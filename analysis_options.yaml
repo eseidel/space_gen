@@ -1,1 +1,5 @@
 include: package:very_good_analysis/analysis_options.yaml
+linter:
+  rules:
+    # Disabled while I'm still finding the shape of the api.
+    public_member_api_docs: false

@@ -145,6 +145,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.0"
+  mason_logger:
+    dependency: "direct main"
+    description:
+      name: mason_logger
+      sha256: c12860ae81f0bdc5d05d7914fe473bfb294047e9dc64e8995b5753c7207e81b9
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.8"
   matcher:
     dependency: transitive
     description:

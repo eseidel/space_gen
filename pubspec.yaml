@@ -8,6 +8,7 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
+  mason_logger: ^0.2.8
   very_good_analysis: ^5.0.0+1
   # path: ^1.8.0
 
