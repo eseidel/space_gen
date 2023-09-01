@@ -9,6 +9,8 @@ environment:
 # Add regular dependencies here.
 dependencies:
   mason_logger: ^0.2.8
+  mustache_template: ^2.0.0
+  path: ^1.8.3
   very_good_analysis: ^5.0.0+1
   # path: ^1.8.0
 
