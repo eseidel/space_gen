@@ -10,6 +10,16 @@ Patches welcome to expand it to support a wider set of OpenAPI.
 
 dart run space_gen
 
+## Values
+* Generates good quality, modern Dart code
+* Not a complete implementation of OpenAPI
+* Generates layered output, which can be used in pieces
+* Generates testable (and tested) code
+
+## Advantages over Open API Generator 7.0.0
+* Dart 3.0+ only (sound null safety)
+* Model code round trips through JSON correctly
+
 ## Why not just contribute to OpenAPI?
 
 As of August 2023, there are two separate (soon to be combined?) OpenAPI
