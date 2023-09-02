@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:mustache_template/mustache_template.dart';
@@ -66,9 +67,27 @@ class Context {
     Process.runSync('dart', args, workingDirectory: outDir.path);
   }
 
+  void renderModels() {
+    // This is a hack.
+    const modelsPath = '../api-docs/models';
+    final dir = Directory(modelsPath);
+    for (final entity in dir.listSync()) {
+      if (entity is! File) {
+        continue;
+      }
+      final file = entity;
+      final contents = file.readAsStringSync();
+      final name = p.basenameWithoutExtension(file.path);
+      final schema =
+          parseSchema(name, jsonDecode(contents) as Map<String, dynamic>);
+      renderSchema(this, schema);
+    }
+  }
+
   void render() {
     renderDirectory();
     renderApis();
+    renderModels();
     runDart(['pub', 'get']);
     runDart(['fix', '.']);
     runDart(['format', '.']);
@@ -144,6 +163,24 @@ List<Model> modelsForApi(Api api) {
 
 String importForModel(Context context, Model model) {
   return 'package:${context.packageName}/src/model/${model.fileName}.dart';
+}
+
+// Convert CamelCase to snake_case
+String snakeFromCamel(String camel) {
+  final snake = camel.splitMapJoin(
+    RegExp('[A-Z]'),
+    onMatch: (m) => '_${m.group(0)}'.toLowerCase(),
+    onNonMatch: (n) => n.toLowerCase(),
+  );
+  return snake.startsWith('_') ? snake.substring(1) : snake;
+}
+
+void renderSchema(Context context, Schema schema) {
+  final model = Model(
+    className: schema.name,
+    fileName: snakeFromCamel(schema.name),
+  );
+  renderModel(context, model);
 }
 
 void renderApi(Context context, Api api) {

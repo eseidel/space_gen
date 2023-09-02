@@ -52,24 +52,27 @@ enum SchemaType {
 // https://spec.openapis.org/oas/v3.0.0#schemaObject
 class Schema {
   const Schema({
+    required this.name,
     required this.type,
     this.properties = const {},
     this.required = const [],
     this.description = '',
   });
 
+  final String name;
   final SchemaType type;
   final Map<String, dynamic> properties;
   final List<String> required;
   final String description;
 }
 
-Schema parseSchema(Map<String, dynamic> json) {
+Schema parseSchema(String name, Map<String, dynamic> json) {
   final type = json['type'] as String;
   final properties = json['properties'] as Map<String, dynamic>? ?? {};
   final required = json['required'] as List<dynamic>? ?? [];
   final description = json['description'] as String? ?? '';
   return Schema(
+    name: name,
     type: SchemaType.fromJson(type),
     properties: properties,
     required: required.cast<String>(),
