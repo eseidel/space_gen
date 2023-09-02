@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
 import 'package:space_gen/space_gen.dart';
 import 'package:space_gen/src/logger.dart';
 
@@ -9,11 +10,11 @@ void main(List<String> arguments) async {
   const outDirPath = 'out';
 
   logger.info('Generating $specPath to $outDirPath');
-
-  // We should eventualy support urls not just paths.
-  final specUrl = Uri.parse(specPath);
-  final spec = await Spec.load(specUrl);
+  final absolutePath = p.absolute(specPath);
+  final specUrl = Uri.parse(absolutePath);
   // Could make clearing of the directory optional.
   final outDir = Directory(outDirPath)..deleteSync(recursive: true);
-  Context(spec, outDir).render();
+  final context = Context(specUrl, outDir);
+  await context.load();
+  context.render();
 }

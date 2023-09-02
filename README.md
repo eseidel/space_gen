@@ -16,6 +16,12 @@ dart run space_gen
 * Generates layered output, which can be used in pieces
 * Generates testable (and tested) code
 
+## Intended Design
+- Phases
+  - Parse OpenAPI
+  - Resolve references
+  - Render Dart code
+
 ## Advantages over Open API Generator 7.0.0
 * Dart 3.0+ only (sound null safety)
 * Model code round trips through JSON correctly

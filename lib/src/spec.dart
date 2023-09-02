@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+import 'package:space_gen/src/string.dart';
+
 class Parameter {
   const Parameter({
     required this.name,
@@ -49,6 +52,42 @@ enum SchemaType {
   }
 }
 
+class RefResolver {
+  RefResolver(this.baseUrl);
+  final Uri baseUrl;
+  final Map<Uri, Schema> _schemas = {};
+
+  // TODO(eseidel): All loads should be done before resolve time.
+  Schema resolve(SchemaRef ref) {
+    if (ref.schema != null) {
+      return ref.schema!;
+    }
+    final uri = ref.uri!;
+    if (_schemas.containsKey(uri)) {
+      return _schemas[uri]!;
+    }
+    final file = File(uri.toFilePath());
+    final contents = file.readAsStringSync();
+    final schema = parseSchema(
+      current: uri,
+      name: p.basenameWithoutExtension(uri.path),
+      json: jsonDecode(contents) as Map<String, dynamic>,
+    );
+    _schemas[uri] = schema;
+    return schema;
+  }
+}
+
+class SchemaRef {
+  SchemaRef.fromPath({required String ref, required Uri current})
+      : schema = null,
+        uri = current.resolve(ref);
+  SchemaRef.schema(this.schema) : uri = null;
+
+  final Uri? uri;
+  final Schema? schema;
+}
+
 // https://spec.openapis.org/oas/v3.0.0#schemaObject
 class Schema {
   const Schema({
@@ -57,18 +96,86 @@ class Schema {
     this.properties = const {},
     this.required = const [],
     this.description = '',
+    this.items,
   });
 
   final String name;
   final SchemaType type;
-  final Map<String, dynamic> properties;
+  final Map<String, SchemaRef> properties;
   final List<String> required;
   final String description;
+  final SchemaRef? items;
 }
 
-Schema parseSchema(String name, Map<String, dynamic> json) {
+SchemaRef parseSchemaOrRef({
+  required Uri current,
+  required Map<String, dynamic> json,
+  required String inferredName,
+}) {
+  if (json.containsKey(r'$ref')) {
+    return SchemaRef.fromPath(ref: json[r'$ref'] as String, current: current);
+  }
+  // type is required when not a ref.
   final type = json['type'] as String;
-  final properties = json['properties'] as Map<String, dynamic>? ?? {};
+  var name = inferredName;
+  if (type != 'object') {
+    name = '$inferredName${type.capitalize()}';
+  }
+  return SchemaRef.schema(
+    parseSchema(current: current, name: name, json: json),
+  );
+}
+
+String inferName(String key, Uri current) {
+  final className = p.basenameWithoutExtension(current.path);
+  return '$className$key';
+}
+
+Map<String, SchemaRef> parseProperties({
+  required Map<String, dynamic>? json,
+  required Uri current,
+}) {
+  if (json == null) {
+    return {};
+  }
+  final properties = <String, SchemaRef>{};
+  if (json.isEmpty) {
+    return properties;
+  }
+  for (final entry in json.entries) {
+    final name = entry.key;
+    final value = entry.value as Map<String, dynamic>;
+    final inferredName = inferName(name, current);
+    properties[name] = parseSchemaOrRef(
+      inferredName: inferredName,
+      current: current,
+      json: value,
+    );
+  }
+  return properties;
+}
+
+Schema parseSchema({
+  required Uri current,
+  required String name,
+  required Map<String, dynamic> json,
+}) {
+  final type = json['type'] as String;
+  final properties = parseProperties(
+    current: current,
+    json: json['properties'] as Map<String, dynamic>?,
+  );
+  final items = json['items'] as Map<String, dynamic>?;
+  SchemaRef? itemSchema;
+  if (items != null) {
+    final inferredName = inferName('Item', current);
+    itemSchema = parseSchemaOrRef(
+      inferredName: inferredName,
+      current: current,
+      json: items,
+    );
+  }
+
   final required = json['required'] as List<dynamic>? ?? [];
   final description = json['description'] as String? ?? '';
   return Schema(
@@ -77,6 +184,7 @@ Schema parseSchema(String name, Map<String, dynamic> json) {
     properties: properties,
     required: required.cast<String>(),
     description: description,
+    items: itemSchema,
   );
 }
 
@@ -115,8 +223,9 @@ class Endpoint {
 // Spec calls this the "OpenAPI Object"
 // https://spec.openapis.org/oas/v3.1.0#openapi-object
 class Spec {
-  Spec(this.endpoints);
+  Spec(this.serverUrl, this.endpoints);
 
+  final Uri serverUrl;
   final List<Endpoint> endpoints;
 
   // OpenAPI refers to these as Tags, but we call them APIs since the Dart
@@ -132,13 +241,18 @@ class Spec {
     });
   }
 
-  static Future<Spec> load(Uri uri) async {
+  static Future<Spec> load(Uri uri, RefResolver resolver) async {
     final file = File(uri.toFilePath());
     final content = file.readAsStringSync();
 
     final endpoints = <Endpoint>[];
 
     final json = jsonDecode(content) as Map<String, dynamic>;
+    // Should support more than one server?
+    final servers = json['servers'] as List<dynamic>;
+    final firstServer = servers.first as Map<String, dynamic>;
+    final serverUrl = firstServer['url'] as String;
+
     final paths = json['paths'] as Map<String, dynamic>;
     for (final pathEntry in paths.entries) {
       final path = pathEntry.key;
@@ -163,6 +277,6 @@ class Spec {
         );
       }
     }
-    return Spec(endpoints);
+    return Spec(Uri.parse(serverUrl), endpoints);
   }
 }

@@ -1,7 +1,21 @@
 class {{ className }} {
-    {{ className }}();
+    {{ className }}(
+        {{#hasProperties}}{ {{/hasProperties}}
+        {{#properties}}
+        required this.{{ propertyName }},
+        {{/properties}}
+        {{#hasProperties}} }{{/hasProperties}}
+    );
+
+    {{#properties}}
+    final {{{ propertyType }}} {{ propertyName }};
+    {{/properties}}
 
     factory {{ className }}.fromJson(Map<String, dynamic> json) {
-        return {{ className }}();
+        return {{ className }}(
+            {{#properties}}
+            {{ propertyName }}: json['{{ propertyName }}'],
+            {{/properties}}
+        );
     }
 }

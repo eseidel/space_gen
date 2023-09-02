@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:mustache_template/mustache_template.dart';
 import 'package:path/path.dart' as p;
 import 'package:space_gen/space_gen.dart';
+import 'package:space_gen/src/string.dart';
 
 Template loadTemplate(String name) {
   return Template(
@@ -12,23 +13,52 @@ Template loadTemplate(String name) {
   );
 }
 
-class Model {
-  Model({required this.className, required this.fileName});
-  final String className;
-  final String fileName;
-}
-
 extension ApiGeneration on Api {
   String get className => '${name.capitalize()}Api';
   String get fileName => '${name.toLowerCase()}_api';
 }
 
+extension SchemaGeneration on Schema {
+  // Some Schema don't have names.
+  String get className => name;
+  String get fileName => snakeFromCamel(name);
+
+  String typeName(RefResolver resolver) {
+    switch (type) {
+      case SchemaType.string:
+        return 'String';
+      case SchemaType.integer:
+        return 'int';
+      case SchemaType.number:
+        return 'double';
+      case SchemaType.boolean:
+        return 'bool';
+      case SchemaType.object:
+        return className;
+      case SchemaType.array:
+        return 'List<${resolver.resolve(items!).typeName(resolver)}>';
+    }
+    // throw UnimplementedError('Unknown type $type');
+  }
+}
+
+// Separate load context vs. render context?
 class Context {
-  Context(this.spec, this.outDir);
-  final Spec spec;
+  Context(this.specUrl, this.outDir) : resolver = RefResolver(specUrl);
+  late Spec spec;
+  final Uri specUrl;
   final Directory outDir;
   final packageName = 'space_gen_example';
-  final baseUrl = 'https://api.spacetraders.io/v2';
+  final RefResolver resolver;
+
+  Schema resolve(SchemaRef ref) {
+    return resolver.resolve(ref);
+  }
+
+  Future<void> load() async {
+    spec = await Spec.load(specUrl, resolver);
+    // Crawl the spec and load all the schemas.
+  }
 
   File _ensureFile(String path) {
     final file = File(p.join(outDir.path, path));
@@ -37,7 +67,7 @@ class Context {
   }
 
   Uri uriForEndpoint(Endpoint endpoint) {
-    return Uri.parse('$baseUrl${endpoint.path}');
+    return Uri.parse('${spec.serverUrl}${endpoint.path}');
   }
 
   void writeFile({required String path, required String content}) {
@@ -78,9 +108,13 @@ class Context {
       final file = entity;
       final contents = file.readAsStringSync();
       final name = p.basenameWithoutExtension(file.path);
-      final schema =
-          parseSchema(name, jsonDecode(contents) as Map<String, dynamic>);
-      renderSchema(this, schema);
+      final uri = Uri.parse(file.path);
+      final schema = parseSchema(
+        current: uri,
+        name: name,
+        json: jsonDecode(contents) as Map<String, dynamic>,
+      );
+      renderModel(this, schema);
     }
   }
 
@@ -94,16 +128,7 @@ class Context {
   }
 }
 
-extension on String {
-  String capitalize() {
-    if (isEmpty) {
-      return this;
-    }
-    return '${this[0].toUpperCase()}${substring(1)}';
-  }
-}
-
-Model endpointResponseBaseModel(Endpoint endpoint) {
+Schema endpointResponseBaseModel(Endpoint endpoint) {
   // Hack to make get cooldown compile.
   final responseCodes = endpoint.responses.keys.toList()..remove('204');
   if (responseCodes.length != 1) {
@@ -118,17 +143,10 @@ Model endpointResponseBaseModel(Endpoint endpoint) {
   );
   final responseCode = responseCodes.first;
   final className = '$camelName${responseCode}Response';
-
-  final snakeName = endpoint.operationId.splitMapJoin(
-    '-',
-    onMatch: (m) => '_',
-    onNonMatch: (n) => n.toLowerCase(),
-  );
-  final fileName = '$snakeName${responseCode}_response';
-  return Model(className: className, fileName: fileName);
+  return Schema(name: className, type: SchemaType.object);
 }
 
-List<Model> modelsFromEndpoint(Endpoint endpoint) {
+List<Schema> modelsFromEndpoint(Endpoint endpoint) {
   return [endpointResponseBaseModel(endpoint)];
 }
 
@@ -140,47 +158,39 @@ String methodNameForEndpoint(Endpoint endpoint) {
   );
 }
 
-void renderModel(Context context, Model model) {
+void renderModel(Context context, Schema schema) {
+  print('Rendering model ${schema.className}');
   final template = loadTemplate('model');
+  final properties = [
+    for (final entry in schema.properties.entries)
+      {
+        'propertyName': entry.key,
+        'propertyType': context.resolve(entry.value).typeName(context.resolver),
+      },
+  ];
   final output = template.renderString(
     {
-      'className': model.className,
+      'className': schema.className,
+      'hasProperties': properties.isNotEmpty,
+      'properties': properties,
     },
   );
   context.writeFile(
-    path: 'lib/src/model/${model.fileName}.dart',
+    path: 'lib/src/model/${schema.fileName}.dart',
     content: output,
   );
 }
 
-List<Model> modelsForApi(Api api) {
-  final models = <Model>[];
+List<Schema> modelsForApi(Api api) {
+  final models = <Schema>[];
   for (final endpoint in api.endpoints) {
     models.addAll(modelsFromEndpoint(endpoint));
   }
   return models;
 }
 
-String importForModel(Context context, Model model) {
-  return 'package:${context.packageName}/src/model/${model.fileName}.dart';
-}
-
-// Convert CamelCase to snake_case
-String snakeFromCamel(String camel) {
-  final snake = camel.splitMapJoin(
-    RegExp('[A-Z]'),
-    onMatch: (m) => '_${m.group(0)}'.toLowerCase(),
-    onNonMatch: (n) => n.toLowerCase(),
-  );
-  return snake.startsWith('_') ? snake.substring(1) : snake;
-}
-
-void renderSchema(Context context, Schema schema) {
-  final model = Model(
-    className: schema.name,
-    fileName: snakeFromCamel(schema.name),
-  );
-  renderModel(context, model);
+String importForModel(Context context, Schema schema) {
+  return 'package:${context.packageName}/src/model/${schema.fileName}.dart';
 }
 
 void renderApi(Context context, Api api) {
