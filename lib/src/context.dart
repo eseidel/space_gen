@@ -8,8 +8,10 @@ import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/string.dart';
 
 Template loadTemplate(String name) {
+  // I'm not sure how to load a template relative to the package root
+  // for when this is installed via pub.  I'm sure it's possible.
   return Template(
-    File('templates/$name.mustache').readAsStringSync(),
+    File('lib/templates/$name.mustache').readAsStringSync(),
     name: name,
   );
 }
