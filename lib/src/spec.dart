@@ -125,13 +125,9 @@ SchemaRef parseSchemaOrRef({
   );
 }
 
-String inferName(String key, Uri current) {
-  final className = p.basenameWithoutExtension(current.path);
-  return '$className$key';
-}
-
 Map<String, SchemaRef> parseProperties({
   required Map<String, dynamic>? json,
+  required String inferredName,
   required Uri current,
 }) {
   if (json == null) {
@@ -144,9 +140,8 @@ Map<String, SchemaRef> parseProperties({
   for (final entry in json.entries) {
     final name = entry.key;
     final value = entry.value as Map<String, dynamic>;
-    final inferredName = inferName(name, current);
     properties[name] = parseSchemaOrRef(
-      inferredName: inferredName,
+      inferredName: '$inferredName${name.capitalize()}',
       current: current,
       json: value,
     );
@@ -162,14 +157,14 @@ Schema parseSchema({
   final type = json['type'] as String;
   final properties = parseProperties(
     current: current,
+    inferredName: name,
     json: json['properties'] as Map<String, dynamic>?,
   );
   final items = json['items'] as Map<String, dynamic>?;
   SchemaRef? itemSchema;
   if (items != null) {
-    final inferredName = inferName('Item', current);
     itemSchema = parseSchemaOrRef(
-      inferredName: inferredName,
+      inferredName: '$name${type.capitalize()}',
       current: current,
       json: items,
     );

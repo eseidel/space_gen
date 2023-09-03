@@ -3,13 +3,8 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:spacetraders/src/model/contract.dart';
 import 'package:spacetraders/src/model/meta.dart';
-import 'package:spacetraders/src/model/contract.dart';
 import 'package:spacetraders/src/model/agent.dart';
-import 'package:spacetraders/src/model/contract.dart';
-import 'package:spacetraders/src/model/contract.dart';
 import 'package:spacetraders/src/model/ship_cargo.dart';
-import 'package:spacetraders/src/model/agent.dart';
-import 'package:spacetraders/src/model/contract.dart';
 
 class ContractsApi {
     Future<GetContracts200Response> GetContracts(
@@ -137,15 +132,15 @@ class GetContracts200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final AcceptContract200ResponseData data;
 
     factory AcceptContract200Response.fromJson(Map<String, dynamic> json) {
         return AcceptContract200Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class AcceptContract200ResponseData {
+    AcceptContract200ResponseData(
         { 
         required this.agent,
         required this.contract,
@@ -155,8 +150,8 @@ class GetContracts200Response {
     final Agent agent;
     final Contract contract;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory AcceptContract200ResponseData.fromJson(Map<String, dynamic> json) {
+        return AcceptContract200ResponseData(
             agent: json['agent'],
             contract: json['contract'],
         );
@@ -168,15 +163,15 @@ class GetContracts200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final DeliverContract200ResponseData data;
 
     factory DeliverContract200Response.fromJson(Map<String, dynamic> json) {
         return DeliverContract200Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class DeliverContract200ResponseData {
+    DeliverContract200ResponseData(
         { 
         required this.contract,
         required this.cargo,
@@ -186,8 +181,8 @@ class GetContracts200Response {
     final Contract contract;
     final ShipCargo cargo;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory DeliverContract200ResponseData.fromJson(Map<String, dynamic> json) {
+        return DeliverContract200ResponseData(
             contract: json['contract'],
             cargo: json['cargo'],
         );
@@ -199,15 +194,15 @@ class GetContracts200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final FulfillContract200ResponseData data;
 
     factory FulfillContract200Response.fromJson(Map<String, dynamic> json) {
         return FulfillContract200Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class FulfillContract200ResponseData {
+    FulfillContract200ResponseData(
         { 
         required this.agent,
         required this.contract,
@@ -217,8 +212,8 @@ class GetContracts200Response {
     final Agent agent;
     final Contract contract;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory FulfillContract200ResponseData.fromJson(Map<String, dynamic> json) {
+        return FulfillContract200ResponseData(
             agent: json['agent'],
             contract: json['contract'],
         );

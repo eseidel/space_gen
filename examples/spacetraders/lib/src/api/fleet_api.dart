@@ -4,56 +4,21 @@ import 'dart:async';
 import 'package:spacetraders/src/model/ship.dart';
 import 'package:spacetraders/src/model/meta.dart';
 import 'package:spacetraders/src/model/agent.dart';
-import 'package:spacetraders/src/model/ship.dart';
 import 'package:spacetraders/src/model/shipyard_transaction.dart';
-import 'package:spacetraders/src/model/ship.dart';
 import 'package:spacetraders/src/model/ship_cargo.dart';
 import 'package:spacetraders/src/model/ship_nav.dart';
-import 'package:spacetraders/src/model/ship_cargo.dart';
 import 'package:spacetraders/src/model/cooldown.dart';
 import 'package:spacetraders/src/model/chart.dart';
 import 'package:spacetraders/src/model/waypoint.dart';
-import 'package:spacetraders/src/model/cooldown.dart';
-import 'package:spacetraders/src/model/ship_nav.dart';
-import 'package:spacetraders/src/model/cooldown.dart';
 import 'package:spacetraders/src/model/survey.dart';
-import 'package:spacetraders/src/model/cooldown.dart';
 import 'package:spacetraders/src/model/extraction.dart';
-import 'package:spacetraders/src/model/ship_cargo.dart';
-import 'package:spacetraders/src/model/ship_cargo.dart';
-import 'package:spacetraders/src/model/cooldown.dart';
-import 'package:spacetraders/src/model/ship_nav.dart';
 import 'package:spacetraders/src/model/ship_fuel.dart';
-import 'package:spacetraders/src/model/ship_nav.dart';
-import 'package:spacetraders/src/model/ship_nav.dart';
-import 'package:spacetraders/src/model/ship_nav.dart';
-import 'package:spacetraders/src/model/ship_fuel.dart';
-import 'package:spacetraders/src/model/ship_nav.dart';
-import 'package:spacetraders/src/model/agent.dart';
-import 'package:spacetraders/src/model/ship_cargo.dart';
 import 'package:spacetraders/src/model/market_transaction.dart';
-import 'package:spacetraders/src/model/cooldown.dart';
 import 'package:spacetraders/src/model/scanned_system.dart';
-import 'package:spacetraders/src/model/cooldown.dart';
 import 'package:spacetraders/src/model/scanned_waypoint.dart';
-import 'package:spacetraders/src/model/cooldown.dart';
 import 'package:spacetraders/src/model/scanned_ship.dart';
-import 'package:spacetraders/src/model/agent.dart';
-import 'package:spacetraders/src/model/ship_fuel.dart';
-import 'package:spacetraders/src/model/market_transaction.dart';
-import 'package:spacetraders/src/model/agent.dart';
-import 'package:spacetraders/src/model/ship_cargo.dart';
-import 'package:spacetraders/src/model/market_transaction.dart';
-import 'package:spacetraders/src/model/ship_cargo.dart';
 import 'package:spacetraders/src/model/contract.dart';
 import 'package:spacetraders/src/model/ship_mount.dart';
-import 'package:spacetraders/src/model/agent.dart';
-import 'package:spacetraders/src/model/ship_mount.dart';
-import 'package:spacetraders/src/model/ship_cargo.dart';
-import 'package:spacetraders/src/model/ship_modification_transaction.dart';
-import 'package:spacetraders/src/model/agent.dart';
-import 'package:spacetraders/src/model/ship_mount.dart';
-import 'package:spacetraders/src/model/ship_cargo.dart';
 import 'package:spacetraders/src/model/ship_modification_transaction.dart';
 
 class FleetApi {
@@ -559,15 +524,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final PurchaseShip201ResponseData data;
 
     factory PurchaseShip201Response.fromJson(Map<String, dynamic> json) {
         return PurchaseShip201Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class PurchaseShip201ResponseData {
+    PurchaseShip201ResponseData(
         { 
         required this.agent,
         required this.ship,
@@ -579,8 +544,8 @@ class GetMyShips200Response {
     final Ship ship;
     final ShipyardTransaction transaction;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory PurchaseShip201ResponseData.fromJson(Map<String, dynamic> json) {
+        return PurchaseShip201ResponseData(
             agent: json['agent'],
             ship: json['ship'],
             transaction: json['transaction'],
@@ -621,15 +586,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final OrbitShip200ResponseData data;
 
     factory OrbitShip200Response.fromJson(Map<String, dynamic> json) {
         return OrbitShip200Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class OrbitShip200ResponseData {
+    OrbitShip200ResponseData(
         { 
         required this.nav,
          }
@@ -637,8 +602,8 @@ class GetMyShips200Response {
 
     final ShipNav nav;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory OrbitShip200ResponseData.fromJson(Map<String, dynamic> json) {
+        return OrbitShip200ResponseData(
             nav: json['nav'],
         );
     }
@@ -649,15 +614,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final ShipRefine201ResponseData data;
 
     factory ShipRefine201Response.fromJson(Map<String, dynamic> json) {
         return ShipRefine201Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class ShipRefine201ResponseData {
+    ShipRefine201ResponseData(
         { 
         required this.cargo,
         required this.cooldown,
@@ -668,19 +633,19 @@ class GetMyShips200Response {
 
     final ShipCargo cargo;
     final Cooldown cooldown;
-    final List<SpaceTradersItem> produced;
-    final List<SpaceTradersItem> consumed;
+    final List<ShipRefine201ResponseDataProducedArrayArray> produced;
+    final List<ShipRefine201ResponseDataConsumedArrayArray> consumed;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory ShipRefine201ResponseData.fromJson(Map<String, dynamic> json) {
+        return ShipRefine201ResponseData(
             cargo: json['cargo'],
             cooldown: json['cooldown'],
             produced: json['produced'],
             consumed: json['consumed'],
         );
     }
-}class SpaceTradersItem {
-    SpaceTradersItem(
+}class ShipRefine201ResponseDataProducedArrayArray {
+    ShipRefine201ResponseDataProducedArrayArray(
         { 
         required this.tradeSymbol,
         required this.units,
@@ -690,14 +655,14 @@ class GetMyShips200Response {
     final String tradeSymbol;
     final int units;
 
-    factory SpaceTradersItem.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersItem(
+    factory ShipRefine201ResponseDataProducedArrayArray.fromJson(Map<String, dynamic> json) {
+        return ShipRefine201ResponseDataProducedArrayArray(
             tradeSymbol: json['tradeSymbol'],
             units: json['units'],
         );
     }
-}class SpaceTradersItem {
-    SpaceTradersItem(
+}class ShipRefine201ResponseDataConsumedArrayArray {
+    ShipRefine201ResponseDataConsumedArrayArray(
         { 
         required this.tradeSymbol,
         required this.units,
@@ -707,8 +672,8 @@ class GetMyShips200Response {
     final String tradeSymbol;
     final int units;
 
-    factory SpaceTradersItem.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersItem(
+    factory ShipRefine201ResponseDataConsumedArrayArray.fromJson(Map<String, dynamic> json) {
+        return ShipRefine201ResponseDataConsumedArrayArray(
             tradeSymbol: json['tradeSymbol'],
             units: json['units'],
         );
@@ -720,15 +685,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final CreateChart201ResponseData data;
 
     factory CreateChart201Response.fromJson(Map<String, dynamic> json) {
         return CreateChart201Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class CreateChart201ResponseData {
+    CreateChart201ResponseData(
         { 
         required this.chart,
         required this.waypoint,
@@ -738,8 +703,8 @@ class GetMyShips200Response {
     final Chart chart;
     final Waypoint waypoint;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory CreateChart201ResponseData.fromJson(Map<String, dynamic> json) {
+        return CreateChart201ResponseData(
             chart: json['chart'],
             waypoint: json['waypoint'],
         );
@@ -765,15 +730,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final DockShip200ResponseData data;
 
     factory DockShip200Response.fromJson(Map<String, dynamic> json) {
         return DockShip200Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class DockShip200ResponseData {
+    DockShip200ResponseData(
         { 
         required this.nav,
          }
@@ -781,8 +746,8 @@ class GetMyShips200Response {
 
     final ShipNav nav;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory DockShip200ResponseData.fromJson(Map<String, dynamic> json) {
+        return DockShip200ResponseData(
             nav: json['nav'],
         );
     }
@@ -793,15 +758,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final CreateSurvey201ResponseData data;
 
     factory CreateSurvey201Response.fromJson(Map<String, dynamic> json) {
         return CreateSurvey201Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class CreateSurvey201ResponseData {
+    CreateSurvey201ResponseData(
         { 
         required this.cooldown,
         required this.surveys,
@@ -811,8 +776,8 @@ class GetMyShips200Response {
     final Cooldown cooldown;
     final List<Survey> surveys;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory CreateSurvey201ResponseData.fromJson(Map<String, dynamic> json) {
+        return CreateSurvey201ResponseData(
             cooldown: json['cooldown'],
             surveys: json['surveys'],
         );
@@ -824,15 +789,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final ExtractResources201ResponseData data;
 
     factory ExtractResources201Response.fromJson(Map<String, dynamic> json) {
         return ExtractResources201Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class ExtractResources201ResponseData {
+    ExtractResources201ResponseData(
         { 
         required this.cooldown,
         required this.extraction,
@@ -844,8 +809,8 @@ class GetMyShips200Response {
     final Extraction extraction;
     final ShipCargo cargo;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory ExtractResources201ResponseData.fromJson(Map<String, dynamic> json) {
+        return ExtractResources201ResponseData(
             cooldown: json['cooldown'],
             extraction: json['extraction'],
             cargo: json['cargo'],
@@ -858,15 +823,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final Jettison200ResponseData data;
 
     factory Jettison200Response.fromJson(Map<String, dynamic> json) {
         return Jettison200Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class Jettison200ResponseData {
+    Jettison200ResponseData(
         { 
         required this.cargo,
          }
@@ -874,8 +839,8 @@ class GetMyShips200Response {
 
     final ShipCargo cargo;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory Jettison200ResponseData.fromJson(Map<String, dynamic> json) {
+        return Jettison200ResponseData(
             cargo: json['cargo'],
         );
     }
@@ -886,15 +851,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final JumpShip200ResponseData data;
 
     factory JumpShip200Response.fromJson(Map<String, dynamic> json) {
         return JumpShip200Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class JumpShip200ResponseData {
+    JumpShip200ResponseData(
         { 
         required this.cooldown,
         required this.nav,
@@ -904,8 +869,8 @@ class GetMyShips200Response {
     final Cooldown cooldown;
     final ShipNav nav;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory JumpShip200ResponseData.fromJson(Map<String, dynamic> json) {
+        return JumpShip200ResponseData(
             cooldown: json['cooldown'],
             nav: json['nav'],
         );
@@ -917,15 +882,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final NavigateShip200ResponseData data;
 
     factory NavigateShip200Response.fromJson(Map<String, dynamic> json) {
         return NavigateShip200Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class NavigateShip200ResponseData {
+    NavigateShip200ResponseData(
         { 
         required this.fuel,
         required this.nav,
@@ -935,8 +900,8 @@ class GetMyShips200Response {
     final ShipFuel fuel;
     final ShipNav nav;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory NavigateShip200ResponseData.fromJson(Map<String, dynamic> json) {
+        return NavigateShip200ResponseData(
             fuel: json['fuel'],
             nav: json['nav'],
         );
@@ -976,15 +941,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final WarpShip200ResponseData data;
 
     factory WarpShip200Response.fromJson(Map<String, dynamic> json) {
         return WarpShip200Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class WarpShip200ResponseData {
+    WarpShip200ResponseData(
         { 
         required this.fuel,
         required this.nav,
@@ -994,8 +959,8 @@ class GetMyShips200Response {
     final ShipFuel fuel;
     final ShipNav nav;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory WarpShip200ResponseData.fromJson(Map<String, dynamic> json) {
+        return WarpShip200ResponseData(
             fuel: json['fuel'],
             nav: json['nav'],
         );
@@ -1007,15 +972,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final SellCargo201ResponseData data;
 
     factory SellCargo201Response.fromJson(Map<String, dynamic> json) {
         return SellCargo201Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class SellCargo201ResponseData {
+    SellCargo201ResponseData(
         { 
         required this.agent,
         required this.cargo,
@@ -1027,8 +992,8 @@ class GetMyShips200Response {
     final ShipCargo cargo;
     final MarketTransaction transaction;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory SellCargo201ResponseData.fromJson(Map<String, dynamic> json) {
+        return SellCargo201ResponseData(
             agent: json['agent'],
             cargo: json['cargo'],
             transaction: json['transaction'],
@@ -1041,15 +1006,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final CreateShipSystemScan201ResponseData data;
 
     factory CreateShipSystemScan201Response.fromJson(Map<String, dynamic> json) {
         return CreateShipSystemScan201Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class CreateShipSystemScan201ResponseData {
+    CreateShipSystemScan201ResponseData(
         { 
         required this.cooldown,
         required this.systems,
@@ -1059,8 +1024,8 @@ class GetMyShips200Response {
     final Cooldown cooldown;
     final List<ScannedSystem> systems;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory CreateShipSystemScan201ResponseData.fromJson(Map<String, dynamic> json) {
+        return CreateShipSystemScan201ResponseData(
             cooldown: json['cooldown'],
             systems: json['systems'],
         );
@@ -1072,15 +1037,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final CreateShipWaypointScan201ResponseData data;
 
     factory CreateShipWaypointScan201Response.fromJson(Map<String, dynamic> json) {
         return CreateShipWaypointScan201Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class CreateShipWaypointScan201ResponseData {
+    CreateShipWaypointScan201ResponseData(
         { 
         required this.cooldown,
         required this.waypoints,
@@ -1090,8 +1055,8 @@ class GetMyShips200Response {
     final Cooldown cooldown;
     final List<ScannedWaypoint> waypoints;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory CreateShipWaypointScan201ResponseData.fromJson(Map<String, dynamic> json) {
+        return CreateShipWaypointScan201ResponseData(
             cooldown: json['cooldown'],
             waypoints: json['waypoints'],
         );
@@ -1103,15 +1068,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final CreateShipShipScan201ResponseData data;
 
     factory CreateShipShipScan201Response.fromJson(Map<String, dynamic> json) {
         return CreateShipShipScan201Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class CreateShipShipScan201ResponseData {
+    CreateShipShipScan201ResponseData(
         { 
         required this.cooldown,
         required this.ships,
@@ -1121,8 +1086,8 @@ class GetMyShips200Response {
     final Cooldown cooldown;
     final List<ScannedShip> ships;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory CreateShipShipScan201ResponseData.fromJson(Map<String, dynamic> json) {
+        return CreateShipShipScan201ResponseData(
             cooldown: json['cooldown'],
             ships: json['ships'],
         );
@@ -1134,15 +1099,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final RefuelShip200ResponseData data;
 
     factory RefuelShip200Response.fromJson(Map<String, dynamic> json) {
         return RefuelShip200Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class RefuelShip200ResponseData {
+    RefuelShip200ResponseData(
         { 
         required this.agent,
         required this.fuel,
@@ -1154,8 +1119,8 @@ class GetMyShips200Response {
     final ShipFuel fuel;
     final MarketTransaction transaction;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory RefuelShip200ResponseData.fromJson(Map<String, dynamic> json) {
+        return RefuelShip200ResponseData(
             agent: json['agent'],
             fuel: json['fuel'],
             transaction: json['transaction'],
@@ -1168,15 +1133,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final PurchaseCargo201ResponseData data;
 
     factory PurchaseCargo201Response.fromJson(Map<String, dynamic> json) {
         return PurchaseCargo201Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class PurchaseCargo201ResponseData {
+    PurchaseCargo201ResponseData(
         { 
         required this.agent,
         required this.cargo,
@@ -1188,8 +1153,8 @@ class GetMyShips200Response {
     final ShipCargo cargo;
     final MarketTransaction transaction;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory PurchaseCargo201ResponseData.fromJson(Map<String, dynamic> json) {
+        return PurchaseCargo201ResponseData(
             agent: json['agent'],
             cargo: json['cargo'],
             transaction: json['transaction'],
@@ -1202,15 +1167,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final TransferCargo200ResponseData data;
 
     factory TransferCargo200Response.fromJson(Map<String, dynamic> json) {
         return TransferCargo200Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class TransferCargo200ResponseData {
+    TransferCargo200ResponseData(
         { 
         required this.cargo,
          }
@@ -1218,8 +1183,8 @@ class GetMyShips200Response {
 
     final ShipCargo cargo;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory TransferCargo200ResponseData.fromJson(Map<String, dynamic> json) {
+        return TransferCargo200ResponseData(
             cargo: json['cargo'],
         );
     }
@@ -1230,15 +1195,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final NegotiateContract201ResponseData data;
 
     factory NegotiateContract201Response.fromJson(Map<String, dynamic> json) {
         return NegotiateContract201Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class NegotiateContract201ResponseData {
+    NegotiateContract201ResponseData(
         { 
         required this.contract,
          }
@@ -1246,8 +1211,8 @@ class GetMyShips200Response {
 
     final Contract contract;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory NegotiateContract201ResponseData.fromJson(Map<String, dynamic> json) {
+        return NegotiateContract201ResponseData(
             contract: json['contract'],
         );
     }
@@ -1272,15 +1237,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final InstallMount201ResponseData data;
 
     factory InstallMount201Response.fromJson(Map<String, dynamic> json) {
         return InstallMount201Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class InstallMount201ResponseData {
+    InstallMount201ResponseData(
         { 
         required this.agent,
         required this.mounts,
@@ -1294,8 +1259,8 @@ class GetMyShips200Response {
     final ShipCargo cargo;
     final ShipModificationTransaction transaction;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory InstallMount201ResponseData.fromJson(Map<String, dynamic> json) {
+        return InstallMount201ResponseData(
             agent: json['agent'],
             mounts: json['mounts'],
             cargo: json['cargo'],
@@ -1309,15 +1274,15 @@ class GetMyShips200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final RemoveMount201ResponseData data;
 
     factory RemoveMount201Response.fromJson(Map<String, dynamic> json) {
         return RemoveMount201Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class RemoveMount201ResponseData {
+    RemoveMount201ResponseData(
         { 
         required this.agent,
         required this.mounts,
@@ -1331,8 +1296,8 @@ class GetMyShips200Response {
     final ShipCargo cargo;
     final ShipModificationTransaction transaction;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory RemoveMount201ResponseData.fromJson(Map<String, dynamic> json) {
+        return RemoveMount201ResponseData(
             agent: json['agent'],
             mounts: json['mounts'],
             cargo: json['cargo'],

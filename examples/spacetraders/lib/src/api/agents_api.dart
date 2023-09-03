@@ -2,9 +2,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:spacetraders/src/model/agent.dart';
-import 'package:spacetraders/src/model/agent.dart';
 import 'package:spacetraders/src/model/meta.dart';
-import 'package:spacetraders/src/model/agent.dart';
 
 class AgentsApi {
     Future<GetMyAgent200Response> GetMyAgent(

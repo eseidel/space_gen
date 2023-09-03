@@ -134,7 +134,11 @@ class Context {
   }
 
   void runDart(List<String> args) {
-    Process.runSync('dart', args, workingDirectory: outDir.path);
+    final result = Process.runSync('dart', args, workingDirectory: outDir.path);
+    if (result.exitCode != 0) {
+      logger.info(result.stderr as String);
+      throw Exception('Failed to run dart ${args.join(' ')}');
+    }
   }
 
   void renderModelFile(String path) {
@@ -167,7 +171,7 @@ class Context {
     renderApis();
     renderModels();
     runDart(['pub', 'get']);
-    runDart(['fix', '.']);
+    runDart(['fix', '.', '--apply']);
     runDart(['format', '.']);
   }
 }
@@ -213,12 +217,12 @@ class RenderContext {
 
 /// Starts a new RenderContext for rendering a new schema file.
 void renderRootSchema(Context context, Schema schema) {
-  logger.info('Rendering model ${schema.className}');
+  // logger.info('Rendering ${schema.className}');
 
   final renderContext = RenderContext()..collectSchema(schema);
-  logger
-    ..info('To import: ${renderContext.imported}')
-    ..info('To render: ${renderContext.inlineSchemas}');
+  // logger
+  //   ..info('To import: ${renderContext.imported}')
+  //   ..info('To render: ${renderContext.inlineSchemas}');
 
   final imports = <String>{};
   for (final ref in renderContext.imported) {
@@ -258,7 +262,7 @@ void renderApi(RenderContext renderContext, Context context, Api api) {
   }
   renderContext.collectApi(api);
   final imports =
-      renderContext.imported.map((ref) => ref.packageImport(context)).toList();
+      renderContext.imported.map((ref) => ref.packageImport(context)).toSet();
   final models = renderContext.inlineSchemas
       .map((schema) => schema.toClassDefinition(context.resolver))
       .toList();

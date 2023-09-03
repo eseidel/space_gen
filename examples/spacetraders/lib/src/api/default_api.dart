@@ -62,11 +62,11 @@ class GetStatus200Response {
     final String version;
     final String resetDate;
     final String description;
-    final SpaceTradersstats stats;
-    final SpaceTradersleaderboards leaderboards;
-    final SpaceTradersserverResets serverResets;
-    final List<SpaceTradersItem> announcements;
-    final List<SpaceTradersItem> links;
+    final GetStatus200ResponseStats stats;
+    final GetStatus200ResponseLeaderboards leaderboards;
+    final GetStatus200ResponseServerResets serverResets;
+    final List<GetStatus200ResponseAnnouncementsArrayArray> announcements;
+    final List<GetStatus200ResponseLinksArrayArray> links;
 
     factory GetStatus200Response.fromJson(Map<String, dynamic> json) {
         return GetStatus200Response(
@@ -81,8 +81,8 @@ class GetStatus200Response {
             links: json['links'],
         );
     }
-}class SpaceTradersstats {
-    SpaceTradersstats(
+}class GetStatus200ResponseStats {
+    GetStatus200ResponseStats(
         { 
         required this.agents,
         required this.ships,
@@ -96,33 +96,33 @@ class GetStatus200Response {
     final int systems;
     final int waypoints;
 
-    factory SpaceTradersstats.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersstats(
+    factory GetStatus200ResponseStats.fromJson(Map<String, dynamic> json) {
+        return GetStatus200ResponseStats(
             agents: json['agents'],
             ships: json['ships'],
             systems: json['systems'],
             waypoints: json['waypoints'],
         );
     }
-}class SpaceTradersleaderboards {
-    SpaceTradersleaderboards(
+}class GetStatus200ResponseLeaderboards {
+    GetStatus200ResponseLeaderboards(
         { 
         required this.mostCredits,
         required this.mostSubmittedCharts,
          }
     );
 
-    final List<SpaceTradersItem> mostCredits;
-    final List<SpaceTradersItem> mostSubmittedCharts;
+    final List<GetStatus200ResponseLeaderboardsMostCreditsArrayArray> mostCredits;
+    final List<GetStatus200ResponseLeaderboardsMostSubmittedChartsArrayArray> mostSubmittedCharts;
 
-    factory SpaceTradersleaderboards.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersleaderboards(
+    factory GetStatus200ResponseLeaderboards.fromJson(Map<String, dynamic> json) {
+        return GetStatus200ResponseLeaderboards(
             mostCredits: json['mostCredits'],
             mostSubmittedCharts: json['mostSubmittedCharts'],
         );
     }
-}class SpaceTradersItem {
-    SpaceTradersItem(
+}class GetStatus200ResponseLeaderboardsMostCreditsArrayArray {
+    GetStatus200ResponseLeaderboardsMostCreditsArrayArray(
         { 
         required this.agentSymbol,
         required this.credits,
@@ -132,14 +132,14 @@ class GetStatus200Response {
     final String agentSymbol;
     final int credits;
 
-    factory SpaceTradersItem.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersItem(
+    factory GetStatus200ResponseLeaderboardsMostCreditsArrayArray.fromJson(Map<String, dynamic> json) {
+        return GetStatus200ResponseLeaderboardsMostCreditsArrayArray(
             agentSymbol: json['agentSymbol'],
             credits: json['credits'],
         );
     }
-}class SpaceTradersItem {
-    SpaceTradersItem(
+}class GetStatus200ResponseLeaderboardsMostSubmittedChartsArrayArray {
+    GetStatus200ResponseLeaderboardsMostSubmittedChartsArrayArray(
         { 
         required this.agentSymbol,
         required this.chartCount,
@@ -149,14 +149,14 @@ class GetStatus200Response {
     final String agentSymbol;
     final int chartCount;
 
-    factory SpaceTradersItem.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersItem(
+    factory GetStatus200ResponseLeaderboardsMostSubmittedChartsArrayArray.fromJson(Map<String, dynamic> json) {
+        return GetStatus200ResponseLeaderboardsMostSubmittedChartsArrayArray(
             agentSymbol: json['agentSymbol'],
             chartCount: json['chartCount'],
         );
     }
-}class SpaceTradersserverResets {
-    SpaceTradersserverResets(
+}class GetStatus200ResponseServerResets {
+    GetStatus200ResponseServerResets(
         { 
         required this.next,
         required this.frequency,
@@ -166,14 +166,14 @@ class GetStatus200Response {
     final String next;
     final String frequency;
 
-    factory SpaceTradersserverResets.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersserverResets(
+    factory GetStatus200ResponseServerResets.fromJson(Map<String, dynamic> json) {
+        return GetStatus200ResponseServerResets(
             next: json['next'],
             frequency: json['frequency'],
         );
     }
-}class SpaceTradersItem {
-    SpaceTradersItem(
+}class GetStatus200ResponseAnnouncementsArrayArray {
+    GetStatus200ResponseAnnouncementsArrayArray(
         { 
         required this.title,
         required this.body,
@@ -183,14 +183,14 @@ class GetStatus200Response {
     final String title;
     final String body;
 
-    factory SpaceTradersItem.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersItem(
+    factory GetStatus200ResponseAnnouncementsArrayArray.fromJson(Map<String, dynamic> json) {
+        return GetStatus200ResponseAnnouncementsArrayArray(
             title: json['title'],
             body: json['body'],
         );
     }
-}class SpaceTradersItem {
-    SpaceTradersItem(
+}class GetStatus200ResponseLinksArrayArray {
+    GetStatus200ResponseLinksArrayArray(
         { 
         required this.name,
         required this.url,
@@ -200,8 +200,8 @@ class GetStatus200Response {
     final String name;
     final String url;
 
-    factory SpaceTradersItem.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersItem(
+    factory GetStatus200ResponseLinksArrayArray.fromJson(Map<String, dynamic> json) {
+        return GetStatus200ResponseLinksArrayArray(
             name: json['name'],
             url: json['url'],
         );
@@ -213,15 +213,15 @@ class GetStatus200Response {
          }
     );
 
-    final SpaceTradersdata data;
+    final Register201ResponseData data;
 
     factory Register201Response.fromJson(Map<String, dynamic> json) {
         return Register201Response(
             data: json['data'],
         );
     }
-}class SpaceTradersdata {
-    SpaceTradersdata(
+}class Register201ResponseData {
+    Register201ResponseData(
         { 
         required this.agent,
         required this.contract,
@@ -237,8 +237,8 @@ class GetStatus200Response {
     final Ship ship;
     final String token;
 
-    factory SpaceTradersdata.fromJson(Map<String, dynamic> json) {
-        return SpaceTradersdata(
+    factory Register201ResponseData.fromJson(Map<String, dynamic> json) {
+        return Register201ResponseData(
             agent: json['agent'],
             contract: json['contract'],
             faction: json['faction'],

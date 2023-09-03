@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:spacetraders/src/model/faction.dart';
 import 'package:spacetraders/src/model/meta.dart';
-import 'package:spacetraders/src/model/faction.dart';
 
 class FactionsApi {
     Future<GetFactions200Response> GetFactions(
