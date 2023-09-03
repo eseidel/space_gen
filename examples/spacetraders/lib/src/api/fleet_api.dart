@@ -1,29 +1,28 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:http/http.dart' as http;
-import 'package:spacetraders/src/model/agent.dart';
-import 'package:spacetraders/src/model/chart.dart';
-import 'package:spacetraders/src/model/contract.dart';
-import 'package:spacetraders/src/model/cooldown.dart';
-import 'package:spacetraders/src/model/extraction.dart';
-import 'package:spacetraders/src/model/market_transaction.dart';
+import 'dart:convert';
+import 'dart:async';
+import 'package:spacetraders/src/model/ship.dart';
 import 'package:spacetraders/src/model/meta.dart';
-import 'package:spacetraders/src/model/scanned_ship.dart';
+import 'package:spacetraders/src/model/agent.dart';
+import 'package:spacetraders/src/model/shipyard_transaction.dart';
+import 'package:spacetraders/src/model/ship_cargo.dart';
+import 'package:spacetraders/src/model/ship_nav.dart';
+import 'package:spacetraders/src/model/cooldown.dart';
+import 'package:spacetraders/src/model/chart.dart';
+import 'package:spacetraders/src/model/waypoint.dart';
+import 'package:spacetraders/src/model/survey.dart';
+import 'package:spacetraders/src/model/extraction.dart';
+import 'package:spacetraders/src/model/ship_fuel.dart';
+import 'package:spacetraders/src/model/market_transaction.dart';
 import 'package:spacetraders/src/model/scanned_system.dart';
 import 'package:spacetraders/src/model/scanned_waypoint.dart';
-import 'package:spacetraders/src/model/ship.dart';
-import 'package:spacetraders/src/model/ship_cargo.dart';
-import 'package:spacetraders/src/model/ship_fuel.dart';
-import 'package:spacetraders/src/model/ship_modification_transaction.dart';
+import 'package:spacetraders/src/model/scanned_ship.dart';
+import 'package:spacetraders/src/model/contract.dart';
 import 'package:spacetraders/src/model/ship_mount.dart';
-import 'package:spacetraders/src/model/ship_nav.dart';
-import 'package:spacetraders/src/model/shipyard_transaction.dart';
-import 'package:spacetraders/src/model/survey.dart';
-import 'package:spacetraders/src/model/waypoint.dart';
+import 'package:spacetraders/src/model/ship_modification_transaction.dart';
 
 class FleetApi {
-  Future<GetMyShips200Response> GetMyShips() async {
+  Future<GetMyShips200Response> getMyShips() async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/my/ships'),
       headers: {
@@ -36,11 +35,11 @@ class FleetApi {
       return GetMyShips200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load GetMyShips');
+      throw Exception('Failed to load getMyShips');
     }
   }
 
-  Future<PurchaseShip201Response> PurchaseShip() async {
+  Future<PurchaseShip201Response> purchaseShip() async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/my/ships'),
       headers: {
@@ -53,11 +52,11 @@ class FleetApi {
       return PurchaseShip201Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load PurchaseShip');
+      throw Exception('Failed to load purchaseShip');
     }
   }
 
-  Future<GetMyShip200Response> GetMyShip() async {
+  Future<GetMyShip200Response> getMyShip() async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D'),
       headers: {
@@ -70,11 +69,11 @@ class FleetApi {
       return GetMyShip200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load GetMyShip');
+      throw Exception('Failed to load getMyShip');
     }
   }
 
-  Future<GetMyShipCargo200Response> GetMyShipCargo() async {
+  Future<GetMyShipCargo200Response> getMyShipCargo() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/cargo',),
@@ -88,11 +87,11 @@ class FleetApi {
       return GetMyShipCargo200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load GetMyShipCargo');
+      throw Exception('Failed to load getMyShipCargo');
     }
   }
 
-  Future<OrbitShip200Response> OrbitShip() async {
+  Future<OrbitShip200Response> orbitShip() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/orbit',),
@@ -106,11 +105,11 @@ class FleetApi {
       return OrbitShip200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load OrbitShip');
+      throw Exception('Failed to load orbitShip');
     }
   }
 
-  Future<ShipRefine201Response> ShipRefine() async {
+  Future<ShipRefine201Response> shipRefine() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/refine',),
@@ -124,11 +123,11 @@ class FleetApi {
       return ShipRefine201Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load ShipRefine');
+      throw Exception('Failed to load shipRefine');
     }
   }
 
-  Future<CreateChart201Response> CreateChart() async {
+  Future<CreateChart201Response> createChart() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/chart',),
@@ -142,11 +141,11 @@ class FleetApi {
       return CreateChart201Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load CreateChart');
+      throw Exception('Failed to load createChart');
     }
   }
 
-  Future<GetShipCooldown200Response> GetShipCooldown() async {
+  Future<GetShipCooldown200Response> getShipCooldown() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/cooldown',),
@@ -160,11 +159,11 @@ class FleetApi {
       return GetShipCooldown200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load GetShipCooldown');
+      throw Exception('Failed to load getShipCooldown');
     }
   }
 
-  Future<DockShip200Response> DockShip() async {
+  Future<DockShip200Response> dockShip() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/dock',),
@@ -178,11 +177,11 @@ class FleetApi {
       return DockShip200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load DockShip');
+      throw Exception('Failed to load dockShip');
     }
   }
 
-  Future<CreateSurvey201Response> CreateSurvey() async {
+  Future<CreateSurvey201Response> createSurvey() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/survey',),
@@ -196,11 +195,11 @@ class FleetApi {
       return CreateSurvey201Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load CreateSurvey');
+      throw Exception('Failed to load createSurvey');
     }
   }
 
-  Future<ExtractResources201Response> ExtractResources() async {
+  Future<ExtractResources201Response> extractResources() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/extract',),
@@ -214,11 +213,11 @@ class FleetApi {
       return ExtractResources201Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load ExtractResources');
+      throw Exception('Failed to load extractResources');
     }
   }
 
-  Future<Jettison200Response> Jettison() async {
+  Future<Jettison200Response> jettison() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/jettison',),
@@ -232,11 +231,11 @@ class FleetApi {
       return Jettison200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load Jettison');
+      throw Exception('Failed to load jettison');
     }
   }
 
-  Future<JumpShip200Response> JumpShip() async {
+  Future<JumpShip200Response> jumpShip() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/jump',),
@@ -250,11 +249,11 @@ class FleetApi {
       return JumpShip200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load JumpShip');
+      throw Exception('Failed to load jumpShip');
     }
   }
 
-  Future<NavigateShip200Response> NavigateShip() async {
+  Future<NavigateShip200Response> navigateShip() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/navigate',),
@@ -268,11 +267,11 @@ class FleetApi {
       return NavigateShip200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load NavigateShip');
+      throw Exception('Failed to load navigateShip');
     }
   }
 
-  Future<GetShipNav200Response> GetShipNav() async {
+  Future<GetShipNav200Response> getShipNav() async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/nav'),
       headers: {
@@ -285,11 +284,11 @@ class FleetApi {
       return GetShipNav200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load GetShipNav');
+      throw Exception('Failed to load getShipNav');
     }
   }
 
-  Future<PatchShipNav200Response> PatchShipNav() async {
+  Future<PatchShipNav200Response> patchShipNav() async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/nav'),
       headers: {
@@ -302,11 +301,11 @@ class FleetApi {
       return PatchShipNav200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load PatchShipNav');
+      throw Exception('Failed to load patchShipNav');
     }
   }
 
-  Future<WarpShip200Response> WarpShip() async {
+  Future<WarpShip200Response> warpShip() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/warp',),
@@ -320,11 +319,11 @@ class FleetApi {
       return WarpShip200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load WarpShip');
+      throw Exception('Failed to load warpShip');
     }
   }
 
-  Future<SellCargo201Response> SellCargo() async {
+  Future<SellCargo201Response> sellCargo() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/sell',),
@@ -338,11 +337,11 @@ class FleetApi {
       return SellCargo201Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load SellCargo');
+      throw Exception('Failed to load sellCargo');
     }
   }
 
-  Future<CreateShipSystemScan201Response> CreateShipSystemScan() async {
+  Future<CreateShipSystemScan201Response> createShipSystemScan() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/scan/systems',),
@@ -356,11 +355,11 @@ class FleetApi {
       return CreateShipSystemScan201Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load CreateShipSystemScan');
+      throw Exception('Failed to load createShipSystemScan');
     }
   }
 
-  Future<CreateShipWaypointScan201Response> CreateShipWaypointScan() async {
+  Future<CreateShipWaypointScan201Response> createShipWaypointScan() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/scan/waypoints',),
@@ -374,11 +373,11 @@ class FleetApi {
       return CreateShipWaypointScan201Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load CreateShipWaypointScan');
+      throw Exception('Failed to load createShipWaypointScan');
     }
   }
 
-  Future<CreateShipShipScan201Response> CreateShipShipScan() async {
+  Future<CreateShipShipScan201Response> createShipShipScan() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/scan/ships',),
@@ -392,11 +391,11 @@ class FleetApi {
       return CreateShipShipScan201Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load CreateShipShipScan');
+      throw Exception('Failed to load createShipShipScan');
     }
   }
 
-  Future<RefuelShip200Response> RefuelShip() async {
+  Future<RefuelShip200Response> refuelShip() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/refuel',),
@@ -410,11 +409,11 @@ class FleetApi {
       return RefuelShip200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load RefuelShip');
+      throw Exception('Failed to load refuelShip');
     }
   }
 
-  Future<PurchaseCargo201Response> PurchaseCargo() async {
+  Future<PurchaseCargo201Response> purchaseCargo() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/purchase',),
@@ -428,11 +427,11 @@ class FleetApi {
       return PurchaseCargo201Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load PurchaseCargo');
+      throw Exception('Failed to load purchaseCargo');
     }
   }
 
-  Future<TransferCargo200Response> TransferCargo() async {
+  Future<TransferCargo200Response> transferCargo() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/transfer',),
@@ -446,11 +445,11 @@ class FleetApi {
       return TransferCargo200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load TransferCargo');
+      throw Exception('Failed to load transferCargo');
     }
   }
 
-  Future<NegotiateContract201Response> NegotiateContract() async {
+  Future<NegotiateContract201Response> negotiateContract() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/negotiate/contract',),
@@ -464,11 +463,11 @@ class FleetApi {
       return NegotiateContract201Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load NegotiateContract');
+      throw Exception('Failed to load negotiateContract');
     }
   }
 
-  Future<GetMounts200Response> GetMounts() async {
+  Future<GetMounts200Response> getMounts() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/mounts',),
@@ -482,11 +481,11 @@ class FleetApi {
       return GetMounts200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load GetMounts');
+      throw Exception('Failed to load getMounts');
     }
   }
 
-  Future<InstallMount201Response> InstallMount() async {
+  Future<InstallMount201Response> installMount() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/mounts/install',),
@@ -500,11 +499,11 @@ class FleetApi {
       return InstallMount201Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load InstallMount');
+      throw Exception('Failed to load installMount');
     }
   }
 
-  Future<RemoveMount201Response> RemoveMount() async {
+  Future<RemoveMount201Response> removeMount() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/mounts/remove',),
@@ -518,7 +517,7 @@ class FleetApi {
       return RemoveMount201Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load RemoveMount');
+      throw Exception('Failed to load removeMount');
     }
   }
 }

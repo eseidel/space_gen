@@ -1,12 +1,11 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async';
 import 'package:spacetraders/src/model/agent.dart';
 import 'package:spacetraders/src/model/meta.dart';
 
 class AgentsApi {
-  Future<GetMyAgent200Response> GetMyAgent() async {
+  Future<GetMyAgent200Response> getMyAgent() async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/my/agent'),
       headers: {
@@ -19,11 +18,11 @@ class AgentsApi {
       return GetMyAgent200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load GetMyAgent');
+      throw Exception('Failed to load getMyAgent');
     }
   }
 
-  Future<GetAgents200Response> GetAgents() async {
+  Future<GetAgents200Response> getAgents() async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/agents'),
       headers: {
@@ -36,11 +35,11 @@ class AgentsApi {
       return GetAgents200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load GetAgents');
+      throw Exception('Failed to load getAgents');
     }
   }
 
-  Future<GetAgent200Response> GetAgent() async {
+  Future<GetAgent200Response> getAgent() async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/agents/%7BagentSymbol%7D'),
       headers: {
@@ -53,7 +52,7 @@ class AgentsApi {
       return GetAgent200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load GetAgent');
+      throw Exception('Failed to load getAgent');
     }
   }
 }

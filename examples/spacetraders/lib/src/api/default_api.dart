@@ -1,14 +1,13 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async';
 import 'package:spacetraders/src/model/agent.dart';
 import 'package:spacetraders/src/model/contract.dart';
 import 'package:spacetraders/src/model/faction.dart';
 import 'package:spacetraders/src/model/ship.dart';
 
 class DefaultApi {
-  Future<GetStatus200Response> GetStatus() async {
+  Future<GetStatus200Response> getStatus() async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/'),
       headers: {
@@ -21,11 +20,11 @@ class DefaultApi {
       return GetStatus200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load GetStatus');
+      throw Exception('Failed to load getStatus');
     }
   }
 
-  Future<Register201Response> Register() async {
+  Future<Register201Response> register() async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/register'),
       headers: {
@@ -38,7 +37,7 @@ class DefaultApi {
       return Register201Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load Register');
+      throw Exception('Failed to load register');
     }
   }
 }

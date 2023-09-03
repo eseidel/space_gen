@@ -32,11 +32,12 @@ extension ApiGeneration on Api {
 
 extension EndpointGeneration on Endpoint {
   String get methodName {
-    return operationId.splitMapJoin(
+    final name = operationId.splitMapJoin(
       '-',
       onMatch: (m) => '',
       onNonMatch: (n) => n.capitalize(),
     );
+    return name[0].toLowerCase() + name.substring(1);
   }
 
   Uri uri(Context context) => Uri.parse('${context.spec.serverUrl}$path');

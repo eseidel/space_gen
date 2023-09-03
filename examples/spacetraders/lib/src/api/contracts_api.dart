@@ -1,14 +1,13 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:http/http.dart' as http;
-import 'package:spacetraders/src/model/agent.dart';
+import 'dart:convert';
+import 'dart:async';
 import 'package:spacetraders/src/model/contract.dart';
 import 'package:spacetraders/src/model/meta.dart';
+import 'package:spacetraders/src/model/agent.dart';
 import 'package:spacetraders/src/model/ship_cargo.dart';
 
 class ContractsApi {
-  Future<GetContracts200Response> GetContracts() async {
+  Future<GetContracts200Response> getContracts() async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/my/contracts'),
       headers: {
@@ -21,11 +20,11 @@ class ContractsApi {
       return GetContracts200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load GetContracts');
+      throw Exception('Failed to load getContracts');
     }
   }
 
-  Future<GetContract200Response> GetContract() async {
+  Future<GetContract200Response> getContract() async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D'),
       headers: {
@@ -38,11 +37,11 @@ class ContractsApi {
       return GetContract200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load GetContract');
+      throw Exception('Failed to load getContract');
     }
   }
 
-  Future<AcceptContract200Response> AcceptContract() async {
+  Future<AcceptContract200Response> acceptContract() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D/accept',),
@@ -56,11 +55,11 @@ class ContractsApi {
       return AcceptContract200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load AcceptContract');
+      throw Exception('Failed to load acceptContract');
     }
   }
 
-  Future<DeliverContract200Response> DeliverContract() async {
+  Future<DeliverContract200Response> deliverContract() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D/deliver',),
@@ -74,11 +73,11 @@ class ContractsApi {
       return DeliverContract200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load DeliverContract');
+      throw Exception('Failed to load deliverContract');
     }
   }
 
-  Future<FulfillContract200Response> FulfillContract() async {
+  Future<FulfillContract200Response> fulfillContract() async {
     final response = await http.post(
       Uri.parse(
           'https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D/fulfill',),
@@ -92,7 +91,7 @@ class ContractsApi {
       return FulfillContract200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load FulfillContract');
+      throw Exception('Failed to load fulfillContract');
     }
   }
 }

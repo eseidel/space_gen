@@ -1,12 +1,11 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async';
 import 'package:spacetraders/src/model/faction.dart';
 import 'package:spacetraders/src/model/meta.dart';
 
 class FactionsApi {
-  Future<GetFactions200Response> GetFactions() async {
+  Future<GetFactions200Response> getFactions() async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/factions'),
       headers: {
@@ -19,11 +18,11 @@ class FactionsApi {
       return GetFactions200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load GetFactions');
+      throw Exception('Failed to load getFactions');
     }
   }
 
-  Future<GetFaction200Response> GetFaction() async {
+  Future<GetFaction200Response> getFaction() async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/factions/%7BfactionSymbol%7D'),
       headers: {
@@ -36,7 +35,7 @@ class FactionsApi {
       return GetFaction200Response.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>,);
     } else {
-      throw Exception('Failed to load GetFaction');
+      throw Exception('Failed to load getFaction');
     }
   }
 }
