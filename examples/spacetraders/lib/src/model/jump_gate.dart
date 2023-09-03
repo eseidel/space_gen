@@ -13,7 +13,8 @@ class JumpGate {
       factionSymbol: json['factionSymbol'] as String,
       connectedSystems: (json['connectedSystems'] as List<dynamic>)
           .map<ConnectedSystem>(
-              (e) => ConnectedSystem.fromJson(e as Map<String, dynamic>),)
+            (e) => ConnectedSystem.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }

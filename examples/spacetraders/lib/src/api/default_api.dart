@@ -1,6 +1,7 @@
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
 import 'package:spacetraders/src/model/agent.dart';
 import 'package:spacetraders/src/model/contract.dart';
 import 'package:spacetraders/src/model/faction.dart';
@@ -18,7 +19,8 @@ class DefaultApi {
 
     if (response.statusCode == 200) {
       return GetStatus200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getStatus');
     }
@@ -35,7 +37,8 @@ class DefaultApi {
 
     if (response.statusCode == 200) {
       return Register201Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load register');
     }
@@ -62,20 +65,27 @@ class GetStatus200Response {
       resetDate: json['resetDate'] as String,
       description: json['description'] as String,
       stats: GetStatus200ResponseStats.fromJson(
-          json['stats'] as Map<String, dynamic>,),
+        json['stats'] as Map<String, dynamic>,
+      ),
       leaderboards: GetStatus200ResponseLeaderboards.fromJson(
-          json['leaderboards'] as Map<String, dynamic>,),
+        json['leaderboards'] as Map<String, dynamic>,
+      ),
       serverResets: GetStatus200ResponseServerResets.fromJson(
-          json['serverResets'] as Map<String, dynamic>,),
+        json['serverResets'] as Map<String, dynamic>,
+      ),
       announcements: (json['announcements'] as List<dynamic>)
-          .map<GetStatus200ResponseAnnouncementsArray>((e) =>
-              GetStatus200ResponseAnnouncementsArray.fromJson(
-                  e as Map<String, dynamic>,),)
+          .map<GetStatus200ResponseAnnouncementsArray>(
+            (e) => GetStatus200ResponseAnnouncementsArray.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
           .toList(),
       links: (json['links'] as List<dynamic>)
-          .map<GetStatus200ResponseLinksArray>((e) =>
-              GetStatus200ResponseLinksArray.fromJson(
-                  e as Map<String, dynamic>,),)
+          .map<GetStatus200ResponseLinksArray>(
+            (e) => GetStatus200ResponseLinksArray.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
           .toList(),
     );
   }
@@ -146,14 +156,19 @@ class GetStatus200ResponseLeaderboards {
   factory GetStatus200ResponseLeaderboards.fromJson(Map<String, dynamic> json) {
     return GetStatus200ResponseLeaderboards(
       mostCredits: (json['mostCredits'] as List<dynamic>)
-          .map<GetStatus200ResponseLeaderboardsMostCreditsArray>((e) =>
-              GetStatus200ResponseLeaderboardsMostCreditsArray.fromJson(
-                  e as Map<String, dynamic>,),)
+          .map<GetStatus200ResponseLeaderboardsMostCreditsArray>(
+            (e) => GetStatus200ResponseLeaderboardsMostCreditsArray.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
           .toList(),
       mostSubmittedCharts: (json['mostSubmittedCharts'] as List<dynamic>)
-          .map<GetStatus200ResponseLeaderboardsMostSubmittedChartsArray>((e) =>
-              GetStatus200ResponseLeaderboardsMostSubmittedChartsArray.fromJson(
-                  e as Map<String, dynamic>,),)
+          .map<GetStatus200ResponseLeaderboardsMostSubmittedChartsArray>(
+            (e) => GetStatus200ResponseLeaderboardsMostSubmittedChartsArray
+                .fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
           .toList(),
     );
   }
@@ -178,7 +193,8 @@ class GetStatus200ResponseLeaderboardsMostCreditsArray {
   });
 
   factory GetStatus200ResponseLeaderboardsMostCreditsArray.fromJson(
-      Map<String, dynamic> json,) {
+    Map<String, dynamic> json,
+  ) {
     return GetStatus200ResponseLeaderboardsMostCreditsArray(
       agentSymbol: json['agentSymbol'] as String,
       credits: json['credits'] as int,
@@ -203,7 +219,8 @@ class GetStatus200ResponseLeaderboardsMostSubmittedChartsArray {
   });
 
   factory GetStatus200ResponseLeaderboardsMostSubmittedChartsArray.fromJson(
-      Map<String, dynamic> json,) {
+    Map<String, dynamic> json,
+  ) {
     return GetStatus200ResponseLeaderboardsMostSubmittedChartsArray(
       agentSymbol: json['agentSymbol'] as String,
       chartCount: json['chartCount'] as int,
@@ -252,7 +269,8 @@ class GetStatus200ResponseAnnouncementsArray {
   });
 
   factory GetStatus200ResponseAnnouncementsArray.fromJson(
-      Map<String, dynamic> json,) {
+    Map<String, dynamic> json,
+  ) {
     return GetStatus200ResponseAnnouncementsArray(
       title: json['title'] as String,
       body: json['body'] as String,
@@ -302,7 +320,8 @@ class Register201Response {
   factory Register201Response.fromJson(Map<String, dynamic> json) {
     return Register201Response(
       data: Register201ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 

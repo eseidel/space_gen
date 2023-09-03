@@ -1,5 +1,5 @@
-import 'package:spacetraders/src/model/contract_payment.dart';
 import 'package:spacetraders/src/model/contract_deliver_good.dart';
+import 'package:spacetraders/src/model/contract_payment.dart';
 
 class ContractTerms {
   ContractTerms({
@@ -15,7 +15,8 @@ class ContractTerms {
           ContractPayment.fromJson(json['payment'] as Map<String, dynamic>),
       deliver: (json['deliver'] as List<dynamic>)
           .map<ContractDeliverGood>(
-              (e) => ContractDeliverGood.fromJson(e as Map<String, dynamic>),)
+            (e) => ContractDeliverGood.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }

@@ -1,13 +1,13 @@
-import 'package:spacetraders/src/model/ship_registration.dart';
-import 'package:spacetraders/src/model/ship_nav.dart';
+import 'package:spacetraders/src/model/ship_cargo.dart';
 import 'package:spacetraders/src/model/ship_crew.dart';
-import 'package:spacetraders/src/model/ship_frame.dart';
-import 'package:spacetraders/src/model/ship_reactor.dart';
 import 'package:spacetraders/src/model/ship_engine.dart';
+import 'package:spacetraders/src/model/ship_frame.dart';
+import 'package:spacetraders/src/model/ship_fuel.dart';
 import 'package:spacetraders/src/model/ship_module.dart';
 import 'package:spacetraders/src/model/ship_mount.dart';
-import 'package:spacetraders/src/model/ship_cargo.dart';
-import 'package:spacetraders/src/model/ship_fuel.dart';
+import 'package:spacetraders/src/model/ship_nav.dart';
+import 'package:spacetraders/src/model/ship_reactor.dart';
+import 'package:spacetraders/src/model/ship_registration.dart';
 
 class Ship {
   Ship({
@@ -28,7 +28,8 @@ class Ship {
     return Ship(
       symbol: json['symbol'] as String,
       registration: ShipRegistration.fromJson(
-          json['registration'] as Map<String, dynamic>,),
+        json['registration'] as Map<String, dynamic>,
+      ),
       nav: ShipNav.fromJson(json['nav'] as Map<String, dynamic>),
       crew: ShipCrew.fromJson(json['crew'] as Map<String, dynamic>),
       frame: ShipFrame.fromJson(json['frame'] as Map<String, dynamic>),
@@ -36,7 +37,8 @@ class Ship {
       engine: ShipEngine.fromJson(json['engine'] as Map<String, dynamic>),
       modules: (json['modules'] as List<dynamic>)
           .map<ShipModule>(
-              (e) => ShipModule.fromJson(e as Map<String, dynamic>),)
+            (e) => ShipModule.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
       mounts: (json['mounts'] as List<dynamic>)
           .map<ShipMount>((e) => ShipMount.fromJson(e as Map<String, dynamic>))

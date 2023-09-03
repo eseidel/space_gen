@@ -15,7 +15,8 @@ class Survey {
       symbol: json['symbol'] as String,
       deposits: (json['deposits'] as List<dynamic>)
           .map<SurveyDeposit>(
-              (e) => SurveyDeposit.fromJson(e as Map<String, dynamic>),)
+            (e) => SurveyDeposit.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
       expiration: json['expiration'] as String,
       size: json['size'] as String,

@@ -211,13 +211,13 @@ class Context {
   }
 
   void runDart(List<String> args) {
-    print('dart ${args.join(' ')} in ${outDir.path}');
+    logger.detail('dart ${args.join(' ')} in ${outDir.path}');
     final result = Process.runSync('dart', args, workingDirectory: outDir.path);
     if (result.exitCode != 0) {
       logger.info(result.stderr as String);
       throw Exception('Failed to run dart ${args.join(' ')}');
     }
-    print(result.stdout);
+    logger.detail(result.stdout as String);
   }
 
   void renderModelFile(String path) {
@@ -250,8 +250,12 @@ class Context {
     renderApis();
     renderModels();
     runDart(['pub', 'get']);
+    // Run format first to add missing commas.
     runDart(['format', '.']);
+    // Then run fix to clean up various other things.
     runDart(['fix', '.', '--apply']);
+    // Run format again to fix wrapping of lines.
+    runDart(['format', '.']);
   }
 }
 
@@ -315,7 +319,7 @@ void renderRootSchema(Context context, Schema schema) {
     template: 'model',
     outPath: _modelPath(schema),
     context: {
-      'imports': imports,
+      'imports': imports.toList()..sort(),
       'models': models,
     },
   );
@@ -349,7 +353,7 @@ void renderApi(RenderContext renderContext, Context context, Api api) {
     outPath: _apiPath(api),
     context: {
       'className': api.className,
-      'imports': imports,
+      'imports': imports.toList()..sort(),
       'endpoints': endpoints,
       'models': models,
     },

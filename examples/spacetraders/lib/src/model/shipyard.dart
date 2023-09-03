@@ -14,15 +14,18 @@ class Shipyard {
       symbol: json['symbol'] as String,
       shipTypes: (json['shipTypes'] as List<dynamic>)
           .map<ShipyardShipTypesArray>(
-              (e) => ShipyardShipTypesArray.fromJson(e as Map<String, dynamic>),)
+            (e) => ShipyardShipTypesArray.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
       transactions: (json['transactions'] as List<dynamic>)
           .map<ShipyardTransaction>(
-              (e) => ShipyardTransaction.fromJson(e as Map<String, dynamic>),)
+            (e) => ShipyardTransaction.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
       ships: (json['ships'] as List<dynamic>)
           .map<ShipyardShip>(
-              (e) => ShipyardShip.fromJson(e as Map<String, dynamic>),)
+            (e) => ShipyardShip.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }

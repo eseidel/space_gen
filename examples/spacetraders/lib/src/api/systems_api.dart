@@ -1,12 +1,13 @@
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:async';
-import 'package:spacetraders/src/model/system.dart';
-import 'package:spacetraders/src/model/meta.dart';
-import 'package:spacetraders/src/model/waypoint.dart';
-import 'package:spacetraders/src/model/market.dart';
-import 'package:spacetraders/src/model/shipyard.dart';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
 import 'package:spacetraders/src/model/jump_gate.dart';
+import 'package:spacetraders/src/model/market.dart';
+import 'package:spacetraders/src/model/meta.dart';
+import 'package:spacetraders/src/model/shipyard.dart';
+import 'package:spacetraders/src/model/system.dart';
+import 'package:spacetraders/src/model/waypoint.dart';
 
 class SystemsApi {
   Future<GetSystems200Response> getSystems() async {
@@ -20,7 +21,8 @@ class SystemsApi {
 
     if (response.statusCode == 200) {
       return GetSystems200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getSystems');
     }
@@ -37,7 +39,8 @@ class SystemsApi {
 
     if (response.statusCode == 200) {
       return GetSystem200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getSystem');
     }
@@ -46,7 +49,8 @@ class SystemsApi {
   Future<GetSystemWaypoints200Response> getSystemWaypoints() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints',),
+        'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -55,7 +59,8 @@ class SystemsApi {
 
     if (response.statusCode == 200) {
       return GetSystemWaypoints200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getSystemWaypoints');
     }
@@ -64,7 +69,8 @@ class SystemsApi {
   Future<GetWaypoint200Response> getWaypoint() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D',),
+        'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -73,7 +79,8 @@ class SystemsApi {
 
     if (response.statusCode == 200) {
       return GetWaypoint200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getWaypoint');
     }
@@ -82,7 +89,8 @@ class SystemsApi {
   Future<GetMarket200Response> getMarket() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/market',),
+        'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/market',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -91,7 +99,8 @@ class SystemsApi {
 
     if (response.statusCode == 200) {
       return GetMarket200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getMarket');
     }
@@ -100,7 +109,8 @@ class SystemsApi {
   Future<GetShipyard200Response> getShipyard() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/shipyard',),
+        'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/shipyard',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -109,7 +119,8 @@ class SystemsApi {
 
     if (response.statusCode == 200) {
       return GetShipyard200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getShipyard');
     }
@@ -118,7 +129,8 @@ class SystemsApi {
   Future<GetJumpGate200Response> getJumpGate() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/jump-gate',),
+        'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/jump-gate',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -127,7 +139,8 @@ class SystemsApi {
 
     if (response.statusCode == 200) {
       return GetJumpGate200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getJumpGate');
     }

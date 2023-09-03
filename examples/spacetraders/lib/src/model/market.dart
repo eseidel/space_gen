@@ -1,6 +1,6 @@
-import 'package:spacetraders/src/model/trade_good.dart';
-import 'package:spacetraders/src/model/market_transaction.dart';
 import 'package:spacetraders/src/model/market_trade_good.dart';
+import 'package:spacetraders/src/model/market_transaction.dart';
+import 'package:spacetraders/src/model/trade_good.dart';
 
 class Market {
   Market({
@@ -26,11 +26,13 @@ class Market {
           .toList(),
       transactions: (json['transactions'] as List<dynamic>)
           .map<MarketTransaction>(
-              (e) => MarketTransaction.fromJson(e as Map<String, dynamic>),)
+            (e) => MarketTransaction.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
       tradeGoods: (json['tradeGoods'] as List<dynamic>)
           .map<MarketTradeGood>(
-              (e) => MarketTradeGood.fromJson(e as Map<String, dynamic>),)
+            (e) => MarketTradeGood.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }

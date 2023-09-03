@@ -13,7 +13,8 @@ class ShipCargo {
       units: json['units'] as int,
       inventory: (json['inventory'] as List<dynamic>)
           .map<ShipCargoItem>(
-              (e) => ShipCargoItem.fromJson(e as Map<String, dynamic>),)
+            (e) => ShipCargoItem.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }

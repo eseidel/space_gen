@@ -11,9 +11,11 @@ class ShipNavRoute {
   factory ShipNavRoute.fromJson(Map<String, dynamic> json) {
     return ShipNavRoute(
       destination: ShipNavRouteWaypoint.fromJson(
-          json['destination'] as Map<String, dynamic>,),
+        json['destination'] as Map<String, dynamic>,
+      ),
       departure: ShipNavRouteWaypoint.fromJson(
-          json['departure'] as Map<String, dynamic>,),
+        json['departure'] as Map<String, dynamic>,
+      ),
       departureTime: json['departureTime'] as String,
       arrival: json['arrival'] as String,
     );

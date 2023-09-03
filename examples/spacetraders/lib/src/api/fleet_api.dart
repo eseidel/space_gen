@@ -1,25 +1,26 @@
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:async';
-import 'package:spacetraders/src/model/ship.dart';
-import 'package:spacetraders/src/model/meta.dart';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
 import 'package:spacetraders/src/model/agent.dart';
-import 'package:spacetraders/src/model/shipyard_transaction.dart';
-import 'package:spacetraders/src/model/ship_cargo.dart';
-import 'package:spacetraders/src/model/ship_nav.dart';
-import 'package:spacetraders/src/model/cooldown.dart';
 import 'package:spacetraders/src/model/chart.dart';
-import 'package:spacetraders/src/model/waypoint.dart';
-import 'package:spacetraders/src/model/survey.dart';
+import 'package:spacetraders/src/model/contract.dart';
+import 'package:spacetraders/src/model/cooldown.dart';
 import 'package:spacetraders/src/model/extraction.dart';
-import 'package:spacetraders/src/model/ship_fuel.dart';
 import 'package:spacetraders/src/model/market_transaction.dart';
+import 'package:spacetraders/src/model/meta.dart';
+import 'package:spacetraders/src/model/scanned_ship.dart';
 import 'package:spacetraders/src/model/scanned_system.dart';
 import 'package:spacetraders/src/model/scanned_waypoint.dart';
-import 'package:spacetraders/src/model/scanned_ship.dart';
-import 'package:spacetraders/src/model/contract.dart';
-import 'package:spacetraders/src/model/ship_mount.dart';
+import 'package:spacetraders/src/model/ship.dart';
+import 'package:spacetraders/src/model/ship_cargo.dart';
+import 'package:spacetraders/src/model/ship_fuel.dart';
 import 'package:spacetraders/src/model/ship_modification_transaction.dart';
+import 'package:spacetraders/src/model/ship_mount.dart';
+import 'package:spacetraders/src/model/ship_nav.dart';
+import 'package:spacetraders/src/model/shipyard_transaction.dart';
+import 'package:spacetraders/src/model/survey.dart';
+import 'package:spacetraders/src/model/waypoint.dart';
 
 class FleetApi {
   Future<GetMyShips200Response> getMyShips() async {
@@ -33,7 +34,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return GetMyShips200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getMyShips');
     }
@@ -50,7 +52,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return PurchaseShip201Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load purchaseShip');
     }
@@ -67,7 +70,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return GetMyShip200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getMyShip');
     }
@@ -76,7 +80,8 @@ class FleetApi {
   Future<GetMyShipCargo200Response> getMyShipCargo() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/cargo',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/cargo',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -85,7 +90,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return GetMyShipCargo200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getMyShipCargo');
     }
@@ -94,7 +100,8 @@ class FleetApi {
   Future<OrbitShip200Response> orbitShip() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/orbit',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/orbit',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -103,7 +110,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return OrbitShip200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load orbitShip');
     }
@@ -112,7 +120,8 @@ class FleetApi {
   Future<ShipRefine201Response> shipRefine() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/refine',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/refine',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -121,7 +130,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return ShipRefine201Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load shipRefine');
     }
@@ -130,7 +140,8 @@ class FleetApi {
   Future<CreateChart201Response> createChart() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/chart',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/chart',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -139,7 +150,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return CreateChart201Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load createChart');
     }
@@ -148,7 +160,8 @@ class FleetApi {
   Future<GetShipCooldown200Response> getShipCooldown() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/cooldown',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/cooldown',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -157,7 +170,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return GetShipCooldown200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getShipCooldown');
     }
@@ -166,7 +180,8 @@ class FleetApi {
   Future<DockShip200Response> dockShip() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/dock',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/dock',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -175,7 +190,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return DockShip200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load dockShip');
     }
@@ -184,7 +200,8 @@ class FleetApi {
   Future<CreateSurvey201Response> createSurvey() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/survey',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/survey',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -193,7 +210,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return CreateSurvey201Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load createSurvey');
     }
@@ -202,7 +220,8 @@ class FleetApi {
   Future<ExtractResources201Response> extractResources() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/extract',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/extract',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -211,7 +230,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return ExtractResources201Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load extractResources');
     }
@@ -220,7 +240,8 @@ class FleetApi {
   Future<Jettison200Response> jettison() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/jettison',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/jettison',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -229,7 +250,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return Jettison200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load jettison');
     }
@@ -238,7 +260,8 @@ class FleetApi {
   Future<JumpShip200Response> jumpShip() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/jump',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/jump',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -247,7 +270,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return JumpShip200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load jumpShip');
     }
@@ -256,7 +280,8 @@ class FleetApi {
   Future<NavigateShip200Response> navigateShip() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/navigate',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/navigate',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -265,7 +290,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return NavigateShip200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load navigateShip');
     }
@@ -282,7 +308,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return GetShipNav200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getShipNav');
     }
@@ -299,7 +326,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return PatchShipNav200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load patchShipNav');
     }
@@ -308,7 +336,8 @@ class FleetApi {
   Future<WarpShip200Response> warpShip() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/warp',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/warp',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -317,7 +346,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return WarpShip200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load warpShip');
     }
@@ -326,7 +356,8 @@ class FleetApi {
   Future<SellCargo201Response> sellCargo() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/sell',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/sell',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -335,7 +366,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return SellCargo201Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load sellCargo');
     }
@@ -344,7 +376,8 @@ class FleetApi {
   Future<CreateShipSystemScan201Response> createShipSystemScan() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/scan/systems',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/scan/systems',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -353,7 +386,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return CreateShipSystemScan201Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load createShipSystemScan');
     }
@@ -362,7 +396,8 @@ class FleetApi {
   Future<CreateShipWaypointScan201Response> createShipWaypointScan() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/scan/waypoints',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/scan/waypoints',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -371,7 +406,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return CreateShipWaypointScan201Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load createShipWaypointScan');
     }
@@ -380,7 +416,8 @@ class FleetApi {
   Future<CreateShipShipScan201Response> createShipShipScan() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/scan/ships',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/scan/ships',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -389,7 +426,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return CreateShipShipScan201Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load createShipShipScan');
     }
@@ -398,7 +436,8 @@ class FleetApi {
   Future<RefuelShip200Response> refuelShip() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/refuel',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/refuel',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -407,7 +446,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return RefuelShip200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load refuelShip');
     }
@@ -416,7 +456,8 @@ class FleetApi {
   Future<PurchaseCargo201Response> purchaseCargo() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/purchase',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/purchase',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -425,7 +466,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return PurchaseCargo201Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load purchaseCargo');
     }
@@ -434,7 +476,8 @@ class FleetApi {
   Future<TransferCargo200Response> transferCargo() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/transfer',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/transfer',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -443,7 +486,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return TransferCargo200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load transferCargo');
     }
@@ -452,7 +496,8 @@ class FleetApi {
   Future<NegotiateContract201Response> negotiateContract() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/negotiate/contract',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/negotiate/contract',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -461,7 +506,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return NegotiateContract201Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load negotiateContract');
     }
@@ -470,7 +516,8 @@ class FleetApi {
   Future<GetMounts200Response> getMounts() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/mounts',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/mounts',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -479,7 +526,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return GetMounts200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getMounts');
     }
@@ -488,7 +536,8 @@ class FleetApi {
   Future<InstallMount201Response> installMount() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/mounts/install',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/mounts/install',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -497,7 +546,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return InstallMount201Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load installMount');
     }
@@ -506,7 +556,8 @@ class FleetApi {
   Future<RemoveMount201Response> removeMount() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/mounts/remove',),
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/mounts/remove',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -515,7 +566,8 @@ class FleetApi {
 
     if (response.statusCode == 200) {
       return RemoveMount201Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load removeMount');
     }
@@ -556,7 +608,8 @@ class PurchaseShip201Response {
   factory PurchaseShip201Response.fromJson(Map<String, dynamic> json) {
     return PurchaseShip201Response(
       data: PurchaseShip201ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -581,7 +634,8 @@ class PurchaseShip201ResponseData {
       agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
       ship: Ship.fromJson(json['ship'] as Map<String, dynamic>),
       transaction: ShipyardTransaction.fromJson(
-          json['transaction'] as Map<String, dynamic>,),
+        json['transaction'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -646,7 +700,8 @@ class OrbitShip200Response {
   factory OrbitShip200Response.fromJson(Map<String, dynamic> json) {
     return OrbitShip200Response(
       data: OrbitShip200ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -687,7 +742,8 @@ class ShipRefine201Response {
   factory ShipRefine201Response.fromJson(Map<String, dynamic> json) {
     return ShipRefine201Response(
       data: ShipRefine201ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -713,14 +769,18 @@ class ShipRefine201ResponseData {
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
       produced: (json['produced'] as List<dynamic>)
-          .map<ShipRefine201ResponseDataProducedArray>((e) =>
-              ShipRefine201ResponseDataProducedArray.fromJson(
-                  e as Map<String, dynamic>,),)
+          .map<ShipRefine201ResponseDataProducedArray>(
+            (e) => ShipRefine201ResponseDataProducedArray.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
           .toList(),
       consumed: (json['consumed'] as List<dynamic>)
-          .map<ShipRefine201ResponseDataConsumedArray>((e) =>
-              ShipRefine201ResponseDataConsumedArray.fromJson(
-                  e as Map<String, dynamic>,),)
+          .map<ShipRefine201ResponseDataConsumedArray>(
+            (e) => ShipRefine201ResponseDataConsumedArray.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
           .toList(),
     );
   }
@@ -747,7 +807,8 @@ class ShipRefine201ResponseDataProducedArray {
   });
 
   factory ShipRefine201ResponseDataProducedArray.fromJson(
-      Map<String, dynamic> json,) {
+    Map<String, dynamic> json,
+  ) {
     return ShipRefine201ResponseDataProducedArray(
       tradeSymbol: json['tradeSymbol'] as String,
       units: json['units'] as int,
@@ -772,7 +833,8 @@ class ShipRefine201ResponseDataConsumedArray {
   });
 
   factory ShipRefine201ResponseDataConsumedArray.fromJson(
-      Map<String, dynamic> json,) {
+    Map<String, dynamic> json,
+  ) {
     return ShipRefine201ResponseDataConsumedArray(
       tradeSymbol: json['tradeSymbol'] as String,
       units: json['units'] as int,
@@ -798,7 +860,8 @@ class CreateChart201Response {
   factory CreateChart201Response.fromJson(Map<String, dynamic> json) {
     return CreateChart201Response(
       data: CreateChart201ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -863,7 +926,8 @@ class DockShip200Response {
   factory DockShip200Response.fromJson(Map<String, dynamic> json) {
     return DockShip200Response(
       data: DockShip200ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -904,7 +968,8 @@ class CreateSurvey201Response {
   factory CreateSurvey201Response.fromJson(Map<String, dynamic> json) {
     return CreateSurvey201Response(
       data: CreateSurvey201ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -951,7 +1016,8 @@ class ExtractResources201Response {
   factory ExtractResources201Response.fromJson(Map<String, dynamic> json) {
     return ExtractResources201Response(
       data: ExtractResources201ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1001,7 +1067,8 @@ class Jettison200Response {
   factory Jettison200Response.fromJson(Map<String, dynamic> json) {
     return Jettison200Response(
       data: Jettison200ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1042,7 +1109,8 @@ class JumpShip200Response {
   factory JumpShip200Response.fromJson(Map<String, dynamic> json) {
     return JumpShip200Response(
       data: JumpShip200ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1087,7 +1155,8 @@ class NavigateShip200Response {
   factory NavigateShip200Response.fromJson(Map<String, dynamic> json) {
     return NavigateShip200Response(
       data: NavigateShip200ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1172,7 +1241,8 @@ class WarpShip200Response {
   factory WarpShip200Response.fromJson(Map<String, dynamic> json) {
     return WarpShip200Response(
       data: WarpShip200ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1217,7 +1287,8 @@ class SellCargo201Response {
   factory SellCargo201Response.fromJson(Map<String, dynamic> json) {
     return SellCargo201Response(
       data: SellCargo201ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1242,7 +1313,8 @@ class SellCargo201ResponseData {
       agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
       transaction: MarketTransaction.fromJson(
-          json['transaction'] as Map<String, dynamic>,),
+        json['transaction'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1267,7 +1339,8 @@ class CreateShipSystemScan201Response {
   factory CreateShipSystemScan201Response.fromJson(Map<String, dynamic> json) {
     return CreateShipSystemScan201Response(
       data: CreateShipSystemScan201ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1287,12 +1360,14 @@ class CreateShipSystemScan201ResponseData {
   });
 
   factory CreateShipSystemScan201ResponseData.fromJson(
-      Map<String, dynamic> json,) {
+    Map<String, dynamic> json,
+  ) {
     return CreateShipSystemScan201ResponseData(
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
       systems: (json['systems'] as List<dynamic>)
           .map<ScannedSystem>(
-              (e) => ScannedSystem.fromJson(e as Map<String, dynamic>),)
+            (e) => ScannedSystem.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }
@@ -1314,10 +1389,12 @@ class CreateShipWaypointScan201Response {
   });
 
   factory CreateShipWaypointScan201Response.fromJson(
-      Map<String, dynamic> json,) {
+    Map<String, dynamic> json,
+  ) {
     return CreateShipWaypointScan201Response(
       data: CreateShipWaypointScan201ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1337,12 +1414,14 @@ class CreateShipWaypointScan201ResponseData {
   });
 
   factory CreateShipWaypointScan201ResponseData.fromJson(
-      Map<String, dynamic> json,) {
+    Map<String, dynamic> json,
+  ) {
     return CreateShipWaypointScan201ResponseData(
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
       waypoints: (json['waypoints'] as List<dynamic>)
           .map<ScannedWaypoint>(
-              (e) => ScannedWaypoint.fromJson(e as Map<String, dynamic>),)
+            (e) => ScannedWaypoint.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }
@@ -1366,7 +1445,8 @@ class CreateShipShipScan201Response {
   factory CreateShipShipScan201Response.fromJson(Map<String, dynamic> json) {
     return CreateShipShipScan201Response(
       data: CreateShipShipScan201ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1386,12 +1466,14 @@ class CreateShipShipScan201ResponseData {
   });
 
   factory CreateShipShipScan201ResponseData.fromJson(
-      Map<String, dynamic> json,) {
+    Map<String, dynamic> json,
+  ) {
     return CreateShipShipScan201ResponseData(
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
       ships: (json['ships'] as List<dynamic>)
           .map<ScannedShip>(
-              (e) => ScannedShip.fromJson(e as Map<String, dynamic>),)
+            (e) => ScannedShip.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }
@@ -1415,7 +1497,8 @@ class RefuelShip200Response {
   factory RefuelShip200Response.fromJson(Map<String, dynamic> json) {
     return RefuelShip200Response(
       data: RefuelShip200ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1440,7 +1523,8 @@ class RefuelShip200ResponseData {
       agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
       fuel: ShipFuel.fromJson(json['fuel'] as Map<String, dynamic>),
       transaction: MarketTransaction.fromJson(
-          json['transaction'] as Map<String, dynamic>,),
+        json['transaction'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1465,7 +1549,8 @@ class PurchaseCargo201Response {
   factory PurchaseCargo201Response.fromJson(Map<String, dynamic> json) {
     return PurchaseCargo201Response(
       data: PurchaseCargo201ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1490,7 +1575,8 @@ class PurchaseCargo201ResponseData {
       agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
       transaction: MarketTransaction.fromJson(
-          json['transaction'] as Map<String, dynamic>,),
+        json['transaction'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1515,7 +1601,8 @@ class TransferCargo200Response {
   factory TransferCargo200Response.fromJson(Map<String, dynamic> json) {
     return TransferCargo200Response(
       data: TransferCargo200ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1556,7 +1643,8 @@ class NegotiateContract201Response {
   factory NegotiateContract201Response.fromJson(Map<String, dynamic> json) {
     return NegotiateContract201Response(
       data: NegotiateContract201ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1619,7 +1707,8 @@ class InstallMount201Response {
   factory InstallMount201Response.fromJson(Map<String, dynamic> json) {
     return InstallMount201Response(
       data: InstallMount201ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1648,7 +1737,8 @@ class InstallMount201ResponseData {
           .toList(),
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
       transaction: ShipModificationTransaction.fromJson(
-          json['transaction'] as Map<String, dynamic>,),
+        json['transaction'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1675,7 +1765,8 @@ class RemoveMount201Response {
   factory RemoveMount201Response.fromJson(Map<String, dynamic> json) {
     return RemoveMount201Response(
       data: RemoveMount201ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -1704,7 +1795,8 @@ class RemoveMount201ResponseData {
           .toList(),
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
       transaction: ShipModificationTransaction.fromJson(
-          json['transaction'] as Map<String, dynamic>,),
+        json['transaction'] as Map<String, dynamic>,
+      ),
     );
   }
 

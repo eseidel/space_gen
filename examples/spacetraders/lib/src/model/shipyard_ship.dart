@@ -28,7 +28,8 @@ class ShipyardShip {
       engine: ShipEngine.fromJson(json['engine'] as Map<String, dynamic>),
       modules: (json['modules'] as List<dynamic>)
           .map<ShipModule>(
-              (e) => ShipModule.fromJson(e as Map<String, dynamic>),)
+            (e) => ShipModule.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
       mounts: (json['mounts'] as List<dynamic>)
           .map<ShipMount>((e) => ShipMount.fromJson(e as Map<String, dynamic>))

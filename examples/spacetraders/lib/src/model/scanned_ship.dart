@@ -1,5 +1,5 @@
-import 'package:spacetraders/src/model/ship_registration.dart';
 import 'package:spacetraders/src/model/ship_nav.dart';
+import 'package:spacetraders/src/model/ship_registration.dart';
 
 class ScannedShip {
   ScannedShip({
@@ -16,7 +16,8 @@ class ScannedShip {
     return ScannedShip(
       symbol: json['symbol'] as String,
       registration: ShipRegistration.fromJson(
-          json['registration'] as Map<String, dynamic>,),
+        json['registration'] as Map<String, dynamic>,
+      ),
       nav: ShipNav.fromJson(json['nav'] as Map<String, dynamic>),
       frame: ScannedShipFrame.fromJson(json['frame'] as Map<String, dynamic>),
       reactor:
@@ -25,7 +26,8 @@ class ScannedShip {
           ScannedShipEngine.fromJson(json['engine'] as Map<String, dynamic>),
       mounts: (json['mounts'] as List<dynamic>)
           .map<ScannedShipMountsArray>(
-              (e) => ScannedShipMountsArray.fromJson(e as Map<String, dynamic>),)
+            (e) => ScannedShipMountsArray.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }

@@ -1,4 +1,3 @@
-
 class ScannedSystem {
   ScannedSystem({
     required this.symbol,

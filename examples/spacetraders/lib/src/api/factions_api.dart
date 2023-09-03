@@ -1,6 +1,7 @@
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
 import 'package:spacetraders/src/model/faction.dart';
 import 'package:spacetraders/src/model/meta.dart';
 
@@ -16,7 +17,8 @@ class FactionsApi {
 
     if (response.statusCode == 200) {
       return GetFactions200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getFactions');
     }
@@ -33,7 +35,8 @@ class FactionsApi {
 
     if (response.statusCode == 200) {
       return GetFaction200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getFaction');
     }

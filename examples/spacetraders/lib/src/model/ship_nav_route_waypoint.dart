@@ -1,4 +1,3 @@
-
 class ShipNavRouteWaypoint {
   ShipNavRouteWaypoint({
     required this.symbol,

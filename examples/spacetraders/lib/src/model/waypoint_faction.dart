@@ -1,4 +1,3 @@
-
 class WaypointFaction {
   WaypointFaction({
     required this.symbol,

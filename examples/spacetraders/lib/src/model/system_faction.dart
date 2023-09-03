@@ -1,4 +1,3 @@
-
 class SystemFaction {
   SystemFaction({
     required this.symbol,

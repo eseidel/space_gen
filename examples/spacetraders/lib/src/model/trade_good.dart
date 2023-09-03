@@ -1,4 +1,3 @@
-
 class TradeGood {
   TradeGood({
     required this.symbol,

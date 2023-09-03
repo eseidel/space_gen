@@ -22,7 +22,8 @@ class ShipFrame {
       mountingPoints: json['mountingPoints'] as int,
       fuelCapacity: json['fuelCapacity'] as int,
       requirements: ShipRequirements.fromJson(
-          json['requirements'] as Map<String, dynamic>,),
+        json['requirements'] as Map<String, dynamic>,
+      ),
     );
   }
 

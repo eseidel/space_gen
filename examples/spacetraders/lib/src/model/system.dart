@@ -21,11 +21,13 @@ class System {
       y: json['y'] as int,
       waypoints: (json['waypoints'] as List<dynamic>)
           .map<SystemWaypoint>(
-              (e) => SystemWaypoint.fromJson(e as Map<String, dynamic>),)
+            (e) => SystemWaypoint.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
       factions: (json['factions'] as List<dynamic>)
           .map<SystemFaction>(
-              (e) => SystemFaction.fromJson(e as Map<String, dynamic>),)
+            (e) => SystemFaction.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }

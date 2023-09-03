@@ -18,7 +18,8 @@ class ShipEngine {
       condition: json['condition'] as int,
       speed: json['speed'] as int,
       requirements: ShipRequirements.fromJson(
-          json['requirements'] as Map<String, dynamic>,),
+        json['requirements'] as Map<String, dynamic>,
+      ),
     );
   }
 

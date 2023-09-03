@@ -1,4 +1,3 @@
-
 class ConnectedSystem {
   ConnectedSystem({
     required this.symbol,

@@ -1,4 +1,3 @@
-
 class ShipRegistration {
   ShipRegistration({
     required this.name,

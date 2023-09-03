@@ -1,9 +1,10 @@
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+import 'package:spacetraders/src/model/agent.dart';
 import 'package:spacetraders/src/model/contract.dart';
 import 'package:spacetraders/src/model/meta.dart';
-import 'package:spacetraders/src/model/agent.dart';
 import 'package:spacetraders/src/model/ship_cargo.dart';
 
 class ContractsApi {
@@ -18,7 +19,8 @@ class ContractsApi {
 
     if (response.statusCode == 200) {
       return GetContracts200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getContracts');
     }
@@ -35,7 +37,8 @@ class ContractsApi {
 
     if (response.statusCode == 200) {
       return GetContract200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getContract');
     }
@@ -44,7 +47,8 @@ class ContractsApi {
   Future<AcceptContract200Response> acceptContract() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D/accept',),
+        'https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D/accept',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -53,7 +57,8 @@ class ContractsApi {
 
     if (response.statusCode == 200) {
       return AcceptContract200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load acceptContract');
     }
@@ -62,7 +67,8 @@ class ContractsApi {
   Future<DeliverContract200Response> deliverContract() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D/deliver',),
+        'https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D/deliver',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -71,7 +77,8 @@ class ContractsApi {
 
     if (response.statusCode == 200) {
       return DeliverContract200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load deliverContract');
     }
@@ -80,7 +87,8 @@ class ContractsApi {
   Future<FulfillContract200Response> fulfillContract() async {
     final response = await http.post(
       Uri.parse(
-          'https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D/fulfill',),
+        'https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D/fulfill',
+      ),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -89,7 +97,8 @@ class ContractsApi {
 
     if (response.statusCode == 200) {
       return FulfillContract200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load fulfillContract');
     }
@@ -150,7 +159,8 @@ class AcceptContract200Response {
   factory AcceptContract200Response.fromJson(Map<String, dynamic> json) {
     return AcceptContract200Response(
       data: AcceptContract200ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -195,7 +205,8 @@ class DeliverContract200Response {
   factory DeliverContract200Response.fromJson(Map<String, dynamic> json) {
     return DeliverContract200Response(
       data: DeliverContract200ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -240,7 +251,8 @@ class FulfillContract200Response {
   factory FulfillContract200Response.fromJson(Map<String, dynamic> json) {
     return FulfillContract200Response(
       data: FulfillContract200ResponseData.fromJson(
-          json['data'] as Map<String, dynamic>,),
+        json['data'] as Map<String, dynamic>,
+      ),
     );
   }
 

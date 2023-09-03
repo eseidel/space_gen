@@ -1,4 +1,3 @@
-
 class SystemWaypoint {
   SystemWaypoint({
     required this.symbol,

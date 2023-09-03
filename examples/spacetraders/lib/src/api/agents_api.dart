@@ -1,6 +1,7 @@
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
 import 'package:spacetraders/src/model/agent.dart';
 import 'package:spacetraders/src/model/meta.dart';
 
@@ -16,7 +17,8 @@ class AgentsApi {
 
     if (response.statusCode == 200) {
       return GetMyAgent200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getMyAgent');
     }
@@ -33,7 +35,8 @@ class AgentsApi {
 
     if (response.statusCode == 200) {
       return GetAgents200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getAgents');
     }
@@ -50,7 +53,8 @@ class AgentsApi {
 
     if (response.statusCode == 200) {
       return GetAgent200Response.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>,);
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
     } else {
       throw Exception('Failed to load getAgent');
     }

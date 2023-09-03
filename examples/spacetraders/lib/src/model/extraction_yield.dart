@@ -1,4 +1,3 @@
-
 class ExtractionYield {
   ExtractionYield({
     required this.symbol,

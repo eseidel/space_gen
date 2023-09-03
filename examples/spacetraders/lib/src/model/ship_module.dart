@@ -18,7 +18,8 @@ class ShipModule {
       name: json['name'] as String,
       description: json['description'] as String,
       requirements: ShipRequirements.fromJson(
-          json['requirements'] as Map<String, dynamic>,),
+        json['requirements'] as Map<String, dynamic>,
+      ),
     );
   }
 
