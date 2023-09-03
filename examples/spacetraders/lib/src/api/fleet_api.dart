@@ -29,12 +29,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetMyShips200Response.fromJson(json.decode(response.body));
+            return GetMyShips200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetMyShips');
         }
@@ -46,12 +48,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return PurchaseShip201Response.fromJson(json.decode(response.body));
+            return PurchaseShip201Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load PurchaseShip');
         }
@@ -63,12 +67,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetMyShip200Response.fromJson(json.decode(response.body));
+            return GetMyShip200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetMyShip');
         }
@@ -80,12 +86,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetMyShipCargo200Response.fromJson(json.decode(response.body));
+            return GetMyShipCargo200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetMyShipCargo');
         }
@@ -97,12 +105,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return OrbitShip200Response.fromJson(json.decode(response.body));
+            return OrbitShip200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load OrbitShip');
         }
@@ -114,12 +124,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return ShipRefine201Response.fromJson(json.decode(response.body));
+            return ShipRefine201Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load ShipRefine');
         }
@@ -131,12 +143,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return CreateChart201Response.fromJson(json.decode(response.body));
+            return CreateChart201Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load CreateChart');
         }
@@ -148,12 +162,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetShipCooldown200Response.fromJson(json.decode(response.body));
+            return GetShipCooldown200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetShipCooldown');
         }
@@ -165,12 +181,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return DockShip200Response.fromJson(json.decode(response.body));
+            return DockShip200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load DockShip');
         }
@@ -182,12 +200,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return CreateSurvey201Response.fromJson(json.decode(response.body));
+            return CreateSurvey201Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load CreateSurvey');
         }
@@ -199,12 +219,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return ExtractResources201Response.fromJson(json.decode(response.body));
+            return ExtractResources201Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load ExtractResources');
         }
@@ -216,12 +238,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return Jettison200Response.fromJson(json.decode(response.body));
+            return Jettison200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load Jettison');
         }
@@ -233,12 +257,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return JumpShip200Response.fromJson(json.decode(response.body));
+            return JumpShip200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load JumpShip');
         }
@@ -250,12 +276,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return NavigateShip200Response.fromJson(json.decode(response.body));
+            return NavigateShip200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load NavigateShip');
         }
@@ -267,12 +295,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetShipNav200Response.fromJson(json.decode(response.body));
+            return GetShipNav200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetShipNav');
         }
@@ -284,12 +314,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return PatchShipNav200Response.fromJson(json.decode(response.body));
+            return PatchShipNav200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load PatchShipNav');
         }
@@ -301,12 +333,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return WarpShip200Response.fromJson(json.decode(response.body));
+            return WarpShip200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load WarpShip');
         }
@@ -318,12 +352,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return SellCargo201Response.fromJson(json.decode(response.body));
+            return SellCargo201Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load SellCargo');
         }
@@ -335,12 +371,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return CreateShipSystemScan201Response.fromJson(json.decode(response.body));
+            return CreateShipSystemScan201Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load CreateShipSystemScan');
         }
@@ -352,12 +390,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return CreateShipWaypointScan201Response.fromJson(json.decode(response.body));
+            return CreateShipWaypointScan201Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load CreateShipWaypointScan');
         }
@@ -369,12 +409,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return CreateShipShipScan201Response.fromJson(json.decode(response.body));
+            return CreateShipShipScan201Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load CreateShipShipScan');
         }
@@ -386,12 +428,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return RefuelShip200Response.fromJson(json.decode(response.body));
+            return RefuelShip200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load RefuelShip');
         }
@@ -403,12 +447,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return PurchaseCargo201Response.fromJson(json.decode(response.body));
+            return PurchaseCargo201Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load PurchaseCargo');
         }
@@ -420,12 +466,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return TransferCargo200Response.fromJson(json.decode(response.body));
+            return TransferCargo200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load TransferCargo');
         }
@@ -437,12 +485,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return NegotiateContract201Response.fromJson(json.decode(response.body));
+            return NegotiateContract201Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load NegotiateContract');
         }
@@ -454,12 +504,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetMounts200Response.fromJson(json.decode(response.body));
+            return GetMounts200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetMounts');
         }
@@ -471,12 +523,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return InstallMount201Response.fromJson(json.decode(response.body));
+            return InstallMount201Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load InstallMount');
         }
@@ -488,12 +542,14 @@ class FleetApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return RemoveMount201Response.fromJson(json.decode(response.body));
+            return RemoveMount201Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load RemoveMount');
         }
@@ -513,9 +569,16 @@ class GetMyShips200Response {
 
     factory GetMyShips200Response.fromJson(Map<String, dynamic> json) {
         return GetMyShips200Response(
-            data: json['data'],
-            meta: json['meta'],
+            data: (json['data'] as List<dynamic>).map<Ship>((e) => Ship.fromJson(e as Map<String, dynamic>)).toList(),
+            meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.map((e) => e.toJson()).toList(),
+            'meta': this.meta.toJson(),
+        };
     }
 }class PurchaseShip201Response {
     PurchaseShip201Response(
@@ -528,8 +591,14 @@ class GetMyShips200Response {
 
     factory PurchaseShip201Response.fromJson(Map<String, dynamic> json) {
         return PurchaseShip201Response(
-            data: json['data'],
+            data: PurchaseShip201ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class PurchaseShip201ResponseData {
     PurchaseShip201ResponseData(
@@ -546,10 +615,18 @@ class GetMyShips200Response {
 
     factory PurchaseShip201ResponseData.fromJson(Map<String, dynamic> json) {
         return PurchaseShip201ResponseData(
-            agent: json['agent'],
-            ship: json['ship'],
-            transaction: json['transaction'],
+            agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
+            ship: Ship.fromJson(json['ship'] as Map<String, dynamic>),
+            transaction: ShipyardTransaction.fromJson(json['transaction'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'agent': this.agent.toJson(),
+            'ship': this.ship.toJson(),
+            'transaction': this.transaction.toJson(),
+        };
     }
 }class GetMyShip200Response {
     GetMyShip200Response(
@@ -562,8 +639,14 @@ class GetMyShips200Response {
 
     factory GetMyShip200Response.fromJson(Map<String, dynamic> json) {
         return GetMyShip200Response(
-            data: json['data'],
+            data: Ship.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class GetMyShipCargo200Response {
     GetMyShipCargo200Response(
@@ -576,8 +659,14 @@ class GetMyShips200Response {
 
     factory GetMyShipCargo200Response.fromJson(Map<String, dynamic> json) {
         return GetMyShipCargo200Response(
-            data: json['data'],
+            data: ShipCargo.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class OrbitShip200Response {
     OrbitShip200Response(
@@ -590,8 +679,14 @@ class GetMyShips200Response {
 
     factory OrbitShip200Response.fromJson(Map<String, dynamic> json) {
         return OrbitShip200Response(
-            data: json['data'],
+            data: OrbitShip200ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class OrbitShip200ResponseData {
     OrbitShip200ResponseData(
@@ -604,8 +699,14 @@ class GetMyShips200Response {
 
     factory OrbitShip200ResponseData.fromJson(Map<String, dynamic> json) {
         return OrbitShip200ResponseData(
-            nav: json['nav'],
+            nav: ShipNav.fromJson(json['nav'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'nav': this.nav.toJson(),
+        };
     }
 }class ShipRefine201Response {
     ShipRefine201Response(
@@ -618,8 +719,14 @@ class GetMyShips200Response {
 
     factory ShipRefine201Response.fromJson(Map<String, dynamic> json) {
         return ShipRefine201Response(
-            data: json['data'],
+            data: ShipRefine201ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class ShipRefine201ResponseData {
     ShipRefine201ResponseData(
@@ -638,11 +745,20 @@ class GetMyShips200Response {
 
     factory ShipRefine201ResponseData.fromJson(Map<String, dynamic> json) {
         return ShipRefine201ResponseData(
-            cargo: json['cargo'],
-            cooldown: json['cooldown'],
-            produced: json['produced'],
-            consumed: json['consumed'],
+            cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
+            cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
+            produced: (json['produced'] as List<dynamic>).map<ShipRefine201ResponseDataProducedArray>((e) => ShipRefine201ResponseDataProducedArray.fromJson(e as Map<String, dynamic>)).toList(),
+            consumed: (json['consumed'] as List<dynamic>).map<ShipRefine201ResponseDataConsumedArray>((e) => ShipRefine201ResponseDataConsumedArray.fromJson(e as Map<String, dynamic>)).toList(),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'cargo': this.cargo.toJson(),
+            'cooldown': this.cooldown.toJson(),
+            'produced': this.produced.map((e) => e.toJson()).toList(),
+            'consumed': this.consumed.map((e) => e.toJson()).toList(),
+        };
     }
 }class ShipRefine201ResponseDataProducedArray {
     ShipRefine201ResponseDataProducedArray(
@@ -657,9 +773,16 @@ class GetMyShips200Response {
 
     factory ShipRefine201ResponseDataProducedArray.fromJson(Map<String, dynamic> json) {
         return ShipRefine201ResponseDataProducedArray(
-            tradeSymbol: json['tradeSymbol'],
-            units: json['units'],
+            tradeSymbol: json['tradeSymbol'] as String,
+            units: json['units'] as int,
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'tradeSymbol': this.tradeSymbol,
+            'units': this.units,
+        };
     }
 }class ShipRefine201ResponseDataConsumedArray {
     ShipRefine201ResponseDataConsumedArray(
@@ -674,9 +797,16 @@ class GetMyShips200Response {
 
     factory ShipRefine201ResponseDataConsumedArray.fromJson(Map<String, dynamic> json) {
         return ShipRefine201ResponseDataConsumedArray(
-            tradeSymbol: json['tradeSymbol'],
-            units: json['units'],
+            tradeSymbol: json['tradeSymbol'] as String,
+            units: json['units'] as int,
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'tradeSymbol': this.tradeSymbol,
+            'units': this.units,
+        };
     }
 }class CreateChart201Response {
     CreateChart201Response(
@@ -689,8 +819,14 @@ class GetMyShips200Response {
 
     factory CreateChart201Response.fromJson(Map<String, dynamic> json) {
         return CreateChart201Response(
-            data: json['data'],
+            data: CreateChart201ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class CreateChart201ResponseData {
     CreateChart201ResponseData(
@@ -705,9 +841,16 @@ class GetMyShips200Response {
 
     factory CreateChart201ResponseData.fromJson(Map<String, dynamic> json) {
         return CreateChart201ResponseData(
-            chart: json['chart'],
-            waypoint: json['waypoint'],
+            chart: Chart.fromJson(json['chart'] as Map<String, dynamic>),
+            waypoint: Waypoint.fromJson(json['waypoint'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'chart': this.chart.toJson(),
+            'waypoint': this.waypoint.toJson(),
+        };
     }
 }class GetShipCooldown200Response {
     GetShipCooldown200Response(
@@ -720,8 +863,14 @@ class GetMyShips200Response {
 
     factory GetShipCooldown200Response.fromJson(Map<String, dynamic> json) {
         return GetShipCooldown200Response(
-            data: json['data'],
+            data: Cooldown.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class DockShip200Response {
     DockShip200Response(
@@ -734,8 +883,14 @@ class GetMyShips200Response {
 
     factory DockShip200Response.fromJson(Map<String, dynamic> json) {
         return DockShip200Response(
-            data: json['data'],
+            data: DockShip200ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class DockShip200ResponseData {
     DockShip200ResponseData(
@@ -748,8 +903,14 @@ class GetMyShips200Response {
 
     factory DockShip200ResponseData.fromJson(Map<String, dynamic> json) {
         return DockShip200ResponseData(
-            nav: json['nav'],
+            nav: ShipNav.fromJson(json['nav'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'nav': this.nav.toJson(),
+        };
     }
 }class CreateSurvey201Response {
     CreateSurvey201Response(
@@ -762,8 +923,14 @@ class GetMyShips200Response {
 
     factory CreateSurvey201Response.fromJson(Map<String, dynamic> json) {
         return CreateSurvey201Response(
-            data: json['data'],
+            data: CreateSurvey201ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class CreateSurvey201ResponseData {
     CreateSurvey201ResponseData(
@@ -778,9 +945,16 @@ class GetMyShips200Response {
 
     factory CreateSurvey201ResponseData.fromJson(Map<String, dynamic> json) {
         return CreateSurvey201ResponseData(
-            cooldown: json['cooldown'],
-            surveys: json['surveys'],
+            cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
+            surveys: (json['surveys'] as List<dynamic>).map<Survey>((e) => Survey.fromJson(e as Map<String, dynamic>)).toList(),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'cooldown': this.cooldown.toJson(),
+            'surveys': this.surveys.map((e) => e.toJson()).toList(),
+        };
     }
 }class ExtractResources201Response {
     ExtractResources201Response(
@@ -793,8 +967,14 @@ class GetMyShips200Response {
 
     factory ExtractResources201Response.fromJson(Map<String, dynamic> json) {
         return ExtractResources201Response(
-            data: json['data'],
+            data: ExtractResources201ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class ExtractResources201ResponseData {
     ExtractResources201ResponseData(
@@ -811,10 +991,18 @@ class GetMyShips200Response {
 
     factory ExtractResources201ResponseData.fromJson(Map<String, dynamic> json) {
         return ExtractResources201ResponseData(
-            cooldown: json['cooldown'],
-            extraction: json['extraction'],
-            cargo: json['cargo'],
+            cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
+            extraction: Extraction.fromJson(json['extraction'] as Map<String, dynamic>),
+            cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'cooldown': this.cooldown.toJson(),
+            'extraction': this.extraction.toJson(),
+            'cargo': this.cargo.toJson(),
+        };
     }
 }class Jettison200Response {
     Jettison200Response(
@@ -827,8 +1015,14 @@ class GetMyShips200Response {
 
     factory Jettison200Response.fromJson(Map<String, dynamic> json) {
         return Jettison200Response(
-            data: json['data'],
+            data: Jettison200ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class Jettison200ResponseData {
     Jettison200ResponseData(
@@ -841,8 +1035,14 @@ class GetMyShips200Response {
 
     factory Jettison200ResponseData.fromJson(Map<String, dynamic> json) {
         return Jettison200ResponseData(
-            cargo: json['cargo'],
+            cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'cargo': this.cargo.toJson(),
+        };
     }
 }class JumpShip200Response {
     JumpShip200Response(
@@ -855,8 +1055,14 @@ class GetMyShips200Response {
 
     factory JumpShip200Response.fromJson(Map<String, dynamic> json) {
         return JumpShip200Response(
-            data: json['data'],
+            data: JumpShip200ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class JumpShip200ResponseData {
     JumpShip200ResponseData(
@@ -871,9 +1077,16 @@ class GetMyShips200Response {
 
     factory JumpShip200ResponseData.fromJson(Map<String, dynamic> json) {
         return JumpShip200ResponseData(
-            cooldown: json['cooldown'],
-            nav: json['nav'],
+            cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
+            nav: ShipNav.fromJson(json['nav'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'cooldown': this.cooldown.toJson(),
+            'nav': this.nav.toJson(),
+        };
     }
 }class NavigateShip200Response {
     NavigateShip200Response(
@@ -886,8 +1099,14 @@ class GetMyShips200Response {
 
     factory NavigateShip200Response.fromJson(Map<String, dynamic> json) {
         return NavigateShip200Response(
-            data: json['data'],
+            data: NavigateShip200ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class NavigateShip200ResponseData {
     NavigateShip200ResponseData(
@@ -902,9 +1121,16 @@ class GetMyShips200Response {
 
     factory NavigateShip200ResponseData.fromJson(Map<String, dynamic> json) {
         return NavigateShip200ResponseData(
-            fuel: json['fuel'],
-            nav: json['nav'],
+            fuel: ShipFuel.fromJson(json['fuel'] as Map<String, dynamic>),
+            nav: ShipNav.fromJson(json['nav'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'fuel': this.fuel.toJson(),
+            'nav': this.nav.toJson(),
+        };
     }
 }class GetShipNav200Response {
     GetShipNav200Response(
@@ -917,8 +1143,14 @@ class GetMyShips200Response {
 
     factory GetShipNav200Response.fromJson(Map<String, dynamic> json) {
         return GetShipNav200Response(
-            data: json['data'],
+            data: ShipNav.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class PatchShipNav200Response {
     PatchShipNav200Response(
@@ -931,8 +1163,14 @@ class GetMyShips200Response {
 
     factory PatchShipNav200Response.fromJson(Map<String, dynamic> json) {
         return PatchShipNav200Response(
-            data: json['data'],
+            data: ShipNav.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class WarpShip200Response {
     WarpShip200Response(
@@ -945,8 +1183,14 @@ class GetMyShips200Response {
 
     factory WarpShip200Response.fromJson(Map<String, dynamic> json) {
         return WarpShip200Response(
-            data: json['data'],
+            data: WarpShip200ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class WarpShip200ResponseData {
     WarpShip200ResponseData(
@@ -961,9 +1205,16 @@ class GetMyShips200Response {
 
     factory WarpShip200ResponseData.fromJson(Map<String, dynamic> json) {
         return WarpShip200ResponseData(
-            fuel: json['fuel'],
-            nav: json['nav'],
+            fuel: ShipFuel.fromJson(json['fuel'] as Map<String, dynamic>),
+            nav: ShipNav.fromJson(json['nav'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'fuel': this.fuel.toJson(),
+            'nav': this.nav.toJson(),
+        };
     }
 }class SellCargo201Response {
     SellCargo201Response(
@@ -976,8 +1227,14 @@ class GetMyShips200Response {
 
     factory SellCargo201Response.fromJson(Map<String, dynamic> json) {
         return SellCargo201Response(
-            data: json['data'],
+            data: SellCargo201ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class SellCargo201ResponseData {
     SellCargo201ResponseData(
@@ -994,10 +1251,18 @@ class GetMyShips200Response {
 
     factory SellCargo201ResponseData.fromJson(Map<String, dynamic> json) {
         return SellCargo201ResponseData(
-            agent: json['agent'],
-            cargo: json['cargo'],
-            transaction: json['transaction'],
+            agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
+            cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
+            transaction: MarketTransaction.fromJson(json['transaction'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'agent': this.agent.toJson(),
+            'cargo': this.cargo.toJson(),
+            'transaction': this.transaction.toJson(),
+        };
     }
 }class CreateShipSystemScan201Response {
     CreateShipSystemScan201Response(
@@ -1010,8 +1275,14 @@ class GetMyShips200Response {
 
     factory CreateShipSystemScan201Response.fromJson(Map<String, dynamic> json) {
         return CreateShipSystemScan201Response(
-            data: json['data'],
+            data: CreateShipSystemScan201ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class CreateShipSystemScan201ResponseData {
     CreateShipSystemScan201ResponseData(
@@ -1026,9 +1297,16 @@ class GetMyShips200Response {
 
     factory CreateShipSystemScan201ResponseData.fromJson(Map<String, dynamic> json) {
         return CreateShipSystemScan201ResponseData(
-            cooldown: json['cooldown'],
-            systems: json['systems'],
+            cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
+            systems: (json['systems'] as List<dynamic>).map<ScannedSystem>((e) => ScannedSystem.fromJson(e as Map<String, dynamic>)).toList(),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'cooldown': this.cooldown.toJson(),
+            'systems': this.systems.map((e) => e.toJson()).toList(),
+        };
     }
 }class CreateShipWaypointScan201Response {
     CreateShipWaypointScan201Response(
@@ -1041,8 +1319,14 @@ class GetMyShips200Response {
 
     factory CreateShipWaypointScan201Response.fromJson(Map<String, dynamic> json) {
         return CreateShipWaypointScan201Response(
-            data: json['data'],
+            data: CreateShipWaypointScan201ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class CreateShipWaypointScan201ResponseData {
     CreateShipWaypointScan201ResponseData(
@@ -1057,9 +1341,16 @@ class GetMyShips200Response {
 
     factory CreateShipWaypointScan201ResponseData.fromJson(Map<String, dynamic> json) {
         return CreateShipWaypointScan201ResponseData(
-            cooldown: json['cooldown'],
-            waypoints: json['waypoints'],
+            cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
+            waypoints: (json['waypoints'] as List<dynamic>).map<ScannedWaypoint>((e) => ScannedWaypoint.fromJson(e as Map<String, dynamic>)).toList(),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'cooldown': this.cooldown.toJson(),
+            'waypoints': this.waypoints.map((e) => e.toJson()).toList(),
+        };
     }
 }class CreateShipShipScan201Response {
     CreateShipShipScan201Response(
@@ -1072,8 +1363,14 @@ class GetMyShips200Response {
 
     factory CreateShipShipScan201Response.fromJson(Map<String, dynamic> json) {
         return CreateShipShipScan201Response(
-            data: json['data'],
+            data: CreateShipShipScan201ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class CreateShipShipScan201ResponseData {
     CreateShipShipScan201ResponseData(
@@ -1088,9 +1385,16 @@ class GetMyShips200Response {
 
     factory CreateShipShipScan201ResponseData.fromJson(Map<String, dynamic> json) {
         return CreateShipShipScan201ResponseData(
-            cooldown: json['cooldown'],
-            ships: json['ships'],
+            cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
+            ships: (json['ships'] as List<dynamic>).map<ScannedShip>((e) => ScannedShip.fromJson(e as Map<String, dynamic>)).toList(),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'cooldown': this.cooldown.toJson(),
+            'ships': this.ships.map((e) => e.toJson()).toList(),
+        };
     }
 }class RefuelShip200Response {
     RefuelShip200Response(
@@ -1103,8 +1407,14 @@ class GetMyShips200Response {
 
     factory RefuelShip200Response.fromJson(Map<String, dynamic> json) {
         return RefuelShip200Response(
-            data: json['data'],
+            data: RefuelShip200ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class RefuelShip200ResponseData {
     RefuelShip200ResponseData(
@@ -1121,10 +1431,18 @@ class GetMyShips200Response {
 
     factory RefuelShip200ResponseData.fromJson(Map<String, dynamic> json) {
         return RefuelShip200ResponseData(
-            agent: json['agent'],
-            fuel: json['fuel'],
-            transaction: json['transaction'],
+            agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
+            fuel: ShipFuel.fromJson(json['fuel'] as Map<String, dynamic>),
+            transaction: MarketTransaction.fromJson(json['transaction'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'agent': this.agent.toJson(),
+            'fuel': this.fuel.toJson(),
+            'transaction': this.transaction.toJson(),
+        };
     }
 }class PurchaseCargo201Response {
     PurchaseCargo201Response(
@@ -1137,8 +1455,14 @@ class GetMyShips200Response {
 
     factory PurchaseCargo201Response.fromJson(Map<String, dynamic> json) {
         return PurchaseCargo201Response(
-            data: json['data'],
+            data: PurchaseCargo201ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class PurchaseCargo201ResponseData {
     PurchaseCargo201ResponseData(
@@ -1155,10 +1479,18 @@ class GetMyShips200Response {
 
     factory PurchaseCargo201ResponseData.fromJson(Map<String, dynamic> json) {
         return PurchaseCargo201ResponseData(
-            agent: json['agent'],
-            cargo: json['cargo'],
-            transaction: json['transaction'],
+            agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
+            cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
+            transaction: MarketTransaction.fromJson(json['transaction'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'agent': this.agent.toJson(),
+            'cargo': this.cargo.toJson(),
+            'transaction': this.transaction.toJson(),
+        };
     }
 }class TransferCargo200Response {
     TransferCargo200Response(
@@ -1171,8 +1503,14 @@ class GetMyShips200Response {
 
     factory TransferCargo200Response.fromJson(Map<String, dynamic> json) {
         return TransferCargo200Response(
-            data: json['data'],
+            data: TransferCargo200ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class TransferCargo200ResponseData {
     TransferCargo200ResponseData(
@@ -1185,8 +1523,14 @@ class GetMyShips200Response {
 
     factory TransferCargo200ResponseData.fromJson(Map<String, dynamic> json) {
         return TransferCargo200ResponseData(
-            cargo: json['cargo'],
+            cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'cargo': this.cargo.toJson(),
+        };
     }
 }class NegotiateContract201Response {
     NegotiateContract201Response(
@@ -1199,8 +1543,14 @@ class GetMyShips200Response {
 
     factory NegotiateContract201Response.fromJson(Map<String, dynamic> json) {
         return NegotiateContract201Response(
-            data: json['data'],
+            data: NegotiateContract201ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class NegotiateContract201ResponseData {
     NegotiateContract201ResponseData(
@@ -1213,8 +1563,14 @@ class GetMyShips200Response {
 
     factory NegotiateContract201ResponseData.fromJson(Map<String, dynamic> json) {
         return NegotiateContract201ResponseData(
-            contract: json['contract'],
+            contract: Contract.fromJson(json['contract'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'contract': this.contract.toJson(),
+        };
     }
 }class GetMounts200Response {
     GetMounts200Response(
@@ -1227,8 +1583,14 @@ class GetMyShips200Response {
 
     factory GetMounts200Response.fromJson(Map<String, dynamic> json) {
         return GetMounts200Response(
-            data: json['data'],
+            data: (json['data'] as List<dynamic>).map<ShipMount>((e) => ShipMount.fromJson(e as Map<String, dynamic>)).toList(),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.map((e) => e.toJson()).toList(),
+        };
     }
 }class InstallMount201Response {
     InstallMount201Response(
@@ -1241,8 +1603,14 @@ class GetMyShips200Response {
 
     factory InstallMount201Response.fromJson(Map<String, dynamic> json) {
         return InstallMount201Response(
-            data: json['data'],
+            data: InstallMount201ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class InstallMount201ResponseData {
     InstallMount201ResponseData(
@@ -1261,11 +1629,20 @@ class GetMyShips200Response {
 
     factory InstallMount201ResponseData.fromJson(Map<String, dynamic> json) {
         return InstallMount201ResponseData(
-            agent: json['agent'],
-            mounts: json['mounts'],
-            cargo: json['cargo'],
-            transaction: json['transaction'],
+            agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
+            mounts: (json['mounts'] as List<dynamic>).map<ShipMount>((e) => ShipMount.fromJson(e as Map<String, dynamic>)).toList(),
+            cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
+            transaction: ShipModificationTransaction.fromJson(json['transaction'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'agent': this.agent.toJson(),
+            'mounts': this.mounts.map((e) => e.toJson()).toList(),
+            'cargo': this.cargo.toJson(),
+            'transaction': this.transaction.toJson(),
+        };
     }
 }class RemoveMount201Response {
     RemoveMount201Response(
@@ -1278,8 +1655,14 @@ class GetMyShips200Response {
 
     factory RemoveMount201Response.fromJson(Map<String, dynamic> json) {
         return RemoveMount201Response(
-            data: json['data'],
+            data: RemoveMount201ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class RemoveMount201ResponseData {
     RemoveMount201ResponseData(
@@ -1298,10 +1681,19 @@ class GetMyShips200Response {
 
     factory RemoveMount201ResponseData.fromJson(Map<String, dynamic> json) {
         return RemoveMount201ResponseData(
-            agent: json['agent'],
-            mounts: json['mounts'],
-            cargo: json['cargo'],
-            transaction: json['transaction'],
+            agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
+            mounts: (json['mounts'] as List<dynamic>).map<ShipMount>((e) => ShipMount.fromJson(e as Map<String, dynamic>)).toList(),
+            cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
+            transaction: ShipModificationTransaction.fromJson(json['transaction'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'agent': this.agent.toJson(),
+            'mounts': this.mounts.map((e) => e.toJson()).toList(),
+            'cargo': this.cargo.toJson(),
+            'transaction': this.transaction.toJson(),
+        };
     }
 }

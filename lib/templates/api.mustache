@@ -7,9 +7,9 @@ import '{{{.}}}';
 
 class {{ className }} {
     {{#endpoints}}
-    Future<{{{returnType}}}> {{{methodName}}}(
+    Future<{{{ returnType }}}> {{{ methodName }}}(
         {{#allParams}}
-        {{{paramType}}} {{{paramName}}},
+        {{{ paramType }}} {{{ paramName }}},
         {{/allParams}}
     ) async {
         final response = await http.post(
@@ -17,15 +17,17 @@ class {{ className }} {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
                 {{#allParams}}
-                '{{{paramName}}}': {{{paramName}}},
+                '{{{ paramName}}}': {{{ paramToJson }}},
                 {{/allParams}}
             }),
         );
 
         if (response.statusCode == 200) {
-            return {{{returnType}}}.fromJson(json.decode(response.body));
+            return {{{ returnType }}}.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load {{methodName}}');
         }

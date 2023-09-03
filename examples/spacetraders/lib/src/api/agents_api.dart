@@ -12,12 +12,14 @@ class AgentsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetMyAgent200Response.fromJson(json.decode(response.body));
+            return GetMyAgent200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetMyAgent');
         }
@@ -29,12 +31,14 @@ class AgentsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetAgents200Response.fromJson(json.decode(response.body));
+            return GetAgents200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetAgents');
         }
@@ -46,12 +50,14 @@ class AgentsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetAgent200Response.fromJson(json.decode(response.body));
+            return GetAgent200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetAgent');
         }
@@ -69,8 +75,14 @@ class GetMyAgent200Response {
 
     factory GetMyAgent200Response.fromJson(Map<String, dynamic> json) {
         return GetMyAgent200Response(
-            data: json['data'],
+            data: Agent.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class GetAgents200Response {
     GetAgents200Response(
@@ -85,9 +97,16 @@ class GetMyAgent200Response {
 
     factory GetAgents200Response.fromJson(Map<String, dynamic> json) {
         return GetAgents200Response(
-            data: json['data'],
-            meta: json['meta'],
+            data: (json['data'] as List<dynamic>).map<Agent>((e) => Agent.fromJson(e as Map<String, dynamic>)).toList(),
+            meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.map((e) => e.toJson()).toList(),
+            'meta': this.meta.toJson(),
+        };
     }
 }class GetAgent200Response {
     GetAgent200Response(
@@ -100,7 +119,13 @@ class GetMyAgent200Response {
 
     factory GetAgent200Response.fromJson(Map<String, dynamic> json) {
         return GetAgent200Response(
-            data: json['data'],
+            data: Agent.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }

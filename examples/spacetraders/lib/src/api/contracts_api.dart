@@ -14,12 +14,14 @@ class ContractsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetContracts200Response.fromJson(json.decode(response.body));
+            return GetContracts200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetContracts');
         }
@@ -31,12 +33,14 @@ class ContractsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetContract200Response.fromJson(json.decode(response.body));
+            return GetContract200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetContract');
         }
@@ -48,12 +52,14 @@ class ContractsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return AcceptContract200Response.fromJson(json.decode(response.body));
+            return AcceptContract200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load AcceptContract');
         }
@@ -65,12 +71,14 @@ class ContractsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return DeliverContract200Response.fromJson(json.decode(response.body));
+            return DeliverContract200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load DeliverContract');
         }
@@ -82,12 +90,14 @@ class ContractsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return FulfillContract200Response.fromJson(json.decode(response.body));
+            return FulfillContract200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load FulfillContract');
         }
@@ -107,9 +117,16 @@ class GetContracts200Response {
 
     factory GetContracts200Response.fromJson(Map<String, dynamic> json) {
         return GetContracts200Response(
-            data: json['data'],
-            meta: json['meta'],
+            data: (json['data'] as List<dynamic>).map<Contract>((e) => Contract.fromJson(e as Map<String, dynamic>)).toList(),
+            meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.map((e) => e.toJson()).toList(),
+            'meta': this.meta.toJson(),
+        };
     }
 }class GetContract200Response {
     GetContract200Response(
@@ -122,8 +139,14 @@ class GetContracts200Response {
 
     factory GetContract200Response.fromJson(Map<String, dynamic> json) {
         return GetContract200Response(
-            data: json['data'],
+            data: Contract.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class AcceptContract200Response {
     AcceptContract200Response(
@@ -136,8 +159,14 @@ class GetContracts200Response {
 
     factory AcceptContract200Response.fromJson(Map<String, dynamic> json) {
         return AcceptContract200Response(
-            data: json['data'],
+            data: AcceptContract200ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class AcceptContract200ResponseData {
     AcceptContract200ResponseData(
@@ -152,9 +181,16 @@ class GetContracts200Response {
 
     factory AcceptContract200ResponseData.fromJson(Map<String, dynamic> json) {
         return AcceptContract200ResponseData(
-            agent: json['agent'],
-            contract: json['contract'],
+            agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
+            contract: Contract.fromJson(json['contract'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'agent': this.agent.toJson(),
+            'contract': this.contract.toJson(),
+        };
     }
 }class DeliverContract200Response {
     DeliverContract200Response(
@@ -167,8 +203,14 @@ class GetContracts200Response {
 
     factory DeliverContract200Response.fromJson(Map<String, dynamic> json) {
         return DeliverContract200Response(
-            data: json['data'],
+            data: DeliverContract200ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class DeliverContract200ResponseData {
     DeliverContract200ResponseData(
@@ -183,9 +225,16 @@ class GetContracts200Response {
 
     factory DeliverContract200ResponseData.fromJson(Map<String, dynamic> json) {
         return DeliverContract200ResponseData(
-            contract: json['contract'],
-            cargo: json['cargo'],
+            contract: Contract.fromJson(json['contract'] as Map<String, dynamic>),
+            cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'contract': this.contract.toJson(),
+            'cargo': this.cargo.toJson(),
+        };
     }
 }class FulfillContract200Response {
     FulfillContract200Response(
@@ -198,8 +247,14 @@ class GetContracts200Response {
 
     factory FulfillContract200Response.fromJson(Map<String, dynamic> json) {
         return FulfillContract200Response(
-            data: json['data'],
+            data: FulfillContract200ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class FulfillContract200ResponseData {
     FulfillContract200ResponseData(
@@ -214,8 +269,15 @@ class GetContracts200Response {
 
     factory FulfillContract200ResponseData.fromJson(Map<String, dynamic> json) {
         return FulfillContract200ResponseData(
-            agent: json['agent'],
-            contract: json['contract'],
+            agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
+            contract: Contract.fromJson(json['contract'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'agent': this.agent.toJson(),
+            'contract': this.contract.toJson(),
+        };
     }
 }

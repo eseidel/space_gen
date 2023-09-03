@@ -57,11 +57,67 @@ extension SchemaGeneration on Schema {
     // throw UnimplementedError('Unknown type $type');
   }
 
+  String toJsonExpression(RefResolver resolver, String name) {
+    switch (type) {
+      case SchemaType.string:
+      case SchemaType.integer:
+      case SchemaType.number:
+      case SchemaType.boolean:
+        return name;
+      case SchemaType.object:
+        return '$name.toJson()';
+      case SchemaType.array:
+        final itemsSchema = resolver.resolve(items!);
+        switch (itemsSchema.type) {
+          case SchemaType.string:
+          case SchemaType.integer:
+          case SchemaType.number:
+          case SchemaType.boolean:
+            // Don't call toJson on primitives.
+            return name;
+          case SchemaType.object:
+          case SchemaType.array:
+            return '$name.map((e) => e.toJson()).toList()';
+        }
+    }
+  }
+
+  String fromJsonExpression(RefResolver resolver, String jsonValue) {
+    switch (type) {
+      case SchemaType.string:
+        return '$jsonValue as String';
+      case SchemaType.integer:
+        return '$jsonValue as int';
+      case SchemaType.number:
+        return '$jsonValue as double';
+      case SchemaType.boolean:
+        return '$jsonValue as bool';
+      case SchemaType.object:
+        return '$className.fromJson($jsonValue as Map<String, dynamic>)';
+      case SchemaType.array:
+        final itemsSchema = resolver.resolve(items!);
+        final itemTypeName = itemsSchema.typeName(resolver);
+        if (itemsSchema.type == SchemaType.object) {
+          return '($jsonValue as List<dynamic>).map<$itemTypeName>((e) => '
+              '$itemTypeName.fromJson(e as Map<String, dynamic>)).toList()';
+        } else {
+          return '($jsonValue as List<dynamic>).cast<$itemTypeName>()';
+        }
+    }
+  }
+
   Map<String, dynamic> toClassDefinition(RefResolver resolver) {
     final renderProperties = properties.entries.map(
-      (entry) => {
-        'propertyName': entry.key,
-        'propertyType': resolver.resolve(entry.value).typeName(resolver),
+      (entry) {
+        final name = entry.key;
+        final schema = resolver.resolve(entry.value);
+        return {
+          'propertyName': name,
+          'propertyType': schema.typeName(resolver),
+          'propertyToJson': schema.toJsonExpression(resolver, 'this.$name'),
+          'propertyFromJson':
+              schema.fromJsonExpression(resolver, "json['$name']"),
+        };
       },
     );
     return {
@@ -117,13 +173,29 @@ class Context {
     return _ensureFile('lib/src/api/${api.fileName}.dart');
   }
 
+  void _renderFile({
+    required String template,
+    required String outPath,
+    required Map<String, dynamic> context,
+  }) {
+    final output = loadTemplate(template).renderString(context);
+    writeFile(path: outPath, content: output);
+  }
+
   void renderDirectory() {
     outDir.createSync(recursive: true);
-    final template = loadTemplate('pubspec');
-    final output = template.renderString(<String, dynamic>{
-      'packageName': packageName,
-    });
-    writeFile(path: 'pubspec.yaml', content: output);
+    _renderFile(
+      template: 'pubspec',
+      outPath: 'pubspec.yaml',
+      context: {
+        'packageName': packageName,
+      },
+    );
+    _renderFile(
+      template: 'analysis_options',
+      outPath: 'analysis_options.yaml',
+      context: {},
+    );
   }
 
   void renderApis() {
@@ -134,11 +206,13 @@ class Context {
   }
 
   void runDart(List<String> args) {
+    print('dart ${args.join(' ')} in ${outDir.path}');
     final result = Process.runSync('dart', args, workingDirectory: outDir.path);
     if (result.exitCode != 0) {
       logger.info(result.stderr as String);
       throw Exception('Failed to run dart ${args.join(' ')}');
     }
+    print(result.stdout);
   }
 
   void renderModelFile(String path) {
@@ -171,8 +245,8 @@ class Context {
     renderApis();
     renderModels();
     runDart(['pub', 'get']);
-    runDart(['fix', '.', '--apply']);
     runDart(['format', '.']);
+    runDart(['fix', '.', '--apply']);
   }
 }
 

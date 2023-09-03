@@ -12,12 +12,14 @@ class FactionsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetFactions200Response.fromJson(json.decode(response.body));
+            return GetFactions200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetFactions');
         }
@@ -29,12 +31,14 @@ class FactionsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetFaction200Response.fromJson(json.decode(response.body));
+            return GetFaction200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetFaction');
         }
@@ -54,9 +58,16 @@ class GetFactions200Response {
 
     factory GetFactions200Response.fromJson(Map<String, dynamic> json) {
         return GetFactions200Response(
-            data: json['data'],
-            meta: json['meta'],
+            data: (json['data'] as List<dynamic>).map<Faction>((e) => Faction.fromJson(e as Map<String, dynamic>)).toList(),
+            meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.map((e) => e.toJson()).toList(),
+            'meta': this.meta.toJson(),
+        };
     }
 }class GetFaction200Response {
     GetFaction200Response(
@@ -69,7 +80,13 @@ class GetFactions200Response {
 
     factory GetFaction200Response.fromJson(Map<String, dynamic> json) {
         return GetFaction200Response(
-            data: json['data'],
+            data: Faction.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }

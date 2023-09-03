@@ -14,8 +14,16 @@ class {{ className }} {
     factory {{ className }}.fromJson(Map<String, dynamic> json) {
         return {{ className }}(
             {{#properties}}
-            {{ propertyName }}: json['{{ propertyName }}'],
+            {{ propertyName }}: {{{ propertyFromJson }}},
             {{/properties}}
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            {{#properties}}
+            '{{ propertyName }}': {{{ propertyToJson }}},
+            {{/properties}}
+        };
     }
 }

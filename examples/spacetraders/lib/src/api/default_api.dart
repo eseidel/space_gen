@@ -14,12 +14,14 @@ class DefaultApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetStatus200Response.fromJson(json.decode(response.body));
+            return GetStatus200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetStatus');
         }
@@ -31,12 +33,14 @@ class DefaultApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return Register201Response.fromJson(json.decode(response.body));
+            return Register201Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load Register');
         }
@@ -70,16 +74,30 @@ class GetStatus200Response {
 
     factory GetStatus200Response.fromJson(Map<String, dynamic> json) {
         return GetStatus200Response(
-            status: json['status'],
-            version: json['version'],
-            resetDate: json['resetDate'],
-            description: json['description'],
-            stats: json['stats'],
-            leaderboards: json['leaderboards'],
-            serverResets: json['serverResets'],
-            announcements: json['announcements'],
-            links: json['links'],
+            status: json['status'] as String,
+            version: json['version'] as String,
+            resetDate: json['resetDate'] as String,
+            description: json['description'] as String,
+            stats: GetStatus200ResponseStats.fromJson(json['stats'] as Map<String, dynamic>),
+            leaderboards: GetStatus200ResponseLeaderboards.fromJson(json['leaderboards'] as Map<String, dynamic>),
+            serverResets: GetStatus200ResponseServerResets.fromJson(json['serverResets'] as Map<String, dynamic>),
+            announcements: (json['announcements'] as List<dynamic>).map<GetStatus200ResponseAnnouncementsArray>((e) => GetStatus200ResponseAnnouncementsArray.fromJson(e as Map<String, dynamic>)).toList(),
+            links: (json['links'] as List<dynamic>).map<GetStatus200ResponseLinksArray>((e) => GetStatus200ResponseLinksArray.fromJson(e as Map<String, dynamic>)).toList(),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'status': this.status,
+            'version': this.version,
+            'resetDate': this.resetDate,
+            'description': this.description,
+            'stats': this.stats.toJson(),
+            'leaderboards': this.leaderboards.toJson(),
+            'serverResets': this.serverResets.toJson(),
+            'announcements': this.announcements.map((e) => e.toJson()).toList(),
+            'links': this.links.map((e) => e.toJson()).toList(),
+        };
     }
 }class GetStatus200ResponseStats {
     GetStatus200ResponseStats(
@@ -98,11 +116,20 @@ class GetStatus200Response {
 
     factory GetStatus200ResponseStats.fromJson(Map<String, dynamic> json) {
         return GetStatus200ResponseStats(
-            agents: json['agents'],
-            ships: json['ships'],
-            systems: json['systems'],
-            waypoints: json['waypoints'],
+            agents: json['agents'] as int,
+            ships: json['ships'] as int,
+            systems: json['systems'] as int,
+            waypoints: json['waypoints'] as int,
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'agents': this.agents,
+            'ships': this.ships,
+            'systems': this.systems,
+            'waypoints': this.waypoints,
+        };
     }
 }class GetStatus200ResponseLeaderboards {
     GetStatus200ResponseLeaderboards(
@@ -117,9 +144,16 @@ class GetStatus200Response {
 
     factory GetStatus200ResponseLeaderboards.fromJson(Map<String, dynamic> json) {
         return GetStatus200ResponseLeaderboards(
-            mostCredits: json['mostCredits'],
-            mostSubmittedCharts: json['mostSubmittedCharts'],
+            mostCredits: (json['mostCredits'] as List<dynamic>).map<GetStatus200ResponseLeaderboardsMostCreditsArray>((e) => GetStatus200ResponseLeaderboardsMostCreditsArray.fromJson(e as Map<String, dynamic>)).toList(),
+            mostSubmittedCharts: (json['mostSubmittedCharts'] as List<dynamic>).map<GetStatus200ResponseLeaderboardsMostSubmittedChartsArray>((e) => GetStatus200ResponseLeaderboardsMostSubmittedChartsArray.fromJson(e as Map<String, dynamic>)).toList(),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'mostCredits': this.mostCredits.map((e) => e.toJson()).toList(),
+            'mostSubmittedCharts': this.mostSubmittedCharts.map((e) => e.toJson()).toList(),
+        };
     }
 }class GetStatus200ResponseLeaderboardsMostCreditsArray {
     GetStatus200ResponseLeaderboardsMostCreditsArray(
@@ -134,9 +168,16 @@ class GetStatus200Response {
 
     factory GetStatus200ResponseLeaderboardsMostCreditsArray.fromJson(Map<String, dynamic> json) {
         return GetStatus200ResponseLeaderboardsMostCreditsArray(
-            agentSymbol: json['agentSymbol'],
-            credits: json['credits'],
+            agentSymbol: json['agentSymbol'] as String,
+            credits: json['credits'] as int,
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'agentSymbol': this.agentSymbol,
+            'credits': this.credits,
+        };
     }
 }class GetStatus200ResponseLeaderboardsMostSubmittedChartsArray {
     GetStatus200ResponseLeaderboardsMostSubmittedChartsArray(
@@ -151,9 +192,16 @@ class GetStatus200Response {
 
     factory GetStatus200ResponseLeaderboardsMostSubmittedChartsArray.fromJson(Map<String, dynamic> json) {
         return GetStatus200ResponseLeaderboardsMostSubmittedChartsArray(
-            agentSymbol: json['agentSymbol'],
-            chartCount: json['chartCount'],
+            agentSymbol: json['agentSymbol'] as String,
+            chartCount: json['chartCount'] as int,
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'agentSymbol': this.agentSymbol,
+            'chartCount': this.chartCount,
+        };
     }
 }class GetStatus200ResponseServerResets {
     GetStatus200ResponseServerResets(
@@ -168,9 +216,16 @@ class GetStatus200Response {
 
     factory GetStatus200ResponseServerResets.fromJson(Map<String, dynamic> json) {
         return GetStatus200ResponseServerResets(
-            next: json['next'],
-            frequency: json['frequency'],
+            next: json['next'] as String,
+            frequency: json['frequency'] as String,
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'next': this.next,
+            'frequency': this.frequency,
+        };
     }
 }class GetStatus200ResponseAnnouncementsArray {
     GetStatus200ResponseAnnouncementsArray(
@@ -185,9 +240,16 @@ class GetStatus200Response {
 
     factory GetStatus200ResponseAnnouncementsArray.fromJson(Map<String, dynamic> json) {
         return GetStatus200ResponseAnnouncementsArray(
-            title: json['title'],
-            body: json['body'],
+            title: json['title'] as String,
+            body: json['body'] as String,
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'title': this.title,
+            'body': this.body,
+        };
     }
 }class GetStatus200ResponseLinksArray {
     GetStatus200ResponseLinksArray(
@@ -202,9 +264,16 @@ class GetStatus200Response {
 
     factory GetStatus200ResponseLinksArray.fromJson(Map<String, dynamic> json) {
         return GetStatus200ResponseLinksArray(
-            name: json['name'],
-            url: json['url'],
+            name: json['name'] as String,
+            url: json['url'] as String,
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'name': this.name,
+            'url': this.url,
+        };
     }
 }class Register201Response {
     Register201Response(
@@ -217,8 +286,14 @@ class GetStatus200Response {
 
     factory Register201Response.fromJson(Map<String, dynamic> json) {
         return Register201Response(
-            data: json['data'],
+            data: Register201ResponseData.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class Register201ResponseData {
     Register201ResponseData(
@@ -239,11 +314,21 @@ class GetStatus200Response {
 
     factory Register201ResponseData.fromJson(Map<String, dynamic> json) {
         return Register201ResponseData(
-            agent: json['agent'],
-            contract: json['contract'],
-            faction: json['faction'],
-            ship: json['ship'],
-            token: json['token'],
+            agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
+            contract: Contract.fromJson(json['contract'] as Map<String, dynamic>),
+            faction: Faction.fromJson(json['faction'] as Map<String, dynamic>),
+            ship: Ship.fromJson(json['ship'] as Map<String, dynamic>),
+            token: json['token'] as String,
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'agent': this.agent.toJson(),
+            'contract': this.contract.toJson(),
+            'faction': this.faction.toJson(),
+            'ship': this.ship.toJson(),
+            'token': this.token,
+        };
     }
 }

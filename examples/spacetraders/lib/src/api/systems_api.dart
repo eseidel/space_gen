@@ -16,12 +16,14 @@ class SystemsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetSystems200Response.fromJson(json.decode(response.body));
+            return GetSystems200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetSystems');
         }
@@ -33,12 +35,14 @@ class SystemsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetSystem200Response.fromJson(json.decode(response.body));
+            return GetSystem200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetSystem');
         }
@@ -50,12 +54,14 @@ class SystemsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetSystemWaypoints200Response.fromJson(json.decode(response.body));
+            return GetSystemWaypoints200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetSystemWaypoints');
         }
@@ -67,12 +73,14 @@ class SystemsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetWaypoint200Response.fromJson(json.decode(response.body));
+            return GetWaypoint200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetWaypoint');
         }
@@ -84,12 +92,14 @@ class SystemsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetMarket200Response.fromJson(json.decode(response.body));
+            return GetMarket200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetMarket');
         }
@@ -101,12 +111,14 @@ class SystemsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetShipyard200Response.fromJson(json.decode(response.body));
+            return GetShipyard200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetShipyard');
         }
@@ -118,12 +130,14 @@ class SystemsApi {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: json.encode({
+            body: jsonEncode({
             }),
         );
 
         if (response.statusCode == 200) {
-            return GetJumpGate200Response.fromJson(json.decode(response.body));
+            return GetJumpGate200Response.fromJson(
+                jsonDecode(response.body) as Map<String, dynamic>
+            );
         } else {
             throw Exception('Failed to load GetJumpGate');
         }
@@ -143,9 +157,16 @@ class GetSystems200Response {
 
     factory GetSystems200Response.fromJson(Map<String, dynamic> json) {
         return GetSystems200Response(
-            data: json['data'],
-            meta: json['meta'],
+            data: (json['data'] as List<dynamic>).map<System>((e) => System.fromJson(e as Map<String, dynamic>)).toList(),
+            meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.map((e) => e.toJson()).toList(),
+            'meta': this.meta.toJson(),
+        };
     }
 }class GetSystem200Response {
     GetSystem200Response(
@@ -158,8 +179,14 @@ class GetSystems200Response {
 
     factory GetSystem200Response.fromJson(Map<String, dynamic> json) {
         return GetSystem200Response(
-            data: json['data'],
+            data: System.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class GetSystemWaypoints200Response {
     GetSystemWaypoints200Response(
@@ -174,9 +201,16 @@ class GetSystems200Response {
 
     factory GetSystemWaypoints200Response.fromJson(Map<String, dynamic> json) {
         return GetSystemWaypoints200Response(
-            data: json['data'],
-            meta: json['meta'],
+            data: (json['data'] as List<dynamic>).map<Waypoint>((e) => Waypoint.fromJson(e as Map<String, dynamic>)).toList(),
+            meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.map((e) => e.toJson()).toList(),
+            'meta': this.meta.toJson(),
+        };
     }
 }class GetWaypoint200Response {
     GetWaypoint200Response(
@@ -189,8 +223,14 @@ class GetSystems200Response {
 
     factory GetWaypoint200Response.fromJson(Map<String, dynamic> json) {
         return GetWaypoint200Response(
-            data: json['data'],
+            data: Waypoint.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class GetMarket200Response {
     GetMarket200Response(
@@ -203,8 +243,14 @@ class GetSystems200Response {
 
     factory GetMarket200Response.fromJson(Map<String, dynamic> json) {
         return GetMarket200Response(
-            data: json['data'],
+            data: Market.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class GetShipyard200Response {
     GetShipyard200Response(
@@ -217,8 +263,14 @@ class GetSystems200Response {
 
     factory GetShipyard200Response.fromJson(Map<String, dynamic> json) {
         return GetShipyard200Response(
-            data: json['data'],
+            data: Shipyard.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }class GetJumpGate200Response {
     GetJumpGate200Response(
@@ -231,7 +283,13 @@ class GetSystems200Response {
 
     factory GetJumpGate200Response.fromJson(Map<String, dynamic> json) {
         return GetJumpGate200Response(
-            data: json['data'],
+            data: JumpGate.fromJson(json['data'] as Map<String, dynamic>),
         );
+    }
+
+    Map<String, dynamic> toJson() {
+        return {
+            'data': this.data.toJson(),
+        };
     }
 }
