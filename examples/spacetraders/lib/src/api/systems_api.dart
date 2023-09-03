@@ -1,295 +1,288 @@
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:async';
-import 'package:spacetraders/src/model/system.dart';
-import 'package:spacetraders/src/model/meta.dart';
-import 'package:spacetraders/src/model/waypoint.dart';
-import 'package:spacetraders/src/model/market.dart';
-import 'package:spacetraders/src/model/shipyard.dart';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
 import 'package:spacetraders/src/model/jump_gate.dart';
+import 'package:spacetraders/src/model/market.dart';
+import 'package:spacetraders/src/model/meta.dart';
+import 'package:spacetraders/src/model/shipyard.dart';
+import 'package:spacetraders/src/model/system.dart';
+import 'package:spacetraders/src/model/waypoint.dart';
 
 class SystemsApi {
-    Future<GetSystems200Response> GetSystems(
-    ) async {
-        final response = await http.post(
-            Uri.parse('https://api.spacetraders.io/v2/systems'),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-            }),
-        );
+  Future<GetSystems200Response> GetSystems() async {
+    final response = await http.post(
+      Uri.parse('https://api.spacetraders.io/v2/systems'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({}),
+    );
 
-        if (response.statusCode == 200) {
-            return GetSystems200Response.fromJson(
-                jsonDecode(response.body) as Map<String, dynamic>
-            );
-        } else {
-            throw Exception('Failed to load GetSystems');
-        }
+    if (response.statusCode == 200) {
+      return GetSystems200Response.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>,);
+    } else {
+      throw Exception('Failed to load GetSystems');
     }
-    Future<GetSystem200Response> GetSystem(
-    ) async {
-        final response = await http.post(
-            Uri.parse('https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D'),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-            }),
-        );
+  }
 
-        if (response.statusCode == 200) {
-            return GetSystem200Response.fromJson(
-                jsonDecode(response.body) as Map<String, dynamic>
-            );
-        } else {
-            throw Exception('Failed to load GetSystem');
-        }
-    }
-    Future<GetSystemWaypoints200Response> GetSystemWaypoints(
-    ) async {
-        final response = await http.post(
-            Uri.parse('https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints'),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-            }),
-        );
+  Future<GetSystem200Response> GetSystem() async {
+    final response = await http.post(
+      Uri.parse('https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({}),
+    );
 
-        if (response.statusCode == 200) {
-            return GetSystemWaypoints200Response.fromJson(
-                jsonDecode(response.body) as Map<String, dynamic>
-            );
-        } else {
-            throw Exception('Failed to load GetSystemWaypoints');
-        }
+    if (response.statusCode == 200) {
+      return GetSystem200Response.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>,);
+    } else {
+      throw Exception('Failed to load GetSystem');
     }
-    Future<GetWaypoint200Response> GetWaypoint(
-    ) async {
-        final response = await http.post(
-            Uri.parse('https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D'),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-            }),
-        );
+  }
 
-        if (response.statusCode == 200) {
-            return GetWaypoint200Response.fromJson(
-                jsonDecode(response.body) as Map<String, dynamic>
-            );
-        } else {
-            throw Exception('Failed to load GetWaypoint');
-        }
-    }
-    Future<GetMarket200Response> GetMarket(
-    ) async {
-        final response = await http.post(
-            Uri.parse('https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/market'),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-            }),
-        );
+  Future<GetSystemWaypoints200Response> GetSystemWaypoints() async {
+    final response = await http.post(
+      Uri.parse(
+          'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints',),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({}),
+    );
 
-        if (response.statusCode == 200) {
-            return GetMarket200Response.fromJson(
-                jsonDecode(response.body) as Map<String, dynamic>
-            );
-        } else {
-            throw Exception('Failed to load GetMarket');
-        }
+    if (response.statusCode == 200) {
+      return GetSystemWaypoints200Response.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>,);
+    } else {
+      throw Exception('Failed to load GetSystemWaypoints');
     }
-    Future<GetShipyard200Response> GetShipyard(
-    ) async {
-        final response = await http.post(
-            Uri.parse('https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/shipyard'),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-            }),
-        );
+  }
 
-        if (response.statusCode == 200) {
-            return GetShipyard200Response.fromJson(
-                jsonDecode(response.body) as Map<String, dynamic>
-            );
-        } else {
-            throw Exception('Failed to load GetShipyard');
-        }
-    }
-    Future<GetJumpGate200Response> GetJumpGate(
-    ) async {
-        final response = await http.post(
-            Uri.parse('https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/jump-gate'),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-            }),
-        );
+  Future<GetWaypoint200Response> GetWaypoint() async {
+    final response = await http.post(
+      Uri.parse(
+          'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D',),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({}),
+    );
 
-        if (response.statusCode == 200) {
-            return GetJumpGate200Response.fromJson(
-                jsonDecode(response.body) as Map<String, dynamic>
-            );
-        } else {
-            throw Exception('Failed to load GetJumpGate');
-        }
+    if (response.statusCode == 200) {
+      return GetWaypoint200Response.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>,);
+    } else {
+      throw Exception('Failed to load GetWaypoint');
     }
+  }
+
+  Future<GetMarket200Response> GetMarket() async {
+    final response = await http.post(
+      Uri.parse(
+          'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/market',),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({}),
+    );
+
+    if (response.statusCode == 200) {
+      return GetMarket200Response.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>,);
+    } else {
+      throw Exception('Failed to load GetMarket');
+    }
+  }
+
+  Future<GetShipyard200Response> GetShipyard() async {
+    final response = await http.post(
+      Uri.parse(
+          'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/shipyard',),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({}),
+    );
+
+    if (response.statusCode == 200) {
+      return GetShipyard200Response.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>,);
+    } else {
+      throw Exception('Failed to load GetShipyard');
+    }
+  }
+
+  Future<GetJumpGate200Response> GetJumpGate() async {
+    final response = await http.post(
+      Uri.parse(
+          'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/jump-gate',),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({}),
+    );
+
+    if (response.statusCode == 200) {
+      return GetJumpGate200Response.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>,);
+    } else {
+      throw Exception('Failed to load GetJumpGate');
+    }
+  }
 }
 
 class GetSystems200Response {
-    GetSystems200Response(
-        { 
-        required this.data,
-        required this.meta,
-         }
+  GetSystems200Response({
+    required this.data,
+    required this.meta,
+  });
+
+  factory GetSystems200Response.fromJson(Map<String, dynamic> json) {
+    return GetSystems200Response(
+      data: (json['data'] as List<dynamic>)
+          .map<System>((e) => System.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
     );
+  }
 
-    final List<System> data;
-    final Meta meta;
+  final List<System> data;
+  final Meta meta;
 
-    factory GetSystems200Response.fromJson(Map<String, dynamic> json) {
-        return GetSystems200Response(
-            data: (json['data'] as List<dynamic>).map<System>((e) => System.fromJson(e as Map<String, dynamic>)).toList(),
-            meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
-        );
-    }
+  Map<String, dynamic> toJson() {
+    return {
+      'data': data.map((e) => e.toJson()).toList(),
+      'meta': meta.toJson(),
+    };
+  }
+}
 
-    Map<String, dynamic> toJson() {
-        return {
-            'data': this.data.map((e) => e.toJson()).toList(),
-            'meta': this.meta.toJson(),
-        };
-    }
-}class GetSystem200Response {
-    GetSystem200Response(
-        { 
-        required this.data,
-         }
+class GetSystem200Response {
+  GetSystem200Response({
+    required this.data,
+  });
+
+  factory GetSystem200Response.fromJson(Map<String, dynamic> json) {
+    return GetSystem200Response(
+      data: System.fromJson(json['data'] as Map<String, dynamic>),
     );
+  }
 
-    final System data;
+  final System data;
 
-    factory GetSystem200Response.fromJson(Map<String, dynamic> json) {
-        return GetSystem200Response(
-            data: System.fromJson(json['data'] as Map<String, dynamic>),
-        );
-    }
+  Map<String, dynamic> toJson() {
+    return {
+      'data': data.toJson(),
+    };
+  }
+}
 
-    Map<String, dynamic> toJson() {
-        return {
-            'data': this.data.toJson(),
-        };
-    }
-}class GetSystemWaypoints200Response {
-    GetSystemWaypoints200Response(
-        { 
-        required this.data,
-        required this.meta,
-         }
+class GetSystemWaypoints200Response {
+  GetSystemWaypoints200Response({
+    required this.data,
+    required this.meta,
+  });
+
+  factory GetSystemWaypoints200Response.fromJson(Map<String, dynamic> json) {
+    return GetSystemWaypoints200Response(
+      data: (json['data'] as List<dynamic>)
+          .map<Waypoint>((e) => Waypoint.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
     );
+  }
 
-    final List<Waypoint> data;
-    final Meta meta;
+  final List<Waypoint> data;
+  final Meta meta;
 
-    factory GetSystemWaypoints200Response.fromJson(Map<String, dynamic> json) {
-        return GetSystemWaypoints200Response(
-            data: (json['data'] as List<dynamic>).map<Waypoint>((e) => Waypoint.fromJson(e as Map<String, dynamic>)).toList(),
-            meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
-        );
-    }
+  Map<String, dynamic> toJson() {
+    return {
+      'data': data.map((e) => e.toJson()).toList(),
+      'meta': meta.toJson(),
+    };
+  }
+}
 
-    Map<String, dynamic> toJson() {
-        return {
-            'data': this.data.map((e) => e.toJson()).toList(),
-            'meta': this.meta.toJson(),
-        };
-    }
-}class GetWaypoint200Response {
-    GetWaypoint200Response(
-        { 
-        required this.data,
-         }
+class GetWaypoint200Response {
+  GetWaypoint200Response({
+    required this.data,
+  });
+
+  factory GetWaypoint200Response.fromJson(Map<String, dynamic> json) {
+    return GetWaypoint200Response(
+      data: Waypoint.fromJson(json['data'] as Map<String, dynamic>),
     );
+  }
 
-    final Waypoint data;
+  final Waypoint data;
 
-    factory GetWaypoint200Response.fromJson(Map<String, dynamic> json) {
-        return GetWaypoint200Response(
-            data: Waypoint.fromJson(json['data'] as Map<String, dynamic>),
-        );
-    }
+  Map<String, dynamic> toJson() {
+    return {
+      'data': data.toJson(),
+    };
+  }
+}
 
-    Map<String, dynamic> toJson() {
-        return {
-            'data': this.data.toJson(),
-        };
-    }
-}class GetMarket200Response {
-    GetMarket200Response(
-        { 
-        required this.data,
-         }
+class GetMarket200Response {
+  GetMarket200Response({
+    required this.data,
+  });
+
+  factory GetMarket200Response.fromJson(Map<String, dynamic> json) {
+    return GetMarket200Response(
+      data: Market.fromJson(json['data'] as Map<String, dynamic>),
     );
+  }
 
-    final Market data;
+  final Market data;
 
-    factory GetMarket200Response.fromJson(Map<String, dynamic> json) {
-        return GetMarket200Response(
-            data: Market.fromJson(json['data'] as Map<String, dynamic>),
-        );
-    }
+  Map<String, dynamic> toJson() {
+    return {
+      'data': data.toJson(),
+    };
+  }
+}
 
-    Map<String, dynamic> toJson() {
-        return {
-            'data': this.data.toJson(),
-        };
-    }
-}class GetShipyard200Response {
-    GetShipyard200Response(
-        { 
-        required this.data,
-         }
+class GetShipyard200Response {
+  GetShipyard200Response({
+    required this.data,
+  });
+
+  factory GetShipyard200Response.fromJson(Map<String, dynamic> json) {
+    return GetShipyard200Response(
+      data: Shipyard.fromJson(json['data'] as Map<String, dynamic>),
     );
+  }
 
-    final Shipyard data;
+  final Shipyard data;
 
-    factory GetShipyard200Response.fromJson(Map<String, dynamic> json) {
-        return GetShipyard200Response(
-            data: Shipyard.fromJson(json['data'] as Map<String, dynamic>),
-        );
-    }
+  Map<String, dynamic> toJson() {
+    return {
+      'data': data.toJson(),
+    };
+  }
+}
 
-    Map<String, dynamic> toJson() {
-        return {
-            'data': this.data.toJson(),
-        };
-    }
-}class GetJumpGate200Response {
-    GetJumpGate200Response(
-        { 
-        required this.data,
-         }
+class GetJumpGate200Response {
+  GetJumpGate200Response({
+    required this.data,
+  });
+
+  factory GetJumpGate200Response.fromJson(Map<String, dynamic> json) {
+    return GetJumpGate200Response(
+      data: JumpGate.fromJson(json['data'] as Map<String, dynamic>),
     );
+  }
 
-    final JumpGate data;
+  final JumpGate data;
 
-    factory GetJumpGate200Response.fromJson(Map<String, dynamic> json) {
-        return GetJumpGate200Response(
-            data: JumpGate.fromJson(json['data'] as Map<String, dynamic>),
-        );
-    }
-
-    Map<String, dynamic> toJson() {
-        return {
-            'data': this.data.toJson(),
-        };
-    }
+  Map<String, dynamic> toJson() {
+    return {
+      'data': data.toJson(),
+    };
+  }
 }

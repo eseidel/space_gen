@@ -17,6 +17,14 @@ Template loadTemplate(String name) {
   );
 }
 
+String _apiPath(Api api) {
+  return 'lib/src/api/${api.fileName}.dart';
+}
+
+String _modelPath(Schema schema) {
+  return 'lib/src/model/${schema.fileName}.dart';
+}
+
 extension ApiGeneration on Api {
   String get className => '${name.capitalize()}Api';
   String get fileName => '${name.toLowerCase()}_api';
@@ -169,11 +177,7 @@ class Context {
     _ensureFile(path).writeAsStringSync(content);
   }
 
-  File fileForApi(Api api) {
-    return _ensureFile('lib/src/api/${api.fileName}.dart');
-  }
-
-  void _renderFile({
+  void renderTemplate({
     required String template,
     required String outPath,
     required Map<String, dynamic> context,
@@ -184,14 +188,14 @@ class Context {
 
   void renderDirectory() {
     outDir.createSync(recursive: true);
-    _renderFile(
+    renderTemplate(
       template: 'pubspec',
       outPath: 'pubspec.yaml',
       context: {
         'packageName': packageName,
       },
     );
-    _renderFile(
+    renderTemplate(
       template: 'analysis_options',
       outPath: 'analysis_options.yaml',
       context: {},
@@ -306,14 +310,13 @@ void renderRootSchema(Context context, Schema schema) {
       .map((schema) => schema.toClassDefinition(context.resolver))
       .toList();
 
-  final template = loadTemplate('model');
-  final output = template.renderString({
-    'imports': imports,
-    'models': models,
-  });
-  context.writeFile(
-    path: 'lib/src/model/${schema.fileName}.dart',
-    content: output,
+  context.renderTemplate(
+    template: 'model',
+    outPath: _modelPath(schema),
+    context: {
+      'imports': imports,
+      'models': models,
+    },
   );
 }
 
@@ -340,13 +343,14 @@ void renderApi(RenderContext renderContext, Context context, Api api) {
   final models = renderContext.inlineSchemas
       .map((schema) => schema.toClassDefinition(context.resolver))
       .toList();
-  loadTemplate('api').render(
-    {
+  context.renderTemplate(
+    template: 'api',
+    outPath: _apiPath(api),
+    context: {
       'className': api.className,
       'imports': imports,
       'endpoints': endpoints,
       'models': models,
     },
-    context.fileForApi(api).openWrite(),
   );
 }
