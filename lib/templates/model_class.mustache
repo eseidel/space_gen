@@ -7,10 +7,6 @@ class {{ className }} {
         {{#hasProperties}} }{{/hasProperties}}
     );
 
-    {{#properties}}
-    final {{{ propertyType }}} {{ propertyName }};
-    {{/properties}}
-
     factory {{ className }}.fromJson(Map<String, dynamic> json) {
         return {{ className }}(
             {{#properties}}
@@ -18,6 +14,10 @@ class {{ className }} {
             {{/properties}}
         );
     }
+
+    {{#properties}}
+    final {{{ propertyType }}} {{ propertyName }};
+    {{/properties}}
 
     Map<String, dynamic> toJson() {
         return {

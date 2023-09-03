@@ -27,7 +27,7 @@ class {{ className }} {
 
         if (response.statusCode == 200) {
             return {{{ returnType }}}.fromJson(
-                jsonDecode(response.body) as Map<String, dynamic>
+                jsonDecode(response.body) as Map<String, dynamic>,
             );
         } else {
             throw Exception('Failed to load {{methodName}}');

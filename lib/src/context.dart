@@ -123,7 +123,7 @@ extension SchemaGeneration on Schema {
         return {
           'propertyName': name,
           'propertyType': schema.typeName(resolver),
-          'propertyToJson': schema.toJsonExpression(resolver, 'this.$name'),
+          'propertyToJson': schema.toJsonExpression(resolver, name),
           'propertyFromJson':
               schema.fromJsonExpression(resolver, "json['$name']"),
         };
