@@ -1,6 +1,9 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import 'package:spacetraders/src/model/faction.dart';
+import 'package:spacetraders/src/model/meta.dart';
+import 'package:spacetraders/src/model/faction.dart';
 
 class FactionsApi {
     Future<GetFactions200Response> GetFactions(
@@ -39,3 +42,35 @@ class FactionsApi {
     }
 }
 
+class GetFactions200Response {
+    GetFactions200Response(
+        { 
+        required this.data,
+        required this.meta,
+         }
+    );
+
+    final List<Faction> data;
+    final Meta meta;
+
+    factory GetFactions200Response.fromJson(Map<String, dynamic> json) {
+        return GetFactions200Response(
+            data: json['data'],
+            meta: json['meta'],
+        );
+    }
+}class GetFaction200Response {
+    GetFaction200Response(
+        { 
+        required this.data,
+         }
+    );
+
+    final Faction data;
+
+    factory GetFaction200Response.fromJson(Map<String, dynamic> json) {
+        return GetFaction200Response(
+            data: json['data'],
+        );
+    }
+}

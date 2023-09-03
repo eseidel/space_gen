@@ -11,7 +11,7 @@ class Parameter {
   });
 
   final String name;
-  final String type;
+  final SchemaRef type;
 }
 
 class Api {

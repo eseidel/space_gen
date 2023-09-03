@@ -12,6 +12,7 @@ Template loadTemplate(String name) {
   // for when this is installed via pub.  I'm sure it's possible.
   return Template(
     File('lib/templates/$name.mustache').readAsStringSync(),
+    partialResolver: loadTemplate,
     name: name,
   );
 }
@@ -74,17 +75,23 @@ extension SchemaGeneration on Schema {
 extension SchemaRefGeneration on SchemaRef {
   String packageImport(Context context) {
     final name = p.basenameWithoutExtension(uri!.path);
-    return 'package:${context.packageName}/src/model/$name.dart';
+    final snakeName = snakeFromCamel(name);
+    return 'package:${context.packageName}/src/model/$snakeName.dart';
   }
 }
 
 // Separate load context vs. render context?
 class Context {
-  Context(this.specUrl, this.outDir) : resolver = RefResolver(specUrl);
+  Context({
+    required this.specUrl,
+    required this.outDir,
+    required this.packageName,
+  }) : resolver = RefResolver(specUrl);
+
   late Spec spec;
   final Uri specUrl;
   final Directory outDir;
-  final packageName = 'space_gen_example';
+  final String packageName;
   final RefResolver resolver;
 
   Schema resolve(SchemaRef ref) {
@@ -143,22 +150,22 @@ class Context {
     renderRootSchema(this, schema);
   }
 
-  // void renderModels() {
-  //   // This is a hack.
-  //   const modelsPath = '../api-docs/models';
-  //   final dir = Directory(modelsPath);
-  //   for (final entity in dir.listSync()) {
-  //     if (entity is! File) {
-  //       continue;
-  //     }
-  //     renderModelFile(entity.path);
-  //   }
-  // }
+  void renderModels() {
+    // This is a hack.
+    const modelsPath = '../api-docs/models';
+    final dir = Directory(modelsPath);
+    for (final entity in dir.listSync()) {
+      if (entity is! File) {
+        continue;
+      }
+      renderModelFile(entity.path);
+    }
+  }
 
   void render() {
     renderDirectory();
     renderApis();
-    // renderModels();
+    renderModels();
     runDart(['pub', 'get']);
     runDart(['fix', '.']);
     runDart(['format', '.']);
@@ -174,13 +181,24 @@ class RenderContext {
 
   void visitRef(SchemaRef ref) {
     if (ref.schema != null) {
-      collect(ref.schema!);
+      collectSchema(ref.schema!);
     } else {
       imported.add(ref);
     }
   }
 
-  void collect(Schema schema) {
+  void collectApi(Api api) {
+    for (final endpoint in api.endpoints) {
+      for (final response in endpoint.responses.responses) {
+        visitRef(response.content);
+      }
+      for (final param in endpoint.parameters) {
+        visitRef(param.type);
+      }
+    }
+  }
+
+  void collectSchema(Schema schema) {
     if (schema.type == SchemaType.object) {
       inlineSchemas.add(schema);
     }
@@ -197,7 +215,7 @@ class RenderContext {
 void renderRootSchema(Context context, Schema schema) {
   logger.info('Rendering model ${schema.className}');
 
-  final renderContext = RenderContext()..collect(schema);
+  final renderContext = RenderContext()..collectSchema(schema);
   logger
     ..info('To import: ${renderContext.imported}')
     ..info('To render: ${renderContext.inlineSchemas}');
@@ -206,10 +224,9 @@ void renderRootSchema(Context context, Schema schema) {
   for (final ref in renderContext.imported) {
     imports.add(ref.packageImport(context));
   }
-  final models = <Map<String, dynamic>>[];
-  for (final schema in renderContext.inlineSchemas) {
-    models.add(schema.toClassDefinition(context.resolver));
-  }
+  final models = renderContext.inlineSchemas
+      .map((schema) => schema.toClassDefinition(context.resolver))
+      .toList();
 
   final template = loadTemplate('model');
   final output = template.renderString({
@@ -239,14 +256,16 @@ void renderApi(RenderContext renderContext, Context context, Api api) {
           .typeName(context.resolver),
     });
   }
-  // TODO(eseidel): Missing models.
-  final models = <Map<String, dynamic>>[];
+  renderContext.collectApi(api);
+  final imports =
+      renderContext.imported.map((ref) => ref.packageImport(context)).toList();
+  final models = renderContext.inlineSchemas
+      .map((schema) => schema.toClassDefinition(context.resolver))
+      .toList();
   loadTemplate('api').render(
     {
       'className': api.className,
-      'imports': renderContext.imported
-          .map((ref) => ref.packageImport(context))
-          .toList(),
+      'imports': imports,
       'endpoints': endpoints,
       'models': models,
     },

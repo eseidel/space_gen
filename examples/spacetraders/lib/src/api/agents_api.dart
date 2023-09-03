@@ -1,6 +1,10 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import 'package:spacetraders/src/model/agent.dart';
+import 'package:spacetraders/src/model/agent.dart';
+import 'package:spacetraders/src/model/meta.dart';
+import 'package:spacetraders/src/model/agent.dart';
 
 class AgentsApi {
     Future<GetMyAgent200Response> GetMyAgent(
@@ -56,3 +60,49 @@ class AgentsApi {
     }
 }
 
+class GetMyAgent200Response {
+    GetMyAgent200Response(
+        { 
+        required this.data,
+         }
+    );
+
+    final Agent data;
+
+    factory GetMyAgent200Response.fromJson(Map<String, dynamic> json) {
+        return GetMyAgent200Response(
+            data: json['data'],
+        );
+    }
+}class GetAgents200Response {
+    GetAgents200Response(
+        { 
+        required this.data,
+        required this.meta,
+         }
+    );
+
+    final List<Agent> data;
+    final Meta meta;
+
+    factory GetAgents200Response.fromJson(Map<String, dynamic> json) {
+        return GetAgents200Response(
+            data: json['data'],
+            meta: json['meta'],
+        );
+    }
+}class GetAgent200Response {
+    GetAgent200Response(
+        { 
+        required this.data,
+         }
+    );
+
+    final Agent data;
+
+    factory GetAgent200Response.fromJson(Map<String, dynamic> json) {
+        return GetAgent200Response(
+            data: json['data'],
+        );
+    }
+}

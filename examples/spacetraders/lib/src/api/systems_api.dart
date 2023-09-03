@@ -1,6 +1,15 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import 'package:spacetraders/src/model/system.dart';
+import 'package:spacetraders/src/model/meta.dart';
+import 'package:spacetraders/src/model/system.dart';
+import 'package:spacetraders/src/model/waypoint.dart';
+import 'package:spacetraders/src/model/meta.dart';
+import 'package:spacetraders/src/model/waypoint.dart';
+import 'package:spacetraders/src/model/market.dart';
+import 'package:spacetraders/src/model/shipyard.dart';
+import 'package:spacetraders/src/model/jump_gate.dart';
 
 class SystemsApi {
     Future<GetSystems200Response> GetSystems(
@@ -124,3 +133,108 @@ class SystemsApi {
     }
 }
 
+class GetSystems200Response {
+    GetSystems200Response(
+        { 
+        required this.data,
+        required this.meta,
+         }
+    );
+
+    final List<System> data;
+    final Meta meta;
+
+    factory GetSystems200Response.fromJson(Map<String, dynamic> json) {
+        return GetSystems200Response(
+            data: json['data'],
+            meta: json['meta'],
+        );
+    }
+}class GetSystem200Response {
+    GetSystem200Response(
+        { 
+        required this.data,
+         }
+    );
+
+    final System data;
+
+    factory GetSystem200Response.fromJson(Map<String, dynamic> json) {
+        return GetSystem200Response(
+            data: json['data'],
+        );
+    }
+}class GetSystemWaypoints200Response {
+    GetSystemWaypoints200Response(
+        { 
+        required this.data,
+        required this.meta,
+         }
+    );
+
+    final List<Waypoint> data;
+    final Meta meta;
+
+    factory GetSystemWaypoints200Response.fromJson(Map<String, dynamic> json) {
+        return GetSystemWaypoints200Response(
+            data: json['data'],
+            meta: json['meta'],
+        );
+    }
+}class GetWaypoint200Response {
+    GetWaypoint200Response(
+        { 
+        required this.data,
+         }
+    );
+
+    final Waypoint data;
+
+    factory GetWaypoint200Response.fromJson(Map<String, dynamic> json) {
+        return GetWaypoint200Response(
+            data: json['data'],
+        );
+    }
+}class GetMarket200Response {
+    GetMarket200Response(
+        { 
+        required this.data,
+         }
+    );
+
+    final Market data;
+
+    factory GetMarket200Response.fromJson(Map<String, dynamic> json) {
+        return GetMarket200Response(
+            data: json['data'],
+        );
+    }
+}class GetShipyard200Response {
+    GetShipyard200Response(
+        { 
+        required this.data,
+         }
+    );
+
+    final Shipyard data;
+
+    factory GetShipyard200Response.fromJson(Map<String, dynamic> json) {
+        return GetShipyard200Response(
+            data: json['data'],
+        );
+    }
+}class GetJumpGate200Response {
+    GetJumpGate200Response(
+        { 
+        required this.data,
+         }
+    );
+
+    final JumpGate data;
+
+    factory GetJumpGate200Response.fromJson(Map<String, dynamic> json) {
+        return GetJumpGate200Response(
+            data: json['data'],
+        );
+    }
+}

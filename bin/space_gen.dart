@@ -17,7 +17,8 @@ void main(List<String> arguments) async {
   if (outDir.existsSync()) {
     outDir.deleteSync(recursive: true);
   }
-  final context = Context(specUrl, outDir);
+  final context =
+      Context(specUrl: specUrl, outDir: outDir, packageName: 'spacetraders');
   await context.load();
   context.render();
 }
