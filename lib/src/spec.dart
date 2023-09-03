@@ -106,6 +106,10 @@ class Schema {
   final SchemaRef? items;
 }
 
+/// Parse a schema or a reference to a schema.
+/// [inferredName] to give a name to the schema if it is not a ref.
+/// it should include the name of the parent type and the name of the property
+/// if it is a property.
 SchemaRef parseSchemaOrRef({
   required Uri current,
   required Map<String, dynamic> json,
@@ -114,7 +118,8 @@ SchemaRef parseSchemaOrRef({
   if (json.containsKey(r'$ref')) {
     return SchemaRef.fromPath(ref: json[r'$ref'] as String, current: current);
   }
-  // type is required when not a ref.
+  // Add our type to the name if it is not an object.
+  // This is mostly for the Enum case.
   final type = json['type'] as String;
   var name = inferredName;
   if (type != 'object') {
@@ -164,7 +169,7 @@ Schema parseSchema({
   SchemaRef? itemSchema;
   if (items != null) {
     itemSchema = parseSchemaOrRef(
-      inferredName: '$name${type.capitalize()}',
+      inferredName: name,
       current: current,
       json: items,
     );

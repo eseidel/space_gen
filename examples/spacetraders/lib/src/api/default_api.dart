@@ -65,8 +65,8 @@ class GetStatus200Response {
     final GetStatus200ResponseStats stats;
     final GetStatus200ResponseLeaderboards leaderboards;
     final GetStatus200ResponseServerResets serverResets;
-    final List<GetStatus200ResponseAnnouncementsArrayArray> announcements;
-    final List<GetStatus200ResponseLinksArrayArray> links;
+    final List<GetStatus200ResponseAnnouncementsArray> announcements;
+    final List<GetStatus200ResponseLinksArray> links;
 
     factory GetStatus200Response.fromJson(Map<String, dynamic> json) {
         return GetStatus200Response(
@@ -112,8 +112,8 @@ class GetStatus200Response {
          }
     );
 
-    final List<GetStatus200ResponseLeaderboardsMostCreditsArrayArray> mostCredits;
-    final List<GetStatus200ResponseLeaderboardsMostSubmittedChartsArrayArray> mostSubmittedCharts;
+    final List<GetStatus200ResponseLeaderboardsMostCreditsArray> mostCredits;
+    final List<GetStatus200ResponseLeaderboardsMostSubmittedChartsArray> mostSubmittedCharts;
 
     factory GetStatus200ResponseLeaderboards.fromJson(Map<String, dynamic> json) {
         return GetStatus200ResponseLeaderboards(
@@ -121,8 +121,8 @@ class GetStatus200Response {
             mostSubmittedCharts: json['mostSubmittedCharts'],
         );
     }
-}class GetStatus200ResponseLeaderboardsMostCreditsArrayArray {
-    GetStatus200ResponseLeaderboardsMostCreditsArrayArray(
+}class GetStatus200ResponseLeaderboardsMostCreditsArray {
+    GetStatus200ResponseLeaderboardsMostCreditsArray(
         { 
         required this.agentSymbol,
         required this.credits,
@@ -132,14 +132,14 @@ class GetStatus200Response {
     final String agentSymbol;
     final int credits;
 
-    factory GetStatus200ResponseLeaderboardsMostCreditsArrayArray.fromJson(Map<String, dynamic> json) {
-        return GetStatus200ResponseLeaderboardsMostCreditsArrayArray(
+    factory GetStatus200ResponseLeaderboardsMostCreditsArray.fromJson(Map<String, dynamic> json) {
+        return GetStatus200ResponseLeaderboardsMostCreditsArray(
             agentSymbol: json['agentSymbol'],
             credits: json['credits'],
         );
     }
-}class GetStatus200ResponseLeaderboardsMostSubmittedChartsArrayArray {
-    GetStatus200ResponseLeaderboardsMostSubmittedChartsArrayArray(
+}class GetStatus200ResponseLeaderboardsMostSubmittedChartsArray {
+    GetStatus200ResponseLeaderboardsMostSubmittedChartsArray(
         { 
         required this.agentSymbol,
         required this.chartCount,
@@ -149,8 +149,8 @@ class GetStatus200Response {
     final String agentSymbol;
     final int chartCount;
 
-    factory GetStatus200ResponseLeaderboardsMostSubmittedChartsArrayArray.fromJson(Map<String, dynamic> json) {
-        return GetStatus200ResponseLeaderboardsMostSubmittedChartsArrayArray(
+    factory GetStatus200ResponseLeaderboardsMostSubmittedChartsArray.fromJson(Map<String, dynamic> json) {
+        return GetStatus200ResponseLeaderboardsMostSubmittedChartsArray(
             agentSymbol: json['agentSymbol'],
             chartCount: json['chartCount'],
         );
@@ -172,8 +172,8 @@ class GetStatus200Response {
             frequency: json['frequency'],
         );
     }
-}class GetStatus200ResponseAnnouncementsArrayArray {
-    GetStatus200ResponseAnnouncementsArrayArray(
+}class GetStatus200ResponseAnnouncementsArray {
+    GetStatus200ResponseAnnouncementsArray(
         { 
         required this.title,
         required this.body,
@@ -183,14 +183,14 @@ class GetStatus200Response {
     final String title;
     final String body;
 
-    factory GetStatus200ResponseAnnouncementsArrayArray.fromJson(Map<String, dynamic> json) {
-        return GetStatus200ResponseAnnouncementsArrayArray(
+    factory GetStatus200ResponseAnnouncementsArray.fromJson(Map<String, dynamic> json) {
+        return GetStatus200ResponseAnnouncementsArray(
             title: json['title'],
             body: json['body'],
         );
     }
-}class GetStatus200ResponseLinksArrayArray {
-    GetStatus200ResponseLinksArrayArray(
+}class GetStatus200ResponseLinksArray {
+    GetStatus200ResponseLinksArray(
         { 
         required this.name,
         required this.url,
@@ -200,8 +200,8 @@ class GetStatus200Response {
     final String name;
     final String url;
 
-    factory GetStatus200ResponseLinksArrayArray.fromJson(Map<String, dynamic> json) {
-        return GetStatus200ResponseLinksArrayArray(
+    factory GetStatus200ResponseLinksArray.fromJson(Map<String, dynamic> json) {
+        return GetStatus200ResponseLinksArray(
             name: json['name'],
             url: json['url'],
         );

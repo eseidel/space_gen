@@ -633,8 +633,8 @@ class GetMyShips200Response {
 
     final ShipCargo cargo;
     final Cooldown cooldown;
-    final List<ShipRefine201ResponseDataProducedArrayArray> produced;
-    final List<ShipRefine201ResponseDataConsumedArrayArray> consumed;
+    final List<ShipRefine201ResponseDataProducedArray> produced;
+    final List<ShipRefine201ResponseDataConsumedArray> consumed;
 
     factory ShipRefine201ResponseData.fromJson(Map<String, dynamic> json) {
         return ShipRefine201ResponseData(
@@ -644,8 +644,8 @@ class GetMyShips200Response {
             consumed: json['consumed'],
         );
     }
-}class ShipRefine201ResponseDataProducedArrayArray {
-    ShipRefine201ResponseDataProducedArrayArray(
+}class ShipRefine201ResponseDataProducedArray {
+    ShipRefine201ResponseDataProducedArray(
         { 
         required this.tradeSymbol,
         required this.units,
@@ -655,14 +655,14 @@ class GetMyShips200Response {
     final String tradeSymbol;
     final int units;
 
-    factory ShipRefine201ResponseDataProducedArrayArray.fromJson(Map<String, dynamic> json) {
-        return ShipRefine201ResponseDataProducedArrayArray(
+    factory ShipRefine201ResponseDataProducedArray.fromJson(Map<String, dynamic> json) {
+        return ShipRefine201ResponseDataProducedArray(
             tradeSymbol: json['tradeSymbol'],
             units: json['units'],
         );
     }
-}class ShipRefine201ResponseDataConsumedArrayArray {
-    ShipRefine201ResponseDataConsumedArrayArray(
+}class ShipRefine201ResponseDataConsumedArray {
+    ShipRefine201ResponseDataConsumedArray(
         { 
         required this.tradeSymbol,
         required this.units,
@@ -672,8 +672,8 @@ class GetMyShips200Response {
     final String tradeSymbol;
     final int units;
 
-    factory ShipRefine201ResponseDataConsumedArrayArray.fromJson(Map<String, dynamic> json) {
-        return ShipRefine201ResponseDataConsumedArrayArray(
+    factory ShipRefine201ResponseDataConsumedArray.fromJson(Map<String, dynamic> json) {
+        return ShipRefine201ResponseDataConsumedArray(
             tradeSymbol: json['tradeSymbol'],
             units: json['units'],
         );
