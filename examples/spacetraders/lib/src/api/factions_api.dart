@@ -6,13 +6,19 @@ import 'package:spacetraders/src/model/faction.dart';
 import 'package:spacetraders/src/model/meta.dart';
 
 class FactionsApi {
-  Future<GetFactions200Response> getFactions() async {
+  Future<GetFactions200Response> getFactions(
+    int page,
+    int limit,
+  ) async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/factions'),
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'page': page,
+        'limit': limit,
+      }),
     );
 
     if (response.statusCode == 200) {

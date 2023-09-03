@@ -8,13 +8,19 @@ import 'package:spacetraders/src/model/meta.dart';
 import 'package:spacetraders/src/model/ship_cargo.dart';
 
 class ContractsApi {
-  Future<GetContracts200Response> getContracts() async {
+  Future<GetContracts200Response> getContracts(
+    int page,
+    int limit,
+  ) async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/my/contracts'),
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'page': page,
+        'limit': limit,
+      }),
     );
 
     if (response.statusCode == 200) {

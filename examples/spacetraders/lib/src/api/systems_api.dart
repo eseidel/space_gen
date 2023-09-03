@@ -10,13 +10,19 @@ import 'package:spacetraders/src/model/system.dart';
 import 'package:spacetraders/src/model/waypoint.dart';
 
 class SystemsApi {
-  Future<GetSystems200Response> getSystems() async {
+  Future<GetSystems200Response> getSystems(
+    int page,
+    int limit,
+  ) async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/systems'),
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'page': page,
+        'limit': limit,
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -46,7 +52,10 @@ class SystemsApi {
     }
   }
 
-  Future<GetSystemWaypoints200Response> getSystemWaypoints() async {
+  Future<GetSystemWaypoints200Response> getSystemWaypoints(
+    int page,
+    int limit,
+  ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints',
@@ -54,7 +63,10 @@ class SystemsApi {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'page': page,
+        'limit': limit,
+      }),
     );
 
     if (response.statusCode == 200) {

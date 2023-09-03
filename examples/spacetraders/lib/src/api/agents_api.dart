@@ -24,13 +24,19 @@ class AgentsApi {
     }
   }
 
-  Future<GetAgents200Response> getAgents() async {
+  Future<GetAgents200Response> getAgents(
+    int page,
+    int limit,
+  ) async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/agents'),
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'page': page,
+        'limit': limit,
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -42,13 +48,17 @@ class AgentsApi {
     }
   }
 
-  Future<GetAgent200Response> getAgent() async {
+  Future<GetAgent200Response> getAgent(
+    String agentSymbol,
+  ) async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/agents/%7BagentSymbol%7D'),
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'agentSymbol': agentSymbol,
+      }),
     );
 
     if (response.statusCode == 200) {

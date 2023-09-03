@@ -23,13 +23,19 @@ import 'package:spacetraders/src/model/survey.dart';
 import 'package:spacetraders/src/model/waypoint.dart';
 
 class FleetApi {
-  Future<GetMyShips200Response> getMyShips() async {
+  Future<GetMyShips200Response> getMyShips(
+    int page,
+    int limit,
+  ) async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/my/ships'),
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'page': page,
+        'limit': limit,
+      }),
     );
 
     if (response.statusCode == 200) {

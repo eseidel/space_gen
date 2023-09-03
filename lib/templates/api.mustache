@@ -9,9 +9,9 @@ import '{{{.}}}';
 class {{ className }} {
     {{#endpoints}}
     Future<{{{ returnType }}}> {{{ methodName }}}(
-        {{#allParams}}
+        {{#parameters}}
         {{{ paramType }}} {{{ paramName }}},
-        {{/allParams}}
+        {{/parameters}}
     ) async {
         final response = await http.post(
             Uri.parse('{{{url}}}'),
@@ -19,9 +19,9 @@ class {{ className }} {
                 'Content-Type': 'application/json',
             },
             body: jsonEncode({
-                {{#allParams}}
+                {{#parameters}}
                 '{{{ paramName}}}': {{{ paramToJson }}},
-                {{/allParams}}
+                {{/parameters}}
             }),
         );
 

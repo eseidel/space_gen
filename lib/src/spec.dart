@@ -4,12 +4,38 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:space_gen/src/string.dart';
 
+enum SentIn {
+  query,
+  header,
+  path,
+  cookie;
+
+  static SentIn fromJson(String json) {
+    switch (json) {
+      case 'query':
+        return query;
+      case 'header':
+        return header;
+      case 'path':
+        return path;
+      case 'cookie':
+        return cookie;
+      default:
+        throw ArgumentError.value(json, 'json', 'Unknown SentIn');
+    }
+  }
+}
+
 class Parameter {
   const Parameter({
     required this.name,
     required this.type,
+    required this.isRequired,
+    required this.sentIn,
   });
 
+  final bool isRequired;
+  final SentIn sentIn;
   final String name;
   final SchemaRef type;
 }
@@ -273,6 +299,24 @@ Responses parseResponses(
   return Responses(responses: responses);
 }
 
+Parameter parseParameter(Uri current, Map<String, dynamic> json) {
+  final name = json['name'] as String;
+  final required = json['required'] as bool? ?? false;
+  final sentIn = json['in'] as String;
+  final schema = json['schema'] as Map<String, dynamic>;
+  final type = parseSchemaOrRef(
+    inferredName: name,
+    current: current,
+    json: schema,
+  );
+  return Parameter(
+    name: name,
+    isRequired: required,
+    sentIn: SentIn.fromJson(sentIn),
+    type: type,
+  );
+}
+
 Endpoint parseEndpoint(
   Uri current,
   Map<String, dynamic> methodValue,
@@ -287,13 +331,18 @@ Endpoint parseEndpoint(
   );
   final tags = methodValue['tags'] as List<dynamic>;
   final tag = tags.firstOrNull as String? ?? 'Default';
+  final parametersJson = methodValue['parameters'] as List<dynamic>? ?? [];
+  final parameters = parametersJson
+      .cast<Map<String, dynamic>>()
+      .map((p) => parseParameter(current, p))
+      .toList();
   return Endpoint(
     path: path,
     method: method,
     tag: tag,
     responses: responses,
     operationId: operationId,
-    parameters: [],
+    parameters: parameters,
   );
 }
 

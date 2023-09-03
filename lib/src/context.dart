@@ -115,7 +115,7 @@ extension SchemaGeneration on Schema {
     }
   }
 
-  Map<String, dynamic> toClassDefinition(RefResolver resolver) {
+  Map<String, dynamic> toTemplateContext(RefResolver resolver) {
     final renderProperties = properties.entries.map(
       (entry) {
         final name = entry.key;
@@ -133,6 +133,20 @@ extension SchemaGeneration on Schema {
       'className': className,
       'hasProperties': renderProperties.isNotEmpty,
       'properties': renderProperties,
+    };
+  }
+}
+
+extension ParameterGeneration on Parameter {
+  Map<String, dynamic> toTemplateContext(
+    RefResolver resolver,
+  ) {
+    final schema = resolver.resolve(type);
+    return {
+      'paramName': name,
+      'paramType': schema.typeName(resolver),
+      'paramToJson': schema.toJsonExpression(resolver, name),
+      'paramFromJson': schema.fromJsonExpression(resolver, "json['$name']"),
     };
   }
 }
@@ -312,7 +326,7 @@ void renderRootSchema(Context context, Schema schema) {
     imports.add(ref.packageImport(context));
   }
   final models = renderContext.inlineSchemas
-      .map((schema) => schema.toClassDefinition(context.resolver))
+      .map((schema) => schema.toTemplateContext(context.resolver))
       .toList();
 
   context.renderTemplate(
@@ -326,27 +340,24 @@ void renderRootSchema(Context context, Schema schema) {
 }
 
 void renderApi(RenderContext renderContext, Context context, Api api) {
+  final resolver = context.resolver;
   final endpoints = <Map<String, dynamic>>[];
   for (final endpoint in api.endpoints) {
+    final parameters =
+        endpoint.parameters.map((p) => p.toTemplateContext(resolver)).toList();
     endpoints.add({
       'url': '${endpoint.uri(context)}',
       'methodName': endpoint.methodName,
-      'allParams': [
-        for (final param in endpoint.parameters)
-          {
-            'paramName': param.name,
-            'paramType': param.type,
-          },
-      ],
-      'returnType': endpoint.responses.responses.first.content.schema!
-          .typeName(context.resolver),
+      'parameters': parameters,
+      'returnType':
+          endpoint.responses.responses.first.content.schema!.typeName(resolver),
     });
   }
   renderContext.collectApi(api);
   final imports =
       renderContext.imported.map((ref) => ref.packageImport(context)).toSet();
   final models = renderContext.inlineSchemas
-      .map((schema) => schema.toClassDefinition(context.resolver))
+      .map((schema) => schema.toTemplateContext(resolver))
       .toList();
   context.renderTemplate(
     template: 'api',
