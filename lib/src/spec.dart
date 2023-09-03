@@ -57,7 +57,6 @@ class RefResolver {
   final Uri baseUrl;
   final Map<Uri, Schema> _schemas = {};
 
-  // TODO(eseidel): All loads should be done before resolve time.
   Schema resolve(SchemaRef ref) {
     if (ref.schema != null) {
       return ref.schema!;
@@ -215,9 +214,87 @@ class Endpoint {
   final String path;
   final Method method;
   final String tag;
-  final Map<String, dynamic> responses;
+  final Responses responses;
   final String operationId;
   final List<Parameter> parameters;
+}
+
+class Response {
+  const Response({
+    required this.code,
+    required this.content,
+  });
+
+  final int code;
+  // The official spec has a map here by mime type, but we only support json.
+  final SchemaRef content;
+}
+
+class Responses {
+  const Responses({
+    required this.responses,
+  });
+
+  final List<Response> responses;
+}
+
+Responses parseResponses(
+  Uri current,
+  Map<String, dynamic> json,
+  String operationId,
+) {
+  // Hack to make get cooldown compile.
+  final responseCodes = json.keys.toList()..remove('204');
+  if (responseCodes.length != 1) {
+    throw UnimplementedError(
+      'Multiple responses not supported, $operationId',
+    );
+  }
+  final camelName = operationId.splitMapJoin(
+    '-',
+    onMatch: (m) => '',
+    onNonMatch: (n) => n.capitalize(),
+  );
+  final responseCode = responseCodes.first;
+  final className = '$camelName${responseCode}Response';
+  final responseTypes = json[responseCode] as Map<String, dynamic>;
+  final content = responseTypes['content'] as Map<String, dynamic>;
+  final jsonResponse = content['application/json'] as Map<String, dynamic>;
+  final responses = [
+    Response(
+      code: int.parse(responseCode),
+      content: parseSchemaOrRef(
+        inferredName: className,
+        current: current,
+        json: jsonResponse['schema'] as Map<String, dynamic>,
+      ),
+    ),
+  ];
+  return Responses(responses: responses);
+}
+
+Endpoint parseEndpoint(
+  Uri current,
+  Map<String, dynamic> methodValue,
+  String path,
+  Method method,
+) {
+  final operationId = methodValue['operationId'] as String;
+  final responses = parseResponses(
+    current,
+    methodValue['responses'] as Map<String, dynamic>,
+    operationId,
+  );
+  final tags = methodValue['tags'] as List<dynamic>;
+  final tag = tags.firstOrNull as String? ?? 'Default';
+  return Endpoint(
+    path: path,
+    method: method,
+    tag: tag,
+    responses: responses,
+    operationId: operationId,
+    parameters: [],
+  );
 }
 
 // Spec calls this the "OpenAPI Object"
@@ -262,17 +339,12 @@ class Spec {
         if (methodValue == null) {
           continue;
         }
-        final responses = methodValue['responses'] as Map<String, dynamic>;
-        final tags = methodValue['tags'] as List<dynamic>;
-        final tag = tags.firstOrNull as String? ?? 'Default';
         endpoints.add(
-          Endpoint(
-            path: path,
-            method: method,
-            tag: tag,
-            responses: responses,
-            operationId: methodValue['operationId'] as String,
-            parameters: [],
+          parseEndpoint(
+            uri,
+            methodValue,
+            path,
+            method,
           ),
         );
       }

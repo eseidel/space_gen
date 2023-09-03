@@ -1,3 +1,8 @@
+{{#imports}}
+import '{{{.}}}';
+{{/imports}}
+
+{{#models}}
 class {{ className }} {
     {{ className }}(
         {{#hasProperties}}{ {{/hasProperties}}
@@ -19,3 +24,4 @@ class {{ className }} {
         );
     }
 }
+{{/models}}

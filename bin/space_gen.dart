@@ -13,7 +13,10 @@ void main(List<String> arguments) async {
   final absolutePath = p.absolute(specPath);
   final specUrl = Uri.parse(absolutePath);
   // Could make clearing of the directory optional.
-  final outDir = Directory(outDirPath)..deleteSync(recursive: true);
+  final outDir = Directory(outDirPath);
+  if (outDir.existsSync()) {
+    outDir.deleteSync(recursive: true);
+  }
   final context = Context(specUrl, outDir);
   await context.load();
   context.render();
