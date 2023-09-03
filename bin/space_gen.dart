@@ -6,8 +6,8 @@ import 'package:space_gen/src/logger.dart';
 
 void main(List<String> arguments) async {
   // These could eventually be passed in as arguments
-  const specPath = '../api-docs/reference/SpaceTraders.json';
-  const outDirPath = 'out';
+  const specPath = 'examples/specs/spacetraders/reference/SpaceTraders.json';
+  const outDirPath = 'examples/spacetraders';
 
   logger.info('Generating $specPath to $outDirPath');
   final absolutePath = p.absolute(specPath);
