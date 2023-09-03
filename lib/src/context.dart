@@ -55,6 +55,20 @@ extension SchemaGeneration on Schema {
     }
     // throw UnimplementedError('Unknown type $type');
   }
+
+  Map<String, dynamic> toClassDefinition(RefResolver resolver) {
+    final renderProperties = properties.entries.map(
+      (entry) => {
+        'propertyName': entry.key,
+        'propertyType': resolver.resolve(entry.value).typeName(resolver),
+      },
+    );
+    return {
+      'className': className,
+      'hasProperties': renderProperties.isNotEmpty,
+      'properties': renderProperties,
+    };
+  }
 }
 
 extension SchemaRefGeneration on SchemaRef {
@@ -194,18 +208,7 @@ void renderRootSchema(Context context, Schema schema) {
   }
   final models = <Map<String, dynamic>>[];
   for (final schema in renderContext.inlineSchemas) {
-    final properties = <Map<String, dynamic>>[];
-    for (final entry in schema.properties.entries) {
-      properties.add({
-        'propertyName': entry.key,
-        'propertyType': context.resolve(entry.value).typeName(context.resolver),
-      });
-    }
-    models.add({
-      'className': schema.className,
-      'hasProperties': properties.isNotEmpty,
-      'properties': properties,
-    });
+    models.add(schema.toClassDefinition(context.resolver));
   }
 
   final template = loadTemplate('model');
@@ -236,6 +239,8 @@ void renderApi(RenderContext renderContext, Context context, Api api) {
           .typeName(context.resolver),
     });
   }
+  // TODO(eseidel): Missing models.
+  final models = <Map<String, dynamic>>[];
   loadTemplate('api').render(
     {
       'className': api.className,
@@ -243,6 +248,7 @@ void renderApi(RenderContext renderContext, Context context, Api api) {
           .map((ref) => ref.packageImport(context))
           .toList(),
       'endpoints': endpoints,
+      'models': models,
     },
     context.fileForApi(api).openWrite(),
   );
