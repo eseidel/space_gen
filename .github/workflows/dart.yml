@@ -19,7 +19,7 @@ jobs:
       - uses: dart-lang/setup-dart@v1
 
       - name: Install dependencies
-        run: dart pub global activate very_good_cli && dart pub global run very_good_cli packages get -r
+        run: dart pub global activate very_good_cli && very_good packages get -r
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
