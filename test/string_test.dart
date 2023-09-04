@@ -14,4 +14,17 @@ void main() {
     expect(camelFromScreamingCaps('CAMEL_FROM_CAPS'), 'camelFromCaps');
     expect(camelFromScreamingCaps('camel_from_caps'), 'camelFromCaps');
   });
+
+  test('isReservedWord', () {
+    expect(isReservedWord('void'), true);
+    expect(isReservedWord('int'), true);
+    expect(isReservedWord('double'), true);
+    expect(isReservedWord('num'), true);
+    expect(isReservedWord('bool'), true);
+    expect(isReservedWord('dynamic'), true);
+    expect(isReservedWord('String'), false);
+    expect(isReservedWord('string'), false);
+    expect(isReservedWord('String'), false);
+    expect(isReservedWord('string'), false);
+  });
 }
