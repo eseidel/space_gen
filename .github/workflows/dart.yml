@@ -18,12 +18,13 @@ jobs:
       # https://github.com/dart-lang/setup-dart/blob/main/README.md
       - uses: dart-lang/setup-dart@v1
 
-      # https://github.com/VeryGoodOpenSource/very_good_cli/issues/774
-      - name: Install very_good
-        run: dart pub global activate very_good_cli && very_good --analytics true
-
       - name: Install dependencies
-        run: very_good packages get -r
+        run: pub get
+
+      # https://github.com/VeryGoodOpenSource/very_good_cli/issues/774
+      - name: Install example dependencies
+        run: pub get
+        working-directory: example/spacetraders
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
