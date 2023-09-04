@@ -6,6 +6,8 @@ just enough to generate beautiful Dart bindings for spacetraders.io.
 
 Patches welcome to expand it to support a wider set of OpenAPI.
 
+NOTE: This readme as written is aspirational.  The code is not yet all working.
+
 ## Usage
 
 dart run space_gen
@@ -13,10 +15,10 @@ dart run space_gen
 ## Values
 * Generates good quality, modern Dart code
 * Not a complete implementation of OpenAPI
-* Generates layered output, which can be used in pieces
-* Generates testable (and tested) code
+* Generates layered output, which can be used in pieces (TBD)
+* Generates testable (and tested) code (TBD)
 
-## Intended Design
+## Intended Design (TBD)
 - Phases
   - Parse OpenAPI
   - Resolve references
@@ -24,7 +26,7 @@ dart run space_gen
 
 ## Advantages over Open API Generator 7.0.0
 * Dart 3.0+ only (sound null safety)
-* Model code round trips through JSON correctly
+* Model code round trips through JSON correctly (TBD)
 
 ## Why not just contribute to OpenAPI?
 
