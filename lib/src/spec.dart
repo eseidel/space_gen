@@ -235,6 +235,7 @@ class Endpoint {
     required this.responses,
     required this.parameters,
     required this.operationId,
+    required this.requestBody,
   });
 
   final String path;
@@ -243,6 +244,7 @@ class Endpoint {
   final Responses responses;
   final String operationId;
   final List<Parameter> parameters;
+  final SchemaRef? requestBody;
 }
 
 class Response {
@@ -336,6 +338,23 @@ Endpoint parseEndpoint(
       .cast<Map<String, dynamic>>()
       .map((p) => parseParameter(current, p))
       .toList();
+  final requestBodyJson = methodValue['requestBody'] as Map<String, dynamic>?;
+  SchemaRef? requestBody;
+  if (requestBodyJson != null) {
+    final camelName = operationId.splitMapJoin(
+      '-',
+      onMatch: (m) => '',
+      onNonMatch: (n) => n.capitalize(),
+    );
+    final inferredName = '${camelName}Request';
+    final content = requestBodyJson['content'] as Map<String, dynamic>;
+    final json = content['application/json'] as Map<String, dynamic>;
+    requestBody = parseSchemaOrRef(
+      inferredName: inferredName,
+      current: current,
+      json: json['schema'] as Map<String, dynamic>,
+    );
+  }
   return Endpoint(
     path: path,
     method: method,
@@ -343,6 +362,7 @@ Endpoint parseEndpoint(
     responses: responses,
     operationId: operationId,
     parameters: parameters,
+    requestBody: requestBody,
   );
 }
 

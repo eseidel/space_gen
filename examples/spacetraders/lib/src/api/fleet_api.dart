@@ -47,13 +47,17 @@ class FleetApi {
     }
   }
 
-  Future<PurchaseShip201Response> purchaseShip() async {
+  Future<PurchaseShip201Response> purchaseShip(
+    PurchaseShipRequest purchaseShipRequest,
+  ) async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/my/ships'),
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'purchaseShipRequest': purchaseShipRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -123,7 +127,9 @@ class FleetApi {
     }
   }
 
-  Future<ShipRefine201Response> shipRefine() async {
+  Future<ShipRefine201Response> shipRefine(
+    ShipRefineRequest shipRefineRequest,
+  ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/refine',
@@ -131,7 +137,9 @@ class FleetApi {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'shipRefineRequest': shipRefineRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -223,7 +231,9 @@ class FleetApi {
     }
   }
 
-  Future<ExtractResources201Response> extractResources() async {
+  Future<ExtractResources201Response> extractResources(
+    ExtractResourcesRequest extractResourcesRequest,
+  ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/extract',
@@ -231,7 +241,9 @@ class FleetApi {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'extractResourcesRequest': extractResourcesRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -243,7 +255,9 @@ class FleetApi {
     }
   }
 
-  Future<Jettison200Response> jettison() async {
+  Future<Jettison200Response> jettison(
+    JettisonRequest jettisonRequest,
+  ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/jettison',
@@ -251,7 +265,9 @@ class FleetApi {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'jettisonRequest': jettisonRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -263,7 +279,9 @@ class FleetApi {
     }
   }
 
-  Future<JumpShip200Response> jumpShip() async {
+  Future<JumpShip200Response> jumpShip(
+    JumpShipRequest jumpShipRequest,
+  ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/jump',
@@ -271,7 +289,9 @@ class FleetApi {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'jumpShipRequest': jumpShipRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -283,7 +303,9 @@ class FleetApi {
     }
   }
 
-  Future<NavigateShip200Response> navigateShip() async {
+  Future<NavigateShip200Response> navigateShip(
+    NavigateShipRequest navigateShipRequest,
+  ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/navigate',
@@ -291,7 +313,9 @@ class FleetApi {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'navigateShipRequest': navigateShipRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -321,13 +345,17 @@ class FleetApi {
     }
   }
 
-  Future<PatchShipNav200Response> patchShipNav() async {
+  Future<PatchShipNav200Response> patchShipNav(
+    PatchShipNavRequest patchShipNavRequest,
+  ) async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/nav'),
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'patchShipNavRequest': patchShipNavRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -339,7 +367,9 @@ class FleetApi {
     }
   }
 
-  Future<WarpShip200Response> warpShip() async {
+  Future<WarpShip200Response> warpShip(
+    WarpShipRequest warpShipRequest,
+  ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/warp',
@@ -347,7 +377,9 @@ class FleetApi {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'warpShipRequest': warpShipRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -359,7 +391,9 @@ class FleetApi {
     }
   }
 
-  Future<SellCargo201Response> sellCargo() async {
+  Future<SellCargo201Response> sellCargo(
+    SellCargoRequest sellCargoRequest,
+  ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/sell',
@@ -367,7 +401,9 @@ class FleetApi {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'sellCargoRequest': sellCargoRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -439,7 +475,9 @@ class FleetApi {
     }
   }
 
-  Future<RefuelShip200Response> refuelShip() async {
+  Future<RefuelShip200Response> refuelShip(
+    RefuelShipRequest refuelShipRequest,
+  ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/refuel',
@@ -447,7 +485,9 @@ class FleetApi {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'refuelShipRequest': refuelShipRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -459,7 +499,9 @@ class FleetApi {
     }
   }
 
-  Future<PurchaseCargo201Response> purchaseCargo() async {
+  Future<PurchaseCargo201Response> purchaseCargo(
+    PurchaseCargoRequest purchaseCargoRequest,
+  ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/purchase',
@@ -467,7 +509,9 @@ class FleetApi {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'purchaseCargoRequest': purchaseCargoRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -479,7 +523,9 @@ class FleetApi {
     }
   }
 
-  Future<TransferCargo200Response> transferCargo() async {
+  Future<TransferCargo200Response> transferCargo(
+    TransferCargoRequest transferCargoRequest,
+  ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/transfer',
@@ -487,7 +533,9 @@ class FleetApi {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'transferCargoRequest': transferCargoRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -539,7 +587,9 @@ class FleetApi {
     }
   }
 
-  Future<InstallMount201Response> installMount() async {
+  Future<InstallMount201Response> installMount(
+    InstallMountRequest installMountRequest,
+  ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/mounts/install',
@@ -547,7 +597,9 @@ class FleetApi {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'installMountRequest': installMountRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -559,7 +611,9 @@ class FleetApi {
     }
   }
 
-  Future<RemoveMount201Response> removeMount() async {
+  Future<RemoveMount201Response> removeMount(
+    RemoveMountRequest removeMountRequest,
+  ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/mounts/remove',
@@ -567,7 +621,9 @@ class FleetApi {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'removeMountRequest': removeMountRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -654,6 +710,30 @@ class PurchaseShip201ResponseData {
       'agent': agent.toJson(),
       'ship': ship.toJson(),
       'transaction': transaction.toJson(),
+    };
+  }
+}
+
+class PurchaseShipRequest {
+  PurchaseShipRequest({
+    required this.shipType,
+    required this.waypointSymbol,
+  });
+
+  factory PurchaseShipRequest.fromJson(Map<String, dynamic> json) {
+    return PurchaseShipRequest(
+      shipType: json['shipType'] as String,
+      waypointSymbol: json['waypointSymbol'] as String,
+    );
+  }
+
+  final String shipType;
+  final String waypointSymbol;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'shipType': shipType,
+      'waypointSymbol': waypointSymbol,
     };
   }
 }
@@ -854,6 +934,26 @@ class ShipRefine201ResponseDataConsumedArray {
     return {
       'tradeSymbol': tradeSymbol,
       'units': units,
+    };
+  }
+}
+
+class ShipRefineRequest {
+  ShipRefineRequest({
+    required this.produce,
+  });
+
+  factory ShipRefineRequest.fromJson(Map<String, dynamic> json) {
+    return ShipRefineRequest(
+      produce: json['produce'] as String,
+    );
+  }
+
+  final String produce;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'produce': produce,
     };
   }
 }
@@ -1065,6 +1165,26 @@ class ExtractResources201ResponseData {
   }
 }
 
+class ExtractResourcesRequest {
+  ExtractResourcesRequest({
+    required this.survey,
+  });
+
+  factory ExtractResourcesRequest.fromJson(Map<String, dynamic> json) {
+    return ExtractResourcesRequest(
+      survey: Survey.fromJson(json['survey'] as Map<String, dynamic>),
+    );
+  }
+
+  final Survey survey;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'survey': survey.toJson(),
+    };
+  }
+}
+
 class Jettison200Response {
   Jettison200Response({
     required this.data,
@@ -1103,6 +1223,30 @@ class Jettison200ResponseData {
   Map<String, dynamic> toJson() {
     return {
       'cargo': cargo.toJson(),
+    };
+  }
+}
+
+class JettisonRequest {
+  JettisonRequest({
+    required this.symbol,
+    required this.units,
+  });
+
+  factory JettisonRequest.fromJson(Map<String, dynamic> json) {
+    return JettisonRequest(
+      symbol: json['symbol'] as String,
+      units: json['units'] as int,
+    );
+  }
+
+  final String symbol;
+  final int units;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'symbol': symbol,
+      'units': units,
     };
   }
 }
@@ -1153,6 +1297,26 @@ class JumpShip200ResponseData {
   }
 }
 
+class JumpShipRequest {
+  JumpShipRequest({
+    required this.systemSymbol,
+  });
+
+  factory JumpShipRequest.fromJson(Map<String, dynamic> json) {
+    return JumpShipRequest(
+      systemSymbol: json['systemSymbol'] as String,
+    );
+  }
+
+  final String systemSymbol;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'systemSymbol': systemSymbol,
+    };
+  }
+}
+
 class NavigateShip200Response {
   NavigateShip200Response({
     required this.data,
@@ -1199,6 +1363,26 @@ class NavigateShip200ResponseData {
   }
 }
 
+class NavigateShipRequest {
+  NavigateShipRequest({
+    required this.waypointSymbol,
+  });
+
+  factory NavigateShipRequest.fromJson(Map<String, dynamic> json) {
+    return NavigateShipRequest(
+      waypointSymbol: json['waypointSymbol'] as String,
+    );
+  }
+
+  final String waypointSymbol;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'waypointSymbol': waypointSymbol,
+    };
+  }
+}
+
 class GetShipNav200Response {
   GetShipNav200Response({
     required this.data,
@@ -1235,6 +1419,26 @@ class PatchShipNav200Response {
   Map<String, dynamic> toJson() {
     return {
       'data': data.toJson(),
+    };
+  }
+}
+
+class PatchShipNavRequest {
+  PatchShipNavRequest({
+    required this.flightMode,
+  });
+
+  factory PatchShipNavRequest.fromJson(Map<String, dynamic> json) {
+    return PatchShipNavRequest(
+      flightMode: json['flightMode'] as String,
+    );
+  }
+
+  final String flightMode;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'flightMode': flightMode,
     };
   }
 }
@@ -1281,6 +1485,26 @@ class WarpShip200ResponseData {
     return {
       'fuel': fuel.toJson(),
       'nav': nav.toJson(),
+    };
+  }
+}
+
+class WarpShipRequest {
+  WarpShipRequest({
+    required this.waypointSymbol,
+  });
+
+  factory WarpShipRequest.fromJson(Map<String, dynamic> json) {
+    return WarpShipRequest(
+      waypointSymbol: json['waypointSymbol'] as String,
+    );
+  }
+
+  final String waypointSymbol;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'waypointSymbol': waypointSymbol,
     };
   }
 }
@@ -1333,6 +1557,30 @@ class SellCargo201ResponseData {
       'agent': agent.toJson(),
       'cargo': cargo.toJson(),
       'transaction': transaction.toJson(),
+    };
+  }
+}
+
+class SellCargoRequest {
+  SellCargoRequest({
+    required this.symbol,
+    required this.units,
+  });
+
+  factory SellCargoRequest.fromJson(Map<String, dynamic> json) {
+    return SellCargoRequest(
+      symbol: json['symbol'] as String,
+      units: json['units'] as int,
+    );
+  }
+
+  final String symbol;
+  final int units;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'symbol': symbol,
+      'units': units,
     };
   }
 }
@@ -1547,6 +1795,26 @@ class RefuelShip200ResponseData {
   }
 }
 
+class RefuelShipRequest {
+  RefuelShipRequest({
+    required this.units,
+  });
+
+  factory RefuelShipRequest.fromJson(Map<String, dynamic> json) {
+    return RefuelShipRequest(
+      units: json['units'] as int,
+    );
+  }
+
+  final int units;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'units': units,
+    };
+  }
+}
+
 class PurchaseCargo201Response {
   PurchaseCargo201Response({
     required this.data,
@@ -1599,6 +1867,30 @@ class PurchaseCargo201ResponseData {
   }
 }
 
+class PurchaseCargoRequest {
+  PurchaseCargoRequest({
+    required this.symbol,
+    required this.units,
+  });
+
+  factory PurchaseCargoRequest.fromJson(Map<String, dynamic> json) {
+    return PurchaseCargoRequest(
+      symbol: json['symbol'] as String,
+      units: json['units'] as int,
+    );
+  }
+
+  final String symbol;
+  final int units;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'symbol': symbol,
+      'units': units,
+    };
+  }
+}
+
 class TransferCargo200Response {
   TransferCargo200Response({
     required this.data,
@@ -1637,6 +1929,34 @@ class TransferCargo200ResponseData {
   Map<String, dynamic> toJson() {
     return {
       'cargo': cargo.toJson(),
+    };
+  }
+}
+
+class TransferCargoRequest {
+  TransferCargoRequest({
+    required this.tradeSymbol,
+    required this.units,
+    required this.shipSymbol,
+  });
+
+  factory TransferCargoRequest.fromJson(Map<String, dynamic> json) {
+    return TransferCargoRequest(
+      tradeSymbol: json['tradeSymbol'] as String,
+      units: json['units'] as int,
+      shipSymbol: json['shipSymbol'] as String,
+    );
+  }
+
+  final String tradeSymbol;
+  final int units;
+  final String shipSymbol;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'tradeSymbol': tradeSymbol,
+      'units': units,
+      'shipSymbol': shipSymbol,
     };
   }
 }
@@ -1763,6 +2083,26 @@ class InstallMount201ResponseData {
   }
 }
 
+class InstallMountRequest {
+  InstallMountRequest({
+    required this.symbol,
+  });
+
+  factory InstallMountRequest.fromJson(Map<String, dynamic> json) {
+    return InstallMountRequest(
+      symbol: json['symbol'] as String,
+    );
+  }
+
+  final String symbol;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'symbol': symbol,
+    };
+  }
+}
+
 class RemoveMount201Response {
   RemoveMount201Response({
     required this.data,
@@ -1817,6 +2157,26 @@ class RemoveMount201ResponseData {
       'mounts': mounts.map((e) => e.toJson()).toList(),
       'cargo': cargo.toJson(),
       'transaction': transaction.toJson(),
+    };
+  }
+}
+
+class RemoveMountRequest {
+  RemoveMountRequest({
+    required this.symbol,
+  });
+
+  factory RemoveMountRequest.fromJson(Map<String, dynamic> json) {
+    return RemoveMountRequest(
+      symbol: json['symbol'] as String,
+    );
+  }
+
+  final String symbol;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'symbol': symbol,
     };
   }
 }

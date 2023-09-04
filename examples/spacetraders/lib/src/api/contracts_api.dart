@@ -70,7 +70,9 @@ class ContractsApi {
     }
   }
 
-  Future<DeliverContract200Response> deliverContract() async {
+  Future<DeliverContract200Response> deliverContract(
+    DeliverContractRequest deliverContractRequest,
+  ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D/deliver',
@@ -78,7 +80,9 @@ class ContractsApi {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'deliverContractRequest': deliverContractRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -245,6 +249,34 @@ class DeliverContract200ResponseData {
     return {
       'contract': contract.toJson(),
       'cargo': cargo.toJson(),
+    };
+  }
+}
+
+class DeliverContractRequest {
+  DeliverContractRequest({
+    required this.shipSymbol,
+    required this.tradeSymbol,
+    required this.units,
+  });
+
+  factory DeliverContractRequest.fromJson(Map<String, dynamic> json) {
+    return DeliverContractRequest(
+      shipSymbol: json['shipSymbol'] as String,
+      tradeSymbol: json['tradeSymbol'] as String,
+      units: json['units'] as int,
+    );
+  }
+
+  final String shipSymbol;
+  final String tradeSymbol;
+  final int units;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'shipSymbol': shipSymbol,
+      'tradeSymbol': tradeSymbol,
+      'units': units,
     };
   }
 }

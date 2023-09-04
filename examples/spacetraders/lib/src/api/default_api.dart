@@ -26,13 +26,17 @@ class DefaultApi {
     }
   }
 
-  Future<Register201Response> register() async {
+  Future<Register201Response> register(
+    RegisterRequest registerRequest,
+  ) async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/register'),
       headers: {
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({}),
+      body: jsonEncode({
+        'registerRequest': registerRequest.toJson(),
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -366,6 +370,34 @@ class Register201ResponseData {
       'faction': faction.toJson(),
       'ship': ship.toJson(),
       'token': token,
+    };
+  }
+}
+
+class RegisterRequest {
+  RegisterRequest({
+    required this.faction,
+    required this.symbol,
+    required this.email,
+  });
+
+  factory RegisterRequest.fromJson(Map<String, dynamic> json) {
+    return RegisterRequest(
+      faction: json['faction'] as String,
+      symbol: json['symbol'] as String,
+      email: json['email'] as String,
+    );
+  }
+
+  final String faction;
+  final String symbol;
+  final String email;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'faction': faction,
+      'symbol': symbol,
+      'email': email,
     };
   }
 }

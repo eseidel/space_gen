@@ -41,6 +41,36 @@ extension EndpointGeneration on Endpoint {
   }
 
   Uri uri(Context context) => Uri.parse('${context.spec.serverUrl}$path');
+
+  Map<String, dynamic> toTemplateContext(Context context) {
+    final resolver = context.resolver;
+    final parameters = this
+        .parameters
+        .map(
+          (param) => param.toTemplateContext(resolver),
+        )
+        .toList();
+    if (requestBody != null) {
+      final bodySchema = resolver.resolve(requestBody!);
+      final typeName = bodySchema.typeName(resolver);
+      final paramName = typeName[0].toLowerCase() + typeName.substring(1);
+      parameters.add({
+        'paramName': paramName,
+        'paramType': typeName,
+        'paramToJson': bodySchema.toJsonExpression(resolver, paramName),
+        'paramFromJson': bodySchema.fromJsonExpression(resolver, 'json'),
+      });
+    }
+    return {
+      'methodName': methodName,
+      'httpMethod': method,
+      'path': path,
+      'url': uri(context),
+      'parameters': parameters,
+      'returnType':
+          responses.responses.first.content.schema!.typeName(resolver),
+    };
+  }
 }
 
 extension SchemaGeneration on Schema {
@@ -296,6 +326,9 @@ class RenderContext {
       for (final param in endpoint.parameters) {
         visitRef(param.type);
       }
+      if (endpoint.requestBody != null) {
+        visitRef(endpoint.requestBody!);
+      }
     }
   }
 
@@ -341,18 +374,8 @@ void renderRootSchema(Context context, Schema schema) {
 
 void renderApi(RenderContext renderContext, Context context, Api api) {
   final resolver = context.resolver;
-  final endpoints = <Map<String, dynamic>>[];
-  for (final endpoint in api.endpoints) {
-    final parameters =
-        endpoint.parameters.map((p) => p.toTemplateContext(resolver)).toList();
-    endpoints.add({
-      'url': '${endpoint.uri(context)}',
-      'methodName': endpoint.methodName,
-      'parameters': parameters,
-      'returnType':
-          endpoint.responses.responses.first.content.schema!.typeName(resolver),
-    });
-  }
+  final endpoints =
+      api.endpoints.map((e) => e.toTemplateContext(context)).toList();
   renderContext.collectApi(api);
   final imports =
       renderContext.imported.map((ref) => ref.packageImport(context)).toSet();
