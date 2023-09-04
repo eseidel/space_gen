@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/eseidel/space_gen/graph/badge.svg?token=nOnPSYpPXi)](https://codecov.io/gh/eseidel/space_gen)
+
 # space_gen
 Simple, hackable Open API generator for Dart
 
