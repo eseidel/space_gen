@@ -24,7 +24,7 @@ jobs:
       # https://github.com/VeryGoodOpenSource/very_good_cli/issues/774
       - name: Install example dependencies
         run: dart pub get
-        working-directory: example/spacetraders
+        working-directory: examples/spacetraders
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
