@@ -20,16 +20,13 @@ jobs:
 
       - name: Install dependencies
         run: dart pub get
-        working-directory: packages/cli
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
-        working-directory: packages/cli
 
       # Consider passing '--fatal-infos' for slightly stricter analysis.
       - name: Analyze project source
         run: dart analyze
-        working-directory: packages/cli
 
       - name: Run tests with coverage
         run: ./coverage.sh
