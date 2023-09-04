@@ -18,8 +18,11 @@ jobs:
       # https://github.com/dart-lang/setup-dart/blob/main/README.md
       - uses: dart-lang/setup-dart@v1
 
+      - name: Install very_good
+        run: dart pub global activate very_good_cli
+
       - name: Install dependencies
-        run: dart pub global activate very_good_cli && very_good packages --analytics false get -r
+        run: very_good packages get -r
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
