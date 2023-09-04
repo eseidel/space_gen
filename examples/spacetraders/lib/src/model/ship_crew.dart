@@ -13,7 +13,7 @@ class ShipCrew {
       current: json['current'] as int,
       required: json['required'] as int,
       capacity: json['capacity'] as int,
-      rotation: json['rotation'] as String,
+      rotation: ShipCrewRotationString.fromJson(json['rotation'] as String),
       morale: json['morale'] as int,
       wages: json['wages'] as int,
     );
@@ -22,7 +22,7 @@ class ShipCrew {
   final int current;
   final int required;
   final int capacity;
-  final String rotation;
+  final ShipCrewRotationString rotation;
   final int morale;
   final int wages;
 
@@ -31,9 +31,39 @@ class ShipCrew {
       'current': current,
       'required': required,
       'capacity': capacity,
-      'rotation': rotation,
+      'rotation': rotation.toJson(),
       'morale': morale,
       'wages': wages,
     };
+  }
+}
+
+enum ShipCrewRotationString {
+  strict('STRICT'),
+  relaxed('RELAXED'),
+  ;
+
+  const ShipCrewRotationString(this.value);
+
+  factory ShipCrewRotationString.fromJson(String json) {
+    switch (json) {
+      case 'STRICT':
+        return ShipCrewRotationString.strict;
+      case 'RELAXED':
+        return ShipCrewRotationString.relaxed;
+      default:
+        throw Exception('Unknown ShipCrewRotationString value: $json');
+    }
+  }
+
+  final String value;
+
+  String toJson() {
+    switch (this) {
+      case ShipCrewRotationString.strict:
+        return 'STRICT';
+      case ShipCrewRotationString.relaxed:
+        return 'RELAXED';
+    }
   }
 }

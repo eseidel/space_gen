@@ -1,3 +1,5 @@
+import 'package:spacetraders/src/model/trade_symbol.dart';
+
 class TradeGood {
   TradeGood({
     required this.symbol,
@@ -7,19 +9,19 @@ class TradeGood {
 
   factory TradeGood.fromJson(Map<String, dynamic> json) {
     return TradeGood(
-      symbol: json['symbol'] as String,
+      symbol: TradeSymbol.fromJson(json['symbol'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
     );
   }
 
-  final String symbol;
+  final TradeSymbol symbol;
   final String name;
   final String description;
 
   Map<String, dynamic> toJson() {
     return {
-      'symbol': symbol,
+      'symbol': symbol.toJson(),
       'name': name,
       'description': description,
     };

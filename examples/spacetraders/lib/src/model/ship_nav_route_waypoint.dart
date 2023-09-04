@@ -1,3 +1,5 @@
+import 'package:spacetraders/src/model/waypoint_type.dart';
+
 class ShipNavRouteWaypoint {
   ShipNavRouteWaypoint({
     required this.symbol,
@@ -10,7 +12,7 @@ class ShipNavRouteWaypoint {
   factory ShipNavRouteWaypoint.fromJson(Map<String, dynamic> json) {
     return ShipNavRouteWaypoint(
       symbol: json['symbol'] as String,
-      type: json['type'] as String,
+      type: WaypointType.fromJson(json['type'] as String),
       systemSymbol: json['systemSymbol'] as String,
       x: json['x'] as int,
       y: json['y'] as int,
@@ -18,7 +20,7 @@ class ShipNavRouteWaypoint {
   }
 
   final String symbol;
-  final String type;
+  final WaypointType type;
   final String systemSymbol;
   final int x;
   final int y;
@@ -26,7 +28,7 @@ class ShipNavRouteWaypoint {
   Map<String, dynamic> toJson() {
     return {
       'symbol': symbol,
-      'type': type,
+      'type': type.toJson(),
       'systemSymbol': systemSymbol,
       'x': x,
       'y': y,

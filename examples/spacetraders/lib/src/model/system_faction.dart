@@ -1,3 +1,5 @@
+import 'package:spacetraders/src/model/faction_symbols.dart';
+
 class SystemFaction {
   SystemFaction({
     required this.symbol,
@@ -5,15 +7,15 @@ class SystemFaction {
 
   factory SystemFaction.fromJson(Map<String, dynamic> json) {
     return SystemFaction(
-      symbol: json['symbol'] as String,
+      symbol: FactionSymbols.fromJson(json['symbol'] as String),
     );
   }
 
-  final String symbol;
+  final FactionSymbols symbol;
 
   Map<String, dynamic> toJson() {
     return {
-      'symbol': symbol,
+      'symbol': symbol.toJson(),
     };
   }
 }

@@ -36,6 +36,10 @@ class {{ className }} {
     {{/endpoints}}
 }
 
-{{#models}}
-{{>model_class}}
-{{/models}}
+{{#objects}}
+{{>schema_object}}
+{{/objects}}
+
+{{#enums}}
+{{>schema_enum}}
+{{/enums}}

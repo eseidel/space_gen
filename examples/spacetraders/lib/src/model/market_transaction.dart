@@ -15,33 +15,63 @@ class MarketTransaction {
       waypointSymbol: json['waypointSymbol'] as String,
       shipSymbol: json['shipSymbol'] as String,
       tradeSymbol: json['tradeSymbol'] as String,
-      type: json['type'] as String,
+      type: MarketTransactionTypeString.fromJson(json['type'] as String),
       units: json['units'] as int,
       pricePerUnit: json['pricePerUnit'] as int,
       totalPrice: json['totalPrice'] as int,
-      timestamp: json['timestamp'] as String,
+      timestamp: DateTime.parse(json['timestamp'] as String),
     );
   }
 
   final String waypointSymbol;
   final String shipSymbol;
   final String tradeSymbol;
-  final String type;
+  final MarketTransactionTypeString type;
   final int units;
   final int pricePerUnit;
   final int totalPrice;
-  final String timestamp;
+  final DateTime timestamp;
 
   Map<String, dynamic> toJson() {
     return {
       'waypointSymbol': waypointSymbol,
       'shipSymbol': shipSymbol,
       'tradeSymbol': tradeSymbol,
-      'type': type,
+      'type': type.toJson(),
       'units': units,
       'pricePerUnit': pricePerUnit,
       'totalPrice': totalPrice,
-      'timestamp': timestamp,
+      'timestamp': timestamp.toIso8601String(),
     };
+  }
+}
+
+enum MarketTransactionTypeString {
+  purchase('PURCHASE'),
+  sell('SELL'),
+  ;
+
+  const MarketTransactionTypeString(this.value);
+
+  factory MarketTransactionTypeString.fromJson(String json) {
+    switch (json) {
+      case 'PURCHASE':
+        return MarketTransactionTypeString.purchase;
+      case 'SELL':
+        return MarketTransactionTypeString.sell;
+      default:
+        throw Exception('Unknown MarketTransactionTypeString value: $json');
+    }
+  }
+
+  final String value;
+
+  String toJson() {
+    switch (this) {
+      case MarketTransactionTypeString.purchase:
+        return 'PURCHASE';
+      case MarketTransactionTypeString.sell:
+        return 'SELL';
+    }
   }
 }

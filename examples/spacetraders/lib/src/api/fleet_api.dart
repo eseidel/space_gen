@@ -18,8 +18,11 @@ import 'package:spacetraders/src/model/ship_fuel.dart';
 import 'package:spacetraders/src/model/ship_modification_transaction.dart';
 import 'package:spacetraders/src/model/ship_mount.dart';
 import 'package:spacetraders/src/model/ship_nav.dart';
+import 'package:spacetraders/src/model/ship_nav_flight_mode.dart';
+import 'package:spacetraders/src/model/ship_type.dart';
 import 'package:spacetraders/src/model/shipyard_transaction.dart';
 import 'package:spacetraders/src/model/survey.dart';
+import 'package:spacetraders/src/model/trade_symbol.dart';
 import 'package:spacetraders/src/model/waypoint.dart';
 
 class FleetApi {
@@ -722,17 +725,17 @@ class PurchaseShipRequest {
 
   factory PurchaseShipRequest.fromJson(Map<String, dynamic> json) {
     return PurchaseShipRequest(
-      shipType: json['shipType'] as String,
+      shipType: ShipType.fromJson(json['shipType'] as String),
       waypointSymbol: json['waypointSymbol'] as String,
     );
   }
 
-  final String shipType;
+  final ShipType shipType;
   final String waypointSymbol;
 
   Map<String, dynamic> toJson() {
     return {
-      'shipType': shipType,
+      'shipType': shipType.toJson(),
       'waypointSymbol': waypointSymbol,
     };
   }
@@ -945,15 +948,16 @@ class ShipRefineRequest {
 
   factory ShipRefineRequest.fromJson(Map<String, dynamic> json) {
     return ShipRefineRequest(
-      produce: json['produce'] as String,
+      produce:
+          ShipRefineRequestProduceString.fromJson(json['produce'] as String),
     );
   }
 
-  final String produce;
+  final ShipRefineRequestProduceString produce;
 
   Map<String, dynamic> toJson() {
     return {
-      'produce': produce,
+      'produce': produce.toJson(),
     };
   }
 }
@@ -1235,17 +1239,17 @@ class JettisonRequest {
 
   factory JettisonRequest.fromJson(Map<String, dynamic> json) {
     return JettisonRequest(
-      symbol: json['symbol'] as String,
+      symbol: TradeSymbol.fromJson(json['symbol'] as String),
       units: json['units'] as int,
     );
   }
 
-  final String symbol;
+  final TradeSymbol symbol;
   final int units;
 
   Map<String, dynamic> toJson() {
     return {
-      'symbol': symbol,
+      'symbol': symbol.toJson(),
       'units': units,
     };
   }
@@ -1430,15 +1434,15 @@ class PatchShipNavRequest {
 
   factory PatchShipNavRequest.fromJson(Map<String, dynamic> json) {
     return PatchShipNavRequest(
-      flightMode: json['flightMode'] as String,
+      flightMode: ShipNavFlightMode.fromJson(json['flightMode'] as String),
     );
   }
 
-  final String flightMode;
+  final ShipNavFlightMode flightMode;
 
   Map<String, dynamic> toJson() {
     return {
-      'flightMode': flightMode,
+      'flightMode': flightMode.toJson(),
     };
   }
 }
@@ -1569,17 +1573,17 @@ class SellCargoRequest {
 
   factory SellCargoRequest.fromJson(Map<String, dynamic> json) {
     return SellCargoRequest(
-      symbol: json['symbol'] as String,
+      symbol: TradeSymbol.fromJson(json['symbol'] as String),
       units: json['units'] as int,
     );
   }
 
-  final String symbol;
+  final TradeSymbol symbol;
   final int units;
 
   Map<String, dynamic> toJson() {
     return {
-      'symbol': symbol,
+      'symbol': symbol.toJson(),
       'units': units,
     };
   }
@@ -1875,17 +1879,17 @@ class PurchaseCargoRequest {
 
   factory PurchaseCargoRequest.fromJson(Map<String, dynamic> json) {
     return PurchaseCargoRequest(
-      symbol: json['symbol'] as String,
+      symbol: TradeSymbol.fromJson(json['symbol'] as String),
       units: json['units'] as int,
     );
   }
 
-  final String symbol;
+  final TradeSymbol symbol;
   final int units;
 
   Map<String, dynamic> toJson() {
     return {
-      'symbol': symbol,
+      'symbol': symbol.toJson(),
       'units': units,
     };
   }
@@ -1942,19 +1946,19 @@ class TransferCargoRequest {
 
   factory TransferCargoRequest.fromJson(Map<String, dynamic> json) {
     return TransferCargoRequest(
-      tradeSymbol: json['tradeSymbol'] as String,
+      tradeSymbol: TradeSymbol.fromJson(json['tradeSymbol'] as String),
       units: json['units'] as int,
       shipSymbol: json['shipSymbol'] as String,
     );
   }
 
-  final String tradeSymbol;
+  final TradeSymbol tradeSymbol;
   final int units;
   final String shipSymbol;
 
   Map<String, dynamic> toJson() {
     return {
-      'tradeSymbol': tradeSymbol,
+      'tradeSymbol': tradeSymbol.toJson(),
       'units': units,
       'shipSymbol': shipSymbol,
     };
@@ -2178,5 +2182,70 @@ class RemoveMountRequest {
     return {
       'symbol': symbol,
     };
+  }
+}
+
+enum ShipRefineRequestProduceString {
+  iron('IRON'),
+  copper('COPPER'),
+  silver('SILVER'),
+  gold('GOLD'),
+  aluminum('ALUMINUM'),
+  platinum('PLATINUM'),
+  uranite('URANITE'),
+  meritium('MERITIUM'),
+  fuel('FUEL'),
+  ;
+
+  const ShipRefineRequestProduceString(this.value);
+
+  factory ShipRefineRequestProduceString.fromJson(String json) {
+    switch (json) {
+      case 'IRON':
+        return ShipRefineRequestProduceString.iron;
+      case 'COPPER':
+        return ShipRefineRequestProduceString.copper;
+      case 'SILVER':
+        return ShipRefineRequestProduceString.silver;
+      case 'GOLD':
+        return ShipRefineRequestProduceString.gold;
+      case 'ALUMINUM':
+        return ShipRefineRequestProduceString.aluminum;
+      case 'PLATINUM':
+        return ShipRefineRequestProduceString.platinum;
+      case 'URANITE':
+        return ShipRefineRequestProduceString.uranite;
+      case 'MERITIUM':
+        return ShipRefineRequestProduceString.meritium;
+      case 'FUEL':
+        return ShipRefineRequestProduceString.fuel;
+      default:
+        throw Exception('Unknown ShipRefineRequestProduceString value: $json');
+    }
+  }
+
+  final String value;
+
+  String toJson() {
+    switch (this) {
+      case ShipRefineRequestProduceString.iron:
+        return 'IRON';
+      case ShipRefineRequestProduceString.copper:
+        return 'COPPER';
+      case ShipRefineRequestProduceString.silver:
+        return 'SILVER';
+      case ShipRefineRequestProduceString.gold:
+        return 'GOLD';
+      case ShipRefineRequestProduceString.aluminum:
+        return 'ALUMINUM';
+      case ShipRefineRequestProduceString.platinum:
+        return 'PLATINUM';
+      case ShipRefineRequestProduceString.uranite:
+        return 'URANITE';
+      case ShipRefineRequestProduceString.meritium:
+        return 'MERITIUM';
+      case ShipRefineRequestProduceString.fuel:
+        return 'FUEL';
+    }
   }
 }

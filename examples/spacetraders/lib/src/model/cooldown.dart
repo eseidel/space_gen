@@ -11,21 +11,21 @@ class Cooldown {
       shipSymbol: json['shipSymbol'] as String,
       totalSeconds: json['totalSeconds'] as int,
       remainingSeconds: json['remainingSeconds'] as int,
-      expiration: json['expiration'] as String,
+      expiration: DateTime.parse(json['expiration'] as String),
     );
   }
 
   final String shipSymbol;
   final int totalSeconds;
   final int remainingSeconds;
-  final String expiration;
+  final DateTime expiration;
 
   Map<String, dynamic> toJson() {
     return {
       'shipSymbol': shipSymbol,
       'totalSeconds': totalSeconds,
       'remainingSeconds': remainingSeconds,
-      'expiration': expiration,
+      'expiration': expiration.toIso8601String(),
     };
   }
 }

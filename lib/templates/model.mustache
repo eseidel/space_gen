@@ -2,6 +2,10 @@
 import '{{{.}}}';
 {{/imports}}
 
-{{#models}}
-{{>model_class}}
-{{/models}}
+{{#objects}}
+{{>schema_object}}
+{{/objects}}
+
+{{#enums}}
+{{>schema_enum}}
+{{/enums}}

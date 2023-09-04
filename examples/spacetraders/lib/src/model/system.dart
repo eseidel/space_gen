@@ -1,4 +1,5 @@
 import 'package:spacetraders/src/model/system_faction.dart';
+import 'package:spacetraders/src/model/system_type.dart';
 import 'package:spacetraders/src/model/system_waypoint.dart';
 
 class System {
@@ -16,7 +17,7 @@ class System {
     return System(
       symbol: json['symbol'] as String,
       sectorSymbol: json['sectorSymbol'] as String,
-      type: json['type'] as String,
+      type: SystemType.fromJson(json['type'] as String),
       x: json['x'] as int,
       y: json['y'] as int,
       waypoints: (json['waypoints'] as List<dynamic>)
@@ -34,7 +35,7 @@ class System {
 
   final String symbol;
   final String sectorSymbol;
-  final String type;
+  final SystemType type;
   final int x;
   final int y;
   final List<SystemWaypoint> waypoints;
@@ -44,7 +45,7 @@ class System {
     return {
       'symbol': symbol,
       'sectorSymbol': sectorSymbol,
-      'type': type,
+      'type': type.toJson(),
       'x': x,
       'y': y,
       'waypoints': waypoints.map((e) => e.toJson()).toList(),

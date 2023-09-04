@@ -1,4 +1,6 @@
+import 'package:spacetraders/src/model/ship_nav_flight_mode.dart';
 import 'package:spacetraders/src/model/ship_nav_route.dart';
+import 'package:spacetraders/src/model/ship_nav_status.dart';
 
 class ShipNav {
   ShipNav({
@@ -14,24 +16,24 @@ class ShipNav {
       systemSymbol: json['systemSymbol'] as String,
       waypointSymbol: json['waypointSymbol'] as String,
       route: ShipNavRoute.fromJson(json['route'] as Map<String, dynamic>),
-      status: json['status'] as String,
-      flightMode: json['flightMode'] as String,
+      status: ShipNavStatus.fromJson(json['status'] as String),
+      flightMode: ShipNavFlightMode.fromJson(json['flightMode'] as String),
     );
   }
 
   final String systemSymbol;
   final String waypointSymbol;
   final ShipNavRoute route;
-  final String status;
-  final String flightMode;
+  final ShipNavStatus status;
+  final ShipNavFlightMode flightMode;
 
   Map<String, dynamic> toJson() {
     return {
       'systemSymbol': systemSymbol,
       'waypointSymbol': waypointSymbol,
       'route': route.toJson(),
-      'status': status,
-      'flightMode': flightMode,
+      'status': status.toJson(),
+      'flightMode': flightMode.toJson(),
     };
   }
 }

@@ -1,3 +1,5 @@
+import 'package:spacetraders/src/model/ship_role.dart';
+
 class ShipRegistration {
   ShipRegistration({
     required this.name,
@@ -9,19 +11,19 @@ class ShipRegistration {
     return ShipRegistration(
       name: json['name'] as String,
       factionSymbol: json['factionSymbol'] as String,
-      role: json['role'] as String,
+      role: ShipRole.fromJson(json['role'] as String),
     );
   }
 
   final String name;
   final String factionSymbol;
-  final String role;
+  final ShipRole role;
 
   Map<String, dynamic> toJson() {
     return {
       'name': name,
       'factionSymbol': factionSymbol,
-      'role': role,
+      'role': role.toJson(),
     };
   }
 }

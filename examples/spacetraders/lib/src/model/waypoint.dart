@@ -2,6 +2,7 @@ import 'package:spacetraders/src/model/chart.dart';
 import 'package:spacetraders/src/model/waypoint_faction.dart';
 import 'package:spacetraders/src/model/waypoint_orbital.dart';
 import 'package:spacetraders/src/model/waypoint_trait.dart';
+import 'package:spacetraders/src/model/waypoint_type.dart';
 
 class Waypoint {
   Waypoint({
@@ -19,7 +20,7 @@ class Waypoint {
   factory Waypoint.fromJson(Map<String, dynamic> json) {
     return Waypoint(
       symbol: json['symbol'] as String,
-      type: json['type'] as String,
+      type: WaypointType.fromJson(json['type'] as String),
       systemSymbol: json['systemSymbol'] as String,
       x: json['x'] as int,
       y: json['y'] as int,
@@ -40,7 +41,7 @@ class Waypoint {
   }
 
   final String symbol;
-  final String type;
+  final WaypointType type;
   final String systemSymbol;
   final int x;
   final int y;
@@ -52,7 +53,7 @@ class Waypoint {
   Map<String, dynamic> toJson() {
     return {
       'symbol': symbol,
-      'type': type,
+      'type': type.toJson(),
       'systemSymbol': systemSymbol,
       'x': x,
       'y': y,

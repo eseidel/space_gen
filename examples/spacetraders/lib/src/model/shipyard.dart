@@ -1,3 +1,4 @@
+import 'package:spacetraders/src/model/ship_type.dart';
 import 'package:spacetraders/src/model/shipyard_ship.dart';
 import 'package:spacetraders/src/model/shipyard_transaction.dart';
 
@@ -52,15 +53,15 @@ class ShipyardShipTypesArray {
 
   factory ShipyardShipTypesArray.fromJson(Map<String, dynamic> json) {
     return ShipyardShipTypesArray(
-      type: json['type'] as String,
+      type: ShipType.fromJson(json['type'] as String),
     );
   }
 
-  final String type;
+  final ShipType type;
 
   Map<String, dynamic> toJson() {
     return {
-      'type': type,
+      'type': type.toJson(),
     };
   }
 }

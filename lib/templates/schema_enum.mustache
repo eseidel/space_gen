@@ -1,0 +1,30 @@
+enum {{ schemaName }} {
+    {{#enumValues}}
+    {{ enumValueName }}('{{ enumValue }}'),
+    {{/enumValues}}
+    ;
+
+    const {{schemaName}}(this.value);
+
+    factory {{ schemaName }}.fromJson(String json) {
+        switch (json) {
+            {{#enumValues}}
+            case '{{ enumValue }}':
+                return {{ schemaName }}.{{ enumValueName }};
+            {{/enumValues}}
+            default:
+                throw Exception('Unknown {{ schemaName }} value: $json');
+        }
+    }
+
+    final String value;
+
+    String toJson() {
+        switch (this) {
+            {{#enumValues}}
+            case {{ schemaName }}.{{ enumValueName }}:
+                return '{{ enumValue }}';
+            {{/enumValues}}
+        }
+    }
+}

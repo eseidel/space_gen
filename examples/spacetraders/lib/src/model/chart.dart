@@ -9,19 +9,19 @@ class Chart {
     return Chart(
       waypointSymbol: json['waypointSymbol'] as String,
       submittedBy: json['submittedBy'] as String,
-      submittedOn: json['submittedOn'] as String,
+      submittedOn: DateTime.parse(json['submittedOn'] as String),
     );
   }
 
   final String waypointSymbol;
   final String submittedBy;
-  final String submittedOn;
+  final DateTime submittedOn;
 
   Map<String, dynamic> toJson() {
     return {
       'waypointSymbol': waypointSymbol,
       'submittedBy': submittedBy,
-      'submittedOn': submittedOn,
+      'submittedOn': submittedOn.toIso8601String(),
     };
   }
 }

@@ -1,3 +1,5 @@
+import 'package:spacetraders/src/model/trade_symbol.dart';
+
 class ExtractionYield {
   ExtractionYield({
     required this.symbol,
@@ -6,17 +8,17 @@ class ExtractionYield {
 
   factory ExtractionYield.fromJson(Map<String, dynamic> json) {
     return ExtractionYield(
-      symbol: json['symbol'] as String,
+      symbol: TradeSymbol.fromJson(json['symbol'] as String),
       units: json['units'] as int,
     );
   }
 
-  final String symbol;
+  final TradeSymbol symbol;
   final int units;
 
   Map<String, dynamic> toJson() {
     return {
-      'symbol': symbol,
+      'symbol': symbol.toJson(),
       'units': units,
     };
   }

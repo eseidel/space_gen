@@ -1,3 +1,4 @@
+import 'package:spacetraders/src/model/faction_symbols.dart';
 import 'package:spacetraders/src/model/faction_trait.dart';
 
 class Faction {
@@ -12,7 +13,7 @@ class Faction {
 
   factory Faction.fromJson(Map<String, dynamic> json) {
     return Faction(
-      symbol: json['symbol'] as String,
+      symbol: FactionSymbols.fromJson(json['symbol'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
       headquarters: json['headquarters'] as String,
@@ -25,7 +26,7 @@ class Faction {
     );
   }
 
-  final String symbol;
+  final FactionSymbols symbol;
   final String name;
   final String description;
   final String headquarters;
@@ -34,7 +35,7 @@ class Faction {
 
   Map<String, dynamic> toJson() {
     return {
-      'symbol': symbol,
+      'symbol': symbol.toJson(),
       'name': name,
       'description': description,
       'headquarters': headquarters,

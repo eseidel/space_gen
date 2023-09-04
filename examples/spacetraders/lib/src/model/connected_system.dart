@@ -1,3 +1,5 @@
+import 'package:spacetraders/src/model/system_type.dart';
+
 class ConnectedSystem {
   ConnectedSystem({
     required this.symbol,
@@ -13,7 +15,7 @@ class ConnectedSystem {
     return ConnectedSystem(
       symbol: json['symbol'] as String,
       sectorSymbol: json['sectorSymbol'] as String,
-      type: json['type'] as String,
+      type: SystemType.fromJson(json['type'] as String),
       factionSymbol: json['factionSymbol'] as String,
       x: json['x'] as int,
       y: json['y'] as int,
@@ -23,7 +25,7 @@ class ConnectedSystem {
 
   final String symbol;
   final String sectorSymbol;
-  final String type;
+  final SystemType type;
   final String factionSymbol;
   final int x;
   final int y;
@@ -33,7 +35,7 @@ class ConnectedSystem {
     return {
       'symbol': symbol,
       'sectorSymbol': sectorSymbol,
-      'type': type,
+      'type': type.toJson(),
       'factionSymbol': factionSymbol,
       'x': x,
       'y': y,

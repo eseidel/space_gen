@@ -13,7 +13,7 @@ class ShipyardTransaction {
       shipSymbol: json['shipSymbol'] as String,
       price: json['price'] as int,
       agentSymbol: json['agentSymbol'] as String,
-      timestamp: json['timestamp'] as String,
+      timestamp: DateTime.parse(json['timestamp'] as String),
     );
   }
 
@@ -21,7 +21,7 @@ class ShipyardTransaction {
   final String shipSymbol;
   final int price;
   final String agentSymbol;
-  final String timestamp;
+  final DateTime timestamp;
 
   Map<String, dynamic> toJson() {
     return {
@@ -29,7 +29,7 @@ class ShipyardTransaction {
       'shipSymbol': shipSymbol,
       'price': price,
       'agentSymbol': agentSymbol,
-      'timestamp': timestamp,
+      'timestamp': timestamp.toIso8601String(),
     };
   }
 }

@@ -1,3 +1,5 @@
+import 'package:spacetraders/src/model/system_type.dart';
+
 class ScannedSystem {
   ScannedSystem({
     required this.symbol,
@@ -12,7 +14,7 @@ class ScannedSystem {
     return ScannedSystem(
       symbol: json['symbol'] as String,
       sectorSymbol: json['sectorSymbol'] as String,
-      type: json['type'] as String,
+      type: SystemType.fromJson(json['type'] as String),
       x: json['x'] as int,
       y: json['y'] as int,
       distance: json['distance'] as int,
@@ -21,7 +23,7 @@ class ScannedSystem {
 
   final String symbol;
   final String sectorSymbol;
-  final String type;
+  final SystemType type;
   final int x;
   final int y;
   final int distance;
@@ -30,7 +32,7 @@ class ScannedSystem {
     return {
       'symbol': symbol,
       'sectorSymbol': sectorSymbol,
-      'type': type,
+      'type': type.toJson(),
       'x': x,
       'y': y,
       'distance': distance,

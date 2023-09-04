@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:spacetraders/src/model/agent.dart';
 import 'package:spacetraders/src/model/contract.dart';
 import 'package:spacetraders/src/model/faction.dart';
+import 'package:spacetraders/src/model/faction_symbols.dart';
 import 'package:spacetraders/src/model/ship.dart';
 
 class DefaultApi {
@@ -383,19 +384,19 @@ class RegisterRequest {
 
   factory RegisterRequest.fromJson(Map<String, dynamic> json) {
     return RegisterRequest(
-      faction: json['faction'] as String,
+      faction: FactionSymbols.fromJson(json['faction'] as String),
       symbol: json['symbol'] as String,
       email: json['email'] as String,
     );
   }
 
-  final String faction;
+  final FactionSymbols faction;
   final String symbol;
   final String email;
 
   Map<String, dynamic> toJson() {
     return {
-      'faction': faction,
+      'faction': faction.toJson(),
       'symbol': symbol,
       'email': email,
     };

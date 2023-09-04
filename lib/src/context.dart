@@ -75,12 +75,26 @@ extension EndpointGeneration on Endpoint {
 
 extension SchemaGeneration on Schema {
   // Some Schema don't have names.
-  String get className => name;
   String get fileName => snakeFromCamel(name);
+
+  bool get needsRender => type == SchemaType.object || isEnum;
+
+  bool get isDateTime {
+    return type == SchemaType.string && format == 'date-time';
+  }
+
+  bool get isEnum {
+    return type == SchemaType.string && enumValues.isNotEmpty;
+  }
 
   String typeName(RefResolver resolver) {
     switch (type) {
       case SchemaType.string:
+        if (isDateTime) {
+          return 'DateTime';
+        } else if (isEnum) {
+          return name;
+        }
         return 'String';
       case SchemaType.integer:
         return 'int';
@@ -89,7 +103,7 @@ extension SchemaGeneration on Schema {
       case SchemaType.boolean:
         return 'bool';
       case SchemaType.object:
-        return className;
+        return name;
       case SchemaType.array:
         return 'List<${resolver.resolve(items!).typeName(resolver)}>';
     }
@@ -99,6 +113,12 @@ extension SchemaGeneration on Schema {
   String toJsonExpression(RefResolver resolver, String name) {
     switch (type) {
       case SchemaType.string:
+        if (isDateTime) {
+          return '$name.toIso8601String()';
+        } else if (isEnum) {
+          return '$name.toJson()';
+        }
+        return name;
       case SchemaType.integer:
       case SchemaType.number:
       case SchemaType.boolean:
@@ -124,6 +144,11 @@ extension SchemaGeneration on Schema {
   String fromJsonExpression(RefResolver resolver, String jsonValue) {
     switch (type) {
       case SchemaType.string:
+        if (isDateTime) {
+          return 'DateTime.parse($jsonValue as String)';
+        } else if (isEnum) {
+          return '$name.fromJson($jsonValue as String)';
+        }
         return '$jsonValue as String';
       case SchemaType.integer:
         return '$jsonValue as int';
@@ -132,7 +157,7 @@ extension SchemaGeneration on Schema {
       case SchemaType.boolean:
         return '$jsonValue as bool';
       case SchemaType.object:
-        return '$className.fromJson($jsonValue as Map<String, dynamic>)';
+        return '$name.fromJson($jsonValue as Map<String, dynamic>)';
       case SchemaType.array:
         final itemsSchema = resolver.resolve(items!);
         final itemTypeName = itemsSchema.typeName(resolver);
@@ -145,7 +170,7 @@ extension SchemaGeneration on Schema {
     }
   }
 
-  Map<String, dynamic> toTemplateContext(RefResolver resolver) {
+  Map<String, dynamic> objectToTemplateContext(RefResolver resolver) {
     final renderProperties = properties.entries.map(
       (entry) {
         final name = entry.key;
@@ -160,10 +185,36 @@ extension SchemaGeneration on Schema {
       },
     );
     return {
-      'className': className,
+      'schemaName': name,
       'hasProperties': renderProperties.isNotEmpty,
       'properties': renderProperties,
     };
+  }
+
+  Map<String, dynamic> _enumToTemplateContext(RefResolver resolver) {
+    Map<String, dynamic> enumValueToTemplateContext(String value) {
+      var dartName = camelFromScreamingCaps(value);
+      if (isReservedWord(dartName)) {
+        dartName = '${dartName}_';
+      }
+      return {
+        'enumValueName': dartName,
+        'enumValue': value,
+      };
+    }
+
+    return {
+      'schemaName': name,
+      'enumValues': enumValues.map(enumValueToTemplateContext).toList(),
+    };
+  }
+
+  Map<String, dynamic> toTemplateContext(RefResolver resolver) {
+    if (isEnum) {
+      return _enumToTemplateContext(resolver);
+    } else {
+      return objectToTemplateContext(resolver);
+    }
   }
 }
 
@@ -333,7 +384,7 @@ class RenderContext {
   }
 
   void collectSchema(Schema schema) {
-    if (schema.type == SchemaType.object) {
+    if (schema.needsRender) {
       inlineSchemas.add(schema);
     }
     for (final entry in schema.properties.entries) {
@@ -343,31 +394,54 @@ class RenderContext {
       visitRef(schema.items!);
     }
   }
+
+  List<String> sortedPackageImports(Context context) {
+    final imports = <String>{};
+    for (final ref in imported) {
+      imports.add(ref.packageImport(context));
+    }
+    return imports.toList()..sort();
+  }
+
+  List<Map<String, dynamic>> objectContexts(RefResolver resolver) {
+    return inlineSchemas
+        .where((schema) => schema.type == SchemaType.object)
+        .map(
+          (schema) => schema.toTemplateContext(resolver),
+        )
+        .toList();
+  }
+
+  List<Map<String, dynamic>> enumContexts(RefResolver resolver) {
+    return inlineSchemas
+        .where((schema) => schema.isEnum)
+        .map(
+          (schema) => schema.toTemplateContext(resolver),
+        )
+        .toList();
+  }
 }
 
 /// Starts a new RenderContext for rendering a new schema file.
 void renderRootSchema(Context context, Schema schema) {
-  // logger.info('Rendering ${schema.className}');
+  // logger.info('Rendering ${schema.name}');
 
   final renderContext = RenderContext()..collectSchema(schema);
   // logger
   //   ..info('To import: ${renderContext.imported}')
   //   ..info('To render: ${renderContext.inlineSchemas}');
 
-  final imports = <String>{};
-  for (final ref in renderContext.imported) {
-    imports.add(ref.packageImport(context));
-  }
-  final models = renderContext.inlineSchemas
-      .map((schema) => schema.toTemplateContext(context.resolver))
-      .toList();
+  final imports = renderContext.sortedPackageImports(context);
+  final objects = renderContext.objectContexts(context.resolver);
+  final enums = renderContext.enumContexts(context.resolver);
 
   context.renderTemplate(
     template: 'model',
     outPath: _modelPath(schema),
     context: {
-      'imports': imports.toList()..sort(),
-      'models': models,
+      'imports': imports,
+      'objects': objects,
+      'enums': enums,
     },
   );
 }
@@ -377,19 +451,20 @@ void renderApi(RenderContext renderContext, Context context, Api api) {
   final endpoints =
       api.endpoints.map((e) => e.toTemplateContext(context)).toList();
   renderContext.collectApi(api);
-  final imports =
-      renderContext.imported.map((ref) => ref.packageImport(context)).toSet();
-  final models = renderContext.inlineSchemas
-      .map((schema) => schema.toTemplateContext(resolver))
-      .toList();
+
+  final imports = renderContext.sortedPackageImports(context);
+  final objects = renderContext.objectContexts(resolver);
+  final enums = renderContext.enumContexts(resolver);
+
   context.renderTemplate(
     template: 'api',
     outPath: _apiPath(api),
     context: {
       'className': api.className,
-      'imports': imports.toList()..sort(),
+      'imports': imports,
       'endpoints': endpoints,
-      'models': models,
+      'objects': objects,
+      'enums': enums,
     },
   );
 }

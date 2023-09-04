@@ -118,10 +118,12 @@ class Schema {
   const Schema({
     required this.name,
     required this.type,
-    this.properties = const {},
-    this.required = const [],
-    this.description = '',
-    this.items,
+    required this.properties,
+    required this.required,
+    required this.description,
+    required this.items,
+    required this.enumValues,
+    required this.format,
   });
 
   final String name;
@@ -130,6 +132,8 @@ class Schema {
   final List<String> required;
   final String description;
   final SchemaRef? items;
+  final List<String> enumValues;
+  final String? format;
 }
 
 /// Parse a schema or a reference to a schema.
@@ -203,6 +207,9 @@ Schema parseSchema({
 
   final required = json['required'] as List<dynamic>? ?? [];
   final description = json['description'] as String? ?? '';
+  final enumValues = json['enum'] as List<dynamic>? ?? [];
+  final format = json['format'] as String?;
+
   return Schema(
     name: name,
     type: SchemaType.fromJson(type),
@@ -210,6 +217,8 @@ Schema parseSchema({
     required: required.cast<String>(),
     description: description,
     items: itemSchema,
+    enumValues: enumValues.cast<String>(),
+    format: format,
   );
 }
 
@@ -284,7 +293,7 @@ Responses parseResponses(
     onNonMatch: (n) => n.capitalize(),
   );
   final responseCode = responseCodes.first;
-  final className = '$camelName${responseCode}Response';
+  final inferredName = '$camelName${responseCode}Response';
   final responseTypes = json[responseCode] as Map<String, dynamic>;
   final content = responseTypes['content'] as Map<String, dynamic>;
   final jsonResponse = content['application/json'] as Map<String, dynamic>;
@@ -292,7 +301,7 @@ Responses parseResponses(
     Response(
       code: int.parse(responseCode),
       content: parseSchemaOrRef(
-        inferredName: className,
+        inferredName: inferredName,
         current: current,
         json: jsonResponse['schema'] as Map<String, dynamic>,
       ),

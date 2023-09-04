@@ -3,6 +3,7 @@ import 'package:spacetraders/src/model/ship_frame.dart';
 import 'package:spacetraders/src/model/ship_module.dart';
 import 'package:spacetraders/src/model/ship_mount.dart';
 import 'package:spacetraders/src/model/ship_reactor.dart';
+import 'package:spacetraders/src/model/ship_type.dart';
 
 class ShipyardShip {
   ShipyardShip({
@@ -19,7 +20,7 @@ class ShipyardShip {
 
   factory ShipyardShip.fromJson(Map<String, dynamic> json) {
     return ShipyardShip(
-      type: json['type'] as String,
+      type: ShipType.fromJson(json['type'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
       purchasePrice: json['purchasePrice'] as int,
@@ -37,7 +38,7 @@ class ShipyardShip {
     );
   }
 
-  final String type;
+  final ShipType type;
   final String name;
   final String description;
   final int purchasePrice;
@@ -49,7 +50,7 @@ class ShipyardShip {
 
   Map<String, dynamic> toJson() {
     return {
-      'type': type,
+      'type': type.toJson(),
       'name': name,
       'description': description,
       'purchasePrice': purchasePrice,

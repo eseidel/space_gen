@@ -1,5 +1,5 @@
-class {{ className }} {
-    {{ className }}(
+class {{ schemaName }} {
+    {{ schemaName }}(
         {{#hasProperties}}{ {{/hasProperties}}
         {{#properties}}
         required this.{{ propertyName }},
@@ -7,8 +7,8 @@ class {{ className }} {
         {{#hasProperties}} }{{/hasProperties}}
     );
 
-    factory {{ className }}.fromJson(Map<String, dynamic> json) {
-        return {{ className }}(
+    factory {{ schemaName }}.fromJson(Map<String, dynamic> json) {
+        return {{ schemaName }}(
             {{#properties}}
             {{ propertyName }}: {{{ propertyFromJson }}},
             {{/properties}}
