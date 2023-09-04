@@ -19,11 +19,11 @@ jobs:
       - uses: dart-lang/setup-dart@v1
 
       - name: Install dependencies
-        run: pub get
+        run: dart pub get
 
       # https://github.com/VeryGoodOpenSource/very_good_cli/issues/774
       - name: Install example dependencies
-        run: pub get
+        run: dart pub get
         working-directory: example/spacetraders
 
       - name: Verify formatting
