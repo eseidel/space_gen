@@ -18,11 +18,13 @@ Template loadTemplate(String name) {
 }
 
 String _apiPath(Api api) {
-  return 'lib/src/api/${api.fileName}.dart';
+  // openapi generator does not use /src/ in the path.
+  return 'lib/api/${api.fileName}.dart';
 }
 
 String _modelPath(Schema schema) {
-  return 'lib/src/model/${schema.fileName}.dart';
+  // openapi generator does not use /src/ in the path.
+  return 'lib/model/${schema.fileName}.dart';
 }
 
 extension ApiGeneration on Api {
@@ -236,7 +238,7 @@ extension SchemaRefGeneration on SchemaRef {
   String packageImport(Context context) {
     final name = p.basenameWithoutExtension(uri!.path);
     final snakeName = snakeFromCamel(name);
-    return 'package:${context.packageName}/src/model/$snakeName.dart';
+    return 'package:${context.packageName}/model/$snakeName.dart';
   }
 }
 
@@ -276,7 +278,7 @@ class Context {
   void renderTemplate({
     required String template,
     required String outPath,
-    required Map<String, dynamic> context,
+    Map<String, dynamic> context = const {},
   }) {
     final output = loadTemplate(template).renderString(context);
     writeFile(path: outPath, content: output);
@@ -294,7 +296,10 @@ class Context {
     renderTemplate(
       template: 'analysis_options',
       outPath: 'analysis_options.yaml',
-      context: {},
+    );
+    renderTemplate(
+      template: 'gitignore',
+      outPath: '.gitignore',
     );
   }
 
@@ -340,10 +345,26 @@ class Context {
     }
   }
 
+  void renderPublicApi() {
+    final exports = spec.apis
+        .map((api) => 'package:$packageName/api/${api.fileName}.dart')
+        .toList()
+      ..sort();
+    renderTemplate(
+      template: 'public_api',
+      outPath: 'lib/api.dart',
+      context: {
+        'imports': <String>[],
+        'exports': exports,
+      },
+    );
+  }
+
   void render() {
     renderDirectory();
     renderApis();
     renderModels();
+    renderPublicApi();
     runDart(['pub', 'get']);
     // Run format first to add missing commas.
     runDart(['format', '.']);

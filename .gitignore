@@ -3,3 +3,6 @@
 .dart_tool/
 # Created by `coverage.sh` and dart test --coverage
 coverage/
+
+# Used for local development
+local_dev.yaml
