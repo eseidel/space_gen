@@ -6,9 +6,11 @@ environment:
   sdk: ^3.1.0
 
 dependencies:
+  args: ^2.4.2
   mason_logger: ^0.2.8
   mustache_template: ^2.0.0
   path: ^1.8.3
+  yaml: ^3.1.2
 
 dev_dependencies:
   lints: ^2.0.0
