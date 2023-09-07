@@ -27,15 +27,15 @@ class GetStatus200Response {
         json['serverResets'] as Map<String, dynamic>,
       ),
       announcements: (json['announcements'] as List<dynamic>)
-          .map<GetStatus200ResponseAnnouncementsArray>(
-            (e) => GetStatus200ResponseAnnouncementsArray.fromJson(
+          .map<GetStatus200ResponseAnnouncementsInner>(
+            (e) => GetStatus200ResponseAnnouncementsInner.fromJson(
               e as Map<String, dynamic>,
             ),
           )
           .toList(),
       links: (json['links'] as List<dynamic>)
-          .map<GetStatus200ResponseLinksArray>(
-            (e) => GetStatus200ResponseLinksArray.fromJson(
+          .map<GetStatus200ResponseLinksInner>(
+            (e) => GetStatus200ResponseLinksInner.fromJson(
               e as Map<String, dynamic>,
             ),
           )
@@ -50,8 +50,8 @@ class GetStatus200Response {
   final GetStatus200ResponseStats stats;
   final GetStatus200ResponseLeaderboards leaderboards;
   final GetStatus200ResponseServerResets serverResets;
-  final List<GetStatus200ResponseAnnouncementsArray> announcements;
-  final List<GetStatus200ResponseLinksArray> links;
+  final List<GetStatus200ResponseAnnouncementsInner> announcements;
+  final List<GetStatus200ResponseLinksInner> links;
 
   Map<String, dynamic> toJson() {
     return {
@@ -109,15 +109,15 @@ class GetStatus200ResponseLeaderboards {
   factory GetStatus200ResponseLeaderboards.fromJson(Map<String, dynamic> json) {
     return GetStatus200ResponseLeaderboards(
       mostCredits: (json['mostCredits'] as List<dynamic>)
-          .map<GetStatus200ResponseLeaderboardsMostCreditsArray>(
-            (e) => GetStatus200ResponseLeaderboardsMostCreditsArray.fromJson(
+          .map<GetStatus200ResponseLeaderboardsMostCreditsInner>(
+            (e) => GetStatus200ResponseLeaderboardsMostCreditsInner.fromJson(
               e as Map<String, dynamic>,
             ),
           )
           .toList(),
       mostSubmittedCharts: (json['mostSubmittedCharts'] as List<dynamic>)
-          .map<GetStatus200ResponseLeaderboardsMostSubmittedChartsArray>(
-            (e) => GetStatus200ResponseLeaderboardsMostSubmittedChartsArray
+          .map<GetStatus200ResponseLeaderboardsMostSubmittedChartsInner>(
+            (e) => GetStatus200ResponseLeaderboardsMostSubmittedChartsInner
                 .fromJson(
               e as Map<String, dynamic>,
             ),
@@ -126,8 +126,8 @@ class GetStatus200ResponseLeaderboards {
     );
   }
 
-  final List<GetStatus200ResponseLeaderboardsMostCreditsArray> mostCredits;
-  final List<GetStatus200ResponseLeaderboardsMostSubmittedChartsArray>
+  final List<GetStatus200ResponseLeaderboardsMostCreditsInner> mostCredits;
+  final List<GetStatus200ResponseLeaderboardsMostSubmittedChartsInner>
       mostSubmittedCharts;
 
   Map<String, dynamic> toJson() {
@@ -139,16 +139,16 @@ class GetStatus200ResponseLeaderboards {
   }
 }
 
-class GetStatus200ResponseLeaderboardsMostCreditsArray {
-  GetStatus200ResponseLeaderboardsMostCreditsArray({
+class GetStatus200ResponseLeaderboardsMostCreditsInner {
+  GetStatus200ResponseLeaderboardsMostCreditsInner({
     required this.agentSymbol,
     required this.credits,
   });
 
-  factory GetStatus200ResponseLeaderboardsMostCreditsArray.fromJson(
+  factory GetStatus200ResponseLeaderboardsMostCreditsInner.fromJson(
     Map<String, dynamic> json,
   ) {
-    return GetStatus200ResponseLeaderboardsMostCreditsArray(
+    return GetStatus200ResponseLeaderboardsMostCreditsInner(
       agentSymbol: json['agentSymbol'] as String,
       credits: json['credits'] as int,
     );
@@ -165,16 +165,16 @@ class GetStatus200ResponseLeaderboardsMostCreditsArray {
   }
 }
 
-class GetStatus200ResponseLeaderboardsMostSubmittedChartsArray {
-  GetStatus200ResponseLeaderboardsMostSubmittedChartsArray({
+class GetStatus200ResponseLeaderboardsMostSubmittedChartsInner {
+  GetStatus200ResponseLeaderboardsMostSubmittedChartsInner({
     required this.agentSymbol,
     required this.chartCount,
   });
 
-  factory GetStatus200ResponseLeaderboardsMostSubmittedChartsArray.fromJson(
+  factory GetStatus200ResponseLeaderboardsMostSubmittedChartsInner.fromJson(
     Map<String, dynamic> json,
   ) {
-    return GetStatus200ResponseLeaderboardsMostSubmittedChartsArray(
+    return GetStatus200ResponseLeaderboardsMostSubmittedChartsInner(
       agentSymbol: json['agentSymbol'] as String,
       chartCount: json['chartCount'] as int,
     );
@@ -215,16 +215,16 @@ class GetStatus200ResponseServerResets {
   }
 }
 
-class GetStatus200ResponseAnnouncementsArray {
-  GetStatus200ResponseAnnouncementsArray({
+class GetStatus200ResponseAnnouncementsInner {
+  GetStatus200ResponseAnnouncementsInner({
     required this.title,
     required this.body,
   });
 
-  factory GetStatus200ResponseAnnouncementsArray.fromJson(
+  factory GetStatus200ResponseAnnouncementsInner.fromJson(
     Map<String, dynamic> json,
   ) {
-    return GetStatus200ResponseAnnouncementsArray(
+    return GetStatus200ResponseAnnouncementsInner(
       title: json['title'] as String,
       body: json['body'] as String,
     );
@@ -241,14 +241,14 @@ class GetStatus200ResponseAnnouncementsArray {
   }
 }
 
-class GetStatus200ResponseLinksArray {
-  GetStatus200ResponseLinksArray({
+class GetStatus200ResponseLinksInner {
+  GetStatus200ResponseLinksInner({
     required this.name,
     required this.url,
   });
 
-  factory GetStatus200ResponseLinksArray.fromJson(Map<String, dynamic> json) {
-    return GetStatus200ResponseLinksArray(
+  factory GetStatus200ResponseLinksInner.fromJson(Map<String, dynamic> json) {
+    return GetStatus200ResponseLinksInner(
       name: json['name'] as String,
       url: json['url'] as String,
     );

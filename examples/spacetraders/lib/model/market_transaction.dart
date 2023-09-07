@@ -15,7 +15,7 @@ class MarketTransaction {
       waypointSymbol: json['waypointSymbol'] as String,
       shipSymbol: json['shipSymbol'] as String,
       tradeSymbol: json['tradeSymbol'] as String,
-      type: MarketTransactionTypeString.fromJson(json['type'] as String),
+      type: MarketTransactionTypeInner.fromJson(json['type'] as String),
       units: json['units'] as int,
       pricePerUnit: json['pricePerUnit'] as int,
       totalPrice: json['totalPrice'] as int,
@@ -26,7 +26,7 @@ class MarketTransaction {
   final String waypointSymbol;
   final String shipSymbol;
   final String tradeSymbol;
-  final MarketTransactionTypeString type;
+  final MarketTransactionTypeInner type;
   final int units;
   final int pricePerUnit;
   final int totalPrice;
@@ -46,21 +46,21 @@ class MarketTransaction {
   }
 }
 
-enum MarketTransactionTypeString {
+enum MarketTransactionTypeInner {
   purchase('PURCHASE'),
   sell('SELL'),
   ;
 
-  const MarketTransactionTypeString(this.value);
+  const MarketTransactionTypeInner(this.value);
 
-  factory MarketTransactionTypeString.fromJson(String json) {
+  factory MarketTransactionTypeInner.fromJson(String json) {
     switch (json) {
       case 'PURCHASE':
-        return MarketTransactionTypeString.purchase;
+        return MarketTransactionTypeInner.purchase;
       case 'SELL':
-        return MarketTransactionTypeString.sell;
+        return MarketTransactionTypeInner.sell;
       default:
-        throw Exception('Unknown MarketTransactionTypeString value: $json');
+        throw Exception('Unknown MarketTransactionTypeInner value: $json');
     }
   }
 
@@ -68,9 +68,9 @@ enum MarketTransactionTypeString {
 
   String toJson() {
     switch (this) {
-      case MarketTransactionTypeString.purchase:
+      case MarketTransactionTypeInner.purchase:
         return 'PURCHASE';
-      case MarketTransactionTypeString.sell:
+      case MarketTransactionTypeInner.sell:
         return 'SELL';
     }
   }

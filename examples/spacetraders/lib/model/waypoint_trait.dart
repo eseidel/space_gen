@@ -7,13 +7,13 @@ class WaypointTrait {
 
   factory WaypointTrait.fromJson(Map<String, dynamic> json) {
     return WaypointTrait(
-      symbol: WaypointTraitSymbolString.fromJson(json['symbol'] as String),
+      symbol: WaypointTraitSymbolInner.fromJson(json['symbol'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
     );
   }
 
-  final WaypointTraitSymbolString symbol;
+  final WaypointTraitSymbolInner symbol;
   final String name;
   final String description;
 
@@ -26,7 +26,7 @@ class WaypointTrait {
   }
 }
 
-enum WaypointTraitSymbolString {
+enum WaypointTraitSymbolInner {
   uncharted('UNCHARTED'),
   marketplace('MARKETPLACE'),
   shipyard('SHIPYARD'),
@@ -88,130 +88,130 @@ enum WaypointTraitSymbolString {
   stripped('STRIPPED'),
   ;
 
-  const WaypointTraitSymbolString(this.value);
+  const WaypointTraitSymbolInner(this.value);
 
-  factory WaypointTraitSymbolString.fromJson(String json) {
+  factory WaypointTraitSymbolInner.fromJson(String json) {
     switch (json) {
       case 'UNCHARTED':
-        return WaypointTraitSymbolString.uncharted;
+        return WaypointTraitSymbolInner.uncharted;
       case 'MARKETPLACE':
-        return WaypointTraitSymbolString.marketplace;
+        return WaypointTraitSymbolInner.marketplace;
       case 'SHIPYARD':
-        return WaypointTraitSymbolString.shipyard;
+        return WaypointTraitSymbolInner.shipyard;
       case 'OUTPOST':
-        return WaypointTraitSymbolString.outpost;
+        return WaypointTraitSymbolInner.outpost;
       case 'SCATTERED_SETTLEMENTS':
-        return WaypointTraitSymbolString.scatteredSettlements;
+        return WaypointTraitSymbolInner.scatteredSettlements;
       case 'SPRAWLING_CITIES':
-        return WaypointTraitSymbolString.sprawlingCities;
+        return WaypointTraitSymbolInner.sprawlingCities;
       case 'MEGA_STRUCTURES':
-        return WaypointTraitSymbolString.megaStructures;
+        return WaypointTraitSymbolInner.megaStructures;
       case 'OVERCROWDED':
-        return WaypointTraitSymbolString.overcrowded;
+        return WaypointTraitSymbolInner.overcrowded;
       case 'HIGH_TECH':
-        return WaypointTraitSymbolString.highTech;
+        return WaypointTraitSymbolInner.highTech;
       case 'CORRUPT':
-        return WaypointTraitSymbolString.corrupt;
+        return WaypointTraitSymbolInner.corrupt;
       case 'BUREAUCRATIC':
-        return WaypointTraitSymbolString.bureaucratic;
+        return WaypointTraitSymbolInner.bureaucratic;
       case 'TRADING_HUB':
-        return WaypointTraitSymbolString.tradingHub;
+        return WaypointTraitSymbolInner.tradingHub;
       case 'INDUSTRIAL':
-        return WaypointTraitSymbolString.industrial;
+        return WaypointTraitSymbolInner.industrial;
       case 'BLACK_MARKET':
-        return WaypointTraitSymbolString.blackMarket;
+        return WaypointTraitSymbolInner.blackMarket;
       case 'RESEARCH_FACILITY':
-        return WaypointTraitSymbolString.researchFacility;
+        return WaypointTraitSymbolInner.researchFacility;
       case 'MILITARY_BASE':
-        return WaypointTraitSymbolString.militaryBase;
+        return WaypointTraitSymbolInner.militaryBase;
       case 'SURVEILLANCE_OUTPOST':
-        return WaypointTraitSymbolString.surveillanceOutpost;
+        return WaypointTraitSymbolInner.surveillanceOutpost;
       case 'EXPLORATION_OUTPOST':
-        return WaypointTraitSymbolString.explorationOutpost;
+        return WaypointTraitSymbolInner.explorationOutpost;
       case 'MINERAL_DEPOSITS':
-        return WaypointTraitSymbolString.mineralDeposits;
+        return WaypointTraitSymbolInner.mineralDeposits;
       case 'COMMON_METAL_DEPOSITS':
-        return WaypointTraitSymbolString.commonMetalDeposits;
+        return WaypointTraitSymbolInner.commonMetalDeposits;
       case 'PRECIOUS_METAL_DEPOSITS':
-        return WaypointTraitSymbolString.preciousMetalDeposits;
+        return WaypointTraitSymbolInner.preciousMetalDeposits;
       case 'RARE_METAL_DEPOSITS':
-        return WaypointTraitSymbolString.rareMetalDeposits;
+        return WaypointTraitSymbolInner.rareMetalDeposits;
       case 'METHANE_POOLS':
-        return WaypointTraitSymbolString.methanePools;
+        return WaypointTraitSymbolInner.methanePools;
       case 'ICE_CRYSTALS':
-        return WaypointTraitSymbolString.iceCrystals;
+        return WaypointTraitSymbolInner.iceCrystals;
       case 'EXPLOSIVE_GASES':
-        return WaypointTraitSymbolString.explosiveGases;
+        return WaypointTraitSymbolInner.explosiveGases;
       case 'STRONG_MAGNETOSPHERE':
-        return WaypointTraitSymbolString.strongMagnetosphere;
+        return WaypointTraitSymbolInner.strongMagnetosphere;
       case 'VIBRANT_AURORAS':
-        return WaypointTraitSymbolString.vibrantAuroras;
+        return WaypointTraitSymbolInner.vibrantAuroras;
       case 'SALT_FLATS':
-        return WaypointTraitSymbolString.saltFlats;
+        return WaypointTraitSymbolInner.saltFlats;
       case 'CANYONS':
-        return WaypointTraitSymbolString.canyons;
+        return WaypointTraitSymbolInner.canyons;
       case 'PERPETUAL_DAYLIGHT':
-        return WaypointTraitSymbolString.perpetualDaylight;
+        return WaypointTraitSymbolInner.perpetualDaylight;
       case 'PERPETUAL_OVERCAST':
-        return WaypointTraitSymbolString.perpetualOvercast;
+        return WaypointTraitSymbolInner.perpetualOvercast;
       case 'DRY_SEABEDS':
-        return WaypointTraitSymbolString.drySeabeds;
+        return WaypointTraitSymbolInner.drySeabeds;
       case 'MAGMA_SEAS':
-        return WaypointTraitSymbolString.magmaSeas;
+        return WaypointTraitSymbolInner.magmaSeas;
       case 'SUPERVOLCANOES':
-        return WaypointTraitSymbolString.supervolcanoes;
+        return WaypointTraitSymbolInner.supervolcanoes;
       case 'ASH_CLOUDS':
-        return WaypointTraitSymbolString.ashClouds;
+        return WaypointTraitSymbolInner.ashClouds;
       case 'VAST_RUINS':
-        return WaypointTraitSymbolString.vastRuins;
+        return WaypointTraitSymbolInner.vastRuins;
       case 'MUTATED_FLORA':
-        return WaypointTraitSymbolString.mutatedFlora;
+        return WaypointTraitSymbolInner.mutatedFlora;
       case 'TERRAFORMED':
-        return WaypointTraitSymbolString.terraformed;
+        return WaypointTraitSymbolInner.terraformed;
       case 'EXTREME_TEMPERATURES':
-        return WaypointTraitSymbolString.extremeTemperatures;
+        return WaypointTraitSymbolInner.extremeTemperatures;
       case 'EXTREME_PRESSURE':
-        return WaypointTraitSymbolString.extremePressure;
+        return WaypointTraitSymbolInner.extremePressure;
       case 'DIVERSE_LIFE':
-        return WaypointTraitSymbolString.diverseLife;
+        return WaypointTraitSymbolInner.diverseLife;
       case 'SCARCE_LIFE':
-        return WaypointTraitSymbolString.scarceLife;
+        return WaypointTraitSymbolInner.scarceLife;
       case 'FOSSILS':
-        return WaypointTraitSymbolString.fossils;
+        return WaypointTraitSymbolInner.fossils;
       case 'WEAK_GRAVITY':
-        return WaypointTraitSymbolString.weakGravity;
+        return WaypointTraitSymbolInner.weakGravity;
       case 'STRONG_GRAVITY':
-        return WaypointTraitSymbolString.strongGravity;
+        return WaypointTraitSymbolInner.strongGravity;
       case 'CRUSHING_GRAVITY':
-        return WaypointTraitSymbolString.crushingGravity;
+        return WaypointTraitSymbolInner.crushingGravity;
       case 'TOXIC_ATMOSPHERE':
-        return WaypointTraitSymbolString.toxicAtmosphere;
+        return WaypointTraitSymbolInner.toxicAtmosphere;
       case 'CORROSIVE_ATMOSPHERE':
-        return WaypointTraitSymbolString.corrosiveAtmosphere;
+        return WaypointTraitSymbolInner.corrosiveAtmosphere;
       case 'BREATHABLE_ATMOSPHERE':
-        return WaypointTraitSymbolString.breathableAtmosphere;
+        return WaypointTraitSymbolInner.breathableAtmosphere;
       case 'JOVIAN':
-        return WaypointTraitSymbolString.jovian;
+        return WaypointTraitSymbolInner.jovian;
       case 'ROCKY':
-        return WaypointTraitSymbolString.rocky;
+        return WaypointTraitSymbolInner.rocky;
       case 'VOLCANIC':
-        return WaypointTraitSymbolString.volcanic;
+        return WaypointTraitSymbolInner.volcanic;
       case 'FROZEN':
-        return WaypointTraitSymbolString.frozen;
+        return WaypointTraitSymbolInner.frozen;
       case 'SWAMP':
-        return WaypointTraitSymbolString.swamp;
+        return WaypointTraitSymbolInner.swamp;
       case 'BARREN':
-        return WaypointTraitSymbolString.barren;
+        return WaypointTraitSymbolInner.barren;
       case 'TEMPERATE':
-        return WaypointTraitSymbolString.temperate;
+        return WaypointTraitSymbolInner.temperate;
       case 'JUNGLE':
-        return WaypointTraitSymbolString.jungle;
+        return WaypointTraitSymbolInner.jungle;
       case 'OCEAN':
-        return WaypointTraitSymbolString.ocean;
+        return WaypointTraitSymbolInner.ocean;
       case 'STRIPPED':
-        return WaypointTraitSymbolString.stripped;
+        return WaypointTraitSymbolInner.stripped;
       default:
-        throw Exception('Unknown WaypointTraitSymbolString value: $json');
+        throw Exception('Unknown WaypointTraitSymbolInner value: $json');
     }
   }
 
@@ -219,123 +219,123 @@ enum WaypointTraitSymbolString {
 
   String toJson() {
     switch (this) {
-      case WaypointTraitSymbolString.uncharted:
+      case WaypointTraitSymbolInner.uncharted:
         return 'UNCHARTED';
-      case WaypointTraitSymbolString.marketplace:
+      case WaypointTraitSymbolInner.marketplace:
         return 'MARKETPLACE';
-      case WaypointTraitSymbolString.shipyard:
+      case WaypointTraitSymbolInner.shipyard:
         return 'SHIPYARD';
-      case WaypointTraitSymbolString.outpost:
+      case WaypointTraitSymbolInner.outpost:
         return 'OUTPOST';
-      case WaypointTraitSymbolString.scatteredSettlements:
+      case WaypointTraitSymbolInner.scatteredSettlements:
         return 'SCATTERED_SETTLEMENTS';
-      case WaypointTraitSymbolString.sprawlingCities:
+      case WaypointTraitSymbolInner.sprawlingCities:
         return 'SPRAWLING_CITIES';
-      case WaypointTraitSymbolString.megaStructures:
+      case WaypointTraitSymbolInner.megaStructures:
         return 'MEGA_STRUCTURES';
-      case WaypointTraitSymbolString.overcrowded:
+      case WaypointTraitSymbolInner.overcrowded:
         return 'OVERCROWDED';
-      case WaypointTraitSymbolString.highTech:
+      case WaypointTraitSymbolInner.highTech:
         return 'HIGH_TECH';
-      case WaypointTraitSymbolString.corrupt:
+      case WaypointTraitSymbolInner.corrupt:
         return 'CORRUPT';
-      case WaypointTraitSymbolString.bureaucratic:
+      case WaypointTraitSymbolInner.bureaucratic:
         return 'BUREAUCRATIC';
-      case WaypointTraitSymbolString.tradingHub:
+      case WaypointTraitSymbolInner.tradingHub:
         return 'TRADING_HUB';
-      case WaypointTraitSymbolString.industrial:
+      case WaypointTraitSymbolInner.industrial:
         return 'INDUSTRIAL';
-      case WaypointTraitSymbolString.blackMarket:
+      case WaypointTraitSymbolInner.blackMarket:
         return 'BLACK_MARKET';
-      case WaypointTraitSymbolString.researchFacility:
+      case WaypointTraitSymbolInner.researchFacility:
         return 'RESEARCH_FACILITY';
-      case WaypointTraitSymbolString.militaryBase:
+      case WaypointTraitSymbolInner.militaryBase:
         return 'MILITARY_BASE';
-      case WaypointTraitSymbolString.surveillanceOutpost:
+      case WaypointTraitSymbolInner.surveillanceOutpost:
         return 'SURVEILLANCE_OUTPOST';
-      case WaypointTraitSymbolString.explorationOutpost:
+      case WaypointTraitSymbolInner.explorationOutpost:
         return 'EXPLORATION_OUTPOST';
-      case WaypointTraitSymbolString.mineralDeposits:
+      case WaypointTraitSymbolInner.mineralDeposits:
         return 'MINERAL_DEPOSITS';
-      case WaypointTraitSymbolString.commonMetalDeposits:
+      case WaypointTraitSymbolInner.commonMetalDeposits:
         return 'COMMON_METAL_DEPOSITS';
-      case WaypointTraitSymbolString.preciousMetalDeposits:
+      case WaypointTraitSymbolInner.preciousMetalDeposits:
         return 'PRECIOUS_METAL_DEPOSITS';
-      case WaypointTraitSymbolString.rareMetalDeposits:
+      case WaypointTraitSymbolInner.rareMetalDeposits:
         return 'RARE_METAL_DEPOSITS';
-      case WaypointTraitSymbolString.methanePools:
+      case WaypointTraitSymbolInner.methanePools:
         return 'METHANE_POOLS';
-      case WaypointTraitSymbolString.iceCrystals:
+      case WaypointTraitSymbolInner.iceCrystals:
         return 'ICE_CRYSTALS';
-      case WaypointTraitSymbolString.explosiveGases:
+      case WaypointTraitSymbolInner.explosiveGases:
         return 'EXPLOSIVE_GASES';
-      case WaypointTraitSymbolString.strongMagnetosphere:
+      case WaypointTraitSymbolInner.strongMagnetosphere:
         return 'STRONG_MAGNETOSPHERE';
-      case WaypointTraitSymbolString.vibrantAuroras:
+      case WaypointTraitSymbolInner.vibrantAuroras:
         return 'VIBRANT_AURORAS';
-      case WaypointTraitSymbolString.saltFlats:
+      case WaypointTraitSymbolInner.saltFlats:
         return 'SALT_FLATS';
-      case WaypointTraitSymbolString.canyons:
+      case WaypointTraitSymbolInner.canyons:
         return 'CANYONS';
-      case WaypointTraitSymbolString.perpetualDaylight:
+      case WaypointTraitSymbolInner.perpetualDaylight:
         return 'PERPETUAL_DAYLIGHT';
-      case WaypointTraitSymbolString.perpetualOvercast:
+      case WaypointTraitSymbolInner.perpetualOvercast:
         return 'PERPETUAL_OVERCAST';
-      case WaypointTraitSymbolString.drySeabeds:
+      case WaypointTraitSymbolInner.drySeabeds:
         return 'DRY_SEABEDS';
-      case WaypointTraitSymbolString.magmaSeas:
+      case WaypointTraitSymbolInner.magmaSeas:
         return 'MAGMA_SEAS';
-      case WaypointTraitSymbolString.supervolcanoes:
+      case WaypointTraitSymbolInner.supervolcanoes:
         return 'SUPERVOLCANOES';
-      case WaypointTraitSymbolString.ashClouds:
+      case WaypointTraitSymbolInner.ashClouds:
         return 'ASH_CLOUDS';
-      case WaypointTraitSymbolString.vastRuins:
+      case WaypointTraitSymbolInner.vastRuins:
         return 'VAST_RUINS';
-      case WaypointTraitSymbolString.mutatedFlora:
+      case WaypointTraitSymbolInner.mutatedFlora:
         return 'MUTATED_FLORA';
-      case WaypointTraitSymbolString.terraformed:
+      case WaypointTraitSymbolInner.terraformed:
         return 'TERRAFORMED';
-      case WaypointTraitSymbolString.extremeTemperatures:
+      case WaypointTraitSymbolInner.extremeTemperatures:
         return 'EXTREME_TEMPERATURES';
-      case WaypointTraitSymbolString.extremePressure:
+      case WaypointTraitSymbolInner.extremePressure:
         return 'EXTREME_PRESSURE';
-      case WaypointTraitSymbolString.diverseLife:
+      case WaypointTraitSymbolInner.diverseLife:
         return 'DIVERSE_LIFE';
-      case WaypointTraitSymbolString.scarceLife:
+      case WaypointTraitSymbolInner.scarceLife:
         return 'SCARCE_LIFE';
-      case WaypointTraitSymbolString.fossils:
+      case WaypointTraitSymbolInner.fossils:
         return 'FOSSILS';
-      case WaypointTraitSymbolString.weakGravity:
+      case WaypointTraitSymbolInner.weakGravity:
         return 'WEAK_GRAVITY';
-      case WaypointTraitSymbolString.strongGravity:
+      case WaypointTraitSymbolInner.strongGravity:
         return 'STRONG_GRAVITY';
-      case WaypointTraitSymbolString.crushingGravity:
+      case WaypointTraitSymbolInner.crushingGravity:
         return 'CRUSHING_GRAVITY';
-      case WaypointTraitSymbolString.toxicAtmosphere:
+      case WaypointTraitSymbolInner.toxicAtmosphere:
         return 'TOXIC_ATMOSPHERE';
-      case WaypointTraitSymbolString.corrosiveAtmosphere:
+      case WaypointTraitSymbolInner.corrosiveAtmosphere:
         return 'CORROSIVE_ATMOSPHERE';
-      case WaypointTraitSymbolString.breathableAtmosphere:
+      case WaypointTraitSymbolInner.breathableAtmosphere:
         return 'BREATHABLE_ATMOSPHERE';
-      case WaypointTraitSymbolString.jovian:
+      case WaypointTraitSymbolInner.jovian:
         return 'JOVIAN';
-      case WaypointTraitSymbolString.rocky:
+      case WaypointTraitSymbolInner.rocky:
         return 'ROCKY';
-      case WaypointTraitSymbolString.volcanic:
+      case WaypointTraitSymbolInner.volcanic:
         return 'VOLCANIC';
-      case WaypointTraitSymbolString.frozen:
+      case WaypointTraitSymbolInner.frozen:
         return 'FROZEN';
-      case WaypointTraitSymbolString.swamp:
+      case WaypointTraitSymbolInner.swamp:
         return 'SWAMP';
-      case WaypointTraitSymbolString.barren:
+      case WaypointTraitSymbolInner.barren:
         return 'BARREN';
-      case WaypointTraitSymbolString.temperate:
+      case WaypointTraitSymbolInner.temperate:
         return 'TEMPERATE';
-      case WaypointTraitSymbolString.jungle:
+      case WaypointTraitSymbolInner.jungle:
         return 'JUNGLE';
-      case WaypointTraitSymbolString.ocean:
+      case WaypointTraitSymbolInner.ocean:
         return 'OCEAN';
-      case WaypointTraitSymbolString.stripped:
+      case WaypointTraitSymbolInner.stripped:
         return 'STRIPPED';
     }
   }

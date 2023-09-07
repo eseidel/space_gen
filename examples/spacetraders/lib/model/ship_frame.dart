@@ -14,7 +14,7 @@ class ShipFrame {
 
   factory ShipFrame.fromJson(Map<String, dynamic> json) {
     return ShipFrame(
-      symbol: ShipFrameSymbolString.fromJson(json['symbol'] as String),
+      symbol: ShipFrameSymbolInner.fromJson(json['symbol'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
       condition: json['condition'] as int,
@@ -27,7 +27,7 @@ class ShipFrame {
     );
   }
 
-  final ShipFrameSymbolString symbol;
+  final ShipFrameSymbolInner symbol;
   final String name;
   final String description;
   final int condition;
@@ -50,7 +50,7 @@ class ShipFrame {
   }
 }
 
-enum ShipFrameSymbolString {
+enum ShipFrameSymbolInner {
   frameProbe('FRAME_PROBE'),
   frameDrone('FRAME_DRONE'),
   frameInterceptor('FRAME_INTERCEPTOR'),
@@ -68,42 +68,42 @@ enum ShipFrameSymbolString {
   frameCarrier('FRAME_CARRIER'),
   ;
 
-  const ShipFrameSymbolString(this.value);
+  const ShipFrameSymbolInner(this.value);
 
-  factory ShipFrameSymbolString.fromJson(String json) {
+  factory ShipFrameSymbolInner.fromJson(String json) {
     switch (json) {
       case 'FRAME_PROBE':
-        return ShipFrameSymbolString.frameProbe;
+        return ShipFrameSymbolInner.frameProbe;
       case 'FRAME_DRONE':
-        return ShipFrameSymbolString.frameDrone;
+        return ShipFrameSymbolInner.frameDrone;
       case 'FRAME_INTERCEPTOR':
-        return ShipFrameSymbolString.frameInterceptor;
+        return ShipFrameSymbolInner.frameInterceptor;
       case 'FRAME_RACER':
-        return ShipFrameSymbolString.frameRacer;
+        return ShipFrameSymbolInner.frameRacer;
       case 'FRAME_FIGHTER':
-        return ShipFrameSymbolString.frameFighter;
+        return ShipFrameSymbolInner.frameFighter;
       case 'FRAME_FRIGATE':
-        return ShipFrameSymbolString.frameFrigate;
+        return ShipFrameSymbolInner.frameFrigate;
       case 'FRAME_SHUTTLE':
-        return ShipFrameSymbolString.frameShuttle;
+        return ShipFrameSymbolInner.frameShuttle;
       case 'FRAME_EXPLORER':
-        return ShipFrameSymbolString.frameExplorer;
+        return ShipFrameSymbolInner.frameExplorer;
       case 'FRAME_MINER':
-        return ShipFrameSymbolString.frameMiner;
+        return ShipFrameSymbolInner.frameMiner;
       case 'FRAME_LIGHT_FREIGHTER':
-        return ShipFrameSymbolString.frameLightFreighter;
+        return ShipFrameSymbolInner.frameLightFreighter;
       case 'FRAME_HEAVY_FREIGHTER':
-        return ShipFrameSymbolString.frameHeavyFreighter;
+        return ShipFrameSymbolInner.frameHeavyFreighter;
       case 'FRAME_TRANSPORT':
-        return ShipFrameSymbolString.frameTransport;
+        return ShipFrameSymbolInner.frameTransport;
       case 'FRAME_DESTROYER':
-        return ShipFrameSymbolString.frameDestroyer;
+        return ShipFrameSymbolInner.frameDestroyer;
       case 'FRAME_CRUISER':
-        return ShipFrameSymbolString.frameCruiser;
+        return ShipFrameSymbolInner.frameCruiser;
       case 'FRAME_CARRIER':
-        return ShipFrameSymbolString.frameCarrier;
+        return ShipFrameSymbolInner.frameCarrier;
       default:
-        throw Exception('Unknown ShipFrameSymbolString value: $json');
+        throw Exception('Unknown ShipFrameSymbolInner value: $json');
     }
   }
 
@@ -111,35 +111,35 @@ enum ShipFrameSymbolString {
 
   String toJson() {
     switch (this) {
-      case ShipFrameSymbolString.frameProbe:
+      case ShipFrameSymbolInner.frameProbe:
         return 'FRAME_PROBE';
-      case ShipFrameSymbolString.frameDrone:
+      case ShipFrameSymbolInner.frameDrone:
         return 'FRAME_DRONE';
-      case ShipFrameSymbolString.frameInterceptor:
+      case ShipFrameSymbolInner.frameInterceptor:
         return 'FRAME_INTERCEPTOR';
-      case ShipFrameSymbolString.frameRacer:
+      case ShipFrameSymbolInner.frameRacer:
         return 'FRAME_RACER';
-      case ShipFrameSymbolString.frameFighter:
+      case ShipFrameSymbolInner.frameFighter:
         return 'FRAME_FIGHTER';
-      case ShipFrameSymbolString.frameFrigate:
+      case ShipFrameSymbolInner.frameFrigate:
         return 'FRAME_FRIGATE';
-      case ShipFrameSymbolString.frameShuttle:
+      case ShipFrameSymbolInner.frameShuttle:
         return 'FRAME_SHUTTLE';
-      case ShipFrameSymbolString.frameExplorer:
+      case ShipFrameSymbolInner.frameExplorer:
         return 'FRAME_EXPLORER';
-      case ShipFrameSymbolString.frameMiner:
+      case ShipFrameSymbolInner.frameMiner:
         return 'FRAME_MINER';
-      case ShipFrameSymbolString.frameLightFreighter:
+      case ShipFrameSymbolInner.frameLightFreighter:
         return 'FRAME_LIGHT_FREIGHTER';
-      case ShipFrameSymbolString.frameHeavyFreighter:
+      case ShipFrameSymbolInner.frameHeavyFreighter:
         return 'FRAME_HEAVY_FREIGHTER';
-      case ShipFrameSymbolString.frameTransport:
+      case ShipFrameSymbolInner.frameTransport:
         return 'FRAME_TRANSPORT';
-      case ShipFrameSymbolString.frameDestroyer:
+      case ShipFrameSymbolInner.frameDestroyer:
         return 'FRAME_DESTROYER';
-      case ShipFrameSymbolString.frameCruiser:
+      case ShipFrameSymbolInner.frameCruiser:
         return 'FRAME_CRUISER';
-      case ShipFrameSymbolString.frameCarrier:
+      case ShipFrameSymbolInner.frameCarrier:
         return 'FRAME_CARRIER';
     }
   }

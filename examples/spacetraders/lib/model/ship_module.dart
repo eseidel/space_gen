@@ -12,7 +12,7 @@ class ShipModule {
 
   factory ShipModule.fromJson(Map<String, dynamic> json) {
     return ShipModule(
-      symbol: ShipModuleSymbolString.fromJson(json['symbol'] as String),
+      symbol: ShipModuleSymbolInner.fromJson(json['symbol'] as String),
       capacity: json['capacity'] as int,
       range: json['range'] as int,
       name: json['name'] as String,
@@ -23,7 +23,7 @@ class ShipModule {
     );
   }
 
-  final ShipModuleSymbolString symbol;
+  final ShipModuleSymbolInner symbol;
   final int capacity;
   final int range;
   final String name;
@@ -42,7 +42,7 @@ class ShipModule {
   }
 }
 
-enum ShipModuleSymbolString {
+enum ShipModuleSymbolInner {
   moduleMineralProcessorI('MODULE_MINERAL_PROCESSOR_I'),
   moduleCargoHoldI('MODULE_CARGO_HOLD_I'),
   moduleCrewQuartersI('MODULE_CREW_QUARTERS_I'),
@@ -62,46 +62,46 @@ enum ShipModuleSymbolString {
   moduleShieldGeneratorIi('MODULE_SHIELD_GENERATOR_II'),
   ;
 
-  const ShipModuleSymbolString(this.value);
+  const ShipModuleSymbolInner(this.value);
 
-  factory ShipModuleSymbolString.fromJson(String json) {
+  factory ShipModuleSymbolInner.fromJson(String json) {
     switch (json) {
       case 'MODULE_MINERAL_PROCESSOR_I':
-        return ShipModuleSymbolString.moduleMineralProcessorI;
+        return ShipModuleSymbolInner.moduleMineralProcessorI;
       case 'MODULE_CARGO_HOLD_I':
-        return ShipModuleSymbolString.moduleCargoHoldI;
+        return ShipModuleSymbolInner.moduleCargoHoldI;
       case 'MODULE_CREW_QUARTERS_I':
-        return ShipModuleSymbolString.moduleCrewQuartersI;
+        return ShipModuleSymbolInner.moduleCrewQuartersI;
       case 'MODULE_ENVOY_QUARTERS_I':
-        return ShipModuleSymbolString.moduleEnvoyQuartersI;
+        return ShipModuleSymbolInner.moduleEnvoyQuartersI;
       case 'MODULE_PASSENGER_CABIN_I':
-        return ShipModuleSymbolString.modulePassengerCabinI;
+        return ShipModuleSymbolInner.modulePassengerCabinI;
       case 'MODULE_MICRO_REFINERY_I':
-        return ShipModuleSymbolString.moduleMicroRefineryI;
+        return ShipModuleSymbolInner.moduleMicroRefineryI;
       case 'MODULE_ORE_REFINERY_I':
-        return ShipModuleSymbolString.moduleOreRefineryI;
+        return ShipModuleSymbolInner.moduleOreRefineryI;
       case 'MODULE_FUEL_REFINERY_I':
-        return ShipModuleSymbolString.moduleFuelRefineryI;
+        return ShipModuleSymbolInner.moduleFuelRefineryI;
       case 'MODULE_SCIENCE_LAB_I':
-        return ShipModuleSymbolString.moduleScienceLabI;
+        return ShipModuleSymbolInner.moduleScienceLabI;
       case 'MODULE_JUMP_DRIVE_I':
-        return ShipModuleSymbolString.moduleJumpDriveI;
+        return ShipModuleSymbolInner.moduleJumpDriveI;
       case 'MODULE_JUMP_DRIVE_II':
-        return ShipModuleSymbolString.moduleJumpDriveIi;
+        return ShipModuleSymbolInner.moduleJumpDriveIi;
       case 'MODULE_JUMP_DRIVE_III':
-        return ShipModuleSymbolString.moduleJumpDriveIii;
+        return ShipModuleSymbolInner.moduleJumpDriveIii;
       case 'MODULE_WARP_DRIVE_I':
-        return ShipModuleSymbolString.moduleWarpDriveI;
+        return ShipModuleSymbolInner.moduleWarpDriveI;
       case 'MODULE_WARP_DRIVE_II':
-        return ShipModuleSymbolString.moduleWarpDriveIi;
+        return ShipModuleSymbolInner.moduleWarpDriveIi;
       case 'MODULE_WARP_DRIVE_III':
-        return ShipModuleSymbolString.moduleWarpDriveIii;
+        return ShipModuleSymbolInner.moduleWarpDriveIii;
       case 'MODULE_SHIELD_GENERATOR_I':
-        return ShipModuleSymbolString.moduleShieldGeneratorI;
+        return ShipModuleSymbolInner.moduleShieldGeneratorI;
       case 'MODULE_SHIELD_GENERATOR_II':
-        return ShipModuleSymbolString.moduleShieldGeneratorIi;
+        return ShipModuleSymbolInner.moduleShieldGeneratorIi;
       default:
-        throw Exception('Unknown ShipModuleSymbolString value: $json');
+        throw Exception('Unknown ShipModuleSymbolInner value: $json');
     }
   }
 
@@ -109,39 +109,39 @@ enum ShipModuleSymbolString {
 
   String toJson() {
     switch (this) {
-      case ShipModuleSymbolString.moduleMineralProcessorI:
+      case ShipModuleSymbolInner.moduleMineralProcessorI:
         return 'MODULE_MINERAL_PROCESSOR_I';
-      case ShipModuleSymbolString.moduleCargoHoldI:
+      case ShipModuleSymbolInner.moduleCargoHoldI:
         return 'MODULE_CARGO_HOLD_I';
-      case ShipModuleSymbolString.moduleCrewQuartersI:
+      case ShipModuleSymbolInner.moduleCrewQuartersI:
         return 'MODULE_CREW_QUARTERS_I';
-      case ShipModuleSymbolString.moduleEnvoyQuartersI:
+      case ShipModuleSymbolInner.moduleEnvoyQuartersI:
         return 'MODULE_ENVOY_QUARTERS_I';
-      case ShipModuleSymbolString.modulePassengerCabinI:
+      case ShipModuleSymbolInner.modulePassengerCabinI:
         return 'MODULE_PASSENGER_CABIN_I';
-      case ShipModuleSymbolString.moduleMicroRefineryI:
+      case ShipModuleSymbolInner.moduleMicroRefineryI:
         return 'MODULE_MICRO_REFINERY_I';
-      case ShipModuleSymbolString.moduleOreRefineryI:
+      case ShipModuleSymbolInner.moduleOreRefineryI:
         return 'MODULE_ORE_REFINERY_I';
-      case ShipModuleSymbolString.moduleFuelRefineryI:
+      case ShipModuleSymbolInner.moduleFuelRefineryI:
         return 'MODULE_FUEL_REFINERY_I';
-      case ShipModuleSymbolString.moduleScienceLabI:
+      case ShipModuleSymbolInner.moduleScienceLabI:
         return 'MODULE_SCIENCE_LAB_I';
-      case ShipModuleSymbolString.moduleJumpDriveI:
+      case ShipModuleSymbolInner.moduleJumpDriveI:
         return 'MODULE_JUMP_DRIVE_I';
-      case ShipModuleSymbolString.moduleJumpDriveIi:
+      case ShipModuleSymbolInner.moduleJumpDriveIi:
         return 'MODULE_JUMP_DRIVE_II';
-      case ShipModuleSymbolString.moduleJumpDriveIii:
+      case ShipModuleSymbolInner.moduleJumpDriveIii:
         return 'MODULE_JUMP_DRIVE_III';
-      case ShipModuleSymbolString.moduleWarpDriveI:
+      case ShipModuleSymbolInner.moduleWarpDriveI:
         return 'MODULE_WARP_DRIVE_I';
-      case ShipModuleSymbolString.moduleWarpDriveIi:
+      case ShipModuleSymbolInner.moduleWarpDriveIi:
         return 'MODULE_WARP_DRIVE_II';
-      case ShipModuleSymbolString.moduleWarpDriveIii:
+      case ShipModuleSymbolInner.moduleWarpDriveIii:
         return 'MODULE_WARP_DRIVE_III';
-      case ShipModuleSymbolString.moduleShieldGeneratorI:
+      case ShipModuleSymbolInner.moduleShieldGeneratorI:
         return 'MODULE_SHIELD_GENERATOR_I';
-      case ShipModuleSymbolString.moduleShieldGeneratorIi:
+      case ShipModuleSymbolInner.moduleShieldGeneratorIi:
         return 'MODULE_SHIELD_GENERATOR_II';
     }
   }

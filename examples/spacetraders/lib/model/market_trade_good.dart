@@ -11,7 +11,7 @@ class MarketTradeGood {
     return MarketTradeGood(
       symbol: json['symbol'] as String,
       tradeVolume: json['tradeVolume'] as int,
-      supply: MarketTradeGoodSupplyString.fromJson(json['supply'] as String),
+      supply: MarketTradeGoodSupplyInner.fromJson(json['supply'] as String),
       purchasePrice: json['purchasePrice'] as int,
       sellPrice: json['sellPrice'] as int,
     );
@@ -19,7 +19,7 @@ class MarketTradeGood {
 
   final String symbol;
   final int tradeVolume;
-  final MarketTradeGoodSupplyString supply;
+  final MarketTradeGoodSupplyInner supply;
   final int purchasePrice;
   final int sellPrice;
 
@@ -34,27 +34,27 @@ class MarketTradeGood {
   }
 }
 
-enum MarketTradeGoodSupplyString {
+enum MarketTradeGoodSupplyInner {
   scarce('SCARCE'),
   limited('LIMITED'),
   moderate('MODERATE'),
   abundant('ABUNDANT'),
   ;
 
-  const MarketTradeGoodSupplyString(this.value);
+  const MarketTradeGoodSupplyInner(this.value);
 
-  factory MarketTradeGoodSupplyString.fromJson(String json) {
+  factory MarketTradeGoodSupplyInner.fromJson(String json) {
     switch (json) {
       case 'SCARCE':
-        return MarketTradeGoodSupplyString.scarce;
+        return MarketTradeGoodSupplyInner.scarce;
       case 'LIMITED':
-        return MarketTradeGoodSupplyString.limited;
+        return MarketTradeGoodSupplyInner.limited;
       case 'MODERATE':
-        return MarketTradeGoodSupplyString.moderate;
+        return MarketTradeGoodSupplyInner.moderate;
       case 'ABUNDANT':
-        return MarketTradeGoodSupplyString.abundant;
+        return MarketTradeGoodSupplyInner.abundant;
       default:
-        throw Exception('Unknown MarketTradeGoodSupplyString value: $json');
+        throw Exception('Unknown MarketTradeGoodSupplyInner value: $json');
     }
   }
 
@@ -62,13 +62,13 @@ enum MarketTradeGoodSupplyString {
 
   String toJson() {
     switch (this) {
-      case MarketTradeGoodSupplyString.scarce:
+      case MarketTradeGoodSupplyInner.scarce:
         return 'SCARCE';
-      case MarketTradeGoodSupplyString.limited:
+      case MarketTradeGoodSupplyInner.limited:
         return 'LIMITED';
-      case MarketTradeGoodSupplyString.moderate:
+      case MarketTradeGoodSupplyInner.moderate:
         return 'MODERATE';
-      case MarketTradeGoodSupplyString.abundant:
+      case MarketTradeGoodSupplyInner.abundant:
         return 'ABUNDANT';
     }
   }

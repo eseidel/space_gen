@@ -14,8 +14,8 @@ class Shipyard {
     return Shipyard(
       symbol: json['symbol'] as String,
       shipTypes: (json['shipTypes'] as List<dynamic>)
-          .map<ShipyardShipTypesArray>(
-            (e) => ShipyardShipTypesArray.fromJson(e as Map<String, dynamic>),
+          .map<ShipyardShipTypesInner>(
+            (e) => ShipyardShipTypesInner.fromJson(e as Map<String, dynamic>),
           )
           .toList(),
       transactions: (json['transactions'] as List<dynamic>)
@@ -32,7 +32,7 @@ class Shipyard {
   }
 
   final String symbol;
-  final List<ShipyardShipTypesArray> shipTypes;
+  final List<ShipyardShipTypesInner> shipTypes;
   final List<ShipyardTransaction> transactions;
   final List<ShipyardShip> ships;
 
@@ -46,13 +46,13 @@ class Shipyard {
   }
 }
 
-class ShipyardShipTypesArray {
-  ShipyardShipTypesArray({
+class ShipyardShipTypesInner {
+  ShipyardShipTypesInner({
     required this.type,
   });
 
-  factory ShipyardShipTypesArray.fromJson(Map<String, dynamic> json) {
-    return ShipyardShipTypesArray(
+  factory ShipyardShipTypesInner.fromJson(Map<String, dynamic> json) {
+    return ShipyardShipTypesInner(
       type: ShipType.fromJson(json['type'] as String),
     );
   }

@@ -13,7 +13,7 @@ class ShipCrew {
       current: json['current'] as int,
       required: json['required'] as int,
       capacity: json['capacity'] as int,
-      rotation: ShipCrewRotationString.fromJson(json['rotation'] as String),
+      rotation: ShipCrewRotationInner.fromJson(json['rotation'] as String),
       morale: json['morale'] as int,
       wages: json['wages'] as int,
     );
@@ -22,7 +22,7 @@ class ShipCrew {
   final int current;
   final int required;
   final int capacity;
-  final ShipCrewRotationString rotation;
+  final ShipCrewRotationInner rotation;
   final int morale;
   final int wages;
 
@@ -38,21 +38,21 @@ class ShipCrew {
   }
 }
 
-enum ShipCrewRotationString {
+enum ShipCrewRotationInner {
   strict('STRICT'),
   relaxed('RELAXED'),
   ;
 
-  const ShipCrewRotationString(this.value);
+  const ShipCrewRotationInner(this.value);
 
-  factory ShipCrewRotationString.fromJson(String json) {
+  factory ShipCrewRotationInner.fromJson(String json) {
     switch (json) {
       case 'STRICT':
-        return ShipCrewRotationString.strict;
+        return ShipCrewRotationInner.strict;
       case 'RELAXED':
-        return ShipCrewRotationString.relaxed;
+        return ShipCrewRotationInner.relaxed;
       default:
-        throw Exception('Unknown ShipCrewRotationString value: $json');
+        throw Exception('Unknown ShipCrewRotationInner value: $json');
     }
   }
 
@@ -60,9 +60,9 @@ enum ShipCrewRotationString {
 
   String toJson() {
     switch (this) {
-      case ShipCrewRotationString.strict:
+      case ShipCrewRotationInner.strict:
         return 'STRICT';
-      case ShipCrewRotationString.relaxed:
+      case ShipCrewRotationInner.relaxed:
         return 'RELAXED';
     }
   }

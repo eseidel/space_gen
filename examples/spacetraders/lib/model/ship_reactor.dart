@@ -12,7 +12,7 @@ class ShipReactor {
 
   factory ShipReactor.fromJson(Map<String, dynamic> json) {
     return ShipReactor(
-      symbol: ShipReactorSymbolString.fromJson(json['symbol'] as String),
+      symbol: ShipReactorSymbolInner.fromJson(json['symbol'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
       condition: json['condition'] as int,
@@ -23,7 +23,7 @@ class ShipReactor {
     );
   }
 
-  final ShipReactorSymbolString symbol;
+  final ShipReactorSymbolInner symbol;
   final String name;
   final String description;
   final int condition;
@@ -42,7 +42,7 @@ class ShipReactor {
   }
 }
 
-enum ShipReactorSymbolString {
+enum ShipReactorSymbolInner {
   reactorSolarI('REACTOR_SOLAR_I'),
   reactorFusionI('REACTOR_FUSION_I'),
   reactorFissionI('REACTOR_FISSION_I'),
@@ -50,22 +50,22 @@ enum ShipReactorSymbolString {
   reactorAntimatterI('REACTOR_ANTIMATTER_I'),
   ;
 
-  const ShipReactorSymbolString(this.value);
+  const ShipReactorSymbolInner(this.value);
 
-  factory ShipReactorSymbolString.fromJson(String json) {
+  factory ShipReactorSymbolInner.fromJson(String json) {
     switch (json) {
       case 'REACTOR_SOLAR_I':
-        return ShipReactorSymbolString.reactorSolarI;
+        return ShipReactorSymbolInner.reactorSolarI;
       case 'REACTOR_FUSION_I':
-        return ShipReactorSymbolString.reactorFusionI;
+        return ShipReactorSymbolInner.reactorFusionI;
       case 'REACTOR_FISSION_I':
-        return ShipReactorSymbolString.reactorFissionI;
+        return ShipReactorSymbolInner.reactorFissionI;
       case 'REACTOR_CHEMICAL_I':
-        return ShipReactorSymbolString.reactorChemicalI;
+        return ShipReactorSymbolInner.reactorChemicalI;
       case 'REACTOR_ANTIMATTER_I':
-        return ShipReactorSymbolString.reactorAntimatterI;
+        return ShipReactorSymbolInner.reactorAntimatterI;
       default:
-        throw Exception('Unknown ShipReactorSymbolString value: $json');
+        throw Exception('Unknown ShipReactorSymbolInner value: $json');
     }
   }
 
@@ -73,15 +73,15 @@ enum ShipReactorSymbolString {
 
   String toJson() {
     switch (this) {
-      case ShipReactorSymbolString.reactorSolarI:
+      case ShipReactorSymbolInner.reactorSolarI:
         return 'REACTOR_SOLAR_I';
-      case ShipReactorSymbolString.reactorFusionI:
+      case ShipReactorSymbolInner.reactorFusionI:
         return 'REACTOR_FUSION_I';
-      case ShipReactorSymbolString.reactorFissionI:
+      case ShipReactorSymbolInner.reactorFissionI:
         return 'REACTOR_FISSION_I';
-      case ShipReactorSymbolString.reactorChemicalI:
+      case ShipReactorSymbolInner.reactorChemicalI:
         return 'REACTOR_CHEMICAL_I';
-      case ShipReactorSymbolString.reactorAntimatterI:
+      case ShipReactorSymbolInner.reactorAntimatterI:
         return 'REACTOR_ANTIMATTER_I';
     }
   }

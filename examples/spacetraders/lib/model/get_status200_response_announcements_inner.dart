@@ -1,13 +1,13 @@
-class GetStatus200ResponseAnnouncementsArray {
-  GetStatus200ResponseAnnouncementsArray({
+class GetStatus200ResponseAnnouncementsInner {
+  GetStatus200ResponseAnnouncementsInner({
     required this.title,
     required this.body,
   });
 
-  factory GetStatus200ResponseAnnouncementsArray.fromJson(
+  factory GetStatus200ResponseAnnouncementsInner.fromJson(
     Map<String, dynamic> json,
   ) {
-    return GetStatus200ResponseAnnouncementsArray(
+    return GetStatus200ResponseAnnouncementsInner(
       title: json['title'] as String,
       body: json['body'] as String,
     );

@@ -1,24 +1,3 @@
-class ShipRefineRequest {
-  ShipRefineRequest({
-    required this.produce,
-  });
-
-  factory ShipRefineRequest.fromJson(Map<String, dynamic> json) {
-    return ShipRefineRequest(
-      produce:
-          ShipRefineRequestProduceInner.fromJson(json['produce'] as String),
-    );
-  }
-
-  final ShipRefineRequestProduceInner produce;
-
-  Map<String, dynamic> toJson() {
-    return {
-      'produce': produce.toJson(),
-    };
-  }
-}
-
 enum ShipRefineRequestProduceInner {
   iron('IRON'),
   copper('COPPER'),

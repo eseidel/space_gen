@@ -12,7 +12,7 @@ class ShipEngine {
 
   factory ShipEngine.fromJson(Map<String, dynamic> json) {
     return ShipEngine(
-      symbol: ShipEngineSymbolString.fromJson(json['symbol'] as String),
+      symbol: ShipEngineSymbolInner.fromJson(json['symbol'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
       condition: json['condition'] as int,
@@ -23,7 +23,7 @@ class ShipEngine {
     );
   }
 
-  final ShipEngineSymbolString symbol;
+  final ShipEngineSymbolInner symbol;
   final String name;
   final String description;
   final int condition;
@@ -42,27 +42,27 @@ class ShipEngine {
   }
 }
 
-enum ShipEngineSymbolString {
+enum ShipEngineSymbolInner {
   engineImpulseDriveI('ENGINE_IMPULSE_DRIVE_I'),
   engineIonDriveI('ENGINE_ION_DRIVE_I'),
   engineIonDriveIi('ENGINE_ION_DRIVE_II'),
   engineHyperDriveI('ENGINE_HYPER_DRIVE_I'),
   ;
 
-  const ShipEngineSymbolString(this.value);
+  const ShipEngineSymbolInner(this.value);
 
-  factory ShipEngineSymbolString.fromJson(String json) {
+  factory ShipEngineSymbolInner.fromJson(String json) {
     switch (json) {
       case 'ENGINE_IMPULSE_DRIVE_I':
-        return ShipEngineSymbolString.engineImpulseDriveI;
+        return ShipEngineSymbolInner.engineImpulseDriveI;
       case 'ENGINE_ION_DRIVE_I':
-        return ShipEngineSymbolString.engineIonDriveI;
+        return ShipEngineSymbolInner.engineIonDriveI;
       case 'ENGINE_ION_DRIVE_II':
-        return ShipEngineSymbolString.engineIonDriveIi;
+        return ShipEngineSymbolInner.engineIonDriveIi;
       case 'ENGINE_HYPER_DRIVE_I':
-        return ShipEngineSymbolString.engineHyperDriveI;
+        return ShipEngineSymbolInner.engineHyperDriveI;
       default:
-        throw Exception('Unknown ShipEngineSymbolString value: $json');
+        throw Exception('Unknown ShipEngineSymbolInner value: $json');
     }
   }
 
@@ -70,13 +70,13 @@ enum ShipEngineSymbolString {
 
   String toJson() {
     switch (this) {
-      case ShipEngineSymbolString.engineImpulseDriveI:
+      case ShipEngineSymbolInner.engineImpulseDriveI:
         return 'ENGINE_IMPULSE_DRIVE_I';
-      case ShipEngineSymbolString.engineIonDriveI:
+      case ShipEngineSymbolInner.engineIonDriveI:
         return 'ENGINE_ION_DRIVE_I';
-      case ShipEngineSymbolString.engineIonDriveIi:
+      case ShipEngineSymbolInner.engineIonDriveIi:
         return 'ENGINE_ION_DRIVE_II';
-      case ShipEngineSymbolString.engineHyperDriveI:
+      case ShipEngineSymbolInner.engineHyperDriveI:
         return 'ENGINE_HYPER_DRIVE_I';
     }
   }

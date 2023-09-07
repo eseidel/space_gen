@@ -1,11 +1,11 @@
-class GetStatus200ResponseLinksArray {
-  GetStatus200ResponseLinksArray({
+class GetStatus200ResponseLinksInner {
+  GetStatus200ResponseLinksInner({
     required this.name,
     required this.url,
   });
 
-  factory GetStatus200ResponseLinksArray.fromJson(Map<String, dynamic> json) {
-    return GetStatus200ResponseLinksArray(
+  factory GetStatus200ResponseLinksInner.fromJson(Map<String, dynamic> json) {
+    return GetStatus200ResponseLinksInner(
       name: json['name'] as String,
       url: json['url'] as String,
     );

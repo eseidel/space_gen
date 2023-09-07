@@ -161,12 +161,12 @@ SchemaRef parseSchemaOrRef({
   if (json.containsKey(r'$ref')) {
     return SchemaRef.fromPath(ref: json[r'$ref'] as String, current: current);
   }
-  // Add our type to the name if it is not an object.
-  // This is mostly for the Enum case.
+  // Add "Inner" to our name if not an object.
+  // This matches what the Dart open api generator does.
   final type = json['type'] as String;
   var name = inferredName;
   if (type != 'object') {
-    name = '$inferredName${type.capitalize()}';
+    name = '${inferredName}Inner';
   }
   return SchemaRef.schema(
     parseSchema(current: current, name: name, json: json),

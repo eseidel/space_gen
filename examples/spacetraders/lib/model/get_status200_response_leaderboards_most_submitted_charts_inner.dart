@@ -1,13 +1,13 @@
-class GetStatus200ResponseLeaderboardsMostSubmittedChartsArray {
-  GetStatus200ResponseLeaderboardsMostSubmittedChartsArray({
+class GetStatus200ResponseLeaderboardsMostSubmittedChartsInner {
+  GetStatus200ResponseLeaderboardsMostSubmittedChartsInner({
     required this.agentSymbol,
     required this.chartCount,
   });
 
-  factory GetStatus200ResponseLeaderboardsMostSubmittedChartsArray.fromJson(
+  factory GetStatus200ResponseLeaderboardsMostSubmittedChartsInner.fromJson(
     Map<String, dynamic> json,
   ) {
-    return GetStatus200ResponseLeaderboardsMostSubmittedChartsArray(
+    return GetStatus200ResponseLeaderboardsMostSubmittedChartsInner(
       agentSymbol: json['agentSymbol'] as String,
       chartCount: json['chartCount'] as int,
     );

@@ -12,23 +12,23 @@ class ShipMount {
 
   factory ShipMount.fromJson(Map<String, dynamic> json) {
     return ShipMount(
-      symbol: ShipMountSymbolString.fromJson(json['symbol'] as String),
+      symbol: ShipMountSymbolInner.fromJson(json['symbol'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
       strength: json['strength'] as int,
       deposits: (json['deposits'] as List<dynamic>)
-          .cast<ShipMountDepositsArrayString>(),
+          .cast<ShipMountDepositsInnerInner>(),
       requirements: ShipRequirements.fromJson(
         json['requirements'] as Map<String, dynamic>,
       ),
     );
   }
 
-  final ShipMountSymbolString symbol;
+  final ShipMountSymbolInner symbol;
   final String name;
   final String description;
   final int strength;
-  final List<ShipMountDepositsArrayString> deposits;
+  final List<ShipMountDepositsInnerInner> deposits;
   final ShipRequirements requirements;
 
   Map<String, dynamic> toJson() {
@@ -43,7 +43,7 @@ class ShipMount {
   }
 }
 
-enum ShipMountSymbolString {
+enum ShipMountSymbolInner {
   mountGasSiphonI('MOUNT_GAS_SIPHON_I'),
   mountGasSiphonIi('MOUNT_GAS_SIPHON_II'),
   mountGasSiphonIii('MOUNT_GAS_SIPHON_III'),
@@ -61,42 +61,42 @@ enum ShipMountSymbolString {
   mountTurretI('MOUNT_TURRET_I'),
   ;
 
-  const ShipMountSymbolString(this.value);
+  const ShipMountSymbolInner(this.value);
 
-  factory ShipMountSymbolString.fromJson(String json) {
+  factory ShipMountSymbolInner.fromJson(String json) {
     switch (json) {
       case 'MOUNT_GAS_SIPHON_I':
-        return ShipMountSymbolString.mountGasSiphonI;
+        return ShipMountSymbolInner.mountGasSiphonI;
       case 'MOUNT_GAS_SIPHON_II':
-        return ShipMountSymbolString.mountGasSiphonIi;
+        return ShipMountSymbolInner.mountGasSiphonIi;
       case 'MOUNT_GAS_SIPHON_III':
-        return ShipMountSymbolString.mountGasSiphonIii;
+        return ShipMountSymbolInner.mountGasSiphonIii;
       case 'MOUNT_SURVEYOR_I':
-        return ShipMountSymbolString.mountSurveyorI;
+        return ShipMountSymbolInner.mountSurveyorI;
       case 'MOUNT_SURVEYOR_II':
-        return ShipMountSymbolString.mountSurveyorIi;
+        return ShipMountSymbolInner.mountSurveyorIi;
       case 'MOUNT_SURVEYOR_III':
-        return ShipMountSymbolString.mountSurveyorIii;
+        return ShipMountSymbolInner.mountSurveyorIii;
       case 'MOUNT_SENSOR_ARRAY_I':
-        return ShipMountSymbolString.mountSensorArrayI;
+        return ShipMountSymbolInner.mountSensorArrayI;
       case 'MOUNT_SENSOR_ARRAY_II':
-        return ShipMountSymbolString.mountSensorArrayIi;
+        return ShipMountSymbolInner.mountSensorArrayIi;
       case 'MOUNT_SENSOR_ARRAY_III':
-        return ShipMountSymbolString.mountSensorArrayIii;
+        return ShipMountSymbolInner.mountSensorArrayIii;
       case 'MOUNT_MINING_LASER_I':
-        return ShipMountSymbolString.mountMiningLaserI;
+        return ShipMountSymbolInner.mountMiningLaserI;
       case 'MOUNT_MINING_LASER_II':
-        return ShipMountSymbolString.mountMiningLaserIi;
+        return ShipMountSymbolInner.mountMiningLaserIi;
       case 'MOUNT_MINING_LASER_III':
-        return ShipMountSymbolString.mountMiningLaserIii;
+        return ShipMountSymbolInner.mountMiningLaserIii;
       case 'MOUNT_LASER_CANNON_I':
-        return ShipMountSymbolString.mountLaserCannonI;
+        return ShipMountSymbolInner.mountLaserCannonI;
       case 'MOUNT_MISSILE_LAUNCHER_I':
-        return ShipMountSymbolString.mountMissileLauncherI;
+        return ShipMountSymbolInner.mountMissileLauncherI;
       case 'MOUNT_TURRET_I':
-        return ShipMountSymbolString.mountTurretI;
+        return ShipMountSymbolInner.mountTurretI;
       default:
-        throw Exception('Unknown ShipMountSymbolString value: $json');
+        throw Exception('Unknown ShipMountSymbolInner value: $json');
     }
   }
 
@@ -104,41 +104,41 @@ enum ShipMountSymbolString {
 
   String toJson() {
     switch (this) {
-      case ShipMountSymbolString.mountGasSiphonI:
+      case ShipMountSymbolInner.mountGasSiphonI:
         return 'MOUNT_GAS_SIPHON_I';
-      case ShipMountSymbolString.mountGasSiphonIi:
+      case ShipMountSymbolInner.mountGasSiphonIi:
         return 'MOUNT_GAS_SIPHON_II';
-      case ShipMountSymbolString.mountGasSiphonIii:
+      case ShipMountSymbolInner.mountGasSiphonIii:
         return 'MOUNT_GAS_SIPHON_III';
-      case ShipMountSymbolString.mountSurveyorI:
+      case ShipMountSymbolInner.mountSurveyorI:
         return 'MOUNT_SURVEYOR_I';
-      case ShipMountSymbolString.mountSurveyorIi:
+      case ShipMountSymbolInner.mountSurveyorIi:
         return 'MOUNT_SURVEYOR_II';
-      case ShipMountSymbolString.mountSurveyorIii:
+      case ShipMountSymbolInner.mountSurveyorIii:
         return 'MOUNT_SURVEYOR_III';
-      case ShipMountSymbolString.mountSensorArrayI:
+      case ShipMountSymbolInner.mountSensorArrayI:
         return 'MOUNT_SENSOR_ARRAY_I';
-      case ShipMountSymbolString.mountSensorArrayIi:
+      case ShipMountSymbolInner.mountSensorArrayIi:
         return 'MOUNT_SENSOR_ARRAY_II';
-      case ShipMountSymbolString.mountSensorArrayIii:
+      case ShipMountSymbolInner.mountSensorArrayIii:
         return 'MOUNT_SENSOR_ARRAY_III';
-      case ShipMountSymbolString.mountMiningLaserI:
+      case ShipMountSymbolInner.mountMiningLaserI:
         return 'MOUNT_MINING_LASER_I';
-      case ShipMountSymbolString.mountMiningLaserIi:
+      case ShipMountSymbolInner.mountMiningLaserIi:
         return 'MOUNT_MINING_LASER_II';
-      case ShipMountSymbolString.mountMiningLaserIii:
+      case ShipMountSymbolInner.mountMiningLaserIii:
         return 'MOUNT_MINING_LASER_III';
-      case ShipMountSymbolString.mountLaserCannonI:
+      case ShipMountSymbolInner.mountLaserCannonI:
         return 'MOUNT_LASER_CANNON_I';
-      case ShipMountSymbolString.mountMissileLauncherI:
+      case ShipMountSymbolInner.mountMissileLauncherI:
         return 'MOUNT_MISSILE_LAUNCHER_I';
-      case ShipMountSymbolString.mountTurretI:
+      case ShipMountSymbolInner.mountTurretI:
         return 'MOUNT_TURRET_I';
     }
   }
 }
 
-enum ShipMountDepositsArrayString {
+enum ShipMountDepositsInnerInner {
   quartzSand('QUARTZ_SAND'),
   siliconCrystals('SILICON_CRYSTALS'),
   preciousStones('PRECIOUS_STONES'),
@@ -155,40 +155,40 @@ enum ShipMountDepositsArrayString {
   meritiumOre('MERITIUM_ORE'),
   ;
 
-  const ShipMountDepositsArrayString(this.value);
+  const ShipMountDepositsInnerInner(this.value);
 
-  factory ShipMountDepositsArrayString.fromJson(String json) {
+  factory ShipMountDepositsInnerInner.fromJson(String json) {
     switch (json) {
       case 'QUARTZ_SAND':
-        return ShipMountDepositsArrayString.quartzSand;
+        return ShipMountDepositsInnerInner.quartzSand;
       case 'SILICON_CRYSTALS':
-        return ShipMountDepositsArrayString.siliconCrystals;
+        return ShipMountDepositsInnerInner.siliconCrystals;
       case 'PRECIOUS_STONES':
-        return ShipMountDepositsArrayString.preciousStones;
+        return ShipMountDepositsInnerInner.preciousStones;
       case 'ICE_WATER':
-        return ShipMountDepositsArrayString.iceWater;
+        return ShipMountDepositsInnerInner.iceWater;
       case 'AMMONIA_ICE':
-        return ShipMountDepositsArrayString.ammoniaIce;
+        return ShipMountDepositsInnerInner.ammoniaIce;
       case 'IRON_ORE':
-        return ShipMountDepositsArrayString.ironOre;
+        return ShipMountDepositsInnerInner.ironOre;
       case 'COPPER_ORE':
-        return ShipMountDepositsArrayString.copperOre;
+        return ShipMountDepositsInnerInner.copperOre;
       case 'SILVER_ORE':
-        return ShipMountDepositsArrayString.silverOre;
+        return ShipMountDepositsInnerInner.silverOre;
       case 'ALUMINUM_ORE':
-        return ShipMountDepositsArrayString.aluminumOre;
+        return ShipMountDepositsInnerInner.aluminumOre;
       case 'GOLD_ORE':
-        return ShipMountDepositsArrayString.goldOre;
+        return ShipMountDepositsInnerInner.goldOre;
       case 'PLATINUM_ORE':
-        return ShipMountDepositsArrayString.platinumOre;
+        return ShipMountDepositsInnerInner.platinumOre;
       case 'DIAMONDS':
-        return ShipMountDepositsArrayString.diamonds;
+        return ShipMountDepositsInnerInner.diamonds;
       case 'URANITE_ORE':
-        return ShipMountDepositsArrayString.uraniteOre;
+        return ShipMountDepositsInnerInner.uraniteOre;
       case 'MERITIUM_ORE':
-        return ShipMountDepositsArrayString.meritiumOre;
+        return ShipMountDepositsInnerInner.meritiumOre;
       default:
-        throw Exception('Unknown ShipMountDepositsArrayString value: $json');
+        throw Exception('Unknown ShipMountDepositsInnerInner value: $json');
     }
   }
 
@@ -196,33 +196,33 @@ enum ShipMountDepositsArrayString {
 
   String toJson() {
     switch (this) {
-      case ShipMountDepositsArrayString.quartzSand:
+      case ShipMountDepositsInnerInner.quartzSand:
         return 'QUARTZ_SAND';
-      case ShipMountDepositsArrayString.siliconCrystals:
+      case ShipMountDepositsInnerInner.siliconCrystals:
         return 'SILICON_CRYSTALS';
-      case ShipMountDepositsArrayString.preciousStones:
+      case ShipMountDepositsInnerInner.preciousStones:
         return 'PRECIOUS_STONES';
-      case ShipMountDepositsArrayString.iceWater:
+      case ShipMountDepositsInnerInner.iceWater:
         return 'ICE_WATER';
-      case ShipMountDepositsArrayString.ammoniaIce:
+      case ShipMountDepositsInnerInner.ammoniaIce:
         return 'AMMONIA_ICE';
-      case ShipMountDepositsArrayString.ironOre:
+      case ShipMountDepositsInnerInner.ironOre:
         return 'IRON_ORE';
-      case ShipMountDepositsArrayString.copperOre:
+      case ShipMountDepositsInnerInner.copperOre:
         return 'COPPER_ORE';
-      case ShipMountDepositsArrayString.silverOre:
+      case ShipMountDepositsInnerInner.silverOre:
         return 'SILVER_ORE';
-      case ShipMountDepositsArrayString.aluminumOre:
+      case ShipMountDepositsInnerInner.aluminumOre:
         return 'ALUMINUM_ORE';
-      case ShipMountDepositsArrayString.goldOre:
+      case ShipMountDepositsInnerInner.goldOre:
         return 'GOLD_ORE';
-      case ShipMountDepositsArrayString.platinumOre:
+      case ShipMountDepositsInnerInner.platinumOre:
         return 'PLATINUM_ORE';
-      case ShipMountDepositsArrayString.diamonds:
+      case ShipMountDepositsInnerInner.diamonds:
         return 'DIAMONDS';
-      case ShipMountDepositsArrayString.uraniteOre:
+      case ShipMountDepositsInnerInner.uraniteOre:
         return 'URANITE_ORE';
-      case ShipMountDepositsArrayString.meritiumOre:
+      case ShipMountDepositsInnerInner.meritiumOre:
         return 'MERITIUM_ORE';
     }
   }

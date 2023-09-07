@@ -1,13 +1,13 @@
-class ShipRefine201ResponseDataProducedArray {
-  ShipRefine201ResponseDataProducedArray({
+class ShipRefine201ResponseDataConsumedInner {
+  ShipRefine201ResponseDataConsumedInner({
     required this.tradeSymbol,
     required this.units,
   });
 
-  factory ShipRefine201ResponseDataProducedArray.fromJson(
+  factory ShipRefine201ResponseDataConsumedInner.fromJson(
     Map<String, dynamic> json,
   ) {
-    return ShipRefine201ResponseDataProducedArray(
+    return ShipRefine201ResponseDataConsumedInner(
       tradeSymbol: json['tradeSymbol'] as String,
       units: json['units'] as int,
     );

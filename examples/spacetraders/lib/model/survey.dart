@@ -19,7 +19,7 @@ class Survey {
           )
           .toList(),
       expiration: DateTime.parse(json['expiration'] as String),
-      size: SurveySizeString.fromJson(json['size'] as String),
+      size: SurveySizeInner.fromJson(json['size'] as String),
     );
   }
 
@@ -27,7 +27,7 @@ class Survey {
   final String symbol;
   final List<SurveyDeposit> deposits;
   final DateTime expiration;
-  final SurveySizeString size;
+  final SurveySizeInner size;
 
   Map<String, dynamic> toJson() {
     return {
@@ -40,24 +40,24 @@ class Survey {
   }
 }
 
-enum SurveySizeString {
+enum SurveySizeInner {
   small('SMALL'),
   moderate('MODERATE'),
   large('LARGE'),
   ;
 
-  const SurveySizeString(this.value);
+  const SurveySizeInner(this.value);
 
-  factory SurveySizeString.fromJson(String json) {
+  factory SurveySizeInner.fromJson(String json) {
     switch (json) {
       case 'SMALL':
-        return SurveySizeString.small;
+        return SurveySizeInner.small;
       case 'MODERATE':
-        return SurveySizeString.moderate;
+        return SurveySizeInner.moderate;
       case 'LARGE':
-        return SurveySizeString.large;
+        return SurveySizeInner.large;
       default:
-        throw Exception('Unknown SurveySizeString value: $json');
+        throw Exception('Unknown SurveySizeInner value: $json');
     }
   }
 
@@ -65,11 +65,11 @@ enum SurveySizeString {
 
   String toJson() {
     switch (this) {
-      case SurveySizeString.small:
+      case SurveySizeInner.small:
         return 'SMALL';
-      case SurveySizeString.moderate:
+      case SurveySizeInner.moderate:
         return 'MODERATE';
-      case SurveySizeString.large:
+      case SurveySizeInner.large:
         return 'LARGE';
     }
   }

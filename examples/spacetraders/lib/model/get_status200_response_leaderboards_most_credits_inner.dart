@@ -1,13 +1,13 @@
-class GetStatus200ResponseLeaderboardsMostCreditsArray {
-  GetStatus200ResponseLeaderboardsMostCreditsArray({
+class GetStatus200ResponseLeaderboardsMostCreditsInner {
+  GetStatus200ResponseLeaderboardsMostCreditsInner({
     required this.agentSymbol,
     required this.credits,
   });
 
-  factory GetStatus200ResponseLeaderboardsMostCreditsArray.fromJson(
+  factory GetStatus200ResponseLeaderboardsMostCreditsInner.fromJson(
     Map<String, dynamic> json,
   ) {
-    return GetStatus200ResponseLeaderboardsMostCreditsArray(
+    return GetStatus200ResponseLeaderboardsMostCreditsInner(
       agentSymbol: json['agentSymbol'] as String,
       credits: json['credits'] as int,
     );

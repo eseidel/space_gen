@@ -16,7 +16,7 @@ class Contract {
     return Contract(
       id: json['id'] as String,
       factionSymbol: json['factionSymbol'] as String,
-      type: ContractTypeString.fromJson(json['type'] as String),
+      type: ContractTypeInner.fromJson(json['type'] as String),
       terms: ContractTerms.fromJson(json['terms'] as Map<String, dynamic>),
       accepted: json['accepted'] as bool,
       fulfilled: json['fulfilled'] as bool,
@@ -27,7 +27,7 @@ class Contract {
 
   final String id;
   final String factionSymbol;
-  final ContractTypeString type;
+  final ContractTypeInner type;
   final ContractTerms terms;
   final bool accepted;
   final bool fulfilled;
@@ -48,24 +48,24 @@ class Contract {
   }
 }
 
-enum ContractTypeString {
+enum ContractTypeInner {
   procurement('PROCUREMENT'),
   transport('TRANSPORT'),
   shuttle('SHUTTLE'),
   ;
 
-  const ContractTypeString(this.value);
+  const ContractTypeInner(this.value);
 
-  factory ContractTypeString.fromJson(String json) {
+  factory ContractTypeInner.fromJson(String json) {
     switch (json) {
       case 'PROCUREMENT':
-        return ContractTypeString.procurement;
+        return ContractTypeInner.procurement;
       case 'TRANSPORT':
-        return ContractTypeString.transport;
+        return ContractTypeInner.transport;
       case 'SHUTTLE':
-        return ContractTypeString.shuttle;
+        return ContractTypeInner.shuttle;
       default:
-        throw Exception('Unknown ContractTypeString value: $json');
+        throw Exception('Unknown ContractTypeInner value: $json');
     }
   }
 
@@ -73,11 +73,11 @@ enum ContractTypeString {
 
   String toJson() {
     switch (this) {
-      case ContractTypeString.procurement:
+      case ContractTypeInner.procurement:
         return 'PROCUREMENT';
-      case ContractTypeString.transport:
+      case ContractTypeInner.transport:
         return 'TRANSPORT';
-      case ContractTypeString.shuttle:
+      case ContractTypeInner.shuttle:
         return 'SHUTTLE';
     }
   }

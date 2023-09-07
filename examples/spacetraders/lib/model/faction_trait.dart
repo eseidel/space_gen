@@ -7,13 +7,13 @@ class FactionTrait {
 
   factory FactionTrait.fromJson(Map<String, dynamic> json) {
     return FactionTrait(
-      symbol: FactionTraitSymbolString.fromJson(json['symbol'] as String),
+      symbol: FactionTraitSymbolInner.fromJson(json['symbol'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
     );
   }
 
-  final FactionTraitSymbolString symbol;
+  final FactionTraitSymbolInner symbol;
   final String name;
   final String description;
 
@@ -26,7 +26,7 @@ class FactionTrait {
   }
 }
 
-enum FactionTraitSymbolString {
+enum FactionTraitSymbolInner {
   bureaucratic('BUREAUCRATIC'),
   secretive('SECRETIVE'),
   capitalistic('CAPITALISTIC'),
@@ -88,130 +88,130 @@ enum FactionTraitSymbolString {
   entrepreneurial('ENTREPRENEURIAL'),
   ;
 
-  const FactionTraitSymbolString(this.value);
+  const FactionTraitSymbolInner(this.value);
 
-  factory FactionTraitSymbolString.fromJson(String json) {
+  factory FactionTraitSymbolInner.fromJson(String json) {
     switch (json) {
       case 'BUREAUCRATIC':
-        return FactionTraitSymbolString.bureaucratic;
+        return FactionTraitSymbolInner.bureaucratic;
       case 'SECRETIVE':
-        return FactionTraitSymbolString.secretive;
+        return FactionTraitSymbolInner.secretive;
       case 'CAPITALISTIC':
-        return FactionTraitSymbolString.capitalistic;
+        return FactionTraitSymbolInner.capitalistic;
       case 'INDUSTRIOUS':
-        return FactionTraitSymbolString.industrious;
+        return FactionTraitSymbolInner.industrious;
       case 'PEACEFUL':
-        return FactionTraitSymbolString.peaceful;
+        return FactionTraitSymbolInner.peaceful;
       case 'DISTRUSTFUL':
-        return FactionTraitSymbolString.distrustful;
+        return FactionTraitSymbolInner.distrustful;
       case 'WELCOMING':
-        return FactionTraitSymbolString.welcoming;
+        return FactionTraitSymbolInner.welcoming;
       case 'SMUGGLERS':
-        return FactionTraitSymbolString.smugglers;
+        return FactionTraitSymbolInner.smugglers;
       case 'SCAVENGERS':
-        return FactionTraitSymbolString.scavengers;
+        return FactionTraitSymbolInner.scavengers;
       case 'REBELLIOUS':
-        return FactionTraitSymbolString.rebellious;
+        return FactionTraitSymbolInner.rebellious;
       case 'EXILES':
-        return FactionTraitSymbolString.exiles;
+        return FactionTraitSymbolInner.exiles;
       case 'PIRATES':
-        return FactionTraitSymbolString.pirates;
+        return FactionTraitSymbolInner.pirates;
       case 'RAIDERS':
-        return FactionTraitSymbolString.raiders;
+        return FactionTraitSymbolInner.raiders;
       case 'CLAN':
-        return FactionTraitSymbolString.clan;
+        return FactionTraitSymbolInner.clan;
       case 'GUILD':
-        return FactionTraitSymbolString.guild;
+        return FactionTraitSymbolInner.guild;
       case 'DOMINION':
-        return FactionTraitSymbolString.dominion;
+        return FactionTraitSymbolInner.dominion;
       case 'FRINGE':
-        return FactionTraitSymbolString.fringe;
+        return FactionTraitSymbolInner.fringe;
       case 'FORSAKEN':
-        return FactionTraitSymbolString.forsaken;
+        return FactionTraitSymbolInner.forsaken;
       case 'ISOLATED':
-        return FactionTraitSymbolString.isolated;
+        return FactionTraitSymbolInner.isolated;
       case 'LOCALIZED':
-        return FactionTraitSymbolString.localized;
+        return FactionTraitSymbolInner.localized;
       case 'ESTABLISHED':
-        return FactionTraitSymbolString.established;
+        return FactionTraitSymbolInner.established;
       case 'NOTABLE':
-        return FactionTraitSymbolString.notable;
+        return FactionTraitSymbolInner.notable;
       case 'DOMINANT':
-        return FactionTraitSymbolString.dominant;
+        return FactionTraitSymbolInner.dominant;
       case 'INESCAPABLE':
-        return FactionTraitSymbolString.inescapable;
+        return FactionTraitSymbolInner.inescapable;
       case 'INNOVATIVE':
-        return FactionTraitSymbolString.innovative;
+        return FactionTraitSymbolInner.innovative;
       case 'BOLD':
-        return FactionTraitSymbolString.bold;
+        return FactionTraitSymbolInner.bold;
       case 'VISIONARY':
-        return FactionTraitSymbolString.visionary;
+        return FactionTraitSymbolInner.visionary;
       case 'CURIOUS':
-        return FactionTraitSymbolString.curious;
+        return FactionTraitSymbolInner.curious;
       case 'DARING':
-        return FactionTraitSymbolString.daring;
+        return FactionTraitSymbolInner.daring;
       case 'EXPLORATORY':
-        return FactionTraitSymbolString.exploratory;
+        return FactionTraitSymbolInner.exploratory;
       case 'RESOURCEFUL':
-        return FactionTraitSymbolString.resourceful;
+        return FactionTraitSymbolInner.resourceful;
       case 'FLEXIBLE':
-        return FactionTraitSymbolString.flexible;
+        return FactionTraitSymbolInner.flexible;
       case 'COOPERATIVE':
-        return FactionTraitSymbolString.cooperative;
+        return FactionTraitSymbolInner.cooperative;
       case 'UNITED':
-        return FactionTraitSymbolString.united;
+        return FactionTraitSymbolInner.united;
       case 'STRATEGIC':
-        return FactionTraitSymbolString.strategic;
+        return FactionTraitSymbolInner.strategic;
       case 'INTELLIGENT':
-        return FactionTraitSymbolString.intelligent;
+        return FactionTraitSymbolInner.intelligent;
       case 'RESEARCH_FOCUSED':
-        return FactionTraitSymbolString.researchFocused;
+        return FactionTraitSymbolInner.researchFocused;
       case 'COLLABORATIVE':
-        return FactionTraitSymbolString.collaborative;
+        return FactionTraitSymbolInner.collaborative;
       case 'PROGRESSIVE':
-        return FactionTraitSymbolString.progressive;
+        return FactionTraitSymbolInner.progressive;
       case 'MILITARISTIC':
-        return FactionTraitSymbolString.militaristic;
+        return FactionTraitSymbolInner.militaristic;
       case 'TECHNOLOGICALLY_ADVANCED':
-        return FactionTraitSymbolString.technologicallyAdvanced;
+        return FactionTraitSymbolInner.technologicallyAdvanced;
       case 'AGGRESSIVE':
-        return FactionTraitSymbolString.aggressive;
+        return FactionTraitSymbolInner.aggressive;
       case 'IMPERIALISTIC':
-        return FactionTraitSymbolString.imperialistic;
+        return FactionTraitSymbolInner.imperialistic;
       case 'TREASURE_HUNTERS':
-        return FactionTraitSymbolString.treasureHunters;
+        return FactionTraitSymbolInner.treasureHunters;
       case 'DEXTEROUS':
-        return FactionTraitSymbolString.dexterous;
+        return FactionTraitSymbolInner.dexterous;
       case 'UNPREDICTABLE':
-        return FactionTraitSymbolString.unpredictable;
+        return FactionTraitSymbolInner.unpredictable;
       case 'BRUTAL':
-        return FactionTraitSymbolString.brutal;
+        return FactionTraitSymbolInner.brutal;
       case 'FLEETING':
-        return FactionTraitSymbolString.fleeting;
+        return FactionTraitSymbolInner.fleeting;
       case 'ADAPTABLE':
-        return FactionTraitSymbolString.adaptable;
+        return FactionTraitSymbolInner.adaptable;
       case 'SELF_SUFFICIENT':
-        return FactionTraitSymbolString.selfSufficient;
+        return FactionTraitSymbolInner.selfSufficient;
       case 'DEFENSIVE':
-        return FactionTraitSymbolString.defensive;
+        return FactionTraitSymbolInner.defensive;
       case 'PROUD':
-        return FactionTraitSymbolString.proud;
+        return FactionTraitSymbolInner.proud;
       case 'DIVERSE':
-        return FactionTraitSymbolString.diverse;
+        return FactionTraitSymbolInner.diverse;
       case 'INDEPENDENT':
-        return FactionTraitSymbolString.independent;
+        return FactionTraitSymbolInner.independent;
       case 'SELF_INTERESTED':
-        return FactionTraitSymbolString.selfInterested;
+        return FactionTraitSymbolInner.selfInterested;
       case 'FRAGMENTED':
-        return FactionTraitSymbolString.fragmented;
+        return FactionTraitSymbolInner.fragmented;
       case 'COMMERCIAL':
-        return FactionTraitSymbolString.commercial;
+        return FactionTraitSymbolInner.commercial;
       case 'FREE_MARKETS':
-        return FactionTraitSymbolString.freeMarkets;
+        return FactionTraitSymbolInner.freeMarkets;
       case 'ENTREPRENEURIAL':
-        return FactionTraitSymbolString.entrepreneurial;
+        return FactionTraitSymbolInner.entrepreneurial;
       default:
-        throw Exception('Unknown FactionTraitSymbolString value: $json');
+        throw Exception('Unknown FactionTraitSymbolInner value: $json');
     }
   }
 
@@ -219,123 +219,123 @@ enum FactionTraitSymbolString {
 
   String toJson() {
     switch (this) {
-      case FactionTraitSymbolString.bureaucratic:
+      case FactionTraitSymbolInner.bureaucratic:
         return 'BUREAUCRATIC';
-      case FactionTraitSymbolString.secretive:
+      case FactionTraitSymbolInner.secretive:
         return 'SECRETIVE';
-      case FactionTraitSymbolString.capitalistic:
+      case FactionTraitSymbolInner.capitalistic:
         return 'CAPITALISTIC';
-      case FactionTraitSymbolString.industrious:
+      case FactionTraitSymbolInner.industrious:
         return 'INDUSTRIOUS';
-      case FactionTraitSymbolString.peaceful:
+      case FactionTraitSymbolInner.peaceful:
         return 'PEACEFUL';
-      case FactionTraitSymbolString.distrustful:
+      case FactionTraitSymbolInner.distrustful:
         return 'DISTRUSTFUL';
-      case FactionTraitSymbolString.welcoming:
+      case FactionTraitSymbolInner.welcoming:
         return 'WELCOMING';
-      case FactionTraitSymbolString.smugglers:
+      case FactionTraitSymbolInner.smugglers:
         return 'SMUGGLERS';
-      case FactionTraitSymbolString.scavengers:
+      case FactionTraitSymbolInner.scavengers:
         return 'SCAVENGERS';
-      case FactionTraitSymbolString.rebellious:
+      case FactionTraitSymbolInner.rebellious:
         return 'REBELLIOUS';
-      case FactionTraitSymbolString.exiles:
+      case FactionTraitSymbolInner.exiles:
         return 'EXILES';
-      case FactionTraitSymbolString.pirates:
+      case FactionTraitSymbolInner.pirates:
         return 'PIRATES';
-      case FactionTraitSymbolString.raiders:
+      case FactionTraitSymbolInner.raiders:
         return 'RAIDERS';
-      case FactionTraitSymbolString.clan:
+      case FactionTraitSymbolInner.clan:
         return 'CLAN';
-      case FactionTraitSymbolString.guild:
+      case FactionTraitSymbolInner.guild:
         return 'GUILD';
-      case FactionTraitSymbolString.dominion:
+      case FactionTraitSymbolInner.dominion:
         return 'DOMINION';
-      case FactionTraitSymbolString.fringe:
+      case FactionTraitSymbolInner.fringe:
         return 'FRINGE';
-      case FactionTraitSymbolString.forsaken:
+      case FactionTraitSymbolInner.forsaken:
         return 'FORSAKEN';
-      case FactionTraitSymbolString.isolated:
+      case FactionTraitSymbolInner.isolated:
         return 'ISOLATED';
-      case FactionTraitSymbolString.localized:
+      case FactionTraitSymbolInner.localized:
         return 'LOCALIZED';
-      case FactionTraitSymbolString.established:
+      case FactionTraitSymbolInner.established:
         return 'ESTABLISHED';
-      case FactionTraitSymbolString.notable:
+      case FactionTraitSymbolInner.notable:
         return 'NOTABLE';
-      case FactionTraitSymbolString.dominant:
+      case FactionTraitSymbolInner.dominant:
         return 'DOMINANT';
-      case FactionTraitSymbolString.inescapable:
+      case FactionTraitSymbolInner.inescapable:
         return 'INESCAPABLE';
-      case FactionTraitSymbolString.innovative:
+      case FactionTraitSymbolInner.innovative:
         return 'INNOVATIVE';
-      case FactionTraitSymbolString.bold:
+      case FactionTraitSymbolInner.bold:
         return 'BOLD';
-      case FactionTraitSymbolString.visionary:
+      case FactionTraitSymbolInner.visionary:
         return 'VISIONARY';
-      case FactionTraitSymbolString.curious:
+      case FactionTraitSymbolInner.curious:
         return 'CURIOUS';
-      case FactionTraitSymbolString.daring:
+      case FactionTraitSymbolInner.daring:
         return 'DARING';
-      case FactionTraitSymbolString.exploratory:
+      case FactionTraitSymbolInner.exploratory:
         return 'EXPLORATORY';
-      case FactionTraitSymbolString.resourceful:
+      case FactionTraitSymbolInner.resourceful:
         return 'RESOURCEFUL';
-      case FactionTraitSymbolString.flexible:
+      case FactionTraitSymbolInner.flexible:
         return 'FLEXIBLE';
-      case FactionTraitSymbolString.cooperative:
+      case FactionTraitSymbolInner.cooperative:
         return 'COOPERATIVE';
-      case FactionTraitSymbolString.united:
+      case FactionTraitSymbolInner.united:
         return 'UNITED';
-      case FactionTraitSymbolString.strategic:
+      case FactionTraitSymbolInner.strategic:
         return 'STRATEGIC';
-      case FactionTraitSymbolString.intelligent:
+      case FactionTraitSymbolInner.intelligent:
         return 'INTELLIGENT';
-      case FactionTraitSymbolString.researchFocused:
+      case FactionTraitSymbolInner.researchFocused:
         return 'RESEARCH_FOCUSED';
-      case FactionTraitSymbolString.collaborative:
+      case FactionTraitSymbolInner.collaborative:
         return 'COLLABORATIVE';
-      case FactionTraitSymbolString.progressive:
+      case FactionTraitSymbolInner.progressive:
         return 'PROGRESSIVE';
-      case FactionTraitSymbolString.militaristic:
+      case FactionTraitSymbolInner.militaristic:
         return 'MILITARISTIC';
-      case FactionTraitSymbolString.technologicallyAdvanced:
+      case FactionTraitSymbolInner.technologicallyAdvanced:
         return 'TECHNOLOGICALLY_ADVANCED';
-      case FactionTraitSymbolString.aggressive:
+      case FactionTraitSymbolInner.aggressive:
         return 'AGGRESSIVE';
-      case FactionTraitSymbolString.imperialistic:
+      case FactionTraitSymbolInner.imperialistic:
         return 'IMPERIALISTIC';
-      case FactionTraitSymbolString.treasureHunters:
+      case FactionTraitSymbolInner.treasureHunters:
         return 'TREASURE_HUNTERS';
-      case FactionTraitSymbolString.dexterous:
+      case FactionTraitSymbolInner.dexterous:
         return 'DEXTEROUS';
-      case FactionTraitSymbolString.unpredictable:
+      case FactionTraitSymbolInner.unpredictable:
         return 'UNPREDICTABLE';
-      case FactionTraitSymbolString.brutal:
+      case FactionTraitSymbolInner.brutal:
         return 'BRUTAL';
-      case FactionTraitSymbolString.fleeting:
+      case FactionTraitSymbolInner.fleeting:
         return 'FLEETING';
-      case FactionTraitSymbolString.adaptable:
+      case FactionTraitSymbolInner.adaptable:
         return 'ADAPTABLE';
-      case FactionTraitSymbolString.selfSufficient:
+      case FactionTraitSymbolInner.selfSufficient:
         return 'SELF_SUFFICIENT';
-      case FactionTraitSymbolString.defensive:
+      case FactionTraitSymbolInner.defensive:
         return 'DEFENSIVE';
-      case FactionTraitSymbolString.proud:
+      case FactionTraitSymbolInner.proud:
         return 'PROUD';
-      case FactionTraitSymbolString.diverse:
+      case FactionTraitSymbolInner.diverse:
         return 'DIVERSE';
-      case FactionTraitSymbolString.independent:
+      case FactionTraitSymbolInner.independent:
         return 'INDEPENDENT';
-      case FactionTraitSymbolString.selfInterested:
+      case FactionTraitSymbolInner.selfInterested:
         return 'SELF_INTERESTED';
-      case FactionTraitSymbolString.fragmented:
+      case FactionTraitSymbolInner.fragmented:
         return 'FRAGMENTED';
-      case FactionTraitSymbolString.commercial:
+      case FactionTraitSymbolInner.commercial:
         return 'COMMERCIAL';
-      case FactionTraitSymbolString.freeMarkets:
+      case FactionTraitSymbolInner.freeMarkets:
         return 'FREE_MARKETS';
-      case FactionTraitSymbolString.entrepreneurial:
+      case FactionTraitSymbolInner.entrepreneurial:
         return 'ENTREPRENEURIAL';
     }
   }
