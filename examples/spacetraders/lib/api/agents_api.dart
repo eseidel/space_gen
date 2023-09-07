@@ -2,8 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:spacetraders/model/agent.dart';
-import 'package:spacetraders/model/meta.dart';
+import 'package:spacetraders/model/get_agent200_response.dart';
+import 'package:spacetraders/model/get_agents200_response.dart';
+import 'package:spacetraders/model/get_my_agent200_response.dart';
 
 class AgentsApi {
   Future<GetMyAgent200Response> getMyAgent() async {
@@ -68,71 +69,5 @@ class AgentsApi {
     } else {
       throw Exception('Failed to load getAgent');
     }
-  }
-}
-
-class GetMyAgent200Response {
-  GetMyAgent200Response({
-    required this.data,
-  });
-
-  factory GetMyAgent200Response.fromJson(Map<String, dynamic> json) {
-    return GetMyAgent200Response(
-      data: Agent.fromJson(json['data'] as Map<String, dynamic>),
-    );
-  }
-
-  final Agent data;
-
-  Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
-  }
-}
-
-class GetAgents200Response {
-  GetAgents200Response({
-    required this.data,
-    required this.meta,
-  });
-
-  factory GetAgents200Response.fromJson(Map<String, dynamic> json) {
-    return GetAgents200Response(
-      data: (json['data'] as List<dynamic>)
-          .map<Agent>((e) => Agent.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
-    );
-  }
-
-  final List<Agent> data;
-  final Meta meta;
-
-  Map<String, dynamic> toJson() {
-    return {
-      'data': data.map((e) => e.toJson()).toList(),
-      'meta': meta.toJson(),
-    };
-  }
-}
-
-class GetAgent200Response {
-  GetAgent200Response({
-    required this.data,
-  });
-
-  factory GetAgent200Response.fromJson(Map<String, dynamic> json) {
-    return GetAgent200Response(
-      data: Agent.fromJson(json['data'] as Map<String, dynamic>),
-    );
-  }
-
-  final Agent data;
-
-  Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
   }
 }

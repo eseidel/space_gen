@@ -8,6 +8,7 @@ environment:
 dependencies:
   args: ^2.4.2
   mason_logger: ^0.2.8
+  meta: ^1.10.0
   mustache_template: ^2.0.0
   path: ^1.8.3
   yaml: ^3.1.2

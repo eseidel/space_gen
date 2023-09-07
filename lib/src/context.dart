@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:mustache_template/mustache_template.dart';
@@ -218,6 +217,11 @@ extension SchemaGeneration on Schema {
       return objectToTemplateContext(resolver);
     }
   }
+
+  String packageImport(Context context) {
+    final snakeName = snakeFromCamel(name);
+    return 'package:${context.packageName}/model/$snakeName.dart';
+  }
 }
 
 extension ParameterGeneration on Parameter {
@@ -304,9 +308,30 @@ class Context {
   }
 
   void renderApis() {
+    final rendered = <Uri>{};
+    final renderQueue = <SchemaRef>{};
     for (final api in spec.apis) {
       final renderContext = RenderContext();
       renderApi(renderContext, this, api);
+      // Api files only contain the API class, any inline schemas
+      // end up in the model files.
+      for (final schema in renderContext.inlineSchemas) {
+        renderRootSchema(this, schema);
+      }
+      renderQueue.addAll(renderContext.imported);
+    }
+
+    // Render all the schemas that were collected while rendering the API.
+    while (renderQueue.isNotEmpty) {
+      final ref = renderQueue.first;
+      renderQueue.remove(ref);
+      if (rendered.contains(ref.uri)) {
+        continue;
+      }
+      rendered.add(ref.uri!);
+      final schema = resolver.resolve(ref);
+      final renderContext = renderRootSchema(this, schema);
+      renderQueue.addAll(renderContext.imported);
     }
   }
 
@@ -320,30 +345,30 @@ class Context {
     logger.detail(result.stdout as String);
   }
 
-  void renderModelFile(String path) {
-    final file = File(path);
-    final contents = file.readAsStringSync();
-    final name = p.basenameWithoutExtension(file.path);
-    final uri = Uri.parse(file.path);
-    final schema = parseSchema(
-      current: uri,
-      name: name,
-      json: jsonDecode(contents) as Map<String, dynamic>,
-    );
-    renderRootSchema(this, schema);
-  }
+  // void renderModelFile(String path) {
+  //   final file = File(path);
+  //   final contents = file.readAsStringSync();
+  //   final name = p.basenameWithoutExtension(file.path);
+  //   final uri = Uri.parse(file.path);
+  //   final schema = parseSchema(
+  //     current: uri,
+  //     name: name,
+  //     json: jsonDecode(contents) as Map<String, dynamic>,
+  //   );
+  //   renderRootSchema(this, schema);
+  // }
 
-  void renderModels() {
-    // This is a hack.
-    const modelsPath = '../api-docs/models';
-    final dir = Directory(modelsPath);
-    for (final entity in dir.listSync()) {
-      if (entity is! File) {
-        continue;
-      }
-      renderModelFile(entity.path);
-    }
-  }
+  // void renderModels() {
+  //   // This is a hack.
+  //   const modelsPath = '../api-docs/models';
+  //   final dir = Directory(modelsPath);
+  //   for (final entity in dir.listSync()) {
+  //     if (entity is! File) {
+  //       continue;
+  //     }
+  //     renderModelFile(entity.path);
+  //   }
+  // }
 
   void renderPublicApi() {
     final exports = spec.apis
@@ -363,7 +388,7 @@ class Context {
   void render() {
     renderDirectory();
     renderApis();
-    renderModels();
+    // renderModels();
     renderPublicApi();
     runDart(['pub', 'get']);
     // Run format first to add missing commas.
@@ -416,10 +441,18 @@ class RenderContext {
     }
   }
 
-  List<String> sortedPackageImports(Context context) {
+  List<String> sortedPackageImports(
+    Context context, {
+    bool includeInlineSchema = false,
+  }) {
     final imports = <String>{};
     for (final ref in imported) {
       imports.add(ref.packageImport(context));
+    }
+    if (includeInlineSchema) {
+      for (final schema in inlineSchemas) {
+        imports.add(schema.packageImport(context));
+      }
     }
     return imports.toList()..sort();
   }
@@ -444,7 +477,7 @@ class RenderContext {
 }
 
 /// Starts a new RenderContext for rendering a new schema file.
-void renderRootSchema(Context context, Schema schema) {
+RenderContext renderRootSchema(Context context, Schema schema) {
   // logger.info('Rendering ${schema.name}');
 
   final renderContext = RenderContext()..collectSchema(schema);
@@ -465,18 +498,20 @@ void renderRootSchema(Context context, Schema schema) {
       'enums': enums,
     },
   );
+  return renderContext;
 }
 
 void renderApi(RenderContext renderContext, Context context, Api api) {
-  final resolver = context.resolver;
   final endpoints =
       api.endpoints.map((e) => e.toTemplateContext(context)).toList();
   renderContext.collectApi(api);
 
-  final imports = renderContext.sortedPackageImports(context);
-  final objects = renderContext.objectContexts(resolver);
-  final enums = renderContext.enumContexts(resolver);
+  final imports =
+      renderContext.sortedPackageImports(context, includeInlineSchema: true);
 
+  // The OpenAPI generator only includes the APIs in the api/ directory
+  // all other classes and enums go in the model/ directory even ones
+  // which were defined inline in the main spec.
   context.renderTemplate(
     template: 'api',
     outPath: _apiPath(api),
@@ -484,8 +519,6 @@ void renderApi(RenderContext renderContext, Context context, Api api) {
       'className': api.className,
       'imports': imports,
       'endpoints': endpoints,
-      'objects': objects,
-      'enums': enums,
     },
   );
 }

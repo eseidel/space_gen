@@ -2,12 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:spacetraders/model/jump_gate.dart';
-import 'package:spacetraders/model/market.dart';
-import 'package:spacetraders/model/meta.dart';
-import 'package:spacetraders/model/shipyard.dart';
-import 'package:spacetraders/model/system.dart';
-import 'package:spacetraders/model/waypoint.dart';
+import 'package:spacetraders/model/get_jump_gate200_response.dart';
+import 'package:spacetraders/model/get_market200_response.dart';
+import 'package:spacetraders/model/get_shipyard200_response.dart';
+import 'package:spacetraders/model/get_system200_response.dart';
+import 'package:spacetraders/model/get_system_waypoints200_response.dart';
+import 'package:spacetraders/model/get_systems200_response.dart';
+import 'package:spacetraders/model/get_waypoint200_response.dart';
 
 class SystemsApi {
   Future<GetSystems200Response> getSystems(
@@ -156,157 +157,5 @@ class SystemsApi {
     } else {
       throw Exception('Failed to load getJumpGate');
     }
-  }
-}
-
-class GetSystems200Response {
-  GetSystems200Response({
-    required this.data,
-    required this.meta,
-  });
-
-  factory GetSystems200Response.fromJson(Map<String, dynamic> json) {
-    return GetSystems200Response(
-      data: (json['data'] as List<dynamic>)
-          .map<System>((e) => System.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
-    );
-  }
-
-  final List<System> data;
-  final Meta meta;
-
-  Map<String, dynamic> toJson() {
-    return {
-      'data': data.map((e) => e.toJson()).toList(),
-      'meta': meta.toJson(),
-    };
-  }
-}
-
-class GetSystem200Response {
-  GetSystem200Response({
-    required this.data,
-  });
-
-  factory GetSystem200Response.fromJson(Map<String, dynamic> json) {
-    return GetSystem200Response(
-      data: System.fromJson(json['data'] as Map<String, dynamic>),
-    );
-  }
-
-  final System data;
-
-  Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
-  }
-}
-
-class GetSystemWaypoints200Response {
-  GetSystemWaypoints200Response({
-    required this.data,
-    required this.meta,
-  });
-
-  factory GetSystemWaypoints200Response.fromJson(Map<String, dynamic> json) {
-    return GetSystemWaypoints200Response(
-      data: (json['data'] as List<dynamic>)
-          .map<Waypoint>((e) => Waypoint.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
-    );
-  }
-
-  final List<Waypoint> data;
-  final Meta meta;
-
-  Map<String, dynamic> toJson() {
-    return {
-      'data': data.map((e) => e.toJson()).toList(),
-      'meta': meta.toJson(),
-    };
-  }
-}
-
-class GetWaypoint200Response {
-  GetWaypoint200Response({
-    required this.data,
-  });
-
-  factory GetWaypoint200Response.fromJson(Map<String, dynamic> json) {
-    return GetWaypoint200Response(
-      data: Waypoint.fromJson(json['data'] as Map<String, dynamic>),
-    );
-  }
-
-  final Waypoint data;
-
-  Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
-  }
-}
-
-class GetMarket200Response {
-  GetMarket200Response({
-    required this.data,
-  });
-
-  factory GetMarket200Response.fromJson(Map<String, dynamic> json) {
-    return GetMarket200Response(
-      data: Market.fromJson(json['data'] as Map<String, dynamic>),
-    );
-  }
-
-  final Market data;
-
-  Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
-  }
-}
-
-class GetShipyard200Response {
-  GetShipyard200Response({
-    required this.data,
-  });
-
-  factory GetShipyard200Response.fromJson(Map<String, dynamic> json) {
-    return GetShipyard200Response(
-      data: Shipyard.fromJson(json['data'] as Map<String, dynamic>),
-    );
-  }
-
-  final Shipyard data;
-
-  Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
-  }
-}
-
-class GetJumpGate200Response {
-  GetJumpGate200Response({
-    required this.data,
-  });
-
-  factory GetJumpGate200Response.fromJson(Map<String, dynamic> json) {
-    return GetJumpGate200Response(
-      data: JumpGate.fromJson(json['data'] as Map<String, dynamic>),
-    );
-  }
-
-  final JumpGate data;
-
-  Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
   }
 }

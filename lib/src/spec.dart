@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:space_gen/src/string.dart';
 
@@ -103,14 +104,26 @@ class RefResolver {
   }
 }
 
+@immutable
 class SchemaRef {
   SchemaRef.fromPath({required String ref, required Uri current})
       : schema = null,
         uri = current.resolve(ref);
-  SchemaRef.schema(this.schema) : uri = null;
+  const SchemaRef.schema(this.schema) : uri = null;
 
   final Uri? uri;
   final Schema? schema;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SchemaRef &&
+          runtimeType == other.runtimeType &&
+          uri == other.uri &&
+          schema == other.schema;
+
+  @override
+  int get hashCode => Object.hash(uri, schema);
 }
 
 // https://spec.openapis.org/oas/v3.0.0#schemaObject
