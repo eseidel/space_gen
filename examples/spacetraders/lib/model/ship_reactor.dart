@@ -53,36 +53,14 @@ enum ShipReactorSymbolInner {
   const ShipReactorSymbolInner(this.value);
 
   factory ShipReactorSymbolInner.fromJson(String json) {
-    switch (json) {
-      case 'REACTOR_SOLAR_I':
-        return ShipReactorSymbolInner.reactorSolarI;
-      case 'REACTOR_FUSION_I':
-        return ShipReactorSymbolInner.reactorFusionI;
-      case 'REACTOR_FISSION_I':
-        return ShipReactorSymbolInner.reactorFissionI;
-      case 'REACTOR_CHEMICAL_I':
-        return ShipReactorSymbolInner.reactorChemicalI;
-      case 'REACTOR_ANTIMATTER_I':
-        return ShipReactorSymbolInner.reactorAntimatterI;
-      default:
-        throw Exception('Unknown ShipReactorSymbolInner value: $json');
-    }
+    return ShipReactorSymbolInner.values.firstWhere(
+      (value) => value.value == json,
+      orElse: () =>
+          throw Exception('Unknown ShipReactorSymbolInner value: $json'),
+    );
   }
 
   final String value;
 
-  String toJson() {
-    switch (this) {
-      case ShipReactorSymbolInner.reactorSolarI:
-        return 'REACTOR_SOLAR_I';
-      case ShipReactorSymbolInner.reactorFusionI:
-        return 'REACTOR_FUSION_I';
-      case ShipReactorSymbolInner.reactorFissionI:
-        return 'REACTOR_FISSION_I';
-      case ShipReactorSymbolInner.reactorChemicalI:
-        return 'REACTOR_CHEMICAL_I';
-      case ShipReactorSymbolInner.reactorAntimatterI:
-        return 'REACTOR_ANTIMATTER_I';
-    }
-  }
+  String toJson() => value;
 }

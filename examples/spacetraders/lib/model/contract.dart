@@ -57,28 +57,13 @@ enum ContractTypeInner {
   const ContractTypeInner(this.value);
 
   factory ContractTypeInner.fromJson(String json) {
-    switch (json) {
-      case 'PROCUREMENT':
-        return ContractTypeInner.procurement;
-      case 'TRANSPORT':
-        return ContractTypeInner.transport;
-      case 'SHUTTLE':
-        return ContractTypeInner.shuttle;
-      default:
-        throw Exception('Unknown ContractTypeInner value: $json');
-    }
+    return ContractTypeInner.values.firstWhere(
+      (value) => value.value == json,
+      orElse: () => throw Exception('Unknown ContractTypeInner value: $json'),
+    );
   }
 
   final String value;
 
-  String toJson() {
-    switch (this) {
-      case ContractTypeInner.procurement:
-        return 'PROCUREMENT';
-      case ContractTypeInner.transport:
-        return 'TRANSPORT';
-      case ContractTypeInner.shuttle:
-        return 'SHUTTLE';
-    }
-  }
+  String toJson() => value;
 }

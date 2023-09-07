@@ -54,24 +54,14 @@ enum MarketTransactionTypeInner {
   const MarketTransactionTypeInner(this.value);
 
   factory MarketTransactionTypeInner.fromJson(String json) {
-    switch (json) {
-      case 'PURCHASE':
-        return MarketTransactionTypeInner.purchase;
-      case 'SELL':
-        return MarketTransactionTypeInner.sell;
-      default:
-        throw Exception('Unknown MarketTransactionTypeInner value: $json');
-    }
+    return MarketTransactionTypeInner.values.firstWhere(
+      (value) => value.value == json,
+      orElse: () =>
+          throw Exception('Unknown MarketTransactionTypeInner value: $json'),
+    );
   }
 
   final String value;
 
-  String toJson() {
-    switch (this) {
-      case MarketTransactionTypeInner.purchase:
-        return 'PURCHASE';
-      case MarketTransactionTypeInner.sell:
-        return 'SELL';
-    }
-  }
+  String toJson() => value;
 }

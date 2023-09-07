@@ -44,32 +44,14 @@ enum MarketTradeGoodSupplyInner {
   const MarketTradeGoodSupplyInner(this.value);
 
   factory MarketTradeGoodSupplyInner.fromJson(String json) {
-    switch (json) {
-      case 'SCARCE':
-        return MarketTradeGoodSupplyInner.scarce;
-      case 'LIMITED':
-        return MarketTradeGoodSupplyInner.limited;
-      case 'MODERATE':
-        return MarketTradeGoodSupplyInner.moderate;
-      case 'ABUNDANT':
-        return MarketTradeGoodSupplyInner.abundant;
-      default:
-        throw Exception('Unknown MarketTradeGoodSupplyInner value: $json');
-    }
+    return MarketTradeGoodSupplyInner.values.firstWhere(
+      (value) => value.value == json,
+      orElse: () =>
+          throw Exception('Unknown MarketTradeGoodSupplyInner value: $json'),
+    );
   }
 
   final String value;
 
-  String toJson() {
-    switch (this) {
-      case MarketTradeGoodSupplyInner.scarce:
-        return 'SCARCE';
-      case MarketTradeGoodSupplyInner.limited:
-        return 'LIMITED';
-      case MarketTradeGoodSupplyInner.moderate:
-        return 'MODERATE';
-      case MarketTradeGoodSupplyInner.abundant:
-        return 'ABUNDANT';
-    }
-  }
+  String toJson() => value;
 }

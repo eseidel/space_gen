@@ -26,6 +26,14 @@ dart run space_gen
   - Resolve references
   - Render Dart code
 
+## Todo
+* OpenAPI does one-class-per-file, remove "models".
+* OpenAPI uniques inline schema based on property layout ignoring names.
+* Add support for required keys.
+* Actually make the networking work.
+* Implement operator== and hashCode?
+* Avoid keyword collisions in property names (e.g. yield).
+
 ## Advantages over Open API Generator 7.0.0
 * Dart 3.0+ only (sound null safety)
 * Model code round trips through JSON correctly (TBD)

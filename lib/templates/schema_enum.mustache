@@ -7,24 +7,14 @@ enum {{ schemaName }} {
     const {{schemaName}}(this.value);
 
     factory {{ schemaName }}.fromJson(String json) {
-        switch (json) {
-            {{#enumValues}}
-            case '{{ enumValue }}':
-                return {{ schemaName }}.{{ enumValueName }};
-            {{/enumValues}}
-            default:
-                throw Exception('Unknown {{ schemaName }} value: $json');
-        }
+        return {{ schemaName }}.values.firstWhere(
+            (value) => value.value == json,
+            orElse: () =>
+                throw Exception('Unknown {{ schemaName }} value: $json')
+        );
     }
 
     final String value;
 
-    String toJson() {
-        switch (this) {
-            {{#enumValues}}
-            case {{ schemaName }}.{{ enumValueName }}:
-                return '{{ enumValue }}';
-            {{/enumValues}}
-        }
-    }
+    String toJson() => value;
 }

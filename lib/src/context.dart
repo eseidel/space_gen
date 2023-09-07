@@ -330,6 +330,12 @@ class Context {
       }
       rendered.add(ref.uri!);
       final schema = resolver.resolve(ref);
+      // Only render objects and enums for now.
+      // Otherwise we render an empty file for ship_condition.dart
+      // which is an int type with min/max values.
+      // if (schema.type != SchemaType.object && !schema.isEnum) {
+      //   continue;
+      // }
       final renderContext = renderRootSchema(this, schema);
       renderQueue.addAll(renderContext.imported);
     }

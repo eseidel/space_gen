@@ -46,24 +46,14 @@ enum ShipCrewRotationInner {
   const ShipCrewRotationInner(this.value);
 
   factory ShipCrewRotationInner.fromJson(String json) {
-    switch (json) {
-      case 'STRICT':
-        return ShipCrewRotationInner.strict;
-      case 'RELAXED':
-        return ShipCrewRotationInner.relaxed;
-      default:
-        throw Exception('Unknown ShipCrewRotationInner value: $json');
-    }
+    return ShipCrewRotationInner.values.firstWhere(
+      (value) => value.value == json,
+      orElse: () =>
+          throw Exception('Unknown ShipCrewRotationInner value: $json'),
+    );
   }
 
   final String value;
 
-  String toJson() {
-    switch (this) {
-      case ShipCrewRotationInner.strict:
-        return 'STRICT';
-      case ShipCrewRotationInner.relaxed:
-        return 'RELAXED';
-    }
-  }
+  String toJson() => value;
 }

@@ -52,32 +52,14 @@ enum ShipEngineSymbolInner {
   const ShipEngineSymbolInner(this.value);
 
   factory ShipEngineSymbolInner.fromJson(String json) {
-    switch (json) {
-      case 'ENGINE_IMPULSE_DRIVE_I':
-        return ShipEngineSymbolInner.engineImpulseDriveI;
-      case 'ENGINE_ION_DRIVE_I':
-        return ShipEngineSymbolInner.engineIonDriveI;
-      case 'ENGINE_ION_DRIVE_II':
-        return ShipEngineSymbolInner.engineIonDriveIi;
-      case 'ENGINE_HYPER_DRIVE_I':
-        return ShipEngineSymbolInner.engineHyperDriveI;
-      default:
-        throw Exception('Unknown ShipEngineSymbolInner value: $json');
-    }
+    return ShipEngineSymbolInner.values.firstWhere(
+      (value) => value.value == json,
+      orElse: () =>
+          throw Exception('Unknown ShipEngineSymbolInner value: $json'),
+    );
   }
 
   final String value;
 
-  String toJson() {
-    switch (this) {
-      case ShipEngineSymbolInner.engineImpulseDriveI:
-        return 'ENGINE_IMPULSE_DRIVE_I';
-      case ShipEngineSymbolInner.engineIonDriveI:
-        return 'ENGINE_ION_DRIVE_I';
-      case ShipEngineSymbolInner.engineIonDriveIi:
-        return 'ENGINE_ION_DRIVE_II';
-      case ShipEngineSymbolInner.engineHyperDriveI:
-        return 'ENGINE_HYPER_DRIVE_I';
-    }
-  }
+  String toJson() => value;
 }

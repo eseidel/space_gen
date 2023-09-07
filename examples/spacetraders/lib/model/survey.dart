@@ -49,28 +49,13 @@ enum SurveySizeInner {
   const SurveySizeInner(this.value);
 
   factory SurveySizeInner.fromJson(String json) {
-    switch (json) {
-      case 'SMALL':
-        return SurveySizeInner.small;
-      case 'MODERATE':
-        return SurveySizeInner.moderate;
-      case 'LARGE':
-        return SurveySizeInner.large;
-      default:
-        throw Exception('Unknown SurveySizeInner value: $json');
-    }
+    return SurveySizeInner.values.firstWhere(
+      (value) => value.value == json,
+      orElse: () => throw Exception('Unknown SurveySizeInner value: $json'),
+    );
   }
 
   final String value;
 
-  String toJson() {
-    switch (this) {
-      case SurveySizeInner.small:
-        return 'SMALL';
-      case SurveySizeInner.moderate:
-        return 'MODERATE';
-      case SurveySizeInner.large:
-        return 'LARGE';
-    }
-  }
+  String toJson() => value;
 }
