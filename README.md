@@ -33,6 +33,7 @@ dart run space_gen
 * Actually make the networking work.
 * Implement operator== and hashCode?
 * Avoid keyword collisions in property names (e.g. yield).
+* Generate tests. https://github.com/eseidel/space_gen/issues/1
 
 ## Advantages over Open API Generator 7.0.0
 * Dart 3.0+ only (sound null safety)

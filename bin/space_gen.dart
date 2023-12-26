@@ -11,7 +11,9 @@ void main(List<String> arguments) async {
     ..addOption('config', abbr: 'c', help: 'Path to config file');
   final results = parser.parse(arguments);
   if (results.rest.isNotEmpty) {
-    logger.err('Unexpected arguments: ${results.rest}');
+    logger
+      ..err('Unexpected arguments: ${results.rest}')
+      ..info(parser.usage);
     exit(1);
   }
 
@@ -20,7 +22,9 @@ void main(List<String> arguments) async {
   if (configPath != null) {
     config = loadFromFile(configPath);
   } else {
-    logger.err('No config file provided');
+    logger
+      ..err('No config file provided')
+      ..info(parser.usage);
     exit(1);
   }
 
