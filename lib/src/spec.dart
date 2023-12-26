@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:file/file.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:space_gen/src/string.dart';
@@ -80,8 +80,9 @@ enum SchemaType {
 }
 
 class RefResolver {
-  RefResolver(this.baseUrl);
+  RefResolver(FileSystem fs, this.baseUrl) : _fs = fs;
   final Uri baseUrl;
+  final FileSystem _fs;
   final Map<Uri, Schema> _schemas = {};
 
   Schema resolve(SchemaRef ref) {
@@ -92,7 +93,7 @@ class RefResolver {
     if (_schemas.containsKey(uri)) {
       return _schemas[uri]!;
     }
-    final file = File(uri.toFilePath());
+    final file = _fs.file(uri.toFilePath());
     final contents = file.readAsStringSync();
     final schema = parseSchema(
       current: uri,
@@ -163,7 +164,7 @@ SchemaRef parseSchemaOrRef({
   }
 
   if (json.containsKey('oneOf')) {
-    // TODO: Support oneOf
+    // TODO(eseidel): Support oneOf
     return const SchemaRef.schema(
       Schema(
         description: 'OneOf',
@@ -426,10 +427,11 @@ class Spec {
     });
   }
 
-  static Future<Spec> load(Uri uri, RefResolver resolver) async {
-    final file = File(uri.toFilePath());
-    final content = file.readAsStringSync();
-
+  static Future<Spec> load(
+    String content,
+    Uri uri,
+    RefResolver resolver,
+  ) async {
     final endpoints = <Endpoint>[];
 
     final json = jsonDecode(content) as Map<String, dynamic>;

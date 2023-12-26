@@ -1,17 +1,18 @@
 import 'dart:io';
 
+import 'package:file/file.dart';
 import 'package:mustache_template/mustache_template.dart';
 import 'package:path/path.dart' as p;
 import 'package:space_gen/space_gen.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/string.dart';
 
-Template loadTemplate(String name) {
+Template loadTemplate(FileSystem fs, String name) {
   // I'm not sure how to load a template relative to the package root
   // for when this is installed via pub.  I'm sure it's possible.
   return Template(
-    File('lib/templates/$name.mustache').readAsStringSync(),
-    partialResolver: loadTemplate,
+    fs.file('lib/templates/$name.mustache').readAsStringSync(),
+    partialResolver: (s) => loadTemplate(fs, s),
     name: name,
   );
 }
@@ -252,25 +253,28 @@ class Context {
     required this.specUrl,
     required this.outDir,
     required this.packageName,
-  }) : resolver = RefResolver(specUrl);
+    required this.fileSystem,
+  }) : resolver = RefResolver(fileSystem, specUrl);
 
   late Spec spec;
   final Uri specUrl;
   final Directory outDir;
   final String packageName;
   final RefResolver resolver;
+  final FileSystem fileSystem;
 
   Schema resolve(SchemaRef ref) {
     return resolver.resolve(ref);
   }
 
   Future<void> load() async {
-    spec = await Spec.load(specUrl, resolver);
+    final content = fileSystem.file(specUrl.toFilePath()).readAsStringSync();
+    spec = await Spec.load(content, specUrl, resolver);
     // Crawl the spec and load all the schemas?
   }
 
   File _ensureFile(String path) {
-    final file = File(p.join(outDir.path, path));
+    final file = fileSystem.file(p.join(outDir.path, path));
     file.parent.createSync(recursive: true);
     return file;
   }
@@ -284,7 +288,7 @@ class Context {
     required String outPath,
     Map<String, dynamic> context = const {},
   }) {
-    final output = loadTemplate(template).renderString(context);
+    final output = loadTemplate(fileSystem, template).renderString(context);
     writeFile(path: outPath, content: output);
   }
 

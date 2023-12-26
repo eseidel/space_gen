@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:file/file.dart';
 import 'package:yaml/yaml.dart';
 
 class Config {
@@ -31,8 +30,8 @@ String resolveRelativePath(String configPath, String relativePath) {
   return resolveRelativeUri(configPath, relativePath).path;
 }
 
-Config loadFromFile(String configPath) {
-  final file = File(configPath);
+Config loadFromFile(FileSystem fs, String configPath) {
+  final file = fs.file(configPath);
   final yaml = loadYaml(file.readAsStringSync()) as YamlMap;
   // Using the same names as openapi-generator-cli
   // https://github.com/OpenAPITools/openapi-generator/blob/master/docs/configuration.md
