@@ -1,21 +1,21 @@
-import 'package:spacetraders/model/waypoint_trait_symbol.dart';
+import 'package:spacetraders/model/waypoint_modifier_symbol.dart';
 
-class WaypointTrait {
-  WaypointTrait({
+class WaypointModifier {
+  WaypointModifier({
     required this.symbol,
     required this.name,
     required this.description,
   });
 
-  factory WaypointTrait.fromJson(Map<String, dynamic> json) {
-    return WaypointTrait(
-      symbol: WaypointTraitSymbol.fromJson(json['symbol'] as String),
+  factory WaypointModifier.fromJson(Map<String, dynamic> json) {
+    return WaypointModifier(
+      symbol: WaypointModifierSymbol.fromJson(json['symbol'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
     );
   }
 
-  final WaypointTraitSymbol symbol;
+  final WaypointModifierSymbol symbol;
   final String name;
   final String description;
 

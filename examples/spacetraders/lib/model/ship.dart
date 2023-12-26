@@ -1,3 +1,4 @@
+import 'package:spacetraders/model/cooldown.dart';
 import 'package:spacetraders/model/ship_cargo.dart';
 import 'package:spacetraders/model/ship_crew.dart';
 import 'package:spacetraders/model/ship_engine.dart';
@@ -18,6 +19,7 @@ class Ship {
     required this.frame,
     required this.reactor,
     required this.engine,
+    required this.cooldown,
     required this.modules,
     required this.mounts,
     required this.cargo,
@@ -35,6 +37,7 @@ class Ship {
       frame: ShipFrame.fromJson(json['frame'] as Map<String, dynamic>),
       reactor: ShipReactor.fromJson(json['reactor'] as Map<String, dynamic>),
       engine: ShipEngine.fromJson(json['engine'] as Map<String, dynamic>),
+      cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
       modules: (json['modules'] as List<dynamic>)
           .map<ShipModule>(
             (e) => ShipModule.fromJson(e as Map<String, dynamic>),
@@ -55,6 +58,7 @@ class Ship {
   final ShipFrame frame;
   final ShipReactor reactor;
   final ShipEngine engine;
+  final Cooldown cooldown;
   final List<ShipModule> modules;
   final List<ShipMount> mounts;
   final ShipCargo cargo;
@@ -69,6 +73,7 @@ class Ship {
       'frame': frame.toJson(),
       'reactor': reactor.toJson(),
       'engine': engine.toJson(),
+      'cooldown': cooldown.toJson(),
       'modules': modules.map((e) => e.toJson()).toList(),
       'mounts': mounts.map((e) => e.toJson()).toList(),
       'cargo': cargo.toJson(),

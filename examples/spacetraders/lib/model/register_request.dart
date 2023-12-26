@@ -1,4 +1,4 @@
-import 'package:spacetraders/model/faction_symbols.dart';
+import 'package:spacetraders/model/faction_symbol.dart';
 
 class RegisterRequest {
   RegisterRequest({
@@ -9,13 +9,13 @@ class RegisterRequest {
 
   factory RegisterRequest.fromJson(Map<String, dynamic> json) {
     return RegisterRequest(
-      faction: FactionSymbols.fromJson(json['faction'] as String),
+      faction: FactionSymbol.fromJson(json['faction'] as String),
       symbol: json['symbol'] as String,
       email: json['email'] as String,
     );
   }
 
-  final FactionSymbols faction;
+  final FactionSymbol faction;
   final String symbol;
   final String email;
 

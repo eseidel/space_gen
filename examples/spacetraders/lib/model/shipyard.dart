@@ -8,6 +8,7 @@ class Shipyard {
     required this.shipTypes,
     required this.transactions,
     required this.ships,
+    required this.modificationsFee,
   });
 
   factory Shipyard.fromJson(Map<String, dynamic> json) {
@@ -28,6 +29,7 @@ class Shipyard {
             (e) => ShipyardShip.fromJson(e as Map<String, dynamic>),
           )
           .toList(),
+      modificationsFee: json['modificationsFee'] as int,
     );
   }
 
@@ -35,6 +37,7 @@ class Shipyard {
   final List<ShipyardShipTypesInner> shipTypes;
   final List<ShipyardTransaction> transactions;
   final List<ShipyardShip> ships;
+  final int modificationsFee;
 
   Map<String, dynamic> toJson() {
     return {
@@ -42,6 +45,7 @@ class Shipyard {
       'shipTypes': shipTypes.map((e) => e.toJson()).toList(),
       'transactions': transactions.map((e) => e.toJson()).toList(),
       'ships': ships.map((e) => e.toJson()).toList(),
+      'modificationsFee': modificationsFee,
     };
   }
 }

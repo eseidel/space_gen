@@ -1,33 +1,23 @@
-import 'package:spacetraders/model/connected_system.dart';
-
 class JumpGate {
   JumpGate({
-    required this.jumpRange,
-    required this.factionSymbol,
-    required this.connectedSystems,
+    required this.symbol,
+    required this.connections,
   });
 
   factory JumpGate.fromJson(Map<String, dynamic> json) {
     return JumpGate(
-      jumpRange: json['jumpRange'] as double,
-      factionSymbol: json['factionSymbol'] as String,
-      connectedSystems: (json['connectedSystems'] as List<dynamic>)
-          .map<ConnectedSystem>(
-            (e) => ConnectedSystem.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
+      symbol: json['symbol'] as String,
+      connections: (json['connections'] as List<dynamic>).cast<String>(),
     );
   }
 
-  final double jumpRange;
-  final String factionSymbol;
-  final List<ConnectedSystem> connectedSystems;
+  final String symbol;
+  final List<String> connections;
 
   Map<String, dynamic> toJson() {
     return {
-      'jumpRange': jumpRange,
-      'factionSymbol': factionSymbol,
-      'connectedSystems': connectedSystems.map((e) => e.toJson()).toList(),
+      'symbol': symbol,
+      'connections': connections,
     };
   }
 }

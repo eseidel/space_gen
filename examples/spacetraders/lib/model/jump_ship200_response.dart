@@ -1,4 +1,6 @@
+import 'package:spacetraders/model/agent.dart';
 import 'package:spacetraders/model/cooldown.dart';
+import 'package:spacetraders/model/market_transaction.dart';
 import 'package:spacetraders/model/ship_nav.dart';
 
 class JumpShip200Response {
@@ -25,24 +27,34 @@ class JumpShip200Response {
 
 class JumpShip200ResponseData {
   JumpShip200ResponseData({
-    required this.cooldown,
     required this.nav,
+    required this.cooldown,
+    required this.transaction,
+    required this.agent,
   });
 
   factory JumpShip200ResponseData.fromJson(Map<String, dynamic> json) {
     return JumpShip200ResponseData(
-      cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
       nav: ShipNav.fromJson(json['nav'] as Map<String, dynamic>),
+      cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
+      transaction: MarketTransaction.fromJson(
+        json['transaction'] as Map<String, dynamic>,
+      ),
+      agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
     );
   }
 
-  final Cooldown cooldown;
   final ShipNav nav;
+  final Cooldown cooldown;
+  final MarketTransaction transaction;
+  final Agent agent;
 
   Map<String, dynamic> toJson() {
     return {
-      'cooldown': cooldown.toJson(),
       'nav': nav.toJson(),
+      'cooldown': cooldown.toJson(),
+      'transaction': transaction.toJson(),
+      'agent': agent.toJson(),
     };
   }
 }

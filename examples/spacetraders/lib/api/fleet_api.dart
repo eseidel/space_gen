@@ -10,6 +10,7 @@ import 'package:spacetraders/model/create_survey201_response.dart';
 import 'package:spacetraders/model/dock_ship200_response.dart';
 import 'package:spacetraders/model/extract_resources201_response.dart';
 import 'package:spacetraders/model/extract_resources_request.dart';
+import 'package:spacetraders/model/extract_resources_with_survey201_response.dart';
 import 'package:spacetraders/model/get_mounts200_response.dart';
 import 'package:spacetraders/model/get_my_ship200_response.dart';
 import 'package:spacetraders/model/get_my_ship_cargo200_response.dart';
@@ -40,6 +41,8 @@ import 'package:spacetraders/model/sell_cargo201_response.dart';
 import 'package:spacetraders/model/sell_cargo_request.dart';
 import 'package:spacetraders/model/ship_refine201_response.dart';
 import 'package:spacetraders/model/ship_refine_request.dart';
+import 'package:spacetraders/model/siphon_resources201_response.dart';
+import 'package:spacetraders/model/survey.dart';
 import 'package:spacetraders/model/transfer_cargo200_response.dart';
 import 'package:spacetraders/model/transfer_cargo_request.dart';
 import 'package:spacetraders/model/warp_ship200_response.dart';
@@ -275,6 +278,50 @@ class FleetApi {
       );
     } else {
       throw Exception('Failed to load extractResources');
+    }
+  }
+
+  Future<SiphonResources201Response> siphonResources() async {
+    final response = await http.post(
+      Uri.parse(
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/siphon',
+      ),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({}),
+    );
+
+    if (response.statusCode == 200) {
+      return SiphonResources201Response.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+    } else {
+      throw Exception('Failed to load siphonResources');
+    }
+  }
+
+  Future<ExtractResourcesWithSurvey201Response> extractResourcesWithSurvey(
+    Survey survey,
+  ) async {
+    final response = await http.post(
+      Uri.parse(
+        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/extract/survey',
+      ),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'survey': survey.toJson(),
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return ExtractResourcesWithSurvey201Response.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+    } else {
+      throw Exception('Failed to load extractResourcesWithSurvey');
     }
   }
 

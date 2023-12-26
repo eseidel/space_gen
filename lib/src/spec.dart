@@ -161,6 +161,23 @@ SchemaRef parseSchemaOrRef({
   if (json.containsKey(r'$ref')) {
     return SchemaRef.fromPath(ref: json[r'$ref'] as String, current: current);
   }
+
+  if (json.containsKey('oneOf')) {
+    // TODO: Support oneOf
+    return const SchemaRef.schema(
+      Schema(
+        description: 'OneOf',
+        name: 'OneOf',
+        type: SchemaType.object,
+        properties: {},
+        required: [],
+        items: null,
+        enumValues: [],
+        format: null,
+      ),
+    );
+  }
+
   // Add "Inner" to our name if not an object.
   // This matches what the Dart open api generator does.
   final type = json['type'] as String;

@@ -1,6 +1,7 @@
 enum ShipType {
   shipProbe('SHIP_PROBE'),
   shipMiningDrone('SHIP_MINING_DRONE'),
+  shipSiphonDrone('SHIP_SIPHON_DRONE'),
   shipInterceptor('SHIP_INTERCEPTOR'),
   shipLightHauler('SHIP_LIGHT_HAULER'),
   shipCommandFrigate('SHIP_COMMAND_FRIGATE'),
@@ -9,6 +10,7 @@ enum ShipType {
   shipLightShuttle('SHIP_LIGHT_SHUTTLE'),
   shipOreHound('SHIP_ORE_HOUND'),
   shipRefiningFreighter('SHIP_REFINING_FREIGHTER'),
+  shipSurveyor('SHIP_SURVEYOR'),
   ;
 
   const ShipType(this.value);

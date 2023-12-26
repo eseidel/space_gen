@@ -44,7 +44,10 @@ class ShipModule {
 
 enum ShipModuleSymbolInner {
   moduleMineralProcessorI('MODULE_MINERAL_PROCESSOR_I'),
+  moduleGasProcessorI('MODULE_GAS_PROCESSOR_I'),
   moduleCargoHoldI('MODULE_CARGO_HOLD_I'),
+  moduleCargoHoldIi('MODULE_CARGO_HOLD_II'),
+  moduleCargoHoldIii('MODULE_CARGO_HOLD_III'),
   moduleCrewQuartersI('MODULE_CREW_QUARTERS_I'),
   moduleEnvoyQuartersI('MODULE_ENVOY_QUARTERS_I'),
   modulePassengerCabinI('MODULE_PASSENGER_CABIN_I'),

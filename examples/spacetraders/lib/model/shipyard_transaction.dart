@@ -2,6 +2,7 @@ class ShipyardTransaction {
   ShipyardTransaction({
     required this.waypointSymbol,
     required this.shipSymbol,
+    required this.shipType,
     required this.price,
     required this.agentSymbol,
     required this.timestamp,
@@ -11,6 +12,7 @@ class ShipyardTransaction {
     return ShipyardTransaction(
       waypointSymbol: json['waypointSymbol'] as String,
       shipSymbol: json['shipSymbol'] as String,
+      shipType: json['shipType'] as String,
       price: json['price'] as int,
       agentSymbol: json['agentSymbol'] as String,
       timestamp: DateTime.parse(json['timestamp'] as String),
@@ -19,6 +21,7 @@ class ShipyardTransaction {
 
   final String waypointSymbol;
   final String shipSymbol;
+  final String shipType;
   final int price;
   final String agentSymbol;
   final DateTime timestamp;
@@ -27,6 +30,7 @@ class ShipyardTransaction {
     return {
       'waypointSymbol': waypointSymbol,
       'shipSymbol': shipSymbol,
+      'shipType': shipType,
       'price': price,
       'agentSymbol': agentSymbol,
       'timestamp': timestamp.toIso8601String(),

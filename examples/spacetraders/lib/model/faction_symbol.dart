@@ -1,4 +1,4 @@
-enum FactionSymbols {
+enum FactionSymbol {
   cosmic('COSMIC'),
   void_('VOID'),
   galactic('GALACTIC'),
@@ -20,12 +20,12 @@ enum FactionSymbols {
   ethereal('ETHEREAL'),
   ;
 
-  const FactionSymbols(this.value);
+  const FactionSymbol(this.value);
 
-  factory FactionSymbols.fromJson(String json) {
-    return FactionSymbols.values.firstWhere(
+  factory FactionSymbol.fromJson(String json) {
+    return FactionSymbol.values.firstWhere(
       (value) => value.value == json,
-      orElse: () => throw Exception('Unknown FactionSymbols value: $json'),
+      orElse: () => throw Exception('Unknown FactionSymbol value: $json'),
     );
   }
 

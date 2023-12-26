@@ -1,0 +1,75 @@
+enum FactionTraitSymbol {
+  bureaucratic('BUREAUCRATIC'),
+  secretive('SECRETIVE'),
+  capitalistic('CAPITALISTIC'),
+  industrious('INDUSTRIOUS'),
+  peaceful('PEACEFUL'),
+  distrustful('DISTRUSTFUL'),
+  welcoming('WELCOMING'),
+  smugglers('SMUGGLERS'),
+  scavengers('SCAVENGERS'),
+  rebellious('REBELLIOUS'),
+  exiles('EXILES'),
+  pirates('PIRATES'),
+  raiders('RAIDERS'),
+  clan('CLAN'),
+  guild('GUILD'),
+  dominion('DOMINION'),
+  fringe('FRINGE'),
+  forsaken('FORSAKEN'),
+  isolated('ISOLATED'),
+  localized('LOCALIZED'),
+  established('ESTABLISHED'),
+  notable('NOTABLE'),
+  dominant('DOMINANT'),
+  inescapable('INESCAPABLE'),
+  innovative('INNOVATIVE'),
+  bold('BOLD'),
+  visionary('VISIONARY'),
+  curious('CURIOUS'),
+  daring('DARING'),
+  exploratory('EXPLORATORY'),
+  resourceful('RESOURCEFUL'),
+  flexible('FLEXIBLE'),
+  cooperative('COOPERATIVE'),
+  united('UNITED'),
+  strategic('STRATEGIC'),
+  intelligent('INTELLIGENT'),
+  researchFocused('RESEARCH_FOCUSED'),
+  collaborative('COLLABORATIVE'),
+  progressive('PROGRESSIVE'),
+  militaristic('MILITARISTIC'),
+  technologicallyAdvanced('TECHNOLOGICALLY_ADVANCED'),
+  aggressive('AGGRESSIVE'),
+  imperialistic('IMPERIALISTIC'),
+  treasureHunters('TREASURE_HUNTERS'),
+  dexterous('DEXTEROUS'),
+  unpredictable('UNPREDICTABLE'),
+  brutal('BRUTAL'),
+  fleeting('FLEETING'),
+  adaptable('ADAPTABLE'),
+  selfSufficient('SELF_SUFFICIENT'),
+  defensive('DEFENSIVE'),
+  proud('PROUD'),
+  diverse('DIVERSE'),
+  independent('INDEPENDENT'),
+  selfInterested('SELF_INTERESTED'),
+  fragmented('FRAGMENTED'),
+  commercial('COMMERCIAL'),
+  freeMarkets('FREE_MARKETS'),
+  entrepreneurial('ENTREPRENEURIAL'),
+  ;
+
+  const FactionTraitSymbol(this.value);
+
+  factory FactionTraitSymbol.fromJson(String json) {
+    return FactionTraitSymbol.values.firstWhere(
+      (value) => value.value == json,
+      orElse: () => throw Exception('Unknown FactionTraitSymbol value: $json'),
+    );
+  }
+
+  final String value;
+
+  String toJson() => value;
+}
