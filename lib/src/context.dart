@@ -34,7 +34,7 @@ extension ApiGeneration on Api {
 
 extension EndpointGeneration on Endpoint {
   String get methodName {
-    final name = operationId.splitMapJoin(
+    final name = snakeName.splitMapJoin(
       '-',
       onMatch: (m) => '',
       onNonMatch: (n) => n.capitalize(),
@@ -263,9 +263,7 @@ class Context {
   final RefResolver resolver;
   final FileSystem fileSystem;
 
-  Schema resolve(SchemaRef ref) {
-    return resolver.resolve(ref);
-  }
+  Schema resolve(SchemaRef ref) => resolver.resolve(ref);
 
   Future<void> load() async {
     final content = fileSystem.file(specUrl.toFilePath()).readAsStringSync();

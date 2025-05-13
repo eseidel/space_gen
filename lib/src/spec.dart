@@ -93,6 +93,7 @@ class RefResolver {
     if (_schemas.containsKey(uri)) {
       return _schemas[uri]!;
     }
+    print(uri);
     final file = _fs.file(uri.toFilePath());
     final contents = file.readAsStringSync();
     final schema = parseSchema(
@@ -176,6 +177,18 @@ SchemaRef parseSchemaOrRef({
         enumValues: [],
         format: null,
       ),
+    );
+  }
+
+  if (json.containsKey('allOf')) {
+    final allOf = json['allOf'] as List<dynamic>;
+    if (allOf.length != 1) {
+      throw UnimplementedError('AllOf with ${allOf.length} items');
+    }
+    return parseSchemaOrRef(
+      current: current,
+      json: allOf.first as Map<String, dynamic>,
+      inferredName: inferredName,
     );
   }
 
@@ -274,7 +287,7 @@ class Endpoint {
     required this.tag,
     required this.responses,
     required this.parameters,
-    required this.operationId,
+    required this.snakeName,
     required this.requestBody,
   });
 
@@ -282,7 +295,7 @@ class Endpoint {
   final Method method;
   final String tag;
   final Responses responses;
-  final String operationId;
+  final String snakeName;
   final List<Parameter> parameters;
   final SchemaRef? requestBody;
 }
@@ -309,24 +322,42 @@ class Responses {
 Responses parseResponses(
   Uri current,
   Map<String, dynamic> json,
-  String operationId,
+  String camelName,
 ) {
   // Hack to make get cooldown compile.
   final responseCodes = json.keys.toList()..remove('204');
   if (responseCodes.length != 1) {
     throw UnimplementedError(
-      'Multiple responses not supported, $operationId',
+      'Multiple responses not supported, $camelName',
     );
   }
-  final camelName = operationId.splitMapJoin(
-    '-',
-    onMatch: (m) => '',
-    onNonMatch: (n) => n.capitalize(),
-  );
+
   final responseCode = responseCodes.first;
   final inferredName = '$camelName${responseCode}Response';
   final responseTypes = json[responseCode] as Map<String, dynamic>;
-  final content = responseTypes['content'] as Map<String, dynamic>;
+  final content = responseTypes['content'] as Map<String, dynamic>?;
+  if (content == null) {
+    return Responses(
+      responses: [
+        Response(
+          code: int.parse(responseCode),
+          content: const SchemaRef.schema(
+            // This is a hack, this should just be a string.
+            Schema(
+              name: 'Empty',
+              type: SchemaType.object,
+              properties: {},
+              required: [],
+              description: '',
+              items: null,
+              enumValues: [],
+              format: null,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
   final jsonResponse = content['application/json'] as Map<String, dynamic>;
   final responses = [
     Response(
@@ -365,14 +396,22 @@ Endpoint parseEndpoint(
   String path,
   Method method,
 ) {
-  final operationId = methodValue['operationId'] as String;
+  final snakeName = methodValue['operationId'] as String? ??
+      Uri.parse(path).pathSegments.last;
+
+  final camelName = snakeName.splitMapJoin(
+    '-',
+    onMatch: (m) => '',
+    onNonMatch: (n) => n.capitalize(),
+  );
+
   final responses = parseResponses(
     current,
     methodValue['responses'] as Map<String, dynamic>,
-    operationId,
+    camelName,
   );
-  final tags = methodValue['tags'] as List<dynamic>;
-  final tag = tags.firstOrNull as String? ?? 'Default';
+  final tags = methodValue['tags'] as List<dynamic>?;
+  final tag = tags?.firstOrNull as String? ?? 'Default';
   final parametersJson = methodValue['parameters'] as List<dynamic>? ?? [];
   final parameters = parametersJson
       .cast<Map<String, dynamic>>()
@@ -381,11 +420,6 @@ Endpoint parseEndpoint(
   final requestBodyJson = methodValue['requestBody'] as Map<String, dynamic>?;
   SchemaRef? requestBody;
   if (requestBodyJson != null) {
-    final camelName = operationId.splitMapJoin(
-      '-',
-      onMatch: (m) => '',
-      onNonMatch: (n) => n.capitalize(),
-    );
     final inferredName = '${camelName}Request';
     final content = requestBodyJson['content'] as Map<String, dynamic>;
     final json = content['application/json'] as Map<String, dynamic>;
@@ -400,7 +434,7 @@ Endpoint parseEndpoint(
     method: method,
     tag: tag,
     responses: responses,
-    operationId: operationId,
+    snakeName: snakeName,
     parameters: parameters,
     requestBody: requestBody,
   );
