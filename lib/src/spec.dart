@@ -464,7 +464,6 @@ class Spec {
   static Future<Spec> load(
     String content,
     Uri uri,
-    RefResolver resolver,
   ) async {
     final endpoints = <Endpoint>[];
 

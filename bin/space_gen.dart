@@ -37,13 +37,32 @@ Future<int> main(List<String> arguments) async {
   if (outDir.existsSync()) {
     outDir.deleteSync(recursive: true);
   }
+
+  final spec = await Context.loadSpec(config.specUri, fs);
+
   final context = Context(
-    fileSystem: fs,
+    spec: spec,
     specUrl: config.specUri,
+    fileSystem: fs,
     outDir: outDir,
     packageName: config.packageName,
   );
-  await context.load();
+
+  // First we want to load the spec.
+  // Then we want to walk and resolve all the references.
+  // Then we hand a fully resolved spec to the renderer.
+
+  // Print stats about the spec.
+  logger.info('Spec:');
+  for (final api in context.spec.apis) {
+    logger.info('  - ${api.className}');
+    for (final endpoint in api.endpoints) {
+      logger.info(
+        '    - ${endpoint.methodName} ${endpoint.method.key} ${endpoint.path}',
+      );
+    }
+  }
+
   context.render();
   return 0;
 }

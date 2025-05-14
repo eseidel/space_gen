@@ -251,13 +251,14 @@ extension SchemaRefGeneration on SchemaRef {
 class Context {
   Context({
     required this.specUrl,
+    required this.spec,
     required this.outDir,
     required this.packageName,
     required this.fileSystem,
   }) : resolver = RefResolver(fileSystem, specUrl);
 
-  late Spec spec;
   final Uri specUrl;
+  final Spec spec;
   final Directory outDir;
   final String packageName;
   final RefResolver resolver;
@@ -265,10 +266,11 @@ class Context {
 
   Schema resolve(SchemaRef ref) => resolver.resolve(ref);
 
-  Future<void> load() async {
+  static Future<Spec> loadSpec(Uri specUrl, FileSystem fileSystem) async {
     final content = fileSystem.file(specUrl.toFilePath()).readAsStringSync();
-    spec = await Spec.load(content, specUrl, resolver);
+    final spec = await Spec.load(content, specUrl);
     // Crawl the spec and load all the schemas?
+    return spec;
   }
 
   File _ensureFile(String path) {
