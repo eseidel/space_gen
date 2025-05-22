@@ -10,6 +10,13 @@ void main() {
     expect(snakeFromCamel('snakeFromCamel'), 'snake_from_camel');
   });
 
+  test('camelFromSnake', () {
+    expect(camelFromSnake('camel_from_snake'), 'CamelFromSnake');
+    expect(camelFromSnake('Camel_from_snake'), 'CamelFromSnake');
+    expect(camelFromSnake('camel_from_snake'), 'CamelFromSnake');
+    expect(camelFromSnake('Camel_from_snake'), 'CamelFromSnake');
+  });
+
   test('camelFromScreamingCaps', () {
     expect(camelFromScreamingCaps('CAMEL_FROM_CAPS'), 'camelFromCaps');
     expect(camelFromScreamingCaps('camel_from_caps'), 'camelFromCaps');

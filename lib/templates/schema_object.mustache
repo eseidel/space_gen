@@ -5,6 +5,11 @@ class {{ schemaName }} {
         required this.{{ propertyName }},
         {{/properties}}
         {{#hasProperties}} }{{/hasProperties}}
+        {{#hasAdditionalProperties}}
+        {
+        required this.additionalProperties,
+        }
+        {{/hasAdditionalProperties}}
     );
 
     factory {{ schemaName }}.fromJson(Map<String, dynamic> json) {
@@ -12,6 +17,9 @@ class {{ schemaName }} {
             {{#properties}}
             {{ propertyName }}: {{{ propertyFromJson }}},
             {{/properties}}
+            {{#hasAdditionalProperties}}
+            additionalProperties: json.map((key, value) => MapEntry(key, {{{ valueFromJson }}})),
+            {{/hasAdditionalProperties}}
         );
     }
 
@@ -19,11 +27,20 @@ class {{ schemaName }} {
     final {{{ propertyType }}} {{ propertyName }};
     {{/properties}}
 
+    {{#hasAdditionalProperties}}
+    final Map<String, {{{ valueSchema }}}> additionalProperties;
+
+    {{{ valueSchema }}}? operator [](String key) => additionalProperties[key];
+    {{/hasAdditionalProperties}}
+
     Map<String, dynamic> toJson() {
         return {
             {{#properties}}
             '{{ propertyName }}': {{{ propertyToJson }}},
             {{/properties}}
+            {{#hasAdditionalProperties}}
+            ...additionalProperties.map((key, value) => MapEntry(key, {{{ valueToJson }}})),
+            {{/hasAdditionalProperties}}
         };
     }
 }

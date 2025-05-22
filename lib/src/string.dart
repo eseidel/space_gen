@@ -8,6 +8,14 @@ String snakeFromCamel(String camel) {
   return snake.startsWith('_') ? snake.substring(1) : snake;
 }
 
+String camelFromSnake(String snake) {
+  return snake.splitMapJoin(
+    RegExp('_'),
+    onMatch: (m) => '',
+    onNonMatch: (n) => n.capitalize(),
+  );
+}
+
 // Converts from SCREAMING_CAPS to camelCase.
 String camelFromScreamingCaps(String caps) {
   final camel = caps.splitMapJoin(
@@ -19,14 +27,7 @@ String camelFromScreamingCaps(String caps) {
 }
 
 bool isReservedWord(String word) {
-  const reservedWords = {
-    'void',
-    'int',
-    'double',
-    'num',
-    'bool',
-    'dynamic',
-  };
+  const reservedWords = {'void', 'int', 'double', 'num', 'bool', 'dynamic'};
   return reservedWords.contains(word);
 }
 

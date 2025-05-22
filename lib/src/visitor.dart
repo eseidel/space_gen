@@ -1,0 +1,86 @@
+import 'package:space_gen/src/spec.dart';
+
+/// Subclass this and override the methods you want to visit.
+abstract class Visitor {
+  void visitSpec(Spec spec) {}
+  void visitEndpoint(Endpoint endpoint) {}
+  void visitParameter(Parameter parameter) {}
+  void visitReference(SchemaRef ref) {}
+  void visitSchema(Schema schema) {}
+}
+
+class _RefCollector extends Visitor {
+  _RefCollector(this._refs);
+
+  final Set<String> _refs;
+
+  @override
+  void visitReference(SchemaRef ref) {
+    if (ref.uri != null) {
+      _refs.add(ref.uri!);
+    }
+  }
+}
+
+Iterable<String> collectRefs(Spec spec) {
+  final refs = <String>{};
+  final collector = _RefCollector(refs);
+  SpecWalker(collector).walkSpec(spec);
+  return refs;
+}
+
+// Would be nice if Dart had a generic way to do this, without needing to
+// teach the walker about all the types.
+class SpecWalker {
+  SpecWalker(this.visitor);
+
+  final Visitor visitor;
+
+  void walkSpec(Spec spec) {
+    visitor.visitSpec(spec);
+    for (final endpoint in spec.endpoints) {
+      _endpoint(endpoint);
+    }
+  }
+
+  void _endpoint(Endpoint endpoint) {
+    visitor.visitEndpoint(endpoint);
+    for (final parameter in endpoint.parameters) {
+      _parameter(parameter);
+    }
+    for (final response in endpoint.responses) {
+      _maybeRef(response.content);
+    }
+    _maybeRef(endpoint.requestBody);
+  }
+
+  void _parameter(Parameter parameter) {
+    visitor.visitParameter(parameter);
+    _maybeRef(parameter.type);
+  }
+
+  void _maybeRef(SchemaRef? ref) {
+    if (ref != null) {
+      _ref(ref);
+    }
+  }
+
+  void _ref(SchemaRef ref) {
+    visitor.visitReference(ref);
+    _maybeSchema(ref.schema);
+  }
+
+  void _maybeSchema(Schema? schema) {
+    if (schema != null) {
+      _schema(schema);
+    }
+  }
+
+  void _schema(Schema schema) {
+    visitor.visitSchema(schema);
+    for (final property in schema.properties.values) {
+      _maybeRef(property);
+    }
+    _maybeRef(schema.items);
+  }
+}

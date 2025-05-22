@@ -26,9 +26,14 @@ class {{ className }} {
         );
 
         if (response.statusCode == 200) {
+            {{#returnIsVoid}}
+            return;
+            {{/returnIsVoid}}
+            {{^returnIsVoid}}
             return {{{ returnType }}}.fromJson(
                 jsonDecode(response.body) as Map<String, dynamic>,
             );
+            {{/returnIsVoid}}
         } else {
             throw Exception('Failed to load {{methodName}}');
         }

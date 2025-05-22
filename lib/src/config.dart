@@ -4,12 +4,12 @@ import 'package:yaml/yaml.dart';
 class Config {
   Config({
     required this.specUri,
-    required this.outDirPath,
+    required this.outDir,
     required this.packageName,
   });
 
   final Uri specUri;
-  final String outDirPath;
+  final Directory outDir;
   final String packageName;
 }
 
@@ -21,29 +21,31 @@ String _requiredValue(YamlMap yaml, String name) {
   throw ArgumentError.value(value, name, 'Expected a string');
 }
 
-Uri resolveRelativeUri(String configPath, String relativePath) {
-  final configUri = Uri.parse(configPath);
+Uri resolveRelativeUri(File config, String relativePath) {
+  final configUri = Uri.file(config.path);
   return configUri.resolve(relativePath);
 }
 
-String resolveRelativePath(String configPath, String relativePath) {
-  return resolveRelativeUri(configPath, relativePath).path;
+String resolveRelativePath(File config, String relativePath) {
+  return resolveRelativeUri(config, relativePath).path;
 }
 
-Config loadFromFile(FileSystem fs, String configPath) {
-  final file = fs.file(configPath);
-  final yaml = loadYaml(file.readAsStringSync()) as YamlMap;
+Config loadFromFile(File config) {
+  final yaml = loadYaml(config.readAsStringSync()) as YamlMap;
   // Using the same names as openapi-generator-cli
   // https://github.com/OpenAPITools/openapi-generator/blob/master/docs/configuration.md
   // https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/dart.md
-  final inputSpec =
-      resolveRelativeUri(configPath, _requiredValue(yaml, 'inputSpec'));
-  final outputDir =
-      resolveRelativePath(configPath, _requiredValue(yaml, 'outputDir'));
+  final inputSpec = resolveRelativeUri(
+    config,
+    _requiredValue(yaml, 'inputSpec'),
+  );
+  final outputDir = config.fileSystem.directory(
+    resolveRelativePath(config, _requiredValue(yaml, 'outputDir')),
+  );
   final packageName = _requiredValue(yaml, 'pubName');
   return Config(
     specUri: inputSpec,
-    outDirPath: outputDir,
+    outDir: outputDir,
     packageName: packageName,
   );
 }
