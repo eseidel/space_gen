@@ -4,9 +4,7 @@ import 'package:spacetraders/model/market_transaction.dart';
 import 'package:spacetraders/model/ship_nav.dart';
 
 class JumpShip200Response {
-  JumpShip200Response({
-    required this.data,
-  });
+  JumpShip200Response({required this.data});
 
   factory JumpShip200Response.fromJson(Map<String, dynamic> json) {
     return JumpShip200Response(
@@ -19,9 +17,7 @@ class JumpShip200Response {
   final JumpShip200ResponseData data;
 
   Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
+    return {'data': data.toJson()};
   }
 }
 

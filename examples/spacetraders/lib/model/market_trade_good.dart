@@ -16,7 +16,7 @@ class MarketTradeGood {
   factory MarketTradeGood.fromJson(Map<String, dynamic> json) {
     return MarketTradeGood(
       symbol: TradeSymbol.fromJson(json['symbol'] as String),
-      type: MarketTradeGoodTypeInner.fromJson(json['type'] as String),
+      type: MarketTradeGoodType.fromJson(json['type'] as String),
       tradeVolume: json['tradeVolume'] as int,
       supply: SupplyLevel.fromJson(json['supply'] as String),
       activity: ActivityLevel.fromJson(json['activity'] as String),
@@ -26,7 +26,7 @@ class MarketTradeGood {
   }
 
   final TradeSymbol symbol;
-  final MarketTradeGoodTypeInner type;
+  final MarketTradeGoodType type;
   final int tradeVolume;
   final SupplyLevel supply;
   final ActivityLevel activity;
@@ -46,19 +46,17 @@ class MarketTradeGood {
   }
 }
 
-enum MarketTradeGoodTypeInner {
+enum MarketTradeGoodType {
   export('EXPORT'),
   import('IMPORT'),
-  exchange('EXCHANGE'),
-  ;
+  exchange('EXCHANGE');
 
-  const MarketTradeGoodTypeInner(this.value);
+  const MarketTradeGoodType(this.value);
 
-  factory MarketTradeGoodTypeInner.fromJson(String json) {
-    return MarketTradeGoodTypeInner.values.firstWhere(
+  factory MarketTradeGoodType.fromJson(String json) {
+    return MarketTradeGoodType.values.firstWhere(
       (value) => value.value == json,
-      orElse: () =>
-          throw Exception('Unknown MarketTradeGoodTypeInner value: $json'),
+      orElse: () => throw Exception('Unknown MarketTradeGoodType value: $json'),
     );
   }
 

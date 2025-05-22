@@ -2,9 +2,7 @@ import 'package:spacetraders/model/contract.dart';
 import 'package:spacetraders/model/ship_cargo.dart';
 
 class DeliverContract200Response {
-  DeliverContract200Response({
-    required this.data,
-  });
+  DeliverContract200Response({required this.data});
 
   factory DeliverContract200Response.fromJson(Map<String, dynamic> json) {
     return DeliverContract200Response(
@@ -17,17 +15,12 @@ class DeliverContract200Response {
   final DeliverContract200ResponseData data;
 
   Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
+    return {'data': data.toJson()};
   }
 }
 
 class DeliverContract200ResponseData {
-  DeliverContract200ResponseData({
-    required this.contract,
-    required this.cargo,
-  });
+  DeliverContract200ResponseData({required this.contract, required this.cargo});
 
   factory DeliverContract200ResponseData.fromJson(Map<String, dynamic> json) {
     return DeliverContract200ResponseData(
@@ -40,9 +33,6 @@ class DeliverContract200ResponseData {
   final ShipCargo cargo;
 
   Map<String, dynamic> toJson() {
-    return {
-      'contract': contract.toJson(),
-      'cargo': cargo.toJson(),
-    };
+    return {'contract': contract.toJson(), 'cargo': cargo.toJson()};
   }
 }

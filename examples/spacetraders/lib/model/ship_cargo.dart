@@ -11,11 +11,12 @@ class ShipCargo {
     return ShipCargo(
       capacity: json['capacity'] as int,
       units: json['units'] as int,
-      inventory: (json['inventory'] as List<dynamic>)
-          .map<ShipCargoItem>(
-            (e) => ShipCargoItem.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
+      inventory:
+          (json['inventory'] as List<dynamic>)
+              .map<ShipCargoItem>(
+                (e) => ShipCargoItem.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
     );
   }
 

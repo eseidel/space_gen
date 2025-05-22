@@ -15,9 +15,6 @@ class GetStatus200ResponseServerResets {
   final String frequency;
 
   Map<String, dynamic> toJson() {
-    return {
-      'next': next,
-      'frequency': frequency,
-    };
+    return {'next': next, 'frequency': frequency};
   }
 }

@@ -3,46 +3,46 @@ import 'package:spacetraders/model/ship_requirements.dart';
 class ShipModule {
   ShipModule({
     required this.symbol,
-    required this.capacity,
-    required this.range,
     required this.name,
     required this.description,
+    required this.capacity,
+    required this.range,
     required this.requirements,
   });
 
   factory ShipModule.fromJson(Map<String, dynamic> json) {
     return ShipModule(
-      symbol: ShipModuleSymbolInner.fromJson(json['symbol'] as String),
-      capacity: json['capacity'] as int,
-      range: json['range'] as int,
+      symbol: ShipModuleSymbol.fromJson(json['symbol'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
+      capacity: json['capacity'] as int,
+      range: json['range'] as int,
       requirements: ShipRequirements.fromJson(
         json['requirements'] as Map<String, dynamic>,
       ),
     );
   }
 
-  final ShipModuleSymbolInner symbol;
-  final int capacity;
-  final int range;
+  final ShipModuleSymbol symbol;
   final String name;
   final String description;
+  final int capacity;
+  final int range;
   final ShipRequirements requirements;
 
   Map<String, dynamic> toJson() {
     return {
       'symbol': symbol.toJson(),
-      'capacity': capacity,
-      'range': range,
       'name': name,
       'description': description,
+      'capacity': capacity,
+      'range': range,
       'requirements': requirements.toJson(),
     };
   }
 }
 
-enum ShipModuleSymbolInner {
+enum ShipModuleSymbol {
   moduleMineralProcessorI('MODULE_MINERAL_PROCESSOR_I'),
   moduleGasProcessorI('MODULE_GAS_PROCESSOR_I'),
   moduleCargoHoldI('MODULE_CARGO_HOLD_I'),
@@ -62,16 +62,14 @@ enum ShipModuleSymbolInner {
   moduleWarpDriveIi('MODULE_WARP_DRIVE_II'),
   moduleWarpDriveIii('MODULE_WARP_DRIVE_III'),
   moduleShieldGeneratorI('MODULE_SHIELD_GENERATOR_I'),
-  moduleShieldGeneratorIi('MODULE_SHIELD_GENERATOR_II'),
-  ;
+  moduleShieldGeneratorIi('MODULE_SHIELD_GENERATOR_II');
 
-  const ShipModuleSymbolInner(this.value);
+  const ShipModuleSymbol(this.value);
 
-  factory ShipModuleSymbolInner.fromJson(String json) {
-    return ShipModuleSymbolInner.values.firstWhere(
+  factory ShipModuleSymbol.fromJson(String json) {
+    return ShipModuleSymbol.values.firstWhere(
       (value) => value.value == json,
-      orElse: () =>
-          throw Exception('Unknown ShipModuleSymbolInner value: $json'),
+      orElse: () => throw Exception('Unknown ShipModuleSymbol value: $json'),
     );
   }
 

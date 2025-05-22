@@ -1,10 +1,7 @@
 import 'package:spacetraders/model/extraction_yield.dart';
 
 class Extraction {
-  Extraction({
-    required this.shipSymbol,
-    required this.yield,
-  });
+  Extraction({required this.shipSymbol, required this.yield});
 
   factory Extraction.fromJson(Map<String, dynamic> json) {
     return Extraction(
@@ -17,9 +14,6 @@ class Extraction {
   final ExtractionYield yield;
 
   Map<String, dynamic> toJson() {
-    return {
-      'shipSymbol': shipSymbol,
-      'yield': yield.toJson(),
-    };
+    return {'shipSymbol': shipSymbol, 'yield': yield.toJson()};
   }
 }

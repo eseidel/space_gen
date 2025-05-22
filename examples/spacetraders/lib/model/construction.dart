@@ -10,11 +10,12 @@ class Construction {
   factory Construction.fromJson(Map<String, dynamic> json) {
     return Construction(
       symbol: json['symbol'] as String,
-      materials: (json['materials'] as List<dynamic>)
-          .map<ConstructionMaterial>(
-            (e) => ConstructionMaterial.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
+      materials:
+          (json['materials'] as List<dynamic>)
+              .map<ConstructionMaterial>(
+                (e) => ConstructionMaterial.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
       isComplete: json['isComplete'] as bool,
     );
   }

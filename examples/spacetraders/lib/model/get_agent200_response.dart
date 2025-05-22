@@ -1,21 +1,17 @@
-import 'package:spacetraders/model/agent.dart';
+import 'package:spacetraders/model/public_agent.dart';
 
 class GetAgent200Response {
-  GetAgent200Response({
-    required this.data,
-  });
+  GetAgent200Response({required this.data});
 
   factory GetAgent200Response.fromJson(Map<String, dynamic> json) {
     return GetAgent200Response(
-      data: Agent.fromJson(json['data'] as Map<String, dynamic>),
+      data: PublicAgent.fromJson(json['data'] as Map<String, dynamic>),
     );
   }
 
-  final Agent data;
+  final PublicAgent data;
 
   Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
+    return {'data': data.toJson()};
   }
 }

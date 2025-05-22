@@ -15,25 +15,36 @@ class Market {
   factory Market.fromJson(Map<String, dynamic> json) {
     return Market(
       symbol: json['symbol'] as String,
-      exports: (json['exports'] as List<dynamic>)
-          .map<TradeGood>((e) => TradeGood.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      imports: (json['imports'] as List<dynamic>)
-          .map<TradeGood>((e) => TradeGood.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      exchange: (json['exchange'] as List<dynamic>)
-          .map<TradeGood>((e) => TradeGood.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      transactions: (json['transactions'] as List<dynamic>)
-          .map<MarketTransaction>(
-            (e) => MarketTransaction.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
-      tradeGoods: (json['tradeGoods'] as List<dynamic>)
-          .map<MarketTradeGood>(
-            (e) => MarketTradeGood.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
+      exports:
+          (json['exports'] as List<dynamic>)
+              .map<TradeGood>(
+                (e) => TradeGood.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
+      imports:
+          (json['imports'] as List<dynamic>)
+              .map<TradeGood>(
+                (e) => TradeGood.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
+      exchange:
+          (json['exchange'] as List<dynamic>)
+              .map<TradeGood>(
+                (e) => TradeGood.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
+      transactions:
+          (json['transactions'] as List<dynamic>)
+              .map<MarketTransaction>(
+                (e) => MarketTransaction.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
+      tradeGoods:
+          (json['tradeGoods'] as List<dynamic>)
+              .map<MarketTradeGood>(
+                (e) => MarketTradeGood.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
     );
   }
 

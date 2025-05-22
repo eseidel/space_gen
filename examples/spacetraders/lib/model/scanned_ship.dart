@@ -20,15 +20,18 @@ class ScannedShip {
       ),
       nav: ShipNav.fromJson(json['nav'] as Map<String, dynamic>),
       frame: ScannedShipFrame.fromJson(json['frame'] as Map<String, dynamic>),
-      reactor:
-          ScannedShipReactor.fromJson(json['reactor'] as Map<String, dynamic>),
-      engine:
-          ScannedShipEngine.fromJson(json['engine'] as Map<String, dynamic>),
-      mounts: (json['mounts'] as List<dynamic>)
-          .map<ScannedShipMountsInner>(
-            (e) => ScannedShipMountsInner.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
+      reactor: ScannedShipReactor.fromJson(
+        json['reactor'] as Map<String, dynamic>,
+      ),
+      engine: ScannedShipEngine.fromJson(
+        json['engine'] as Map<String, dynamic>,
+      ),
+      mounts:
+          (json['mounts'] as List<dynamic>)
+              .map<ScannedShipMounts>(
+                (e) => ScannedShipMounts.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
     );
   }
 
@@ -38,7 +41,7 @@ class ScannedShip {
   final ScannedShipFrame frame;
   final ScannedShipReactor reactor;
   final ScannedShipEngine engine;
-  final List<ScannedShipMountsInner> mounts;
+  final List<ScannedShipMounts> mounts;
 
   Map<String, dynamic> toJson() {
     return {
@@ -54,81 +57,57 @@ class ScannedShip {
 }
 
 class ScannedShipFrame {
-  ScannedShipFrame({
-    required this.symbol,
-  });
+  ScannedShipFrame({required this.symbol});
 
   factory ScannedShipFrame.fromJson(Map<String, dynamic> json) {
-    return ScannedShipFrame(
-      symbol: json['symbol'] as String,
-    );
+    return ScannedShipFrame(symbol: json['symbol'] as String);
   }
 
   final String symbol;
 
   Map<String, dynamic> toJson() {
-    return {
-      'symbol': symbol,
-    };
+    return {'symbol': symbol};
   }
 }
 
 class ScannedShipReactor {
-  ScannedShipReactor({
-    required this.symbol,
-  });
+  ScannedShipReactor({required this.symbol});
 
   factory ScannedShipReactor.fromJson(Map<String, dynamic> json) {
-    return ScannedShipReactor(
-      symbol: json['symbol'] as String,
-    );
+    return ScannedShipReactor(symbol: json['symbol'] as String);
   }
 
   final String symbol;
 
   Map<String, dynamic> toJson() {
-    return {
-      'symbol': symbol,
-    };
+    return {'symbol': symbol};
   }
 }
 
 class ScannedShipEngine {
-  ScannedShipEngine({
-    required this.symbol,
-  });
+  ScannedShipEngine({required this.symbol});
 
   factory ScannedShipEngine.fromJson(Map<String, dynamic> json) {
-    return ScannedShipEngine(
-      symbol: json['symbol'] as String,
-    );
+    return ScannedShipEngine(symbol: json['symbol'] as String);
   }
 
   final String symbol;
 
   Map<String, dynamic> toJson() {
-    return {
-      'symbol': symbol,
-    };
+    return {'symbol': symbol};
   }
 }
 
-class ScannedShipMountsInner {
-  ScannedShipMountsInner({
-    required this.symbol,
-  });
+class ScannedShipMounts {
+  ScannedShipMounts({required this.symbol});
 
-  factory ScannedShipMountsInner.fromJson(Map<String, dynamic> json) {
-    return ScannedShipMountsInner(
-      symbol: json['symbol'] as String,
-    );
+  factory ScannedShipMounts.fromJson(Map<String, dynamic> json) {
+    return ScannedShipMounts(symbol: json['symbol'] as String);
   }
 
   final String symbol;
 
   Map<String, dynamic> toJson() {
-    return {
-      'symbol': symbol,
-    };
+    return {'symbol': symbol};
   }
 }

@@ -2,16 +2,14 @@ import 'package:spacetraders/model/meta.dart';
 import 'package:spacetraders/model/system.dart';
 
 class GetSystems200Response {
-  GetSystems200Response({
-    required this.data,
-    required this.meta,
-  });
+  GetSystems200Response({required this.data, required this.meta});
 
   factory GetSystems200Response.fromJson(Map<String, dynamic> json) {
     return GetSystems200Response(
-      data: (json['data'] as List<dynamic>)
-          .map<System>((e) => System.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      data:
+          (json['data'] as List<dynamic>)
+              .map<System>((e) => System.fromJson(e as Map<String, dynamic>))
+              .toList(),
       meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
     );
   }

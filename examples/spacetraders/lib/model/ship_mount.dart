@@ -12,23 +12,22 @@ class ShipMount {
 
   factory ShipMount.fromJson(Map<String, dynamic> json) {
     return ShipMount(
-      symbol: ShipMountSymbolInner.fromJson(json['symbol'] as String),
+      symbol: ShipMountSymbol.fromJson(json['symbol'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
       strength: json['strength'] as int,
-      deposits: (json['deposits'] as List<dynamic>)
-          .cast<ShipMountDepositsInnerInner>(),
+      deposits: (json['deposits'] as List<dynamic>).cast<ShipMountDeposits>(),
       requirements: ShipRequirements.fromJson(
         json['requirements'] as Map<String, dynamic>,
       ),
     );
   }
 
-  final ShipMountSymbolInner symbol;
+  final ShipMountSymbol symbol;
   final String name;
   final String description;
   final int strength;
-  final List<ShipMountDepositsInnerInner> deposits;
+  final List<ShipMountDeposits> deposits;
   final ShipRequirements requirements;
 
   Map<String, dynamic> toJson() {
@@ -43,7 +42,7 @@ class ShipMount {
   }
 }
 
-enum ShipMountSymbolInner {
+enum ShipMountSymbol {
   mountGasSiphonI('MOUNT_GAS_SIPHON_I'),
   mountGasSiphonIi('MOUNT_GAS_SIPHON_II'),
   mountGasSiphonIii('MOUNT_GAS_SIPHON_III'),
@@ -58,16 +57,14 @@ enum ShipMountSymbolInner {
   mountMiningLaserIii('MOUNT_MINING_LASER_III'),
   mountLaserCannonI('MOUNT_LASER_CANNON_I'),
   mountMissileLauncherI('MOUNT_MISSILE_LAUNCHER_I'),
-  mountTurretI('MOUNT_TURRET_I'),
-  ;
+  mountTurretI('MOUNT_TURRET_I');
 
-  const ShipMountSymbolInner(this.value);
+  const ShipMountSymbol(this.value);
 
-  factory ShipMountSymbolInner.fromJson(String json) {
-    return ShipMountSymbolInner.values.firstWhere(
+  factory ShipMountSymbol.fromJson(String json) {
+    return ShipMountSymbol.values.firstWhere(
       (value) => value.value == json,
-      orElse: () =>
-          throw Exception('Unknown ShipMountSymbolInner value: $json'),
+      orElse: () => throw Exception('Unknown ShipMountSymbol value: $json'),
     );
   }
 
@@ -76,7 +73,7 @@ enum ShipMountSymbolInner {
   String toJson() => value;
 }
 
-enum ShipMountDepositsInnerInner {
+enum ShipMountDeposits {
   quartzSand('QUARTZ_SAND'),
   siliconCrystals('SILICON_CRYSTALS'),
   preciousStones('PRECIOUS_STONES'),
@@ -90,17 +87,14 @@ enum ShipMountDepositsInnerInner {
   platinumOre('PLATINUM_ORE'),
   diamonds('DIAMONDS'),
   uraniteOre('URANITE_ORE'),
-  meritiumOre('MERITIUM_ORE'),
-  ;
+  meritiumOre('MERITIUM_ORE');
 
-  const ShipMountDepositsInnerInner(this.value);
+  const ShipMountDeposits(this.value);
 
-  factory ShipMountDepositsInnerInner.fromJson(String json) {
-    return ShipMountDepositsInnerInner.values.firstWhere(
+  factory ShipMountDeposits.fromJson(String json) {
+    return ShipMountDeposits.values.firstWhere(
       (value) => value.value == json,
-      orElse: () => throw Exception(
-        'Unknown ShipMountDepositsInnerInner value: $json',
-      ),
+      orElse: () => throw Exception('Unknown ShipMountDeposits value: $json'),
     );
   }
 

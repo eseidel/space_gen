@@ -1,9 +1,7 @@
 import 'package:spacetraders/model/faction.dart';
 
 class GetFaction200Response {
-  GetFaction200Response({
-    required this.data,
-  });
+  GetFaction200Response({required this.data});
 
   factory GetFaction200Response.fromJson(Map<String, dynamic> json) {
     return GetFaction200Response(
@@ -14,8 +12,6 @@ class GetFaction200Response {
   final Faction data;
 
   Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
+    return {'data': data.toJson()};
   }
 }

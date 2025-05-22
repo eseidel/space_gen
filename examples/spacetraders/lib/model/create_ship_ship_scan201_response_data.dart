@@ -12,11 +12,12 @@ class CreateShipShipScan201ResponseData {
   ) {
     return CreateShipShipScan201ResponseData(
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
-      ships: (json['ships'] as List<dynamic>)
-          .map<ScannedShip>(
-            (e) => ScannedShip.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
+      ships:
+          (json['ships'] as List<dynamic>)
+              .map<ScannedShip>(
+                (e) => ScannedShip.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
     );
   }
 

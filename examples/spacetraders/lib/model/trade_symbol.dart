@@ -86,6 +86,7 @@ enum TradeSymbol {
   frameDestroyer('FRAME_DESTROYER'),
   frameCruiser('FRAME_CRUISER'),
   frameCarrier('FRAME_CARRIER'),
+  frameBulkFreighter('FRAME_BULK_FREIGHTER'),
   reactorSolarI('REACTOR_SOLAR_I'),
   reactorFusionI('REACTOR_FUSION_I'),
   reactorFissionI('REACTOR_FISSION_I'),
@@ -142,7 +143,7 @@ enum TradeSymbol {
   shipOreHound('SHIP_ORE_HOUND'),
   shipRefiningFreighter('SHIP_REFINING_FREIGHTER'),
   shipSurveyor('SHIP_SURVEYOR'),
-  ;
+  shipBulkFreighter('SHIP_BULK_FREIGHTER');
 
   const TradeSymbol(this.value);
 

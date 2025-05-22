@@ -2,9 +2,7 @@ import 'package:spacetraders/model/construction.dart';
 import 'package:spacetraders/model/ship_cargo.dart';
 
 class SupplyConstruction201Response {
-  SupplyConstruction201Response({
-    required this.data,
-  });
+  SupplyConstruction201Response({required this.data});
 
   factory SupplyConstruction201Response.fromJson(Map<String, dynamic> json) {
     return SupplyConstruction201Response(
@@ -17,9 +15,7 @@ class SupplyConstruction201Response {
   final SupplyConstruction201ResponseData data;
 
   Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
+    return {'data': data.toJson()};
   }
 }
 
@@ -33,8 +29,9 @@ class SupplyConstruction201ResponseData {
     Map<String, dynamic> json,
   ) {
     return SupplyConstruction201ResponseData(
-      construction:
-          Construction.fromJson(json['construction'] as Map<String, dynamic>),
+      construction: Construction.fromJson(
+        json['construction'] as Map<String, dynamic>,
+      ),
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
     );
   }
@@ -43,9 +40,6 @@ class SupplyConstruction201ResponseData {
   final ShipCargo cargo;
 
   Map<String, dynamic> toJson() {
-    return {
-      'construction': construction.toJson(),
-      'cargo': cargo.toJson(),
-    };
+    return {'construction': construction.toJson(), 'cargo': cargo.toJson()};
   }
 }

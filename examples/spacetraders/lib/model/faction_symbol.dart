@@ -17,8 +17,7 @@ enum FactionSymbol {
   cult('CULT'),
   ancients('ANCIENTS'),
   shadow('SHADOW'),
-  ethereal('ETHEREAL'),
-  ;
+  ethereal('ETHEREAL');
 
   const FactionSymbol(this.value);
 

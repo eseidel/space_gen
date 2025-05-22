@@ -2,9 +2,7 @@ import 'package:spacetraders/model/cooldown.dart';
 import 'package:spacetraders/model/survey.dart';
 
 class CreateSurvey201Response {
-  CreateSurvey201Response({
-    required this.data,
-  });
+  CreateSurvey201Response({required this.data});
 
   factory CreateSurvey201Response.fromJson(Map<String, dynamic> json) {
     return CreateSurvey201Response(
@@ -17,24 +15,20 @@ class CreateSurvey201Response {
   final CreateSurvey201ResponseData data;
 
   Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
+    return {'data': data.toJson()};
   }
 }
 
 class CreateSurvey201ResponseData {
-  CreateSurvey201ResponseData({
-    required this.cooldown,
-    required this.surveys,
-  });
+  CreateSurvey201ResponseData({required this.cooldown, required this.surveys});
 
   factory CreateSurvey201ResponseData.fromJson(Map<String, dynamic> json) {
     return CreateSurvey201ResponseData(
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
-      surveys: (json['surveys'] as List<dynamic>)
-          .map<Survey>((e) => Survey.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      surveys:
+          (json['surveys'] as List<dynamic>)
+              .map<Survey>((e) => Survey.fromJson(e as Map<String, dynamic>))
+              .toList(),
     );
   }
 

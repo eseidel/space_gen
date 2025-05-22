@@ -4,9 +4,7 @@ import 'package:spacetraders/model/ship_modification_transaction.dart';
 import 'package:spacetraders/model/ship_mount.dart';
 
 class InstallMount201Response {
-  InstallMount201Response({
-    required this.data,
-  });
+  InstallMount201Response({required this.data});
 
   factory InstallMount201Response.fromJson(Map<String, dynamic> json) {
     return InstallMount201Response(
@@ -19,9 +17,7 @@ class InstallMount201Response {
   final InstallMount201ResponseData data;
 
   Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
+    return {'data': data.toJson()};
   }
 }
 
@@ -36,9 +32,12 @@ class InstallMount201ResponseData {
   factory InstallMount201ResponseData.fromJson(Map<String, dynamic> json) {
     return InstallMount201ResponseData(
       agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
-      mounts: (json['mounts'] as List<dynamic>)
-          .map<ShipMount>((e) => ShipMount.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      mounts:
+          (json['mounts'] as List<dynamic>)
+              .map<ShipMount>(
+                (e) => ShipMount.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
       transaction: ShipModificationTransaction.fromJson(
         json['transaction'] as Map<String, dynamic>,

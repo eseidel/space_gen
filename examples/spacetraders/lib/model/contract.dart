@@ -16,7 +16,7 @@ class Contract {
     return Contract(
       id: json['id'] as String,
       factionSymbol: json['factionSymbol'] as String,
-      type: ContractTypeInner.fromJson(json['type'] as String),
+      type: ContractType.fromJson(json['type'] as String),
       terms: ContractTerms.fromJson(json['terms'] as Map<String, dynamic>),
       accepted: json['accepted'] as bool,
       fulfilled: json['fulfilled'] as bool,
@@ -27,7 +27,7 @@ class Contract {
 
   final String id;
   final String factionSymbol;
-  final ContractTypeInner type;
+  final ContractType type;
   final ContractTerms terms;
   final bool accepted;
   final bool fulfilled;
@@ -48,18 +48,17 @@ class Contract {
   }
 }
 
-enum ContractTypeInner {
+enum ContractType {
   procurement('PROCUREMENT'),
   transport('TRANSPORT'),
-  shuttle('SHUTTLE'),
-  ;
+  shuttle('SHUTTLE');
 
-  const ContractTypeInner(this.value);
+  const ContractType(this.value);
 
-  factory ContractTypeInner.fromJson(String json) {
-    return ContractTypeInner.values.firstWhere(
+  factory ContractType.fromJson(String json) {
+    return ContractType.values.firstWhere(
       (value) => value.value == json,
-      orElse: () => throw Exception('Unknown ContractTypeInner value: $json'),
+      orElse: () => throw Exception('Unknown ContractType value: $json'),
     );
   }
 

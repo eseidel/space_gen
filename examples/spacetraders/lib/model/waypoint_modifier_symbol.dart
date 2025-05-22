@@ -3,16 +3,15 @@ enum WaypointModifierSymbol {
   unstable('UNSTABLE'),
   radiationLeak('RADIATION_LEAK'),
   criticalLimit('CRITICAL_LIMIT'),
-  civilUnrest('CIVIL_UNREST'),
-  ;
+  civilUnrest('CIVIL_UNREST');
 
   const WaypointModifierSymbol(this.value);
 
   factory WaypointModifierSymbol.fromJson(String json) {
     return WaypointModifierSymbol.values.firstWhere(
       (value) => value.value == json,
-      orElse: () =>
-          throw Exception('Unknown WaypointModifierSymbol value: $json'),
+      orElse:
+          () => throw Exception('Unknown WaypointModifierSymbol value: $json'),
     );
   }
 

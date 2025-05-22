@@ -2,48 +2,33 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:spacetraders/model/get_status200_response.dart';
-import 'package:spacetraders/model/register201_response.dart';
-import 'package:spacetraders/model/register_request.dart';
 
 class DefaultApi {
-  Future<GetStatus200Response> getStatus() async {
+  Future<void> health() async {
     final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      Uri.parse('https://api.spacetraders.io/v2/health'),
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({}),
     );
 
     if (response.statusCode == 200) {
-      return GetStatus200Response.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>,
-      );
+      return;
     } else {
-      throw Exception('Failed to load getStatus');
+      throw Exception('Failed to load health');
     }
   }
 
-  Future<Register201Response> register(
-    RegisterRequest registerRequest,
-  ) async {
+  Future<void> metrics() async {
     final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/register'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'registerRequest': registerRequest.toJson(),
-      }),
+      Uri.parse('https://api.spacetraders.io/v2/metrics'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({}),
     );
 
     if (response.statusCode == 200) {
-      return Register201Response.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>,
-      );
+      return;
     } else {
-      throw Exception('Failed to load register');
+      throw Exception('Failed to load metrics');
     }
   }
 }

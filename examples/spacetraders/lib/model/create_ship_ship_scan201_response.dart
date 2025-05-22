@@ -2,9 +2,7 @@ import 'package:spacetraders/model/cooldown.dart';
 import 'package:spacetraders/model/scanned_ship.dart';
 
 class CreateShipShipScan201Response {
-  CreateShipShipScan201Response({
-    required this.data,
-  });
+  CreateShipShipScan201Response({required this.data});
 
   factory CreateShipShipScan201Response.fromJson(Map<String, dynamic> json) {
     return CreateShipShipScan201Response(
@@ -17,9 +15,7 @@ class CreateShipShipScan201Response {
   final CreateShipShipScan201ResponseData data;
 
   Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
+    return {'data': data.toJson()};
   }
 }
 
@@ -34,11 +30,12 @@ class CreateShipShipScan201ResponseData {
   ) {
     return CreateShipShipScan201ResponseData(
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
-      ships: (json['ships'] as List<dynamic>)
-          .map<ScannedShip>(
-            (e) => ScannedShip.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
+      ships:
+          (json['ships'] as List<dynamic>)
+              .map<ScannedShip>(
+                (e) => ScannedShip.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
     );
   }
 

@@ -1,9 +1,7 @@
 import 'package:spacetraders/model/agent.dart';
 
 class GetMyAgent200Response {
-  GetMyAgent200Response({
-    required this.data,
-  });
+  GetMyAgent200Response({required this.data});
 
   factory GetMyAgent200Response.fromJson(Map<String, dynamic> json) {
     return GetMyAgent200Response(
@@ -14,8 +12,6 @@ class GetMyAgent200Response {
   final Agent data;
 
   Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
+    return {'data': data.toJson()};
   }
 }

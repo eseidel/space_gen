@@ -2,8 +2,7 @@ enum ShipNavFlightMode {
   drift('DRIFT'),
   stealth('STEALTH'),
   cruise('CRUISE'),
-  burn('BURN'),
-  ;
+  burn('BURN');
 
   const ShipNavFlightMode(this.value);
 

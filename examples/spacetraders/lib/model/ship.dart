@@ -19,11 +19,11 @@ class Ship {
     required this.frame,
     required this.reactor,
     required this.engine,
-    required this.cooldown,
     required this.modules,
     required this.mounts,
     required this.cargo,
     required this.fuel,
+    required this.cooldown,
   });
 
   factory Ship.fromJson(Map<String, dynamic> json) {
@@ -37,17 +37,21 @@ class Ship {
       frame: ShipFrame.fromJson(json['frame'] as Map<String, dynamic>),
       reactor: ShipReactor.fromJson(json['reactor'] as Map<String, dynamic>),
       engine: ShipEngine.fromJson(json['engine'] as Map<String, dynamic>),
-      cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
-      modules: (json['modules'] as List<dynamic>)
-          .map<ShipModule>(
-            (e) => ShipModule.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
-      mounts: (json['mounts'] as List<dynamic>)
-          .map<ShipMount>((e) => ShipMount.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      modules:
+          (json['modules'] as List<dynamic>)
+              .map<ShipModule>(
+                (e) => ShipModule.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
+      mounts:
+          (json['mounts'] as List<dynamic>)
+              .map<ShipMount>(
+                (e) => ShipMount.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
       fuel: ShipFuel.fromJson(json['fuel'] as Map<String, dynamic>),
+      cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
     );
   }
 
@@ -58,11 +62,11 @@ class Ship {
   final ShipFrame frame;
   final ShipReactor reactor;
   final ShipEngine engine;
-  final Cooldown cooldown;
   final List<ShipModule> modules;
   final List<ShipMount> mounts;
   final ShipCargo cargo;
   final ShipFuel fuel;
+  final Cooldown cooldown;
 
   Map<String, dynamic> toJson() {
     return {
@@ -73,11 +77,11 @@ class Ship {
       'frame': frame.toJson(),
       'reactor': reactor.toJson(),
       'engine': engine.toJson(),
-      'cooldown': cooldown.toJson(),
       'modules': modules.map((e) => e.toJson()).toList(),
       'mounts': mounts.map((e) => e.toJson()).toList(),
       'cargo': cargo.toJson(),
       'fuel': fuel.toJson(),
+      'cooldown': cooldown.toJson(),
     };
   }
 }

@@ -17,11 +17,12 @@ class Faction {
       name: json['name'] as String,
       description: json['description'] as String,
       headquarters: json['headquarters'] as String,
-      traits: (json['traits'] as List<dynamic>)
-          .map<FactionTrait>(
-            (e) => FactionTrait.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
+      traits:
+          (json['traits'] as List<dynamic>)
+              .map<FactionTrait>(
+                (e) => FactionTrait.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
       isRecruiting: json['isRecruiting'] as bool,
     );
   }

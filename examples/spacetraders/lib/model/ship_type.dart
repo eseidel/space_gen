@@ -11,7 +11,7 @@ enum ShipType {
   shipOreHound('SHIP_ORE_HOUND'),
   shipRefiningFreighter('SHIP_REFINING_FREIGHTER'),
   shipSurveyor('SHIP_SURVEYOR'),
-  ;
+  shipBulkFreighter('SHIP_BULK_FREIGHTER');
 
   const ShipType(this.value);
 

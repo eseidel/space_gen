@@ -1,7 +1,5 @@
 class NavigateShipRequest {
-  NavigateShipRequest({
-    required this.waypointSymbol,
-  });
+  NavigateShipRequest({required this.waypointSymbol});
 
   factory NavigateShipRequest.fromJson(Map<String, dynamic> json) {
     return NavigateShipRequest(
@@ -12,8 +10,6 @@ class NavigateShipRequest {
   final String waypointSymbol;
 
   Map<String, dynamic> toJson() {
-    return {
-      'waypointSymbol': waypointSymbol,
-    };
+    return {'waypointSymbol': waypointSymbol};
   }
 }

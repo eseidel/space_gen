@@ -11,13 +11,15 @@ class ContractTerms {
   factory ContractTerms.fromJson(Map<String, dynamic> json) {
     return ContractTerms(
       deadline: DateTime.parse(json['deadline'] as String),
-      payment:
-          ContractPayment.fromJson(json['payment'] as Map<String, dynamic>),
-      deliver: (json['deliver'] as List<dynamic>)
-          .map<ContractDeliverGood>(
-            (e) => ContractDeliverGood.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
+      payment: ContractPayment.fromJson(
+        json['payment'] as Map<String, dynamic>,
+      ),
+      deliver:
+          (json['deliver'] as List<dynamic>)
+              .map<ContractDeliverGood>(
+                (e) => ContractDeliverGood.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
     );
   }
 

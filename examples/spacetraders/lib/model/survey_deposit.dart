@@ -1,19 +1,17 @@
+import 'package:spacetraders/model/trade_symbol.dart';
+
 class SurveyDeposit {
-  SurveyDeposit({
-    required this.symbol,
-  });
+  SurveyDeposit({required this.symbol});
 
   factory SurveyDeposit.fromJson(Map<String, dynamic> json) {
     return SurveyDeposit(
-      symbol: json['symbol'] as String,
+      symbol: TradeSymbol.fromJson(json['symbol'] as String),
     );
   }
 
-  final String symbol;
+  final TradeSymbol symbol;
 
   Map<String, dynamic> toJson() {
-    return {
-      'symbol': symbol,
-    };
+    return {'symbol': symbol.toJson()};
   }
 }

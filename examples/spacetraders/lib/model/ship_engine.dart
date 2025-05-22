@@ -4,58 +4,64 @@ class ShipEngine {
   ShipEngine({
     required this.symbol,
     required this.name,
-    required this.description,
     required this.condition,
+    required this.integrity,
+    required this.description,
     required this.speed,
     required this.requirements,
+    required this.quality,
   });
 
   factory ShipEngine.fromJson(Map<String, dynamic> json) {
     return ShipEngine(
-      symbol: ShipEngineSymbolInner.fromJson(json['symbol'] as String),
+      symbol: ShipEngineSymbol.fromJson(json['symbol'] as String),
       name: json['name'] as String,
+      condition: json['condition'] as double,
+      integrity: json['integrity'] as double,
       description: json['description'] as String,
-      condition: json['condition'] as int,
       speed: json['speed'] as int,
       requirements: ShipRequirements.fromJson(
         json['requirements'] as Map<String, dynamic>,
       ),
+      quality: json['quality'] as double,
     );
   }
 
-  final ShipEngineSymbolInner symbol;
+  final ShipEngineSymbol symbol;
   final String name;
+  final double condition;
+  final double integrity;
   final String description;
-  final int condition;
   final int speed;
   final ShipRequirements requirements;
+  final double quality;
 
   Map<String, dynamic> toJson() {
     return {
       'symbol': symbol.toJson(),
       'name': name,
-      'description': description,
       'condition': condition,
+      'integrity': integrity,
+      'description': description,
       'speed': speed,
       'requirements': requirements.toJson(),
+      'quality': quality,
     };
   }
 }
 
-enum ShipEngineSymbolInner {
+enum ShipEngineSymbol {
   engineImpulseDriveI('ENGINE_IMPULSE_DRIVE_I'),
   engineIonDriveI('ENGINE_ION_DRIVE_I'),
   engineIonDriveIi('ENGINE_ION_DRIVE_II'),
-  engineHyperDriveI('ENGINE_HYPER_DRIVE_I'),
-  ;
+  engineHyperDriveI('ENGINE_HYPER_DRIVE_I');
 
-  const ShipEngineSymbolInner(this.value);
+  const ShipEngineSymbol(this.value);
 
-  factory ShipEngineSymbolInner.fromJson(String json) {
-    return ShipEngineSymbolInner.values.firstWhere(
+  factory ShipEngineSymbol.fromJson(String json) {
+    return ShipEngineSymbol.values.firstWhere(
       (value) => value.value == json,
-      orElse: () =>
-          throw Exception('Unknown ShipEngineSymbolInner value: $json'),
+      orElse: () => throw Exception('Unknown ShipEngineSymbol value: $json'),
     );
   }
 

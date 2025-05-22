@@ -14,27 +14,30 @@ class Shipyard {
   factory Shipyard.fromJson(Map<String, dynamic> json) {
     return Shipyard(
       symbol: json['symbol'] as String,
-      shipTypes: (json['shipTypes'] as List<dynamic>)
-          .map<ShipyardShipTypesInner>(
-            (e) => ShipyardShipTypesInner.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
-      transactions: (json['transactions'] as List<dynamic>)
-          .map<ShipyardTransaction>(
-            (e) => ShipyardTransaction.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
-      ships: (json['ships'] as List<dynamic>)
-          .map<ShipyardShip>(
-            (e) => ShipyardShip.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
+      shipTypes:
+          (json['shipTypes'] as List<dynamic>)
+              .map<ShipyardShipTypes>(
+                (e) => ShipyardShipTypes.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
+      transactions:
+          (json['transactions'] as List<dynamic>)
+              .map<ShipyardTransaction>(
+                (e) => ShipyardTransaction.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
+      ships:
+          (json['ships'] as List<dynamic>)
+              .map<ShipyardShip>(
+                (e) => ShipyardShip.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
       modificationsFee: json['modificationsFee'] as int,
     );
   }
 
   final String symbol;
-  final List<ShipyardShipTypesInner> shipTypes;
+  final List<ShipyardShipTypes> shipTypes;
   final List<ShipyardTransaction> transactions;
   final List<ShipyardShip> ships;
   final int modificationsFee;
@@ -50,22 +53,16 @@ class Shipyard {
   }
 }
 
-class ShipyardShipTypesInner {
-  ShipyardShipTypesInner({
-    required this.type,
-  });
+class ShipyardShipTypes {
+  ShipyardShipTypes({required this.type});
 
-  factory ShipyardShipTypesInner.fromJson(Map<String, dynamic> json) {
-    return ShipyardShipTypesInner(
-      type: ShipType.fromJson(json['type'] as String),
-    );
+  factory ShipyardShipTypes.fromJson(Map<String, dynamic> json) {
+    return ShipyardShipTypes(type: ShipType.fromJson(json['type'] as String));
   }
 
   final ShipType type;
 
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-    };
+    return {'type': type.toJson()};
   }
 }

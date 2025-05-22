@@ -1,10 +1,7 @@
 import 'package:spacetraders/model/trade_symbol.dart';
 
 class PurchaseCargoRequest {
-  PurchaseCargoRequest({
-    required this.symbol,
-    required this.units,
-  });
+  PurchaseCargoRequest({required this.symbol, required this.units});
 
   factory PurchaseCargoRequest.fromJson(Map<String, dynamic> json) {
     return PurchaseCargoRequest(
@@ -17,9 +14,6 @@ class PurchaseCargoRequest {
   final int units;
 
   Map<String, dynamic> toJson() {
-    return {
-      'symbol': symbol.toJson(),
-      'units': units,
-    };
+    return {'symbol': symbol.toJson(), 'units': units};
   }
 }

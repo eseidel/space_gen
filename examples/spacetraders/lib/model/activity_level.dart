@@ -2,8 +2,7 @@ enum ActivityLevel {
   weak('WEAK'),
   growing('GROWING'),
   strong('STRONG'),
-  restricted('RESTRICTED'),
-  ;
+  restricted('RESTRICTED');
 
   const ActivityLevel(this.value);
 

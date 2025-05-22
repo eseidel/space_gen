@@ -2,9 +2,7 @@ import 'package:spacetraders/model/cooldown.dart';
 import 'package:spacetraders/model/scanned_waypoint.dart';
 
 class CreateShipWaypointScan201Response {
-  CreateShipWaypointScan201Response({
-    required this.data,
-  });
+  CreateShipWaypointScan201Response({required this.data});
 
   factory CreateShipWaypointScan201Response.fromJson(
     Map<String, dynamic> json,
@@ -19,9 +17,7 @@ class CreateShipWaypointScan201Response {
   final CreateShipWaypointScan201ResponseData data;
 
   Map<String, dynamic> toJson() {
-    return {
-      'data': data.toJson(),
-    };
+    return {'data': data.toJson()};
   }
 }
 
@@ -36,11 +32,12 @@ class CreateShipWaypointScan201ResponseData {
   ) {
     return CreateShipWaypointScan201ResponseData(
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
-      waypoints: (json['waypoints'] as List<dynamic>)
-          .map<ScannedWaypoint>(
-            (e) => ScannedWaypoint.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
+      waypoints:
+          (json['waypoints'] as List<dynamic>)
+              .map<ScannedWaypoint>(
+                (e) => ScannedWaypoint.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
     );
   }
 

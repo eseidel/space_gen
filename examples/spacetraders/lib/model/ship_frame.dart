@@ -4,53 +4,61 @@ class ShipFrame {
   ShipFrame({
     required this.symbol,
     required this.name,
-    required this.description,
     required this.condition,
+    required this.integrity,
+    required this.description,
     required this.moduleSlots,
     required this.mountingPoints,
     required this.fuelCapacity,
     required this.requirements,
+    required this.quality,
   });
 
   factory ShipFrame.fromJson(Map<String, dynamic> json) {
     return ShipFrame(
-      symbol: ShipFrameSymbolInner.fromJson(json['symbol'] as String),
+      symbol: ShipFrameSymbol.fromJson(json['symbol'] as String),
       name: json['name'] as String,
+      condition: json['condition'] as double,
+      integrity: json['integrity'] as double,
       description: json['description'] as String,
-      condition: json['condition'] as int,
       moduleSlots: json['moduleSlots'] as int,
       mountingPoints: json['mountingPoints'] as int,
       fuelCapacity: json['fuelCapacity'] as int,
       requirements: ShipRequirements.fromJson(
         json['requirements'] as Map<String, dynamic>,
       ),
+      quality: json['quality'] as double,
     );
   }
 
-  final ShipFrameSymbolInner symbol;
+  final ShipFrameSymbol symbol;
   final String name;
+  final double condition;
+  final double integrity;
   final String description;
-  final int condition;
   final int moduleSlots;
   final int mountingPoints;
   final int fuelCapacity;
   final ShipRequirements requirements;
+  final double quality;
 
   Map<String, dynamic> toJson() {
     return {
       'symbol': symbol.toJson(),
       'name': name,
-      'description': description,
       'condition': condition,
+      'integrity': integrity,
+      'description': description,
       'moduleSlots': moduleSlots,
       'mountingPoints': mountingPoints,
       'fuelCapacity': fuelCapacity,
       'requirements': requirements.toJson(),
+      'quality': quality,
     };
   }
 }
 
-enum ShipFrameSymbolInner {
+enum ShipFrameSymbol {
   frameProbe('FRAME_PROBE'),
   frameDrone('FRAME_DRONE'),
   frameInterceptor('FRAME_INTERCEPTOR'),
@@ -66,15 +74,14 @@ enum ShipFrameSymbolInner {
   frameDestroyer('FRAME_DESTROYER'),
   frameCruiser('FRAME_CRUISER'),
   frameCarrier('FRAME_CARRIER'),
-  ;
+  frameBulkFreighter('FRAME_BULK_FREIGHTER');
 
-  const ShipFrameSymbolInner(this.value);
+  const ShipFrameSymbol(this.value);
 
-  factory ShipFrameSymbolInner.fromJson(String json) {
-    return ShipFrameSymbolInner.values.firstWhere(
+  factory ShipFrameSymbol.fromJson(String json) {
+    return ShipFrameSymbol.values.firstWhere(
       (value) => value.value == json,
-      orElse: () =>
-          throw Exception('Unknown ShipFrameSymbolInner value: $json'),
+      orElse: () => throw Exception('Unknown ShipFrameSymbol value: $json'),
     );
   }
 

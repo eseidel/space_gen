@@ -10,19 +10,11 @@ import 'package:spacetraders/model/get_contract200_response.dart';
 import 'package:spacetraders/model/get_contracts200_response.dart';
 
 class ContractsApi {
-  Future<GetContracts200Response> getContracts(
-    int page,
-    int limit,
-  ) async {
+  Future<GetContracts200Response> getContracts(int page, int limit) async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/my/contracts'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'page': page,
-        'limit': limit,
-      }),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'page': page, 'limit': limit}),
     );
 
     if (response.statusCode == 200) {
@@ -34,13 +26,11 @@ class ContractsApi {
     }
   }
 
-  Future<GetContract200Response> getContract() async {
+  Future<GetContract200Response> getContract(String contractId) async {
     final response = await http.post(
       Uri.parse('https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({}),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'contractId': contractId}),
     );
 
     if (response.statusCode == 200) {
@@ -52,15 +42,13 @@ class ContractsApi {
     }
   }
 
-  Future<AcceptContract200Response> acceptContract() async {
+  Future<AcceptContract200Response> acceptContract(String contractId) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D/accept',
       ),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({}),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'contractId': contractId}),
     );
 
     if (response.statusCode == 200) {
@@ -72,17 +60,35 @@ class ContractsApi {
     }
   }
 
+  Future<FulfillContract200Response> fulfillContract(String contractId) async {
+    final response = await http.post(
+      Uri.parse(
+        'https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D/fulfill',
+      ),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'contractId': contractId}),
+    );
+
+    if (response.statusCode == 200) {
+      return FulfillContract200Response.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+    } else {
+      throw Exception('Failed to load fulfillContract');
+    }
+  }
+
   Future<DeliverContract200Response> deliverContract(
+    String contractId,
     DeliverContractRequest deliverContractRequest,
   ) async {
     final response = await http.post(
       Uri.parse(
         'https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D/deliver',
       ),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
+        'contractId': contractId,
         'deliverContractRequest': deliverContractRequest.toJson(),
       }),
     );
@@ -93,26 +99,6 @@ class ContractsApi {
       );
     } else {
       throw Exception('Failed to load deliverContract');
-    }
-  }
-
-  Future<FulfillContract200Response> fulfillContract() async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/contracts/%7BcontractId%7D/fulfill',
-      ),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({}),
-    );
-
-    if (response.statusCode == 200) {
-      return FulfillContract200Response.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>,
-      );
-    } else {
-      throw Exception('Failed to load fulfillContract');
     }
   }
 }

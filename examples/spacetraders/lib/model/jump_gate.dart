@@ -1,8 +1,5 @@
 class JumpGate {
-  JumpGate({
-    required this.symbol,
-    required this.connections,
-  });
+  JumpGate({required this.symbol, required this.connections});
 
   factory JumpGate.fromJson(Map<String, dynamic> json) {
     return JumpGate(
@@ -15,9 +12,6 @@ class JumpGate {
   final List<String> connections;
 
   Map<String, dynamic> toJson() {
-    return {
-      'symbol': symbol,
-      'connections': connections,
-    };
+    return {'symbol': symbol, 'connections': connections};
   }
 }
