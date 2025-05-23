@@ -1,5 +1,5 @@
-import 'package:spacetraders/model/ship_type.dart';
 import 'package:spacetraders/model/shipyard_ship.dart';
+import 'package:spacetraders/model/shipyard_ship_types_item.dart';
 import 'package:spacetraders/model/shipyard_transaction.dart';
 
 class Shipyard {
@@ -51,21 +51,5 @@ class Shipyard {
       'ships': ships.map((e) => e.toJson()).toList(),
       'modificationsFee': modificationsFee,
     };
-  }
-}
-
-class ShipyardShipTypesItem {
-  ShipyardShipTypesItem({required this.type});
-
-  factory ShipyardShipTypesItem.fromJson(Map<String, dynamic> json) {
-    return ShipyardShipTypesItem(
-      type: ShipType.fromJson(json['type'] as String),
-    );
-  }
-
-  final ShipType type;
-
-  Map<String, dynamic> toJson() {
-    return {'type': type.toJson()};
   }
 }

@@ -1,4 +1,5 @@
 import 'package:spacetraders/model/activity_level.dart';
+import 'package:spacetraders/model/market_trade_good_type.dart';
 import 'package:spacetraders/model/supply_level.dart';
 import 'package:spacetraders/model/trade_symbol.dart';
 
@@ -44,23 +45,4 @@ class MarketTradeGood {
       'sellPrice': sellPrice,
     };
   }
-}
-
-enum MarketTradeGoodType {
-  EXPORT('EXPORT'),
-  IMPORT('IMPORT'),
-  EXCHANGE('EXCHANGE');
-
-  const MarketTradeGoodType(this.value);
-
-  factory MarketTradeGoodType.fromJson(String json) {
-    return MarketTradeGoodType.values.firstWhere(
-      (value) => value.value == json,
-      orElse: () => throw Exception('Unknown MarketTradeGoodType value: $json'),
-    );
-  }
-
-  final String value;
-
-  String toJson() => value;
 }

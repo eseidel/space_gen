@@ -1,4 +1,4 @@
-import 'package:spacetraders/model/scrap_transaction.dart';
+import 'package:spacetraders/model/get_scrap_ship200_response_data.dart';
 
 class GetScrapShip200Response {
   GetScrapShip200Response({required this.data});
@@ -15,23 +15,5 @@ class GetScrapShip200Response {
 
   Map<String, dynamic> toJson() {
     return {'data': data.toJson()};
-  }
-}
-
-class GetScrapShip200ResponseData {
-  GetScrapShip200ResponseData({required this.transaction});
-
-  factory GetScrapShip200ResponseData.fromJson(Map<String, dynamic> json) {
-    return GetScrapShip200ResponseData(
-      transaction: ScrapTransaction.fromJson(
-        json['transaction'] as Map<String, dynamic>,
-      ),
-    );
-  }
-
-  final ScrapTransaction transaction;
-
-  Map<String, dynamic> toJson() {
-    return {'transaction': transaction.toJson()};
   }
 }

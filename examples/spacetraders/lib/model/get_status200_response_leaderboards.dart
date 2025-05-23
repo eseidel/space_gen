@@ -1,3 +1,6 @@
+import 'package:spacetraders/model/get_status200_response_leaderboards_most_credits_item.dart';
+import 'package:spacetraders/model/get_status200_response_leaderboards_most_submitted_charts_item.dart';
+
 class GetStatus200ResponseLeaderboards {
   GetStatus200ResponseLeaderboards({
     required this.mostCredits,
@@ -36,51 +39,5 @@ class GetStatus200ResponseLeaderboards {
       'mostSubmittedCharts':
           mostSubmittedCharts.map((e) => e.toJson()).toList(),
     };
-  }
-}
-
-class GetStatus200ResponseLeaderboardsMostCreditsItem {
-  GetStatus200ResponseLeaderboardsMostCreditsItem({
-    required this.agentSymbol,
-    required this.credits,
-  });
-
-  factory GetStatus200ResponseLeaderboardsMostCreditsItem.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    return GetStatus200ResponseLeaderboardsMostCreditsItem(
-      agentSymbol: json['agentSymbol'] as String,
-      credits: json['credits'] as int,
-    );
-  }
-
-  final String agentSymbol;
-  final int credits;
-
-  Map<String, dynamic> toJson() {
-    return {'agentSymbol': agentSymbol, 'credits': credits};
-  }
-}
-
-class GetStatus200ResponseLeaderboardsMostSubmittedChartsItem {
-  GetStatus200ResponseLeaderboardsMostSubmittedChartsItem({
-    required this.agentSymbol,
-    required this.chartCount,
-  });
-
-  factory GetStatus200ResponseLeaderboardsMostSubmittedChartsItem.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    return GetStatus200ResponseLeaderboardsMostSubmittedChartsItem(
-      agentSymbol: json['agentSymbol'] as String,
-      chartCount: json['chartCount'] as int,
-    );
-  }
-
-  final String agentSymbol;
-  final int chartCount;
-
-  Map<String, dynamic> toJson() {
-    return {'agentSymbol': agentSymbol, 'chartCount': chartCount};
   }
 }

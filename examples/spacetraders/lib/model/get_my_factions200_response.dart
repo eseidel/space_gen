@@ -1,3 +1,4 @@
+import 'package:spacetraders/model/get_my_factions200_response_data_item.dart';
 import 'package:spacetraders/model/meta.dart';
 
 class GetMyFactions200Response {
@@ -25,26 +26,5 @@ class GetMyFactions200Response {
       'data': data.map((e) => e.toJson()).toList(),
       'meta': meta.toJson(),
     };
-  }
-}
-
-class GetMyFactions200ResponseDataItem {
-  GetMyFactions200ResponseDataItem({
-    required this.symbol,
-    required this.reputation,
-  });
-
-  factory GetMyFactions200ResponseDataItem.fromJson(Map<String, dynamic> json) {
-    return GetMyFactions200ResponseDataItem(
-      symbol: json['symbol'] as String,
-      reputation: json['reputation'] as int,
-    );
-  }
-
-  final String symbol;
-  final int reputation;
-
-  Map<String, dynamic> toJson() {
-    return {'symbol': symbol, 'reputation': reputation};
   }
 }

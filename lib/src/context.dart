@@ -385,6 +385,10 @@ class Context {
       return ref.schema!;
     }
     final uri = specUrl.resolve(ref.uri!);
+    return resolveUri(uri);
+  }
+
+  Schema resolveUri(Uri uri) {
     return schemaRegistry.get(uri);
   }
 
@@ -429,30 +433,42 @@ class Context {
   /// Render the API classes and supporting models.
   Set<Uri> renderApis() {
     final rendered = <Uri>{};
-    final renderQueue = <SchemaRef>{};
+    final renderQueue = <Uri>{};
+    Set<Uri> urisFromSchemaRefs(Set<SchemaRef> refs) {
+      return refs.map((ref) => specUrl.resolve(ref.uri!)).toSet();
+    }
+
+    Set<Uri> urisFromSchemas(List<Schema> schemas) {
+      return schemas
+          .map((schema) => specUrl.replace(fragment: schema.pointer))
+          .toSet();
+    }
+
     for (final api in spec.apis) {
       final renderContext = RenderContext(specUri: specUrl);
       renderApi(renderContext, this, api);
       // Api files only contain the API class, any inline schemas
       // end up in the model files.
-      for (final schema in renderContext.inlineSchemas) {
-        renderRootSchema(this, schema);
-      }
-      renderQueue.addAll(renderContext.importedSchemas);
+      renderQueue.addAll([
+        ...urisFromSchemas(renderContext.inlineSchemas),
+        ...urisFromSchemaRefs(renderContext.importedSchemas),
+      ]);
     }
 
     // Render all the schemas that were collected while rendering the API.
     while (renderQueue.isNotEmpty) {
-      final ref = renderQueue.first;
-      renderQueue.remove(ref);
-      final resolvedUri = specUrl.resolve(ref.uri!);
-      if (rendered.contains(resolvedUri)) {
+      final uri = renderQueue.first;
+      renderQueue.remove(uri);
+      if (rendered.contains(uri)) {
         continue;
       }
-      rendered.add(resolvedUri);
-      final schema = resolve(ref);
-      final renderContext = renderRootSchema(this, schema);
-      renderQueue.addAll(renderContext.importedSchemas);
+      rendered.add(uri);
+      final schema = resolveUri(uri);
+      final renderContext = renderSchema(this, schema);
+      renderQueue.addAll([
+        ...urisFromSchemas(renderContext.inlineSchemas),
+        ...urisFromSchemaRefs(renderContext.importedSchemas),
+      ]);
     }
     return rendered;
   }
@@ -596,42 +612,26 @@ class RenderContext {
     }
     return imports.toList()..sort();
   }
-
-  /// Get the object contexts for rendering the api.
-  List<Map<String, dynamic>> objectContexts(Context context) {
-    return inlineSchemas
-        .where((schema) => schema.type == SchemaType.object)
-        .map((schema) => schema.toTemplateContext(context))
-        .toList();
-  }
-
-  /// Get the enum contexts for this render context.
-  List<Map<String, dynamic>> enumContexts(Context context) {
-    return inlineSchemas
-        .where((schema) => schema.isEnum)
-        .map((schema) => schema.toTemplateContext(context))
-        .toList();
-  }
 }
 
 /// Starts a new RenderContext for rendering a new schema file.
-RenderContext renderRootSchema(Context context, Schema schema) {
+RenderContext renderSchema(Context context, Schema schema) {
   final renderContext = RenderContext(specUri: context.specUrl)
     ..collectSchema(schema);
 
-  final imports = renderContext.sortedPackageImports(context);
-  final objects = renderContext.objectContexts(context);
-  final enums = renderContext.enumContexts(context);
+  final imports = renderContext.sortedPackageImports(
+    context,
+    includeInlineSchema: true,
+  );
+  final schemaContext = schema.toTemplateContext(context);
+  final template = schema.isEnum ? 'schema_enum' : 'schema_object';
 
+  final outPath = Paths.modelFilePath(schema);
+  logger.detail('rendering $outPath from ${schema.pointer}');
   context.renderTemplate(
-    template: 'model',
-    outPath: Paths.modelFilePath(schema),
-    context: {
-      'imports': imports,
-      'objects': objects,
-      'enums': enums,
-      'packageName': context.packageName,
-    },
+    template: template,
+    outPath: outPath,
+    context: {'imports': imports, ...schemaContext},
   );
   return renderContext;
 }

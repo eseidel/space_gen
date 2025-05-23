@@ -1,4 +1,4 @@
-import 'package:spacetraders/model/repair_transaction.dart';
+import 'package:spacetraders/model/get_repair_ship200_response_data.dart';
 
 class GetRepairShip200Response {
   GetRepairShip200Response({required this.data});
@@ -15,23 +15,5 @@ class GetRepairShip200Response {
 
   Map<String, dynamic> toJson() {
     return {'data': data.toJson()};
-  }
-}
-
-class GetRepairShip200ResponseData {
-  GetRepairShip200ResponseData({required this.transaction});
-
-  factory GetRepairShip200ResponseData.fromJson(Map<String, dynamic> json) {
-    return GetRepairShip200ResponseData(
-      transaction: RepairTransaction.fromJson(
-        json['transaction'] as Map<String, dynamic>,
-      ),
-    );
-  }
-
-  final RepairTransaction transaction;
-
-  Map<String, dynamic> toJson() {
-    return {'transaction': transaction.toJson()};
   }
 }

@@ -1,3 +1,5 @@
+import 'package:spacetraders/model/market_transaction_type.dart';
+
 class MarketTransaction {
   MarketTransaction({
     required this.waypointSymbol,
@@ -44,23 +46,4 @@ class MarketTransaction {
       'timestamp': timestamp.toIso8601String(),
     };
   }
-}
-
-enum MarketTransactionType {
-  PURCHASE('PURCHASE'),
-  SELL('SELL');
-
-  const MarketTransactionType(this.value);
-
-  factory MarketTransactionType.fromJson(String json) {
-    return MarketTransactionType.values.firstWhere(
-      (value) => value.value == json,
-      orElse:
-          () => throw Exception('Unknown MarketTransactionType value: $json'),
-    );
-  }
-
-  final String value;
-
-  String toJson() => value;
 }

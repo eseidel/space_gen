@@ -1,3 +1,7 @@
+import 'package:spacetraders/model/scanned_ship_engine.dart';
+import 'package:spacetraders/model/scanned_ship_frame.dart';
+import 'package:spacetraders/model/scanned_ship_mounts_item.dart';
+import 'package:spacetraders/model/scanned_ship_reactor.dart';
 import 'package:spacetraders/model/ship_nav.dart';
 import 'package:spacetraders/model/ship_registration.dart';
 
@@ -54,61 +58,5 @@ class ScannedShip {
       'engine': engine.toJson(),
       'mounts': mounts.map((e) => e.toJson()).toList(),
     };
-  }
-}
-
-class ScannedShipFrame {
-  ScannedShipFrame({required this.symbol});
-
-  factory ScannedShipFrame.fromJson(Map<String, dynamic> json) {
-    return ScannedShipFrame(symbol: json['symbol'] as String);
-  }
-
-  final String symbol;
-
-  Map<String, dynamic> toJson() {
-    return {'symbol': symbol};
-  }
-}
-
-class ScannedShipReactor {
-  ScannedShipReactor({required this.symbol});
-
-  factory ScannedShipReactor.fromJson(Map<String, dynamic> json) {
-    return ScannedShipReactor(symbol: json['symbol'] as String);
-  }
-
-  final String symbol;
-
-  Map<String, dynamic> toJson() {
-    return {'symbol': symbol};
-  }
-}
-
-class ScannedShipEngine {
-  ScannedShipEngine({required this.symbol});
-
-  factory ScannedShipEngine.fromJson(Map<String, dynamic> json) {
-    return ScannedShipEngine(symbol: json['symbol'] as String);
-  }
-
-  final String symbol;
-
-  Map<String, dynamic> toJson() {
-    return {'symbol': symbol};
-  }
-}
-
-class ScannedShipMountsItem {
-  ScannedShipMountsItem({required this.symbol});
-
-  factory ScannedShipMountsItem.fromJson(Map<String, dynamic> json) {
-    return ScannedShipMountsItem(symbol: json['symbol'] as String);
-  }
-
-  final String symbol;
-
-  Map<String, dynamic> toJson() {
-    return {'symbol': symbol};
   }
 }

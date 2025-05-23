@@ -49,7 +49,7 @@ void main() {
     );
   });
 
-  test('renderSpec', () async {
+  test('renderSpec smoke test', () async {
     final fs = MemoryFileSystem.test();
     final spec = fs.file('test/spec.json')
       ..createSync(recursive: true)
@@ -82,5 +82,84 @@ void main() {
     expect(out.existsSync(), isTrue);
     expect(out.childFile('lib/api.dart').existsSync(), isTrue);
     expect(out.childFile('lib/api_client.dart').existsSync(), isTrue);
+  });
+
+  test('renderSpec with real endpoints', () async {
+    final fs = MemoryFileSystem.test();
+    final spec = fs.file('test/spec.json')
+      ..createSync(recursive: true)
+      ..writeAsStringSync(
+        jsonEncode({
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/my/account': {
+              'get': {
+                'operationId': 'get-my-account',
+                'summary': 'Get Account',
+                'description': 'Fetch your account details.',
+                'responses': {
+                  '200': {
+                    'description': 'Default Response',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          'type': 'object',
+                          'properties': {
+                            'data': {r'$ref': '#/components/schemas/Account'},
+                          },
+                          'required': ['data'],
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'components': {
+            'schemas': {
+              'Account': {
+                'type': 'object',
+                'properties': {
+                  'role': {
+                    'type': 'object',
+                    'enumValues': ['admin', 'user'],
+                    'description': 'The role of the account.',
+                  },
+                  'id': {'type': 'string'},
+                  'email': {'type': 'string', 'nullable': true},
+                },
+                'required': ['role', 'id'],
+              },
+            },
+          },
+        }),
+      );
+    final out = fs.directory('spacetraders');
+
+    final logger = _MockLogger();
+
+    await runWithLogger(
+      logger,
+      () => renderSpec(
+        specUri: Uri.file(spec.path),
+        packageName: 'spacetraders',
+        outDir: out,
+        templateDir: templateDir,
+        runProcess: runProcess,
+      ),
+    );
+    expect(out.existsSync(), isTrue);
+    expect(out.childFile('lib/api.dart').existsSync(), isTrue);
+    expect(out.childFile('lib/api_client.dart').existsSync(), isTrue);
+    expect(out.childFile('lib/api/default_api.dart').existsSync(), isTrue);
+    expect(
+      out.childFile('lib/model/get_my_account200_response.dart').existsSync(),
+      isTrue,
+    );
+    expect(out.childFile('lib/model/account.dart').existsSync(), isTrue);
+    expect(out.childFile('lib/model/account_role.dart').existsSync(), isTrue);
   });
 }

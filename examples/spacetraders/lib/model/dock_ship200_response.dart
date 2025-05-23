@@ -1,4 +1,4 @@
-import 'package:spacetraders/model/ship_nav.dart';
+import 'package:spacetraders/model/dock_ship200_response_data.dart';
 
 class DockShip200Response {
   DockShip200Response({required this.data});
@@ -15,21 +15,5 @@ class DockShip200Response {
 
   Map<String, dynamic> toJson() {
     return {'data': data.toJson()};
-  }
-}
-
-class DockShip200ResponseData {
-  DockShip200ResponseData({required this.nav});
-
-  factory DockShip200ResponseData.fromJson(Map<String, dynamic> json) {
-    return DockShip200ResponseData(
-      nav: ShipNav.fromJson(json['nav'] as Map<String, dynamic>),
-    );
-  }
-
-  final ShipNav nav;
-
-  Map<String, dynamic> toJson() {
-    return {'nav': nav.toJson()};
   }
 }

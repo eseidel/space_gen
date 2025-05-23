@@ -5,6 +5,7 @@ import 'package:spacetraders/model/ship_module.dart';
 import 'package:spacetraders/model/ship_mount.dart';
 import 'package:spacetraders/model/ship_reactor.dart';
 import 'package:spacetraders/model/ship_type.dart';
+import 'package:spacetraders/model/shipyard_ship_crew.dart';
 import 'package:spacetraders/model/supply_level.dart';
 
 class ShipyardShip {
@@ -78,23 +79,5 @@ class ShipyardShip {
       'mounts': mounts.map((e) => e.toJson()).toList(),
       'crew': crew.toJson(),
     };
-  }
-}
-
-class ShipyardShipCrew {
-  ShipyardShipCrew({required this.required, required this.capacity});
-
-  factory ShipyardShipCrew.fromJson(Map<String, dynamic> json) {
-    return ShipyardShipCrew(
-      required: json['required'] as int,
-      capacity: json['capacity'] as int,
-    );
-  }
-
-  final int required;
-  final int capacity;
-
-  Map<String, dynamic> toJson() {
-    return {'required': required, 'capacity': capacity};
   }
 }

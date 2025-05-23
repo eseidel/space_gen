@@ -1,6 +1,7 @@
 import 'package:spacetraders/model/cooldown.dart';
 import 'package:spacetraders/model/ship_cargo.dart';
-import 'package:spacetraders/model/trade_symbol.dart';
+import 'package:spacetraders/model/ship_refine201_response_data_consumed_item.dart';
+import 'package:spacetraders/model/ship_refine201_response_data_produced_item.dart';
 
 class ShipRefine201ResponseData {
   ShipRefine201ResponseData({
@@ -45,51 +46,5 @@ class ShipRefine201ResponseData {
       'produced': produced.map((e) => e.toJson()).toList(),
       'consumed': consumed.map((e) => e.toJson()).toList(),
     };
-  }
-}
-
-class ShipRefine201ResponseDataProducedItem {
-  ShipRefine201ResponseDataProducedItem({
-    required this.tradeSymbol,
-    required this.units,
-  });
-
-  factory ShipRefine201ResponseDataProducedItem.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    return ShipRefine201ResponseDataProducedItem(
-      tradeSymbol: TradeSymbol.fromJson(json['tradeSymbol'] as String),
-      units: json['units'] as int,
-    );
-  }
-
-  final TradeSymbol tradeSymbol;
-  final int units;
-
-  Map<String, dynamic> toJson() {
-    return {'tradeSymbol': tradeSymbol.toJson(), 'units': units};
-  }
-}
-
-class ShipRefine201ResponseDataConsumedItem {
-  ShipRefine201ResponseDataConsumedItem({
-    required this.tradeSymbol,
-    required this.units,
-  });
-
-  factory ShipRefine201ResponseDataConsumedItem.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    return ShipRefine201ResponseDataConsumedItem(
-      tradeSymbol: TradeSymbol.fromJson(json['tradeSymbol'] as String),
-      units: json['units'] as int,
-    );
-  }
-
-  final TradeSymbol tradeSymbol;
-  final int units;
-
-  Map<String, dynamic> toJson() {
-    return {'tradeSymbol': tradeSymbol.toJson(), 'units': units};
   }
 }

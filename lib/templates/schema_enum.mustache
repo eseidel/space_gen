@@ -1,3 +1,7 @@
+{{#imports}}
+import '{{{.}}}';
+{{/imports}}
+
 enum {{ schemaName }} {
     {{#enumValues}}
     {{ enumValueName }}('{{ enumValue }}'),
