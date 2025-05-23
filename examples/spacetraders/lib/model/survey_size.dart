@@ -1,7 +1,7 @@
 enum SurveySize {
-  small('SMALL'),
-  moderate('MODERATE'),
-  large('LARGE');
+  SMALL('SMALL'),
+  MODERATE('MODERATE'),
+  LARGE('LARGE');
 
   const SurveySize(this.value);
 

@@ -245,7 +245,9 @@ extension SchemaGeneration on Schema {
   /// Template context for an enum schema.
   Map<String, dynamic> _enumToTemplateContext() {
     Map<String, dynamic> enumValueToTemplateContext(String value) {
-      var dartName = camelFromScreamingCaps(value);
+      // var dartName = camelFromScreamingCaps(value);
+      // OpenAPI uses screaming caps for enum values so we're matching for now.
+      var dartName = value;
       if (isReservedWord(dartName)) {
         dartName = '${dartName}_';
       }

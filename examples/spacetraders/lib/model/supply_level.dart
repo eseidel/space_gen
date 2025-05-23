@@ -1,9 +1,9 @@
 enum SupplyLevel {
-  scarce('SCARCE'),
-  limited('LIMITED'),
-  moderate('MODERATE'),
-  high('HIGH'),
-  abundant('ABUNDANT');
+  SCARCE('SCARCE'),
+  LIMITED('LIMITED'),
+  MODERATE('MODERATE'),
+  HIGH('HIGH'),
+  ABUNDANT('ABUNDANT');
 
   const SupplyLevel(this.value);
 

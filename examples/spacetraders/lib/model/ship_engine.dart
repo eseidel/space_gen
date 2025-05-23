@@ -51,10 +51,10 @@ class ShipEngine {
 }
 
 enum ShipEngineSymbol {
-  engineImpulseDriveI('ENGINE_IMPULSE_DRIVE_I'),
-  engineIonDriveI('ENGINE_ION_DRIVE_I'),
-  engineIonDriveIi('ENGINE_ION_DRIVE_II'),
-  engineHyperDriveI('ENGINE_HYPER_DRIVE_I');
+  ENGINE_IMPULSE_DRIVE_I('ENGINE_IMPULSE_DRIVE_I'),
+  ENGINE_ION_DRIVE_I('ENGINE_ION_DRIVE_I'),
+  ENGINE_ION_DRIVE_II('ENGINE_ION_DRIVE_II'),
+  ENGINE_HYPER_DRIVE_I('ENGINE_HYPER_DRIVE_I');
 
   const ShipEngineSymbol(this.value);
 

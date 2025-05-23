@@ -47,9 +47,9 @@ class MarketTradeGood {
 }
 
 enum MarketTradeGoodType {
-  export('EXPORT'),
-  import('IMPORT'),
-  exchange('EXCHANGE');
+  EXPORT('EXPORT'),
+  IMPORT('IMPORT'),
+  EXCHANGE('EXCHANGE');
 
   const MarketTradeGoodType(this.value);
 

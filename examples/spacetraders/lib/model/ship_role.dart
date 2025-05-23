@@ -1,18 +1,18 @@
 enum ShipRole {
-  fabricator('FABRICATOR'),
-  harvester('HARVESTER'),
-  hauler('HAULER'),
-  interceptor('INTERCEPTOR'),
-  excavator('EXCAVATOR'),
-  transport('TRANSPORT'),
-  repair('REPAIR'),
-  surveyor('SURVEYOR'),
-  command('COMMAND'),
-  carrier('CARRIER'),
-  patrol('PATROL'),
-  satellite('SATELLITE'),
-  explorer('EXPLORER'),
-  refinery('REFINERY');
+  FABRICATOR('FABRICATOR'),
+  HARVESTER('HARVESTER'),
+  HAULER('HAULER'),
+  INTERCEPTOR('INTERCEPTOR'),
+  EXCAVATOR('EXCAVATOR'),
+  TRANSPORT('TRANSPORT'),
+  REPAIR('REPAIR'),
+  SURVEYOR('SURVEYOR'),
+  COMMAND('COMMAND'),
+  CARRIER('CARRIER'),
+  PATROL('PATROL'),
+  SATELLITE('SATELLITE'),
+  EXPLORER('EXPLORER'),
+  REFINERY('REFINERY');
 
   const ShipRole(this.value);
 

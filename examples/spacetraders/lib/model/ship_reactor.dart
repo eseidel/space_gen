@@ -51,11 +51,11 @@ class ShipReactor {
 }
 
 enum ShipReactorSymbol {
-  reactorSolarI('REACTOR_SOLAR_I'),
-  reactorFusionI('REACTOR_FUSION_I'),
-  reactorFissionI('REACTOR_FISSION_I'),
-  reactorChemicalI('REACTOR_CHEMICAL_I'),
-  reactorAntimatterI('REACTOR_ANTIMATTER_I');
+  REACTOR_SOLAR_I('REACTOR_SOLAR_I'),
+  REACTOR_FUSION_I('REACTOR_FUSION_I'),
+  REACTOR_FISSION_I('REACTOR_FISSION_I'),
+  REACTOR_CHEMICAL_I('REACTOR_CHEMICAL_I'),
+  REACTOR_ANTIMATTER_I('REACTOR_ANTIMATTER_I');
 
   const ShipReactorSymbol(this.value);
 

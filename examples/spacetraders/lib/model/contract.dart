@@ -49,9 +49,9 @@ class Contract {
 }
 
 enum ContractType {
-  procurement('PROCUREMENT'),
-  transport('TRANSPORT'),
-  shuttle('SHUTTLE');
+  PROCUREMENT('PROCUREMENT'),
+  TRANSPORT('TRANSPORT'),
+  SHUTTLE('SHUTTLE');
 
   const ContractType(this.value);
 

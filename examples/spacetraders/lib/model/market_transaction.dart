@@ -47,8 +47,8 @@ class MarketTransaction {
 }
 
 enum MarketTransactionType {
-  purchase('PURCHASE'),
-  sell('SELL');
+  PURCHASE('PURCHASE'),
+  SELL('SELL');
 
   const MarketTransactionType(this.value);
 

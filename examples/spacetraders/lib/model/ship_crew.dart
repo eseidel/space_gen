@@ -39,8 +39,8 @@ class ShipCrew {
 }
 
 enum ShipCrewRotation {
-  strict('STRICT'),
-  relaxed('RELAXED');
+  STRICT('STRICT'),
+  RELAXED('RELAXED');
 
   const ShipCrewRotation(this.value);
 
