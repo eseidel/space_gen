@@ -4,7 +4,7 @@ import 'package:space_gen/src/config.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/render.dart';
 
-Future<int> main(List<String> arguments) async {
+Future<int> run(List<String> arguments) async {
   const fs = LocalFileSystem();
   // Mostly trying to match openapi-generator-cli
   final parser = ArgParser()
@@ -34,4 +34,8 @@ Future<int> main(List<String> arguments) async {
     outDir: config.outDir,
   );
   return 0;
+}
+
+Future<int> main(List<String> arguments) async {
+  return runWithLogger(Logger(), () => run(arguments));
 }
