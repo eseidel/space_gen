@@ -9,16 +9,6 @@ import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/spec.dart';
 import 'package:space_gen/src/string.dart';
 
-Template loadTemplate(FileSystem fs, String name) {
-  // I'm not sure how to load a template relative to the package root
-  // for when this is installed via pub.  I'm sure it's possible.
-  return Template(
-    fs.file('lib/templates/$name.mustache').readAsStringSync(),
-    partialResolver: (s) => loadTemplate(fs, s),
-    name: name,
-  );
-}
-
 class Paths {
   static String apiFilePath(Api api) {
     // openapi generator does not use /src/ in the path.
@@ -317,6 +307,13 @@ extension SchemaRefGeneration on SchemaRef {
   }
 }
 
+typedef RunProcess =
+    ProcessResult Function(
+      String executable,
+      List<String> arguments, {
+      String? workingDirectory,
+    });
+
 /// Context for rendering the spec.
 /// This is separate from a RenderContext which is per-file.
 class Context {
@@ -326,9 +323,18 @@ class Context {
     required this.spec,
     required this.outDir,
     required this.packageName,
-    required this.fs,
     required this.schemaRegistry,
-  });
+    Directory? templateDir,
+    RunProcess? runProcess,
+  }) : fs = outDir.fileSystem,
+       templateDir =
+           templateDir ?? outDir.fileSystem.directory('lib/templates'),
+       runProcess = runProcess ?? Process.runSync {
+    final dir = this.templateDir;
+    if (!dir.existsSync()) {
+      throw Exception('Template directory does not exist: ${dir.path}');
+    }
+  }
 
   /// The spec url.
   final Uri specUrl;
@@ -342,12 +348,28 @@ class Context {
   /// The package name this spec is being rendered into.
   final String packageName;
 
+  /// The directory containing the templates.
+  final Directory templateDir;
+
   /// The file system where the rendered files will go.
   final FileSystem fs;
 
   /// The schema registry.
   /// This must be fully populated before rendering.
   final SchemaRegistry schemaRegistry;
+
+  /// The function to run a process. Allows for mocking in tests.
+  final RunProcess runProcess;
+
+  Template loadTemplate(String name) {
+    // I'm not sure how to load a template relative to the package root
+    // for when this is installed via pub.  I'm sure it's possible.
+    return Template(
+      templateDir.childFile('$name.mustache').readAsStringSync(),
+      partialResolver: loadTemplate,
+      name: name,
+    );
+  }
 
   /// Resolve a nullable schema reference into a nullable schema.
   Schema? maybeResolve(SchemaRef? ref) {
@@ -384,7 +406,7 @@ class Context {
     required String outPath,
     Map<String, dynamic> context = const {},
   }) {
-    final output = loadTemplate(fs, template).renderString(context);
+    final output = loadTemplate(template).renderString(context);
     writeFile(path: outPath, content: output);
   }
 
@@ -451,7 +473,11 @@ class Context {
   /// Run a dart command.
   void runDart(List<String> args) {
     logger.detail('dart ${args.join(' ')} in ${outDir.path}');
-    final result = Process.runSync('dart', args, workingDirectory: outDir.path);
+    final result = runProcess(
+      Platform.executable,
+      args,
+      workingDirectory: outDir.path,
+    );
     if (result.exitCode != 0) {
       logger.info(result.stderr as String);
       throw Exception('Failed to run dart ${args.join(' ')}');

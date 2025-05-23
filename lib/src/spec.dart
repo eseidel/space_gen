@@ -3,6 +3,8 @@ import 'package:meta/meta.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/string.dart';
 
+typedef Json = Map<String, dynamic>;
+
 enum SentIn {
   query,
   header,
@@ -278,25 +280,24 @@ class Endpoint {
   });
 
   factory Endpoint.parse({
-    required Map<String, dynamic> methodValue,
+    required Map<String, dynamic> json,
     required String path,
     required Method method,
     required ParseContext parentContext,
   }) {
     final snakeName =
-        (methodValue['operationId'] as String? ??
-                Uri.parse(path).pathSegments.last)
+        (json['operationId'] as String? ?? Uri.parse(path).pathSegments.last)
             .replaceAll('-', '_');
 
     final context = parentContext.addSnakeName(snakeName);
 
     final responses = parseResponses(
-      methodValue['responses'] as Map<String, dynamic>,
+      _optional<Map<String, dynamic>>(json, 'responses'),
       context.key('responses'),
     );
-    final tags = methodValue['tags'] as List<dynamic>?;
+    final tags = _optional<List<dynamic>>(json, 'tags');
     final tag = tags?.firstOrNull as String? ?? 'Default';
-    final parametersJson = methodValue['parameters'] as List<dynamic>? ?? [];
+    final parametersJson = _optional<List<dynamic>>(json, 'parameters') ?? [];
     final parameters = parametersJson
         .cast<Map<String, dynamic>>()
         .indexed
@@ -310,7 +311,7 @@ class Endpoint {
           ),
         )
         .toList();
-    final requestBodyJson = methodValue['requestBody'] as Map<String, dynamic>?;
+    final requestBodyJson = json['requestBody'] as Map<String, dynamic>?;
     SchemaRef? requestBody;
     if (requestBodyJson != null) {
       final content = requestBodyJson['content'] as Map<String, dynamic>;
@@ -349,9 +350,12 @@ class Response {
 }
 
 List<Response> parseResponses(
-  Map<String, dynamic> json,
+  Map<String, dynamic>? json,
   ParseContext parentContext,
 ) {
+  if (json == null) {
+    return [];
+  }
   // Hack to make get cooldown compile.
   final responseCodes = json.keys.toList()..remove('204');
   if (responseCodes.length != 1) {
@@ -434,20 +438,40 @@ Components parseComponents(Map<String, dynamic>? json, ParseContext context) {
   return Components(schemas: schemas);
 }
 
+T _required<T>(Map<String, dynamic> json, String key) {
+  final value = json[key];
+  if (value == null) {
+    throw FormatException('Required key not found: $key in $json');
+  }
+  return value as T;
+}
+
+void _expect(bool condition, Json json, String message) {
+  if (!condition) {
+    throw FormatException('$message in $json');
+  }
+}
+
+T? _optional<T>(Map<String, dynamic> json, String key) {
+  return json[key] as T?;
+}
+
 // Spec calls this the "OpenAPI Object"
 // https://spec.openapis.org/oas/v3.1.0#openapi-object
 class Spec {
   Spec(this.serverUrl, this.endpoints, this.components);
 
   factory Spec.parse(Map<String, dynamic> json, ParseContext context) {
-    final servers = json['servers'] as List<dynamic>;
+    final servers = _required<List<dynamic>>(json, 'servers');
     final firstServer = servers.first as Map<String, dynamic>;
-    final serverUrl = firstServer['url'] as String;
+    final serverUrl = _required<String>(firstServer, 'url');
 
-    final paths = json['paths'] as Map<String, dynamic>;
+    final paths = _required<Map<String, dynamic>>(json, 'paths');
     final endpoints = <Endpoint>[];
     for (final pathEntry in paths.entries) {
       final path = pathEntry.key;
+      _expect(path.isNotEmpty, json, 'Path cannot be empty');
+      _expect(path.startsWith('/'), json, 'Path must start with /: $path');
       final pathValue = pathEntry.value as Map<String, dynamic>;
       for (final method in Method.values) {
         final methodValue = pathValue[method.key] as Map<String, dynamic>?;
@@ -458,7 +482,7 @@ class Spec {
           Endpoint.parse(
             parentContext: context.key('paths').key(path).key(method.key),
             path: path,
-            methodValue: methodValue,
+            json: methodValue,
             method: method,
           ),
         );
@@ -620,7 +644,7 @@ class ParseContext {
 /// We use a parse method rather than just fromJson since we need to maintain
 /// the location (json pointer) information for each schema we parse and
 /// write that information down somewhere (currently in the schema registry).
-Spec parseSpec(Map<String, dynamic> json, ParseContext context) {
+Spec parseSpec(Json json, ParseContext context) {
   final spec = Spec.parse(json, context);
   return spec;
 }

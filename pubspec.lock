@@ -201,6 +201,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  mocktail:
+    dependency: "direct dev"
+    description:
+      name: mocktail
+      sha256: "890df3f9688106f25755f26b1c60589a92b3ab91a22b8b224947ad041bf172d8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.4"
   mustache_template:
     dependency: "direct main"
     description:
@@ -249,6 +257,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  scoped_deps:
+    dependency: "direct main"
+    description:
+      path: "packages/scoped_deps"
+      ref: HEAD
+      resolved-ref: "192fbb94e3e424986419b45636dcd60113c73465"
+      url: "https://github.com/shorebirdtech/shorebird.git"
+    source: git
+    version: "0.1.0+2"
   shelf:
     dependency: transitive
     description:
@@ -373,10 +390,10 @@ packages:
     dependency: "direct dev"
     description:
       name: very_good_analysis
-      sha256: "9ae7f3a3bd5764fb021b335ca28a34f040cd0ab6eec00a1b213b445dae58a4b8"
+      sha256: "62d2b86d183fb81b2edc22913d9f155d26eb5cf3855173adb1f59fac85035c63"
       url: "https://pub.dev"
     source: hosted
-    version: "5.1.0"
+    version: "7.0.0"
   vm_service:
     dependency: transitive
     description:
