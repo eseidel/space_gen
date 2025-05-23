@@ -242,12 +242,25 @@ extension SchemaGeneration on Schema {
     };
   }
 
+  String _sharedPrefix(List<String> values) {
+    final prefix = '${values.first.split('_').first}_';
+    for (final value in values) {
+      if (!value.startsWith(prefix)) {
+        return '';
+      }
+    }
+    return prefix;
+  }
+
   /// Template context for an enum schema.
   Map<String, dynamic> _enumToTemplateContext() {
+    final sharedPrefix = _sharedPrefix(enumValues);
     Map<String, dynamic> enumValueToTemplateContext(String value) {
       // var dartName = camelFromScreamingCaps(value);
       // OpenAPI uses screaming caps for enum values so we're matching for now.
       var dartName = value;
+      // OpenAPI also removes shared prefixes from enum values.
+      dartName = dartName.replaceAll(sharedPrefix, '');
       if (isReservedWord(dartName)) {
         dartName = '${dartName}_';
       }
