@@ -2703,24 +2703,6 @@
         }
     },
     "paths": {
-        "/health": {
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Default Response"
-                    }
-                }
-            }
-        },
-        "/metrics": {
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Default Response"
-                    }
-                }
-            }
-        },
         "/factions": {
             "get": {
                 "operationId": "get-factions",
@@ -3002,7 +2984,7 @@
         "/": {
             "get": {
                 "operationId": "get-status",
-                "summary": "Get the status of the game server.",
+                "summary": "Server status",
                 "tags": [
                     "Global"
                 ],
@@ -3066,6 +3048,15 @@
                                                 "systems",
                                                 "waypoints"
                                             ]
+                                        },
+                                        "health": {
+                                            "type": "object",
+                                            "properties": {
+                                                "lastMarketUpdate": {
+                                                    "type": "string",
+                                                    "description": "The date/time when the market was last updated."
+                                                }
+                                            }
                                         },
                                         "leaderboards": {
                                             "type": "object",
@@ -3180,12 +3171,62 @@
                                         "resetDate",
                                         "description",
                                         "stats",
+                                        "health",
                                         "leaderboards",
                                         "serverResets",
                                         "announcements",
                                         "links"
                                     ],
                                     "description": "Fetched status successfully."
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/error-codes": {
+            "get": {
+                "operationId": "get-error-codes",
+                "summary": "Error code list",
+                "tags": [
+                    "Global"
+                ],
+                "description": "Return a list of all possible error codes thrown by the game server.",
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fetched error codes successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "errorCodes": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "code": {
+                                                        "type": "number"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "code",
+                                                    "name"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "errorCodes"
+                                    ],
+                                    "description": "Fetched error codes successfully."
                                 }
                             }
                         }
@@ -3355,10 +3396,17 @@
                     },
                     {
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/components/schemas/WaypointTraitSymbol"
-                            }
+                            "anyOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/WaypointTraitSymbol"
+                                    }
+                                },
+                                {
+                                    "$ref": "#/components/schemas/WaypointTraitSymbol"
+                                }
+                            ]
                         },
                         "in": "query",
                         "name": "traits",
@@ -5886,12 +5934,24 @@
                                         "example": 100
                                     },
                                     "fromCargo": {
-                                        "type": "boolean",
+                                        "anyOf": [
+                                            {
+                                                "type": "boolean"
+                                            },
+                                            {
+                                                "type": "null"
+                                            }
+                                        ],
                                         "default": false,
                                         "description": "Wether to use the FUEL thats in your cargo or not.",
                                         "example": false
                                     }
                                 }
+                            }
+                        },
+                        "text/plain": {
+                            "schema": {
+                                "type": "string"
                             }
                         }
                     }
@@ -7046,11 +7106,6 @@
                                     },
                                     "faction": {
                                         "$ref": "#/components/schemas/FactionSymbol"
-                                    },
-                                    "email": {
-                                        "type": "string",
-                                        "format": "email",
-                                        "description": "Your email address. This is used if you reserved your call sign between resets."
                                     }
                                 },
                                 "required": [

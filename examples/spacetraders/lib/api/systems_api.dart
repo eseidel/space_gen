@@ -12,7 +12,6 @@ import 'package:spacetraders/model/get_systems200_response.dart';
 import 'package:spacetraders/model/get_waypoint200_response.dart';
 import 'package:spacetraders/model/supply_construction201_response.dart';
 import 'package:spacetraders/model/supply_construction_request.dart';
-import 'package:spacetraders/model/waypoint_trait_symbol.dart';
 import 'package:spacetraders/model/waypoint_type.dart';
 
 class SystemsApi {
@@ -56,7 +55,7 @@ class SystemsApi {
     int page,
     int limit,
     WaypointType type,
-    List<WaypointTraitSymbol> traits,
+    dynamic traits,
     String systemSymbol,
   ) async {
     final response = await client.invokeApi(

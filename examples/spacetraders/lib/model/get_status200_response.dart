@@ -5,6 +5,7 @@ class GetStatus200Response {
     required this.resetDate,
     required this.description,
     required this.stats,
+    required this.health,
     required this.leaderboards,
     required this.serverResets,
     required this.announcements,
@@ -19,6 +20,9 @@ class GetStatus200Response {
       description: json['description'] as String,
       stats: GetStatus200ResponseStats.fromJson(
         json['stats'] as Map<String, dynamic>,
+      ),
+      health: GetStatus200ResponseHealth.fromJson(
+        json['health'] as Map<String, dynamic>,
       ),
       leaderboards: GetStatus200ResponseLeaderboards.fromJson(
         json['leaderboards'] as Map<String, dynamic>,
@@ -50,6 +54,7 @@ class GetStatus200Response {
   final String resetDate;
   final String description;
   final GetStatus200ResponseStats stats;
+  final GetStatus200ResponseHealth health;
   final GetStatus200ResponseLeaderboards leaderboards;
   final GetStatus200ResponseServerResets serverResets;
   final List<GetStatus200ResponseAnnouncementsItem> announcements;
@@ -62,6 +67,7 @@ class GetStatus200Response {
       'resetDate': resetDate,
       'description': description,
       'stats': stats.toJson(),
+      'health': health.toJson(),
       'leaderboards': leaderboards.toJson(),
       'serverResets': serverResets.toJson(),
       'announcements': announcements.map((e) => e.toJson()).toList(),
@@ -103,6 +109,22 @@ class GetStatus200ResponseStats {
       'systems': systems,
       'waypoints': waypoints,
     };
+  }
+}
+
+class GetStatus200ResponseHealth {
+  GetStatus200ResponseHealth({required this.lastMarketUpdate});
+
+  factory GetStatus200ResponseHealth.fromJson(Map<String, dynamic> json) {
+    return GetStatus200ResponseHealth(
+      lastMarketUpdate: json['lastMarketUpdate'] as String,
+    );
+  }
+
+  final String lastMarketUpdate;
+
+  Map<String, dynamic> toJson() {
+    return {'lastMarketUpdate': lastMarketUpdate};
   }
 }
 

@@ -2,7 +2,6 @@ export 'package:spacetraders/api/accounts_api.dart';
 export 'package:spacetraders/api/agents_api.dart';
 export 'package:spacetraders/api/contracts_api.dart';
 export 'package:spacetraders/api/data_api.dart';
-export 'package:spacetraders/api/default_api.dart';
 export 'package:spacetraders/api/factions_api.dart';
 export 'package:spacetraders/api/fleet_api.dart';
 export 'package:spacetraders/api/global_api.dart';
