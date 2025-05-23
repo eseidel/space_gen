@@ -8,13 +8,19 @@ Future<int> run(List<String> arguments) async {
   const fs = LocalFileSystem();
   // Mostly trying to match openapi-generator-cli
   final parser = ArgParser()
-    ..addOption('config', abbr: 'c', help: 'Path to config file');
+    ..addOption('config', abbr: 'c', help: 'Path to config file')
+    ..addFlag('verbose', abbr: 'v', help: 'Verbose output');
   final results = parser.parse(arguments);
   if (results.rest.isNotEmpty) {
     logger
       ..err('Unexpected arguments: ${results.rest}')
       ..info(parser.usage);
     return 1;
+  }
+
+  final verbose = results['verbose'] as bool;
+  if (verbose) {
+    setVerboseLogging();
   }
 
   final configPath = results['config'] as String?;

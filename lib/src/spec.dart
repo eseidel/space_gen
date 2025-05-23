@@ -5,13 +5,13 @@ import 'package:space_gen/src/string.dart';
 
 typedef Json = Map<String, dynamic>;
 
-enum SentIn {
+enum SendIn {
   query,
   header,
   path,
   cookie;
 
-  static SentIn fromJson(String json) {
+  static SendIn fromJson(String json) {
     switch (json) {
       case 'query':
         return query;
@@ -22,7 +22,7 @@ enum SentIn {
       case 'cookie':
         return cookie;
       default:
-        throw ArgumentError.value(json, 'json', 'Unknown SentIn');
+        throw ArgumentError.value(json, 'json', 'Unknown SendIn');
     }
   }
 }
@@ -30,31 +30,73 @@ enum SentIn {
 class Parameter {
   const Parameter({
     required this.name,
+    required this.description,
     required this.type,
     required this.isRequired,
-    required this.sentIn,
+    required this.sendIn,
   });
 
   factory Parameter.parse({
     required Map<String, dynamic> json,
     required ParseContext context,
   }) {
-    final name = json['name'] as String;
-    final required = json['required'] as bool? ?? false;
-    final sentIn = json['in'] as String;
-    final schema = json['schema'] as Map<String, dynamic>;
-    final type = parseSchemaOrRef(json: schema, context: context.key('schema'));
+    final schema = _optional<Json>(json, 'schema');
+    final hasSchema = schema != null;
+    final hasContent = _optional<Json>(json, 'content') != null;
+
+    // Common fields.
+    final name = _required<String>(json, 'name');
+    final description = _optional<String>(json, 'description');
+    final required = _optional<bool>(json, 'required') ?? false;
+    final sendIn = SendIn.fromJson(_required<String>(json, 'in'));
+    _ignored(json, 'deprecated');
+    _ignored(json, 'allowEmptyValue');
+
+    final SchemaRef type;
+    if (hasSchema) {
+      if (hasContent) {
+        _error(json, 'Parameter cannot have both schema and content');
+      }
+      // Schema fields.
+      type = parseSchemaOrRef(json: schema, context: context.key('schema'));
+      _ignored(json, 'style');
+      _ignored(json, 'explode');
+      _ignored(json, 'allowReserved');
+      _ignored(json, 'example');
+      _ignored(json, 'examples');
+    } else {
+      if (!hasSchema && !hasContent) {
+        _error(json, 'Parameter must have either schema or content');
+      }
+      // Content fields.
+      // Use an explicit throw so Dart can see `type` is always set.
+      throw const FormatException('Content parameters not supported');
+    }
+
+    if (sendIn == SendIn.cookie) {
+      throw UnimplementedError('Cookie parameters not supported');
+    }
+    if (sendIn == SendIn.path) {
+      if (type.schema?.type != SchemaType.string) {
+        throw UnimplementedError('Path parameters must be strings');
+      }
+      if (required != true) {
+        throw UnimplementedError('Path parameters must be required');
+      }
+    }
+
     return Parameter(
       name: name,
+      description: description,
       isRequired: required,
-      sentIn: SentIn.fromJson(sentIn),
+      sendIn: sendIn,
       type: type,
     );
   }
-
-  final bool isRequired;
-  final SentIn sentIn;
   final String name;
+  final String? description;
+  final bool isRequired;
+  final SendIn sendIn;
   final SchemaRef type;
 }
 
@@ -146,6 +188,15 @@ class Schema {
         context: context.addSnakeName('item').key('items'),
       );
     }
+
+    _ignored(json, 'nullable');
+    _ignored(json, 'readOnly');
+    _ignored(json, 'writeOnly');
+    _ignored(json, 'discriminator');
+    _ignored(json, 'xml');
+    _ignored(json, 'example');
+    _ignored(json, 'examples');
+    _ignored(json, 'externalDocs');
 
     final required = json['required'] as List<dynamic>? ?? [];
     final description = json['description'] as String? ?? '';
@@ -454,6 +505,24 @@ void _expect(bool condition, Json json, String message) {
 
 T? _optional<T>(Map<String, dynamic> json, String key) {
   return json[key] as T?;
+}
+
+// void _unimplemented(Json json, String key) {
+//   final value = json[key];
+//   if (value != null) {
+//     throw UnimplementedError('Unsupported key: $key in $json');
+//   }
+// }
+
+void _ignored(Json json, String key) {
+  final value = json[key];
+  if (value != null) {
+    logger.detail('Ignoring key: $key in $json');
+  }
+}
+
+void _error(Json json, String message) {
+  throw FormatException('$message in $json');
 }
 
 // Spec calls this the "OpenAPI Object"

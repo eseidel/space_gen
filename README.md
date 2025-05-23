@@ -35,6 +35,7 @@ dart run space_gen
 * Use named args when multiple are same type (e.g. page/limit)
 * Support keyword arguments.
 * WaypointSymbol is rendered wrong.
+* Support parameter "in" keyword.
 
 ## Advantages over Open API Generator 7.0.0
 * Dart 3.0+ only (sound null safety)

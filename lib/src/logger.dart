@@ -15,3 +15,8 @@ Logger get logger => read(loggerRef);
 R runWithLogger<R>(Logger logger, R Function() fn) {
   return runScoped(fn, values: {loggerRef.overrideWith(() => logger)});
 }
+
+/// Set the global logger to verbose logging.
+void setVerboseLogging() {
+  logger.level = Level.verbose;
+}
