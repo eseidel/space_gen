@@ -280,9 +280,10 @@ class Endpoint {
     required Method method,
     required ParseContext parentContext,
   }) {
-    final snakeName = (methodValue['operationId'] as String? ??
-            Uri.parse(path).pathSegments.last)
-        .replaceAll('-', '_');
+    final snakeName =
+        (methodValue['operationId'] as String? ??
+                Uri.parse(path).pathSegments.last)
+            .replaceAll('-', '_');
 
     final context = parentContext.addSnakeName(snakeName);
 
@@ -293,17 +294,16 @@ class Endpoint {
     final tags = methodValue['tags'] as List<dynamic>?;
     final tag = tags?.firstOrNull as String? ?? 'Default';
     final parametersJson = methodValue['parameters'] as List<dynamic>? ?? [];
-    final parameters =
-        parametersJson
-            .cast<Map<String, dynamic>>()
-            .indexed
-            .map(
-              (indexed) => Parameter.parse(
-                json: indexed.$2,
-                context: context.key('parameters').index(indexed.$1),
-              ),
-            )
-            .toList();
+    final parameters = parametersJson
+        .cast<Map<String, dynamic>>()
+        .indexed
+        .map(
+          (indexed) => Parameter.parse(
+            json: indexed.$2,
+            context: context.key('parameters').index(indexed.$1),
+          ),
+        )
+        .toList();
     final requestBodyJson = methodValue['requestBody'] as Map<String, dynamic>?;
     SchemaRef? requestBody;
     if (requestBodyJson != null) {

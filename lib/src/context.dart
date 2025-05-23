@@ -41,15 +41,14 @@ class Api {
 }
 
 extension SpecGeneration on Spec {
-  List<Api> get apis =>
-      tags
-          .map(
-            (tag) => Api(
-              name: tag,
-              endpoints: endpoints.where((e) => e.tag == tag).toList(),
-            ),
-          )
-          .toList();
+  List<Api> get apis => tags
+      .map(
+        (tag) => Api(
+          name: tag,
+          endpoints: endpoints.where((e) => e.tag == tag).toList(),
+        ),
+      )
+      .toList();
 }
 
 extension EndpointGeneration on Endpoint {
@@ -61,10 +60,9 @@ extension EndpointGeneration on Endpoint {
   Uri uri(Context context) => Uri.parse('${context.spec.serverUrl}$path');
 
   Map<String, dynamic> toTemplateContext(Context context) {
-    final parameters =
-        this.parameters
-            .map((param) => param.toTemplateContext(context))
-            .toList();
+    final parameters = this.parameters
+        .map((param) => param.toTemplateContext(context))
+        .toList();
     final bodySchema = context.maybeResolve(requestBody);
     if (bodySchema != null) {
       final typeName = bodySchema.typeName(context);
@@ -552,8 +550,9 @@ RenderContext renderRootSchema(Context context, Schema schema) {
 }
 
 void renderApi(RenderContext renderContext, Context context, Api api) {
-  final endpoints =
-      api.endpoints.map((e) => e.toTemplateContext(context)).toList();
+  final endpoints = api.endpoints
+      .map((e) => e.toTemplateContext(context))
+      .toList();
   renderContext.collectApi(api);
 
   final imports = renderContext.sortedPackageImports(

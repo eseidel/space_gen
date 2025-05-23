@@ -10,8 +10,8 @@ import 'package:space_gen/src/visitor.dart';
 Future<int> main(List<String> arguments) async {
   const fs = LocalFileSystem();
   // Mostly trying to match openapi-generator-cli
-  final parser =
-      ArgParser()..addOption('config', abbr: 'c', help: 'Path to config file');
+  final parser = ArgParser()
+    ..addOption('config', abbr: 'c', help: 'Path to config file');
   final results = parser.parse(arguments);
   if (results.rest.isNotEmpty) {
     logger
