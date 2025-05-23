@@ -6,6 +6,8 @@ export 'package:spacetraders/api/factions_api.dart';
 export 'package:spacetraders/api/fleet_api.dart';
 export 'package:spacetraders/api/global_api.dart';
 export 'package:spacetraders/api/systems_api.dart';
+export 'package:spacetraders/api_client.dart';
+export 'package:spacetraders/api_exception.dart';
 export 'package:spacetraders/model/activity_level.dart';
 export 'package:spacetraders/model/agent.dart';
 export 'package:spacetraders/model/agent_event.dart';

@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart';
+import 'package:spacetraders/api_exception.dart';
 
 enum Method { get, post, patch }
 
@@ -28,16 +30,53 @@ class ApiClient {
     final uri = resolvePath(path);
     final body = method != Method.get ? jsonEncode(parameters) : null;
 
-    switch (method) {
-      case Method.get:
-        final withParams = uri.replace(
-          queryParameters: {...baseUri.queryParameters, ...parameters},
-        );
-        return client.get(withParams, headers: headers);
-      case Method.post:
-        return client.post(uri, headers: headers, body: body);
-      case Method.patch:
-        return client.patch(uri, headers: headers, body: body);
+    try {
+      switch (method) {
+        case Method.get:
+          final withParams = uri.replace(
+            queryParameters: {...baseUri.queryParameters, ...parameters},
+          );
+          return client.get(withParams, headers: headers);
+        case Method.post:
+          return client.post(uri, headers: headers, body: body);
+        case Method.patch:
+          return client.patch(uri, headers: headers, body: body);
+      }
+    } on SocketException catch (error, trace) {
+      throw ApiException.withInner(
+        HttpStatus.badRequest,
+        'Socket operation failed: $method $path',
+        error,
+        trace,
+      );
+    } on TlsException catch (error, trace) {
+      throw ApiException.withInner(
+        HttpStatus.badRequest,
+        'TLS/SSL communication failed: $method $path',
+        error,
+        trace,
+      );
+    } on IOException catch (error, trace) {
+      throw ApiException.withInner(
+        HttpStatus.badRequest,
+        'I/O operation failed: $method $path',
+        error,
+        trace,
+      );
+    } on ClientException catch (error, trace) {
+      throw ApiException.withInner(
+        HttpStatus.badRequest,
+        'HTTP connection failed: $method $path',
+        error,
+        trace,
+      );
+    } on Exception catch (error, trace) {
+      throw ApiException.withInner(
+        HttpStatus.badRequest,
+        'Exception occurred: $method $path',
+        error,
+        trace,
+      );
     }
   }
 }

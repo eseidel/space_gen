@@ -221,13 +221,20 @@ extension SchemaGeneration on Schema {
   /// Template context for an object schema.
   Map<String, dynamic> _objectToTemplateContext(Context context) {
     final renderProperties = properties.entries.map((entry) {
-      final name = entry.key;
+      final jsonName = entry.key;
+      var dartName = entry.key;
+      if (isReservedWord(dartName)) {
+        dartName = '${dartName}_';
+      }
       final schema = context.maybeResolve(entry.value)!;
       return {
-        'propertyName': name,
+        'propertyName': dartName,
         'propertyType': schema.typeName(context),
-        'propertyToJson': schema.toJsonExpression(name, context),
-        'propertyFromJson': schema.fromJsonExpression("json['$name']", context),
+        'propertyToJson': schema.toJsonExpression(dartName, context),
+        'propertyFromJson': schema.fromJsonExpression(
+          "json['$jsonName']",
+          context,
+        ),
       };
     });
     final valueSchema = this.valueSchema(context);
@@ -431,6 +438,10 @@ class Context {
   /// Render the api client.
   void renderApiClient() {
     renderTemplate(
+      template: 'api_exception',
+      outPath: 'lib/api_exception.dart',
+    );
+    renderTemplate(
       template: 'api_client',
       outPath: 'lib/api_client.dart',
       context: {'baseUri': spec.serverUrl, 'packageName': packageName},
@@ -453,6 +464,8 @@ class Context {
     final paths = [
       ...spec.apis.map(Paths.apiPackagePath),
       ...renderedModels.map(Paths.modelPackagePath),
+      'api_client.dart',
+      'api_exception.dart',
     ];
     final exports = paths
         .map((path) => 'package:$packageName/$path')
