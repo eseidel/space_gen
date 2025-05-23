@@ -212,10 +212,8 @@ extension SchemaGeneration on Schema {
   Map<String, dynamic> _objectToTemplateContext(Context context) {
     final renderProperties = properties.entries.map((entry) {
       final jsonName = entry.key;
-      var dartName = entry.key;
-      if (isReservedWord(dartName)) {
-        dartName = '${dartName}_';
-      }
+      // TODO(eseidel): Remove this once we've migrated to the new generator.
+      final dartName = avoidReservedWord(entry.key);
       final schema = context.maybeResolve(entry.value)!;
       return {
         'propertyName': dartName,
@@ -249,6 +247,13 @@ extension SchemaGeneration on Schema {
     return prefix;
   }
 
+  String avoidReservedWord(String value) {
+    if (isReservedWord(value)) {
+      return '${value}_';
+    }
+    return value;
+  }
+
   /// Template context for an enum schema.
   Map<String, dynamic> _enumToTemplateContext() {
     final sharedPrefix = _sharedPrefix(enumValues);
@@ -258,9 +263,8 @@ extension SchemaGeneration on Schema {
       var dartName = value;
       // OpenAPI also removes shared prefixes from enum values.
       dartName = dartName.replaceAll(sharedPrefix, '');
-      if (isReservedWord(dartName)) {
-        dartName = '${dartName}_';
-      }
+      // And avoids reserved words.
+      dartName = avoidReservedWord(dartName);
       return {'enumValueName': dartName, 'enumValue': value};
     }
 

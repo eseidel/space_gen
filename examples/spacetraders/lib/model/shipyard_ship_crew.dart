@@ -1,17 +1,17 @@
 class ShipyardShipCrew {
-  ShipyardShipCrew({required this.required, required this.capacity});
+  ShipyardShipCrew({required this.required_, required this.capacity});
 
   factory ShipyardShipCrew.fromJson(Map<String, dynamic> json) {
     return ShipyardShipCrew(
-      required: json['required'] as int,
+      required_: json['required'] as int,
       capacity: json['capacity'] as int,
     );
   }
 
-  final int required;
+  final int required_;
   final int capacity;
 
   Map<String, dynamic> toJson() {
-    return {'required': required, 'capacity': capacity};
+    return {'required_': required_, 'capacity': capacity};
   }
 }

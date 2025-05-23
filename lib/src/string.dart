@@ -27,7 +27,16 @@ String camelFromScreamingCaps(String caps) {
 }
 
 bool isReservedWord(String word) {
-  const reservedWords = {'void', 'int', 'double', 'num', 'bool', 'dynamic'};
+  const reservedWords = {
+    'void',
+    'int',
+    'double',
+    'num',
+    'bool',
+    'dynamic',
+    'yield',
+    'required',
+  };
   return reservedWords.contains(word);
 }
 

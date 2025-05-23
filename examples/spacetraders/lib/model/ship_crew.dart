@@ -3,7 +3,7 @@ import 'package:spacetraders/model/ship_crew_rotation.dart';
 class ShipCrew {
   ShipCrew({
     required this.current,
-    required this.required,
+    required this.required_,
     required this.capacity,
     required this.rotation,
     required this.morale,
@@ -13,7 +13,7 @@ class ShipCrew {
   factory ShipCrew.fromJson(Map<String, dynamic> json) {
     return ShipCrew(
       current: json['current'] as int,
-      required: json['required'] as int,
+      required_: json['required'] as int,
       capacity: json['capacity'] as int,
       rotation: ShipCrewRotation.fromJson(json['rotation'] as String),
       morale: json['morale'] as int,
@@ -22,7 +22,7 @@ class ShipCrew {
   }
 
   final int current;
-  final int required;
+  final int required_;
   final int capacity;
   final ShipCrewRotation rotation;
   final int morale;
@@ -31,7 +31,7 @@ class ShipCrew {
   Map<String, dynamic> toJson() {
     return {
       'current': current,
-      'required': required,
+      'required_': required_,
       'capacity': capacity,
       'rotation': rotation.toJson(),
       'morale': morale,

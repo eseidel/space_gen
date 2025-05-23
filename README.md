@@ -30,11 +30,11 @@ dart run space_gen
 * Add support for required keys.
 * Actually make the networking work.
 * Implement operator== and hashCode?
-* Avoid keyword collisions in property names (e.g. yield).
 * Generate tests. https://github.com/eseidel/space_gen/issues/1
-* Export Request/Response objects in api.dart
 * Figure out if types should be immutable or not.
 * Use named args when multiple are same type (e.g. page/limit)
+* Support keyword arguments.
+* WaypointSymbol is rendered wrong.
 
 ## Advantages over Open API Generator 7.0.0
 * Dart 3.0+ only (sound null safety)
