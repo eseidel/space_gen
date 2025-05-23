@@ -1,18 +1,22 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:spacetraders/api_client.dart';
 import 'package:spacetraders/model/get_agent200_response.dart';
 import 'package:spacetraders/model/get_agents200_response.dart';
 import 'package:spacetraders/model/get_my_agent200_response.dart';
 import 'package:spacetraders/model/get_my_agent_events200_response.dart';
 
 class AgentsApi {
+  AgentsApi(ApiClient? client) : client = client ?? ApiClient();
+
+  final ApiClient client;
+
   Future<GetAgents200Response> getAgents(int page, int limit) async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/agents'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'page': page, 'limit': limit}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/agents',
+      parameters: {'page': page, 'limit': limit},
     );
 
     if (response.statusCode == 200) {
@@ -25,10 +29,10 @@ class AgentsApi {
   }
 
   Future<GetAgent200Response> getAgent(String agentSymbol) async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/agents/%7BagentSymbol%7D'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'agentSymbol': agentSymbol}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/agents/{agentSymbol}',
+      parameters: {'agentSymbol': agentSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -41,10 +45,9 @@ class AgentsApi {
   }
 
   Future<GetMyAgent200Response> getMyAgent() async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/my/agent'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/my/agent',
     );
 
     if (response.statusCode == 200) {
@@ -57,10 +60,9 @@ class AgentsApi {
   }
 
   Future<GetMyAgentEvents200Response> getMyAgentEvents() async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/my/agent/events'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/my/agent/events',
     );
 
     if (response.statusCode == 200) {

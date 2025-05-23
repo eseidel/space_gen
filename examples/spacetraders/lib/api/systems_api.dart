@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:spacetraders/api_client.dart';
 import 'package:spacetraders/model/get_construction200_response.dart';
 import 'package:spacetraders/model/get_jump_gate200_response.dart';
 import 'package:spacetraders/model/get_market200_response.dart';
@@ -16,11 +16,15 @@ import 'package:spacetraders/model/waypoint_trait_symbol.dart';
 import 'package:spacetraders/model/waypoint_type.dart';
 
 class SystemsApi {
+  SystemsApi(ApiClient? client) : client = client ?? ApiClient();
+
+  final ApiClient client;
+
   Future<GetSystems200Response> getSystems(int page, int limit) async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/systems'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'page': page, 'limit': limit}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/systems',
+      parameters: {'page': page, 'limit': limit},
     );
 
     if (response.statusCode == 200) {
@@ -33,10 +37,10 @@ class SystemsApi {
   }
 
   Future<GetSystem200Response> getSystem(String systemSymbol) async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'systemSymbol': systemSymbol}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/systems/{systemSymbol}',
+      parameters: {'systemSymbol': systemSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -55,18 +59,16 @@ class SystemsApi {
     List<WaypointTraitSymbol> traits,
     String systemSymbol,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/systems/{systemSymbol}/waypoints',
+      parameters: {
         'page': page,
         'limit': limit,
         'type': type.toJson(),
         'traits': traits,
         'systemSymbol': systemSymbol,
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -82,15 +84,13 @@ class SystemsApi {
     String systemSymbol,
     String waypointSymbol,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}',
+      parameters: {
         'systemSymbol': systemSymbol,
         'waypointSymbol': waypointSymbol,
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -106,15 +106,13 @@ class SystemsApi {
     String systemSymbol,
     String waypointSymbol,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/construction',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}/construction',
+      parameters: {
         'systemSymbol': systemSymbol,
         'waypointSymbol': waypointSymbol,
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -131,16 +129,15 @@ class SystemsApi {
     String waypointSymbol,
     SupplyConstructionRequest supplyConstructionRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/construction/supply',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.post,
+      path:
+          '/systems/{systemSymbol}/waypoints/{waypointSymbol}/construction/supply',
+      parameters: {
         'systemSymbol': systemSymbol,
         'waypointSymbol': waypointSymbol,
         'supplyConstructionRequest': supplyConstructionRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -156,15 +153,13 @@ class SystemsApi {
     String systemSymbol,
     String waypointSymbol,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/market',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}/market',
+      parameters: {
         'systemSymbol': systemSymbol,
         'waypointSymbol': waypointSymbol,
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -180,15 +175,13 @@ class SystemsApi {
     String systemSymbol,
     String waypointSymbol,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/jump-gate',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}/jump-gate',
+      parameters: {
         'systemSymbol': systemSymbol,
         'waypointSymbol': waypointSymbol,
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -204,15 +197,13 @@ class SystemsApi {
     String systemSymbol,
     String waypointSymbol,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/systems/%7BsystemSymbol%7D/waypoints/%7BwaypointSymbol%7D/shipyard',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}/shipyard',
+      parameters: {
         'systemSymbol': systemSymbol,
         'waypointSymbol': waypointSymbol,
-      }),
+      },
     );
 
     if (response.statusCode == 200) {

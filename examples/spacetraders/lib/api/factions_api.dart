@@ -1,17 +1,21 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:spacetraders/api_client.dart';
 import 'package:spacetraders/model/get_faction200_response.dart';
 import 'package:spacetraders/model/get_factions200_response.dart';
 import 'package:spacetraders/model/get_my_factions200_response.dart';
 
 class FactionsApi {
+  FactionsApi(ApiClient? client) : client = client ?? ApiClient();
+
+  final ApiClient client;
+
   Future<GetFactions200Response> getFactions(int page, int limit) async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/factions'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'page': page, 'limit': limit}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/factions',
+      parameters: {'page': page, 'limit': limit},
     );
 
     if (response.statusCode == 200) {
@@ -24,10 +28,10 @@ class FactionsApi {
   }
 
   Future<GetFaction200Response> getFaction(String factionSymbol) async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/factions/%7BfactionSymbol%7D'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'factionSymbol': factionSymbol}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/factions/{factionSymbol}',
+      parameters: {'factionSymbol': factionSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -40,10 +44,10 @@ class FactionsApi {
   }
 
   Future<GetMyFactions200Response> getMyFactions(int page, int limit) async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/my/factions'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'page': page, 'limit': limit}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/my/factions',
+      parameters: {'page': page, 'limit': limit},
     );
 
     if (response.statusCode == 200) {

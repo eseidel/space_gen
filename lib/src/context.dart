@@ -78,9 +78,10 @@ extension EndpointGeneration on Endpoint {
     final returnType = firstResponse?.typeName(context) ?? 'void';
     return {
       'methodName': methodName,
-      'httpMethod': method,
+      'httpMethod': method.name,
       'path': path,
       'url': uri(context),
+      'hasParameters': parameters.isNotEmpty,
       'parameters': parameters,
       'returnIsVoid': returnType == 'void',
       'returnType': returnType,
@@ -399,6 +400,15 @@ class Context {
     }
   }
 
+  /// Render the api client.
+  void renderApiClient() {
+    renderTemplate(
+      template: 'api_client',
+      outPath: 'lib/api_client.dart',
+      context: {'baseUri': spec.serverUrl, 'packageName': packageName},
+    );
+  }
+
   /// Run a dart command.
   void runDart(List<String> args) {
     logger.detail('dart ${args.join(' ')} in ${outDir.path}');
@@ -428,6 +438,7 @@ class Context {
   void render() {
     renderDirectory();
     renderApis();
+    renderApiClient();
     // renderModels();
     renderPublicApi();
     runDart(['pub', 'get']);
@@ -544,7 +555,12 @@ RenderContext renderRootSchema(Context context, Schema schema) {
   context.renderTemplate(
     template: 'model',
     outPath: _modelPath(schema),
-    context: {'imports': imports, 'objects': objects, 'enums': enums},
+    context: {
+      'imports': imports,
+      'objects': objects,
+      'enums': enums,
+      'packageName': context.packageName,
+    },
   );
   return renderContext;
 }
@@ -570,6 +586,7 @@ void renderApi(RenderContext renderContext, Context context, Api api) {
       'className': api.className,
       'imports': imports,
       'endpoints': endpoints,
+      'packageName': context.packageName,
     },
   );
 }

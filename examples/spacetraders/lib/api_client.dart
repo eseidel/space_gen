@@ -1,0 +1,43 @@
+import 'dart:convert';
+
+import 'package:http/http.dart';
+
+enum Method { get, post, patch }
+
+class ApiClient {
+  ApiClient({Uri? baseUri, Client? client, this.defaultHeaders = const {}})
+    : baseUri = baseUri ?? Uri.parse('https://api.spacetraders.io/v2'),
+      client = client ?? Client();
+
+  final Uri baseUri;
+  final Client client;
+  final Map<String, String> defaultHeaders;
+
+  Map<String, String> get headers => <String, String>{
+    ...defaultHeaders,
+    'Content-Type': 'application/json',
+  };
+
+  Uri resolvePath(String path) => baseUri.resolve(path).resolve(path);
+
+  Future<Response> invokeApi({
+    required Method method,
+    required String path,
+    Map<String, dynamic> parameters = const {},
+  }) async {
+    final uri = resolvePath(path);
+    final body = method != Method.get ? jsonEncode(parameters) : null;
+
+    switch (method) {
+      case Method.get:
+        final withParams = uri.replace(
+          queryParameters: {...baseUri.queryParameters, ...parameters},
+        );
+        return client.get(withParams, headers: headers);
+      case Method.post:
+        return client.post(uri, headers: headers, body: body);
+      case Method.patch:
+        return client.patch(uri, headers: headers, body: body);
+    }
+  }
+}

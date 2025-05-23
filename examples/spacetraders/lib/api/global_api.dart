@@ -1,16 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:spacetraders/api_client.dart';
 import 'package:spacetraders/model/get_status200_response.dart';
 
 class GlobalApi {
+  GlobalApi(ApiClient? client) : client = client ?? ApiClient();
+
+  final ApiClient client;
+
   Future<GetStatus200Response> getStatus() async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({}),
-    );
+    final response = await client.invokeApi(method: Method.get, path: '/');
 
     if (response.statusCode == 200) {
       return GetStatus200Response.fromJson(

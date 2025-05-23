@@ -1,28 +1,33 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:{{{packageName}}}/api_client.dart';
 import 'package:http/http.dart' as http;
 {{#imports}}
 import '{{{.}}}';
 {{/imports}}
 
 class {{ className }} {
+    {{ className }}(ApiClient? client) : client = client ?? ApiClient();
+
+    final ApiClient client;
+
     {{#endpoints}}
     Future<{{{ returnType }}}> {{{ methodName }}}(
         {{#parameters}}
         {{{ paramType }}} {{{ paramName }}},
         {{/parameters}}
     ) async {
-        final response = await http.post(
-            Uri.parse('{{{url}}}'),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
+        final response = await client.invokeApi(
+            method: Method.{{{httpMethod}}},
+            path: '{{{path}}}',
+            {{#hasParameters}}
+            parameters: {
                 {{#parameters}}
                 '{{{ paramName}}}': {{{ paramToJson }}},
                 {{/parameters}}
-            }),
+            },
+            {{/hasParameters}}
         );
 
         if (response.statusCode == 200) {

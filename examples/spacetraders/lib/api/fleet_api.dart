@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:spacetraders/api_client.dart';
 import 'package:spacetraders/model/create_chart201_response.dart';
 import 'package:spacetraders/model/create_ship_ship_scan201_response.dart';
 import 'package:spacetraders/model/create_ship_system_scan201_response.dart';
@@ -57,11 +57,15 @@ import 'package:spacetraders/model/warp_ship200_response.dart';
 import 'package:spacetraders/model/warp_ship_request.dart';
 
 class FleetApi {
+  FleetApi(ApiClient? client) : client = client ?? ApiClient();
+
+  final ApiClient client;
+
   Future<GetMyShips200Response> getMyShips(int page, int limit) async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/my/ships'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'page': page, 'limit': limit}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/my/ships',
+      parameters: {'page': page, 'limit': limit},
     );
 
     if (response.statusCode == 200) {
@@ -76,10 +80,10 @@ class FleetApi {
   Future<PurchaseShip201Response> purchaseShip(
     PurchaseShipRequest purchaseShipRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/my/ships'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'purchaseShipRequest': purchaseShipRequest.toJson()}),
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships',
+      parameters: {'purchaseShipRequest': purchaseShipRequest.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -92,10 +96,10 @@ class FleetApi {
   }
 
   Future<GetMyShip200Response> getMyShip(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/my/ships/{shipSymbol}',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -108,12 +112,10 @@ class FleetApi {
   }
 
   Future<CreateChart201Response> createChart(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/chart',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/chart',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -128,12 +130,10 @@ class FleetApi {
   Future<NegotiateContract201Response> negotiateContract(
     String shipSymbol,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/negotiate/contract',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/negotiate/contract',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -146,12 +146,10 @@ class FleetApi {
   }
 
   Future<GetShipCooldown200Response> getShipCooldown(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/cooldown',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/my/ships/{shipSymbol}/cooldown',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -164,12 +162,10 @@ class FleetApi {
   }
 
   Future<DockShip200Response> dockShip(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/dock',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/dock',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -184,12 +180,10 @@ class FleetApi {
   Future<ExtractResources201Response> extractResources(
     String shipSymbol,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/extract',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/extract',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -205,12 +199,10 @@ class FleetApi {
     String shipSymbol,
     Survey survey,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/extract/survey',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol, 'survey': survey.toJson()}),
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/extract/survey',
+      parameters: {'shipSymbol': shipSymbol, 'survey': survey.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -226,15 +218,13 @@ class FleetApi {
     String shipSymbol,
     JettisonRequest jettisonRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/jettison',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/jettison',
+      parameters: {
         'shipSymbol': shipSymbol,
         'jettisonRequest': jettisonRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -250,15 +240,13 @@ class FleetApi {
     String shipSymbol,
     JumpShipRequest jumpShipRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/jump',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/jump',
+      parameters: {
         'shipSymbol': shipSymbol,
         'jumpShipRequest': jumpShipRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -273,12 +261,10 @@ class FleetApi {
   Future<CreateShipSystemScan201Response> createShipSystemScan(
     String shipSymbol,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/scan/systems',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/scan/systems',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -293,12 +279,10 @@ class FleetApi {
   Future<CreateShipWaypointScan201Response> createShipWaypointScan(
     String shipSymbol,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/scan/waypoints',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/scan/waypoints',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -313,12 +297,10 @@ class FleetApi {
   Future<CreateShipShipScan201Response> createShipShipScan(
     String shipSymbol,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/scan/ships',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/scan/ships',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -331,12 +313,10 @@ class FleetApi {
   }
 
   Future<GetScrapShip200Response> getScrapShip(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/scrap',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/my/ships/{shipSymbol}/scrap',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -349,12 +329,10 @@ class FleetApi {
   }
 
   Future<ScrapShip200Response> scrapShip(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/scrap',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/scrap',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -370,15 +348,13 @@ class FleetApi {
     String shipSymbol,
     NavigateShipRequest navigateShipRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/navigate',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/navigate',
+      parameters: {
         'shipSymbol': shipSymbol,
         'navigateShipRequest': navigateShipRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -394,15 +370,13 @@ class FleetApi {
     String shipSymbol,
     WarpShipRequest warpShipRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/warp',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/warp',
+      parameters: {
         'shipSymbol': shipSymbol,
         'warpShipRequest': warpShipRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -415,12 +389,10 @@ class FleetApi {
   }
 
   Future<OrbitShip200Response> orbitShip(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/orbit',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/orbit',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -436,15 +408,13 @@ class FleetApi {
     String shipSymbol,
     PurchaseCargoRequest purchaseCargoRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/purchase',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/purchase',
+      parameters: {
         'shipSymbol': shipSymbol,
         'purchaseCargoRequest': purchaseCargoRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -460,15 +430,13 @@ class FleetApi {
     String shipSymbol,
     ShipRefineRequest shipRefineRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/refine',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/refine',
+      parameters: {
         'shipSymbol': shipSymbol,
         'shipRefineRequest': shipRefineRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -484,15 +452,13 @@ class FleetApi {
     String shipSymbol,
     RefuelShipRequest refuelShipRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/refuel',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/refuel',
+      parameters: {
         'shipSymbol': shipSymbol,
         'refuelShipRequest': refuelShipRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -505,12 +471,10 @@ class FleetApi {
   }
 
   Future<GetRepairShip200Response> getRepairShip(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/repair',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/my/ships/{shipSymbol}/repair',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -523,12 +487,10 @@ class FleetApi {
   }
 
   Future<RepairShip200Response> repairShip(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/repair',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/repair',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -544,15 +506,13 @@ class FleetApi {
     String shipSymbol,
     SellCargoRequest sellCargoRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/sell',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/sell',
+      parameters: {
         'shipSymbol': shipSymbol,
         'sellCargoRequest': sellCargoRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -565,12 +525,10 @@ class FleetApi {
   }
 
   Future<SiphonResources201Response> siphonResources(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/siphon',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/siphon',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -583,12 +541,10 @@ class FleetApi {
   }
 
   Future<CreateSurvey201Response> createSurvey(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/survey',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/survey',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -604,15 +560,13 @@ class FleetApi {
     String shipSymbol,
     TransferCargoRequest transferCargoRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/transfer',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/transfer',
+      parameters: {
         'shipSymbol': shipSymbol,
         'transferCargoRequest': transferCargoRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -625,12 +579,10 @@ class FleetApi {
   }
 
   Future<GetMyShipCargo200Response> getMyShipCargo(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/cargo',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/my/ships/{shipSymbol}/cargo',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -643,12 +595,10 @@ class FleetApi {
   }
 
   Future<GetShipModules200Response> getShipModules(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/modules',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/my/ships/{shipSymbol}/modules',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -664,15 +614,13 @@ class FleetApi {
     String shipSymbol,
     InstallShipModuleRequest installShipModuleRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/modules/install',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/modules/install',
+      parameters: {
         'shipSymbol': shipSymbol,
         'installShipModuleRequest': installShipModuleRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -688,15 +636,13 @@ class FleetApi {
     String shipSymbol,
     RemoveShipModuleRequest removeShipModuleRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/modules/remove',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/modules/remove',
+      parameters: {
         'shipSymbol': shipSymbol,
         'removeShipModuleRequest': removeShipModuleRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -709,12 +655,10 @@ class FleetApi {
   }
 
   Future<GetMounts200Response> getMounts(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/mounts',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/my/ships/{shipSymbol}/mounts',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -730,15 +674,13 @@ class FleetApi {
     String shipSymbol,
     InstallMountRequest installMountRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/mounts/install',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/mounts/install',
+      parameters: {
         'shipSymbol': shipSymbol,
         'installMountRequest': installMountRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -754,15 +696,13 @@ class FleetApi {
     String shipSymbol,
     RemoveMountRequest removeMountRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse(
-        'https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/mounts/remove',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/my/ships/{shipSymbol}/mounts/remove',
+      parameters: {
         'shipSymbol': shipSymbol,
         'removeMountRequest': removeMountRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
@@ -775,10 +715,10 @@ class FleetApi {
   }
 
   Future<GetShipNav200Response> getShipNav(String shipSymbol) async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/nav'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'shipSymbol': shipSymbol}),
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/my/ships/{shipSymbol}/nav',
+      parameters: {'shipSymbol': shipSymbol},
     );
 
     if (response.statusCode == 200) {
@@ -794,13 +734,13 @@ class FleetApi {
     String shipSymbol,
     PatchShipNavRequest patchShipNavRequest,
   ) async {
-    final response = await http.post(
-      Uri.parse('https://api.spacetraders.io/v2/my/ships/%7BshipSymbol%7D/nav'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await client.invokeApi(
+      method: Method.patch,
+      path: '/my/ships/{shipSymbol}/nav',
+      parameters: {
         'shipSymbol': shipSymbol,
         'patchShipNavRequest': patchShipNavRequest.toJson(),
-      }),
+      },
     );
 
     if (response.statusCode == 200) {
