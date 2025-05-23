@@ -69,14 +69,25 @@ extension EndpointGeneration on Endpoint {
       final typeName = bodySchema.typeName(context);
       final paramName = typeName[0].toLowerCase() + typeName.substring(1);
       parameters.add({
-        'paramName': paramName,
-        'paramType': typeName,
-        'paramToJson': bodySchema.toJsonExpression(paramName, context),
-        'paramFromJson': bodySchema.fromJsonExpression('json', context),
+        'name': paramName,
+        'type': typeName,
+        'nullableType': bodySchema.nullableTypeName(context),
+        'required': true,
+        'toJson': bodySchema.toJsonExpression(
+          paramName,
+          context,
+          isNullable: false,
+        ),
+        'fromJson': bodySchema.fromJsonExpression('json', context),
       });
     }
+
     final firstResponse = context.maybeResolve(responses.firstOrNull?.content);
     final returnType = firstResponse?.typeName(context) ?? 'void';
+
+    final namedParameters = parameters.where((p) => p['required'] == false);
+    final positionalParameters = parameters.where((p) => p['required'] == true);
+
     return {
       'methodName': methodName,
       'httpMethod': method.name,
@@ -84,6 +95,9 @@ extension EndpointGeneration on Endpoint {
       'url': uri(context),
       'hasParameters': parameters.isNotEmpty,
       'parameters': parameters,
+      'positionalParameters': positionalParameters,
+      'hasNamedParameters': namedParameters.isNotEmpty,
+      'namedParameters': namedParameters,
       'returnIsVoid': returnType == 'void',
       'returnType': returnType,
     };
@@ -141,14 +155,24 @@ extension SchemaGeneration on Schema {
     // throw UnimplementedError('Unknown type $type');
   }
 
+  String nullableTypeName(Context context) {
+    final typeName = this.typeName(context);
+    return typeName.endsWith('?') ? typeName : '$typeName?';
+  }
+
   /// The toJson expression for this schema.
-  String toJsonExpression(String name, Context context) {
+  String toJsonExpression(
+    String name,
+    Context context, {
+    required bool isNullable,
+  }) {
+    final nameCall = isNullable ? '$name?' : name;
     switch (type) {
       case SchemaType.string:
         if (isDateTime) {
-          return '$name.toIso8601String()';
+          return '$nameCall.toIso8601String()';
         } else if (isEnum) {
-          return '$name.toJson()';
+          return '$nameCall.toJson()';
         }
         return name;
       case SchemaType.integer:
@@ -156,7 +180,7 @@ extension SchemaGeneration on Schema {
       case SchemaType.boolean:
         return name;
       case SchemaType.object:
-        return '$name.toJson()';
+        return '$nameCall.toJson()';
       case SchemaType.array:
         final itemsSchema = context.maybeResolve(items)!;
         switch (itemsSchema.type) {
@@ -169,7 +193,7 @@ extension SchemaGeneration on Schema {
             return name;
           case SchemaType.object:
           case SchemaType.array:
-            return '$name.map((e) => e.toJson()).toList()';
+            return '$nameCall.map((e) => e.toJson()).toList()';
         }
       case SchemaType.unknown:
         return name;
@@ -218,7 +242,11 @@ extension SchemaGeneration on Schema {
       return {
         'propertyName': dartName,
         'propertyType': schema.typeName(context),
-        'propertyToJson': schema.toJsonExpression(dartName, context),
+        'propertyToJson': schema.toJsonExpression(
+          dartName,
+          context,
+          isNullable: false,
+        ),
         'propertyFromJson': schema.fromJsonExpression(
           "json['$jsonName']",
           context,
@@ -232,7 +260,11 @@ extension SchemaGeneration on Schema {
       'properties': renderProperties,
       'hasAdditionalProperties': valueSchema != null,
       'valueSchema': valueSchema?.typeName(context),
-      'valueToJson': valueSchema?.toJsonExpression('value', context),
+      'valueToJson': valueSchema?.toJsonExpression(
+        'value',
+        context,
+        isNullable: false,
+      ),
       'valueFromJson': valueSchema?.fromJsonExpression('value', context),
     };
   }
@@ -293,10 +325,17 @@ extension ParameterGeneration on Parameter {
   Map<String, dynamic> toTemplateContext(Context context) {
     final typeSchema = context.maybeResolve(type)!;
     return {
-      'paramName': name,
-      'paramType': typeSchema.typeName(context),
-      'paramToJson': typeSchema.toJsonExpression(name, context),
-      'paramFromJson': typeSchema.fromJsonExpression("json['$name']", context),
+      'name': name,
+      'required': isRequired,
+      'defaultValue': typeSchema.defaultValue,
+      'type': typeSchema.typeName(context),
+      'nullableType': typeSchema.nullableTypeName(context),
+      'toJson': typeSchema.toJsonExpression(
+        name,
+        context,
+        isNullable: !isRequired,
+      ),
+      'fromJson': typeSchema.fromJsonExpression("json['$name']", context),
     };
   }
 }

@@ -14,9 +14,12 @@ class {{ className }} {
 
     {{#endpoints}}
     Future<{{{ returnType }}}> {{{ methodName }}}(
-        {{#parameters}}
-        {{{ paramType }}} {{{ paramName }}},
-        {{/parameters}}
+        {{#positionalParameters}}
+        {{{ type }}} {{{ name }}},
+        {{/positionalParameters}}
+        {{#hasNamedParameters}}
+        { {{#namedParameters}}{{#required}}required {{{ type }}}{{/required}}{{^required}}{{{ nullableType }}}{{/required}} {{{ name }}}{{#defaultValue}} = {{{ defaultValue }}}{{/defaultValue}},{{/namedParameters}} }
+        {{/hasNamedParameters}}
     ) async {
         final response = await client.invokeApi(
             method: Method.{{{httpMethod}}},
@@ -24,7 +27,7 @@ class {{ className }} {
             {{#hasParameters}}
             parameters: {
                 {{#parameters}}
-                '{{{ paramName}}}': {{{ paramToJson }}},
+                '{{{ name }}}': {{{ toJson }}},
                 {{/parameters}}
             },
             {{/hasParameters}}

@@ -12,7 +12,10 @@ class AgentsApi {
 
   final ApiClient client;
 
-  Future<GetAgents200Response> getAgents(int page, int limit) async {
+  Future<GetAgents200Response> getAgents({
+    int? page = 1,
+    int? limit = 10,
+  }) async {
     final response = await client.invokeApi(
       method: Method.get,
       path: '/agents',

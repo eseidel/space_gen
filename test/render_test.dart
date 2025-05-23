@@ -94,11 +94,20 @@ void main() {
             {'url': 'https://api.spacetraders.io/v2'},
           ],
           'paths': {
-            '/my/account': {
+            '/users/{name}': {
               'get': {
-                'operationId': 'get-my-account',
-                'summary': 'Get Account',
-                'description': 'Fetch your account details.',
+                'operationId': 'get-user',
+                'summary': 'Get User',
+                'description': 'Fetch a user by name.',
+                'parameters': [
+                  {
+                    'schema': {'type': 'string'},
+                    'in': 'path',
+                    'name': 'name',
+                    'required': true,
+                    'description': 'The name of the user to fetch.',
+                  },
+                ],
                 'responses': {
                   '200': {
                     'description': 'Default Response',
@@ -156,7 +165,7 @@ void main() {
     expect(out.childFile('lib/api_client.dart').existsSync(), isTrue);
     expect(out.childFile('lib/api/default_api.dart').existsSync(), isTrue);
     expect(
-      out.childFile('lib/model/get_my_account200_response.dart').existsSync(),
+      out.childFile('lib/model/get_user200_response.dart').existsSync(),
       isTrue,
     );
     expect(out.childFile('lib/model/account.dart').existsSync(), isTrue);

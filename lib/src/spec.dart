@@ -164,6 +164,7 @@ class Schema {
     required this.enumValues,
     required this.format,
     required this.additionalProperties,
+    required this.defaultValue,
   }) {
     if (type == SchemaType.object && snakeName.isEmpty) {
       throw ArgumentError.value(
@@ -198,6 +199,8 @@ class Schema {
     _ignored(json, 'examples');
     _ignored(json, 'externalDocs');
 
+    final defaultValue = _optional<dynamic>(json, 'default');
+
     final required = json['required'] as List<dynamic>? ?? [];
     final description = json['description'] as String? ?? '';
     final enumValues = json['enum'] as List<dynamic>? ?? [];
@@ -226,6 +229,7 @@ class Schema {
       enumValues: enumValues.cast<String>(),
       format: format,
       additionalProperties: additionalProperties,
+      defaultValue: defaultValue,
     );
     context.addSchema(schema);
     return schema;
@@ -245,6 +249,7 @@ class Schema {
   final List<String> enumValues;
   final String? format;
   final SchemaRef? additionalProperties;
+  final dynamic defaultValue;
 
   @override
   String toString() {
@@ -504,7 +509,11 @@ void _expect(bool condition, Json json, String message) {
 }
 
 T? _optional<T>(Map<String, dynamic> json, String key) {
-  return json[key] as T?;
+  final value = json[key];
+  if (value is T?) {
+    return value;
+  }
+  throw FormatException('Key $key is not of type $T: $value (from $json)');
 }
 
 // void _unimplemented(Json json, String key) {
