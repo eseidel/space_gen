@@ -28,8 +28,9 @@ class ScannedShip {
       ),
       mounts:
           (json['mounts'] as List<dynamic>)
-              .map<ScannedShipMounts>(
-                (e) => ScannedShipMounts.fromJson(e as Map<String, dynamic>),
+              .map<ScannedShipMountsItem>(
+                (e) =>
+                    ScannedShipMountsItem.fromJson(e as Map<String, dynamic>),
               )
               .toList(),
     );
@@ -41,7 +42,7 @@ class ScannedShip {
   final ScannedShipFrame frame;
   final ScannedShipReactor reactor;
   final ScannedShipEngine engine;
-  final List<ScannedShipMounts> mounts;
+  final List<ScannedShipMountsItem> mounts;
 
   Map<String, dynamic> toJson() {
     return {
@@ -98,11 +99,11 @@ class ScannedShipEngine {
   }
 }
 
-class ScannedShipMounts {
-  ScannedShipMounts({required this.symbol});
+class ScannedShipMountsItem {
+  ScannedShipMountsItem({required this.symbol});
 
-  factory ScannedShipMounts.fromJson(Map<String, dynamic> json) {
-    return ScannedShipMounts(symbol: json['symbol'] as String);
+  factory ScannedShipMountsItem.fromJson(Map<String, dynamic> json) {
+    return ScannedShipMountsItem(symbol: json['symbol'] as String);
   }
 
   final String symbol;

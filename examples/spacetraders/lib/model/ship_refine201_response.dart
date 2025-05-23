@@ -34,16 +34,16 @@ class ShipRefine201ResponseData {
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
       produced:
           (json['produced'] as List<dynamic>)
-              .map<ShipRefine201ResponseDataProduced>(
-                (e) => ShipRefine201ResponseDataProduced.fromJson(
+              .map<ShipRefine201ResponseDataProducedItem>(
+                (e) => ShipRefine201ResponseDataProducedItem.fromJson(
                   e as Map<String, dynamic>,
                 ),
               )
               .toList(),
       consumed:
           (json['consumed'] as List<dynamic>)
-              .map<ShipRefine201ResponseDataConsumed>(
-                (e) => ShipRefine201ResponseDataConsumed.fromJson(
+              .map<ShipRefine201ResponseDataConsumedItem>(
+                (e) => ShipRefine201ResponseDataConsumedItem.fromJson(
                   e as Map<String, dynamic>,
                 ),
               )
@@ -53,8 +53,8 @@ class ShipRefine201ResponseData {
 
   final ShipCargo cargo;
   final Cooldown cooldown;
-  final List<ShipRefine201ResponseDataProduced> produced;
-  final List<ShipRefine201ResponseDataConsumed> consumed;
+  final List<ShipRefine201ResponseDataProducedItem> produced;
+  final List<ShipRefine201ResponseDataConsumedItem> consumed;
 
   Map<String, dynamic> toJson() {
     return {
@@ -66,16 +66,16 @@ class ShipRefine201ResponseData {
   }
 }
 
-class ShipRefine201ResponseDataProduced {
-  ShipRefine201ResponseDataProduced({
+class ShipRefine201ResponseDataProducedItem {
+  ShipRefine201ResponseDataProducedItem({
     required this.tradeSymbol,
     required this.units,
   });
 
-  factory ShipRefine201ResponseDataProduced.fromJson(
+  factory ShipRefine201ResponseDataProducedItem.fromJson(
     Map<String, dynamic> json,
   ) {
-    return ShipRefine201ResponseDataProduced(
+    return ShipRefine201ResponseDataProducedItem(
       tradeSymbol: TradeSymbol.fromJson(json['tradeSymbol'] as String),
       units: json['units'] as int,
     );
@@ -89,16 +89,16 @@ class ShipRefine201ResponseDataProduced {
   }
 }
 
-class ShipRefine201ResponseDataConsumed {
-  ShipRefine201ResponseDataConsumed({
+class ShipRefine201ResponseDataConsumedItem {
+  ShipRefine201ResponseDataConsumedItem({
     required this.tradeSymbol,
     required this.units,
   });
 
-  factory ShipRefine201ResponseDataConsumed.fromJson(
+  factory ShipRefine201ResponseDataConsumedItem.fromJson(
     Map<String, dynamic> json,
   ) {
-    return ShipRefine201ResponseDataConsumed(
+    return ShipRefine201ResponseDataConsumedItem(
       tradeSymbol: TradeSymbol.fromJson(json['tradeSymbol'] as String),
       units: json['units'] as int,
     );

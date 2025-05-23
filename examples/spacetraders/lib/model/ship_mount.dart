@@ -16,7 +16,8 @@ class ShipMount {
       name: json['name'] as String,
       description: json['description'] as String,
       strength: json['strength'] as int,
-      deposits: (json['deposits'] as List<dynamic>).cast<ShipMountDeposits>(),
+      deposits:
+          (json['deposits'] as List<dynamic>).cast<ShipMountDepositsItem>(),
       requirements: ShipRequirements.fromJson(
         json['requirements'] as Map<String, dynamic>,
       ),
@@ -27,7 +28,7 @@ class ShipMount {
   final String name;
   final String description;
   final int strength;
-  final List<ShipMountDeposits> deposits;
+  final List<ShipMountDepositsItem> deposits;
   final ShipRequirements requirements;
 
   Map<String, dynamic> toJson() {
@@ -73,7 +74,7 @@ enum ShipMountSymbol {
   String toJson() => value;
 }
 
-enum ShipMountDeposits {
+enum ShipMountDepositsItem {
   quartzSand('QUARTZ_SAND'),
   siliconCrystals('SILICON_CRYSTALS'),
   preciousStones('PRECIOUS_STONES'),
@@ -89,12 +90,13 @@ enum ShipMountDeposits {
   uraniteOre('URANITE_ORE'),
   meritiumOre('MERITIUM_ORE');
 
-  const ShipMountDeposits(this.value);
+  const ShipMountDepositsItem(this.value);
 
-  factory ShipMountDeposits.fromJson(String json) {
-    return ShipMountDeposits.values.firstWhere(
+  factory ShipMountDepositsItem.fromJson(String json) {
+    return ShipMountDepositsItem.values.firstWhere(
       (value) => value.value == json,
-      orElse: () => throw Exception('Unknown ShipMountDeposits value: $json'),
+      orElse:
+          () => throw Exception('Unknown ShipMountDepositsItem value: $json'),
     );
   }
 

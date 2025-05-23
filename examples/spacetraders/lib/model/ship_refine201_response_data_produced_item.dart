@@ -1,15 +1,15 @@
 import 'package:spacetraders/model/trade_symbol.dart';
 
-class ShipRefine201ResponseDataProduced {
-  ShipRefine201ResponseDataProduced({
+class ShipRefine201ResponseDataProducedItem {
+  ShipRefine201ResponseDataProducedItem({
     required this.tradeSymbol,
     required this.units,
   });
 
-  factory ShipRefine201ResponseDataProduced.fromJson(
+  factory ShipRefine201ResponseDataProducedItem.fromJson(
     Map<String, dynamic> json,
   ) {
-    return ShipRefine201ResponseDataProduced(
+    return ShipRefine201ResponseDataProducedItem(
       tradeSymbol: TradeSymbol.fromJson(json['tradeSymbol'] as String),
       units: json['units'] as int,
     );

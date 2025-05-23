@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:file/file.dart';
 import 'package:mustache_template/mustache_template.dart';
 import 'package:path/path.dart' as p;
@@ -18,14 +19,24 @@ Template loadTemplate(FileSystem fs, String name) {
   );
 }
 
-String _apiPath(Api api) {
-  // openapi generator does not use /src/ in the path.
-  return 'lib/api/${api.fileName}.dart';
-}
+class Paths {
+  static String apiFilePath(Api api) {
+    // openapi generator does not use /src/ in the path.
+    return 'lib/api/${api.fileName}.dart';
+  }
 
-String _modelPath(Schema schema) {
-  // openapi generator does not use /src/ in the path.
-  return 'lib/model/${schema.fileName}.dart';
+  static String apiPackagePath(Api api) {
+    return 'api/${api.fileName}.dart';
+  }
+
+  static String modelFilePath(Schema schema) {
+    // openapi generator does not use /src/ in the path.
+    return 'lib/model/${schema.fileName}.dart';
+  }
+
+  static String modelPackagePath(Schema schema) {
+    return 'model/${schema.fileName}.dart';
+  }
 }
 
 /// The spec calls these tags, but the Dart openapi generator groups endpoints
@@ -372,8 +383,8 @@ class Context {
   }
 
   /// Render the API classes and supporting models.
-  void renderApis() {
-    final rendered = <String>{};
+  Set<Uri> renderApis() {
+    final rendered = <Uri>{};
     final renderQueue = <SchemaRef>{};
     for (final api in spec.apis) {
       final renderContext = RenderContext(specUri: specUrl);
@@ -390,14 +401,16 @@ class Context {
     while (renderQueue.isNotEmpty) {
       final ref = renderQueue.first;
       renderQueue.remove(ref);
-      if (rendered.contains(ref.uri)) {
+      final resolvedUri = specUrl.resolve(ref.uri!);
+      if (rendered.contains(resolvedUri)) {
         continue;
       }
-      rendered.add(ref.uri!);
+      rendered.add(resolvedUri);
       final schema = resolve(ref);
       final renderContext = renderRootSchema(this, schema);
       renderQueue.addAll(renderContext.importedSchemas);
     }
+    return rendered;
   }
 
   /// Render the api client.
@@ -421,12 +434,15 @@ class Context {
   }
 
   /// Render the public API file.
-  void renderPublicApi() {
-    final exports =
-        spec.apis
-            .map((api) => 'package:$packageName/api/${api.fileName}.dart')
-            .toList()
-          ..sort();
+  void renderPublicApi(Iterable<Schema> renderedModels) {
+    final paths = [
+      ...spec.apis.map(Paths.apiPackagePath),
+      ...renderedModels.map(Paths.modelPackagePath),
+    ];
+    final exports = paths
+        .map((path) => 'package:$packageName/$path')
+        .sorted()
+        .toList();
     renderTemplate(
       template: 'public_api',
       outPath: 'lib/api.dart',
@@ -437,10 +453,11 @@ class Context {
   /// Render the entire spec.
   void render() {
     renderDirectory();
-    renderApis();
+    final rendered = renderApis();
     renderApiClient();
     // renderModels();
-    renderPublicApi();
+    final renderedModels = rendered.map(schemaRegistry.get);
+    renderPublicApi(renderedModels);
     runDart(['pub', 'get']);
     // Run format first to add missing commas.
     runDart(['format', '.']);
@@ -554,7 +571,7 @@ RenderContext renderRootSchema(Context context, Schema schema) {
 
   context.renderTemplate(
     template: 'model',
-    outPath: _modelPath(schema),
+    outPath: Paths.modelFilePath(schema),
     context: {
       'imports': imports,
       'objects': objects,
@@ -581,7 +598,7 @@ void renderApi(RenderContext renderContext, Context context, Api api) {
   // which were defined inline in the main spec.
   context.renderTemplate(
     template: 'api',
-    outPath: _apiPath(api),
+    outPath: Paths.apiFilePath(api),
     context: {
       'className': api.className,
       'imports': imports,

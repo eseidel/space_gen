@@ -139,7 +139,10 @@ class Schema {
     final items = json['items'] as Map<String, dynamic>?;
     SchemaRef? itemSchema;
     if (items != null) {
-      itemSchema = parseSchemaOrRef(json: items, context: context.key('items'));
+      itemSchema = parseSchemaOrRef(
+        json: items,
+        context: context.addSnakeName('item').key('items'),
+      );
     }
 
     final required = json['required'] as List<dynamic>? ?? [];
@@ -300,7 +303,10 @@ class Endpoint {
         .map(
           (indexed) => Parameter.parse(
             json: indexed.$2,
-            context: context.key('parameters').index(indexed.$1),
+            context: context
+                .addSnakeName('parameter${indexed.$1}')
+                .key('parameters')
+                .index(indexed.$1),
           ),
         )
         .toList();
@@ -488,6 +494,24 @@ class SchemaRegistry {
   Schema operator [](Uri uri) => get(uri);
 
   void register(Uri uri, Schema schema) {
+    if (schemas.containsKey(uri)) {
+      logger
+        ..warn('Schema already registered: $uri')
+        ..info('before: ${schemas[uri]}')
+        ..info('after: $schema');
+      throw Exception('Schema already registered: $uri');
+    }
+    final byName = schemas.entries.firstWhereOrNull(
+      (e) => e.value.snakeName == schema.snakeName,
+    );
+    if (byName != null) {
+      logger
+        ..warn('Schema already registered by name: ${schema.snakeName}')
+        ..info('existing uri: ${byName.key}')
+        ..info('existing schema: ${byName.value}')
+        ..info('new uri: $uri')
+        ..info('new schema: $schema');
+    }
     schemas[uri] = schema;
   }
 

@@ -1,11 +1,11 @@
-class GetMyFactions200ResponseData {
-  GetMyFactions200ResponseData({
+class GetMyFactions200ResponseDataItem {
+  GetMyFactions200ResponseDataItem({
     required this.symbol,
     required this.reputation,
   });
 
-  factory GetMyFactions200ResponseData.fromJson(Map<String, dynamic> json) {
-    return GetMyFactions200ResponseData(
+  factory GetMyFactions200ResponseDataItem.fromJson(Map<String, dynamic> json) {
+    return GetMyFactions200ResponseDataItem(
       symbol: json['symbol'] as String,
       reputation: json['reputation'] as int,
     );

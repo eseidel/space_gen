@@ -7,8 +7,8 @@ class GetMyFactions200Response {
     return GetMyFactions200Response(
       data:
           (json['data'] as List<dynamic>)
-              .map<GetMyFactions200ResponseData>(
-                (e) => GetMyFactions200ResponseData.fromJson(
+              .map<GetMyFactions200ResponseDataItem>(
+                (e) => GetMyFactions200ResponseDataItem.fromJson(
                   e as Map<String, dynamic>,
                 ),
               )
@@ -17,7 +17,7 @@ class GetMyFactions200Response {
     );
   }
 
-  final List<GetMyFactions200ResponseData> data;
+  final List<GetMyFactions200ResponseDataItem> data;
   final Meta meta;
 
   Map<String, dynamic> toJson() {
@@ -28,14 +28,14 @@ class GetMyFactions200Response {
   }
 }
 
-class GetMyFactions200ResponseData {
-  GetMyFactions200ResponseData({
+class GetMyFactions200ResponseDataItem {
+  GetMyFactions200ResponseDataItem({
     required this.symbol,
     required this.reputation,
   });
 
-  factory GetMyFactions200ResponseData.fromJson(Map<String, dynamic> json) {
-    return GetMyFactions200ResponseData(
+  factory GetMyFactions200ResponseDataItem.fromJson(Map<String, dynamic> json) {
+    return GetMyFactions200ResponseDataItem(
       symbol: json['symbol'] as String,
       reputation: json['reputation'] as int,
     );
