@@ -353,6 +353,7 @@ extension _SchemaGeneration on Schema {
       ),
       'valueFromJson': valueSchema?.fromJsonExpression('value', context),
       'fromJsonJsonType': context.fromJsonJsonType,
+      'mutableModels': context.quirks.mutableModels,
     };
   }
 
@@ -699,11 +700,14 @@ class _Context {
 
 /// Quirks are a set of flags that can be used to customize the generated code.
 class Quirks {
-  const Quirks({this.dynamicJson = false});
+  const Quirks({this.dynamicJson = false, this.mutableModels = false});
 
   /// Use "dynamic" instead of "Map\<String, dynamic\>" for passing to fromJson
   /// to match OpenAPI's behavior.
   final bool dynamicJson;
+
+  /// Use mutable models instead of immutable ones to match OpenAPI's behavior.
+  final bool mutableModels;
 }
 
 void renderSpec({

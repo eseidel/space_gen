@@ -34,9 +34,7 @@ dart run space_gen
 * requestBody needs to check required.
 * Handle non-required properties (read the required array).
 * Handle min/max in newtype types.
-* Either fix all uses of mutability or make generated models mutable for now.
 * Wire up Authentication and sending of bearer header.
-* Consider making fromJson take dynamic to match openapi.
 
 ## Advantages over Open API Generator 7.0.0
 * Dart 3.0+ only (sound null safety)
