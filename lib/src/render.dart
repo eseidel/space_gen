@@ -28,6 +28,7 @@ Future<void> loadAndRenderSpec({
   required Directory outDir,
   Directory? templateDir,
   RunProcess? runProcess,
+  Quirks quirks = const Quirks(),
 }) async {
   final fs = outDir.fileSystem;
 
@@ -61,5 +62,6 @@ Future<void> loadAndRenderSpec({
     packageName: packageName,
     templateDir: templateDir,
     runProcess: runProcess,
+    quirks: quirks,
   );
 }

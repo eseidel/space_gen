@@ -10,7 +10,7 @@ class {{ typeName }} {
         {{/hasProperties}}
     );
 
-    factory {{ typeName }}.fromJson(Map<String, dynamic> json) {
+    factory {{ typeName }}.fromJson({{{fromJsonJsonType}}} json) {
         return {{ typeName }}(
             {{#properties}}
             {{ name }}: {{{ fromJson }}},

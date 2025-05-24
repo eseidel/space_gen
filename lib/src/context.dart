@@ -318,7 +318,7 @@ extension _SchemaGeneration on Schema {
   /// Template context for an object schema.
   Map<String, dynamic> objectTemplateContext(_Context context) {
     if (type != SchemaType.object) {
-      throw Exception('Schema is not an object: $this');
+      throw StateError('Schema is not an object: $this');
     }
     final renderProperties = properties.entries.map((entry) {
       final jsonName = entry.key;
@@ -351,25 +351,26 @@ extension _SchemaGeneration on Schema {
         isNullable: false,
       ),
       'valueFromJson': valueSchema?.fromJsonExpression('value', context),
+      'fromJsonJsonType': context.fromJsonJsonType,
     };
   }
 
   Map<String, dynamic> stringNewtypeTemplateContext() {
     if (type != SchemaType.string) {
-      throw Exception('Schema is not a string: $this');
+      throw StateError('Schema is not a string: $this');
     }
     if (!useNewType) {
-      throw Exception('Schema is not a newtype: $this');
+      throw StateError('Schema is not a newtype: $this');
     }
     return {'typeName': className};
   }
 
   Map<String, dynamic> numberNewtypeTemplateContext() {
     if (type != SchemaType.number) {
-      throw Exception('Schema is not a number: $this');
+      throw StateError('Schema is not a number: $this');
     }
     if (!useNewType) {
-      throw Exception('Schema is not a newtype: $this');
+      throw StateError('Schema is not a newtype: $this');
     }
     return {'typeName': className};
   }
@@ -394,7 +395,7 @@ extension _SchemaGeneration on Schema {
   /// Template context for an enum schema.
   Map<String, dynamic> enumTemplateContext() {
     if (!isEnum) {
-      throw Exception('Schema is not an enum: $this');
+      throw StateError('Schema is not an enum: $this');
     }
     final sharedPrefix = _sharedPrefix(enumValues);
     Map<String, dynamic> enumValueToTemplateContext(String value) {
@@ -474,6 +475,7 @@ class _Context {
     required this.schemaRegistry,
     Directory? templateDir,
     RunProcess? runProcess,
+    this.quirks = const Quirks(),
   }) : fs = outDir.fileSystem,
        templateDir =
            templateDir ?? outDir.fileSystem.directory('lib/templates'),
@@ -509,6 +511,9 @@ class _Context {
   /// The function to run a process. Allows for mocking in tests.
   final RunProcess runProcess;
 
+  /// The quirks to use for rendering.
+  final Quirks quirks;
+
   /// Load a template from the template directory.
   Template _loadTemplate(String name) {
     return Template(
@@ -517,6 +522,10 @@ class _Context {
       name: name,
     );
   }
+
+  /// The type of the json object passed to fromJson.
+  String get fromJsonJsonType =>
+      quirks.dynamicJson ? 'dynamic' : 'Map<String, dynamic>';
 
   /// Resolve a nullable [SchemaRef] into a nullable [Schema].
   Schema? _maybeResolve(SchemaRef? ref) {
@@ -687,6 +696,15 @@ class _Context {
   }
 }
 
+/// Quirks are a set of flags that can be used to customize the generated code.
+class Quirks {
+  const Quirks({this.dynamicJson = false});
+
+  /// Use "dynamic" instead of "Map\<String, dynamic\>" for passing to fromJson
+  /// to match OpenAPI's behavior.
+  final bool dynamicJson;
+}
+
 void renderSpec({
   required Uri specUri,
   required String packageName,
@@ -695,6 +713,7 @@ void renderSpec({
   required SchemaRegistry schemaRegistry,
   Directory? templateDir,
   RunProcess? runProcess,
+  Quirks quirks = const Quirks(),
 }) {
   _Context(
     specUrl: specUri,
@@ -704,6 +723,7 @@ void renderSpec({
     schemaRegistry: schemaRegistry,
     templateDir: templateDir,
     runProcess: runProcess,
+    quirks: quirks,
   ).render();
 }
 
