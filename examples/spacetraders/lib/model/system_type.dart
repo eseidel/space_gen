@@ -1,16 +1,16 @@
 enum SystemType {
-  NEUTRON_STAR('NEUTRON_STAR'),
-  RED_STAR('RED_STAR'),
-  ORANGE_STAR('ORANGE_STAR'),
-  BLUE_STAR('BLUE_STAR'),
-  YOUNG_STAR('YOUNG_STAR'),
-  WHITE_DWARF('WHITE_DWARF'),
-  BLACK_HOLE('BLACK_HOLE'),
-  HYPERGIANT('HYPERGIANT'),
-  NEBULA('NEBULA'),
-  UNSTABLE('UNSTABLE');
+  NEUTRON_STAR._('NEUTRON_STAR'),
+  RED_STAR._('RED_STAR'),
+  ORANGE_STAR._('ORANGE_STAR'),
+  BLUE_STAR._('BLUE_STAR'),
+  YOUNG_STAR._('YOUNG_STAR'),
+  WHITE_DWARF._('WHITE_DWARF'),
+  BLACK_HOLE._('BLACK_HOLE'),
+  HYPERGIANT._('HYPERGIANT'),
+  NEBULA._('NEBULA'),
+  UNSTABLE._('UNSTABLE');
 
-  const SystemType(this.value);
+  const SystemType._(this.value);
 
   factory SystemType.fromJson(String json) {
     return SystemType.values.firstWhere(

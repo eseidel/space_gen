@@ -1,11 +1,5 @@
-class WaypointSymbol {
-  WaypointSymbol();
+extension type WaypointSymbol(String value) {
+  factory WaypointSymbol.fromJson(String json) => WaypointSymbol(json);
 
-  factory WaypointSymbol.fromJson() {
-    return WaypointSymbol();
-  }
-
-  Map<String, dynamic> toJson() {
-    return {};
-  }
+  String toJson() => value;
 }

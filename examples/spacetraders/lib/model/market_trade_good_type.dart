@@ -1,9 +1,9 @@
 enum MarketTradeGoodType {
-  EXPORT('EXPORT'),
-  IMPORT('IMPORT'),
-  EXCHANGE('EXCHANGE');
+  EXPORT._('EXPORT'),
+  IMPORT._('IMPORT'),
+  EXCHANGE._('EXCHANGE');
 
-  const MarketTradeGoodType(this.value);
+  const MarketTradeGoodType._(this.value);
 
   factory MarketTradeGoodType.fromJson(String json) {
     return MarketTradeGoodType.values.firstWhere(

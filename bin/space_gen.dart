@@ -34,7 +34,7 @@ Future<int> run(List<String> arguments) async {
     return 1;
   }
 
-  await renderSpec(
+  await loadAndRenderSpec(
     specUri: config.specUri,
     packageName: config.packageName,
     outDir: config.outDir,

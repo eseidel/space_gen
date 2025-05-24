@@ -1,10 +1,10 @@
 enum ShipNavFlightMode {
-  DRIFT('DRIFT'),
-  STEALTH('STEALTH'),
-  CRUISE('CRUISE'),
-  BURN('BURN');
+  DRIFT._('DRIFT'),
+  STEALTH._('STEALTH'),
+  CRUISE._('CRUISE'),
+  BURN._('BURN');
 
-  const ShipNavFlightMode(this.value);
+  const ShipNavFlightMode._(this.value);
 
   factory ShipNavFlightMode.fromJson(String json) {
     return ShipNavFlightMode.values.firstWhere(

@@ -31,7 +31,7 @@ dart run space_gen
 * Implement operator== and hashCode?
 * Generate tests. https://github.com/eseidel/space_gen/issues/1
 * Figure out if types should be immutable or not.
-* Use new-type pattern for all schemas in components.
+* Use newtype pattern for all schemas in components.
 * Support parameter "in" keyword.
 
 ## Advantages over Open API Generator 7.0.0

@@ -5,7 +5,7 @@ import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/spec.dart';
 import 'package:space_gen/src/visitor.dart';
 
-Future<void> renderSpec({
+Future<void> loadAndRenderSpec({
   required Uri specUri,
   required String packageName,
   required Directory outDir,
@@ -48,13 +48,13 @@ Future<void> renderSpec({
     await cache.load(resolved);
   }
 
-  Context(
+  renderSpec(
     spec: spec,
     schemaRegistry: parseContext.schemas,
-    specUrl: specUri,
+    specUri: specUri,
     outDir: outDir,
     packageName: packageName,
     templateDir: templateDir,
     runProcess: runProcess,
-  ).render();
+  );
 }

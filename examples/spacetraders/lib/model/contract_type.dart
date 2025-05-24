@@ -1,9 +1,9 @@
 enum ContractType {
-  PROCUREMENT('PROCUREMENT'),
-  TRANSPORT('TRANSPORT'),
-  SHUTTLE('SHUTTLE');
+  PROCUREMENT._('PROCUREMENT'),
+  TRANSPORT._('TRANSPORT'),
+  SHUTTLE._('SHUTTLE');
 
-  const ContractType(this.value);
+  const ContractType._(this.value);
 
   factory ContractType.fromJson(String json) {
     return ContractType.values.firstWhere(

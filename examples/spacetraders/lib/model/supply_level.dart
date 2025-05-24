@@ -1,11 +1,11 @@
 enum SupplyLevel {
-  SCARCE('SCARCE'),
-  LIMITED('LIMITED'),
-  MODERATE('MODERATE'),
-  HIGH('HIGH'),
-  ABUNDANT('ABUNDANT');
+  SCARCE._('SCARCE'),
+  LIMITED._('LIMITED'),
+  MODERATE._('MODERATE'),
+  HIGH._('HIGH'),
+  ABUNDANT._('ABUNDANT');
 
-  const SupplyLevel(this.value);
+  const SupplyLevel._(this.value);
 
   factory SupplyLevel.fromJson(String json) {
     return SupplyLevel.values.firstWhere(

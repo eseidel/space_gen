@@ -165,6 +165,7 @@ class Schema {
     required this.format,
     required this.additionalProperties,
     required this.defaultValue,
+    required this.useNewType,
   }) {
     if (type == SchemaType.object && snakeName.isEmpty) {
       throw ArgumentError.value(
@@ -176,7 +177,7 @@ class Schema {
   }
 
   factory Schema.parse(Map<String, dynamic> json, ParseContext context) {
-    final type = json['type'] as String? ?? 'unknown';
+    final type = SchemaType.fromJson(json['type'] as String? ?? 'unknown');
     final properties = parseProperties(
       json: json['properties'] as Map<String, dynamic>?,
       context: context.key('properties'),
@@ -204,6 +205,13 @@ class Schema {
     final required = json['required'] as List<dynamic>? ?? [];
     final description = json['description'] as String? ?? '';
     final enumValues = json['enum'] as List<dynamic>? ?? [];
+    if (enumValues.isNotEmpty) {
+      if (type != SchemaType.string) {
+        throw UnimplementedError(
+          'Enum values are currently only supported for string types',
+        );
+      }
+    }
     final format = json['format'] as String?;
     final additionalPropertiesJson = json['additionalProperties'];
     SchemaRef? additionalProperties;
@@ -221,7 +229,7 @@ class Schema {
     final schema = Schema(
       pointer: context.pointer.toString(),
       snakeName: context.snakeName,
-      type: SchemaType.fromJson(type),
+      type: type,
       properties: properties,
       required: required.cast<String>(),
       description: description,
@@ -230,6 +238,7 @@ class Schema {
       format: format,
       additionalProperties: additionalProperties,
       defaultValue: defaultValue,
+      useNewType: context.isTopLevelComponent,
     );
     context.addSchema(schema);
     return schema;
@@ -241,21 +250,42 @@ class Schema {
   /// Name of this schema based on parse location.
   final String snakeName;
 
+  /// The type of this schema.
   final SchemaType type;
+
+  /// The properties of this schema.
   final Map<String, SchemaRef> properties;
+
+  /// The required properties of this schema.
   final List<String> required;
+
+  /// The description of this schema.
   final String description;
+
+  /// The items of this schema.
   final SchemaRef? items;
+
+  /// The enum values of this schema.
   final List<String> enumValues;
+
+  /// The format of this schema.
   final String? format;
+
+  /// The additional properties of this schema.
+  /// Used for specifying T for Map\<String, T\>.
   final SchemaRef? additionalProperties;
+
+  /// The default value of this schema.
   final dynamic defaultValue;
+
+  /// Whether to use the newtype pattern for this schema.
+  /// e.g. Wrap the underlying type in a named object.
+  final bool useNewType;
 
   @override
   String toString() {
-    return 'Schema(type: $type, properties: $properties, '
-        'required: $required, description: $description, '
-        'items: $items, enumValues: $enumValues, format: $format)';
+    return 'Schema(name: $snakeName, pointer: $pointer, type: $type, '
+        'description: $description, useNewType: $useNewType)';
   }
 }
 
@@ -388,12 +418,26 @@ class Endpoint {
     );
   }
 
+  /// The path of this endpoint (e.g. /my/user/{name})
   final String path;
+
+  /// The method of this endpoint (e.g. GET, POST, etc.)
   final Method method;
+
+  /// A tag for grouping endpoints.
   final String tag;
+
+  /// The responses of this endpoint.
   final List<Response> responses;
+
+  /// The snake name of this endpoint (e.g. get_user)
+  /// Typically the operationId, or the last path segment if not present.
   final String snakeName;
+
+  /// The parameters of this endpoint.
   final List<Parameter> parameters;
+
+  /// The request body of this endpoint.
   final SchemaRef? requestBody;
 }
 
@@ -486,7 +530,10 @@ Components parseComponents(Map<String, dynamic>? json, ParseContext context) {
       final value = entry.value as Map<String, dynamic>;
       schemas[name] = Schema.parse(
         value,
-        context.addSnakeName(snakeName).key('schemas').key(name),
+        context
+            .addSnakeName(snakeName, isTopLevelComponent: true)
+            .key('schemas')
+            .key(name),
       );
     }
   }
@@ -651,6 +698,7 @@ class ParseContext {
     required this.pointerParts,
     required this.snakeNameStack,
     required this.schemas,
+    required this.isTopLevelComponent,
   }) {
     if (baseUrl.hasFragment) {
       throw ArgumentError.value(
@@ -663,7 +711,8 @@ class ParseContext {
   ParseContext.initial(this.baseUrl)
     : pointerParts = [],
       snakeNameStack = [],
-      schemas = SchemaRegistry();
+      schemas = SchemaRegistry(),
+      isTopLevelComponent = false;
 
   /// The base url of the spec being parsed.
   final Uri baseUrl;
@@ -673,6 +722,9 @@ class ParseContext {
 
   /// Stack of name parts for the current schema.
   final List<String> snakeNameStack;
+
+  /// Whether the current schema is a top-level component.
+  final bool isTopLevelComponent;
 
   JsonPointer get pointer => JsonPointer(pointerParts);
 
@@ -703,18 +755,27 @@ class ParseContext {
     schemas.register(uri, schema);
   }
 
-  ParseContext addSnakeName(String snakeName) =>
-      copyWith(snakeNameStack: [...snakeNameStack, snakeName]);
+  /// Add a snake name to the current context.
+  /// Also resets the top-level component flag by default.
+  ParseContext addSnakeName(
+    String snakeName, {
+    bool isTopLevelComponent = false,
+  }) => copyWith(
+    snakeNameStack: [...snakeNameStack, snakeName],
+    isTopLevelComponent: isTopLevelComponent,
+  );
 
   ParseContext copyWith({
     List<String>? pointerParts,
     List<String>? snakeNameStack,
+    bool? isTopLevelComponent,
   }) {
     return ParseContext(
       baseUrl: baseUrl,
       pointerParts: pointerParts ?? this.pointerParts,
       snakeNameStack: snakeNameStack ?? this.snakeNameStack,
       schemas: schemas,
+      isTopLevelComponent: isTopLevelComponent ?? this.isTopLevelComponent,
     );
   }
 }

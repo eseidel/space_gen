@@ -1,8 +1,8 @@
 enum MarketTransactionType {
-  PURCHASE('PURCHASE'),
-  SELL('SELL');
+  PURCHASE._('PURCHASE'),
+  SELL._('SELL');
 
-  const MarketTransactionType(this.value);
+  const MarketTransactionType._(this.value);
 
   factory MarketTransactionType.fromJson(String json) {
     return MarketTransactionType.values.firstWhere(

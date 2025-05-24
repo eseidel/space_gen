@@ -1,0 +1,9 @@
+{{#imports}}
+import '{{{.}}}';
+{{/imports}}
+
+extension type {{{ schemaName }}}(double value) {
+    factory {{ schemaName }}.fromJson(num json) => {{ schemaName }}(json.toDouble());
+
+    double toJson() => value;
+}

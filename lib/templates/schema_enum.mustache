@@ -4,11 +4,11 @@ import '{{{.}}}';
 
 enum {{ schemaName }} {
     {{#enumValues}}
-    {{ enumValueName }}('{{ enumValue }}'),
+    {{ enumValueName }}._('{{ enumValue }}'),
     {{/enumValues}}
     ;
 
-    const {{schemaName}}(this.value);
+    const {{schemaName}}._(this.value);
 
     factory {{ schemaName }}.fromJson(String json) {
         return {{ schemaName }}.values.firstWhere(

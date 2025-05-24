@@ -1,11 +1,6 @@
-class ShipComponentIntegrity {
-  ShipComponentIntegrity();
+extension type ShipComponentIntegrity(double value) {
+  factory ShipComponentIntegrity.fromJson(num json) =>
+      ShipComponentIntegrity(json.toDouble());
 
-  factory ShipComponentIntegrity.fromJson() {
-    return ShipComponentIntegrity();
-  }
-
-  Map<String, dynamic> toJson() {
-    return {};
-  }
+  double toJson() => value;
 }

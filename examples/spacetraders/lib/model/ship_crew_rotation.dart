@@ -1,8 +1,8 @@
 enum ShipCrewRotation {
-  STRICT('STRICT'),
-  RELAXED('RELAXED');
+  STRICT._('STRICT'),
+  RELAXED._('RELAXED');
 
-  const ShipCrewRotation(this.value);
+  const ShipCrewRotation._(this.value);
 
   factory ShipCrewRotation.fromJson(String json) {
     return ShipCrewRotation.values.firstWhere(

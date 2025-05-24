@@ -1,0 +1,9 @@
+{{#imports}}
+import '{{{.}}}';
+{{/imports}}
+
+extension type {{{ schemaName }}}(String value) {
+    factory {{ schemaName }}.fromJson(String json) => {{ schemaName }}(json);
+
+    String toJson() => value;
+}

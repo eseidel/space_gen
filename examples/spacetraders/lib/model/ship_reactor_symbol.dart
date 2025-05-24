@@ -1,11 +1,11 @@
 enum ShipReactorSymbol {
-  SOLAR_I('REACTOR_SOLAR_I'),
-  FUSION_I('REACTOR_FUSION_I'),
-  FISSION_I('REACTOR_FISSION_I'),
-  CHEMICAL_I('REACTOR_CHEMICAL_I'),
-  ANTIMATTER_I('REACTOR_ANTIMATTER_I');
+  SOLAR_I._('REACTOR_SOLAR_I'),
+  FUSION_I._('REACTOR_FUSION_I'),
+  FISSION_I._('REACTOR_FISSION_I'),
+  CHEMICAL_I._('REACTOR_CHEMICAL_I'),
+  ANTIMATTER_I._('REACTOR_ANTIMATTER_I');
 
-  const ShipReactorSymbol(this.value);
+  const ShipReactorSymbol._(this.value);
 
   factory ShipReactorSymbol.fromJson(String json) {
     return ShipReactorSymbol.values.firstWhere(

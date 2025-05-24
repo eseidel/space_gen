@@ -1,10 +1,10 @@
 enum ActivityLevel {
-  WEAK('WEAK'),
-  GROWING('GROWING'),
-  STRONG('STRONG'),
-  RESTRICTED('RESTRICTED');
+  WEAK._('WEAK'),
+  GROWING._('GROWING'),
+  STRONG._('STRONG'),
+  RESTRICTED._('RESTRICTED');
 
-  const ActivityLevel(this.value);
+  const ActivityLevel._(this.value);
 
   factory ActivityLevel.fromJson(String json) {
     return ActivityLevel.values.firstWhere(

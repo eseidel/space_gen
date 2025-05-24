@@ -1,11 +1,6 @@
-class ShipComponentCondition {
-  ShipComponentCondition();
+extension type ShipComponentCondition(double value) {
+  factory ShipComponentCondition.fromJson(num json) =>
+      ShipComponentCondition(json.toDouble());
 
-  factory ShipComponentCondition.fromJson() {
-    return ShipComponentCondition();
-  }
-
-  Map<String, dynamic> toJson() {
-    return {};
-  }
+  double toJson() => value;
 }

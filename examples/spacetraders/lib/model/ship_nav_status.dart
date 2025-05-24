@@ -1,9 +1,9 @@
 enum ShipNavStatus {
-  IN_TRANSIT('IN_TRANSIT'),
-  IN_ORBIT('IN_ORBIT'),
-  DOCKED('DOCKED');
+  IN_TRANSIT._('IN_TRANSIT'),
+  IN_ORBIT._('IN_ORBIT'),
+  DOCKED._('DOCKED');
 
-  const ShipNavStatus(this.value);
+  const ShipNavStatus._(this.value);
 
   factory ShipNavStatus.fromJson(String json) {
     return ShipNavStatus.values.firstWhere(

@@ -1,9 +1,9 @@
 enum SurveySize {
-  SMALL('SMALL'),
-  MODERATE('MODERATE'),
-  LARGE('LARGE');
+  SMALL._('SMALL'),
+  MODERATE._('MODERATE'),
+  LARGE._('LARGE');
 
-  const SurveySize(this.value);
+  const SurveySize._(this.value);
 
   factory SurveySize.fromJson(String json) {
     return SurveySize.values.firstWhere(

@@ -1,15 +1,15 @@
 enum ShipRefineRequestProduce {
-  IRON('IRON'),
-  COPPER('COPPER'),
-  SILVER('SILVER'),
-  GOLD('GOLD'),
-  ALUMINUM('ALUMINUM'),
-  PLATINUM('PLATINUM'),
-  URANITE('URANITE'),
-  MERITIUM('MERITIUM'),
-  FUEL('FUEL');
+  IRON._('IRON'),
+  COPPER._('COPPER'),
+  SILVER._('SILVER'),
+  GOLD._('GOLD'),
+  ALUMINUM._('ALUMINUM'),
+  PLATINUM._('PLATINUM'),
+  URANITE._('URANITE'),
+  MERITIUM._('MERITIUM'),
+  FUEL._('FUEL');
 
-  const ShipRefineRequestProduce(this.value);
+  const ShipRefineRequestProduce._(this.value);
 
   factory ShipRefineRequestProduce.fromJson(String json) {
     return ShipRefineRequestProduce.values.firstWhere(

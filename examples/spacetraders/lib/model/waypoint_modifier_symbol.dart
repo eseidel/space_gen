@@ -1,11 +1,11 @@
 enum WaypointModifierSymbol {
-  STRIPPED('STRIPPED'),
-  UNSTABLE('UNSTABLE'),
-  RADIATION_LEAK('RADIATION_LEAK'),
-  CRITICAL_LIMIT('CRITICAL_LIMIT'),
-  CIVIL_UNREST('CIVIL_UNREST');
+  STRIPPED._('STRIPPED'),
+  UNSTABLE._('UNSTABLE'),
+  RADIATION_LEAK._('RADIATION_LEAK'),
+  CRITICAL_LIMIT._('CRITICAL_LIMIT'),
+  CIVIL_UNREST._('CIVIL_UNREST');
 
-  const WaypointModifierSymbol(this.value);
+  const WaypointModifierSymbol._(this.value);
 
   factory WaypointModifierSymbol.fromJson(String json) {
     return WaypointModifierSymbol.values.firstWhere(
