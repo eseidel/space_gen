@@ -244,27 +244,40 @@ extension SchemaGeneration on Schema {
     }
   }
 
+  Map<String, dynamic> propertyTemplateContext({
+    required String jsonName,
+    required Schema schema,
+    required Context context,
+  }) {
+    // TODO(eseidel): Remove this once we've migrated to the new generator.
+    final dartName = avoidReservedWord(jsonName);
+    return {
+      'propertyName': dartName,
+      'propertyType': schema.typeName(context),
+      'propertyToJson': schema.toJsonExpression(
+        dartName,
+        context,
+        isNullable: false,
+      ),
+      'propertyFromJson': schema.fromJsonExpression(
+        "json['$jsonName']",
+        context,
+      ),
+    };
+  }
+
   /// Template context for an object schema.
   Map<String, dynamic> _objectToTemplateContext(Context context) {
     final renderProperties = properties.entries.map((entry) {
       final jsonName = entry.key;
-      // TODO(eseidel): Remove this once we've migrated to the new generator.
-      final dartName = avoidReservedWord(entry.key);
       final schema = context.maybeResolve(entry.value)!;
-      return {
-        'propertyName': dartName,
-        'propertyType': schema.typeName(context),
-        'propertyToJson': schema.toJsonExpression(
-          dartName,
-          context,
-          isNullable: false,
-        ),
-        'propertyFromJson': schema.fromJsonExpression(
-          "json['$jsonName']",
-          context,
-        ),
-      };
-    });
+      return propertyTemplateContext(
+        jsonName: jsonName,
+        schema: schema,
+        context: context,
+      );
+    }).toList();
+
     final valueSchema = this.valueSchema(context);
     return {
       'schemaName': className,
