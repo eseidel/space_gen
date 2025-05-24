@@ -3,14 +3,26 @@ import 'package:meta/meta.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/string.dart';
 
+/// A typedef representing a json object.
 typedef Json = Map<String, dynamic>;
 
+/// The "in" of a parameter.  "in" is a keyword in Dart, so we use SendIn.
+/// e.g. query, header, path, cookie.
+/// https://spec.openapis.org/oas/v3.0.0#parameter-object
 enum SendIn {
+  /// The query parameter is a parameter that is sent in the query string.
   query,
+
+  /// The header parameter is a parameter that is sent in the header.
   header,
+
+  /// The path parameter is a parameter that is sent in the path.
   path,
+
+  /// The cookie parameter is a parameter that is sent in the cookie.
   cookie;
 
+  /// Parse a SendIn from a json string.
   static SendIn fromJson(String json) {
     switch (json) {
       case 'query':
@@ -27,7 +39,10 @@ enum SendIn {
   }
 }
 
+/// A parameter is a parameter to an endpoint.
+/// https://spec.openapis.org/oas/v3.0.0#parameter-object
 class Parameter {
+  /// Create a new parameter.
   const Parameter({
     required this.name,
     required this.description,
@@ -36,10 +51,8 @@ class Parameter {
     required this.sendIn,
   });
 
-  factory Parameter.parse({
-    required Map<String, dynamic> json,
-    required ParseContext context,
-  }) {
+  /// Parse a parameter from a json object.
+  factory Parameter.parse({required Json json, required ParseContext context}) {
     final schema = _optional<Json>(json, 'schema');
     final hasSchema = schema != null;
     final hasContent = _optional<Json>(json, 'content') != null;
@@ -93,20 +106,46 @@ class Parameter {
       type: type,
     );
   }
+
+  /// The name of the parameter.
   final String name;
+
+  /// The description of the parameter.
   final String? description;
+
+  /// Whether the parameter is required.
   final bool isRequired;
+
+  /// The "in" of the parameter.
+  /// e.g. query, header, path, cookie.
   final SendIn sendIn;
+
+  /// The type of the parameter.
   final SchemaRef type;
 }
 
+/// A type of schema.
+/// https://spec.openapis.org/oas/v3.0.0#schemaObject
 enum SchemaType {
+  /// A string.
   string,
+
+  /// A number.
   number,
+
+  /// An integer.
   integer,
+
+  /// A boolean.
   boolean,
+
+  /// An array.
   array,
+
+  /// An object.
   object,
+
+  /// If 'type' is missing.
   unknown; // if 'type' is missing.
 
   static SchemaType fromJson(String json) {
@@ -131,12 +170,20 @@ enum SchemaType {
   }
 }
 
+/// An object which either holds a schema or a reference to a schema.
+/// https://spec.openapis.org/oas/v3.0.0#schemaObject
 @immutable
 class SchemaRef {
+  /// Create a new schema reference from a path.
   const SchemaRef.fromPath({required String ref}) : schema = null, uri = ref;
+
+  /// Create a new schema reference from a schema.
   const SchemaRef.schema(this.schema) : uri = null;
 
+  /// The uri of the schema.
   final String? uri;
+
+  /// The schema.
   final Schema? schema;
 
   @override
@@ -151,8 +198,10 @@ class SchemaRef {
   int get hashCode => Object.hash(uri, schema);
 }
 
-// https://spec.openapis.org/oas/v3.0.0#schemaObject
+/// A schema is a json object that describes the shape of a json object.
+/// https://spec.openapis.org/oas/v3.0.0#schemaObject
 class Schema {
+  /// Create a new schema.
   Schema({
     required this.pointer,
     required this.snakeName,
@@ -176,13 +225,14 @@ class Schema {
     }
   }
 
-  factory Schema.parse(Map<String, dynamic> json, ParseContext context) {
+  /// Parse a schema from a json object.
+  factory Schema.parse(Json json, ParseContext context) {
     final type = SchemaType.fromJson(json['type'] as String? ?? 'unknown');
     final properties = parseProperties(
-      json: json['properties'] as Map<String, dynamic>?,
+      json: json['properties'] as Json?,
       context: context.key('properties'),
     );
-    final items = json['items'] as Map<String, dynamic>?;
+    final items = json['items'] as Json?;
     SchemaRef? itemSchema;
     if (items != null) {
       itemSchema = parseSchemaOrRef(
@@ -215,7 +265,7 @@ class Schema {
     final format = json['format'] as String?;
     final additionalPropertiesJson = json['additionalProperties'];
     SchemaRef? additionalProperties;
-    if (additionalPropertiesJson is Map<String, dynamic>) {
+    if (additionalPropertiesJson is Json) {
       additionalProperties = parseSchemaOrRef(
         json: additionalPropertiesJson,
         context: context.key('additionalProperties'),
@@ -290,8 +340,10 @@ class Schema {
 }
 
 /// Parse a schema or a reference to a schema.
+/// https://spec.openapis.org/oas/v3.0.0#schemaObject
+/// https://spec.openapis.org/oas/v3.0.0#relative-references-in-urls
 SchemaRef parseSchemaOrRef({
-  required Map<String, dynamic> json,
+  required Json json,
   required ParseContext context,
 }) {
   if (json.containsKey(r'$ref')) {
@@ -309,7 +361,7 @@ SchemaRef parseSchemaOrRef({
       throw UnimplementedError('AllOf with ${allOf.length} items');
     }
     return parseSchemaOrRef(
-      json: allOf.first as Map<String, dynamic>,
+      json: allOf.first as Json,
       context: context.key('allOf'),
     );
   }
@@ -317,8 +369,10 @@ SchemaRef parseSchemaOrRef({
   return SchemaRef.schema(Schema.parse(json, context));
 }
 
+/// Parse the properties of a schema.
+/// https://spec.openapis.org/oas/v3.0.0#schemaObject
 Map<String, SchemaRef> parseProperties({
-  required Map<String, dynamic>? json,
+  required Json? json,
   required ParseContext context,
 }) {
   if (json == null) {
@@ -331,7 +385,7 @@ Map<String, SchemaRef> parseProperties({
   for (final entry in json.entries) {
     final name = entry.key;
     final snakeName = snakeFromCamel(name);
-    final value = entry.value as Map<String, dynamic>;
+    final value = entry.value as Json;
     properties[name] = parseSchemaOrRef(
       json: value,
       context: context.addSnakeName(snakeName).key(name),
@@ -340,21 +394,41 @@ Map<String, SchemaRef> parseProperties({
   return properties;
 }
 
+/// A method is a http method.
+/// https://spec.openapis.org/oas/v3.0.0#operation-object
 enum Method {
+  /// The GET method is used to retrieve a resource.
   get,
+
+  /// The POST method is used to create a resource.
   post,
+
+  /// The PUT method is used to update a resource.
   put,
+
+  /// The DELETE method is used to delete a resource.
   delete,
+
+  /// The PATCH method is used to update a resource.
   patch,
+
+  /// The HEAD method is used to get the headers of a resource.
   head,
+
+  /// The OPTIONS method is used to get the supported methods of a resource.
   options,
+
+  /// The TRACE method is used to get the trace of a resource.
   trace;
 
+  /// The method as a lowercase string.
   String get key => name.toLowerCase();
 }
 
-// https://spec.openapis.org/oas/v3.0.0#path-item-object
+/// An endpoint is a path with a method.
+/// https://spec.openapis.org/oas/v3.0.0#path-item-object
 class Endpoint {
+  /// Create a new endpoint.
   const Endpoint({
     required this.path,
     required this.method,
@@ -365,8 +439,9 @@ class Endpoint {
     required this.requestBody,
   });
 
+  /// Parse an endpoint from a json object.
   factory Endpoint.parse({
-    required Map<String, dynamic> json,
+    required Json json,
     required String path,
     required Method method,
     required ParseContext parentContext,
@@ -378,14 +453,14 @@ class Endpoint {
     final context = parentContext.addSnakeName(snakeName);
 
     final responses = parseResponses(
-      _optional<Map<String, dynamic>>(json, 'responses'),
+      _optional<Json>(json, 'responses'),
       context.key('responses'),
     );
     final tags = _optional<List<dynamic>>(json, 'tags');
     final tag = tags?.firstOrNull as String? ?? 'Default';
     final parametersJson = _optional<List<dynamic>>(json, 'parameters') ?? [];
     final parameters = parametersJson
-        .cast<Map<String, dynamic>>()
+        .cast<Json>()
         .indexed
         .map(
           (indexed) => Parameter.parse(
@@ -397,13 +472,13 @@ class Endpoint {
           ),
         )
         .toList();
-    final requestBodyJson = json['requestBody'] as Map<String, dynamic>?;
+    final requestBodyJson = json['requestBody'] as Json?;
     SchemaRef? requestBody;
     if (requestBodyJson != null) {
-      final content = requestBodyJson['content'] as Map<String, dynamic>;
-      final json = content['application/json'] as Map<String, dynamic>;
+      final content = requestBodyJson['content'] as Json;
+      final json = content['application/json'] as Json;
       requestBody = parseSchemaOrRef(
-        json: json['schema'] as Map<String, dynamic>,
+        json: json['schema'] as Json,
         context: context.addSnakeName('request').key('requestBody'),
       );
     }
@@ -441,18 +516,21 @@ class Endpoint {
   final SchemaRef? requestBody;
 }
 
+/// A response from an endpoint.
+/// https://spec.openapis.org/oas/v3.1.0#response-object
 class Response {
+  /// Create a new response.
   const Response({required this.code, required this.content});
 
+  /// The status code of this response.
   final int code;
-  // The official spec has a map here by mime type, but we only support json.
+
+  /// The content of this response.
+  /// The official spec has a map here by mime type, but we only support json.
   final SchemaRef content;
 }
 
-List<Response> parseResponses(
-  Map<String, dynamic>? json,
-  ParseContext parentContext,
-) {
+List<Response> parseResponses(Json? json, ParseContext parentContext) {
   if (json == null) {
     return [];
   }
@@ -463,17 +541,17 @@ List<Response> parseResponses(
   }
 
   final responseCode = responseCodes.first;
-  final responseTypes = json[responseCode] as Map<String, dynamic>;
-  final content = responseTypes['content'] as Map<String, dynamic>?;
+  final responseTypes = json[responseCode] as Json;
+  final content = responseTypes['content'] as Json?;
   if (content == null) {
     return [];
   }
-  final jsonResponse = content['application/json'] as Map<String, dynamic>;
+  final jsonResponse = content['application/json'] as Json;
   return [
     Response(
       code: int.parse(responseCode),
       content: parseSchemaOrRef(
-        json: jsonResponse['schema'] as Map<String, dynamic>,
+        json: jsonResponse['schema'] as Json,
         context: parentContext
             .addSnakeName(responseCode)
             .addSnakeName('response')
@@ -500,7 +578,7 @@ class Components {
   // final Map<String, Callback> callbacks;
 }
 
-Components parseComponents(Map<String, dynamic>? json, ParseContext context) {
+Components parseComponents(Json? json, ParseContext context) {
   if (json == null) {
     return const Components(schemas: {});
   }
@@ -509,25 +587,25 @@ Components parseComponents(Map<String, dynamic>? json, ParseContext context) {
 
   for (final key in keys) {
     if (!supportedKeys.contains(key)) {
-      final value = json[key] as Map<String, dynamic>;
+      final value = json[key] as Json;
       if (value.isNotEmpty) {
         throw UnimplementedError('Components key not supported: $key');
       }
     }
   }
 
-  final securitySchemesJson = json['securitySchemes'] as Map<String, dynamic>?;
+  final securitySchemesJson = json['securitySchemes'] as Json?;
   if (securitySchemesJson != null) {
     logger.warn('Ignoring securitySchemes.');
   }
 
-  final schemasJson = json['schemas'] as Map<String, dynamic>?;
+  final schemasJson = json['schemas'] as Json?;
   final schemas = <String, Schema>{};
   if (schemasJson != null) {
     for (final entry in schemasJson.entries) {
       final name = entry.key;
       final snakeName = snakeFromCamel(name);
-      final value = entry.value as Map<String, dynamic>;
+      final value = entry.value as Json;
       schemas[name] = Schema.parse(
         value,
         context
@@ -541,7 +619,7 @@ Components parseComponents(Map<String, dynamic>? json, ParseContext context) {
   return Components(schemas: schemas);
 }
 
-T _required<T>(Map<String, dynamic> json, String key) {
+T _required<T>(Json json, String key) {
   final value = json[key];
   if (value == null) {
     throw FormatException('Required key not found: $key in $json');
@@ -555,7 +633,7 @@ void _expect(bool condition, Json json, String message) {
   }
 }
 
-T? _optional<T>(Map<String, dynamic> json, String key) {
+T? _optional<T>(Json json, String key) {
   final value = json[key];
   if (value is T?) {
     return value;
@@ -586,20 +664,20 @@ void _error(Json json, String message) {
 class Spec {
   Spec(this.serverUrl, this.endpoints, this.components);
 
-  factory Spec.parse(Map<String, dynamic> json, ParseContext context) {
+  factory Spec.parse(Json json, ParseContext context) {
     final servers = _required<List<dynamic>>(json, 'servers');
-    final firstServer = servers.first as Map<String, dynamic>;
+    final firstServer = servers.first as Json;
     final serverUrl = _required<String>(firstServer, 'url');
 
-    final paths = _required<Map<String, dynamic>>(json, 'paths');
+    final paths = _required<Json>(json, 'paths');
     final endpoints = <Endpoint>[];
     for (final pathEntry in paths.entries) {
       final path = pathEntry.key;
       _expect(path.isNotEmpty, json, 'Path cannot be empty');
       _expect(path.startsWith('/'), json, 'Path must start with /: $path');
-      final pathValue = pathEntry.value as Map<String, dynamic>;
+      final pathValue = pathEntry.value as Json;
       for (final method in Method.values) {
-        final methodValue = pathValue[method.key] as Map<String, dynamic>?;
+        final methodValue = pathValue[method.key] as Json?;
         if (methodValue == null) {
           continue;
         }
@@ -614,7 +692,7 @@ class Spec {
       }
     }
     final components = parseComponents(
-      json['components'] as Map<String, dynamic>?,
+      json['components'] as Json?,
       context.key('components'),
     );
     return Spec(Uri.parse(serverUrl), endpoints, components);
@@ -673,18 +751,22 @@ class SchemaRegistry {
   }
 }
 
+/// Json pointer is a string that can be used to reference a value in a json
+/// object.
+/// https://spec.openapis.org/oas/v3.1.0#json-pointer
 class JsonPointer {
+  /// Create a new JsonPointer from a list of parts.
   JsonPointer(this.parts);
 
+  /// The parts of the json pointer.
   final List<String> parts;
 
-  String get location {
-    return '/${parts.map(urlEncode).join('/')}';
-  }
+  /// This pointer encoded as a url-ready string.
+  String get location => '/${parts.map(urlEncode).join('/')}';
 
-  String urlEncode(String part) {
-    return part.replaceAll('~', '~0').replaceAll('/', '~1');
-  }
+  /// Encode a part of the json pointer as a url-ready string.
+  static String urlEncode(String part) =>
+      part.replaceAll('~', '~0').replaceAll('/', '~1');
 
   @override
   String toString() => location;
