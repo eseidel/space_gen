@@ -31,6 +31,16 @@ dart run space_gen
 * Implement operator== and hashCode?
 * Generate tests. https://github.com/eseidel/space_gen/issues/1
 * Figure out if types should be immutable or not.
+* requestBody needs to check required.
+* Consider adding a maybeJson factory method by default.
+* Handle non-required properties (read the required array).
+* Handle min/max in newtype types.
+* Either fix all uses of mutability or make generated models mutable for now.
+* Wire up Authentication and sending of bearer header.
+* Fix default values not working (e.g. Meta)
+* Consider using Inner instead of Item for now (e.g. ShipyardShipTypesInner)
+* Consider "entries" instead of "additionalProperties" as field name.
+* Consider making fromJson take dynamic to match openapi.
 
 ## Advantages over Open API Generator 7.0.0
 * Dart 3.0+ only (sound null safety)
