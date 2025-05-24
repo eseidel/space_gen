@@ -2,16 +2,16 @@
 import '{{{.}}}';
 {{/imports}}
 
-class {{ schemaName }} {
-    {{ schemaName }}(
+class {{ typeName }} {
+    {{ typeName }}(
         {{#hasProperties}}
         { {{#properties}}{{#isRequired}}required{{/isRequired}} this.{{{ name }}}{{#hasDefaultValue}} = {{{ defaultValue }}}{{/hasDefaultValue}},{{/properties}}
         {{#hasAdditionalProperties}}required this.additionalProperties,{{/hasAdditionalProperties}} }
         {{/hasProperties}}
     );
 
-    factory {{ schemaName }}.fromJson(Map<String, dynamic> json) {
-        return {{ schemaName }}(
+    factory {{ typeName }}.fromJson(Map<String, dynamic> json) {
+        return {{ typeName }}(
             {{#properties}}
             {{ name }}: {{{ fromJson }}},
             {{/properties}}

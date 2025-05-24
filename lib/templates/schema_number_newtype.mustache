@@ -2,8 +2,8 @@
 import '{{{.}}}';
 {{/imports}}
 
-extension type {{{ schemaName }}}(double value) {
-    factory {{ schemaName }}.fromJson(num json) => {{ schemaName }}(json.toDouble());
+extension type {{{ typeName }}}(double value) {
+    factory {{ typeName }}.fromJson(num json) => {{ typeName }}(json.toDouble());
 
     double toJson() => value;
 }

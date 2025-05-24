@@ -2,19 +2,19 @@
 import '{{{.}}}';
 {{/imports}}
 
-enum {{ schemaName }} {
+enum {{ typeName }} {
     {{#enumValues}}
     {{ enumValueName }}._('{{ enumValue }}'),
     {{/enumValues}}
     ;
 
-    const {{schemaName}}._(this.value);
+    const {{typeName}}._(this.value);
 
-    factory {{ schemaName }}.fromJson(String json) {
-        return {{ schemaName }}.values.firstWhere(
+    factory {{ typeName }}.fromJson(String json) {
+        return {{ typeName }}.values.firstWhere(
             (value) => value.value == json,
             orElse: () =>
-                throw Exception('Unknown {{ schemaName }} value: $json')
+                throw Exception('Unknown {{ typeName }} value: $json')
         );
     }
 

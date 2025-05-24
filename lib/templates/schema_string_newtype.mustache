@@ -2,8 +2,8 @@
 import '{{{.}}}';
 {{/imports}}
 
-extension type {{{ schemaName }}}(String value) {
-    factory {{ schemaName }}.fromJson(String json) => {{ schemaName }}(json);
+extension type {{{ typeName }}}(String value) {
+    factory {{ typeName }}.fromJson(String json) => {{ typeName }}(json);
 
     String toJson() => value;
 }

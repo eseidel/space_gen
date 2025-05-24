@@ -333,7 +333,7 @@ extension _SchemaGeneration on Schema {
     final hasProperties =
         renderProperties.isNotEmpty || hasAdditionalProperties;
     return {
-      'schemaName': className,
+      'typeName': className,
       'hasProperties': hasProperties,
       'properties': renderProperties,
       'hasAdditionalProperties': hasAdditionalProperties,
@@ -354,7 +354,7 @@ extension _SchemaGeneration on Schema {
     if (!useNewType) {
       throw Exception('Schema is not a newtype: $this');
     }
-    return {'schemaName': className};
+    return {'typeName': className};
   }
 
   Map<String, dynamic> numberNewtypeTemplateContext() {
@@ -364,7 +364,7 @@ extension _SchemaGeneration on Schema {
     if (!useNewType) {
       throw Exception('Schema is not a newtype: $this');
     }
-    return {'schemaName': className};
+    return {'typeName': className};
   }
 
   String _sharedPrefix(List<String> values) {
@@ -400,7 +400,7 @@ extension _SchemaGeneration on Schema {
     }
 
     return {
-      'schemaName': className,
+      'typeName': className,
       'enumValues': enumValues.map(enumValueToTemplateContext).toList(),
     };
   }
