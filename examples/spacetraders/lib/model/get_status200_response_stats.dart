@@ -17,6 +17,15 @@ class GetStatus200ResponseStats {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetStatus200ResponseStats? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return GetStatus200ResponseStats.fromJson(json);
+  }
+
   final int accounts;
   final int agents;
   final int ships;

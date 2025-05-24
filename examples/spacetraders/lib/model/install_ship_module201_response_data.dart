@@ -27,6 +27,17 @@ class InstallShipModule201ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static InstallShipModule201ResponseData? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return InstallShipModule201ResponseData.fromJson(json);
+  }
+
   final Agent agent;
   final List<ShipModule> modules;
   final ShipCargo cargo;

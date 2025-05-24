@@ -11,6 +11,17 @@ class InstallShipModule201Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static InstallShipModule201Response? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return InstallShipModule201Response.fromJson(json);
+  }
+
   final InstallShipModule201ResponseData data;
 
   Map<String, dynamic> toJson() {

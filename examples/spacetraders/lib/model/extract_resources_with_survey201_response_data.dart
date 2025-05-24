@@ -37,6 +37,17 @@ class ExtractResourcesWithSurvey201ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ExtractResourcesWithSurvey201ResponseData? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return ExtractResourcesWithSurvey201ResponseData.fromJson(json);
+  }
+
   final Extraction extraction;
   final Cooldown cooldown;
   final ShipCargo cargo;

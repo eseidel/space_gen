@@ -25,6 +25,15 @@ class MarketTransaction {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static MarketTransaction? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return MarketTransaction.fromJson(json);
+  }
+
   final String waypointSymbol;
   final String shipSymbol;
   final String tradeSymbol;

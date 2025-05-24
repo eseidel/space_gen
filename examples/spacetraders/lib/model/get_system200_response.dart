@@ -9,6 +9,15 @@ class GetSystem200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetSystem200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return GetSystem200Response.fromJson(json);
+  }
+
   final System data;
 
   Map<String, dynamic> toJson() {

@@ -10,6 +10,15 @@ class SellCargoRequest {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static SellCargoRequest? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return SellCargoRequest.fromJson(json);
+  }
+
   final TradeSymbol symbol;
   final int units;
 

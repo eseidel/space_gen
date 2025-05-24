@@ -26,6 +26,15 @@ class Contract {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static Contract? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return Contract.fromJson(json);
+  }
+
   final String id;
   final String factionSymbol;
   final ContractType type;

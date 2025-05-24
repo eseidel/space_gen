@@ -29,6 +29,17 @@ class GetStatus200ResponseLeaderboards {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetStatus200ResponseLeaderboards? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return GetStatus200ResponseLeaderboards.fromJson(json);
+  }
+
   final List<GetStatus200ResponseLeaderboardsMostCreditsItem> mostCredits;
   final List<GetStatus200ResponseLeaderboardsMostSubmittedChartsItem>
   mostSubmittedCharts;

@@ -11,6 +11,15 @@ class CreateSurvey201Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static CreateSurvey201Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return CreateSurvey201Response.fromJson(json);
+  }
+
   final CreateSurvey201ResponseData data;
 
   Map<String, dynamic> toJson() {

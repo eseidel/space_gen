@@ -9,6 +9,15 @@ class GetMarket200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetMarket200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return GetMarket200Response.fromJson(json);
+  }
+
   final Market data;
 
   Map<String, dynamic> toJson() {

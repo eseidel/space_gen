@@ -19,6 +19,15 @@ class Agent {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static Agent? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return Agent.fromJson(json);
+  }
+
   final String accountId;
   final String symbol;
   final String headquarters;

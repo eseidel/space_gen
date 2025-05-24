@@ -9,6 +9,15 @@ class WaypointFaction {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static WaypointFaction? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return WaypointFaction.fromJson(json);
+  }
+
   final FactionSymbol symbol;
 
   Map<String, dynamic> toJson() {

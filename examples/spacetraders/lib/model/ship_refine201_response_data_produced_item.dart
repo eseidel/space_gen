@@ -15,6 +15,17 @@ class ShipRefine201ResponseDataProducedItem {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipRefine201ResponseDataProducedItem? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return ShipRefine201ResponseDataProducedItem.fromJson(json);
+  }
+
   final TradeSymbol tradeSymbol;
   final int units;
 

@@ -13,6 +13,15 @@ class DeliverContractRequest {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static DeliverContractRequest? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return DeliverContractRequest.fromJson(json);
+  }
+
   final String shipSymbol;
   final String tradeSymbol;
   final int units;

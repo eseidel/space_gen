@@ -21,6 +21,15 @@ class ShipNavRoute {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipNavRoute? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipNavRoute.fromJson(json);
+  }
+
   final ShipNavRouteWaypoint destination;
   final ShipNavRouteWaypoint origin;
   final DateTime departureTime;

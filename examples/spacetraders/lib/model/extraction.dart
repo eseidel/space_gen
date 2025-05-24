@@ -10,6 +10,15 @@ class Extraction {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static Extraction? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return Extraction.fromJson(json);
+  }
+
   final String shipSymbol;
   final ExtractionYield yield_;
 

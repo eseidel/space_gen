@@ -27,6 +27,15 @@ class RemoveMount201ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static RemoveMount201ResponseData? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return RemoveMount201ResponseData.fromJson(json);
+  }
+
   final Agent agent;
   final List<ShipMount> mounts;
   final ShipCargo cargo;

@@ -22,6 +22,17 @@ class NavigateShip200ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static NavigateShip200ResponseData? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return NavigateShip200ResponseData.fromJson(json);
+  }
+
   final ShipNav nav;
   final ShipFuel fuel;
   final List<ShipConditionEvent> events;

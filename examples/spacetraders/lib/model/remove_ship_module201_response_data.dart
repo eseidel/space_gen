@@ -27,6 +27,17 @@ class RemoveShipModule201ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static RemoveShipModule201ResponseData? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return RemoveShipModule201ResponseData.fromJson(json);
+  }
+
   final Agent agent;
   final List<ShipModule> modules;
   final ShipCargo cargo;

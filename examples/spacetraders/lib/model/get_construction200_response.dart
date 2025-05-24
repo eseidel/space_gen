@@ -9,6 +9,15 @@ class GetConstruction200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetConstruction200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return GetConstruction200Response.fromJson(json);
+  }
+
   final Construction data;
 
   Map<String, dynamic> toJson() {

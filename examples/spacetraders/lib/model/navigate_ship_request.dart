@@ -7,6 +7,15 @@ class NavigateShipRequest {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static NavigateShipRequest? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return NavigateShipRequest.fromJson(json);
+  }
+
   final String waypointSymbol;
 
   Map<String, dynamic> toJson() {

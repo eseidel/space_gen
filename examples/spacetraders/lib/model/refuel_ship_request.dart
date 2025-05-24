@@ -8,6 +8,15 @@ class RefuelShipRequest {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static RefuelShipRequest? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return RefuelShipRequest.fromJson(json);
+  }
+
   final int units;
   final dynamic fromCargo;
 

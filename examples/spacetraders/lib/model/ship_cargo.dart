@@ -20,6 +20,15 @@ class ShipCargo {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipCargo? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipCargo.fromJson(json);
+  }
+
   final int capacity;
   final int units;
   final List<ShipCargoItem> inventory;

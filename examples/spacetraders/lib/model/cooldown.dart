@@ -15,6 +15,15 @@ class Cooldown {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static Cooldown? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return Cooldown.fromJson(json);
+  }
+
   final String shipSymbol;
   final int totalSeconds;
   final int remainingSeconds;

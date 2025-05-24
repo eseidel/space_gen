@@ -15,6 +15,15 @@ class SupplyConstructionRequest {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static SupplyConstructionRequest? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return SupplyConstructionRequest.fromJson(json);
+  }
+
   final String shipSymbol;
   final TradeSymbol tradeSymbol;
   final int units;

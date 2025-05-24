@@ -11,6 +11,17 @@ class GetMyFactions200ResponseDataItem {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetMyFactions200ResponseDataItem? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return GetMyFactions200ResponseDataItem.fromJson(json);
+  }
+
   final String symbol;
   final int reputation;
 

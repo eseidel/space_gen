@@ -32,6 +32,15 @@ class ShipFrame {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipFrame? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipFrame.fromJson(json);
+  }
+
   final ShipFrameSymbol symbol;
   final String name;
   final double condition;

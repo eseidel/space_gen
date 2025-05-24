@@ -17,6 +17,15 @@ class PublicAgent {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static PublicAgent? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return PublicAgent.fromJson(json);
+  }
+
   final String symbol;
   final String headquarters;
   final int credits;

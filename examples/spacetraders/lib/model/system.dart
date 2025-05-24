@@ -39,6 +39,15 @@ class System {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static System? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return System.fromJson(json);
+  }
+
   final String constellation;
   final String symbol;
   final String sectorSymbol;

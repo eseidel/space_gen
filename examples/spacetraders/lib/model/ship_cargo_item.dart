@@ -17,6 +17,15 @@ class ShipCargoItem {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipCargoItem? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipCargoItem.fromJson(json);
+  }
+
   final TradeSymbol symbol;
   final String name;
   final String description;

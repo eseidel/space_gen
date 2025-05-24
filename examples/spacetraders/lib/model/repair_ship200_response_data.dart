@@ -19,6 +19,15 @@ class RepairShip200ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static RepairShip200ResponseData? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return RepairShip200ResponseData.fromJson(json);
+  }
+
   final Agent agent;
   final Ship ship;
   final RepairTransaction transaction;

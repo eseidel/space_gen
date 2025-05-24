@@ -16,6 +16,17 @@ class GetSystemWaypoints200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetSystemWaypoints200Response? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return GetSystemWaypoints200Response.fromJson(json);
+  }
+
   final List<Waypoint> data;
   final Meta meta;
 

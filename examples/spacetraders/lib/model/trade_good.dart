@@ -15,6 +15,15 @@ class TradeGood {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static TradeGood? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return TradeGood.fromJson(json);
+  }
+
   final TradeSymbol symbol;
   final String name;
   final String description;

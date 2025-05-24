@@ -25,6 +25,15 @@ class Register201ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static Register201ResponseData? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return Register201ResponseData.fromJson(json);
+  }
+
   final String token;
   final Agent agent;
   final Faction faction;

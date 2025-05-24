@@ -11,6 +11,15 @@ class DeliverContract200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static DeliverContract200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return DeliverContract200Response.fromJson(json);
+  }
+
   final DeliverContract200ResponseData data;
 
   Map<String, dynamic> toJson() {

@@ -11,6 +11,15 @@ class Jettison200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static Jettison200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return Jettison200Response.fromJson(json);
+  }
+
   final Jettison200ResponseData data;
 
   Map<String, dynamic> toJson() {

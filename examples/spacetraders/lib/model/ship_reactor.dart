@@ -28,6 +28,15 @@ class ShipReactor {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipReactor? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipReactor.fromJson(json);
+  }
+
   final ShipReactorSymbol symbol;
   final String name;
   final double condition;

@@ -10,6 +10,15 @@ class RegisterRequest {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static RegisterRequest? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return RegisterRequest.fromJson(json);
+  }
+
   final String symbol;
   final FactionSymbol faction;
 

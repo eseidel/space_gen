@@ -9,6 +9,15 @@ class OrbitShip200ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static OrbitShip200ResponseData? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return OrbitShip200ResponseData.fromJson(json);
+  }
+
   final ShipNav nav;
 
   Map<String, dynamic> toJson() {

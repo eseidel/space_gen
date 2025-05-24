@@ -11,6 +11,15 @@ class ScrapShip200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ScrapShip200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ScrapShip200Response.fromJson(json);
+  }
+
   final ScrapShip200ResponseData data;
 
   Map<String, dynamic> toJson() {

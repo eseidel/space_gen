@@ -14,6 +14,17 @@ class GetMyAgentEvents200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetMyAgentEvents200Response? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return GetMyAgentEvents200Response.fromJson(json);
+  }
+
   final List<AgentEvent> data;
 
   Map<String, dynamic> toJson() {

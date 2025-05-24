@@ -26,6 +26,15 @@ class ShipMount {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipMount? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipMount.fromJson(json);
+  }
+
   final ShipMountSymbol symbol;
   final String name;
   final String description;

@@ -25,6 +25,17 @@ class SiphonResources201ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static SiphonResources201ResponseData? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return SiphonResources201ResponseData.fromJson(json);
+  }
+
   final Siphon siphon;
   final Cooldown cooldown;
   final ShipCargo cargo;

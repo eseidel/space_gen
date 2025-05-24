@@ -15,6 +15,15 @@ class ConstructionMaterial {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ConstructionMaterial? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ConstructionMaterial.fromJson(json);
+  }
+
   final TradeSymbol tradeSymbol;
   final int required_;
   final int fulfilled;

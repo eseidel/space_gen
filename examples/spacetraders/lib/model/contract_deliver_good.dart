@@ -15,6 +15,15 @@ class ContractDeliverGood {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ContractDeliverGood? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ContractDeliverGood.fromJson(json);
+  }
+
   final String tradeSymbol;
   final String destinationSymbol;
   final int unitsRequired;

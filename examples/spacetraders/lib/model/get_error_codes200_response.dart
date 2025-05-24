@@ -16,6 +16,15 @@ class GetErrorCodes200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetErrorCodes200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return GetErrorCodes200Response.fromJson(json);
+  }
+
   final List<GetErrorCodes200ResponseErrorCodesItem> errorCodes;
 
   Map<String, dynamic> toJson() {

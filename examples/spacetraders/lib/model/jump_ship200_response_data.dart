@@ -22,6 +22,15 @@ class JumpShip200ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static JumpShip200ResponseData? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return JumpShip200ResponseData.fromJson(json);
+  }
+
   final ShipNav nav;
   final Cooldown cooldown;
   final MarketTransaction transaction;

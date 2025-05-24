@@ -15,6 +15,15 @@ class WaypointModifier {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static WaypointModifier? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return WaypointModifier.fromJson(json);
+  }
+
   final WaypointModifierSymbol symbol;
   final String name;
   final String description;

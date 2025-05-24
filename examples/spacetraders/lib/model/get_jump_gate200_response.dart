@@ -9,6 +9,15 @@ class GetJumpGate200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetJumpGate200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return GetJumpGate200Response.fromJson(json);
+  }
+
   final JumpGate data;
 
   Map<String, dynamic> toJson() {

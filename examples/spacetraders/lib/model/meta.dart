@@ -9,6 +9,15 @@ class Meta {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static Meta? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return Meta.fromJson(json);
+  }
+
   final int total;
   final int page;
   final int limit;

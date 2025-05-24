@@ -11,6 +11,15 @@ class CreateChart201Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static CreateChart201Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return CreateChart201Response.fromJson(json);
+  }
+
   final CreateChart201ResponseData data;
 
   Map<String, dynamic> toJson() {

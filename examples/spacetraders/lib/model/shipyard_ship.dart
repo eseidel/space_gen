@@ -51,6 +51,15 @@ class ShipyardShip {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipyardShip? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipyardShip.fromJson(json);
+  }
+
   final ShipType type;
   final String name;
   final String description;

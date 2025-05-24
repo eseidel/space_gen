@@ -11,6 +11,15 @@ class TransferCargo200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static TransferCargo200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return TransferCargo200Response.fromJson(json);
+  }
+
   final TransferCargo200ResponseData data;
 
   Map<String, dynamic> toJson() {

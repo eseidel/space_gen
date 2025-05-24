@@ -20,6 +20,15 @@ class ShipConditionEvent {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipConditionEvent? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipConditionEvent.fromJson(json);
+  }
+
   final ShipConditionEventSymbol symbol;
   final ShipConditionEventComponent component;
   final String name;

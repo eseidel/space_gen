@@ -10,6 +10,15 @@ class Siphon {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static Siphon? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return Siphon.fromJson(json);
+  }
+
   final String shipSymbol;
   final SiphonYield yield_;
 

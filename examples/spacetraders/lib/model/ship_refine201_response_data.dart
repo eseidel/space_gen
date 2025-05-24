@@ -34,6 +34,15 @@ class ShipRefine201ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipRefine201ResponseData? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipRefine201ResponseData.fromJson(json);
+  }
+
   final ShipCargo cargo;
   final Cooldown cooldown;
   final List<ShipRefine201ResponseDataProducedItem> produced;

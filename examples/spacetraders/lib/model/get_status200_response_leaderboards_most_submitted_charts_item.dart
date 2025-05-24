@@ -13,6 +13,19 @@ class GetStatus200ResponseLeaderboardsMostSubmittedChartsItem {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetStatus200ResponseLeaderboardsMostSubmittedChartsItem? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return GetStatus200ResponseLeaderboardsMostSubmittedChartsItem.fromJson(
+      json,
+    );
+  }
+
   final String agentSymbol;
   final int chartCount;
 

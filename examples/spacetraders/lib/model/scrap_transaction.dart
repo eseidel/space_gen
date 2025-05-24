@@ -15,6 +15,15 @@ class ScrapTransaction {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ScrapTransaction? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ScrapTransaction.fromJson(json);
+  }
+
   final String waypointSymbol;
   final String shipSymbol;
   final int totalPrice;

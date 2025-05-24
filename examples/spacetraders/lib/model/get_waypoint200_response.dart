@@ -9,6 +9,15 @@ class GetWaypoint200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetWaypoint200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return GetWaypoint200Response.fromJson(json);
+  }
+
   final Waypoint data;
 
   Map<String, dynamic> toJson() {

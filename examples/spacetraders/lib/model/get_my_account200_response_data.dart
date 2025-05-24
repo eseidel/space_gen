@@ -11,6 +11,17 @@ class GetMyAccount200ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetMyAccount200ResponseData? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return GetMyAccount200ResponseData.fromJson(json);
+  }
+
   final GetMyAccount200ResponseDataAccount account;
 
   Map<String, dynamic> toJson() {

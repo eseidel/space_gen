@@ -13,6 +13,17 @@ class GetStatus200ResponseAnnouncementsItem {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetStatus200ResponseAnnouncementsItem? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return GetStatus200ResponseAnnouncementsItem.fromJson(json);
+  }
+
   final String title;
   final String body;
 

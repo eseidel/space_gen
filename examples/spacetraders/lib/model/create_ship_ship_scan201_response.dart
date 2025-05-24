@@ -11,6 +11,17 @@ class CreateShipShipScan201Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static CreateShipShipScan201Response? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return CreateShipShipScan201Response.fromJson(json);
+  }
+
   final CreateShipShipScan201ResponseData data;
 
   Map<String, dynamic> toJson() {

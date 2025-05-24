@@ -9,6 +9,15 @@ class GetContract200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetContract200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return GetContract200Response.fromJson(json);
+  }
+
   final Contract data;
 
   Map<String, dynamic> toJson() {

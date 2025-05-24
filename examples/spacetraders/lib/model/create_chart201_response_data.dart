@@ -22,6 +22,15 @@ class CreateChart201ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static CreateChart201ResponseData? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return CreateChart201ResponseData.fromJson(json);
+  }
+
   final Chart chart;
   final Waypoint waypoint;
   final ChartTransaction transaction;

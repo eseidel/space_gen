@@ -9,6 +9,15 @@ class ShipRefineRequest {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipRefineRequest? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipRefineRequest.fromJson(json);
+  }
+
   final ShipRefineRequestProduce produce;
 
   Map<String, dynamic> toJson() {

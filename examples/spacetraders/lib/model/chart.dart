@@ -13,6 +13,15 @@ class Chart {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static Chart? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return Chart.fromJson(json);
+  }
+
   final String waypointSymbol;
   final String submittedBy;
   final DateTime submittedOn;

@@ -17,6 +17,15 @@ class ShipFuel {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipFuel? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipFuel.fromJson(json);
+  }
+
   final int current;
   final int capacity;
   final ShipFuelConsumed consumed;

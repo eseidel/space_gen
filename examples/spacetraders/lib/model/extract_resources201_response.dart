@@ -11,6 +11,17 @@ class ExtractResources201Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ExtractResources201Response? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return ExtractResources201Response.fromJson(json);
+  }
+
   final ExtractResources201ResponseData data;
 
   Map<String, dynamic> toJson() {

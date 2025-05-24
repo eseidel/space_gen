@@ -27,6 +27,15 @@ class Faction {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static Faction? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return Faction.fromJson(json);
+  }
+
   final FactionSymbol symbol;
   final String name;
   final String description;

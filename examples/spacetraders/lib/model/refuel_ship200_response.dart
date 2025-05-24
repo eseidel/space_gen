@@ -11,6 +11,15 @@ class RefuelShip200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static RefuelShip200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return RefuelShip200Response.fromJson(json);
+  }
+
   final RefuelShip200ResponseData data;
 
   Map<String, dynamic> toJson() {

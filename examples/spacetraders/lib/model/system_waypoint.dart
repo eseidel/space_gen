@@ -27,6 +27,15 @@ class SystemWaypoint {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static SystemWaypoint? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return SystemWaypoint.fromJson(json);
+  }
+
   final String symbol;
   final WaypointType type;
   final int x;

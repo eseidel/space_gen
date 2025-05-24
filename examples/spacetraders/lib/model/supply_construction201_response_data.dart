@@ -18,6 +18,17 @@ class SupplyConstruction201ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static SupplyConstruction201ResponseData? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return SupplyConstruction201ResponseData.fromJson(json);
+  }
+
   final Construction construction;
   final ShipCargo cargo;
 

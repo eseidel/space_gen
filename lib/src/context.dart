@@ -122,8 +122,14 @@ extension _SchemaGeneration on Schema {
   /// Schema name in file name format.
   String get fileName => snakeName;
 
-  /// Schema name in class name format.
-  String get className => camelFromSnake(snakeName);
+  /// Schema name in class name format. Only valid for enum, object and
+  /// newtype schemas.
+  String get className {
+    if (!isEnum && type != SchemaType.object && !useNewType) {
+      throw Exception('Schema is not an enum or object: $this');
+    }
+    return camelFromSnake(snakeName);
+  }
 
   /// Whether this schema needs to be rendered.
   bool get needsRender => type == SchemaType.object || isEnum;
@@ -334,6 +340,7 @@ extension _SchemaGeneration on Schema {
         renderProperties.isNotEmpty || hasAdditionalProperties;
     return {
       'typeName': className,
+      'nullableTypeName': nullableTypeName(context),
       'hasProperties': hasProperties,
       'properties': renderProperties,
       'hasAdditionalProperties': hasAdditionalProperties,

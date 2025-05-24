@@ -11,6 +11,15 @@ class PurchaseShip201Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static PurchaseShip201Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return PurchaseShip201Response.fromJson(json);
+  }
+
   final PurchaseShip201ResponseData data;
 
   Map<String, dynamic> toJson() {

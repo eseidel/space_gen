@@ -21,6 +21,15 @@ class ShipCrew {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipCrew? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipCrew.fromJson(json);
+  }
+
   final int current;
   final int required_;
   final int capacity;

@@ -14,6 +14,15 @@ class GetShipModules200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetShipModules200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return GetShipModules200Response.fromJson(json);
+  }
+
   final List<ShipModule> data;
 
   Map<String, dynamic> toJson() {

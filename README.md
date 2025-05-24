@@ -32,7 +32,6 @@ dart run space_gen
 * Generate tests. https://github.com/eseidel/space_gen/issues/1
 * Figure out if types should be immutable or not.
 * requestBody needs to check required.
-* Consider adding a maybeJson factory method by default.
 * Handle non-required properties (read the required array).
 * Handle min/max in newtype types.
 * Either fix all uses of mutability or make generated models mutable for now.

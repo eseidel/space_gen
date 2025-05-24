@@ -9,6 +9,15 @@ class GetShipyard200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetShipyard200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return GetShipyard200Response.fromJson(json);
+  }
+
   final Shipyard data;
 
   Map<String, dynamic> toJson() {

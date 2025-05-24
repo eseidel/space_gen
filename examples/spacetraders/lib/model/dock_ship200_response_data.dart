@@ -9,6 +9,15 @@ class DockShip200ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static DockShip200ResponseData? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return DockShip200ResponseData.fromJson(json);
+  }
+
   final ShipNav nav;
 
   Map<String, dynamic> toJson() {

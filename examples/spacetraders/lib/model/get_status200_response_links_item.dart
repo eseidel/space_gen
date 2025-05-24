@@ -8,6 +8,17 @@ class GetStatus200ResponseLinksItem {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetStatus200ResponseLinksItem? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return GetStatus200ResponseLinksItem.fromJson(json);
+  }
+
   final String name;
   final String url;
 

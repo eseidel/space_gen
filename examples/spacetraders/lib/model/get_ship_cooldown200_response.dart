@@ -9,6 +9,15 @@ class GetShipCooldown200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetShipCooldown200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return GetShipCooldown200Response.fromJson(json);
+  }
+
   final Cooldown data;
 
   Map<String, dynamic> toJson() {

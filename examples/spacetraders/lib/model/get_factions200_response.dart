@@ -14,6 +14,15 @@ class GetFactions200Response {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetFactions200Response? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return GetFactions200Response.fromJson(json);
+  }
+
   final List<Faction> data;
   final Meta meta;
 

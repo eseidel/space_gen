@@ -12,6 +12,17 @@ class GetSupplyChain200ResponseData {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static GetSupplyChain200ResponseData? maybeFromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null) {
+      return null;
+    }
+    return GetSupplyChain200ResponseData.fromJson(json);
+  }
+
   final GetSupplyChain200ResponseDataExportToImportMap exportToImportMap;
 
   Map<String, dynamic> toJson() {
