@@ -1,13 +1,13 @@
-class GetStatus200ResponseLeaderboardsMostCreditsItem {
-  GetStatus200ResponseLeaderboardsMostCreditsItem({
+class GetStatus200ResponseLeaderboardsMostCreditsInner {
+  GetStatus200ResponseLeaderboardsMostCreditsInner({
     required this.agentSymbol,
     required this.credits,
   });
 
-  factory GetStatus200ResponseLeaderboardsMostCreditsItem.fromJson(
+  factory GetStatus200ResponseLeaderboardsMostCreditsInner.fromJson(
     Map<String, dynamic> json,
   ) {
-    return GetStatus200ResponseLeaderboardsMostCreditsItem(
+    return GetStatus200ResponseLeaderboardsMostCreditsInner(
       agentSymbol: json['agentSymbol'] as String,
       credits: json['credits'] as int,
     );
@@ -15,13 +15,13 @@ class GetStatus200ResponseLeaderboardsMostCreditsItem {
 
   /// Convenience to create a nullable type from a nullable json object.
   /// Useful when parsing optional fields.
-  static GetStatus200ResponseLeaderboardsMostCreditsItem? maybeFromJson(
+  static GetStatus200ResponseLeaderboardsMostCreditsInner? maybeFromJson(
     Map<String, dynamic>? json,
   ) {
     if (json == null) {
       return null;
     }
-    return GetStatus200ResponseLeaderboardsMostCreditsItem.fromJson(json);
+    return GetStatus200ResponseLeaderboardsMostCreditsInner.fromJson(json);
   }
 
   final String agentSymbol;

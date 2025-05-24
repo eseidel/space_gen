@@ -1,8 +1,8 @@
-class GetStatus200ResponseLinksItem {
-  GetStatus200ResponseLinksItem({required this.name, required this.url});
+class GetStatus200ResponseLinksInner {
+  GetStatus200ResponseLinksInner({required this.name, required this.url});
 
-  factory GetStatus200ResponseLinksItem.fromJson(Map<String, dynamic> json) {
-    return GetStatus200ResponseLinksItem(
+  factory GetStatus200ResponseLinksInner.fromJson(Map<String, dynamic> json) {
+    return GetStatus200ResponseLinksInner(
       name: json['name'] as String,
       url: json['url'] as String,
     );
@@ -10,13 +10,13 @@ class GetStatus200ResponseLinksItem {
 
   /// Convenience to create a nullable type from a nullable json object.
   /// Useful when parsing optional fields.
-  static GetStatus200ResponseLinksItem? maybeFromJson(
+  static GetStatus200ResponseLinksInner? maybeFromJson(
     Map<String, dynamic>? json,
   ) {
     if (json == null) {
       return null;
     }
-    return GetStatus200ResponseLinksItem.fromJson(json);
+    return GetStatus200ResponseLinksInner.fromJson(json);
   }
 
   final String name;

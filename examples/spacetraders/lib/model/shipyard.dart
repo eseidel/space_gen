@@ -1,5 +1,5 @@
 import 'package:spacetraders/model/shipyard_ship.dart';
-import 'package:spacetraders/model/shipyard_ship_types_item.dart';
+import 'package:spacetraders/model/shipyard_ship_types_inner.dart';
 import 'package:spacetraders/model/shipyard_transaction.dart';
 
 class Shipyard {
@@ -16,9 +16,9 @@ class Shipyard {
       symbol: json['symbol'] as String,
       shipTypes:
           (json['shipTypes'] as List<dynamic>)
-              .map<ShipyardShipTypesItem>(
+              .map<ShipyardShipTypesInner>(
                 (e) =>
-                    ShipyardShipTypesItem.fromJson(e as Map<String, dynamic>),
+                    ShipyardShipTypesInner.fromJson(e as Map<String, dynamic>),
               )
               .toList(),
       transactions:
@@ -47,7 +47,7 @@ class Shipyard {
   }
 
   final String symbol;
-  final List<ShipyardShipTypesItem> shipTypes;
+  final List<ShipyardShipTypesInner> shipTypes;
   final List<ShipyardTransaction> transactions;
   final List<ShipyardShip> ships;
   final int modificationsFee;

@@ -36,8 +36,6 @@ dart run space_gen
 * Handle min/max in newtype types.
 * Either fix all uses of mutability or make generated models mutable for now.
 * Wire up Authentication and sending of bearer header.
-* Consider using Inner instead of Item for now (e.g. ShipyardShipTypesInner)
-* Consider "entries" instead of "additionalProperties" as field name.
 * Consider making fromJson take dynamic to match openapi.
 
 ## Advantages over Open API Generator 7.0.0

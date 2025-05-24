@@ -1,4 +1,4 @@
-import 'package:spacetraders/model/get_error_codes200_response_error_codes_item.dart';
+import 'package:spacetraders/model/get_error_codes200_response_error_codes_inner.dart';
 
 class GetErrorCodes200Response {
   GetErrorCodes200Response({required this.errorCodes});
@@ -7,8 +7,8 @@ class GetErrorCodes200Response {
     return GetErrorCodes200Response(
       errorCodes:
           (json['errorCodes'] as List<dynamic>)
-              .map<GetErrorCodes200ResponseErrorCodesItem>(
-                (e) => GetErrorCodes200ResponseErrorCodesItem.fromJson(
+              .map<GetErrorCodes200ResponseErrorCodesInner>(
+                (e) => GetErrorCodes200ResponseErrorCodesInner.fromJson(
                   e as Map<String, dynamic>,
                 ),
               )
@@ -25,7 +25,7 @@ class GetErrorCodes200Response {
     return GetErrorCodes200Response.fromJson(json);
   }
 
-  final List<GetErrorCodes200ResponseErrorCodesItem> errorCodes;
+  final List<GetErrorCodes200ResponseErrorCodesInner> errorCodes;
 
   Map<String, dynamic> toJson() {
     return {'errorCodes': errorCodes.map((e) => e.toJson()).toList()};

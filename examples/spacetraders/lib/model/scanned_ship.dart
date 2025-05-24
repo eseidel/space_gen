@@ -1,6 +1,6 @@
 import 'package:spacetraders/model/scanned_ship_engine.dart';
 import 'package:spacetraders/model/scanned_ship_frame.dart';
-import 'package:spacetraders/model/scanned_ship_mounts_item.dart';
+import 'package:spacetraders/model/scanned_ship_mounts_inner.dart';
 import 'package:spacetraders/model/scanned_ship_reactor.dart';
 import 'package:spacetraders/model/ship_nav.dart';
 import 'package:spacetraders/model/ship_registration.dart';
@@ -32,9 +32,9 @@ class ScannedShip {
       ),
       mounts:
           (json['mounts'] as List<dynamic>)
-              .map<ScannedShipMountsItem>(
+              .map<ScannedShipMountsInner>(
                 (e) =>
-                    ScannedShipMountsItem.fromJson(e as Map<String, dynamic>),
+                    ScannedShipMountsInner.fromJson(e as Map<String, dynamic>),
               )
               .toList(),
     );
@@ -55,7 +55,7 @@ class ScannedShip {
   final ScannedShipFrame frame;
   final ScannedShipReactor reactor;
   final ScannedShipEngine engine;
-  final List<ScannedShipMountsItem> mounts;
+  final List<ScannedShipMountsInner> mounts;
 
   Map<String, dynamic> toJson() {
     return {

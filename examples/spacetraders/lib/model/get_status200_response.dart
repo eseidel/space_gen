@@ -1,7 +1,7 @@
-import 'package:spacetraders/model/get_status200_response_announcements_item.dart';
+import 'package:spacetraders/model/get_status200_response_announcements_inner.dart';
 import 'package:spacetraders/model/get_status200_response_health.dart';
 import 'package:spacetraders/model/get_status200_response_leaderboards.dart';
-import 'package:spacetraders/model/get_status200_response_links_item.dart';
+import 'package:spacetraders/model/get_status200_response_links_inner.dart';
 import 'package:spacetraders/model/get_status200_response_server_resets.dart';
 import 'package:spacetraders/model/get_status200_response_stats.dart';
 
@@ -39,16 +39,16 @@ class GetStatus200Response {
       ),
       announcements:
           (json['announcements'] as List<dynamic>)
-              .map<GetStatus200ResponseAnnouncementsItem>(
-                (e) => GetStatus200ResponseAnnouncementsItem.fromJson(
+              .map<GetStatus200ResponseAnnouncementsInner>(
+                (e) => GetStatus200ResponseAnnouncementsInner.fromJson(
                   e as Map<String, dynamic>,
                 ),
               )
               .toList(),
       links:
           (json['links'] as List<dynamic>)
-              .map<GetStatus200ResponseLinksItem>(
-                (e) => GetStatus200ResponseLinksItem.fromJson(
+              .map<GetStatus200ResponseLinksInner>(
+                (e) => GetStatus200ResponseLinksInner.fromJson(
                   e as Map<String, dynamic>,
                 ),
               )
@@ -73,8 +73,8 @@ class GetStatus200Response {
   final GetStatus200ResponseHealth health;
   final GetStatus200ResponseLeaderboards leaderboards;
   final GetStatus200ResponseServerResets serverResets;
-  final List<GetStatus200ResponseAnnouncementsItem> announcements;
-  final List<GetStatus200ResponseLinksItem> links;
+  final List<GetStatus200ResponseAnnouncementsInner> announcements;
+  final List<GetStatus200ResponseLinksInner> links;
 
   Map<String, dynamic> toJson() {
     return {

@@ -1,4 +1,4 @@
-enum ShipMountDepositsItem {
+enum ShipMountDepositsInner {
   QUARTZ_SAND._('QUARTZ_SAND'),
   SILICON_CRYSTALS._('SILICON_CRYSTALS'),
   PRECIOUS_STONES._('PRECIOUS_STONES'),
@@ -14,13 +14,13 @@ enum ShipMountDepositsItem {
   URANITE_ORE._('URANITE_ORE'),
   MERITIUM_ORE._('MERITIUM_ORE');
 
-  const ShipMountDepositsItem._(this.value);
+  const ShipMountDepositsInner._(this.value);
 
-  factory ShipMountDepositsItem.fromJson(String json) {
-    return ShipMountDepositsItem.values.firstWhere(
+  factory ShipMountDepositsInner.fromJson(String json) {
+    return ShipMountDepositsInner.values.firstWhere(
       (value) => value.value == json,
       orElse:
-          () => throw Exception('Unknown ShipMountDepositsItem value: $json'),
+          () => throw Exception('Unknown ShipMountDepositsInner value: $json'),
     );
   }
 

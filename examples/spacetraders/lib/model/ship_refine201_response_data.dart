@@ -1,7 +1,7 @@
 import 'package:spacetraders/model/cooldown.dart';
 import 'package:spacetraders/model/ship_cargo.dart';
-import 'package:spacetraders/model/ship_refine201_response_data_consumed_item.dart';
-import 'package:spacetraders/model/ship_refine201_response_data_produced_item.dart';
+import 'package:spacetraders/model/ship_refine201_response_data_consumed_inner.dart';
+import 'package:spacetraders/model/ship_refine201_response_data_produced_inner.dart';
 
 class ShipRefine201ResponseData {
   ShipRefine201ResponseData({
@@ -17,16 +17,16 @@ class ShipRefine201ResponseData {
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
       produced:
           (json['produced'] as List<dynamic>)
-              .map<ShipRefine201ResponseDataProducedItem>(
-                (e) => ShipRefine201ResponseDataProducedItem.fromJson(
+              .map<ShipRefine201ResponseDataProducedInner>(
+                (e) => ShipRefine201ResponseDataProducedInner.fromJson(
                   e as Map<String, dynamic>,
                 ),
               )
               .toList(),
       consumed:
           (json['consumed'] as List<dynamic>)
-              .map<ShipRefine201ResponseDataConsumedItem>(
-                (e) => ShipRefine201ResponseDataConsumedItem.fromJson(
+              .map<ShipRefine201ResponseDataConsumedInner>(
+                (e) => ShipRefine201ResponseDataConsumedInner.fromJson(
                   e as Map<String, dynamic>,
                 ),
               )
@@ -45,8 +45,8 @@ class ShipRefine201ResponseData {
 
   final ShipCargo cargo;
   final Cooldown cooldown;
-  final List<ShipRefine201ResponseDataProducedItem> produced;
-  final List<ShipRefine201ResponseDataConsumedItem> consumed;
+  final List<ShipRefine201ResponseDataProducedInner> produced;
+  final List<ShipRefine201ResponseDataConsumedInner> consumed;
 
   Map<String, dynamic> toJson() {
     return {

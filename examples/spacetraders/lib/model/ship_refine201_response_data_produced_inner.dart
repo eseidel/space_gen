@@ -1,15 +1,15 @@
 import 'package:spacetraders/model/trade_symbol.dart';
 
-class ShipRefine201ResponseDataProducedItem {
-  ShipRefine201ResponseDataProducedItem({
+class ShipRefine201ResponseDataProducedInner {
+  ShipRefine201ResponseDataProducedInner({
     required this.tradeSymbol,
     required this.units,
   });
 
-  factory ShipRefine201ResponseDataProducedItem.fromJson(
+  factory ShipRefine201ResponseDataProducedInner.fromJson(
     Map<String, dynamic> json,
   ) {
-    return ShipRefine201ResponseDataProducedItem(
+    return ShipRefine201ResponseDataProducedInner(
       tradeSymbol: TradeSymbol.fromJson(json['tradeSymbol'] as String),
       units: json['units'] as int,
     );
@@ -17,13 +17,13 @@ class ShipRefine201ResponseDataProducedItem {
 
   /// Convenience to create a nullable type from a nullable json object.
   /// Useful when parsing optional fields.
-  static ShipRefine201ResponseDataProducedItem? maybeFromJson(
+  static ShipRefine201ResponseDataProducedInner? maybeFromJson(
     Map<String, dynamic>? json,
   ) {
     if (json == null) {
       return null;
     }
-    return ShipRefine201ResponseDataProducedItem.fromJson(json);
+    return ShipRefine201ResponseDataProducedInner.fromJson(json);
   }
 
   final TradeSymbol tradeSymbol;

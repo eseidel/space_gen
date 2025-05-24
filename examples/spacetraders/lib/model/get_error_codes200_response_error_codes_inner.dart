@@ -1,13 +1,13 @@
-class GetErrorCodes200ResponseErrorCodesItem {
-  GetErrorCodes200ResponseErrorCodesItem({
+class GetErrorCodes200ResponseErrorCodesInner {
+  GetErrorCodes200ResponseErrorCodesInner({
     required this.code,
     required this.name,
   });
 
-  factory GetErrorCodes200ResponseErrorCodesItem.fromJson(
+  factory GetErrorCodes200ResponseErrorCodesInner.fromJson(
     Map<String, dynamic> json,
   ) {
-    return GetErrorCodes200ResponseErrorCodesItem(
+    return GetErrorCodes200ResponseErrorCodesInner(
       code: json['code'] as double,
       name: json['name'] as String,
     );
@@ -15,13 +15,13 @@ class GetErrorCodes200ResponseErrorCodesItem {
 
   /// Convenience to create a nullable type from a nullable json object.
   /// Useful when parsing optional fields.
-  static GetErrorCodes200ResponseErrorCodesItem? maybeFromJson(
+  static GetErrorCodes200ResponseErrorCodesInner? maybeFromJson(
     Map<String, dynamic>? json,
   ) {
     if (json == null) {
       return null;
     }
-    return GetErrorCodes200ResponseErrorCodesItem.fromJson(json);
+    return GetErrorCodes200ResponseErrorCodesInner.fromJson(json);
   }
 
   final double code;

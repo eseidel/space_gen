@@ -235,9 +235,10 @@ class Schema {
     final items = json['items'] as Json?;
     SchemaRef? itemSchema;
     if (items != null) {
+      const innerName = 'inner'; // Matching OpenAPI.
       itemSchema = parseSchemaOrRef(
         json: items,
-        context: context.addSnakeName('item').key('items'),
+        context: context.addSnakeName(innerName).key('items'),
       );
     }
 

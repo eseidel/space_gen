@@ -1,4 +1,4 @@
-import 'package:spacetraders/model/ship_mount_deposits_item.dart';
+import 'package:spacetraders/model/ship_mount_deposits_inner.dart';
 import 'package:spacetraders/model/ship_mount_symbol.dart';
 import 'package:spacetraders/model/ship_requirements.dart';
 
@@ -19,7 +19,7 @@ class ShipMount {
       description: json['description'] as String,
       strength: json['strength'] as int,
       deposits:
-          (json['deposits'] as List<dynamic>).cast<ShipMountDepositsItem>(),
+          (json['deposits'] as List<dynamic>).cast<ShipMountDepositsInner>(),
       requirements: ShipRequirements.fromJson(
         json['requirements'] as Map<String, dynamic>,
       ),
@@ -39,7 +39,7 @@ class ShipMount {
   final String name;
   final String description;
   final int strength;
-  final List<ShipMountDepositsItem> deposits;
+  final List<ShipMountDepositsInner> deposits;
   final ShipRequirements requirements;
 
   Map<String, dynamic> toJson() {

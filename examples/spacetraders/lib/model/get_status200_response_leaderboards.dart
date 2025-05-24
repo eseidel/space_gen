@@ -1,5 +1,5 @@
-import 'package:spacetraders/model/get_status200_response_leaderboards_most_credits_item.dart';
-import 'package:spacetraders/model/get_status200_response_leaderboards_most_submitted_charts_item.dart';
+import 'package:spacetraders/model/get_status200_response_leaderboards_most_credits_inner.dart';
+import 'package:spacetraders/model/get_status200_response_leaderboards_most_submitted_charts_inner.dart';
 
 class GetStatus200ResponseLeaderboards {
   GetStatus200ResponseLeaderboards({
@@ -11,17 +11,18 @@ class GetStatus200ResponseLeaderboards {
     return GetStatus200ResponseLeaderboards(
       mostCredits:
           (json['mostCredits'] as List<dynamic>)
-              .map<GetStatus200ResponseLeaderboardsMostCreditsItem>(
-                (e) => GetStatus200ResponseLeaderboardsMostCreditsItem.fromJson(
-                  e as Map<String, dynamic>,
-                ),
+              .map<GetStatus200ResponseLeaderboardsMostCreditsInner>(
+                (e) =>
+                    GetStatus200ResponseLeaderboardsMostCreditsInner.fromJson(
+                      e as Map<String, dynamic>,
+                    ),
               )
               .toList(),
       mostSubmittedCharts:
           (json['mostSubmittedCharts'] as List<dynamic>)
-              .map<GetStatus200ResponseLeaderboardsMostSubmittedChartsItem>(
+              .map<GetStatus200ResponseLeaderboardsMostSubmittedChartsInner>(
                 (e) =>
-                    GetStatus200ResponseLeaderboardsMostSubmittedChartsItem.fromJson(
+                    GetStatus200ResponseLeaderboardsMostSubmittedChartsInner.fromJson(
                       e as Map<String, dynamic>,
                     ),
               )
@@ -40,8 +41,8 @@ class GetStatus200ResponseLeaderboards {
     return GetStatus200ResponseLeaderboards.fromJson(json);
   }
 
-  final List<GetStatus200ResponseLeaderboardsMostCreditsItem> mostCredits;
-  final List<GetStatus200ResponseLeaderboardsMostSubmittedChartsItem>
+  final List<GetStatus200ResponseLeaderboardsMostCreditsInner> mostCredits;
+  final List<GetStatus200ResponseLeaderboardsMostSubmittedChartsInner>
   mostSubmittedCharts;
 
   Map<String, dynamic> toJson() {
