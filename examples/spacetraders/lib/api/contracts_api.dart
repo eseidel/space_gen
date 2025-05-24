@@ -36,8 +36,7 @@ class ContractsApi {
   Future<GetContract200Response> getContract(String contractId) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/my/contracts/{contractId}',
-      parameters: {'contractId': contractId},
+      path: '/my/contracts/{contractId}'.replaceAll('{contractId}', contractId),
     );
 
     if (response.statusCode == 200) {
@@ -52,8 +51,10 @@ class ContractsApi {
   Future<AcceptContract200Response> acceptContract(String contractId) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/contracts/{contractId}/accept',
-      parameters: {'contractId': contractId},
+      path: '/my/contracts/{contractId}/accept'.replaceAll(
+        '{contractId}',
+        contractId,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -68,8 +69,10 @@ class ContractsApi {
   Future<FulfillContract200Response> fulfillContract(String contractId) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/contracts/{contractId}/fulfill',
-      parameters: {'contractId': contractId},
+      path: '/my/contracts/{contractId}/fulfill'.replaceAll(
+        '{contractId}',
+        contractId,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -87,11 +90,11 @@ class ContractsApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/contracts/{contractId}/deliver',
-      parameters: {
-        'contractId': contractId,
-        'deliverContractRequest': deliverContractRequest.toJson(),
-      },
+      path: '/my/contracts/{contractId}/deliver'.replaceAll(
+        '{contractId}',
+        contractId,
+      ),
+      parameters: {'deliverContractRequest': deliverContractRequest.toJson()},
     );
 
     if (response.statusCode == 200) {

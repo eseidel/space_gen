@@ -70,6 +70,7 @@ extension EndpointGeneration on Endpoint {
       final paramName = typeName[0].toLowerCase() + typeName.substring(1);
       parameters.add({
         'name': paramName,
+        'bracketedName': '{$paramName}',
         'type': typeName,
         'nullableType': bodySchema.nullableTypeName(context),
         'required': true,
@@ -79,6 +80,7 @@ extension EndpointGeneration on Endpoint {
           isNullable: false,
         ),
         'fromJson': bodySchema.fromJsonExpression('json', context),
+        'sendIn': 'query',
       });
     }
 
@@ -88,16 +90,26 @@ extension EndpointGeneration on Endpoint {
     final namedParameters = parameters.where((p) => p['required'] == false);
     final positionalParameters = parameters.where((p) => p['required'] == true);
 
+    final pathParameters = parameters.where((p) => p['sendIn'] == 'path');
+    final queryParameters = parameters.where((p) => p['sendIn'] == 'query');
+    final hasQueryParameters = queryParameters.isNotEmpty;
+
+    // Cookie parameters are not supported for now.
+
     return {
       'methodName': methodName,
       'httpMethod': method.name,
       'path': path,
       'url': uri(context),
-      'hasParameters': parameters.isNotEmpty,
-      'parameters': parameters,
+      // Parameters grouped for dart parameter generation.
       'positionalParameters': positionalParameters,
       'hasNamedParameters': namedParameters.isNotEmpty,
       'namedParameters': namedParameters,
+      // Parameters grouped for call to server.
+      'pathParameters': pathParameters,
+      'hasQueryParameters': hasQueryParameters,
+      'queryParameters': queryParameters,
+      // TODO(eseidel): remove void support, it's unused.
       'returnIsVoid': returnType == 'void',
       'returnType': returnType,
     };
@@ -326,10 +338,12 @@ extension ParameterGeneration on Parameter {
     final typeSchema = context.maybeResolve(type)!;
     return {
       'name': name,
+      'bracketedName': '{$name}',
       'required': isRequired,
       'defaultValue': typeSchema.defaultValue,
       'type': typeSchema.typeName(context),
       'nullableType': typeSchema.nullableTypeName(context),
+      'sendIn': sendIn.name,
       'toJson': typeSchema.toJsonExpression(
         name,
         context,

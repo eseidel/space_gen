@@ -27,13 +27,10 @@ dart run space_gen
   - Render Dart code
 
 ## Todo
-* Add support for required keys.
 * Actually make the networking work.
 * Implement operator== and hashCode?
 * Generate tests. https://github.com/eseidel/space_gen/issues/1
 * Figure out if types should be immutable or not.
-* Use named args when multiple are same type (e.g. page/limit)
-* Support keyword arguments.
 * WaypointSymbol is rendered wrong.
 * Support parameter "in" keyword.
 

@@ -23,14 +23,17 @@ class {{ className }} {
     ) async {
         final response = await client.invokeApi(
             method: Method.{{{httpMethod}}},
-            path: '{{{path}}}',
-            {{#hasParameters}}
+            path: '{{{path}}}'
+            {{#pathParameters}}
+            .replaceAll('{{{ bracketedName }}}', {{{ toJson }}})
+            {{/pathParameters}},
+            {{#hasQueryParameters}}
             parameters: {
-                {{#parameters}}
+                {{#queryParameters}}
                 '{{{ name }}}': {{{ toJson }}},
-                {{/parameters}}
+                {{/queryParameters}}
             },
-            {{/hasParameters}}
+            {{/hasQueryParameters}}
         );
 
         if (response.statusCode == 200) {

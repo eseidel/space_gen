@@ -101,8 +101,7 @@ class FleetApi {
   Future<GetMyShip200Response> getMyShip(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/my/ships/{shipSymbol}',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}'.replaceAll('{shipSymbol}', shipSymbol),
     );
 
     if (response.statusCode == 200) {
@@ -117,8 +116,10 @@ class FleetApi {
   Future<CreateChart201Response> createChart(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/chart',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/chart'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -135,8 +136,10 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/negotiate/contract',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/negotiate/contract'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -151,8 +154,10 @@ class FleetApi {
   Future<GetShipCooldown200Response> getShipCooldown(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/my/ships/{shipSymbol}/cooldown',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/cooldown'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -167,8 +172,10 @@ class FleetApi {
   Future<DockShip200Response> dockShip(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/dock',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/dock'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -185,8 +192,10 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/extract',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/extract'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -204,8 +213,11 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/extract/survey',
-      parameters: {'shipSymbol': shipSymbol, 'survey': survey.toJson()},
+      path: '/my/ships/{shipSymbol}/extract/survey'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
+      parameters: {'survey': survey.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -223,11 +235,11 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/jettison',
-      parameters: {
-        'shipSymbol': shipSymbol,
-        'jettisonRequest': jettisonRequest.toJson(),
-      },
+      path: '/my/ships/{shipSymbol}/jettison'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
+      parameters: {'jettisonRequest': jettisonRequest.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -245,11 +257,11 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/jump',
-      parameters: {
-        'shipSymbol': shipSymbol,
-        'jumpShipRequest': jumpShipRequest.toJson(),
-      },
+      path: '/my/ships/{shipSymbol}/jump'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
+      parameters: {'jumpShipRequest': jumpShipRequest.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -266,8 +278,10 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/scan/systems',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/scan/systems'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -284,8 +298,10 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/scan/waypoints',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/scan/waypoints'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -302,8 +318,10 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/scan/ships',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/scan/ships'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -318,8 +336,10 @@ class FleetApi {
   Future<GetScrapShip200Response> getScrapShip(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/my/ships/{shipSymbol}/scrap',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/scrap'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -334,8 +354,10 @@ class FleetApi {
   Future<ScrapShip200Response> scrapShip(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/scrap',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/scrap'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -353,11 +375,11 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/navigate',
-      parameters: {
-        'shipSymbol': shipSymbol,
-        'navigateShipRequest': navigateShipRequest.toJson(),
-      },
+      path: '/my/ships/{shipSymbol}/navigate'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
+      parameters: {'navigateShipRequest': navigateShipRequest.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -375,11 +397,11 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/warp',
-      parameters: {
-        'shipSymbol': shipSymbol,
-        'warpShipRequest': warpShipRequest.toJson(),
-      },
+      path: '/my/ships/{shipSymbol}/warp'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
+      parameters: {'warpShipRequest': warpShipRequest.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -394,8 +416,10 @@ class FleetApi {
   Future<OrbitShip200Response> orbitShip(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/orbit',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/orbit'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -413,11 +437,11 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/purchase',
-      parameters: {
-        'shipSymbol': shipSymbol,
-        'purchaseCargoRequest': purchaseCargoRequest.toJson(),
-      },
+      path: '/my/ships/{shipSymbol}/purchase'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
+      parameters: {'purchaseCargoRequest': purchaseCargoRequest.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -435,11 +459,11 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/refine',
-      parameters: {
-        'shipSymbol': shipSymbol,
-        'shipRefineRequest': shipRefineRequest.toJson(),
-      },
+      path: '/my/ships/{shipSymbol}/refine'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
+      parameters: {'shipRefineRequest': shipRefineRequest.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -457,11 +481,11 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/refuel',
-      parameters: {
-        'shipSymbol': shipSymbol,
-        'refuelShipRequest': refuelShipRequest.toJson(),
-      },
+      path: '/my/ships/{shipSymbol}/refuel'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
+      parameters: {'refuelShipRequest': refuelShipRequest.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -476,8 +500,10 @@ class FleetApi {
   Future<GetRepairShip200Response> getRepairShip(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/my/ships/{shipSymbol}/repair',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/repair'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -492,8 +518,10 @@ class FleetApi {
   Future<RepairShip200Response> repairShip(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/repair',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/repair'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -511,11 +539,11 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/sell',
-      parameters: {
-        'shipSymbol': shipSymbol,
-        'sellCargoRequest': sellCargoRequest.toJson(),
-      },
+      path: '/my/ships/{shipSymbol}/sell'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
+      parameters: {'sellCargoRequest': sellCargoRequest.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -530,8 +558,10 @@ class FleetApi {
   Future<SiphonResources201Response> siphonResources(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/siphon',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/siphon'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -546,8 +576,10 @@ class FleetApi {
   Future<CreateSurvey201Response> createSurvey(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/survey',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/survey'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -565,11 +597,11 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/transfer',
-      parameters: {
-        'shipSymbol': shipSymbol,
-        'transferCargoRequest': transferCargoRequest.toJson(),
-      },
+      path: '/my/ships/{shipSymbol}/transfer'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
+      parameters: {'transferCargoRequest': transferCargoRequest.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -584,8 +616,10 @@ class FleetApi {
   Future<GetMyShipCargo200Response> getMyShipCargo(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/my/ships/{shipSymbol}/cargo',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/cargo'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -600,8 +634,10 @@ class FleetApi {
   Future<GetShipModules200Response> getShipModules(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/my/ships/{shipSymbol}/modules',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/modules'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -619,9 +655,11 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/modules/install',
+      path: '/my/ships/{shipSymbol}/modules/install'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
       parameters: {
-        'shipSymbol': shipSymbol,
         'installShipModuleRequest': installShipModuleRequest.toJson(),
       },
     );
@@ -641,11 +679,11 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/modules/remove',
-      parameters: {
-        'shipSymbol': shipSymbol,
-        'removeShipModuleRequest': removeShipModuleRequest.toJson(),
-      },
+      path: '/my/ships/{shipSymbol}/modules/remove'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
+      parameters: {'removeShipModuleRequest': removeShipModuleRequest.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -660,8 +698,10 @@ class FleetApi {
   Future<GetMounts200Response> getMounts(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/my/ships/{shipSymbol}/mounts',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/mounts'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -679,11 +719,11 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/mounts/install',
-      parameters: {
-        'shipSymbol': shipSymbol,
-        'installMountRequest': installMountRequest.toJson(),
-      },
+      path: '/my/ships/{shipSymbol}/mounts/install'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
+      parameters: {'installMountRequest': installMountRequest.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -701,11 +741,11 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.post,
-      path: '/my/ships/{shipSymbol}/mounts/remove',
-      parameters: {
-        'shipSymbol': shipSymbol,
-        'removeMountRequest': removeMountRequest.toJson(),
-      },
+      path: '/my/ships/{shipSymbol}/mounts/remove'.replaceAll(
+        '{shipSymbol}',
+        shipSymbol,
+      ),
+      parameters: {'removeMountRequest': removeMountRequest.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -720,8 +760,7 @@ class FleetApi {
   Future<GetShipNav200Response> getShipNav(String shipSymbol) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/my/ships/{shipSymbol}/nav',
-      parameters: {'shipSymbol': shipSymbol},
+      path: '/my/ships/{shipSymbol}/nav'.replaceAll('{shipSymbol}', shipSymbol),
     );
 
     if (response.statusCode == 200) {
@@ -739,11 +778,8 @@ class FleetApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.patch,
-      path: '/my/ships/{shipSymbol}/nav',
-      parameters: {
-        'shipSymbol': shipSymbol,
-        'patchShipNavRequest': patchShipNavRequest.toJson(),
-      },
+      path: '/my/ships/{shipSymbol}/nav'.replaceAll('{shipSymbol}', shipSymbol),
+      parameters: {'patchShipNavRequest': patchShipNavRequest.toJson()},
     );
 
     if (response.statusCode == 200) {

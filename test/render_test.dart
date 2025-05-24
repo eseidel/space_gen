@@ -171,4 +171,120 @@ void main() {
     expect(out.childFile('lib/model/account.dart').existsSync(), isTrue);
     expect(out.childFile('lib/model/account_role.dart').existsSync(), isTrue);
   });
+
+  test('renderSpec with request body', () async {
+    final fs = MemoryFileSystem.test();
+    final spec = fs.file('test/spec.json')
+      ..createSync(recursive: true)
+      ..writeAsStringSync(
+        jsonEncode({
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/my/ships/{shipSymbol}/purchase': {
+              'post': {
+                'operationId': 'purchase-cargo',
+                'summary': 'Purchase Cargo',
+                'tags': ['Fleet'],
+                'description': 'Purchase cargo from a market.',
+                'requestBody': {
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'properties': {
+                          'symbol': {
+                            'type': 'string',
+                            'description':
+                                'The symbol of the good to purchase.',
+                          },
+                          'units': {
+                            'type': 'integer',
+                            'minimum': 1,
+                            'description':
+                                'The number of units of the good to purchase.',
+                          },
+                        },
+                        'required': ['symbol', 'units'],
+                        'title': 'Purchase Cargo Request',
+                      },
+                    },
+                  },
+                  'required': true,
+                },
+                'parameters': [
+                  {
+                    'schema': {'type': 'string'},
+                    'in': 'path',
+                    'name': 'shipSymbol',
+                    'required': true,
+                    'description': 'The symbol of the ship.',
+                  },
+                ],
+                'responses': {
+                  '201': {
+                    'description': 'Purchased goods successfully.',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          'type': 'object',
+                          'properties': {
+                            'data': {
+                              'type': 'object',
+                              'properties': {
+                                'cargo': {
+                                  'type': 'object',
+                                  'properties': {
+                                    'units': {
+                                      'type': 'integer',
+                                      'description': 'The number of units.',
+                                    },
+                                  },
+                                },
+                              },
+                              'required': ['cargo'],
+                            },
+                          },
+                          'required': ['data'],
+                          'title': 'Purchase Cargo 201 Response',
+                          'description': 'Purchased goods successfully.',
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        }),
+      );
+
+    final out = fs.directory('spacetraders');
+
+    final logger = _MockLogger();
+
+    await runWithLogger(
+      logger,
+      () => renderSpec(
+        specUri: Uri.file(spec.path),
+        packageName: 'spacetraders',
+        outDir: out,
+        templateDir: templateDir,
+        runProcess: runProcess,
+      ),
+    );
+    expect(out.existsSync(), isTrue);
+    expect(out.childFile('lib/api.dart').existsSync(), isTrue);
+    expect(out.childFile('lib/api_client.dart').existsSync(), isTrue);
+    expect(out.childFile('lib/api/fleet_api.dart').existsSync(), isTrue);
+    expect(
+      out.childFile('lib/model/purchase_cargo201_response.dart').existsSync(),
+      isTrue,
+    );
+    expect(
+      out.childFile('lib/model/purchase_cargo_request.dart').existsSync(),
+      isTrue,
+    );
+  });
 }

@@ -41,8 +41,10 @@ class SystemsApi {
   Future<GetSystem200Response> getSystem(String systemSymbol) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/systems/{systemSymbol}',
-      parameters: {'systemSymbol': systemSymbol},
+      path: '/systems/{systemSymbol}'.replaceAll(
+        '{systemSymbol}',
+        systemSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
@@ -63,13 +65,15 @@ class SystemsApi {
   }) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/systems/{systemSymbol}/waypoints',
+      path: '/systems/{systemSymbol}/waypoints'.replaceAll(
+        '{systemSymbol}',
+        systemSymbol,
+      ),
       parameters: {
         'page': page,
         'limit': limit,
         'type': type?.toJson(),
         'traits': traits,
-        'systemSymbol': systemSymbol,
       },
     );
 
@@ -88,11 +92,9 @@ class SystemsApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}',
-      parameters: {
-        'systemSymbol': systemSymbol,
-        'waypointSymbol': waypointSymbol,
-      },
+      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}'
+          .replaceAll('{systemSymbol}', systemSymbol)
+          .replaceAll('{waypointSymbol}', waypointSymbol),
     );
 
     if (response.statusCode == 200) {
@@ -110,11 +112,9 @@ class SystemsApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}/construction',
-      parameters: {
-        'systemSymbol': systemSymbol,
-        'waypointSymbol': waypointSymbol,
-      },
+      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}/construction'
+          .replaceAll('{systemSymbol}', systemSymbol)
+          .replaceAll('{waypointSymbol}', waypointSymbol),
     );
 
     if (response.statusCode == 200) {
@@ -134,10 +134,10 @@ class SystemsApi {
     final response = await client.invokeApi(
       method: Method.post,
       path:
-          '/systems/{systemSymbol}/waypoints/{waypointSymbol}/construction/supply',
+          '/systems/{systemSymbol}/waypoints/{waypointSymbol}/construction/supply'
+              .replaceAll('{systemSymbol}', systemSymbol)
+              .replaceAll('{waypointSymbol}', waypointSymbol),
       parameters: {
-        'systemSymbol': systemSymbol,
-        'waypointSymbol': waypointSymbol,
         'supplyConstructionRequest': supplyConstructionRequest.toJson(),
       },
     );
@@ -157,11 +157,9 @@ class SystemsApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}/market',
-      parameters: {
-        'systemSymbol': systemSymbol,
-        'waypointSymbol': waypointSymbol,
-      },
+      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}/market'
+          .replaceAll('{systemSymbol}', systemSymbol)
+          .replaceAll('{waypointSymbol}', waypointSymbol),
     );
 
     if (response.statusCode == 200) {
@@ -179,11 +177,9 @@ class SystemsApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}/jump-gate',
-      parameters: {
-        'systemSymbol': systemSymbol,
-        'waypointSymbol': waypointSymbol,
-      },
+      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}/jump-gate'
+          .replaceAll('{systemSymbol}', systemSymbol)
+          .replaceAll('{waypointSymbol}', waypointSymbol),
     );
 
     if (response.statusCode == 200) {
@@ -201,11 +197,9 @@ class SystemsApi {
   ) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}/shipyard',
-      parameters: {
-        'systemSymbol': systemSymbol,
-        'waypointSymbol': waypointSymbol,
-      },
+      path: '/systems/{systemSymbol}/waypoints/{waypointSymbol}/shipyard'
+          .replaceAll('{systemSymbol}', systemSymbol)
+          .replaceAll('{waypointSymbol}', waypointSymbol),
     );
 
     if (response.statusCode == 200) {

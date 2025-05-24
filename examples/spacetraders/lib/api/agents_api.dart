@@ -34,8 +34,7 @@ class AgentsApi {
   Future<GetAgent200Response> getAgent(String agentSymbol) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/agents/{agentSymbol}',
-      parameters: {'agentSymbol': agentSymbol},
+      path: '/agents/{agentSymbol}'.replaceAll('{agentSymbol}', agentSymbol),
     );
 
     if (response.statusCode == 200) {

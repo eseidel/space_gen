@@ -33,8 +33,10 @@ class FactionsApi {
   Future<GetFaction200Response> getFaction(String factionSymbol) async {
     final response = await client.invokeApi(
       method: Method.get,
-      path: '/factions/{factionSymbol}',
-      parameters: {'factionSymbol': factionSymbol},
+      path: '/factions/{factionSymbol}'.replaceAll(
+        '{factionSymbol}',
+        factionSymbol,
+      ),
     );
 
     if (response.statusCode == 200) {
