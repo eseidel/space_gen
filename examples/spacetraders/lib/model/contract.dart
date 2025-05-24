@@ -7,10 +7,10 @@ class Contract {
     required this.factionSymbol,
     required this.type,
     required this.terms,
-    required this.accepted,
-    required this.fulfilled,
     required this.expiration,
     required this.deadlineToAccept,
+    this.accepted = false,
+    this.fulfilled = false,
   });
 
   factory Contract.fromJson(Map<String, dynamic> json) {

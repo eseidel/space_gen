@@ -1,7 +1,7 @@
 import 'package:spacetraders/model/ship_nav_flight_mode.dart';
 
 class PatchShipNavRequest {
-  PatchShipNavRequest({required this.flightMode});
+  PatchShipNavRequest({this.flightMode = ShipNavFlightMode.CRUISE});
 
   factory PatchShipNavRequest.fromJson(Map<String, dynamic> json) {
     return PatchShipNavRequest(

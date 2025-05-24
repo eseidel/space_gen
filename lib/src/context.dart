@@ -128,6 +128,24 @@ extension _SchemaGeneration on Schema {
   /// Whether this schema needs to be rendered.
   bool get needsRender => type == SchemaType.object || isEnum;
 
+  /// The name of an enum value.
+  String enumValueName(String jsonName) {
+    // Dart style would be to use camelCase.
+    // return camelFromScreamingCaps(jsonName);
+    // OpenAPI uses screaming caps for enum values so we're matching for now.
+    return jsonName;
+  }
+
+  /// The default value of this schema as a string.
+  String? get defaultValueString {
+    // If the type of this schema is an object we need to convert the default
+    // value to that object type.
+    if (isEnum && defaultValue is String) {
+      return '$className.${enumValueName(defaultValue as String)}';
+    }
+    return defaultValue?.toString();
+  }
+
   /// The type of schema to render.
   SchemaRenderType get renderType {
     if (isEnum) {
@@ -280,17 +298,14 @@ extension _SchemaGeneration on Schema {
     // TODO(eseidel): Remove this once we've migrated to the new generator.
     final dartName = avoidReservedWord(jsonName);
     return {
-      'propertyName': dartName,
-      'propertyType': schema.typeName(context),
-      'propertyToJson': schema.toJsonExpression(
-        dartName,
-        context,
-        isNullable: false,
-      ),
-      'propertyFromJson': schema.fromJsonExpression(
-        "json['$jsonName']",
-        context,
-      ),
+      'name': dartName,
+      'isRequired': schema.defaultValue == null,
+      'hasDefaultValue': schema.defaultValue != null,
+      'defaultValue': schema.defaultValueString,
+      'type': schema.typeName(context),
+      'nullableType': schema.nullableTypeName(context),
+      'toJson': schema.toJsonExpression(dartName, context, isNullable: false),
+      'fromJson': schema.fromJsonExpression("json['$jsonName']", context),
     };
   }
 
@@ -313,11 +328,15 @@ extension _SchemaGeneration on Schema {
     }).toList();
 
     final valueSchema = this.valueSchema(context);
+    final hasAdditionalProperties = valueSchema != null;
+    // Force named properties to be rendered if hasAdditionalProperties is true.
+    final hasProperties =
+        renderProperties.isNotEmpty || hasAdditionalProperties;
     return {
       'schemaName': className,
-      'hasProperties': renderProperties.isNotEmpty,
+      'hasProperties': hasProperties,
       'properties': renderProperties,
-      'hasAdditionalProperties': valueSchema != null,
+      'hasAdditionalProperties': hasAdditionalProperties,
       'valueSchema': valueSchema?.typeName(context),
       'valueToJson': valueSchema?.toJsonExpression(
         'value',
@@ -372,9 +391,7 @@ extension _SchemaGeneration on Schema {
     }
     final sharedPrefix = _sharedPrefix(enumValues);
     Map<String, dynamic> enumValueToTemplateContext(String value) {
-      // var dartName = camelFromScreamingCaps(value);
-      // OpenAPI uses screaming caps for enum values so we're matching for now.
-      var dartName = value;
+      var dartName = enumValueName(value);
       // OpenAPI also removes shared prefixes from enum values.
       dartName = dartName.replaceAll(sharedPrefix, '');
       // And avoids reserved words.
@@ -406,7 +423,8 @@ extension _ParameterGeneration on Parameter {
       'name': name,
       'bracketedName': '{$name}',
       'required': isRequired,
-      'defaultValue': typeSchema.defaultValue,
+      'hasDefaultValue': typeSchema.defaultValue != null,
+      'defaultValue': typeSchema.defaultValueString,
       'type': typeSchema.typeName(context),
       'nullableType': typeSchema.nullableTypeName(context),
       'sendIn': sendIn.name,

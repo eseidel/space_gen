@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' as io;
 import 'dart:mirrors';
 
+import 'package:file/file.dart';
 import 'package:file/local.dart';
 import 'package:file/memory.dart';
 import 'package:mocktail/mocktail.dart';
@@ -21,45 +22,54 @@ void main() {
         .resolve('../lib/templates');
     final templateDir = localFs.directory(templatesUri.path);
 
-    ProcessResult runProcess(
+    io.ProcessResult runProcess(
       String executable,
       List<String> arguments, {
       String? workingDirectory,
     }) {
-      return ProcessResult(0, 0, '', '');
+      return io.ProcessResult(0, 0, '', '');
+    }
+
+    Future<void> renderToDirectory({
+      required Map<String, dynamic> spec,
+      required Directory outDir,
+      required Logger logger,
+    }) async {
+      final fs = outDir.fileSystem;
+      final specFile = fs.file('spec.json')
+        ..createSync(recursive: true)
+        ..writeAsStringSync(jsonEncode(spec));
+      final logger = _MockLogger();
+      await runWithLogger(
+        logger,
+        () => loadAndRenderSpec(
+          specUri: Uri.file(specFile.path),
+          packageName: outDir.path.split('/').last,
+          outDir: outDir,
+          templateDir: templateDir,
+          runProcess: runProcess,
+        ),
+      );
     }
 
     test('deletes existing output directory', () async {
       final fs = MemoryFileSystem.test();
       final out = fs.directory('spacetraders');
-      final spec = fs.file('test/spec.json')
-        ..createSync(recursive: true)
-        ..writeAsStringSync(
-          jsonEncode({
-            'servers': [
-              {'url': 'https://api.spacetraders.io/v2'},
-            ],
-            'paths': {
-              '/users': {
-                'get': {'summary': 'Get user'},
-              },
-            },
-          }),
-        );
+      final spec = {
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {'summary': 'Get user'},
+          },
+        },
+      };
       final spuriousFile = out.childFile('foo.txt')
         ..createSync(recursive: true);
       expect(spuriousFile.existsSync(), isTrue);
       final logger = _MockLogger();
-      await runWithLogger(
-        logger,
-        () => loadAndRenderSpec(
-          specUri: Uri.file(spec.path),
-          packageName: 'spacetraders',
-          outDir: out,
-          templateDir: templateDir,
-          runProcess: runProcess,
-        ),
-      );
+      await renderToDirectory(spec: spec, outDir: out, logger: logger);
       expect(spuriousFile.existsSync(), isFalse);
       expect(out.childFile('lib/api.dart').existsSync(), isTrue);
       expect(out.childFile('lib/api_client.dart').existsSync(), isTrue);
@@ -67,55 +77,29 @@ void main() {
 
     test('empty spec throws format exception', () async {
       final fs = MemoryFileSystem.test();
-      final spec = fs.file('test/spec.json')
-        ..createSync(recursive: true)
-        ..writeAsStringSync('{}');
       final out = fs.directory('spacetraders');
-
       final logger = _MockLogger();
       await expectLater(
-        () => runWithLogger(
-          logger,
-          () => loadAndRenderSpec(
-            specUri: Uri.file(spec.path),
-            packageName: 'spacetraders',
-            outDir: out,
-          ),
-        ),
+        () => renderToDirectory(spec: {}, outDir: out, logger: logger),
         throwsA(isA<FormatException>()),
       );
     });
 
     test('smoke test with simple spec', () async {
       final fs = MemoryFileSystem.test();
-      final spec = fs.file('test/spec.json')
-        ..createSync(recursive: true)
-        ..writeAsStringSync(
-          jsonEncode({
-            'servers': [
-              {'url': 'https://api.spacetraders.io/v2'},
-            ],
-            'paths': {
-              '/users': {
-                'get': {'summary': 'Get user'},
-              },
-            },
-          }),
-        );
+      final spec = {
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {'summary': 'Get user'},
+          },
+        },
+      };
       final out = fs.directory('spacetraders');
-
       final logger = _MockLogger();
-
-      await runWithLogger(
-        logger,
-        () => loadAndRenderSpec(
-          specUri: Uri.file(spec.path),
-          packageName: 'spacetraders',
-          outDir: out,
-          templateDir: templateDir,
-          runProcess: runProcess,
-        ),
-      );
+      await renderToDirectory(spec: spec, outDir: out, logger: logger);
       expect(out.existsSync(), isTrue);
       expect(out.childFile('lib/api.dart').existsSync(), isTrue);
       expect(out.childFile('lib/api_client.dart').existsSync(), isTrue);
@@ -123,80 +107,67 @@ void main() {
 
     test('with real endpoints', () async {
       final fs = MemoryFileSystem.test();
-      final spec = fs.file('test/spec.json')
-        ..createSync(recursive: true)
-        ..writeAsStringSync(
-          jsonEncode({
-            'servers': [
-              {'url': 'https://api.spacetraders.io/v2'},
-            ],
-            'paths': {
-              '/users/{name}': {
-                'get': {
-                  'operationId': 'get-user',
-                  'summary': 'Get User',
-                  'description': 'Fetch a user by name.',
-                  'parameters': [
-                    {
-                      'schema': {'type': 'string'},
-                      'in': 'path',
-                      'name': 'name',
-                      'required': true,
-                      'description': 'The name of the user to fetch.',
-                    },
-                  ],
-                  'responses': {
-                    '200': {
-                      'description': 'Default Response',
-                      'content': {
-                        'application/json': {
-                          'schema': {
-                            'type': 'object',
-                            'properties': {
-                              'data': {r'$ref': '#/components/schemas/Account'},
-                            },
-                            'required': ['data'],
-                          },
+      final spec = {
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users/{name}': {
+            'get': {
+              'operationId': 'get-user',
+              'summary': 'Get User',
+              'description': 'Fetch a user by name.',
+              'parameters': [
+                {
+                  'schema': {'type': 'string'},
+                  'in': 'path',
+                  'name': 'name',
+                  'required': true,
+                  'description': 'The name of the user to fetch.',
+                },
+              ],
+              'responses': {
+                '200': {
+                  'description': 'Default Response',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'properties': {
+                          'data': {r'$ref': '#/components/schemas/Account'},
                         },
+                        'required': ['data'],
                       },
                     },
                   },
                 },
               },
             },
-            'components': {
-              'schemas': {
-                'Account': {
-                  'type': 'object',
-                  'properties': {
-                    'role': {
-                      'type': 'string',
-                      'enum': ['admin', 'user'],
-                      'description': 'The role of the account.',
-                    },
-                    'id': {'type': 'string'},
-                    'email': {'type': 'string', 'nullable': true},
-                  },
-                  'required': ['role', 'id'],
+          },
+        },
+        'components': {
+          'schemas': {
+            'Account': {
+              'type': 'object',
+              'properties': {
+                'role': {
+                  'type': 'string',
+                  'enum': ['admin', 'user'],
+                  'description': 'The role of the account.',
                 },
+                'id': {'type': 'string'},
+                'email': {'type': 'string', 'nullable': true},
               },
+              'required': ['role', 'id'],
             },
-          }),
-        );
+          },
+        },
+      };
       final out = fs.directory('spacetraders');
 
       final logger = _MockLogger();
 
-      await runWithLogger(
-        logger,
-        () => loadAndRenderSpec(
-          specUri: Uri.file(spec.path),
-          packageName: 'spacetraders',
-          outDir: out,
-          templateDir: templateDir,
-          runProcess: runProcess,
-        ),
-      );
+      await renderToDirectory(spec: spec, outDir: out, logger: logger);
       expect(out.existsSync(), isTrue);
       expect(out.childFile('lib/api.dart').existsSync(), isTrue);
       expect(out.childFile('lib/api_client.dart').existsSync(), isTrue);
@@ -211,106 +182,90 @@ void main() {
 
     test('with request body', () async {
       final fs = MemoryFileSystem.test();
-      final spec = fs.file('test/spec.json')
-        ..createSync(recursive: true)
-        ..writeAsStringSync(
-          jsonEncode({
-            'servers': [
-              {'url': 'https://api.spacetraders.io/v2'},
-            ],
-            'paths': {
-              '/my/ships/{shipSymbol}/purchase': {
-                'post': {
-                  'operationId': 'purchase-cargo',
-                  'summary': 'Purchase Cargo',
-                  'tags': ['Fleet'],
-                  'description': 'Purchase cargo from a market.',
-                  'requestBody': {
-                    'content': {
-                      'application/json': {
-                        'schema': {
-                          'type': 'object',
-                          'properties': {
-                            'symbol': {
-                              'type': 'string',
-                              'description':
-                                  'The symbol of the good to purchase.',
-                            },
-                            'units': {
-                              'type': 'integer',
-                              'minimum': 1,
-                              'description':
-                                  'The number of units of the good to purchase.',
-                            },
-                          },
-                          'required': ['symbol', 'units'],
-                          'title': 'Purchase Cargo Request',
+      final spec = {
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/my/ships/{shipSymbol}/purchase': {
+            'post': {
+              'operationId': 'purchase-cargo',
+              'summary': 'Purchase Cargo',
+              'tags': ['Fleet'],
+              'description': 'Purchase cargo from a market.',
+              'requestBody': {
+                'content': {
+                  'application/json': {
+                    'schema': {
+                      'type': 'object',
+                      'properties': {
+                        'symbol': {
+                          'type': 'string',
+                          'description': 'The symbol of the good to purchase.',
+                        },
+                        'units': {
+                          'type': 'integer',
+                          'minimum': 1,
+                          'description':
+                              'The number of units of the good to purchase.',
                         },
                       },
+                      'required': ['symbol', 'units'],
+                      'title': 'Purchase Cargo Request',
                     },
-                    'required': true,
                   },
-                  'parameters': [
-                    {
-                      'schema': {'type': 'string'},
-                      'in': 'path',
-                      'name': 'shipSymbol',
-                      'required': true,
-                      'description': 'The symbol of the ship.',
-                    },
-                  ],
-                  'responses': {
-                    '201': {
-                      'description': 'Purchased goods successfully.',
-                      'content': {
-                        'application/json': {
-                          'schema': {
+                },
+                'required': true,
+              },
+              'parameters': [
+                {
+                  'schema': {'type': 'string'},
+                  'in': 'path',
+                  'name': 'shipSymbol',
+                  'required': true,
+                  'description': 'The symbol of the ship.',
+                },
+              ],
+              'responses': {
+                '201': {
+                  'description': 'Purchased goods successfully.',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'properties': {
+                          'data': {
                             'type': 'object',
                             'properties': {
-                              'data': {
+                              'cargo': {
                                 'type': 'object',
                                 'properties': {
-                                  'cargo': {
-                                    'type': 'object',
-                                    'properties': {
-                                      'units': {
-                                        'type': 'integer',
-                                        'description': 'The number of units.',
-                                      },
-                                    },
+                                  'units': {
+                                    'type': 'integer',
+                                    'description': 'The number of units.',
                                   },
                                 },
-                                'required': ['cargo'],
                               },
                             },
-                            'required': ['data'],
-                            'title': 'Purchase Cargo 201 Response',
-                            'description': 'Purchased goods successfully.',
+                            'required': ['cargo'],
                           },
                         },
+                        'required': ['data'],
+                        'title': 'Purchase Cargo 201 Response',
+                        'description': 'Purchased goods successfully.',
                       },
                     },
                   },
                 },
               },
             },
-          }),
-        );
-
+          },
+        },
+      };
       final out = fs.directory('spacetraders');
-
       final logger = _MockLogger();
 
-      await runWithLogger(
-        logger,
-        () => loadAndRenderSpec(
-          specUri: Uri.file(spec.path),
-          packageName: 'spacetraders',
-          outDir: out,
-          templateDir: templateDir,
-          runProcess: runProcess,
-        ),
-      );
+      await renderToDirectory(spec: spec, outDir: out, logger: logger);
       expect(out.existsSync(), isTrue);
       expect(out.childFile('lib/api.dart').existsSync(), isTrue);
       expect(out.childFile('lib/api_client.dart').existsSync(), isTrue);
@@ -327,74 +282,162 @@ void main() {
 
     test('with newtype', () async {
       final fs = MemoryFileSystem.test();
-      final spec = fs.file('test/spec.json')
-        ..createSync(recursive: true)
-        ..writeAsStringSync(
-          jsonEncode({
-            'servers': [
-              {'url': 'https://api.spacetraders.io/v2'},
-            ],
-            'paths': {
-              '/users': {
-                'get': {
-                  'operationId': 'get-user',
-                  'summary': 'Get User',
-                  'description': 'Fetch a user by name.',
-                  'parameters': [
-                    {
-                      'schema': {'type': 'string'},
-                      'in': 'query',
-                      'name': 'id',
-                      'required': true,
-                      'description': 'The role of the user to fetch.',
-                    },
-                  ],
-                  'responses': {
-                    '200': {
-                      'description': 'Default Response',
-                      'content': {
-                        'application/json': {
-                          'schema': {
-                            'type': 'object',
-                            'properties': {
-                              'user': {r'$ref': '#/components/schemas/User'},
-                              'multiplier': {
-                                r'$ref': '#/components/schemas/Multiplier',
-                              },
-                            },
-                            'required': ['user', 'multiplier'],
+      final spec = {
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'operationId': 'get-user',
+              'summary': 'Get User',
+              'description': 'Fetch a user by name.',
+              'parameters': [
+                {
+                  'schema': {'type': 'string'},
+                  'in': 'query',
+                  'name': 'id',
+                  'required': true,
+                  'description': 'The role of the user to fetch.',
+                },
+              ],
+              'responses': {
+                '200': {
+                  'description': 'Default Response',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'properties': {
+                          'user': {r'$ref': '#/components/schemas/User'},
+                          'multiplier': {
+                            r'$ref': '#/components/schemas/Multiplier',
                           },
                         },
+                        'required': ['user', 'multiplier'],
                       },
                     },
                   },
                 },
               },
             },
-            'components': {
-              'schemas': {
-                'User': {'type': 'string'},
-                'Multiplier': {'type': 'number'},
-              },
-            },
-          }),
-        );
+          },
+        },
+        'components': {
+          'schemas': {
+            'User': {'type': 'string'},
+            'Multiplier': {'type': 'number'},
+          },
+        },
+      };
       final out = fs.directory('spacetraders');
-
       final logger = _MockLogger();
 
-      await runWithLogger(
-        logger,
-        () => loadAndRenderSpec(
-          specUri: Uri.file(spec.path),
-          packageName: 'spacetraders',
-          outDir: out,
-          templateDir: templateDir,
-          runProcess: runProcess,
-        ),
-      );
+      await renderToDirectory(spec: spec, outDir: out, logger: logger);
       expect(out.childFile('lib/model/user.dart').existsSync(), isTrue);
       expect(out.childFile('lib/model/multiplier.dart').existsSync(), isTrue);
+    });
+
+    test('with default enum value', () async {
+      final fs = MemoryFileSystem.test();
+      final spec = {
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'operationId': 'get-user',
+              'summary': 'Get User',
+              'description': 'Fetch a user by name.',
+              'parameters': [
+                {
+                  'schema': {'type': 'string'},
+                  'in': 'query',
+                  'name': 'id',
+                  'required': true,
+                  'description': 'The role of the user to fetch.',
+                },
+              ],
+              'responses': {
+                '200': {
+                  'description': 'Default Response',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'properties': {
+                          'user': {r'$ref': '#/components/schemas/User'},
+                        },
+                        'required': ['user'],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'User': {
+              'type': 'string',
+              'enum': ['admin', 'user'],
+              // Special handling is needed when an enum is default.
+              'default': 'user',
+            },
+          },
+        },
+      };
+      final out = fs.directory('spacetraders');
+      final logger = _MockLogger();
+
+      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+      expect(
+        out.childFile('lib/model/get_user200_response.dart').existsSync(),
+        isTrue,
+      );
+      expect(out.childFile('lib/model/user.dart').existsSync(), isTrue);
+    });
+
+    test('with additionalProperties', () async {
+      final fs = MemoryFileSystem.test();
+      final spec = {
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'operationId': 'get-user',
+              'summary': 'Get User',
+              'description': 'Fetch a user by name.',
+              'responses': {
+                '200': {
+                  'description': 'Default Response',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        // Makes this into a Map<String, String>
+                        'additionalProperties': {'type': 'string'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+      final out = fs.directory('spacetraders');
+      final logger = _MockLogger();
+
+      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+      expect(
+        out.childFile('lib/model/get_user200_response.dart').existsSync(),
+        isTrue,
+      );
     });
   });
 }

@@ -4,22 +4,16 @@ import '{{{.}}}';
 
 class {{ schemaName }} {
     {{ schemaName }}(
-        {{#hasProperties}}{ {{/hasProperties}}
-        {{#properties}}
-        required this.{{ propertyName }},
-        {{/properties}}
-        {{#hasProperties}} }{{/hasProperties}}
-        {{#hasAdditionalProperties}}
-        {
-        required this.additionalProperties,
-        }
-        {{/hasAdditionalProperties}}
+        {{#hasProperties}}
+        { {{#properties}}{{#isRequired}}required{{/isRequired}} this.{{{ name }}}{{#hasDefaultValue}} = {{{ defaultValue }}}{{/hasDefaultValue}},{{/properties}}
+        {{#hasAdditionalProperties}}required this.additionalProperties,{{/hasAdditionalProperties}} }
+        {{/hasProperties}}
     );
 
     factory {{ schemaName }}.fromJson(Map<String, dynamic> json) {
         return {{ schemaName }}(
             {{#properties}}
-            {{ propertyName }}: {{{ propertyFromJson }}},
+            {{ name }}: {{{ fromJson }}},
             {{/properties}}
             {{#hasAdditionalProperties}}
             additionalProperties: json.map((key, value) => MapEntry(key, {{{ valueFromJson }}})),
@@ -28,7 +22,7 @@ class {{ schemaName }} {
     }
 
     {{#properties}}
-    final {{{ propertyType }}} {{ propertyName }};
+    final {{{ type }}} {{ name }};
     {{/properties}}
 
     {{#hasAdditionalProperties}}
@@ -40,7 +34,7 @@ class {{ schemaName }} {
     Map<String, dynamic> toJson() {
         return {
             {{#properties}}
-            '{{ propertyName }}': {{{ propertyToJson }}},
+            '{{ name }}': {{{ toJson }}},
             {{/properties}}
             {{#hasAdditionalProperties}}
             ...additionalProperties.map((key, value) => MapEntry(key, {{{ valueToJson }}})),

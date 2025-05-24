@@ -18,7 +18,7 @@ class {{ className }} {
         {{{ type }}} {{{ name }}},
         {{/positionalParameters}}
         {{#hasNamedParameters}}
-        { {{#namedParameters}}{{#required}}required {{{ type }}}{{/required}}{{^required}}{{{ nullableType }}}{{/required}} {{{ name }}}{{#defaultValue}} = {{{ defaultValue }}}{{/defaultValue}},{{/namedParameters}} }
+        { {{#namedParameters}}{{#required}}required {{{ type }}}{{/required}}{{^required}}{{{ nullableType }}}{{/required}} {{{ name }}}{{#hasDefaultValue}} = {{{ defaultValue }}}{{/hasDefaultValue}},{{/namedParameters}} }
         {{/hasNamedParameters}}
     ) async {
         final response = await client.invokeApi(

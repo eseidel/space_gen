@@ -1,5 +1,5 @@
 class RefuelShipRequest {
-  RefuelShipRequest({required this.units, required this.fromCargo});
+  RefuelShipRequest({required this.units, this.fromCargo = false});
 
   factory RefuelShipRequest.fromJson(Map<String, dynamic> json) {
     return RefuelShipRequest(

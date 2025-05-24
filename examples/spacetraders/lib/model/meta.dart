@@ -1,5 +1,5 @@
 class Meta {
-  Meta({required this.total, required this.page, required this.limit});
+  Meta({required this.total, this.page = 1, this.limit = 10});
 
   factory Meta.fromJson(Map<String, dynamic> json) {
     return Meta(
