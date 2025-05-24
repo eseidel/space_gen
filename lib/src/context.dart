@@ -344,6 +344,7 @@ extension _SchemaGeneration on Schema {
       'hasProperties': hasProperties,
       'properties': renderProperties,
       'hasAdditionalProperties': hasAdditionalProperties,
+      'additionalPropertiesName': 'entities', // Matching OpenAPI.
       'valueSchema': valueSchema?.typeName(context),
       'valueToJson': valueSchema?.toJsonExpression(
         'value',

@@ -6,7 +6,7 @@ class {{ typeName }} {
     {{ typeName }}(
         {{#hasProperties}}
         { {{#properties}}{{#isRequired}}required{{/isRequired}} this.{{{ name }}}{{#hasDefaultValue}} = {{{ defaultValue }}}{{/hasDefaultValue}},{{/properties}}
-        {{#hasAdditionalProperties}}required this.additionalProperties,{{/hasAdditionalProperties}} }
+        {{#hasAdditionalProperties}}required this.{{additionalPropertiesName}},{{/hasAdditionalProperties}} }
         {{/hasProperties}}
     );
 
@@ -16,7 +16,7 @@ class {{ typeName }} {
             {{ name }}: {{{ fromJson }}},
             {{/properties}}
             {{#hasAdditionalProperties}}
-            additionalProperties: json.map((key, value) => MapEntry(key, {{{ valueFromJson }}})),
+            {{additionalPropertiesName}}: json.map((key, value) => MapEntry(key, {{{ valueFromJson }}})),
             {{/hasAdditionalProperties}}
         );
     }
@@ -35,9 +35,9 @@ class {{ typeName }} {
     {{/properties}}
 
     {{#hasAdditionalProperties}}
-    final Map<String, {{{ valueSchema }}}> additionalProperties;
+    final Map<String, {{{ valueSchema }}}> {{additionalPropertiesName}};
 
-    {{{ valueSchema }}}? operator [](String key) => additionalProperties[key];
+    {{{ valueSchema }}}? operator [](String key) => {{additionalPropertiesName}}[key];
     {{/hasAdditionalProperties}}
 
     Map<String, dynamic> toJson() {
@@ -46,7 +46,7 @@ class {{ typeName }} {
             '{{ name }}': {{{ toJson }}},
             {{/properties}}
             {{#hasAdditionalProperties}}
-            ...additionalProperties.map((key, value) => MapEntry(key, {{{ valueToJson }}})),
+            ...{{additionalPropertiesName}}.map((key, value) => MapEntry(key, {{{ valueToJson }}})),
             {{/hasAdditionalProperties}}
         };
     }
