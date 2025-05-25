@@ -5,7 +5,7 @@ abstract class Visitor {
   void visitSpec(Spec spec) {}
   void visitEndpoint(Endpoint endpoint) {}
   void visitParameter(Parameter parameter) {}
-  void visitReference(SchemaRef ref) {}
+  void visitReference<T>(RefOr<T> ref) {}
   void visitSchema(Schema schema) {}
 }
 
@@ -15,9 +15,9 @@ class _RefCollector extends Visitor {
   final Set<String> _refs;
 
   @override
-  void visitReference(SchemaRef ref) {
-    if (ref.uri != null) {
-      _refs.add(ref.uri!);
+  void visitReference<T>(RefOr<T> ref) {
+    if (ref.ref != null) {
+      _refs.add(ref.ref!);
     }
   }
 }
@@ -59,15 +59,18 @@ class SpecWalker {
     _maybeRef(parameter.type);
   }
 
-  void _maybeRef(SchemaRef? ref) {
+  void _maybeRef<T>(RefOr<T>? ref) {
     if (ref != null) {
       _ref(ref);
     }
   }
 
-  void _ref(SchemaRef ref) {
+  void _ref<T>(RefOr<T> ref) {
     visitor.visitReference(ref);
-    _maybeSchema(ref.schema);
+    final object = ref.object;
+    if (object is Schema?) {
+      _maybeSchema(object);
+    }
   }
 
   void _maybeSchema(Schema? schema) {

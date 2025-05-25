@@ -511,5 +511,52 @@ void main() {
         ]),
       );
     });
+
+    test('with request body ref', () async {
+      final fs = MemoryFileSystem.test();
+      final spec = {
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/my/ships/{shipSymbol}/purchase': {
+            'post': {
+              'operationId': 'purchase-cargo',
+              'requestBody': {
+                r'$ref': '#/components/requestBodies/PurchaseCargoRequest',
+              },
+            },
+          },
+        },
+        'components': {
+          'requestBodies': {
+            'PurchaseCargoRequest': {
+              'content': {
+                'application/json': {
+                  'schema': {
+                    'type': 'object',
+                    'properties': {
+                      'symbol': {'type': 'string'},
+                      'units': {'type': 'integer'},
+                    },
+                    'required': ['symbol', 'units'],
+                  },
+                },
+              },
+              'required': true,
+            },
+          },
+        },
+      };
+      final out = fs.directory('spacetraders');
+      final logger = _MockLogger();
+
+      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+      expect(
+        out.childFile('lib/model/purchase_cargo_request.dart'),
+        isNot(exists),
+      );
+      expect(out.childFile('lib/api/default_api.dart'), exists);
+    });
   });
 }

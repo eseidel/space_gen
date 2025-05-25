@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/string.dart';
@@ -41,7 +42,8 @@ enum SendIn {
 
 /// A parameter is a parameter to an endpoint.
 /// https://spec.openapis.org/oas/v3.0.0#parameter-object
-class Parameter {
+@immutable
+class Parameter extends Equatable {
   /// Create a new parameter.
   const Parameter({
     required this.name,
@@ -122,6 +124,9 @@ class Parameter {
 
   /// The type of the parameter.
   final SchemaRef type;
+
+  @override
+  List<Object?> get props => [name, description, isRequired, sendIn, type];
 }
 
 /// A type of schema.
@@ -173,34 +178,28 @@ enum SchemaType {
 /// An object which either holds a schema or a reference to a schema.
 /// https://spec.openapis.org/oas/v3.0.0#schemaObject
 @immutable
-class SchemaRef {
-  /// Create a new schema reference from a path.
-  const SchemaRef.fromPath({required String ref}) : schema = null, uri = ref;
+class RefOr<T> extends Equatable {
+  const RefOr.ref(this.ref) : object = null;
+  const RefOr.object(this.object) : ref = null;
 
-  /// Create a new schema reference from a schema.
-  const SchemaRef.schema(this.schema) : uri = null;
-
-  /// The uri of the schema.
-  final String? uri;
-
-  /// The schema.
-  final Schema? schema;
+  final String? ref;
+  final T? object;
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is SchemaRef &&
-          runtimeType == other.runtimeType &&
-          uri == other.uri &&
-          schema == other.schema;
+  List<Object?> get props => [ref, object];
+}
 
-  @override
-  int get hashCode => Object.hash(uri, schema);
+class SchemaRef extends RefOr<Schema> {
+  const SchemaRef.ref(String super.ref) : super.ref();
+  const SchemaRef.schema(Schema super.schema) : super.object();
+
+  Schema? get schema => object;
 }
 
 /// A schema is a json object that describes the shape of a json object.
 /// https://spec.openapis.org/oas/v3.0.0#schemaObject
-class Schema {
+@immutable
+class Schema extends Equatable {
   /// Create a new schema.
   Schema({
     required this.pointer,
@@ -291,7 +290,7 @@ class Schema {
       defaultValue: defaultValue,
       useNewType: context.isTopLevelComponent,
     );
-    context.addSchema(schema);
+    context.addObject(schema);
     return schema;
   }
 
@@ -334,6 +333,22 @@ class Schema {
   final bool useNewType;
 
   @override
+  List<Object?> get props => [
+    pointer,
+    snakeName,
+    type,
+    properties,
+    required,
+    description,
+    items,
+    enumValues,
+    format,
+    additionalProperties,
+    defaultValue,
+    useNewType,
+  ];
+
+  @override
   String toString() {
     return 'Schema(name: $snakeName, pointer: $pointer, type: $type, '
         'description: $description, useNewType: $useNewType)';
@@ -348,7 +363,7 @@ SchemaRef parseSchemaOrRef({
   required ParseContext context,
 }) {
   if (json.containsKey(r'$ref')) {
-    return SchemaRef.fromPath(ref: json[r'$ref'] as String);
+    return SchemaRef.ref(json[r'$ref'] as String);
   }
 
   if (json.containsKey('oneOf')) {
@@ -368,6 +383,20 @@ SchemaRef parseSchemaOrRef({
   }
 
   return SchemaRef.schema(Schema.parse(json, context));
+}
+
+/// Parse a schema or a reference to a schema.
+/// https://spec.openapis.org/oas/v3.0.0#schemaObject
+/// https://spec.openapis.org/oas/v3.0.0#relative-references-in-urls
+RefOr<RequestBody> parseRequestBodyOrRef({
+  required Json json,
+  required ParseContext context,
+}) {
+  if (json.containsKey(r'$ref')) {
+    return RefOr<RequestBody>.ref(json[r'$ref'] as String);
+  }
+  final body = RequestBody.parse(json, context);
+  return RefOr<RequestBody>.object(body);
 }
 
 /// Parse the properties of a schema.
@@ -426,9 +455,54 @@ enum Method {
   String get key => name.toLowerCase();
 }
 
+/// Request body is sorta a schema, but it's a bit different.
+/// https://spec.openapis.org/oas/v3.0.0#requestBodyObject
+/// Notably "required" is a boolean, not a list of strings.
+@immutable
+class RequestBody extends Equatable {
+  const RequestBody({
+    required this.pointer,
+    required this.isRequired,
+    required this.schema,
+  });
+
+  factory RequestBody.parse(Json requestBodyJson, ParseContext context) {
+    final content = _required<Json>(requestBodyJson, 'content');
+    final applicationJson = _required<Json>(content, 'application/json');
+    final schema = parseSchemaOrRef(
+      json: _required<Json>(applicationJson, 'schema'),
+      context: context.addSnakeName('request').key('requestBody'),
+    );
+    _ignored(requestBodyJson, 'description');
+
+    final isRequired = requestBodyJson['required'] as bool? ?? false;
+    final body = RequestBody(
+      pointer: context.pointer.toString(),
+      isRequired: isRequired,
+      schema: schema,
+    );
+    context.addObject(body);
+    return body;
+  }
+
+  /// The pointer to this request body.
+  final String pointer;
+
+  /// Whether the request body is required.
+  final bool isRequired;
+
+  /// The schema of the application/json content.
+  final SchemaRef schema;
+
+  @override
+  List<Object?> get props => [pointer, isRequired, schema];
+}
+
 /// An endpoint is a path with a method.
+/// Spec splits this into a "path item" and a "operation" object.
 /// https://spec.openapis.org/oas/v3.0.0#path-item-object
-class Endpoint {
+@immutable
+class Endpoint extends Equatable {
   /// Create a new endpoint.
   const Endpoint({
     required this.path,
@@ -474,13 +548,11 @@ class Endpoint {
         )
         .toList();
     final requestBodyJson = json['requestBody'] as Json?;
-    SchemaRef? requestBody;
+    RefOr<RequestBody>? requestBody;
     if (requestBodyJson != null) {
-      final content = requestBodyJson['content'] as Json;
-      final json = content['application/json'] as Json;
-      requestBody = parseSchemaOrRef(
-        json: json['schema'] as Json,
-        context: context.addSnakeName('request').key('requestBody'),
+      requestBody = parseRequestBodyOrRef(
+        json: requestBodyJson,
+        context: context.key('requestBody'),
       );
     }
     return Endpoint(
@@ -514,12 +586,24 @@ class Endpoint {
   final List<Parameter> parameters;
 
   /// The request body of this endpoint.
-  final SchemaRef? requestBody;
+  final RefOr<RequestBody>? requestBody;
+
+  @override
+  List<Object?> get props => [
+    path,
+    method,
+    tag,
+    responses,
+    snakeName,
+    parameters,
+    requestBody,
+  ];
 }
 
 /// A response from an endpoint.
 /// https://spec.openapis.org/oas/v3.1.0#response-object
-class Response {
+@immutable
+class Response extends Equatable {
   /// Create a new response.
   const Response({required this.code, required this.content});
 
@@ -529,6 +613,9 @@ class Response {
   /// The content of this response.
   /// The official spec has a map here by mime type, but we only support json.
   final SchemaRef content;
+
+  @override
+  List<Object?> get props => [code, content];
 }
 
 List<Response> parseResponses(Json? json, ParseContext parentContext) {
@@ -565,26 +652,30 @@ List<Response> parseResponses(Json? json, ParseContext parentContext) {
   ];
 }
 
-class Components {
-  const Components({required this.schemas});
+@immutable
+class Components extends Equatable {
+  const Components({required this.schemas, required this.requestBodies});
 
   final Map<String, Schema> schemas;
   // final Map<String, Parameter> parameters;
   // final Map<String, SecurityScheme> securitySchemes;
-  // final Map<String, RequestBody> requestBodies;
+  final Map<String, RequestBody> requestBodies;
   // final Map<String, Response> responses;
   // final Map<String, Header> headers;
   // final Map<String, Example> examples;
   // final Map<String, Link> links;
   // final Map<String, Callback> callbacks;
+
+  @override
+  List<Object?> get props => [schemas, requestBodies];
 }
 
 Components parseComponents(Json? json, ParseContext context) {
   if (json == null) {
-    return const Components(schemas: {});
+    return const Components(schemas: {}, requestBodies: {});
   }
   final keys = json.keys.toList();
-  final supportedKeys = ['schemas', 'securitySchemes'];
+  final supportedKeys = ['schemas', 'securitySchemes', 'requestBodies'];
 
   for (final key in keys) {
     if (!supportedKeys.contains(key)) {
@@ -617,7 +708,24 @@ Components parseComponents(Json? json, ParseContext context) {
     }
   }
 
-  return Components(schemas: schemas);
+  final requestBodiesJson = json['requestBodies'] as Json?;
+  final requestBodies = <String, RequestBody>{};
+  if (requestBodiesJson != null) {
+    for (final entry in requestBodiesJson.entries) {
+      final name = entry.key;
+      final snakeName = snakeFromCamel(name);
+      final value = entry.value as Json;
+      requestBodies[name] = RequestBody.parse(
+        value,
+        context
+            .addSnakeName(snakeName, isTopLevelComponent: true)
+            .key('requestBodies')
+            .key(name),
+      );
+    }
+  }
+
+  return Components(schemas: schemas, requestBodies: requestBodies);
 }
 
 T _required<T>(Json json, String key) {
@@ -662,8 +770,10 @@ void _error(Json json, String message) {
 
 // Spec calls this the "OpenAPI Object"
 // https://spec.openapis.org/oas/v3.1.0#openapi-object
-class Spec {
-  Spec(this.serverUrl, this.endpoints, this.components);
+
+@immutable
+class Spec extends Equatable {
+  const Spec(this.serverUrl, this.endpoints, this.components);
 
   factory Spec.parse(Json json, ParseContext context) {
     final servers = _required<List<dynamic>>(json, 'servers');
@@ -704,60 +814,64 @@ class Spec {
   final Components components;
 
   List<String> get tags => endpoints.map((e) => e.tag).toSet().sorted();
+
+  @override
+  List<Object?> get props => [serverUrl, endpoints, components];
 }
 
-class SchemaRegistry {
-  SchemaRegistry();
+class RefRegistry {
+  RefRegistry();
 
-  final Map<Uri, Schema> schemas = {};
+  final objectsByUri = <Uri, dynamic>{};
 
-  Schema get(Uri uri) {
-    final schema = schemas[uri];
-    if (schema == null) {
-      throw Exception('Schema not found: $uri');
+  Iterable<Uri> get uris => objectsByUri.keys;
+
+  T get<T>(Uri uri) {
+    final object = objectsByUri[uri];
+    if (object == null) {
+      throw StateError('$T not found: $uri');
     }
-    return schema;
+    if (object is! T) {
+      throw StateError('Expected $T, got $object');
+    }
+    return object;
   }
 
-  Schema operator [](Uri uri) => get(uri);
-
-  void register(Uri uri, Schema schema) {
-    if (schemas.containsKey(uri)) {
+  void register(Uri uri, dynamic object) {
+    if (objectsByUri.containsKey(uri)) {
       logger
-        ..warn('Schema already registered: $uri')
-        ..info('before: ${schemas[uri]}')
-        ..info('after: $schema');
-      throw Exception('Schema already registered: $uri');
+        ..warn('Object already registered: $uri')
+        ..info('before: ${objectsByUri[uri]}')
+        ..info('after: $object');
+      throw Exception('Object already registered: $uri');
     }
-    final byName = schemas.entries.firstWhereOrNull(
-      (e) => e.value.snakeName == schema.snakeName,
-    );
-    if (byName != null) {
-      logger
-        ..warn('Schema already registered by name: ${schema.snakeName}')
-        ..info('existing uri: ${byName.key}')
-        ..info('existing schema: ${byName.value}')
-        ..info('new uri: $uri')
-        ..info('new schema: $schema');
+    if (object is Schema) {
+      final schema = object;
+      final byName = objectsByUri.entries
+          .where((e) => e.value is Schema)
+          .firstWhereOrNull(
+            (e) => (e.value as Schema).snakeName == schema.snakeName,
+          );
+      if (byName != null) {
+        logger
+          ..warn('Schema already registered by name: ${schema.snakeName}')
+          ..info('existing uri: ${byName.key}')
+          ..info('existing schema: ${byName.value}')
+          ..info('new uri: $uri')
+          ..info('new schema: $schema');
+      }
     }
-    schemas[uri] = schema;
-  }
-
-  Uri lookupUri(Schema schema) {
-    final entry = schemas.entries.firstWhereOrNull((e) => e.value == schema);
-    if (entry == null) {
-      throw Exception('Url not found for schema: $schema');
-    }
-    return entry.key;
+    objectsByUri[uri] = object;
   }
 }
 
 /// Json pointer is a string that can be used to reference a value in a json
 /// object.
 /// https://spec.openapis.org/oas/v3.1.0#json-pointer
-class JsonPointer {
+@immutable
+class JsonPointer extends Equatable {
   /// Create a new JsonPointer from a list of parts.
-  JsonPointer(this.parts);
+  const JsonPointer(this.parts);
 
   /// The parts of the json pointer.
   final List<String> parts;
@@ -771,6 +885,9 @@ class JsonPointer {
 
   @override
   String toString() => location;
+
+  @override
+  List<Object?> get props => [parts];
 }
 
 /// Immutable context for parsing a spec.
@@ -780,7 +897,7 @@ class ParseContext {
     required this.baseUrl,
     required this.pointerParts,
     required this.snakeNameStack,
-    required this.schemas,
+    required this.refRegistry,
     required this.isTopLevelComponent,
   }) {
     if (baseUrl.hasFragment) {
@@ -794,7 +911,7 @@ class ParseContext {
   ParseContext.initial(this.baseUrl)
     : pointerParts = [],
       snakeNameStack = [],
-      schemas = SchemaRegistry(),
+      refRegistry = RefRegistry(),
       isTopLevelComponent = false;
 
   /// The base url of the spec being parsed.
@@ -824,8 +941,8 @@ class ParseContext {
   }
 
   // Registry of all the schemas we've parsed so far.
-  // SchemaRegistry is internally mutable.
-  final SchemaRegistry schemas;
+  // RefRegistry is internally mutable.
+  final RefRegistry refRegistry;
 
   ParseContext _addPart(String part) =>
       copyWith(pointerParts: [...pointerParts, part]);
@@ -833,9 +950,9 @@ class ParseContext {
   ParseContext key(String key) => _addPart(key);
   ParseContext index(int index) => _addPart(index.toString());
 
-  void addSchema(Schema schema) {
+  void addObject(dynamic object) {
     final uri = baseUrl.replace(fragment: pointer.toString());
-    schemas.register(uri, schema);
+    refRegistry.register(uri, object);
   }
 
   /// Add a snake name to the current context.
@@ -857,7 +974,7 @@ class ParseContext {
       baseUrl: baseUrl,
       pointerParts: pointerParts ?? this.pointerParts,
       snakeNameStack: snakeNameStack ?? this.snakeNameStack,
-      schemas: schemas,
+      refRegistry: refRegistry,
       isTopLevelComponent: isTopLevelComponent ?? this.isTopLevelComponent,
     );
   }

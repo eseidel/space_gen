@@ -208,16 +208,16 @@ class FleetApi {
   }
 
   Future<ExtractResourcesWithSurvey201Response> extractResourcesWithSurvey(
-    String shipSymbol,
-    Survey survey,
-  ) async {
+    String shipSymbol, {
+    Survey? survey,
+  }) async {
     final response = await client.invokeApi(
       method: Method.post,
       path: '/my/ships/{shipSymbol}/extract/survey'.replaceAll(
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'survey': survey.toJson()},
+      parameters: {'survey': survey?.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -476,16 +476,16 @@ class FleetApi {
   }
 
   Future<RefuelShip200Response> refuelShip(
-    String shipSymbol,
-    RefuelShipRequest refuelShipRequest,
-  ) async {
+    String shipSymbol, {
+    RefuelShipRequest? refuelShipRequest,
+  }) async {
     final response = await client.invokeApi(
       method: Method.post,
       path: '/my/ships/{shipSymbol}/refuel'.replaceAll(
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'refuelShipRequest': refuelShipRequest.toJson()},
+      parameters: {'refuelShipRequest': refuelShipRequest?.toJson()},
     );
 
     if (response.statusCode == 200) {
@@ -773,13 +773,13 @@ class FleetApi {
   }
 
   Future<PatchShipNav200Response> patchShipNav(
-    String shipSymbol,
-    PatchShipNavRequest patchShipNavRequest,
-  ) async {
+    String shipSymbol, {
+    PatchShipNavRequest? patchShipNavRequest,
+  }) async {
     final response = await client.invokeApi(
       method: Method.patch,
       path: '/my/ships/{shipSymbol}/nav'.replaceAll('{shipSymbol}', shipSymbol),
-      parameters: {'patchShipNavRequest': patchShipNavRequest.toJson()},
+      parameters: {'patchShipNavRequest': patchShipNavRequest?.toJson()},
     );
 
     if (response.statusCode == 200) {

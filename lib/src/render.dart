@@ -7,7 +7,7 @@ import 'package:space_gen/src/visitor.dart';
 
 void _printSpecStats(ParseContext parseContext, Spec spec) {
   logger.detail('Registered schemas:');
-  for (final uri in parseContext.schemas.schemas.keys) {
+  for (final uri in parseContext.refRegistry.uris) {
     logger.detail('  - $uri');
   }
 
@@ -56,7 +56,7 @@ Future<void> loadAndRenderSpec({
 
   renderSpec(
     spec: spec,
-    schemaRegistry: parseContext.schemas,
+    refRegistry: parseContext.refRegistry,
     specUri: specUri,
     outDir: outDir,
     packageName: packageName,

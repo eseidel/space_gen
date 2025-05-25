@@ -64,24 +64,10 @@ extension _EndpointGeneration on Endpoint {
     final parameters = this.parameters
         .map((param) => param.toTemplateContext(context))
         .toList();
-    final bodySchema = context._maybeResolve(requestBody);
-    if (bodySchema != null) {
-      final typeName = bodySchema.typeName(context);
-      final paramName = typeName[0].toLowerCase() + typeName.substring(1);
-      parameters.add({
-        'name': paramName,
-        'bracketedName': '{$paramName}',
-        'type': typeName,
-        'nullableType': bodySchema.nullableTypeName(context),
-        'required': true,
-        'toJson': bodySchema.toJsonExpression(
-          paramName,
-          context,
-          isNullable: false,
-        ),
-        'fromJson': bodySchema.fromJsonExpression('json', context),
-        'sendIn': 'query',
-      });
+    final body = context._maybeResolve<RequestBody>(requestBody);
+    if (body != null) {
+      final templateContext = body.toTemplateContext(context);
+      parameters.add(templateContext);
     }
 
     final firstResponse = context._maybeResolve(responses.firstOrNull?.content);
@@ -91,7 +77,9 @@ extension _EndpointGeneration on Endpoint {
     final positionalParameters = parameters.where((p) => p['required'] == true);
 
     final pathParameters = parameters.where((p) => p['sendIn'] == 'path');
-    final queryParameters = parameters.where((p) => p['sendIn'] == 'query');
+    final queryParameters = parameters.where(
+      (p) => p['sendIn'] == 'query' || p['sendIn'] == 'body',
+    );
     final hasQueryParameters = queryParameters.isNotEmpty;
 
     // Cookie parameters are not supported for now.
@@ -448,11 +436,39 @@ extension _ParameterGeneration on Parameter {
   }
 }
 
+extension _RequestBodyGeneration on RequestBody {
+  Map<String, dynamic> toTemplateContext(_Context context) {
+    final schema = context._maybeResolve<Schema>(this.schema);
+    if (schema == null) {
+      throw StateError('Schema is null: $this');
+    }
+    final typeName = schema.typeName(context);
+    final paramName = typeName[0].toLowerCase() + typeName.substring(1);
+    // TODO(eseidel): Share code with Parameter.toTemplateContext.
+    return {
+      'name': paramName,
+      'bracketedName': '{$paramName}',
+      'required': isRequired,
+      'hasDefaultValue': schema.defaultValue != null,
+      'defaultValue': schema.defaultValueString,
+      'type': typeName,
+      'nullableType': schema.nullableTypeName(context),
+      'sendIn': 'body',
+      'toJson': schema.toJsonExpression(
+        paramName,
+        context,
+        isNullable: !isRequired,
+      ),
+      'fromJson': schema.fromJsonExpression('json', context),
+    };
+  }
+}
+
 /// Extensions for rendering schema references.
-extension _SchemaRefGeneration on SchemaRef {
+extension _SchemaRefGeneration on RefOr<dynamic> {
   /// package import string for this schema reference.
   String packageImport(_Context context) {
-    final name = p.basenameWithoutExtension(uri!);
+    final name = p.basenameWithoutExtension(ref!);
     final snakeName = snakeFromCamel(name);
     return 'package:${context.packageName}/model/$snakeName.dart';
   }
@@ -474,7 +490,7 @@ class _Context {
     required this.spec,
     required this.outDir,
     required this.packageName,
-    required this.schemaRegistry,
+    required this.refRegistry,
     Directory? templateDir,
     RunProcess? runProcess,
     this.quirks = const Quirks(),
@@ -506,9 +522,9 @@ class _Context {
   /// The file system where the rendered files will go.
   final FileSystem fs;
 
-  /// The schema registry.
+  /// The registry of all the objects we've parsed so far.
   /// This must be fully populated before rendering.
-  final SchemaRegistry schemaRegistry;
+  final RefRegistry refRegistry;
 
   /// The function to run a process. Allows for mocking in tests.
   final RunProcess runProcess;
@@ -530,7 +546,7 @@ class _Context {
       quirks.dynamicJson ? 'dynamic' : 'Map<String, dynamic>';
 
   /// Resolve a nullable [SchemaRef] into a nullable [Schema].
-  Schema? _maybeResolve(SchemaRef? ref) {
+  T? _maybeResolve<T>(RefOr<T>? ref) {
     if (ref == null) {
       return null;
     }
@@ -538,16 +554,16 @@ class _Context {
   }
 
   /// Resolve a [SchemaRef] into a [Schema].
-  Schema _resolve(SchemaRef ref) {
-    if (ref.schema != null) {
-      return ref.schema!;
+  T _resolve<T>(RefOr<T> ref) {
+    if (ref.object != null) {
+      return ref.object!;
     }
-    final uri = specUrl.resolve(ref.uri!);
+    final uri = specUrl.resolve(ref.ref!);
     return _resolveUri(uri);
   }
 
   /// Resolve a uri into a [Schema].
-  Schema _resolveUri(Uri uri) => schemaRegistry.get(uri);
+  T _resolveUri<T>(Uri uri) => refRegistry.get<T>(uri);
 
   /// Ensure a file exists.
   File _ensureFile(String path) {
@@ -591,8 +607,8 @@ class _Context {
   Set<Uri> _renderApis() {
     final rendered = <Uri>{};
     final renderQueue = <Uri>{};
-    Set<Uri> urisFromSchemaRefs(Set<SchemaRef> refs) {
-      return refs.map((ref) => specUrl.resolve(ref.uri!)).toSet();
+    Set<Uri> urisFromRefs(Set<RefOr<dynamic>> refs) {
+      return refs.map((ref) => specUrl.resolve(ref.ref!)).toSet();
     }
 
     Set<Uri> urisFromSchemas(List<Schema> schemas) {
@@ -608,7 +624,7 @@ class _Context {
       // end up in the model files.
       renderQueue.addAll([
         ...urisFromSchemas(renderContext.inlineSchemas),
-        ...urisFromSchemaRefs(renderContext.importedSchemas),
+        ...urisFromRefs(renderContext.importedSchemas),
       ]);
     }
 
@@ -619,13 +635,15 @@ class _Context {
       if (rendered.contains(uri)) {
         continue;
       }
-      rendered.add(uri);
-      final schema = _resolveUri(uri);
-      final renderContext = _renderSchema(this, schema);
-      renderQueue.addAll([
-        ...urisFromSchemas(renderContext.inlineSchemas),
-        ...urisFromSchemaRefs(renderContext.importedSchemas),
-      ]);
+      final schema = _resolveUri<dynamic>(uri);
+      if (schema is Schema) {
+        final renderContext = _renderSchema(this, schema);
+        renderQueue.addAll([
+          ...urisFromSchemas(renderContext.inlineSchemas),
+          ...urisFromRefs(renderContext.importedSchemas),
+        ]);
+        rendered.add(uri);
+      }
     }
     return rendered;
   }
@@ -685,7 +703,7 @@ class _Context {
     final rendered = _renderApis();
     _renderApiClient();
     // Render the combined api.dart exporting all rendered schemas.
-    final renderedModels = rendered.map(schemaRegistry.get);
+    final renderedModels = rendered.map(refRegistry.get<Schema>);
     _renderPublicApi(renderedModels);
     // Consider running pub upgrade here to ensure packages are up to date.
     _runDart(['pub', 'get']);
@@ -715,7 +733,7 @@ void renderSpec({
   required String packageName,
   required Directory outDir,
   required Spec spec,
-  required SchemaRegistry schemaRegistry,
+  required RefRegistry refRegistry,
   Directory? templateDir,
   RunProcess? runProcess,
   Quirks quirks = const Quirks(),
@@ -725,7 +743,7 @@ void renderSpec({
     spec: spec,
     outDir: outDir,
     packageName: packageName,
-    schemaRegistry: schemaRegistry,
+    refRegistry: refRegistry,
     templateDir: templateDir,
     runProcess: runProcess,
     quirks: quirks,
@@ -746,16 +764,23 @@ class _RenderContext {
   List<Schema> inlineSchemas = [];
 
   /// Schemas imported by this file.
-  Set<SchemaRef> importedSchemas = {};
+  Set<RefOr<dynamic>> importedSchemas = {};
 
   /// Visit a schema reference and collect it if it is not already in the
   /// importedSchemas set.
-  void visitRef(SchemaRef? ref) {
+  void visitRef<T>(RefOr<T>? ref) {
     if (ref == null) {
       return;
     }
-    if (ref.schema != null) {
-      collectSchema(ref.schema!);
+    final object = ref.object;
+    if (object != null) {
+      if (object is Schema) {
+        collectSchema(object);
+      } else if (object is RequestBody) {
+        collectRequestBody(object);
+      } else {
+        throw StateError('Ref is not a schema or request body: $ref');
+      }
     } else {
       importedSchemas.add(ref);
     }
@@ -775,6 +800,10 @@ class _RenderContext {
         visitRef(endpoint.requestBody);
       }
     }
+  }
+
+  void collectRequestBody(RequestBody requestBody) {
+    visitRef(requestBody.schema);
   }
 
   /// Collect a schema if it needs to be rendered.
