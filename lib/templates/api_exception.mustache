@@ -2,11 +2,11 @@ import 'package:meta/meta.dart';
 
 @immutable
 class ApiException implements Exception {
-  ApiException(this.code, this.message)
+  const ApiException(this.code, this.message)
       : innerException = null,
       stackTrace = null;
 
-  ApiException.withInner(
+  const ApiException.withInner(
       this.code, this.message, this.innerException, this.stackTrace);
 
   final int code;
@@ -22,6 +22,7 @@ class ApiException implements Exception {
     if (innerException == null) {
       return 'ApiException $code: $message';
     }
-    return 'ApiException $code: $message (Inner exception: $innerException)\n\n$stackTrace';
+    return 'ApiException $code: $message '
+        '(Inner exception: $innerException)\n\n$stackTrace';
   }
 }

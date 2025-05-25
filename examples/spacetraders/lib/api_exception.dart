@@ -26,6 +26,7 @@ class ApiException implements Exception {
     if (innerException == null) {
       return 'ApiException $code: $message';
     }
-    return 'ApiException $code: $message (Inner exception: $innerException)\n\n$stackTrace';
+    return 'ApiException $code: $message '
+        '(Inner exception: $innerException)\n\n$stackTrace';
   }
 }
