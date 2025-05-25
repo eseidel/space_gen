@@ -7,8 +7,8 @@ class RefuelShip200ResponseData {
   RefuelShip200ResponseData({
     required this.agent,
     required this.fuel,
-    required this.cargo,
     required this.transaction,
+    this.cargo,
   });
 
   factory RefuelShip200ResponseData.fromJson(Map<String, dynamic> json) {
@@ -33,14 +33,14 @@ class RefuelShip200ResponseData {
 
   final Agent agent;
   final ShipFuel fuel;
-  final ShipCargo cargo;
+  final ShipCargo? cargo;
   final MarketTransaction transaction;
 
   Map<String, dynamic> toJson() {
     return {
       'agent': agent.toJson(),
       'fuel': fuel.toJson(),
-      'cargo': cargo.toJson(),
+      'cargo': cargo?.toJson(),
       'transaction': transaction.toJson(),
     };
   }

@@ -288,17 +288,24 @@ extension _SchemaGeneration on Schema {
     required String jsonName,
     required Schema schema,
     required _Context context,
+    required bool required,
   }) {
     // TODO(eseidel): Remove this once we've migrated to the new generator.
     final dartName = avoidReservedWord(jsonName);
     return {
       'name': dartName,
-      'isRequired': schema.defaultValue == null,
-      'hasDefaultValue': schema.defaultValue != null,
-      'defaultValue': schema.defaultValueString,
+      // Is this correct?
+      'isRequired': required,
+      // Required properties can't have a default value.
+      'hasDefaultValue': !required && schema.defaultValue != null,
+      'defaultValue': required ? null : schema.defaultValueString,
       'type': schema.typeName(context),
       'nullableType': schema.nullableTypeName(context),
-      'toJson': schema.toJsonExpression(dartName, context, isNullable: false),
+      'toJson': schema.toJsonExpression(
+        dartName,
+        context,
+        isNullable: !required,
+      ),
       'fromJson': schema.fromJsonExpression("json['$jsonName']", context),
     };
   }
@@ -318,6 +325,7 @@ extension _SchemaGeneration on Schema {
         jsonName: jsonName,
         schema: schema,
         context: context,
+        required: required.contains(jsonName),
       );
     }).toList();
 

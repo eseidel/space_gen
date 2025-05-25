@@ -4,7 +4,6 @@ import 'package:spacetraders/model/system_waypoint.dart';
 
 class System {
   System({
-    required this.constellation,
     required this.symbol,
     required this.sectorSymbol,
     required this.type,
@@ -12,7 +11,8 @@ class System {
     required this.y,
     required this.waypoints,
     required this.factions,
-    required this.name,
+    this.constellation,
+    this.name,
   });
 
   factory System.fromJson(Map<String, dynamic> json) {
@@ -48,7 +48,7 @@ class System {
     return System.fromJson(json);
   }
 
-  final String constellation;
+  final String? constellation;
   final String symbol;
   final String sectorSymbol;
   final SystemType type;
@@ -56,7 +56,7 @@ class System {
   final int y;
   final List<SystemWaypoint> waypoints;
   final List<SystemFaction> factions;
-  final String name;
+  final String? name;
 
   Map<String, dynamic> toJson() {
     return {

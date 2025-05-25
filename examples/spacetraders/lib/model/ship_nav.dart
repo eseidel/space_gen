@@ -8,7 +8,7 @@ class ShipNav {
     required this.waypointSymbol,
     required this.route,
     required this.status,
-    this.flightMode = ShipNavFlightMode.CRUISE,
+    required this.flightMode,
   });
 
   factory ShipNav.fromJson(Map<String, dynamic> json) {

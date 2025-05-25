@@ -6,9 +6,9 @@ class ShipModule {
     required this.symbol,
     required this.name,
     required this.description,
-    required this.capacity,
-    required this.range,
     required this.requirements,
+    this.capacity,
+    this.range,
   });
 
   factory ShipModule.fromJson(Map<String, dynamic> json) {
@@ -36,8 +36,8 @@ class ShipModule {
   final ShipModuleSymbol symbol;
   final String name;
   final String description;
-  final int capacity;
-  final int range;
+  final int? capacity;
+  final int? range;
   final ShipRequirements requirements;
 
   Map<String, dynamic> toJson() {

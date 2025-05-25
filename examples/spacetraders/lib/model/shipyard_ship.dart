@@ -13,7 +13,6 @@ class ShipyardShip {
     required this.type,
     required this.name,
     required this.description,
-    required this.activity,
     required this.supply,
     required this.purchasePrice,
     required this.frame,
@@ -22,6 +21,7 @@ class ShipyardShip {
     required this.modules,
     required this.mounts,
     required this.crew,
+    this.activity,
   });
 
   factory ShipyardShip.fromJson(Map<String, dynamic> json) {
@@ -63,7 +63,7 @@ class ShipyardShip {
   final ShipType type;
   final String name;
   final String description;
-  final ActivityLevel activity;
+  final ActivityLevel? activity;
   final SupplyLevel supply;
   final int purchasePrice;
   final ShipFrame frame;
@@ -78,7 +78,7 @@ class ShipyardShip {
       'type': type.toJson(),
       'name': name,
       'description': description,
-      'activity': activity.toJson(),
+      'activity': activity?.toJson(),
       'supply': supply.toJson(),
       'purchasePrice': purchasePrice,
       'frame': frame.toJson(),

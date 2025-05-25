@@ -7,9 +7,9 @@ class ShipMount {
     required this.symbol,
     required this.name,
     required this.description,
-    required this.strength,
-    required this.deposits,
     required this.requirements,
+    this.strength,
+    this.deposits,
   });
 
   factory ShipMount.fromJson(Map<String, dynamic> json) {
@@ -38,8 +38,8 @@ class ShipMount {
   final ShipMountSymbol symbol;
   final String name;
   final String description;
-  final int strength;
-  final List<ShipMountDepositsInner> deposits;
+  final int? strength;
+  final List<ShipMountDepositsInner>? deposits;
   final ShipRequirements requirements;
 
   Map<String, dynamic> toJson() {

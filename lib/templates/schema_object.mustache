@@ -38,7 +38,9 @@ class {{ typeName }} {
     }
 
     {{#properties}}
-    {{^mutableModels}}final{{/mutableModels}} {{{ type }}} {{ name }};
+    {{^mutableModels}}final{{/mutableModels}}
+    {{#isRequired}}{{{ type }}}{{/isRequired}}
+    {{^isRequired}}{{{ nullableType }}}{{/isRequired}} {{ name }};
     {{/properties}}
 
     {{#hasAdditionalProperties}}

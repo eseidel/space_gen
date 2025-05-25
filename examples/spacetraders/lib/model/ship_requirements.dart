@@ -1,9 +1,5 @@
 class ShipRequirements {
-  ShipRequirements({
-    required this.power,
-    required this.crew,
-    required this.slots,
-  });
+  ShipRequirements({this.power, this.crew, this.slots});
 
   factory ShipRequirements.fromJson(Map<String, dynamic> json) {
     return ShipRequirements(
@@ -22,9 +18,9 @@ class ShipRequirements {
     return ShipRequirements.fromJson(json);
   }
 
-  final int power;
-  final int crew;
-  final int slots;
+  final int? power;
+  final int? crew;
+  final int? slots;
 
   Map<String, dynamic> toJson() {
     return {'power': power, 'crew': crew, 'slots': slots};

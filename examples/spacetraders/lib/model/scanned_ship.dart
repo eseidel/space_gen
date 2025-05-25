@@ -10,10 +10,10 @@ class ScannedShip {
     required this.symbol,
     required this.registration,
     required this.nav,
-    required this.frame,
-    required this.reactor,
     required this.engine,
-    required this.mounts,
+    this.frame,
+    this.reactor,
+    this.mounts,
   });
 
   factory ScannedShip.fromJson(Map<String, dynamic> json) {
@@ -52,20 +52,20 @@ class ScannedShip {
   final String symbol;
   final ShipRegistration registration;
   final ShipNav nav;
-  final ScannedShipFrame frame;
-  final ScannedShipReactor reactor;
+  final ScannedShipFrame? frame;
+  final ScannedShipReactor? reactor;
   final ScannedShipEngine engine;
-  final List<ScannedShipMountsInner> mounts;
+  final List<ScannedShipMountsInner>? mounts;
 
   Map<String, dynamic> toJson() {
     return {
       'symbol': symbol,
       'registration': registration.toJson(),
       'nav': nav.toJson(),
-      'frame': frame.toJson(),
-      'reactor': reactor.toJson(),
+      'frame': frame?.toJson(),
+      'reactor': reactor?.toJson(),
       'engine': engine.toJson(),
-      'mounts': mounts.map((e) => e.toJson()).toList(),
+      'mounts': mounts?.map((e) => e.toJson()).toList(),
     };
   }
 }

@@ -12,9 +12,9 @@ class ScannedWaypoint {
     required this.x,
     required this.y,
     required this.orbitals,
-    required this.faction,
     required this.traits,
-    required this.chart,
+    this.faction,
+    this.chart,
   });
 
   factory ScannedWaypoint.fromJson(Map<String, dynamic> json) {
@@ -58,9 +58,9 @@ class ScannedWaypoint {
   final int x;
   final int y;
   final List<WaypointOrbital> orbitals;
-  final WaypointFaction faction;
+  final WaypointFaction? faction;
   final List<WaypointTrait> traits;
-  final Chart chart;
+  final Chart? chart;
 
   Map<String, dynamic> toJson() {
     return {
@@ -70,9 +70,9 @@ class ScannedWaypoint {
       'x': x,
       'y': y,
       'orbitals': orbitals.map((e) => e.toJson()).toList(),
-      'faction': faction.toJson(),
+      'faction': faction?.toJson(),
       'traits': traits.map((e) => e.toJson()).toList(),
-      'chart': chart.toJson(),
+      'chart': chart?.toJson(),
     };
   }
 }

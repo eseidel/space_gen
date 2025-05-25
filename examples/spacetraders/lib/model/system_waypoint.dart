@@ -8,7 +8,7 @@ class SystemWaypoint {
     required this.x,
     required this.y,
     required this.orbitals,
-    required this.orbits,
+    this.orbits,
   });
 
   factory SystemWaypoint.fromJson(Map<String, dynamic> json) {
@@ -41,7 +41,7 @@ class SystemWaypoint {
   final int x;
   final int y;
   final List<WaypointOrbital> orbitals;
-  final String orbits;
+  final String? orbits;
 
   Map<String, dynamic> toJson() {
     return {

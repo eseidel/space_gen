@@ -3,8 +3,8 @@ class AgentEvent {
     required this.id,
     required this.type,
     required this.message,
-    required this.data,
     required this.createdAt,
+    this.data,
   });
 
   factory AgentEvent.fromJson(Map<String, dynamic> json) {

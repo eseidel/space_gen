@@ -3,7 +3,7 @@ class Cooldown {
     required this.shipSymbol,
     required this.totalSeconds,
     required this.remainingSeconds,
-    required this.expiration,
+    this.expiration,
   });
 
   factory Cooldown.fromJson(Map<String, dynamic> json) {
@@ -27,14 +27,14 @@ class Cooldown {
   final String shipSymbol;
   final int totalSeconds;
   final int remainingSeconds;
-  final DateTime expiration;
+  final DateTime? expiration;
 
   Map<String, dynamic> toJson() {
     return {
       'shipSymbol': shipSymbol,
       'totalSeconds': totalSeconds,
       'remainingSeconds': remainingSeconds,
-      'expiration': expiration.toIso8601String(),
+      'expiration': expiration?.toIso8601String(),
     };
   }
 }

@@ -8,8 +8,8 @@ class Market {
     required this.exports,
     required this.imports,
     required this.exchange,
-    required this.transactions,
-    required this.tradeGoods,
+    this.transactions,
+    this.tradeGoods,
   });
 
   factory Market.fromJson(Map<String, dynamic> json) {
@@ -61,8 +61,8 @@ class Market {
   final List<TradeGood> exports;
   final List<TradeGood> imports;
   final List<TradeGood> exchange;
-  final List<MarketTransaction> transactions;
-  final List<MarketTradeGood> tradeGoods;
+  final List<MarketTransaction>? transactions;
+  final List<MarketTradeGood>? tradeGoods;
 
   Map<String, dynamic> toJson() {
     return {
@@ -70,8 +70,8 @@ class Market {
       'exports': exports.map((e) => e.toJson()).toList(),
       'imports': imports.map((e) => e.toJson()).toList(),
       'exchange': exchange.map((e) => e.toJson()).toList(),
-      'transactions': transactions.map((e) => e.toJson()).toList(),
-      'tradeGoods': tradeGoods.map((e) => e.toJson()).toList(),
+      'transactions': transactions?.map((e) => e.toJson()).toList(),
+      'tradeGoods': tradeGoods?.map((e) => e.toJson()).toList(),
     };
   }
 }
