@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/trade_symbol.dart';
 
+@immutable
 class ConstructionMaterial {
-  ConstructionMaterial({
+  const ConstructionMaterial({
     required this.tradeSymbol,
     required this.required_,
     required this.fulfilled,
@@ -31,8 +33,20 @@ class ConstructionMaterial {
   Map<String, dynamic> toJson() {
     return {
       'tradeSymbol': tradeSymbol.toJson(),
-      'required_': required_,
+      'required': required_,
       'fulfilled': fulfilled,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(tradeSymbol, required_, fulfilled);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ConstructionMaterial &&
+        tradeSymbol == other.tradeSymbol &&
+        required_ == other.required_ &&
+        fulfilled == other.fulfilled;
   }
 }

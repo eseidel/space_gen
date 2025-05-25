@@ -1,8 +1,14 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/meta.dart';
 import 'package:spacetraders/model/waypoint.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class GetSystemWaypoints200Response {
-  GetSystemWaypoints200Response({required this.meta, this.data = const []});
+  const GetSystemWaypoints200Response({
+    required this.meta,
+    this.data = const [],
+  });
 
   factory GetSystemWaypoints200Response.fromJson(Map<String, dynamic> json) {
     return GetSystemWaypoints200Response(
@@ -35,5 +41,16 @@ class GetSystemWaypoints200Response {
       'data': data.map((e) => e.toJson()).toList(),
       'meta': meta.toJson(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(data, meta);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetSystemWaypoints200Response &&
+        listsEqual(data, other.data) &&
+        meta == other.meta;
   }
 }

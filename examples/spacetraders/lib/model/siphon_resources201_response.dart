@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/siphon_resources201_response_data.dart';
 
+@immutable
 class SiphonResources201Response {
-  SiphonResources201Response({required this.data});
+  const SiphonResources201Response({required this.data});
 
   factory SiphonResources201Response.fromJson(Map<String, dynamic> json) {
     return SiphonResources201Response(
@@ -24,5 +26,14 @@ class SiphonResources201Response {
 
   Map<String, dynamic> toJson() {
     return {'data': data.toJson()};
+  }
+
+  @override
+  int get hashCode => data.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SiphonResources201Response && data == other.data;
   }
 }

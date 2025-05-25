@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class ScrapTransaction {
-  ScrapTransaction({
+  const ScrapTransaction({
     required this.waypointSymbol,
     required this.shipSymbol,
     required this.totalPrice,
@@ -36,5 +39,19 @@ class ScrapTransaction {
       'totalPrice': totalPrice,
       'timestamp': timestamp.toIso8601String(),
     };
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(waypointSymbol, shipSymbol, totalPrice, timestamp);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ScrapTransaction &&
+        waypointSymbol == other.waypointSymbol &&
+        shipSymbol == other.shipSymbol &&
+        totalPrice == other.totalPrice &&
+        timestamp == other.timestamp;
   }
 }

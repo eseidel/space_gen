@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/system_type.dart';
 
+@immutable
 class ScannedSystem {
-  ScannedSystem({
+  const ScannedSystem({
     required this.symbol,
     required this.sectorSymbol,
     required this.type,
@@ -46,5 +48,20 @@ class ScannedSystem {
       'y': y,
       'distance': distance,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(symbol, sectorSymbol, type, x, y, distance);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ScannedSystem &&
+        symbol == other.symbol &&
+        sectorSymbol == other.sectorSymbol &&
+        type == other.type &&
+        x == other.x &&
+        y == other.y &&
+        distance == other.distance;
   }
 }

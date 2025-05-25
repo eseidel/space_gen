@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_crew_rotation.dart';
 
+@immutable
 class ShipCrew {
-  ShipCrew({
+  const ShipCrew({
     required this.current,
     required this.required_,
     required this.capacity,
@@ -40,11 +42,27 @@ class ShipCrew {
   Map<String, dynamic> toJson() {
     return {
       'current': current,
-      'required_': required_,
+      'required': required_,
       'capacity': capacity,
       'rotation': rotation.toJson(),
       'morale': morale,
       'wages': wages,
     };
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(current, required_, capacity, rotation, morale, wages);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipCrew &&
+        current == other.current &&
+        required_ == other.required_ &&
+        capacity == other.capacity &&
+        rotation == other.rotation &&
+        morale == other.morale &&
+        wages == other.wages;
   }
 }

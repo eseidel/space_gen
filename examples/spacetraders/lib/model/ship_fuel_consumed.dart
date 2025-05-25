@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class ShipFuelConsumed {
-  ShipFuelConsumed({required this.amount, required this.timestamp});
+  const ShipFuelConsumed({required this.amount, required this.timestamp});
 
   factory ShipFuelConsumed.fromJson(Map<String, dynamic> json) {
     return ShipFuelConsumed(
@@ -22,5 +25,16 @@ class ShipFuelConsumed {
 
   Map<String, dynamic> toJson() {
     return {'amount': amount, 'timestamp': timestamp.toIso8601String()};
+  }
+
+  @override
+  int get hashCode => Object.hash(amount, timestamp);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipFuelConsumed &&
+        amount == other.amount &&
+        timestamp == other.timestamp;
   }
 }

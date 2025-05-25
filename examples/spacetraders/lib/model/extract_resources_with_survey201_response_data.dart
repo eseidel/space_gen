@@ -1,11 +1,14 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/cooldown.dart';
 import 'package:spacetraders/model/extraction.dart';
 import 'package:spacetraders/model/ship_cargo.dart';
 import 'package:spacetraders/model/ship_condition_event.dart';
 import 'package:spacetraders/model/waypoint_modifier.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class ExtractResourcesWithSurvey201ResponseData {
-  ExtractResourcesWithSurvey201ResponseData({
+  const ExtractResourcesWithSurvey201ResponseData({
     required this.extraction,
     required this.cooldown,
     required this.cargo,
@@ -62,5 +65,20 @@ class ExtractResourcesWithSurvey201ResponseData {
       'modifiers': modifiers?.map((e) => e.toJson()).toList(),
       'events': events.map((e) => e.toJson()).toList(),
     };
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(extraction, cooldown, cargo, modifiers, events);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ExtractResourcesWithSurvey201ResponseData &&
+        extraction == other.extraction &&
+        cooldown == other.cooldown &&
+        cargo == other.cargo &&
+        listsEqual(modifiers, other.modifiers) &&
+        listsEqual(events, other.events);
   }
 }

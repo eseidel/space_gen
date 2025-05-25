@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class RefuelShipRequest {
-  RefuelShipRequest({this.units, this.fromCargo = false});
+  const RefuelShipRequest({this.units, this.fromCargo = false});
 
   factory RefuelShipRequest.fromJson(Map<String, dynamic> json) {
     return RefuelShipRequest(
@@ -22,5 +25,16 @@ class RefuelShipRequest {
 
   Map<String, dynamic> toJson() {
     return {'units': units, 'fromCargo': fromCargo};
+  }
+
+  @override
+  int get hashCode => Object.hash(units, fromCargo);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is RefuelShipRequest &&
+        units == other.units &&
+        identical(fromCargo, other.fromCargo);
   }
 }

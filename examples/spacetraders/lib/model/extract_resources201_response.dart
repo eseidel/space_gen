@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/extract_resources201_response_data.dart';
 
+@immutable
 class ExtractResources201Response {
-  ExtractResources201Response({required this.data});
+  const ExtractResources201Response({required this.data});
 
   factory ExtractResources201Response.fromJson(Map<String, dynamic> json) {
     return ExtractResources201Response(
@@ -26,5 +28,14 @@ class ExtractResources201Response {
 
   Map<String, dynamic> toJson() {
     return {'data': data.toJson()};
+  }
+
+  @override
+  int get hashCode => data.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ExtractResources201Response && data == other.data;
   }
 }

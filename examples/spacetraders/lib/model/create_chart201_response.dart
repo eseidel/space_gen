@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/create_chart201_response_data.dart';
 
+@immutable
 class CreateChart201Response {
-  CreateChart201Response({required this.data});
+  const CreateChart201Response({required this.data});
 
   factory CreateChart201Response.fromJson(Map<String, dynamic> json) {
     return CreateChart201Response(
@@ -24,5 +26,14 @@ class CreateChart201Response {
 
   Map<String, dynamic> toJson() {
     return {'data': data.toJson()};
+  }
+
+  @override
+  int get hashCode => data.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is CreateChart201Response && data == other.data;
   }
 }

@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/trade_symbol.dart';
 
+@immutable
 class ShipRefine201ResponseDataConsumedInner {
-  ShipRefine201ResponseDataConsumedInner({
+  const ShipRefine201ResponseDataConsumedInner({
     required this.tradeSymbol,
     required this.units,
   });
@@ -31,5 +33,16 @@ class ShipRefine201ResponseDataConsumedInner {
 
   Map<String, dynamic> toJson() {
     return {'tradeSymbol': tradeSymbol.toJson(), 'units': units};
+  }
+
+  @override
+  int get hashCode => Object.hash(tradeSymbol, units);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipRefine201ResponseDataConsumedInner &&
+        tradeSymbol == other.tradeSymbol &&
+        units == other.units;
   }
 }

@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_cargo.dart';
 
+@immutable
 class Jettison200ResponseData {
-  Jettison200ResponseData({required this.cargo});
+  const Jettison200ResponseData({required this.cargo});
 
   factory Jettison200ResponseData.fromJson(Map<String, dynamic> json) {
     return Jettison200ResponseData(
@@ -22,5 +24,14 @@ class Jettison200ResponseData {
 
   Map<String, dynamic> toJson() {
     return {'cargo': cargo.toJson()};
+  }
+
+  @override
+  int get hashCode => cargo.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Jettison200ResponseData && cargo == other.cargo;
   }
 }

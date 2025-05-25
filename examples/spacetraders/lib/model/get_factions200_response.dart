@@ -1,8 +1,11 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/faction.dart';
 import 'package:spacetraders/model/meta.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class GetFactions200Response {
-  GetFactions200Response({required this.meta, this.data = const []});
+  const GetFactions200Response({required this.meta, this.data = const []});
 
   factory GetFactions200Response.fromJson(Map<String, dynamic> json) {
     return GetFactions200Response(
@@ -31,5 +34,16 @@ class GetFactions200Response {
       'data': data.map((e) => e.toJson()).toList(),
       'meta': meta.toJson(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(data, meta);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetFactions200Response &&
+        listsEqual(data, other.data) &&
+        meta == other.meta;
   }
 }

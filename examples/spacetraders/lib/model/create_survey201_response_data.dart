@@ -1,8 +1,11 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/cooldown.dart';
 import 'package:spacetraders/model/survey.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class CreateSurvey201ResponseData {
-  CreateSurvey201ResponseData({
+  const CreateSurvey201ResponseData({
     required this.cooldown,
     this.surveys = const [],
   });
@@ -36,5 +39,16 @@ class CreateSurvey201ResponseData {
       'cooldown': cooldown.toJson(),
       'surveys': surveys.map((e) => e.toJson()).toList(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(cooldown, surveys);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is CreateSurvey201ResponseData &&
+        cooldown == other.cooldown &&
+        listsEqual(surveys, other.surveys);
   }
 }

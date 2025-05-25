@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class InstallMountRequest {
-  InstallMountRequest({required this.symbol});
+  const InstallMountRequest({required this.symbol});
 
   factory InstallMountRequest.fromJson(Map<String, dynamic> json) {
     return InstallMountRequest(symbol: json['symbol'] as String);
@@ -18,5 +21,14 @@ class InstallMountRequest {
 
   Map<String, dynamic> toJson() {
     return {'symbol': symbol};
+  }
+
+  @override
+  int get hashCode => symbol.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is InstallMountRequest && symbol == other.symbol;
   }
 }

@@ -1,10 +1,13 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/agent.dart';
 import 'package:spacetraders/model/ship_cargo.dart';
 import 'package:spacetraders/model/ship_modification_transaction.dart';
 import 'package:spacetraders/model/ship_mount.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class InstallMount201ResponseData {
-  InstallMount201ResponseData({
+  const InstallMount201ResponseData({
     required this.agent,
     required this.cargo,
     required this.transaction,
@@ -50,5 +53,18 @@ class InstallMount201ResponseData {
       'cargo': cargo.toJson(),
       'transaction': transaction.toJson(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(agent, mounts, cargo, transaction);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is InstallMount201ResponseData &&
+        agent == other.agent &&
+        listsEqual(mounts, other.mounts) &&
+        cargo == other.cargo &&
+        transaction == other.transaction;
   }
 }

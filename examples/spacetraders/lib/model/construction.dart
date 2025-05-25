@@ -1,7 +1,10 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/construction_material.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class Construction {
-  Construction({
+  const Construction({
     required this.symbol,
     required this.isComplete,
     this.materials = const [],
@@ -39,5 +42,17 @@ class Construction {
       'materials': materials.map((e) => e.toJson()).toList(),
       'isComplete': isComplete,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(symbol, materials, isComplete);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Construction &&
+        symbol == other.symbol &&
+        listsEqual(materials, other.materials) &&
+        isComplete == other.isComplete;
   }
 }

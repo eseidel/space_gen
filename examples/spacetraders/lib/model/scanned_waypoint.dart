@@ -1,11 +1,14 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/chart.dart';
 import 'package:spacetraders/model/waypoint_faction.dart';
 import 'package:spacetraders/model/waypoint_orbital.dart';
 import 'package:spacetraders/model/waypoint_trait.dart';
 import 'package:spacetraders/model/waypoint_type.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class ScannedWaypoint {
-  ScannedWaypoint({
+  const ScannedWaypoint({
     required this.symbol,
     required this.type,
     required this.systemSymbol,
@@ -74,5 +77,33 @@ class ScannedWaypoint {
       'traits': traits.map((e) => e.toJson()).toList(),
       'chart': chart?.toJson(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    symbol,
+    type,
+    systemSymbol,
+    x,
+    y,
+    orbitals,
+    faction,
+    traits,
+    chart,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ScannedWaypoint &&
+        symbol == other.symbol &&
+        type == other.type &&
+        systemSymbol == other.systemSymbol &&
+        x == other.x &&
+        y == other.y &&
+        listsEqual(orbitals, other.orbitals) &&
+        faction == other.faction &&
+        listsEqual(traits, other.traits) &&
+        chart == other.chart;
   }
 }

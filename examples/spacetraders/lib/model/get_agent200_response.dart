@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/public_agent.dart';
 
+@immutable
 class GetAgent200Response {
-  GetAgent200Response({required this.data});
+  const GetAgent200Response({required this.data});
 
   factory GetAgent200Response.fromJson(Map<String, dynamic> json) {
     return GetAgent200Response(
@@ -22,5 +24,14 @@ class GetAgent200Response {
 
   Map<String, dynamic> toJson() {
     return {'data': data.toJson()};
+  }
+
+  @override
+  int get hashCode => data.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetAgent200Response && data == other.data;
   }
 }

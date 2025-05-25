@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class WarpShipRequest {
-  WarpShipRequest({required this.waypointSymbol});
+  const WarpShipRequest({required this.waypointSymbol});
 
   factory WarpShipRequest.fromJson(Map<String, dynamic> json) {
     return WarpShipRequest(waypointSymbol: json['waypointSymbol'] as String);
@@ -18,5 +21,14 @@ class WarpShipRequest {
 
   Map<String, dynamic> toJson() {
     return {'waypointSymbol': waypointSymbol};
+  }
+
+  @override
+  int get hashCode => waypointSymbol.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is WarpShipRequest && waypointSymbol == other.waypointSymbol;
   }
 }

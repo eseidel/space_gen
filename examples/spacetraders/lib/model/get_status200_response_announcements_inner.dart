@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class GetStatus200ResponseAnnouncementsInner {
-  GetStatus200ResponseAnnouncementsInner({
+  const GetStatus200ResponseAnnouncementsInner({
     required this.title,
     required this.body,
   });
@@ -29,5 +32,16 @@ class GetStatus200ResponseAnnouncementsInner {
 
   Map<String, dynamic> toJson() {
     return {'title': title, 'body': body};
+  }
+
+  @override
+  int get hashCode => Object.hash(title, body);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetStatus200ResponseAnnouncementsInner &&
+        title == other.title &&
+        body == other.body;
   }
 }

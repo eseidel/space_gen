@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class JumpShipRequest {
-  JumpShipRequest({required this.waypointSymbol});
+  const JumpShipRequest({required this.waypointSymbol});
 
   factory JumpShipRequest.fromJson(Map<String, dynamic> json) {
     return JumpShipRequest(waypointSymbol: json['waypointSymbol'] as String);
@@ -18,5 +21,14 @@ class JumpShipRequest {
 
   Map<String, dynamic> toJson() {
     return {'waypointSymbol': waypointSymbol};
+  }
+
+  @override
+  int get hashCode => waypointSymbol.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is JumpShipRequest && waypointSymbol == other.waypointSymbol;
   }
 }

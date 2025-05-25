@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class RemoveShipModuleRequest {
-  RemoveShipModuleRequest({required this.symbol});
+  const RemoveShipModuleRequest({required this.symbol});
 
   factory RemoveShipModuleRequest.fromJson(Map<String, dynamic> json) {
     return RemoveShipModuleRequest(symbol: json['symbol'] as String);
@@ -18,5 +21,14 @@ class RemoveShipModuleRequest {
 
   Map<String, dynamic> toJson() {
     return {'symbol': symbol};
+  }
+
+  @override
+  int get hashCode => symbol.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is RemoveShipModuleRequest && symbol == other.symbol;
   }
 }

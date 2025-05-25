@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/faction_symbol.dart';
 
+@immutable
 class WaypointFaction {
-  WaypointFaction({required this.symbol});
+  const WaypointFaction({required this.symbol});
 
   factory WaypointFaction.fromJson(Map<String, dynamic> json) {
     return WaypointFaction(
@@ -22,5 +24,14 @@ class WaypointFaction {
 
   Map<String, dynamic> toJson() {
     return {'symbol': symbol.toJson()};
+  }
+
+  @override
+  int get hashCode => symbol.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is WaypointFaction && symbol == other.symbol;
   }
 }

@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/trade_symbol.dart';
 
+@immutable
 class ShipCargoItem {
-  ShipCargoItem({
+  const ShipCargoItem({
     required this.symbol,
     required this.name,
     required this.description,
@@ -38,5 +40,18 @@ class ShipCargoItem {
       'description': description,
       'units': units,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(symbol, name, description, units);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipCargoItem &&
+        symbol == other.symbol &&
+        name == other.name &&
+        description == other.description &&
+        units == other.units;
   }
 }

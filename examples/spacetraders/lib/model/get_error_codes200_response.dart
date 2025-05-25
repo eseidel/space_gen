@@ -1,7 +1,10 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/get_error_codes200_response_error_codes_inner.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class GetErrorCodes200Response {
-  GetErrorCodes200Response({this.errorCodes = const []});
+  const GetErrorCodes200Response({this.errorCodes = const []});
 
   factory GetErrorCodes200Response.fromJson(Map<String, dynamic> json) {
     return GetErrorCodes200Response(
@@ -29,5 +32,15 @@ class GetErrorCodes200Response {
 
   Map<String, dynamic> toJson() {
     return {'errorCodes': errorCodes.map((e) => e.toJson()).toList()};
+  }
+
+  @override
+  int get hashCode => errorCodes.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetErrorCodes200Response &&
+        listsEqual(errorCodes, other.errorCodes);
   }
 }

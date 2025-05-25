@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class ShipModificationTransaction {
-  ShipModificationTransaction({
+  const ShipModificationTransaction({
     required this.waypointSymbol,
     required this.shipSymbol,
     required this.tradeSymbol,
@@ -42,5 +45,25 @@ class ShipModificationTransaction {
       'totalPrice': totalPrice,
       'timestamp': timestamp.toIso8601String(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    waypointSymbol,
+    shipSymbol,
+    tradeSymbol,
+    totalPrice,
+    timestamp,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipModificationTransaction &&
+        waypointSymbol == other.waypointSymbol &&
+        shipSymbol == other.shipSymbol &&
+        tradeSymbol == other.tradeSymbol &&
+        totalPrice == other.totalPrice &&
+        timestamp == other.timestamp;
   }
 }

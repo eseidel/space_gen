@@ -1,8 +1,10 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_frame_symbol.dart';
 import 'package:spacetraders/model/ship_requirements.dart';
 
+@immutable
 class ShipFrame {
-  ShipFrame({
+  const ShipFrame({
     required this.symbol,
     required this.name,
     required this.condition,
@@ -65,5 +67,35 @@ class ShipFrame {
       'requirements': requirements.toJson(),
       'quality': quality,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    symbol,
+    name,
+    condition,
+    integrity,
+    description,
+    moduleSlots,
+    mountingPoints,
+    fuelCapacity,
+    requirements,
+    quality,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipFrame &&
+        symbol == other.symbol &&
+        name == other.name &&
+        condition == other.condition &&
+        integrity == other.integrity &&
+        description == other.description &&
+        moduleSlots == other.moduleSlots &&
+        mountingPoints == other.mountingPoints &&
+        fuelCapacity == other.fuelCapacity &&
+        requirements == other.requirements &&
+        quality == other.quality;
   }
 }

@@ -1,7 +1,10 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/agent_event.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class GetMyAgentEvents200Response {
-  GetMyAgentEvents200Response({this.data = const []});
+  const GetMyAgentEvents200Response({this.data = const []});
 
   factory GetMyAgentEvents200Response.fromJson(Map<String, dynamic> json) {
     return GetMyAgentEvents200Response(
@@ -29,5 +32,14 @@ class GetMyAgentEvents200Response {
 
   Map<String, dynamic> toJson() {
     return {'data': data.map((e) => e.toJson()).toList()};
+  }
+
+  @override
+  int get hashCode => data.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetMyAgentEvents200Response && listsEqual(data, other.data);
   }
 }

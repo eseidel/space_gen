@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/extraction_yield.dart';
 
+@immutable
 class Extraction {
-  Extraction({required this.shipSymbol, required this.yield_});
+  const Extraction({required this.shipSymbol, required this.yield_});
 
   factory Extraction.fromJson(Map<String, dynamic> json) {
     return Extraction(
@@ -23,6 +25,17 @@ class Extraction {
   final ExtractionYield yield_;
 
   Map<String, dynamic> toJson() {
-    return {'shipSymbol': shipSymbol, 'yield_': yield_.toJson()};
+    return {'shipSymbol': shipSymbol, 'yield': yield_.toJson()};
+  }
+
+  @override
+  int get hashCode => Object.hash(shipSymbol, yield_);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Extraction &&
+        shipSymbol == other.shipSymbol &&
+        yield_ == other.yield_;
   }
 }

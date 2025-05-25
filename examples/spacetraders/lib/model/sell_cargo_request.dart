@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/trade_symbol.dart';
 
+@immutable
 class SellCargoRequest {
-  SellCargoRequest({required this.symbol, required this.units});
+  const SellCargoRequest({required this.symbol, required this.units});
 
   factory SellCargoRequest.fromJson(Map<String, dynamic> json) {
     return SellCargoRequest(
@@ -24,5 +26,16 @@ class SellCargoRequest {
 
   Map<String, dynamic> toJson() {
     return {'symbol': symbol.toJson(), 'units': units};
+  }
+
+  @override
+  int get hashCode => Object.hash(symbol, units);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SellCargoRequest &&
+        symbol == other.symbol &&
+        units == other.units;
   }
 }

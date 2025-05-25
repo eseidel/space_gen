@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/trade_symbol.dart';
 
+@immutable
 class SupplyConstructionRequest {
-  SupplyConstructionRequest({
+  const SupplyConstructionRequest({
     required this.shipSymbol,
     required this.tradeSymbol,
     required this.units,
@@ -34,5 +36,17 @@ class SupplyConstructionRequest {
       'tradeSymbol': tradeSymbol.toJson(),
       'units': units,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(shipSymbol, tradeSymbol, units);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SupplyConstructionRequest &&
+        shipSymbol == other.shipSymbol &&
+        tradeSymbol == other.tradeSymbol &&
+        units == other.units;
   }
 }

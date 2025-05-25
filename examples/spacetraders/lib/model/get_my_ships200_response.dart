@@ -1,8 +1,11 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/meta.dart';
 import 'package:spacetraders/model/ship.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class GetMyShips200Response {
-  GetMyShips200Response({required this.meta, this.data = const []});
+  const GetMyShips200Response({required this.meta, this.data = const []});
 
   factory GetMyShips200Response.fromJson(Map<String, dynamic> json) {
     return GetMyShips200Response(
@@ -31,5 +34,16 @@ class GetMyShips200Response {
       'data': data.map((e) => e.toJson()).toList(),
       'meta': meta.toJson(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(data, meta);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetMyShips200Response &&
+        listsEqual(data, other.data) &&
+        meta == other.meta;
   }
 }

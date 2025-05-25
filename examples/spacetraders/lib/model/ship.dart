@@ -1,3 +1,4 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/cooldown.dart';
 import 'package:spacetraders/model/ship_cargo.dart';
 import 'package:spacetraders/model/ship_crew.dart';
@@ -9,9 +10,11 @@ import 'package:spacetraders/model/ship_mount.dart';
 import 'package:spacetraders/model/ship_nav.dart';
 import 'package:spacetraders/model/ship_reactor.dart';
 import 'package:spacetraders/model/ship_registration.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class Ship {
-  Ship({
+  const Ship({
     required this.symbol,
     required this.registration,
     required this.nav,
@@ -92,5 +95,39 @@ class Ship {
       'fuel': fuel.toJson(),
       'cooldown': cooldown.toJson(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    symbol,
+    registration,
+    nav,
+    crew,
+    frame,
+    reactor,
+    engine,
+    modules,
+    mounts,
+    cargo,
+    fuel,
+    cooldown,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Ship &&
+        symbol == other.symbol &&
+        registration == other.registration &&
+        nav == other.nav &&
+        crew == other.crew &&
+        frame == other.frame &&
+        reactor == other.reactor &&
+        engine == other.engine &&
+        listsEqual(modules, other.modules) &&
+        listsEqual(mounts, other.mounts) &&
+        cargo == other.cargo &&
+        fuel == other.fuel &&
+        cooldown == other.cooldown;
   }
 }

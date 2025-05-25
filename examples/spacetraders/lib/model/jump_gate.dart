@@ -1,5 +1,9 @@
+import 'package:meta/meta.dart';
+import 'package:spacetraders/model_helpers.dart';
+
+@immutable
 class JumpGate {
-  JumpGate({required this.symbol, this.connections = const []});
+  const JumpGate({required this.symbol, this.connections = const []});
 
   factory JumpGate.fromJson(Map<String, dynamic> json) {
     return JumpGate(
@@ -22,5 +26,16 @@ class JumpGate {
 
   Map<String, dynamic> toJson() {
     return {'symbol': symbol, 'connections': connections};
+  }
+
+  @override
+  int get hashCode => Object.hash(symbol, connections);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is JumpGate &&
+        symbol == other.symbol &&
+        listsEqual(connections, other.connections);
   }
 }

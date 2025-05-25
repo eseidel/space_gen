@@ -1,10 +1,12 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/activity_level.dart';
 import 'package:spacetraders/model/market_trade_good_type.dart';
 import 'package:spacetraders/model/supply_level.dart';
 import 'package:spacetraders/model/trade_symbol.dart';
 
+@immutable
 class MarketTradeGood {
-  MarketTradeGood({
+  const MarketTradeGood({
     required this.symbol,
     required this.type,
     required this.tradeVolume,
@@ -53,5 +55,29 @@ class MarketTradeGood {
       'purchasePrice': purchasePrice,
       'sellPrice': sellPrice,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    symbol,
+    type,
+    tradeVolume,
+    supply,
+    activity,
+    purchasePrice,
+    sellPrice,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is MarketTradeGood &&
+        symbol == other.symbol &&
+        type == other.type &&
+        tradeVolume == other.tradeVolume &&
+        supply == other.supply &&
+        activity == other.activity &&
+        purchasePrice == other.purchasePrice &&
+        sellPrice == other.sellPrice;
   }
 }

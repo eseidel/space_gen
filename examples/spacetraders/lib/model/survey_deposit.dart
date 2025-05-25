@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/trade_symbol.dart';
 
+@immutable
 class SurveyDeposit {
-  SurveyDeposit({required this.symbol});
+  const SurveyDeposit({required this.symbol});
 
   factory SurveyDeposit.fromJson(Map<String, dynamic> json) {
     return SurveyDeposit(
@@ -22,5 +24,14 @@ class SurveyDeposit {
 
   Map<String, dynamic> toJson() {
     return {'symbol': symbol.toJson()};
+  }
+
+  @override
+  int get hashCode => symbol.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SurveyDeposit && symbol == other.symbol;
   }
 }

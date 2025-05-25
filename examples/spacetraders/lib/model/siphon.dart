@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/siphon_yield.dart';
 
+@immutable
 class Siphon {
-  Siphon({required this.shipSymbol, required this.yield_});
+  const Siphon({required this.shipSymbol, required this.yield_});
 
   factory Siphon.fromJson(Map<String, dynamic> json) {
     return Siphon(
@@ -23,6 +25,17 @@ class Siphon {
   final SiphonYield yield_;
 
   Map<String, dynamic> toJson() {
-    return {'shipSymbol': shipSymbol, 'yield_': yield_.toJson()};
+    return {'shipSymbol': shipSymbol, 'yield': yield_.toJson()};
+  }
+
+  @override
+  int get hashCode => Object.hash(shipSymbol, yield_);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Siphon &&
+        shipSymbol == other.shipSymbol &&
+        yield_ == other.yield_;
   }
 }

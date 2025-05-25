@@ -1,10 +1,13 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/agent.dart';
 import 'package:spacetraders/model/contract.dart';
 import 'package:spacetraders/model/faction.dart';
 import 'package:spacetraders/model/ship.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class Register201ResponseData {
-  Register201ResponseData({
+  const Register201ResponseData({
     required this.token,
     required this.agent,
     required this.faction,
@@ -48,5 +51,19 @@ class Register201ResponseData {
       'contract': contract.toJson(),
       'ships': ships.map((e) => e.toJson()).toList(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(token, agent, faction, contract, ships);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Register201ResponseData &&
+        token == other.token &&
+        agent == other.agent &&
+        faction == other.faction &&
+        contract == other.contract &&
+        listsEqual(ships, other.ships);
   }
 }

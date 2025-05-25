@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class GetStatus200ResponseStats {
-  GetStatus200ResponseStats({
+  const GetStatus200ResponseStats({
     required this.agents,
     required this.ships,
     required this.systems,
@@ -40,5 +43,19 @@ class GetStatus200ResponseStats {
       'systems': systems,
       'waypoints': waypoints,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(accounts, agents, ships, systems, waypoints);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetStatus200ResponseStats &&
+        accounts == other.accounts &&
+        agents == other.agents &&
+        ships == other.ships &&
+        systems == other.systems &&
+        waypoints == other.waypoints;
   }
 }

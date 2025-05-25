@@ -1,7 +1,13 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_fuel_consumed.dart';
 
+@immutable
 class ShipFuel {
-  ShipFuel({required this.current, required this.capacity, this.consumed});
+  const ShipFuel({
+    required this.current,
+    required this.capacity,
+    this.consumed,
+  });
 
   factory ShipFuel.fromJson(Map<String, dynamic> json) {
     return ShipFuel(
@@ -32,5 +38,17 @@ class ShipFuel {
       'capacity': capacity,
       'consumed': consumed?.toJson(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(current, capacity, consumed);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipFuel &&
+        current == other.current &&
+        capacity == other.capacity &&
+        consumed == other.consumed;
   }
 }

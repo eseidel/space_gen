@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_nav_route_waypoint.dart';
 
+@immutable
 class ShipNavRoute {
-  ShipNavRoute({
+  const ShipNavRoute({
     required this.destination,
     required this.origin,
     required this.departureTime,
@@ -42,5 +44,18 @@ class ShipNavRoute {
       'departureTime': departureTime.toIso8601String(),
       'arrival': arrival.toIso8601String(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(destination, origin, departureTime, arrival);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipNavRoute &&
+        destination == other.destination &&
+        origin == other.origin &&
+        departureTime == other.departureTime &&
+        arrival == other.arrival;
   }
 }

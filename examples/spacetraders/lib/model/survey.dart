@@ -1,8 +1,11 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/survey_deposit.dart';
 import 'package:spacetraders/model/survey_size.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class Survey {
-  Survey({
+  const Survey({
     required this.signature,
     required this.symbol,
     required this.expiration,
@@ -48,5 +51,20 @@ class Survey {
       'expiration': expiration.toIso8601String(),
       'size': size.toJson(),
     };
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(signature, symbol, deposits, expiration, size);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Survey &&
+        signature == other.signature &&
+        symbol == other.symbol &&
+        listsEqual(deposits, other.deposits) &&
+        expiration == other.expiration &&
+        size == other.size;
   }
 }

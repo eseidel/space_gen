@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/faction_symbol.dart';
 
+@immutable
 class SystemFaction {
-  SystemFaction({required this.symbol});
+  const SystemFaction({required this.symbol});
 
   factory SystemFaction.fromJson(Map<String, dynamic> json) {
     return SystemFaction(
@@ -22,5 +24,14 @@ class SystemFaction {
 
   Map<String, dynamic> toJson() {
     return {'symbol': symbol.toJson()};
+  }
+
+  @override
+  int get hashCode => symbol.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SystemFaction && symbol == other.symbol;
   }
 }

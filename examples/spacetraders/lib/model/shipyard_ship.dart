@@ -1,3 +1,4 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/activity_level.dart';
 import 'package:spacetraders/model/ship_engine.dart';
 import 'package:spacetraders/model/ship_frame.dart';
@@ -7,9 +8,11 @@ import 'package:spacetraders/model/ship_reactor.dart';
 import 'package:spacetraders/model/ship_type.dart';
 import 'package:spacetraders/model/shipyard_ship_crew.dart';
 import 'package:spacetraders/model/supply_level.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class ShipyardShip {
-  ShipyardShip({
+  const ShipyardShip({
     required this.type,
     required this.name,
     required this.description,
@@ -88,5 +91,39 @@ class ShipyardShip {
       'mounts': mounts.map((e) => e.toJson()).toList(),
       'crew': crew.toJson(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    type,
+    name,
+    description,
+    activity,
+    supply,
+    purchasePrice,
+    frame,
+    reactor,
+    engine,
+    modules,
+    mounts,
+    crew,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipyardShip &&
+        type == other.type &&
+        name == other.name &&
+        description == other.description &&
+        activity == other.activity &&
+        supply == other.supply &&
+        purchasePrice == other.purchasePrice &&
+        frame == other.frame &&
+        reactor == other.reactor &&
+        engine == other.engine &&
+        listsEqual(modules, other.modules) &&
+        listsEqual(mounts, other.mounts) &&
+        crew == other.crew;
   }
 }

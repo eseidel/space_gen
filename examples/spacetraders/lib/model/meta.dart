@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class Meta {
-  Meta({required this.total, this.page = 1, this.limit = 10});
+  const Meta({required this.total, this.page = 1, this.limit = 10});
 
   factory Meta.fromJson(Map<String, dynamic> json) {
     return Meta(
@@ -24,5 +27,17 @@ class Meta {
 
   Map<String, dynamic> toJson() {
     return {'total': total, 'page': page, 'limit': limit};
+  }
+
+  @override
+  int get hashCode => Object.hash(total, page, limit);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Meta &&
+        total == other.total &&
+        page == other.page &&
+        limit == other.limit;
   }
 }

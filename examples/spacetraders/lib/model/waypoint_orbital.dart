@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class WaypointOrbital {
-  WaypointOrbital({required this.symbol});
+  const WaypointOrbital({required this.symbol});
 
   factory WaypointOrbital.fromJson(Map<String, dynamic> json) {
     return WaypointOrbital(symbol: json['symbol'] as String);
@@ -18,5 +21,14 @@ class WaypointOrbital {
 
   Map<String, dynamic> toJson() {
     return {'symbol': symbol};
+  }
+
+  @override
+  int get hashCode => symbol.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is WaypointOrbital && symbol == other.symbol;
   }
 }

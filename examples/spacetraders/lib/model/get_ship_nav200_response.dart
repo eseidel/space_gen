@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_nav.dart';
 
+@immutable
 class GetShipNav200Response {
-  GetShipNav200Response({required this.data});
+  const GetShipNav200Response({required this.data});
 
   factory GetShipNav200Response.fromJson(Map<String, dynamic> json) {
     return GetShipNav200Response(
@@ -22,5 +24,14 @@ class GetShipNav200Response {
 
   Map<String, dynamic> toJson() {
     return {'data': data.toJson()};
+  }
+
+  @override
+  int get hashCode => data.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetShipNav200Response && data == other.data;
   }
 }

@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class GetMyFactions200ResponseDataInner {
-  GetMyFactions200ResponseDataInner({
+  const GetMyFactions200ResponseDataInner({
     required this.symbol,
     required this.reputation,
   });
@@ -29,5 +32,16 @@ class GetMyFactions200ResponseDataInner {
 
   Map<String, dynamic> toJson() {
     return {'symbol': symbol, 'reputation': reputation};
+  }
+
+  @override
+  int get hashCode => Object.hash(symbol, reputation);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetMyFactions200ResponseDataInner &&
+        symbol == other.symbol &&
+        reputation == other.reputation;
   }
 }

@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class ContractDeliverGood {
-  ContractDeliverGood({
+  const ContractDeliverGood({
     required this.tradeSymbol,
     required this.destinationSymbol,
     required this.unitsRequired,
@@ -36,5 +39,23 @@ class ContractDeliverGood {
       'unitsRequired': unitsRequired,
       'unitsFulfilled': unitsFulfilled,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    tradeSymbol,
+    destinationSymbol,
+    unitsRequired,
+    unitsFulfilled,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ContractDeliverGood &&
+        tradeSymbol == other.tradeSymbol &&
+        destinationSymbol == other.destinationSymbol &&
+        unitsRequired == other.unitsRequired &&
+        unitsFulfilled == other.unitsFulfilled;
   }
 }

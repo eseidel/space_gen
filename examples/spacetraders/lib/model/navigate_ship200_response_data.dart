@@ -1,9 +1,12 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_condition_event.dart';
 import 'package:spacetraders/model/ship_fuel.dart';
 import 'package:spacetraders/model/ship_nav.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class NavigateShip200ResponseData {
-  NavigateShip200ResponseData({
+  const NavigateShip200ResponseData({
     required this.nav,
     required this.fuel,
     this.events = const [],
@@ -43,5 +46,17 @@ class NavigateShip200ResponseData {
       'fuel': fuel.toJson(),
       'events': events.map((e) => e.toJson()).toList(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(nav, fuel, events);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is NavigateShip200ResponseData &&
+        nav == other.nav &&
+        fuel == other.fuel &&
+        listsEqual(events, other.events);
   }
 }

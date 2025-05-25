@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/trade_symbol.dart';
 
+@immutable
 class TransferCargoRequest {
-  TransferCargoRequest({
+  const TransferCargoRequest({
     required this.tradeSymbol,
     required this.units,
     required this.shipSymbol,
@@ -34,5 +36,17 @@ class TransferCargoRequest {
       'units': units,
       'shipSymbol': shipSymbol,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(tradeSymbol, units, shipSymbol);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is TransferCargoRequest &&
+        tradeSymbol == other.tradeSymbol &&
+        units == other.units &&
+        shipSymbol == other.shipSymbol;
   }
 }

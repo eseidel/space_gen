@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/scrap_ship200_response_data.dart';
 
+@immutable
 class ScrapShip200Response {
-  ScrapShip200Response({required this.data});
+  const ScrapShip200Response({required this.data});
 
   factory ScrapShip200Response.fromJson(Map<String, dynamic> json) {
     return ScrapShip200Response(
@@ -24,5 +26,14 @@ class ScrapShip200Response {
 
   Map<String, dynamic> toJson() {
     return {'data': data.toJson()};
+  }
+
+  @override
+  int get hashCode => data.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ScrapShip200Response && data == other.data;
   }
 }

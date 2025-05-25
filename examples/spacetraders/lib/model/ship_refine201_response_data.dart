@@ -1,10 +1,13 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/cooldown.dart';
 import 'package:spacetraders/model/ship_cargo.dart';
 import 'package:spacetraders/model/ship_refine201_response_data_consumed_inner.dart';
 import 'package:spacetraders/model/ship_refine201_response_data_produced_inner.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class ShipRefine201ResponseData {
-  ShipRefine201ResponseData({
+  const ShipRefine201ResponseData({
     required this.cargo,
     required this.cooldown,
     this.produced = const [],
@@ -55,5 +58,18 @@ class ShipRefine201ResponseData {
       'produced': produced.map((e) => e.toJson()).toList(),
       'consumed': consumed.map((e) => e.toJson()).toList(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(cargo, cooldown, produced, consumed);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipRefine201ResponseData &&
+        cargo == other.cargo &&
+        cooldown == other.cooldown &&
+        listsEqual(produced, other.produced) &&
+        listsEqual(consumed, other.consumed);
   }
 }

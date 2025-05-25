@@ -1,8 +1,11 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/cooldown.dart';
 import 'package:spacetraders/model/scanned_waypoint.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class CreateShipWaypointScan201ResponseData {
-  CreateShipWaypointScan201ResponseData({
+  const CreateShipWaypointScan201ResponseData({
     required this.cooldown,
     this.waypoints = const [],
   });
@@ -40,5 +43,16 @@ class CreateShipWaypointScan201ResponseData {
       'cooldown': cooldown.toJson(),
       'waypoints': waypoints.map((e) => e.toJson()).toList(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(cooldown, waypoints);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is CreateShipWaypointScan201ResponseData &&
+        cooldown == other.cooldown &&
+        listsEqual(waypoints, other.waypoints);
   }
 }

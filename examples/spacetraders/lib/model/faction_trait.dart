@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/faction_trait_symbol.dart';
 
+@immutable
 class FactionTrait {
-  FactionTrait({
+  const FactionTrait({
     required this.symbol,
     required this.name,
     required this.description,
@@ -34,5 +36,17 @@ class FactionTrait {
       'name': name,
       'description': description,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(symbol, name, description);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is FactionTrait &&
+        symbol == other.symbol &&
+        name == other.name &&
+        description == other.description;
   }
 }

@@ -1,7 +1,10 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_cargo_item.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class ShipCargo {
-  ShipCargo({
+  const ShipCargo({
     required this.capacity,
     required this.units,
     this.inventory = const [],
@@ -39,5 +42,17 @@ class ShipCargo {
       'units': units,
       'inventory': inventory.map((e) => e.toJson()).toList(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(capacity, units, inventory);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipCargo &&
+        capacity == other.capacity &&
+        units == other.units &&
+        listsEqual(inventory, other.inventory);
   }
 }

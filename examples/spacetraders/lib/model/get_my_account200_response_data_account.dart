@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class GetMyAccount200ResponseDataAccount {
-  GetMyAccount200ResponseDataAccount({
+  const GetMyAccount200ResponseDataAccount({
     required this.id,
     required this.email,
     required this.createdAt,
@@ -40,5 +43,18 @@ class GetMyAccount200ResponseDataAccount {
       'token': token,
       'createdAt': createdAt.toIso8601String(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(id, email, token, createdAt);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetMyAccount200ResponseDataAccount &&
+        id == other.id &&
+        email == other.email &&
+        token == other.token &&
+        createdAt == other.createdAt;
   }
 }

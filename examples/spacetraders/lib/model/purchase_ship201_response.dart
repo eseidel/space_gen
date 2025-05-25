@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/purchase_ship201_response_data.dart';
 
+@immutable
 class PurchaseShip201Response {
-  PurchaseShip201Response({required this.data});
+  const PurchaseShip201Response({required this.data});
 
   factory PurchaseShip201Response.fromJson(Map<String, dynamic> json) {
     return PurchaseShip201Response(
@@ -24,5 +26,14 @@ class PurchaseShip201Response {
 
   Map<String, dynamic> toJson() {
     return {'data': data.toJson()};
+  }
+
+  @override
+  int get hashCode => data.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is PurchaseShip201Response && data == other.data;
   }
 }

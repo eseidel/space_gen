@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_refine_request_produce.dart';
 
+@immutable
 class ShipRefineRequest {
-  ShipRefineRequest({required this.produce});
+  const ShipRefineRequest({required this.produce});
 
   factory ShipRefineRequest.fromJson(Map<String, dynamic> json) {
     return ShipRefineRequest(
@@ -22,5 +24,14 @@ class ShipRefineRequest {
 
   Map<String, dynamic> toJson() {
     return {'produce': produce.toJson()};
+  }
+
+  @override
+  int get hashCode => produce.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipRefineRequest && produce == other.produce;
   }
 }

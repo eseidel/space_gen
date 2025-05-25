@@ -1,8 +1,10 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/construction.dart';
 import 'package:spacetraders/model/ship_cargo.dart';
 
+@immutable
 class SupplyConstruction201ResponseData {
-  SupplyConstruction201ResponseData({
+  const SupplyConstruction201ResponseData({
     required this.construction,
     required this.cargo,
   });
@@ -34,5 +36,16 @@ class SupplyConstruction201ResponseData {
 
   Map<String, dynamic> toJson() {
     return {'construction': construction.toJson(), 'cargo': cargo.toJson()};
+  }
+
+  @override
+  int get hashCode => Object.hash(construction, cargo);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SupplyConstruction201ResponseData &&
+        construction == other.construction &&
+        cargo == other.cargo;
   }
 }

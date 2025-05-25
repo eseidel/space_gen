@@ -6,9 +6,10 @@ environment:
   sdk: '>=3.7.0 <4.0.0'
 
 dependencies:
+  collection: ^1.19.0
   http: ^1.4.0
+  meta: ^1.17.0
 
-  meta: any
 dev_dependencies:
   test: ^1.26.0
   very_good_analysis: ^7.0.0

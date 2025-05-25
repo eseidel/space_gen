@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class GetStatus200ResponseHealth {
-  GetStatus200ResponseHealth({this.lastMarketUpdate});
+  const GetStatus200ResponseHealth({this.lastMarketUpdate});
 
   factory GetStatus200ResponseHealth.fromJson(Map<String, dynamic> json) {
     return GetStatus200ResponseHealth(
@@ -20,5 +23,15 @@ class GetStatus200ResponseHealth {
 
   Map<String, dynamic> toJson() {
     return {'lastMarketUpdate': lastMarketUpdate};
+  }
+
+  @override
+  int get hashCode => lastMarketUpdate.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetStatus200ResponseHealth &&
+        lastMarketUpdate == other.lastMarketUpdate;
   }
 }

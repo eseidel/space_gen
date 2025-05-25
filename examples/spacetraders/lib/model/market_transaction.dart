@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/market_transaction_type.dart';
 
+@immutable
 class MarketTransaction {
-  MarketTransaction({
+  const MarketTransaction({
     required this.waypointSymbol,
     required this.shipSymbol,
     required this.tradeSymbol,
@@ -54,5 +56,31 @@ class MarketTransaction {
       'totalPrice': totalPrice,
       'timestamp': timestamp.toIso8601String(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    waypointSymbol,
+    shipSymbol,
+    tradeSymbol,
+    type,
+    units,
+    pricePerUnit,
+    totalPrice,
+    timestamp,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is MarketTransaction &&
+        waypointSymbol == other.waypointSymbol &&
+        shipSymbol == other.shipSymbol &&
+        tradeSymbol == other.tradeSymbol &&
+        type == other.type &&
+        units == other.units &&
+        pricePerUnit == other.pricePerUnit &&
+        totalPrice == other.totalPrice &&
+        timestamp == other.timestamp;
   }
 }

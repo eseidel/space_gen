@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class ShipyardShipCrew {
-  ShipyardShipCrew({required this.required_, required this.capacity});
+  const ShipyardShipCrew({required this.required_, required this.capacity});
 
   factory ShipyardShipCrew.fromJson(Map<String, dynamic> json) {
     return ShipyardShipCrew(
@@ -21,6 +24,17 @@ class ShipyardShipCrew {
   final int capacity;
 
   Map<String, dynamic> toJson() {
-    return {'required_': required_, 'capacity': capacity};
+    return {'required': required_, 'capacity': capacity};
+  }
+
+  @override
+  int get hashCode => Object.hash(required_, capacity);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipyardShipCrew &&
+        required_ == other.required_ &&
+        capacity == other.capacity;
   }
 }

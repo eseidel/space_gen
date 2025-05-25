@@ -1,12 +1,15 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/scanned_ship_engine.dart';
 import 'package:spacetraders/model/scanned_ship_frame.dart';
 import 'package:spacetraders/model/scanned_ship_mounts_inner.dart';
 import 'package:spacetraders/model/scanned_ship_reactor.dart';
 import 'package:spacetraders/model/ship_nav.dart';
 import 'package:spacetraders/model/ship_registration.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class ScannedShip {
-  ScannedShip({
+  const ScannedShip({
     required this.symbol,
     required this.registration,
     required this.nav,
@@ -67,5 +70,22 @@ class ScannedShip {
       'engine': engine.toJson(),
       'mounts': mounts?.map((e) => e.toJson()).toList(),
     };
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(symbol, registration, nav, frame, reactor, engine, mounts);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ScannedShip &&
+        symbol == other.symbol &&
+        registration == other.registration &&
+        nav == other.nav &&
+        frame == other.frame &&
+        reactor == other.reactor &&
+        engine == other.engine &&
+        listsEqual(mounts, other.mounts);
   }
 }

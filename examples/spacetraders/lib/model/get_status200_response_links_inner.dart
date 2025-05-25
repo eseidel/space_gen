@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class GetStatus200ResponseLinksInner {
-  GetStatus200ResponseLinksInner({required this.name, required this.url});
+  const GetStatus200ResponseLinksInner({required this.name, required this.url});
 
   factory GetStatus200ResponseLinksInner.fromJson(Map<String, dynamic> json) {
     return GetStatus200ResponseLinksInner(
@@ -24,5 +27,16 @@ class GetStatus200ResponseLinksInner {
 
   Map<String, dynamic> toJson() {
     return {'name': name, 'url': url};
+  }
+
+  @override
+  int get hashCode => Object.hash(name, url);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetStatus200ResponseLinksInner &&
+        name == other.name &&
+        url == other.url;
   }
 }

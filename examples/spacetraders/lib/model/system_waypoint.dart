@@ -1,8 +1,11 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/waypoint_orbital.dart';
 import 'package:spacetraders/model/waypoint_type.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class SystemWaypoint {
-  SystemWaypoint({
+  const SystemWaypoint({
     required this.symbol,
     required this.type,
     required this.x,
@@ -52,5 +55,20 @@ class SystemWaypoint {
       'orbitals': orbitals.map((e) => e.toJson()).toList(),
       'orbits': orbits,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(symbol, type, x, y, orbitals, orbits);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SystemWaypoint &&
+        symbol == other.symbol &&
+        type == other.type &&
+        x == other.x &&
+        y == other.y &&
+        listsEqual(orbitals, other.orbitals) &&
+        orbits == other.orbits;
   }
 }

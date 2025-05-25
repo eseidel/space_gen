@@ -1,12 +1,15 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/get_status200_response_announcements_inner.dart';
 import 'package:spacetraders/model/get_status200_response_health.dart';
 import 'package:spacetraders/model/get_status200_response_leaderboards.dart';
 import 'package:spacetraders/model/get_status200_response_links_inner.dart';
 import 'package:spacetraders/model/get_status200_response_server_resets.dart';
 import 'package:spacetraders/model/get_status200_response_stats.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class GetStatus200Response {
-  GetStatus200Response({
+  const GetStatus200Response({
     required this.status,
     required this.version,
     required this.resetDate,
@@ -89,5 +92,35 @@ class GetStatus200Response {
       'announcements': announcements.map((e) => e.toJson()).toList(),
       'links': links.map((e) => e.toJson()).toList(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    status,
+    version,
+    resetDate,
+    description,
+    stats,
+    health,
+    leaderboards,
+    serverResets,
+    announcements,
+    links,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetStatus200Response &&
+        status == other.status &&
+        version == other.version &&
+        resetDate == other.resetDate &&
+        description == other.description &&
+        stats == other.stats &&
+        health == other.health &&
+        leaderboards == other.leaderboards &&
+        serverResets == other.serverResets &&
+        listsEqual(announcements, other.announcements) &&
+        listsEqual(links, other.links);
   }
 }

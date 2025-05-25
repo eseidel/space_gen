@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class AgentEvent {
-  AgentEvent({
+  const AgentEvent({
     required this.id,
     required this.type,
     required this.message,
@@ -40,5 +43,19 @@ class AgentEvent {
       'data': data,
       'createdAt': createdAt.toIso8601String(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(id, type, message, data, createdAt);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is AgentEvent &&
+        id == other.id &&
+        type == other.type &&
+        message == other.message &&
+        identical(data, other.data) &&
+        createdAt == other.createdAt;
   }
 }

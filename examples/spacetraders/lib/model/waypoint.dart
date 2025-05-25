@@ -1,12 +1,15 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/chart.dart';
 import 'package:spacetraders/model/waypoint_faction.dart';
 import 'package:spacetraders/model/waypoint_modifier.dart';
 import 'package:spacetraders/model/waypoint_orbital.dart';
 import 'package:spacetraders/model/waypoint_trait.dart';
 import 'package:spacetraders/model/waypoint_type.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class Waypoint {
-  Waypoint({
+  const Waypoint({
     required this.symbol,
     required this.type,
     required this.systemSymbol,
@@ -92,5 +95,39 @@ class Waypoint {
       'chart': chart?.toJson(),
       'isUnderConstruction': isUnderConstruction,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    symbol,
+    type,
+    systemSymbol,
+    x,
+    y,
+    orbitals,
+    orbits,
+    faction,
+    traits,
+    modifiers,
+    chart,
+    isUnderConstruction,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Waypoint &&
+        symbol == other.symbol &&
+        type == other.type &&
+        systemSymbol == other.systemSymbol &&
+        x == other.x &&
+        y == other.y &&
+        listsEqual(orbitals, other.orbitals) &&
+        orbits == other.orbits &&
+        faction == other.faction &&
+        listsEqual(traits, other.traits) &&
+        listsEqual(modifiers, other.modifiers) &&
+        chart == other.chart &&
+        isUnderConstruction == other.isUnderConstruction;
   }
 }

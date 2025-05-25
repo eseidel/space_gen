@@ -2,10 +2,15 @@
 import '{{{.}}}';
 {{/imports}}
 
+{{^mutableModels}}
+import 'package:meta/meta.dart';
+
+@immutable
+{{/mutableModels}}
 class {{ typeName }} {
     {{ typeName }}(
         {{#hasProperties}}
-        { {{#properties}}{{#useRequired}}required{{/useRequired}} this.{{{ name }}}{{#hasDefaultValue}} = {{{ defaultValue }}}{{/hasDefaultValue}},{{/properties}}
+        { {{#properties}}{{#useRequired}}required{{/useRequired}} this.{{{ dartName }}}{{#hasDefaultValue}} = {{{ defaultValue }}}{{/hasDefaultValue}},{{/properties}}
         {{#hasAdditionalProperties}}required this.{{additionalPropertiesName}},{{/hasAdditionalProperties}} }
         {{/hasProperties}}
     );
@@ -20,7 +25,7 @@ class {{ typeName }} {
     {{/castFromJsonArg}}
         return {{ typeName }}(
             {{#properties}}
-            {{ name }}: {{{ fromJson }}},
+            {{ dartName }}: {{{ fromJson }}},
             {{/properties}}
             {{#hasAdditionalProperties}}
             {{additionalPropertiesName}}: json.map((key, value) => MapEntry(key, {{{ valueFromJson }}})),
@@ -37,11 +42,7 @@ class {{ typeName }} {
         return {{ typeName }}.fromJson(json);
     }
 
-    {{#properties}}
-    {{^mutableModels}}final{{/mutableModels}}
-    {{^isNullable}}{{{ type }}}{{/isNullable}}
-    {{#isNullable}}{{{ nullableType }}}{{/isNullable}} {{ name }};
-    {{/properties}}
+    {{#properties}}{{^mutableModels}}final{{/mutableModels}} {{^isNullable}}{{{ type }}}{{/isNullable}} {{#isNullable}}{{{ nullableType }}}{{/isNullable}} {{ dartName }};{{/properties}}
 
     {{#hasAdditionalProperties}}
     final Map<String, {{{ valueSchema }}}> {{additionalPropertiesName}};
@@ -52,11 +53,45 @@ class {{ typeName }} {
     Map<String, dynamic> toJson() {
         return {
             {{#properties}}
-            '{{ name }}': {{{ toJson }}},
+            '{{ jsonName }}': {{{ toJson }}},
             {{/properties}}
             {{#hasAdditionalProperties}}
             ...{{additionalPropertiesName}}.map((key, value) => MapEntry(key, {{{ valueToJson }}})),
             {{/hasAdditionalProperties}}
         };
+    }
+
+    @override
+    int get hashCode =>
+        {{#hasOneProperty}}
+          {{#properties}}
+          {{ dartName }}.hashCode;
+          {{/properties}}
+          {{#hasAdditionalProperties}}
+          {{additionalPropertiesName}}.hashCode;
+          {{/hasAdditionalProperties}}
+        {{/hasOneProperty}}
+        {{^hasOneProperty}}
+        Object.hash(
+          {{#properties}}
+          {{ dartName }},
+          {{/properties}}
+          {{#hasAdditionalProperties}}
+          {{additionalPropertiesName}},
+          {{/hasAdditionalProperties}}
+        );
+        {{/hasOneProperty}}
+
+    @override
+    bool operator ==(Object other) {
+        if (identical(this, other)) return true;
+        return other is {{ typeName }}
+            {{#properties}}
+            && {{ equals}}
+            {{/properties}}
+            {{#hasAdditionalProperties}}
+            && mapsEqual({{additionalPropertiesName}}, other.{{additionalPropertiesName}})
+            {{/hasAdditionalProperties}}
+        ;
     }
 }

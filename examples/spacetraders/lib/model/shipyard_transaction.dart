@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class ShipyardTransaction {
-  ShipyardTransaction({
+  const ShipyardTransaction({
     required this.waypointSymbol,
     required this.shipSymbol,
     required this.shipType,
@@ -44,5 +47,27 @@ class ShipyardTransaction {
       'agentSymbol': agentSymbol,
       'timestamp': timestamp.toIso8601String(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    waypointSymbol,
+    shipSymbol,
+    shipType,
+    price,
+    agentSymbol,
+    timestamp,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipyardTransaction &&
+        waypointSymbol == other.waypointSymbol &&
+        shipSymbol == other.shipSymbol &&
+        shipType == other.shipType &&
+        price == other.price &&
+        agentSymbol == other.agentSymbol &&
+        timestamp == other.timestamp;
   }
 }

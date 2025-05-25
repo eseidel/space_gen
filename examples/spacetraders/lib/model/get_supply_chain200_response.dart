@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/get_supply_chain200_response_data.dart';
 
+@immutable
 class GetSupplyChain200Response {
-  GetSupplyChain200Response({required this.data});
+  const GetSupplyChain200Response({required this.data});
 
   factory GetSupplyChain200Response.fromJson(Map<String, dynamic> json) {
     return GetSupplyChain200Response(
@@ -24,5 +26,14 @@ class GetSupplyChain200Response {
 
   Map<String, dynamic> toJson() {
     return {'data': data.toJson()};
+  }
+
+  @override
+  int get hashCode => data.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetSupplyChain200Response && data == other.data;
   }
 }

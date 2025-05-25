@@ -34,6 +34,22 @@ class _Exists extends Matcher {
 
 const exists = _Exists();
 
+class _HasFiles extends CustomMatcher {
+  _HasFiles(List<String> files)
+    : super('has files', 'files', unorderedEquals(files));
+
+  @override
+  Object? featureValueOf(dynamic actual) {
+    return (actual as Directory)
+        .listSync()
+        .whereType<File>()
+        .map((e) => e.path.split('/').last)
+        .toList();
+  }
+}
+
+Matcher hasFiles(List<String> files) => _HasFiles(files);
+
 void main() {
   group('loadAndRenderSpec', () {
     const localFs = LocalFileSystem();
@@ -122,8 +138,15 @@ void main() {
       await renderToDirectory(spec: spec, outDir: out, logger: logger);
       expect(out, exists);
       expect(out.childFile('foo.txt'), isNot(exists));
-      expect(out.childFile('lib/api.dart'), exists);
-      expect(out.childFile('lib/api_client.dart'), exists);
+      expect(
+        out.childDirectory('lib'),
+        hasFiles([
+          'api.dart',
+          'api_exception.dart',
+          'api_client.dart',
+          'model_helpers.dart',
+        ]),
+      );
     });
 
     test('with real endpoints', () async {
@@ -284,8 +307,6 @@ void main() {
       final logger = _MockLogger();
 
       File outFile(String path) => out.childFile(path);
-      File modelFile(String path) =>
-          out.childDirectory('lib/model').childFile(path);
       File apiFile(String path) =>
           out.childDirectory('lib/api').childFile(path);
 
@@ -294,10 +315,15 @@ void main() {
       expect(outFile('lib/api.dart'), exists);
       expect(outFile('lib/api_client.dart'), exists);
       expect(apiFile('fleet_api.dart'), exists);
-      expect(modelFile('purchase_cargo201_response.dart'), exists);
-      expect(modelFile('purchase_cargo201_response_data.dart'), exists);
-      expect(modelFile('purchase_cargo201_response_data_cargo.dart'), exists);
-      expect(modelFile('purchase_cargo_request.dart'), exists);
+      expect(
+        out.childDirectory('lib/model'),
+        hasFiles([
+          'purchase_cargo201_response.dart',
+          'purchase_cargo201_response_data.dart',
+          'purchase_cargo201_response_data_cargo.dart',
+          'purchase_cargo_request.dart',
+        ]),
+      );
     });
 
     test('with newtype', () async {
@@ -501,11 +527,9 @@ void main() {
       final logger = _MockLogger();
 
       await renderToDirectory(spec: spec, outDir: out, logger: logger);
-      final modelPaths = out.childDirectory('lib/model').listSync();
-      expect(modelPaths, hasLength(2));
       expect(
-        modelPaths.map((e) => e.path.split('/').last),
-        containsAll([
+        out.childDirectory('lib/model'),
+        hasFiles([
           'get_my_factions200_response.dart',
           'get_my_factions200_response_data_inner.dart',
         ]),
@@ -557,6 +581,47 @@ void main() {
         isNot(exists),
       );
       expect(out.childFile('lib/api/default_api.dart'), exists);
+    });
+
+    test('with boolean and unknown type', () async {
+      final fs = MemoryFileSystem.test();
+      final spec = {
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'operationId': 'get-user',
+              'responses': {
+                '200': {
+                  'description': 'Default Response',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'properties': {
+                          'foo': {'type': 'boolean', 'default': true},
+                          'bar': {
+                            // No type is unknown and renders as dynamic.
+                            'description': 'A description',
+                          },
+                        },
+                        'required': ['foo'],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+      final out = fs.directory('spacetraders');
+      final logger = _MockLogger();
+
+      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+      expect(out.childDirectory('lib/api'), hasFiles(['default_api.dart']));
     });
   });
 }

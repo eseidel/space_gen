@@ -1,10 +1,13 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/agent.dart';
 import 'package:spacetraders/model/ship_cargo.dart';
 import 'package:spacetraders/model/ship_modification_transaction.dart';
 import 'package:spacetraders/model/ship_module.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class RemoveShipModule201ResponseData {
-  RemoveShipModule201ResponseData({
+  const RemoveShipModule201ResponseData({
     required this.agent,
     required this.cargo,
     required this.transaction,
@@ -50,5 +53,18 @@ class RemoveShipModule201ResponseData {
       'cargo': cargo.toJson(),
       'transaction': transaction.toJson(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(agent, modules, cargo, transaction);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is RemoveShipModule201ResponseData &&
+        agent == other.agent &&
+        listsEqual(modules, other.modules) &&
+        cargo == other.cargo &&
+        transaction == other.transaction;
   }
 }

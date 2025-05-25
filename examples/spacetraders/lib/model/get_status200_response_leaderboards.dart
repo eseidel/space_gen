@@ -1,8 +1,11 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/get_status200_response_leaderboards_most_credits_inner.dart';
 import 'package:spacetraders/model/get_status200_response_leaderboards_most_submitted_charts_inner.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class GetStatus200ResponseLeaderboards {
-  GetStatus200ResponseLeaderboards({
+  const GetStatus200ResponseLeaderboards({
     this.mostCredits = const [],
     this.mostSubmittedCharts = const [],
   });
@@ -51,5 +54,16 @@ class GetStatus200ResponseLeaderboards {
       'mostSubmittedCharts':
           mostSubmittedCharts.map((e) => e.toJson()).toList(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(mostCredits, mostSubmittedCharts);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetStatus200ResponseLeaderboards &&
+        listsEqual(mostCredits, other.mostCredits) &&
+        listsEqual(mostSubmittedCharts, other.mostSubmittedCharts);
   }
 }

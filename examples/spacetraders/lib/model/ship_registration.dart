@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_role.dart';
 
+@immutable
 class ShipRegistration {
-  ShipRegistration({
+  const ShipRegistration({
     required this.name,
     required this.factionSymbol,
     required this.role,
@@ -34,5 +36,17 @@ class ShipRegistration {
       'factionSymbol': factionSymbol,
       'role': role.toJson(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(name, factionSymbol, role);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipRegistration &&
+        name == other.name &&
+        factionSymbol == other.factionSymbol &&
+        role == other.role;
   }
 }

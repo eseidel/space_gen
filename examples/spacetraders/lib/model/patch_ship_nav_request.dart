@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_nav_flight_mode.dart';
 
+@immutable
 class PatchShipNavRequest {
-  PatchShipNavRequest({this.flightMode = ShipNavFlightMode.CRUISE});
+  const PatchShipNavRequest({this.flightMode = ShipNavFlightMode.CRUISE});
 
   factory PatchShipNavRequest.fromJson(Map<String, dynamic> json) {
     return PatchShipNavRequest(
@@ -22,5 +24,14 @@ class PatchShipNavRequest {
 
   Map<String, dynamic> toJson() {
     return {'flightMode': flightMode?.toJson()};
+  }
+
+  @override
+  int get hashCode => flightMode.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is PatchShipNavRequest && flightMode == other.flightMode;
   }
 }

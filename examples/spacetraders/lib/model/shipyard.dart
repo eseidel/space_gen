@@ -1,9 +1,12 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/shipyard_ship.dart';
 import 'package:spacetraders/model/shipyard_ship_types_inner.dart';
 import 'package:spacetraders/model/shipyard_transaction.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class Shipyard {
-  Shipyard({
+  const Shipyard({
     required this.symbol,
     required this.modificationsFee,
     this.shipTypes = const [],
@@ -60,5 +63,20 @@ class Shipyard {
       'ships': ships?.map((e) => e.toJson()).toList(),
       'modificationsFee': modificationsFee,
     };
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(symbol, shipTypes, transactions, ships, modificationsFee);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Shipyard &&
+        symbol == other.symbol &&
+        listsEqual(shipTypes, other.shipTypes) &&
+        listsEqual(transactions, other.transactions) &&
+        listsEqual(ships, other.ships) &&
+        modificationsFee == other.modificationsFee;
   }
 }

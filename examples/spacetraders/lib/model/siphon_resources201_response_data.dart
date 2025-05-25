@@ -1,10 +1,13 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/cooldown.dart';
 import 'package:spacetraders/model/ship_cargo.dart';
 import 'package:spacetraders/model/ship_condition_event.dart';
 import 'package:spacetraders/model/siphon.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class SiphonResources201ResponseData {
-  SiphonResources201ResponseData({
+  const SiphonResources201ResponseData({
     required this.siphon,
     required this.cooldown,
     required this.cargo,
@@ -48,5 +51,18 @@ class SiphonResources201ResponseData {
       'cargo': cargo.toJson(),
       'events': events.map((e) => e.toJson()).toList(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(siphon, cooldown, cargo, events);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SiphonResources201ResponseData &&
+        siphon == other.siphon &&
+        cooldown == other.cooldown &&
+        cargo == other.cargo &&
+        listsEqual(events, other.events);
   }
 }

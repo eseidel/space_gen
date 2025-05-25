@@ -1,8 +1,10 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_reactor_symbol.dart';
 import 'package:spacetraders/model/ship_requirements.dart';
 
+@immutable
 class ShipReactor {
-  ShipReactor({
+  const ShipReactor({
     required this.symbol,
     required this.name,
     required this.condition,
@@ -57,5 +59,31 @@ class ShipReactor {
       'requirements': requirements.toJson(),
       'quality': quality,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    symbol,
+    name,
+    condition,
+    integrity,
+    description,
+    powerOutput,
+    requirements,
+    quality,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipReactor &&
+        symbol == other.symbol &&
+        name == other.name &&
+        condition == other.condition &&
+        integrity == other.integrity &&
+        description == other.description &&
+        powerOutput == other.powerOutput &&
+        requirements == other.requirements &&
+        quality == other.quality;
   }
 }

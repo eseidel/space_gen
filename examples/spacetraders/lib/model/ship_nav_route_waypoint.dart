@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/waypoint_type.dart';
 
+@immutable
 class ShipNavRouteWaypoint {
-  ShipNavRouteWaypoint({
+  const ShipNavRouteWaypoint({
     required this.symbol,
     required this.type,
     required this.systemSymbol,
@@ -42,5 +44,19 @@ class ShipNavRouteWaypoint {
       'x': x,
       'y': y,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(symbol, type, systemSymbol, x, y);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipNavRouteWaypoint &&
+        symbol == other.symbol &&
+        type == other.type &&
+        systemSymbol == other.systemSymbol &&
+        x == other.x &&
+        y == other.y;
   }
 }

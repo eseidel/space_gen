@@ -1,9 +1,12 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/system_faction.dart';
 import 'package:spacetraders/model/system_type.dart';
 import 'package:spacetraders/model/system_waypoint.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class System {
-  System({
+  const System({
     required this.symbol,
     required this.sectorSymbol,
     required this.type,
@@ -70,5 +73,33 @@ class System {
       'factions': factions.map((e) => e.toJson()).toList(),
       'name': name,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    constellation,
+    symbol,
+    sectorSymbol,
+    type,
+    x,
+    y,
+    waypoints,
+    factions,
+    name,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is System &&
+        constellation == other.constellation &&
+        symbol == other.symbol &&
+        sectorSymbol == other.sectorSymbol &&
+        type == other.type &&
+        x == other.x &&
+        y == other.y &&
+        listsEqual(waypoints, other.waypoints) &&
+        listsEqual(factions, other.factions) &&
+        name == other.name;
   }
 }

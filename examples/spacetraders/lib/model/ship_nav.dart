@@ -1,9 +1,11 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_nav_flight_mode.dart';
 import 'package:spacetraders/model/ship_nav_route.dart';
 import 'package:spacetraders/model/ship_nav_status.dart';
 
+@immutable
 class ShipNav {
-  ShipNav({
+  const ShipNav({
     required this.systemSymbol,
     required this.waypointSymbol,
     required this.route,
@@ -44,5 +46,20 @@ class ShipNav {
       'status': status.toJson(),
       'flightMode': flightMode.toJson(),
     };
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(systemSymbol, waypointSymbol, route, status, flightMode);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipNav &&
+        systemSymbol == other.systemSymbol &&
+        waypointSymbol == other.waypointSymbol &&
+        route == other.route &&
+        status == other.status &&
+        flightMode == other.flightMode;
   }
 }

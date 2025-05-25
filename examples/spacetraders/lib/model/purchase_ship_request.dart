@@ -1,7 +1,12 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_type.dart';
 
+@immutable
 class PurchaseShipRequest {
-  PurchaseShipRequest({required this.shipType, required this.waypointSymbol});
+  const PurchaseShipRequest({
+    required this.shipType,
+    required this.waypointSymbol,
+  });
 
   factory PurchaseShipRequest.fromJson(Map<String, dynamic> json) {
     return PurchaseShipRequest(
@@ -24,5 +29,16 @@ class PurchaseShipRequest {
 
   Map<String, dynamic> toJson() {
     return {'shipType': shipType.toJson(), 'waypointSymbol': waypointSymbol};
+  }
+
+  @override
+  int get hashCode => Object.hash(shipType, waypointSymbol);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is PurchaseShipRequest &&
+        shipType == other.shipType &&
+        waypointSymbol == other.waypointSymbol;
   }
 }

@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class RemoveMountRequest {
-  RemoveMountRequest({required this.symbol});
+  const RemoveMountRequest({required this.symbol});
 
   factory RemoveMountRequest.fromJson(Map<String, dynamic> json) {
     return RemoveMountRequest(symbol: json['symbol'] as String);
@@ -18,5 +21,14 @@ class RemoveMountRequest {
 
   Map<String, dynamic> toJson() {
     return {'symbol': symbol};
+  }
+
+  @override
+  int get hashCode => symbol.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is RemoveMountRequest && symbol == other.symbol;
   }
 }

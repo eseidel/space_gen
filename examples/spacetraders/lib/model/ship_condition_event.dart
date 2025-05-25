@@ -1,8 +1,10 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/ship_condition_event_component.dart';
 import 'package:spacetraders/model/ship_condition_event_symbol.dart';
 
+@immutable
 class ShipConditionEvent {
-  ShipConditionEvent({
+  const ShipConditionEvent({
     required this.symbol,
     required this.component,
     required this.name,
@@ -41,5 +43,18 @@ class ShipConditionEvent {
       'name': name,
       'description': description,
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(symbol, component, name, description);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ShipConditionEvent &&
+        symbol == other.symbol &&
+        component == other.component &&
+        name == other.name &&
+        description == other.description;
   }
 }

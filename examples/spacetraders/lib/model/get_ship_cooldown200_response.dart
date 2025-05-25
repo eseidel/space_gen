@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/cooldown.dart';
 
+@immutable
 class GetShipCooldown200Response {
-  GetShipCooldown200Response({required this.data});
+  const GetShipCooldown200Response({required this.data});
 
   factory GetShipCooldown200Response.fromJson(Map<String, dynamic> json) {
     return GetShipCooldown200Response(
@@ -22,5 +24,14 @@ class GetShipCooldown200Response {
 
   Map<String, dynamic> toJson() {
     return {'data': data.toJson()};
+  }
+
+  @override
+  int get hashCode => data.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is GetShipCooldown200Response && data == other.data;
   }
 }

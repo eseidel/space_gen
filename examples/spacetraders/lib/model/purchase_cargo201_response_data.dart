@@ -1,9 +1,11 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/agent.dart';
 import 'package:spacetraders/model/market_transaction.dart';
 import 'package:spacetraders/model/ship_cargo.dart';
 
+@immutable
 class PurchaseCargo201ResponseData {
-  PurchaseCargo201ResponseData({
+  const PurchaseCargo201ResponseData({
     required this.cargo,
     required this.transaction,
     required this.agent,
@@ -40,5 +42,17 @@ class PurchaseCargo201ResponseData {
       'transaction': transaction.toJson(),
       'agent': agent.toJson(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(cargo, transaction, agent);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is PurchaseCargo201ResponseData &&
+        cargo == other.cargo &&
+        transaction == other.transaction &&
+        agent == other.agent;
   }
 }

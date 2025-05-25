@@ -1,8 +1,11 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/contract_deliver_good.dart';
 import 'package:spacetraders/model/contract_payment.dart';
+import 'package:spacetraders/model_helpers.dart';
 
+@immutable
 class ContractTerms {
-  ContractTerms({
+  const ContractTerms({
     required this.deadline,
     required this.payment,
     this.deliver = const [],
@@ -42,5 +45,17 @@ class ContractTerms {
       'payment': payment.toJson(),
       'deliver': deliver?.map((e) => e.toJson()).toList(),
     };
+  }
+
+  @override
+  int get hashCode => Object.hash(deadline, payment, deliver);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ContractTerms &&
+        deadline == other.deadline &&
+        payment == other.payment &&
+        listsEqual(deliver, other.deliver);
   }
 }

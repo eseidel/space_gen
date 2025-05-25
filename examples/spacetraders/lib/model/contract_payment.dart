@@ -1,5 +1,8 @@
+import 'package:meta/meta.dart';
+
+@immutable
 class ContractPayment {
-  ContractPayment({required this.onAccepted, required this.onFulfilled});
+  const ContractPayment({required this.onAccepted, required this.onFulfilled});
 
   factory ContractPayment.fromJson(Map<String, dynamic> json) {
     return ContractPayment(
@@ -22,5 +25,16 @@ class ContractPayment {
 
   Map<String, dynamic> toJson() {
     return {'onAccepted': onAccepted, 'onFulfilled': onFulfilled};
+  }
+
+  @override
+  int get hashCode => Object.hash(onAccepted, onFulfilled);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ContractPayment &&
+        onAccepted == other.onAccepted &&
+        onFulfilled == other.onFulfilled;
   }
 }

@@ -1,7 +1,9 @@
+import 'package:meta/meta.dart';
 import 'package:spacetraders/model/trade_symbol.dart';
 
+@immutable
 class SiphonYield {
-  SiphonYield({required this.symbol, required this.units});
+  const SiphonYield({required this.symbol, required this.units});
 
   factory SiphonYield.fromJson(Map<String, dynamic> json) {
     return SiphonYield(
@@ -24,5 +26,16 @@ class SiphonYield {
 
   Map<String, dynamic> toJson() {
     return {'symbol': symbol.toJson(), 'units': units};
+  }
+
+  @override
+  int get hashCode => Object.hash(symbol, units);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SiphonYield &&
+        symbol == other.symbol &&
+        units == other.units;
   }
 }
