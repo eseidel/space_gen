@@ -332,7 +332,7 @@ extension _SchemaGeneration on Schema {
       'hasProperties': hasProperties,
       'properties': renderProperties,
       'hasAdditionalProperties': hasAdditionalProperties,
-      'additionalPropertiesName': 'entities', // Matching OpenAPI.
+      'additionalPropertiesName': 'entries', // Matching OpenAPI.
       'valueSchema': valueSchema?.typeName(context),
       'valueToJson': valueSchema?.toJsonExpression(
         'value',
@@ -719,6 +719,8 @@ class _Context {
 /// Quirks are a set of flags that can be used to customize the generated code.
 class Quirks {
   const Quirks({this.dynamicJson = false, this.mutableModels = false});
+
+  const Quirks.openapi() : this(dynamicJson: true, mutableModels: true);
 
   /// Use "dynamic" instead of "Map\<String, dynamic\>" for passing to fromJson
   /// to match OpenAPI's behavior.

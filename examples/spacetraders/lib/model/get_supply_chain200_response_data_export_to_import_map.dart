@@ -1,11 +1,11 @@
 class GetSupplyChain200ResponseDataExportToImportMap {
-  GetSupplyChain200ResponseDataExportToImportMap({required this.entities});
+  GetSupplyChain200ResponseDataExportToImportMap({required this.entries});
 
   factory GetSupplyChain200ResponseDataExportToImportMap.fromJson(
     Map<String, dynamic> json,
   ) {
     return GetSupplyChain200ResponseDataExportToImportMap(
-      entities: json.map(
+      entries: json.map(
         (key, value) => MapEntry(key, (value as List<dynamic>).cast<String>()),
       ),
     );
@@ -22,11 +22,11 @@ class GetSupplyChain200ResponseDataExportToImportMap {
     return GetSupplyChain200ResponseDataExportToImportMap.fromJson(json);
   }
 
-  final Map<String, List<String>> entities;
+  final Map<String, List<String>> entries;
 
-  List<String>? operator [](String key) => entities[key];
+  List<String>? operator [](String key) => entries[key];
 
   Map<String, dynamic> toJson() {
-    return {...entities.map(MapEntry.new)};
+    return {...entries.map(MapEntry.new)};
   }
 }

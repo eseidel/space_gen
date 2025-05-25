@@ -34,6 +34,7 @@ dart run space_gen
 * Handle non-required properties (read the required array).
 * Handle min/max in newtype types.
 * Wire up Authentication and sending of bearer header.
+* Add casting from dynamic to Map<String, dynamic> in fromJson in quirks mode.
 
 ## Advantages over Open API Generator 7.0.0
 * Dart 3.0+ only (sound null safety)
