@@ -10,7 +10,14 @@ class {{ typeName }} {
         {{/hasProperties}}
     );
 
-    factory {{ typeName }}.fromJson({{{fromJsonJsonType}}} json) {
+    factory {{ typeName }}.fromJson({{{fromJsonJsonType}}}
+    {{#castFromJsonArg}}
+        jsonArg) {
+    final json = jsonArg as Map<String, dynamic>;
+    {{/castFromJsonArg}}
+    {{^castFromJsonArg}}
+        json) {
+    {{/castFromJsonArg}}
         return {{ typeName }}(
             {{#properties}}
             {{ name }}: {{{ fromJson }}},

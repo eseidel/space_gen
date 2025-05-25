@@ -341,6 +341,7 @@ extension _SchemaGeneration on Schema {
       ),
       'valueFromJson': valueSchema?.fromJsonExpression('value', context),
       'fromJsonJsonType': context.fromJsonJsonType,
+      'castFromJsonArg': context.quirks.dynamicJson,
       'mutableModels': context.quirks.mutableModels,
     };
   }
