@@ -39,4 +39,7 @@ enum ShipMountDepositsInner {
   final String value;
 
   String toJson() => value;
+
+  @override
+  String toString() => value;
 }
