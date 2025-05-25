@@ -1,17 +1,21 @@
 import 'package:args/args.dart';
 import 'package:file/local.dart';
-import 'package:space_gen/src/config.dart';
 import 'package:space_gen/src/context.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/render.dart';
 
 Future<int> run(List<String> arguments) async {
   const fs = LocalFileSystem();
-  // Mostly trying to match openapi-generator-cli
   final parser = ArgParser()
-    ..addOption('config', abbr: 'c', help: 'Path to config file')
+    ..addOption('in', abbr: 'i', help: 'Path or URL to spec', mandatory: true)
+    ..addOption(
+      'out',
+      abbr: 'o',
+      help: 'Path to output directory',
+      mandatory: true,
+    )
     ..addFlag('verbose', abbr: 'v', help: 'Verbose output')
-    ..addFlag('openapi', abbr: 'o', help: 'Use OpenAPI quirks');
+    ..addFlag('openapi', help: 'Use OpenAPI quirks');
   final results = parser.parse(arguments);
   if (results.rest.isNotEmpty) {
     logger
@@ -25,25 +29,17 @@ Future<int> run(List<String> arguments) async {
     setVerboseLogging();
   }
 
-  final configPath = results['config'] as String?;
-  final Config config;
-  if (configPath != null) {
-    config = loadFromFile(fs.file(configPath));
-  } else {
-    logger
-      ..err('No config file provided')
-      ..info(parser.usage);
-    return 1;
-  }
-
+  final specUri = Uri.parse(results['in'] as String);
+  final outDir = fs.directory(results['out'] as String);
+  final packageName = outDir.path.split('/').last;
   final quirks = results['openapi'] as bool
       ? const Quirks.openapi()
       : const Quirks();
 
   await loadAndRenderSpec(
-    specUri: config.specUri,
-    packageName: config.packageName,
-    outDir: config.outDir,
+    specUri: specUri,
+    packageName: packageName,
+    outDir: outDir,
     quirks: quirks,
   );
   return 0;

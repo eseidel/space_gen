@@ -8,8 +8,6 @@ just enough to generate beautiful Dart bindings for spacetraders.io.
 
 Patches welcome to expand it to support a wider set of OpenAPI.
 
-NOTE: This readme as written is aspirational.  The code is not yet all working.
-
 ## Usage
 
 dart run space_gen
@@ -17,24 +15,19 @@ dart run space_gen
 ## Values
 * Generates good quality, modern Dart code
 * Not a complete implementation of OpenAPI
-* Generates layered output, which can be used in pieces (TBD)
-* Generates testable (and tested) code (TBD)
+* Generates independent classes, which can be used in pieces.
+* Supports immutable output.
+* Generates testable code.
 
-## Intended Design (TBD)
-- Phases
-  - Parse OpenAPI
-  - Resolve references
-  - Render Dart code
+## Design
+* Parses the Spec, including recording JSON pointer locations and inferring model names.
+* Resolves all references and loads resulting urls in the cache.
+* Walks the parsed spec and renders to files using templates.
 
 ## Todo
-* Actually make the networking work.
-* Implement operator== and hashCode?
 * Generate tests. https://github.com/eseidel/space_gen/issues/1
-* Figure out if types should be immutable or not.
-* Handle non-required properties (read the required array).
 * Handle min/max in newtype types.
 * Wire up Authentication and sending of bearer header.
-* Add casting from dynamic to Map<String, dynamic> in fromJson in quirks mode.
 
 ## Advantages over Open API Generator 7.0.0
 * Dart 3.0+ only (sound null safety)
