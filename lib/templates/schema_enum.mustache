@@ -14,7 +14,7 @@ enum {{ typeName }} {
         return {{ typeName }}.values.firstWhere(
             (value) => value.value == json,
             orElse: () =>
-                throw Exception('Unknown {{ typeName }} value: $json')
+                throw FormatException('Unknown {{ typeName }} value: $json')
         );
     }
 

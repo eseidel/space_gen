@@ -24,7 +24,7 @@ enum FactionSymbol {
   factory FactionSymbol.fromJson(String json) {
     return FactionSymbol.values.firstWhere(
       (value) => value.value == json,
-      orElse: () => throw Exception('Unknown FactionSymbol value: $json'),
+      orElse: () => throw FormatException('Unknown FactionSymbol value: $json'),
     );
   }
 

@@ -8,7 +8,7 @@ enum ContractType {
   factory ContractType.fromJson(String json) {
     return ContractType.values.firstWhere(
       (value) => value.value == json,
-      orElse: () => throw Exception('Unknown ContractType value: $json'),
+      orElse: () => throw FormatException('Unknown ContractType value: $json'),
     );
   }
 

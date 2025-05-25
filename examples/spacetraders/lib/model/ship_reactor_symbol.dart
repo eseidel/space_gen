@@ -10,7 +10,8 @@ enum ShipReactorSymbol {
   factory ShipReactorSymbol.fromJson(String json) {
     return ShipReactorSymbol.values.firstWhere(
       (value) => value.value == json,
-      orElse: () => throw Exception('Unknown ShipReactorSymbol value: $json'),
+      orElse:
+          () => throw FormatException('Unknown ShipReactorSymbol value: $json'),
     );
   }
 

@@ -20,7 +20,8 @@ enum ShipMountSymbol {
   factory ShipMountSymbol.fromJson(String json) {
     return ShipMountSymbol.values.firstWhere(
       (value) => value.value == json,
-      orElse: () => throw Exception('Unknown ShipMountSymbol value: $json'),
+      orElse:
+          () => throw FormatException('Unknown ShipMountSymbol value: $json'),
     );
   }
 

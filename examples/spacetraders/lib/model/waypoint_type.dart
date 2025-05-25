@@ -19,7 +19,7 @@ enum WaypointType {
   factory WaypointType.fromJson(String json) {
     return WaypointType.values.firstWhere(
       (value) => value.value == json,
-      orElse: () => throw Exception('Unknown WaypointType value: $json'),
+      orElse: () => throw FormatException('Unknown WaypointType value: $json'),
     );
   }
 

@@ -8,7 +8,9 @@ enum MarketTradeGoodType {
   factory MarketTradeGoodType.fromJson(String json) {
     return MarketTradeGoodType.values.firstWhere(
       (value) => value.value == json,
-      orElse: () => throw Exception('Unknown MarketTradeGoodType value: $json'),
+      orElse:
+          () =>
+              throw FormatException('Unknown MarketTradeGoodType value: $json'),
     );
   }
 

@@ -18,7 +18,7 @@ enum ShipType {
   factory ShipType.fromJson(String json) {
     return ShipType.values.firstWhere(
       (value) => value.value == json,
-      orElse: () => throw Exception('Unknown ShipType value: $json'),
+      orElse: () => throw FormatException('Unknown ShipType value: $json'),
     );
   }
 

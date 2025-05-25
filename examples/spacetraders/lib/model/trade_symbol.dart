@@ -150,7 +150,7 @@ enum TradeSymbol {
   factory TradeSymbol.fromJson(String json) {
     return TradeSymbol.values.firstWhere(
       (value) => value.value == json,
-      orElse: () => throw Exception('Unknown TradeSymbol value: $json'),
+      orElse: () => throw FormatException('Unknown TradeSymbol value: $json'),
     );
   }
 

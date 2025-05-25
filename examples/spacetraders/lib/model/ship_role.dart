@@ -19,7 +19,7 @@ enum ShipRole {
   factory ShipRole.fromJson(String json) {
     return ShipRole.values.firstWhere(
       (value) => value.value == json,
-      orElse: () => throw Exception('Unknown ShipRole value: $json'),
+      orElse: () => throw FormatException('Unknown ShipRole value: $json'),
     );
   }
 

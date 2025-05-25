@@ -15,7 +15,7 @@ enum SystemType {
   factory SystemType.fromJson(String json) {
     return SystemType.values.firstWhere(
       (value) => value.value == json,
-      orElse: () => throw Exception('Unknown SystemType value: $json'),
+      orElse: () => throw FormatException('Unknown SystemType value: $json'),
     );
   }
 
