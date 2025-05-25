@@ -31,7 +31,6 @@ dart run space_gen
 * Implement operator== and hashCode?
 * Generate tests. https://github.com/eseidel/space_gen/issues/1
 * Figure out if types should be immutable or not.
-* requestBody needs to check required.
 * Handle non-required properties (read the required array).
 * Handle min/max in newtype types.
 * Wire up Authentication and sending of bearer header.
