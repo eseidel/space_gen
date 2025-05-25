@@ -24,6 +24,15 @@ enum ShipMountDepositsInner {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipMountDepositsInner? maybeFromJson(String? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipMountDepositsInner.fromJson(json);
+  }
+
   final String value;
 
   String toJson() => value;

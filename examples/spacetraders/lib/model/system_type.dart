@@ -19,6 +19,15 @@ enum SystemType {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static SystemType? maybeFromJson(String? json) {
+    if (json == null) {
+      return null;
+    }
+    return SystemType.fromJson(json);
+  }
+
   final String value;
 
   String toJson() => value;

@@ -14,6 +14,15 @@ enum SupplyLevel {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static SupplyLevel? maybeFromJson(String? json) {
+    if (json == null) {
+      return null;
+    }
+    return SupplyLevel.fromJson(json);
+  }
+
   final String value;
 
   String toJson() => value;

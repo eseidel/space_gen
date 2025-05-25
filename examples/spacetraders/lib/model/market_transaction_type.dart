@@ -12,6 +12,15 @@ enum MarketTransactionType {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static MarketTransactionType? maybeFromJson(String? json) {
+    if (json == null) {
+      return null;
+    }
+    return MarketTransactionType.fromJson(json);
+  }
+
   final String value;
 
   String toJson() => value;

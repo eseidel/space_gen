@@ -28,6 +28,15 @@ enum FactionSymbol {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static FactionSymbol? maybeFromJson(String? json) {
+    if (json == null) {
+      return null;
+    }
+    return FactionSymbol.fromJson(json);
+  }
+
   final String value;
 
   String toJson() => value;

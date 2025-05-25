@@ -38,6 +38,15 @@ enum ShipConditionEventSymbol {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipConditionEventSymbol? maybeFromJson(String? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipConditionEventSymbol.fromJson(json);
+  }
+
   final String value;
 
   String toJson() => value;

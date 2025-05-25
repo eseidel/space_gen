@@ -28,6 +28,8 @@ dart run space_gen
 * Generate tests. https://github.com/eseidel/space_gen/issues/1
 * Handle min/max in newtype types.
 * Wire up Authentication and sending of bearer header.
+* Meta limit should have a default, even though it's required.
+* OpenAPI defaults arrays to empty when optional? including Market.exchange.
 
 ## Advantages over Open API Generator 7.0.0
 * Dart 3.0+ only (sound null safety)

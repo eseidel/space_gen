@@ -25,6 +25,15 @@ enum ShipFrameSymbol {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ShipFrameSymbol? maybeFromJson(String? json) {
+    if (json == null) {
+      return null;
+    }
+    return ShipFrameSymbol.fromJson(json);
+  }
+
   final String value;
 
   String toJson() => value;

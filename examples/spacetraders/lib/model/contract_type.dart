@@ -12,6 +12,15 @@ enum ContractType {
     );
   }
 
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static ContractType? maybeFromJson(String? json) {
+    if (json == null) {
+      return null;
+    }
+    return ContractType.fromJson(json);
+  }
+
   final String value;
 
   String toJson() => value;

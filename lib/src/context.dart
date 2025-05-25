@@ -392,7 +392,7 @@ extension _SchemaGeneration on Schema {
   }
 
   /// Template context for an enum schema.
-  Map<String, dynamic> enumTemplateContext() {
+  Map<String, dynamic> enumTemplateContext(_Context context) {
     if (!isEnum) {
       throw StateError('Schema is not an enum: $this');
     }
@@ -408,6 +408,7 @@ extension _SchemaGeneration on Schema {
 
     return {
       'typeName': className,
+      'nullableTypeName': nullableTypeName(context),
       'enumValues': enumValues.map(enumValueToTemplateContext).toList(),
     };
   }
@@ -861,7 +862,7 @@ _RenderContext _renderSchema(_Context context, Schema schema) {
   final String template;
   switch (schema.renderType) {
     case SchemaRenderType.enumeration:
-      schemaContext = schema.enumTemplateContext();
+      schemaContext = schema.enumTemplateContext(context);
       template = 'schema_enum';
     case SchemaRenderType.object:
       schemaContext = schema.objectTemplateContext(context);
