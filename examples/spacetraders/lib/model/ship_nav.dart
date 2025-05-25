@@ -8,7 +8,7 @@ class ShipNav {
     required this.waypointSymbol,
     required this.route,
     required this.status,
-    required this.flightMode,
+    this.flightMode = ShipNavFlightMode.CRUISE,
   });
 
   factory ShipNav.fromJson(Map<String, dynamic> json) {
@@ -34,7 +34,7 @@ class ShipNav {
   final String waypointSymbol;
   final ShipNavRoute route;
   final ShipNavStatus status;
-  final ShipNavFlightMode flightMode;
+  final ShipNavFlightMode? flightMode;
 
   Map<String, dynamic> toJson() {
     return {
@@ -42,7 +42,7 @@ class ShipNav {
       'waypointSymbol': waypointSymbol,
       'route': route.toJson(),
       'status': status.toJson(),
-      'flightMode': flightMode.toJson(),
+      'flightMode': flightMode?.toJson(),
     };
   }
 }

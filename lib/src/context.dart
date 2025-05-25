@@ -288,23 +288,27 @@ extension _SchemaGeneration on Schema {
     required String jsonName,
     required Schema schema,
     required _Context context,
-    required bool required,
+    required bool inRequiredList,
   }) {
     // TODO(eseidel): Remove this once we've migrated to the new generator.
     final dartName = avoidReservedWord(jsonName);
+    // Even if the server requires a property, we don't need the Dart
+    // constructor to require it if it has a default value.
+    final hasDefaultValue = schema.defaultValue != null;
+    final isRequired = inRequiredList && !hasDefaultValue;
+    final isNullable = !isRequired;
     return {
       'name': dartName,
-      // Is this correct?
-      'isRequired': required,
+      'isRequired': isRequired,
       // Required properties can't have a default value.
-      'hasDefaultValue': !required && schema.defaultValue != null,
-      'defaultValue': required ? null : schema.defaultValueString,
+      'hasDefaultValue': schema.defaultValue != null,
+      'defaultValue': schema.defaultValueString,
       'type': schema.typeName(context),
       'nullableType': schema.nullableTypeName(context),
       'toJson': schema.toJsonExpression(
         dartName,
         context,
-        isNullable: !required,
+        isNullable: isNullable,
       ),
       'fromJson': schema.fromJsonExpression("json['$jsonName']", context),
     };
@@ -325,7 +329,7 @@ extension _SchemaGeneration on Schema {
         jsonName: jsonName,
         schema: schema,
         context: context,
-        required: required.contains(jsonName),
+        inRequiredList: required.contains(jsonName),
       );
     }).toList();
 

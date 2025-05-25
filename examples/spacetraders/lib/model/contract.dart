@@ -7,9 +7,9 @@ class Contract {
     required this.factionSymbol,
     required this.type,
     required this.terms,
-    required this.accepted,
-    required this.fulfilled,
     required this.expiration,
+    this.accepted = false,
+    this.fulfilled = false,
     this.deadlineToAccept,
   });
 
@@ -39,8 +39,8 @@ class Contract {
   final String factionSymbol;
   final ContractType type;
   final ContractTerms terms;
-  final bool accepted;
-  final bool fulfilled;
+  final bool? accepted;
+  final bool? fulfilled;
   final DateTime expiration;
   final DateTime? deadlineToAccept;
 
