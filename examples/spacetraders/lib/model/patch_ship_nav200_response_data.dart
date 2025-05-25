@@ -6,7 +6,7 @@ class PatchShipNav200ResponseData {
   PatchShipNav200ResponseData({
     required this.nav,
     required this.fuel,
-    required this.events,
+    this.events = const [],
   });
 
   factory PatchShipNav200ResponseData.fromJson(Map<String, dynamic> json) {

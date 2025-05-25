@@ -8,7 +8,7 @@ class SiphonResources201ResponseData {
     required this.siphon,
     required this.cooldown,
     required this.cargo,
-    required this.events,
+    this.events = const [],
   });
 
   factory SiphonResources201ResponseData.fromJson(Map<String, dynamic> json) {

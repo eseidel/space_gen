@@ -292,9 +292,17 @@ extension _SchemaGeneration on Schema {
   }) {
     // TODO(eseidel): Remove this once we've migrated to the new generator.
     final dartName = avoidReservedWord(jsonName);
+
     // Even if the server requires a property, we don't need the Dart
     // constructor to require it if it has a default value.
-    final hasDefaultValue = schema.defaultValue != null;
+    var hasDefaultValue = schema.defaultValue != null;
+    var defaultValueString = schema.defaultValueString;
+    // OpenAPI defaults arrays to empty, so we match for now.
+    if (schema.type == SchemaType.array) {
+      hasDefaultValue = true;
+      defaultValueString = 'const []';
+    }
+
     // useRequired means "use the required constructor parameter"
     final useRequired = inRequiredList && !hasDefaultValue;
     // isNullable means it's optional for the server, use nullable storage.
@@ -303,8 +311,8 @@ extension _SchemaGeneration on Schema {
       'name': dartName,
       'useRequired': useRequired,
       'isNullable': isNullable,
-      'hasDefaultValue': schema.defaultValue != null,
-      'defaultValue': schema.defaultValueString,
+      'hasDefaultValue': hasDefaultValue,
+      'defaultValue': defaultValueString,
       'type': schema.typeName(context),
       'nullableType': schema.nullableTypeName(context),
       'toJson': schema.toJsonExpression(

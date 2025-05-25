@@ -13,8 +13,9 @@ Patches welcome to expand it to support a wider set of OpenAPI.
 dart run space_gen
 
 ## Values
-* Generates good quality, modern Dart code
-* Not a complete implementation of OpenAPI
+* Generates good quality, modern Dart code.
+* Gives readable errors on failure.
+* Generates much, but not all, of OpenAPI 3.0.
 * Generates independent classes, which can be used in pieces.
 * Supports immutable output.
 * Generates testable code.
@@ -28,8 +29,6 @@ dart run space_gen
 * Generate tests. https://github.com/eseidel/space_gen/issues/1
 * Handle min/max in newtype types.
 * Wire up Authentication and sending of bearer header.
-* Meta limit should have a default, even though it's required.
-* OpenAPI defaults arrays to empty when optional? including Market.exchange.
 
 ## Advantages over Open API Generator 7.0.0
 * Dart 3.0+ only (sound null safety)

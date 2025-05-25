@@ -19,11 +19,11 @@ class Ship {
     required this.frame,
     required this.reactor,
     required this.engine,
-    required this.modules,
-    required this.mounts,
     required this.cargo,
     required this.fuel,
     required this.cooldown,
+    this.modules = const [],
+    this.mounts = const [],
   });
 
   factory Ship.fromJson(Map<String, dynamic> json) {

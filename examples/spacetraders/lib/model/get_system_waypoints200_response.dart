@@ -2,7 +2,7 @@ import 'package:spacetraders/model/meta.dart';
 import 'package:spacetraders/model/waypoint.dart';
 
 class GetSystemWaypoints200Response {
-  GetSystemWaypoints200Response({required this.data, required this.meta});
+  GetSystemWaypoints200Response({required this.meta, this.data = const []});
 
   factory GetSystemWaypoints200Response.fromJson(Map<String, dynamic> json) {
     return GetSystemWaypoints200Response(

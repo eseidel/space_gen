@@ -4,7 +4,7 @@ import 'package:spacetraders/model/scanned_system.dart';
 class CreateShipSystemScan201ResponseData {
   CreateShipSystemScan201ResponseData({
     required this.cooldown,
-    required this.systems,
+    this.systems = const [],
   });
 
   factory CreateShipSystemScan201ResponseData.fromJson(

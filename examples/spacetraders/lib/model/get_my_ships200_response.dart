@@ -2,7 +2,7 @@ import 'package:spacetraders/model/meta.dart';
 import 'package:spacetraders/model/ship.dart';
 
 class GetMyShips200Response {
-  GetMyShips200Response({required this.data, required this.meta});
+  GetMyShips200Response({required this.meta, this.data = const []});
 
   factory GetMyShips200Response.fromJson(Map<String, dynamic> json) {
     return GetMyShips200Response(

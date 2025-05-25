@@ -1,5 +1,5 @@
 class JumpGate {
-  JumpGate({required this.symbol, required this.connections});
+  JumpGate({required this.symbol, this.connections = const []});
 
   factory JumpGate.fromJson(Map<String, dynamic> json) {
     return JumpGate(

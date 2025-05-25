@@ -3,8 +3,8 @@ import 'package:spacetraders/model/get_status200_response_leaderboards_most_subm
 
 class GetStatus200ResponseLeaderboards {
   GetStatus200ResponseLeaderboards({
-    required this.mostCredits,
-    required this.mostSubmittedCharts,
+    this.mostCredits = const [],
+    this.mostSubmittedCharts = const [],
   });
 
   factory GetStatus200ResponseLeaderboards.fromJson(Map<String, dynamic> json) {

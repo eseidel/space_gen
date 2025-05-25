@@ -9,7 +9,7 @@ class Register201ResponseData {
     required this.agent,
     required this.faction,
     required this.contract,
-    required this.ships,
+    this.ships = const [],
   });
 
   factory Register201ResponseData.fromJson(Map<String, dynamic> json) {

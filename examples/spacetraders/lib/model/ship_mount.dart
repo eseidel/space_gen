@@ -9,7 +9,7 @@ class ShipMount {
     required this.description,
     required this.requirements,
     this.strength,
-    this.deposits,
+    this.deposits = const [],
   });
 
   factory ShipMount.fromJson(Map<String, dynamic> json) {

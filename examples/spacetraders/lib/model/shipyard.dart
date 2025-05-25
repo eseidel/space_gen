@@ -5,10 +5,10 @@ import 'package:spacetraders/model/shipyard_transaction.dart';
 class Shipyard {
   Shipyard({
     required this.symbol,
-    required this.shipTypes,
     required this.modificationsFee,
-    this.transactions,
-    this.ships,
+    this.shipTypes = const [],
+    this.transactions = const [],
+    this.ships = const [],
   });
 
   factory Shipyard.fromJson(Map<String, dynamic> json) {

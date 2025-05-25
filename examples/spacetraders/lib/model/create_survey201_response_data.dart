@@ -2,7 +2,10 @@ import 'package:spacetraders/model/cooldown.dart';
 import 'package:spacetraders/model/survey.dart';
 
 class CreateSurvey201ResponseData {
-  CreateSurvey201ResponseData({required this.cooldown, required this.surveys});
+  CreateSurvey201ResponseData({
+    required this.cooldown,
+    this.surveys = const [],
+  });
 
   factory CreateSurvey201ResponseData.fromJson(Map<String, dynamic> json) {
     return CreateSurvey201ResponseData(

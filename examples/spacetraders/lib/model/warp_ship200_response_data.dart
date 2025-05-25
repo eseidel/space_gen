@@ -6,7 +6,7 @@ class WarpShip200ResponseData {
   WarpShip200ResponseData({
     required this.nav,
     required this.fuel,
-    required this.events,
+    this.events = const [],
   });
 
   factory WarpShip200ResponseData.fromJson(Map<String, dynamic> json) {

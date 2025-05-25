@@ -5,9 +5,9 @@ class Survey {
   Survey({
     required this.signature,
     required this.symbol,
-    required this.deposits,
     required this.expiration,
     required this.size,
+    this.deposits = const [],
   });
 
   factory Survey.fromJson(Map<String, dynamic> json) {

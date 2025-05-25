@@ -7,8 +7,8 @@ class ShipRefine201ResponseData {
   ShipRefine201ResponseData({
     required this.cargo,
     required this.cooldown,
-    required this.produced,
-    required this.consumed,
+    this.produced = const [],
+    this.consumed = const [],
   });
 
   factory ShipRefine201ResponseData.fromJson(Map<String, dynamic> json) {

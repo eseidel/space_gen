@@ -2,7 +2,7 @@ import 'package:spacetraders/model/meta.dart';
 import 'package:spacetraders/model/public_agent.dart';
 
 class GetAgents200Response {
-  GetAgents200Response({required this.data, required this.meta});
+  GetAgents200Response({required this.meta, this.data = const []});
 
   factory GetAgents200Response.fromJson(Map<String, dynamic> json) {
     return GetAgents200Response(

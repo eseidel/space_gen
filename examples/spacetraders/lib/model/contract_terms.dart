@@ -2,7 +2,11 @@ import 'package:spacetraders/model/contract_deliver_good.dart';
 import 'package:spacetraders/model/contract_payment.dart';
 
 class ContractTerms {
-  ContractTerms({required this.deadline, required this.payment, this.deliver});
+  ContractTerms({
+    required this.deadline,
+    required this.payment,
+    this.deliver = const [],
+  });
 
   factory ContractTerms.fromJson(Map<String, dynamic> json) {
     return ContractTerms(

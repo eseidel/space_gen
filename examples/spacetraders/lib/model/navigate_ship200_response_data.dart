@@ -6,7 +6,7 @@ class NavigateShip200ResponseData {
   NavigateShip200ResponseData({
     required this.nav,
     required this.fuel,
-    required this.events,
+    this.events = const [],
   });
 
   factory NavigateShip200ResponseData.fromJson(Map<String, dynamic> json) {

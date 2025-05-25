@@ -6,9 +6,9 @@ import 'package:spacetraders/model/ship_mount.dart';
 class RemoveMount201ResponseData {
   RemoveMount201ResponseData({
     required this.agent,
-    required this.mounts,
     required this.cargo,
     required this.transaction,
+    this.mounts = const [],
   });
 
   factory RemoveMount201ResponseData.fromJson(Map<String, dynamic> json) {

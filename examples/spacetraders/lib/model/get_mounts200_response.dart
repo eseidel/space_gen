@@ -1,7 +1,7 @@
 import 'package:spacetraders/model/ship_mount.dart';
 
 class GetMounts200Response {
-  GetMounts200Response({required this.data});
+  GetMounts200Response({this.data = const []});
 
   factory GetMounts200Response.fromJson(Map<String, dynamic> json) {
     return GetMounts200Response(

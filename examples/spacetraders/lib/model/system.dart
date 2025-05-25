@@ -9,9 +9,9 @@ class System {
     required this.type,
     required this.x,
     required this.y,
-    required this.waypoints,
-    required this.factions,
     this.constellation,
+    this.waypoints = const [],
+    this.factions = const [],
     this.name,
   });
 

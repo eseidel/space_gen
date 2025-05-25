@@ -1,7 +1,7 @@
 import 'package:spacetraders/model/agent_event.dart';
 
 class GetMyAgentEvents200Response {
-  GetMyAgentEvents200Response({required this.data});
+  GetMyAgentEvents200Response({this.data = const []});
 
   factory GetMyAgentEvents200Response.fromJson(Map<String, dynamic> json) {
     return GetMyAgentEvents200Response(

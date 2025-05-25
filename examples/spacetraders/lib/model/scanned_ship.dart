@@ -13,7 +13,7 @@ class ScannedShip {
     required this.engine,
     this.frame,
     this.reactor,
-    this.mounts,
+    this.mounts = const [],
   });
 
   factory ScannedShip.fromJson(Map<String, dynamic> json) {

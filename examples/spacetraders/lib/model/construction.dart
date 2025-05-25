@@ -3,8 +3,8 @@ import 'package:spacetraders/model/construction_material.dart';
 class Construction {
   Construction({
     required this.symbol,
-    required this.materials,
     required this.isComplete,
+    this.materials = const [],
   });
 
   factory Construction.fromJson(Map<String, dynamic> json) {

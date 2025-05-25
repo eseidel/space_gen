@@ -2,7 +2,7 @@ import 'package:spacetraders/model/meta.dart';
 import 'package:spacetraders/model/system.dart';
 
 class GetSystems200Response {
-  GetSystems200Response({required this.data, required this.meta});
+  GetSystems200Response({required this.meta, this.data = const []});
 
   factory GetSystems200Response.fromJson(Map<String, dynamic> json) {
     return GetSystems200Response(

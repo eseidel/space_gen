@@ -15,8 +15,8 @@ class GetStatus200Response {
     required this.health,
     required this.leaderboards,
     required this.serverResets,
-    required this.announcements,
-    required this.links,
+    this.announcements = const [],
+    this.links = const [],
   });
 
   factory GetStatus200Response.fromJson(Map<String, dynamic> json) {

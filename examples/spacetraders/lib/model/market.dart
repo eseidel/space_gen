@@ -5,11 +5,11 @@ import 'package:spacetraders/model/trade_good.dart';
 class Market {
   Market({
     required this.symbol,
-    required this.exports,
-    required this.imports,
-    required this.exchange,
-    this.transactions,
-    this.tradeGoods,
+    this.exports = const [],
+    this.imports = const [],
+    this.exchange = const [],
+    this.transactions = const [],
+    this.tradeGoods = const [],
   });
 
   factory Market.fromJson(Map<String, dynamic> json) {

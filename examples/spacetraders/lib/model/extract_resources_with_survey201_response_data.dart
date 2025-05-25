@@ -9,8 +9,8 @@ class ExtractResourcesWithSurvey201ResponseData {
     required this.extraction,
     required this.cooldown,
     required this.cargo,
-    required this.events,
-    this.modifiers,
+    this.modifiers = const [],
+    this.events = const [],
   });
 
   factory ExtractResourcesWithSurvey201ResponseData.fromJson(

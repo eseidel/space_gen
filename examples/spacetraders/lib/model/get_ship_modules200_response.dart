@@ -1,7 +1,7 @@
 import 'package:spacetraders/model/ship_module.dart';
 
 class GetShipModules200Response {
-  GetShipModules200Response({required this.data});
+  GetShipModules200Response({this.data = const []});
 
   factory GetShipModules200Response.fromJson(Map<String, dynamic> json) {
     return GetShipModules200Response(

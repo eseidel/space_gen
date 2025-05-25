@@ -4,7 +4,7 @@ class ShipCargo {
   ShipCargo({
     required this.capacity,
     required this.units,
-    required this.inventory,
+    this.inventory = const [],
   });
 
   factory ShipCargo.fromJson(Map<String, dynamic> json) {

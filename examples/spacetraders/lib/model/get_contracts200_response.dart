@@ -2,7 +2,7 @@ import 'package:spacetraders/model/contract.dart';
 import 'package:spacetraders/model/meta.dart';
 
 class GetContracts200Response {
-  GetContracts200Response({required this.data, required this.meta});
+  GetContracts200Response({required this.meta, this.data = const []});
 
   factory GetContracts200Response.fromJson(Map<String, dynamic> json) {
     return GetContracts200Response(

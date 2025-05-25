@@ -11,9 +11,9 @@ class ScannedWaypoint {
     required this.systemSymbol,
     required this.x,
     required this.y,
-    required this.orbitals,
-    required this.traits,
+    this.orbitals = const [],
     this.faction,
+    this.traits = const [],
     this.chart,
   });
 
