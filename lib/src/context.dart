@@ -649,6 +649,7 @@ class _Context {
     _renderTemplate(
       template: 'analysis_options',
       outPath: 'analysis_options.yaml',
+      context: {'mutableModels': quirks.mutableModels},
     );
     _renderTemplate(template: 'gitignore', outPath: '.gitignore');
   }
