@@ -33,7 +33,7 @@ class ShipCrew {
   final int current;
   final int required_;
   final int capacity;
-  final ShipCrewRotation? rotation;
+  final ShipCrewRotation rotation;
   final int morale;
   final int wages;
 
@@ -42,7 +42,7 @@ class ShipCrew {
       'current': current,
       'required_': required_,
       'capacity': capacity,
-      'rotation': rotation?.toJson(),
+      'rotation': rotation.toJson(),
       'morale': morale,
       'wages': wages,
     };

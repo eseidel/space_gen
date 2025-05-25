@@ -295,12 +295,14 @@ extension _SchemaGeneration on Schema {
     // Even if the server requires a property, we don't need the Dart
     // constructor to require it if it has a default value.
     final hasDefaultValue = schema.defaultValue != null;
-    final isRequired = inRequiredList && !hasDefaultValue;
-    final isNullable = !isRequired;
+    // useRequired means "use the required constructor parameter"
+    final useRequired = inRequiredList && !hasDefaultValue;
+    // isNullable means it's optional for the server, use nullable storage.
+    final isNullable = !inRequiredList;
     return {
       'name': dartName,
-      'isRequired': isRequired,
-      // Required properties can't have a default value.
+      'useRequired': useRequired,
+      'isNullable': isNullable,
       'hasDefaultValue': schema.defaultValue != null,
       'defaultValue': schema.defaultValueString,
       'type': schema.typeName(context),

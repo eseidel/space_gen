@@ -39,8 +39,8 @@ class Contract {
   final String factionSymbol;
   final ContractType type;
   final ContractTerms terms;
-  final bool? accepted;
-  final bool? fulfilled;
+  final bool accepted;
+  final bool fulfilled;
   final DateTime expiration;
   final DateTime? deadlineToAccept;
 

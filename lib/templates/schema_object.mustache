@@ -5,7 +5,7 @@ import '{{{.}}}';
 class {{ typeName }} {
     {{ typeName }}(
         {{#hasProperties}}
-        { {{#properties}}{{#isRequired}}required{{/isRequired}} this.{{{ name }}}{{#hasDefaultValue}} = {{{ defaultValue }}}{{/hasDefaultValue}},{{/properties}}
+        { {{#properties}}{{#useRequired}}required{{/useRequired}} this.{{{ name }}}{{#hasDefaultValue}} = {{{ defaultValue }}}{{/hasDefaultValue}},{{/properties}}
         {{#hasAdditionalProperties}}required this.{{additionalPropertiesName}},{{/hasAdditionalProperties}} }
         {{/hasProperties}}
     );
@@ -39,8 +39,8 @@ class {{ typeName }} {
 
     {{#properties}}
     {{^mutableModels}}final{{/mutableModels}}
-    {{#isRequired}}{{{ type }}}{{/isRequired}}
-    {{^isRequired}}{{{ nullableType }}}{{/isRequired}} {{ name }};
+    {{^isNullable}}{{{ type }}}{{/isNullable}}
+    {{#isNullable}}{{{ nullableType }}}{{/isNullable}} {{ name }};
     {{/properties}}
 
     {{#hasAdditionalProperties}}

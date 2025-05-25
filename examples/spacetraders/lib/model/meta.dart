@@ -19,8 +19,8 @@ class Meta {
   }
 
   final int total;
-  final int? page;
-  final int? limit;
+  final int page;
+  final int limit;
 
   Map<String, dynamic> toJson() {
     return {'total': total, 'page': page, 'limit': limit};
