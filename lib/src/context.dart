@@ -119,8 +119,8 @@ extension _SchemaGeneration on Schema {
     return camelFromSnake(snakeName);
   }
 
-  /// Whether this schema needs to be rendered.
-  bool get needsRender => type == SchemaType.object || isEnum;
+  /// Whether this schema creates a new type and thus needs to be rendered.
+  bool get createsNewType => type == SchemaType.object || isEnum || useNewType;
 
   /// The name of an enum value.
   String enumValueName(String jsonName) {
@@ -272,7 +272,10 @@ extension _SchemaGeneration on Schema {
       case SchemaType.integer:
         return isNullable ? 'int?' : 'int';
       case SchemaType.number:
-        return isNullable ? 'double?' : 'double';
+        // Dart's json parser parses '1' as an int, and int is a separate
+        // type from double, however both are subtypes of num, so we can cast
+        // to num and then convert to double.
+        return isNullable ? 'num?' : 'num';
       case SchemaType.boolean:
         return isNullable ? 'bool?' : 'bool';
       case SchemaType.object:
@@ -290,29 +293,29 @@ extension _SchemaGeneration on Schema {
     _Context context, {
     required bool isNullable,
   }) {
-    final storageType = jsonStorageType(isNullable: isNullable);
+    final jsonType = jsonStorageType(isNullable: isNullable);
     switch (type) {
       case SchemaType.string:
         if (isDateTime) {
           if (isNullable) {
-            return 'maybeParseDateTime($jsonValue as $storageType)';
+            return 'maybeParseDateTime($jsonValue as $jsonType)';
           } else {
-            return 'DateTime.parse($jsonValue as $storageType)';
+            return 'DateTime.parse($jsonValue as $jsonType)';
           }
         } else if (isEnum) {
           final jsonMethod = isNullable ? 'maybeFromJson' : 'fromJson';
-          return '$className.$jsonMethod($jsonValue as $storageType)';
+          return '$className.$jsonMethod($jsonValue as $jsonType)';
         }
-        return '$jsonValue as $storageType';
+        return '$jsonValue as $jsonType';
       case SchemaType.integer:
-        return '$jsonValue as $storageType';
-      case SchemaType.number:
-        return '$jsonValue as $storageType';
       case SchemaType.boolean:
-        return '$jsonValue as $storageType';
+        return '$jsonValue as $jsonType';
+      case SchemaType.number:
+        final nullAware = isNullable ? '?' : '';
+        return '($jsonValue as $jsonType)$nullAware.toDouble()';
       case SchemaType.object:
         final jsonMethod = isNullable ? 'maybeFromJson' : 'fromJson';
-        return '$className.$jsonMethod($jsonValue as $storageType)';
+        return '$className.$jsonMethod($jsonValue as $jsonType)';
       case SchemaType.array:
         final itemsSchema = context._maybeResolve(items);
         if (itemsSchema == null) {
@@ -896,10 +899,10 @@ class _RenderContext {
   /// which can be used to look up schemas in the schema registry.
   final Uri specUri;
 
-  /// Schemas declared within this file.
+  /// Schemas declared within this file, will be added to the rendering queue.
   List<Schema> inlineSchemas = [];
 
-  /// Schemas imported by this file.
+  /// Schemas imported by this file, will be added to the rendering queue.
   Set<RefOr<dynamic>> importedSchemas = {};
 
   /// Visit a schema reference and collect it if it is not already in the
@@ -944,7 +947,7 @@ class _RenderContext {
 
   /// Collect a schema if it needs to be rendered.
   void collectSchema(Schema schema) {
-    if (schema.needsRender) {
+    if (schema.createsNewType) {
       inlineSchemas.add(schema);
     }
     for (final entry in schema.properties.entries) {
@@ -956,18 +959,13 @@ class _RenderContext {
   }
 
   /// Get the sorted package imports for this render context.
-  List<String> sortedPackageImports(
-    _Context context, {
-    bool includeInlineSchema = false,
-  }) {
+  List<String> sortedPackageImports(_Context context) {
     final imports = <String>{};
     for (final ref in importedSchemas) {
       imports.add(ref.packageImport(context));
     }
-    if (includeInlineSchema) {
-      for (final schema in inlineSchemas) {
-        imports.add(schema.packageImport(context));
-      }
+    for (final schema in inlineSchemas) {
+      imports.add(schema.packageImport(context));
     }
     return imports.toList()..sort();
   }
@@ -978,10 +976,7 @@ _RenderContext _renderSchema(_Context context, Schema schema) {
   final renderContext = _RenderContext(specUri: context.specUrl)
     ..collectSchema(schema);
 
-  final imports = renderContext.sortedPackageImports(
-    context,
-    includeInlineSchema: true,
-  );
+  final imports = renderContext.sortedPackageImports(context);
   final Map<String, dynamic> schemaContext;
   final String template;
   switch (schema.renderType) {
@@ -1019,10 +1014,7 @@ void _renderApi(_RenderContext renderContext, _Context context, Api api) {
       .toList();
   renderContext.collectApi(api);
 
-  final imports = renderContext.sortedPackageImports(
-    context,
-    includeInlineSchema: true,
-  );
+  final imports = renderContext.sortedPackageImports(context);
 
   // The OpenAPI generator only includes the APIs in the api/ directory
   // all other classes and enums go in the model/ directory even ones

@@ -49,3 +49,18 @@ generators for Dart.  One for package:http and one for package:dio.  I only
 ever used the http one and it had lots of bugs.  I looked at fixing them
 in OpenAPI, but failed to figure out how to hack on the OpenAPI generator
 (Java) or successfully interact with the community (several separate slacks).
+
+
+### OpenApi Quirks
+
+space_gen implements a few OpenAPI quirks to optionally make the generated
+output maximally openapi_generator compatible in case you're transitioning
+from openapi_generator to space_gen.
+
+#### Lists default to []
+
+OpenAPI makes all List values default to [], and stores all lists as
+non-nullable, even if they're nullable (not required) in the spec.  This
+breaks round-tripping of values, since if your 'list' property is null
+(or missing) openapi_generator will parse it as [] and send back [].  The
+openapi_generator can never send null for a list value.

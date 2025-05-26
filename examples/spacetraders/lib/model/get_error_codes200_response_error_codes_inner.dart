@@ -11,7 +11,7 @@ class GetErrorCodes200ResponseErrorCodesInner {
     Map<String, dynamic> json,
   ) {
     return GetErrorCodes200ResponseErrorCodesInner(
-      code: json['code'] as double,
+      code: (json['code'] as num).toDouble(),
       name: json['name'] as String,
     );
   }
