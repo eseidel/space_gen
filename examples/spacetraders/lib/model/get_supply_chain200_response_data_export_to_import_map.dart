@@ -10,7 +10,7 @@ class GetSupplyChain200ResponseDataExportToImportMap {
   ) {
     return GetSupplyChain200ResponseDataExportToImportMap(
       entries: json.map(
-        (key, value) => MapEntry(key, (value as List<dynamic>).cast<String>()),
+        (key, value) => MapEntry(key, (value as List).cast<String>()),
       ),
     );
   }

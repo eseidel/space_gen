@@ -18,7 +18,7 @@ class RemoveShipModule201ResponseData {
     return RemoveShipModule201ResponseData(
       agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
       modules:
-          (json['modules'] as List<dynamic>)
+          (json['modules'] as List)
               .map<ShipModule>(
                 (e) => ShipModule.fromJson(e as Map<String, dynamic>),
               )

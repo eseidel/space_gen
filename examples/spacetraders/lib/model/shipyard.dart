@@ -18,20 +18,20 @@ class Shipyard {
     return Shipyard(
       symbol: json['symbol'] as String,
       shipTypes:
-          (json['shipTypes'] as List<dynamic>)
+          (json['shipTypes'] as List)
               .map<ShipyardShipTypesInner>(
                 (e) =>
                     ShipyardShipTypesInner.fromJson(e as Map<String, dynamic>),
               )
               .toList(),
       transactions:
-          (json['transactions'] as List<dynamic>)
+          (json['transactions'] as List)
               .map<ShipyardTransaction>(
                 (e) => ShipyardTransaction.fromJson(e as Map<String, dynamic>),
               )
               .toList(),
       ships:
-          (json['ships'] as List<dynamic>)
+          (json['ships'] as List)
               .map<ShipyardShip>(
                 (e) => ShipyardShip.fromJson(e as Map<String, dynamic>),
               )

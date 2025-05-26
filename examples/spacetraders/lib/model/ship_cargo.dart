@@ -15,7 +15,7 @@ class ShipCargo {
       capacity: json['capacity'] as int,
       units: json['units'] as int,
       inventory:
-          (json['inventory'] as List<dynamic>)
+          (json['inventory'] as List)
               .map<ShipCargoItem>(
                 (e) => ShipCargoItem.fromJson(e as Map<String, dynamic>),
               )

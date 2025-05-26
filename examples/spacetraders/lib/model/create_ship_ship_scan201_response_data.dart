@@ -16,7 +16,7 @@ class CreateShipShipScan201ResponseData {
     return CreateShipShipScan201ResponseData(
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
       ships:
-          (json['ships'] as List<dynamic>)
+          (json['ships'] as List)
               .map<ScannedShip>(
                 (e) => ScannedShip.fromJson(e as Map<String, dynamic>),
               )

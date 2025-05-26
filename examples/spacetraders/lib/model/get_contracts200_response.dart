@@ -10,7 +10,7 @@ class GetContracts200Response {
   factory GetContracts200Response.fromJson(Map<String, dynamic> json) {
     return GetContracts200Response(
       data:
-          (json['data'] as List<dynamic>)
+          (json['data'] as List)
               .map<Contract>(
                 (e) => Contract.fromJson(e as Map<String, dynamic>),
               )

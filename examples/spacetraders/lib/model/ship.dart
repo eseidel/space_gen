@@ -41,13 +41,13 @@ class Ship {
       reactor: ShipReactor.fromJson(json['reactor'] as Map<String, dynamic>),
       engine: ShipEngine.fromJson(json['engine'] as Map<String, dynamic>),
       modules:
-          (json['modules'] as List<dynamic>)
+          (json['modules'] as List)
               .map<ShipModule>(
                 (e) => ShipModule.fromJson(e as Map<String, dynamic>),
               )
               .toList(),
       mounts:
-          (json['mounts'] as List<dynamic>)
+          (json['mounts'] as List)
               .map<ShipMount>(
                 (e) => ShipMount.fromJson(e as Map<String, dynamic>),
               )

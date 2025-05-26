@@ -324,10 +324,10 @@ extension _SchemaGeneration on Schema {
         final itemTypeName = itemsSchema.typeName(context);
         // TODO(eseidel): this probably doesn't handle nullable correctly.
         if (itemsSchema.type == SchemaType.object) {
-          return '($jsonValue as List<dynamic>).map<$itemTypeName>((e) => '
+          return '($jsonValue as List).map<$itemTypeName>((e) => '
               '$itemTypeName.fromJson(e as Map<String, dynamic>)).toList()';
         } else {
-          return '($jsonValue as List<dynamic>).cast<$itemTypeName>()';
+          return '($jsonValue as List).cast<$itemTypeName>()';
         }
       case SchemaType.unknown:
         return jsonValue;

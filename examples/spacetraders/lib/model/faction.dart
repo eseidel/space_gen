@@ -21,7 +21,7 @@ class Faction {
       description: json['description'] as String,
       headquarters: json['headquarters'] as String?,
       traits:
-          (json['traits'] as List<dynamic>)
+          (json['traits'] as List)
               .map<FactionTrait>(
                 (e) => FactionTrait.fromJson(e as Map<String, dynamic>),
               )

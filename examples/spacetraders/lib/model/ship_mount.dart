@@ -21,8 +21,7 @@ class ShipMount {
       name: json['name'] as String,
       description: json['description'] as String,
       strength: json['strength'] as int?,
-      deposits:
-          (json['deposits'] as List<dynamic>).cast<ShipMountDepositsInner>(),
+      deposits: (json['deposits'] as List).cast<ShipMountDepositsInner>(),
       requirements: ShipRequirements.fromJson(
         json['requirements'] as Map<String, dynamic>,
       ),

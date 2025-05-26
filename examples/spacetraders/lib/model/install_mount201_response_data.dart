@@ -18,7 +18,7 @@ class InstallMount201ResponseData {
     return InstallMount201ResponseData(
       agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
       mounts:
-          (json['mounts'] as List<dynamic>)
+          (json['mounts'] as List)
               .map<ShipMount>(
                 (e) => ShipMount.fromJson(e as Map<String, dynamic>),
               )

@@ -10,7 +10,7 @@ class GetMyShips200Response {
   factory GetMyShips200Response.fromJson(Map<String, dynamic> json) {
     return GetMyShips200Response(
       data:
-          (json['data'] as List<dynamic>)
+          (json['data'] as List)
               .map<Ship>((e) => Ship.fromJson(e as Map<String, dynamic>))
               .toList(),
       meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),

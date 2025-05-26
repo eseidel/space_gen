@@ -9,7 +9,7 @@ class GetErrorCodes200Response {
   factory GetErrorCodes200Response.fromJson(Map<String, dynamic> json) {
     return GetErrorCodes200Response(
       errorCodes:
-          (json['errorCodes'] as List<dynamic>)
+          (json['errorCodes'] as List)
               .map<GetErrorCodes200ResponseErrorCodesInner>(
                 (e) => GetErrorCodes200ResponseErrorCodesInner.fromJson(
                   e as Map<String, dynamic>,

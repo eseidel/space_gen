@@ -10,7 +10,7 @@ class GetAgents200Response {
   factory GetAgents200Response.fromJson(Map<String, dynamic> json) {
     return GetAgents200Response(
       data:
-          (json['data'] as List<dynamic>)
+          (json['data'] as List)
               .map<PublicAgent>(
                 (e) => PublicAgent.fromJson(e as Map<String, dynamic>),
               )

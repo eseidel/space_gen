@@ -22,7 +22,7 @@ class Register201ResponseData {
       faction: Faction.fromJson(json['faction'] as Map<String, dynamic>),
       contract: Contract.fromJson(json['contract'] as Map<String, dynamic>),
       ships:
-          (json['ships'] as List<dynamic>)
+          (json['ships'] as List)
               .map<Ship>((e) => Ship.fromJson(e as Map<String, dynamic>))
               .toList(),
     );

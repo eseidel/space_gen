@@ -41,7 +41,7 @@ class GetStatus200Response {
         json['serverResets'] as Map<String, dynamic>,
       ),
       announcements:
-          (json['announcements'] as List<dynamic>)
+          (json['announcements'] as List)
               .map<GetStatus200ResponseAnnouncementsInner>(
                 (e) => GetStatus200ResponseAnnouncementsInner.fromJson(
                   e as Map<String, dynamic>,
@@ -49,7 +49,7 @@ class GetStatus200Response {
               )
               .toList(),
       links:
-          (json['links'] as List<dynamic>)
+          (json['links'] as List)
               .map<GetStatus200ResponseLinksInner>(
                 (e) => GetStatus200ResponseLinksInner.fromJson(
                   e as Map<String, dynamic>,

@@ -21,7 +21,7 @@ class SystemWaypoint {
       x: json['x'] as int,
       y: json['y'] as int,
       orbitals:
-          (json['orbitals'] as List<dynamic>)
+          (json['orbitals'] as List)
               .map<WaypointOrbital>(
                 (e) => WaypointOrbital.fromJson(e as Map<String, dynamic>),
               )

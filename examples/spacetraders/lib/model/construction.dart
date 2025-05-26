@@ -14,7 +14,7 @@ class Construction {
     return Construction(
       symbol: json['symbol'] as String,
       materials:
-          (json['materials'] as List<dynamic>)
+          (json['materials'] as List)
               .map<ConstructionMaterial>(
                 (e) => ConstructionMaterial.fromJson(e as Map<String, dynamic>),
               )

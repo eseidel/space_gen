@@ -18,7 +18,7 @@ class Survey {
       signature: json['signature'] as String,
       symbol: json['symbol'] as String,
       deposits:
-          (json['deposits'] as List<dynamic>)
+          (json['deposits'] as List)
               .map<SurveyDeposit>(
                 (e) => SurveyDeposit.fromJson(e as Map<String, dynamic>),
               )

@@ -32,7 +32,7 @@ class Waypoint {
       x: json['x'] as int,
       y: json['y'] as int,
       orbitals:
-          (json['orbitals'] as List<dynamic>)
+          (json['orbitals'] as List)
               .map<WaypointOrbital>(
                 (e) => WaypointOrbital.fromJson(e as Map<String, dynamic>),
               )
@@ -42,13 +42,13 @@ class Waypoint {
         json['faction'] as Map<String, dynamic>?,
       ),
       traits:
-          (json['traits'] as List<dynamic>)
+          (json['traits'] as List)
               .map<WaypointTrait>(
                 (e) => WaypointTrait.fromJson(e as Map<String, dynamic>),
               )
               .toList(),
       modifiers:
-          (json['modifiers'] as List<dynamic>)
+          (json['modifiers'] as List)
               .map<WaypointModifier>(
                 (e) => WaypointModifier.fromJson(e as Map<String, dynamic>),
               )
