@@ -32,7 +32,7 @@ class ShipyardShip {
       type: ShipType.fromJson(json['type'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
-      activity: ActivityLevel.fromJson(json['activity'] as String),
+      activity: ActivityLevel.maybeFromJson(json['activity'] as String?),
       supply: SupplyLevel.fromJson(json['supply'] as String),
       purchasePrice: json['purchasePrice'] as int,
       frame: ShipFrame.fromJson(json['frame'] as Map<String, dynamic>),

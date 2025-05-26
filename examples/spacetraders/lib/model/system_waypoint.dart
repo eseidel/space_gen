@@ -26,7 +26,7 @@ class SystemWaypoint {
                 (e) => WaypointOrbital.fromJson(e as Map<String, dynamic>),
               )
               .toList(),
-      orbits: json['orbits'] as String,
+      orbits: json['orbits'] as String?,
     );
   }
 

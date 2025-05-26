@@ -18,8 +18,8 @@ class ShipModule {
       symbol: ShipModuleSymbol.fromJson(json['symbol'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
-      capacity: json['capacity'] as int,
-      range: json['range'] as int,
+      capacity: json['capacity'] as int?,
+      range: json['range'] as int?,
       requirements: ShipRequirements.fromJson(
         json['requirements'] as Map<String, dynamic>,
       ),

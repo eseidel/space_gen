@@ -6,7 +6,7 @@ class GetStatus200ResponseHealth {
 
   factory GetStatus200ResponseHealth.fromJson(Map<String, dynamic> json) {
     return GetStatus200ResponseHealth(
-      lastMarketUpdate: json['lastMarketUpdate'] as String,
+      lastMarketUpdate: json['lastMarketUpdate'] as String?,
     );
   }
 

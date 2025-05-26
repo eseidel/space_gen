@@ -1,5 +1,12 @@
 import 'package:collection/collection.dart';
 
+DateTime? maybeParseDateTime(String? value) {
+  if (value == null) {
+    return null;
+  }
+  return DateTime.parse(value);
+}
+
 bool listsEqual<T>(List<T>? a, List<T>? b) {
   final deepEquals = const DeepCollectionEquality().equals;
   return deepEquals(a, b);

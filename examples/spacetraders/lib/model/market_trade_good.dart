@@ -22,7 +22,7 @@ class MarketTradeGood {
       type: MarketTradeGoodType.fromJson(json['type'] as String),
       tradeVolume: json['tradeVolume'] as int,
       supply: SupplyLevel.fromJson(json['supply'] as String),
-      activity: ActivityLevel.fromJson(json['activity'] as String),
+      activity: ActivityLevel.maybeFromJson(json['activity'] as String?),
       purchasePrice: json['purchasePrice'] as int,
       sellPrice: json['sellPrice'] as int,
     );

@@ -17,7 +17,7 @@ class RefuelShip200ResponseData {
     return RefuelShip200ResponseData(
       agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
       fuel: ShipFuel.fromJson(json['fuel'] as Map<String, dynamic>),
-      cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
+      cargo: ShipCargo.maybeFromJson(json['cargo'] as Map<String, dynamic>?),
       transaction: MarketTransaction.fromJson(
         json['transaction'] as Map<String, dynamic>,
       ),

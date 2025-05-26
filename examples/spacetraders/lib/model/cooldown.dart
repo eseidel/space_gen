@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/model_helpers.dart';
 
 @immutable
 class Cooldown {
@@ -14,7 +15,7 @@ class Cooldown {
       shipSymbol: json['shipSymbol'] as String,
       totalSeconds: json['totalSeconds'] as int,
       remainingSeconds: json['remainingSeconds'] as int,
-      expiration: DateTime.parse(json['expiration'] as String),
+      expiration: maybeParseDateTime(json['expiration'] as String?),
     );
   }
 

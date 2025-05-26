@@ -19,7 +19,7 @@ class Faction {
       symbol: FactionSymbol.fromJson(json['symbol'] as String),
       name: json['name'] as String,
       description: json['description'] as String,
-      headquarters: json['headquarters'] as String,
+      headquarters: json['headquarters'] as String?,
       traits:
           (json['traits'] as List<dynamic>)
               .map<FactionTrait>(

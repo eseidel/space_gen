@@ -6,9 +6,9 @@ class ShipRequirements {
 
   factory ShipRequirements.fromJson(Map<String, dynamic> json) {
     return ShipRequirements(
-      power: json['power'] as int,
-      crew: json['crew'] as int,
-      slots: json['slots'] as int,
+      power: json['power'] as int?,
+      crew: json['crew'] as int?,
+      slots: json['slots'] as int?,
     );
   }
 

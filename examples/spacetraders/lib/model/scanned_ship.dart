@@ -26,9 +26,11 @@ class ScannedShip {
         json['registration'] as Map<String, dynamic>,
       ),
       nav: ShipNav.fromJson(json['nav'] as Map<String, dynamic>),
-      frame: ScannedShipFrame.fromJson(json['frame'] as Map<String, dynamic>),
-      reactor: ScannedShipReactor.fromJson(
-        json['reactor'] as Map<String, dynamic>,
+      frame: ScannedShipFrame.maybeFromJson(
+        json['frame'] as Map<String, dynamic>?,
+      ),
+      reactor: ScannedShipReactor.maybeFromJson(
+        json['reactor'] as Map<String, dynamic>?,
       ),
       engine: ScannedShipEngine.fromJson(
         json['engine'] as Map<String, dynamic>,

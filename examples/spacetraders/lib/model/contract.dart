@@ -1,6 +1,7 @@
 import 'package:meta/meta.dart';
 import 'package:spacetraders/model/contract_terms.dart';
 import 'package:spacetraders/model/contract_type.dart';
+import 'package:spacetraders/model_helpers.dart';
 
 @immutable
 class Contract {
@@ -24,7 +25,7 @@ class Contract {
       accepted: json['accepted'] as bool,
       fulfilled: json['fulfilled'] as bool,
       expiration: DateTime.parse(json['expiration'] as String),
-      deadlineToAccept: DateTime.parse(json['deadlineToAccept'] as String),
+      deadlineToAccept: maybeParseDateTime(json['deadlineToAccept'] as String?),
     );
   }
 

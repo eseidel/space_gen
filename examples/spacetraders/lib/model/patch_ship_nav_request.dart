@@ -7,7 +7,9 @@ class PatchShipNavRequest {
 
   factory PatchShipNavRequest.fromJson(Map<String, dynamic> json) {
     return PatchShipNavRequest(
-      flightMode: ShipNavFlightMode.fromJson(json['flightMode'] as String),
+      flightMode: ShipNavFlightMode.maybeFromJson(
+        json['flightMode'] as String?,
+      ),
     );
   }
 

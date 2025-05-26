@@ -13,8 +13,8 @@ class ShipFuel {
     return ShipFuel(
       current: json['current'] as int,
       capacity: json['capacity'] as int,
-      consumed: ShipFuelConsumed.fromJson(
-        json['consumed'] as Map<String, dynamic>,
+      consumed: ShipFuelConsumed.maybeFromJson(
+        json['consumed'] as Map<String, dynamic>?,
       ),
     );
   }

@@ -15,7 +15,7 @@ class GetMyAccount200ResponseDataAccount {
     return GetMyAccount200ResponseDataAccount(
       id: json['id'] as String,
       email: json['email'] as String,
-      token: json['token'] as String,
+      token: json['token'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
