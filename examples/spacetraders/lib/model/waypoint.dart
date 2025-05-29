@@ -48,8 +48,8 @@ class Waypoint {
               )
               .toList(),
       modifiers:
-          (json['modifiers'] as List)
-              .map<WaypointModifier>(
+          (json['modifiers'] as List?)
+              ?.map<WaypointModifier>(
                 (e) => WaypointModifier.fromJson(e as Map<String, dynamic>),
               )
               .toList(),

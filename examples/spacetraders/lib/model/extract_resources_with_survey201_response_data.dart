@@ -26,8 +26,8 @@ class ExtractResourcesWithSurvey201ResponseData {
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
       modifiers:
-          (json['modifiers'] as List)
-              .map<WaypointModifier>(
+          (json['modifiers'] as List?)
+              ?.map<WaypointModifier>(
                 (e) => WaypointModifier.fromJson(e as Map<String, dynamic>),
               )
               .toList(),

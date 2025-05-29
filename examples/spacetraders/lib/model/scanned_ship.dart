@@ -36,8 +36,8 @@ class ScannedShip {
         json['engine'] as Map<String, dynamic>,
       ),
       mounts:
-          (json['mounts'] as List)
-              .map<ScannedShipMountsInner>(
+          (json['mounts'] as List?)
+              ?.map<ScannedShipMountsInner>(
                 (e) =>
                     ScannedShipMountsInner.fromJson(e as Map<String, dynamic>),
               )

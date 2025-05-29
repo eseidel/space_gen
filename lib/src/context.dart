@@ -130,16 +130,6 @@ extension _SchemaGeneration on Schema {
     return jsonName;
   }
 
-  /// The default value of this schema as a string.
-  String? get defaultValueString {
-    // If the type of this schema is an object we need to convert the default
-    // value to that object type.
-    if (isEnum && defaultValue is String) {
-      return '$className.${enumValueName(defaultValue as String)}';
-    }
-    return defaultValue?.toString();
-  }
-
   /// The type of schema to render.
   SchemaRenderType get renderType {
     if (isEnum) {
@@ -224,11 +214,11 @@ extension _SchemaGeneration on Schema {
 
   /// The toJson expression for this schema.
   String toJsonExpression(
-    String name,
+    String dartName,
     _Context context, {
     required bool isNullable,
   }) {
-    final nameCall = isNullable ? '$name?' : name;
+    final nameCall = isNullable ? '$dartName?' : dartName;
     switch (type) {
       case SchemaType.string:
         if (isDateTime) {
@@ -236,11 +226,11 @@ extension _SchemaGeneration on Schema {
         } else if (isEnum) {
           return '$nameCall.toJson()';
         }
-        return name;
+        return dartName;
       case SchemaType.integer:
       case SchemaType.number:
       case SchemaType.boolean:
-        return name;
+        return dartName;
       case SchemaType.object:
         return '$nameCall.toJson()';
       case SchemaType.array:
@@ -255,13 +245,13 @@ extension _SchemaGeneration on Schema {
           case SchemaType.number:
           case SchemaType.boolean:
             // Don't call toJson on primitives.
-            return name;
+            return dartName;
           case SchemaType.object:
           case SchemaType.array:
             return '$nameCall.map((e) => e.toJson()).toList()';
         }
       case SchemaType.unknown:
-        return name;
+        return dartName;
     }
   }
 
@@ -322,61 +312,88 @@ extension _SchemaGeneration on Schema {
           throw StateError('Items schema is null: $this');
         }
         final itemTypeName = itemsSchema.typeName(context);
-        // TODO(eseidel): this probably doesn't handle nullable correctly.
-        if (itemsSchema.type == SchemaType.object) {
-          return '($jsonValue as List).map<$itemTypeName>((e) => '
-              '$itemTypeName.fromJson(e as Map<String, dynamic>)).toList()';
-        } else {
-          return '($jsonValue as List).cast<$itemTypeName>()';
+
+        final castAsList = isNullable
+            ? '($jsonValue as List?)?'
+            : '($jsonValue as List)';
+        final itemsFromJson = itemsSchema.fromJsonExpression(
+          'e',
+          context,
+          // Unless itemSchema itself has a nullable type this is always false.
+          isNullable: false,
+        );
+        // If it doesn't create a new type we can just cast the list.
+        if (!itemsSchema.createsNewType) {
+          return '$castAsList.cast<$itemTypeName>()';
         }
+        return '$castAsList.map<$itemTypeName>((e) => $itemsFromJson).toList()';
       case SchemaType.unknown:
         return jsonValue;
     }
   }
 
+  // OpenAPI defaults arrays to empty, so we match for now.
+  bool shouldApplyListDefaultToEmptyQuirk(_Context context) =>
+      type == SchemaType.array && context.quirks.allListsDefaultToEmpty;
+
+  /// The default value of this schema as a string.
+  String? defaultValueString(_Context context) {
+    // If the type of this schema is an object we need to convert the default
+    // value to that object type.
+    if (isEnum && defaultValue is String) {
+      return '$className.${enumValueName(defaultValue as String)}';
+    }
+    if (shouldApplyListDefaultToEmptyQuirk(context)) {
+      return 'const []';
+    }
+    return defaultValue?.toString();
+  }
+
+  bool hasDefaultValue(_Context context) =>
+      defaultValue != null || shouldApplyListDefaultToEmptyQuirk(context);
+
+  // isNullable means it's optional for the server, use nullable storage.
+  bool propertyIsNullable({
+    required _Context context,
+    required String jsonName,
+  }) {
+    final inRequiredList = required.contains(jsonName);
+    if (context.quirks.nonNullableDefaultValues) {
+      return !inRequiredList && !hasDefaultValue(context);
+    }
+    return !inRequiredList;
+  }
+
+  /// `this` is the schema of the object containing the property.
+  /// [property] is the schema of the property itself.
   Map<String, dynamic> propertyTemplateContext({
     required String jsonName,
-    required Schema schema,
+    required Schema property,
     required _Context context,
-    required bool inRequiredList,
   }) {
+    // Properties only need to avoid reserved words for openapi compat.
     // TODO(eseidel): Remove this once we've migrated to the new generator.
     final dartName = avoidReservedWord(jsonName);
+    final isNullable = propertyIsNullable(context: context, jsonName: jsonName);
 
-    // Even if the server requires a property, we don't need the Dart
-    // constructor to require it if it has a default value.
-    var hasDefaultValue = schema.defaultValue != null;
-    var defaultValueString = schema.defaultValueString;
-    // OpenAPI defaults arrays to empty, so we match for now.
-    if (context.quirks.allListsDefaultToEmpty &&
-        schema.type == SchemaType.array) {
-      hasDefaultValue = true;
-      defaultValueString = 'const []';
-    }
-
-    // useRequired means "use the required constructor parameter"
-    final useRequired = inRequiredList && !hasDefaultValue;
-    // isNullable means it's optional for the server, use nullable storage.
-    final isNullable = context.quirks.nonNullableDefaultValues
-        ? !inRequiredList && !hasDefaultValue
-        : !inRequiredList;
-
+    final useRequired =
+        required.contains(jsonName) && !property.hasDefaultValue(context);
     return {
       'dartName': dartName,
       'jsonName': jsonName,
       'useRequired': useRequired,
       'isNullable': isNullable,
-      'hasDefaultValue': hasDefaultValue,
-      'defaultValue': defaultValueString,
-      'type': schema.typeName(context),
-      'nullableType': schema.nullableTypeName(context),
-      'equals': schema.equalsExpression(dartName, context),
-      'toJson': schema.toJsonExpression(
+      'hasDefaultValue': property.hasDefaultValue(context),
+      'defaultValue': property.defaultValueString(context),
+      'type': property.typeName(context),
+      'nullableType': property.nullableTypeName(context),
+      'equals': property.equalsExpression(dartName, context),
+      'toJson': property.toJsonExpression(
         dartName,
         context,
         isNullable: isNullable,
       ),
-      'fromJson': schema.fromJsonExpression(
+      'fromJson': property.fromJsonExpression(
         "json['$jsonName']",
         context,
         isNullable: isNullable,
@@ -397,9 +414,8 @@ extension _SchemaGeneration on Schema {
       }
       return propertyTemplateContext(
         jsonName: jsonName,
-        schema: schema,
+        property: schema,
         context: context,
-        inRequiredList: required.contains(jsonName),
       );
     }).toList();
 
@@ -519,7 +535,7 @@ extension _ParameterGeneration on Parameter {
       'bracketedName': '{$name}',
       'required': isRequired,
       'hasDefaultValue': typeSchema.defaultValue != null,
-      'defaultValue': typeSchema.defaultValueString,
+      'defaultValue': typeSchema.defaultValueString(context),
       'type': typeSchema.typeName(context),
       'nullableType': typeSchema.nullableTypeName(context),
       'sendIn': sendIn.name,
@@ -552,7 +568,7 @@ extension _RequestBodyGeneration on RequestBody {
       'bracketedName': '{$paramName}',
       'required': isRequired,
       'hasDefaultValue': schema.defaultValue != null,
-      'defaultValue': schema.defaultValueString,
+      'defaultValue': schema.defaultValueString(context),
       'type': typeName,
       'nullableType': schema.nullableTypeName(context),
       'sendIn': 'body',
