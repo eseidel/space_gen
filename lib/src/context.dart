@@ -376,6 +376,8 @@ extension _SchemaGeneration on Schema {
     final dartName = avoidReservedWord(jsonName);
     final isNullable = propertyIsNullable(context: context, jsonName: jsonName);
 
+    // Means that the constructor parameter is required which is only true if
+    // both the json property is required and it does not have a default.
     final useRequired =
         required.contains(jsonName) && !property.hasDefaultValue(context);
     return {
