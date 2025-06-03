@@ -17,12 +17,11 @@ class ContractTerms {
       payment: ContractPayment.fromJson(
         json['payment'] as Map<String, dynamic>,
       ),
-      deliver:
-          (json['deliver'] as List?)
-              ?.map<ContractDeliverGood>(
-                (e) => ContractDeliverGood.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
+      deliver: (json['deliver'] as List?)
+          ?.map<ContractDeliverGood>(
+            (e) => ContractDeliverGood.fromJson(e as Map<String, dynamic>),
+          )
+          .toList(),
     );
   }
 

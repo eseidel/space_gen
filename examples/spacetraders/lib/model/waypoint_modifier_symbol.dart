@@ -10,11 +10,8 @@ enum WaypointModifierSymbol {
   factory WaypointModifierSymbol.fromJson(String json) {
     return WaypointModifierSymbol.values.firstWhere(
       (value) => value.value == json,
-      orElse:
-          () =>
-              throw FormatException(
-                'Unknown WaypointModifierSymbol value: $json',
-              ),
+      orElse: () =>
+          throw FormatException('Unknown WaypointModifierSymbol value: $json'),
     );
   }
 

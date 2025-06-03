@@ -74,9 +74,8 @@ enum WaypointTraitSymbol {
   factory WaypointTraitSymbol.fromJson(String json) {
     return WaypointTraitSymbol.values.firstWhere(
       (value) => value.value == json,
-      orElse:
-          () =>
-              throw FormatException('Unknown WaypointTraitSymbol value: $json'),
+      orElse: () =>
+          throw FormatException('Unknown WaypointTraitSymbol value: $json'),
     );
   }
 

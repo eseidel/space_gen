@@ -17,12 +17,9 @@ class RemoveMount201ResponseData {
   factory RemoveMount201ResponseData.fromJson(Map<String, dynamic> json) {
     return RemoveMount201ResponseData(
       agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
-      mounts:
-          (json['mounts'] as List)
-              .map<ShipMount>(
-                (e) => ShipMount.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
+      mounts: (json['mounts'] as List)
+          .map<ShipMount>((e) => ShipMount.fromJson(e as Map<String, dynamic>))
+          .toList(),
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
       transaction: ShipModificationTransaction.fromJson(
         json['transaction'] as Map<String, dynamic>,

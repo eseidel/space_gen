@@ -7,11 +7,8 @@ enum MarketTransactionType {
   factory MarketTransactionType.fromJson(String json) {
     return MarketTransactionType.values.firstWhere(
       (value) => value.value == json,
-      orElse:
-          () =>
-              throw FormatException(
-                'Unknown MarketTransactionType value: $json',
-              ),
+      orElse: () =>
+          throw FormatException('Unknown MarketTransactionType value: $json'),
     );
   }
 

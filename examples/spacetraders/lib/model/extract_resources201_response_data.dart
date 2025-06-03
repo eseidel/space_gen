@@ -23,18 +23,16 @@ class ExtractResources201ResponseData {
       ),
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
-      modifiers:
-          (json['modifiers'] as List?)
-              ?.map<WaypointModifier>(
-                (e) => WaypointModifier.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
-      events:
-          (json['events'] as List)
-              .map<ShipConditionEvent>(
-                (e) => ShipConditionEvent.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
+      modifiers: (json['modifiers'] as List?)
+          ?.map<WaypointModifier>(
+            (e) => WaypointModifier.fromJson(e as Map<String, dynamic>),
+          )
+          .toList(),
+      events: (json['events'] as List)
+          .map<ShipConditionEvent>(
+            (e) => ShipConditionEvent.fromJson(e as Map<String, dynamic>),
+          )
+          .toList(),
     );
   }
 

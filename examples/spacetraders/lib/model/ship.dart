@@ -40,18 +40,14 @@ class Ship {
       frame: ShipFrame.fromJson(json['frame'] as Map<String, dynamic>),
       reactor: ShipReactor.fromJson(json['reactor'] as Map<String, dynamic>),
       engine: ShipEngine.fromJson(json['engine'] as Map<String, dynamic>),
-      modules:
-          (json['modules'] as List)
-              .map<ShipModule>(
-                (e) => ShipModule.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
-      mounts:
-          (json['mounts'] as List)
-              .map<ShipMount>(
-                (e) => ShipMount.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
+      modules: (json['modules'] as List)
+          .map<ShipModule>(
+            (e) => ShipModule.fromJson(e as Map<String, dynamic>),
+          )
+          .toList(),
+      mounts: (json['mounts'] as List)
+          .map<ShipMount>((e) => ShipMount.fromJson(e as Map<String, dynamic>))
+          .toList(),
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
       fuel: ShipFuel.fromJson(json['fuel'] as Map<String, dynamic>),
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),

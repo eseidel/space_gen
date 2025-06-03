@@ -12,12 +12,9 @@ class GetSystemWaypoints200Response {
 
   factory GetSystemWaypoints200Response.fromJson(Map<String, dynamic> json) {
     return GetSystemWaypoints200Response(
-      data:
-          (json['data'] as List)
-              .map<Waypoint>(
-                (e) => Waypoint.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
+      data: (json['data'] as List)
+          .map<Waypoint>((e) => Waypoint.fromJson(e as Map<String, dynamic>))
+          .toList(),
       meta: Meta.fromJson(json['meta'] as Map<String, dynamic>),
     );
   }

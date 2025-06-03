@@ -19,12 +19,11 @@ class SiphonResources201ResponseData {
       siphon: Siphon.fromJson(json['siphon'] as Map<String, dynamic>),
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
-      events:
-          (json['events'] as List)
-              .map<ShipConditionEvent>(
-                (e) => ShipConditionEvent.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
+      events: (json['events'] as List)
+          .map<ShipConditionEvent>(
+            (e) => ShipConditionEvent.fromJson(e as Map<String, dynamic>),
+          )
+          .toList(),
     );
   }
 

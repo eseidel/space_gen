@@ -12,24 +12,21 @@ class GetStatus200ResponseLeaderboards {
 
   factory GetStatus200ResponseLeaderboards.fromJson(Map<String, dynamic> json) {
     return GetStatus200ResponseLeaderboards(
-      mostCredits:
-          (json['mostCredits'] as List)
-              .map<GetStatus200ResponseLeaderboardsMostCreditsInner>(
-                (e) =>
-                    GetStatus200ResponseLeaderboardsMostCreditsInner.fromJson(
-                      e as Map<String, dynamic>,
-                    ),
-              )
-              .toList(),
-      mostSubmittedCharts:
-          (json['mostSubmittedCharts'] as List)
-              .map<GetStatus200ResponseLeaderboardsMostSubmittedChartsInner>(
-                (e) =>
-                    GetStatus200ResponseLeaderboardsMostSubmittedChartsInner.fromJson(
-                      e as Map<String, dynamic>,
-                    ),
-              )
-              .toList(),
+      mostCredits: (json['mostCredits'] as List)
+          .map<GetStatus200ResponseLeaderboardsMostCreditsInner>(
+            (e) => GetStatus200ResponseLeaderboardsMostCreditsInner.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
+          .toList(),
+      mostSubmittedCharts: (json['mostSubmittedCharts'] as List)
+          .map<GetStatus200ResponseLeaderboardsMostSubmittedChartsInner>(
+            (e) =>
+                GetStatus200ResponseLeaderboardsMostSubmittedChartsInner.fromJson(
+                  e as Map<String, dynamic>,
+                ),
+          )
+          .toList(),
     );
   }
 
@@ -51,8 +48,9 @@ class GetStatus200ResponseLeaderboards {
   Map<String, dynamic> toJson() {
     return {
       'mostCredits': mostCredits.map((e) => e.toJson()).toList(),
-      'mostSubmittedCharts':
-          mostSubmittedCharts.map((e) => e.toJson()).toList(),
+      'mostSubmittedCharts': mostSubmittedCharts
+          .map((e) => e.toJson())
+          .toList(),
     };
   }
 

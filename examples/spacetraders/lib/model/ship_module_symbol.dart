@@ -25,8 +25,8 @@ enum ShipModuleSymbol {
   factory ShipModuleSymbol.fromJson(String json) {
     return ShipModuleSymbol.values.firstWhere(
       (value) => value.value == json,
-      orElse:
-          () => throw FormatException('Unknown ShipModuleSymbol value: $json'),
+      orElse: () =>
+          throw FormatException('Unknown ShipModuleSymbol value: $json'),
     );
   }
 

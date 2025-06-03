@@ -8,12 +8,11 @@ class GetShipModules200Response {
 
   factory GetShipModules200Response.fromJson(Map<String, dynamic> json) {
     return GetShipModules200Response(
-      data:
-          (json['data'] as List)
-              .map<ShipModule>(
-                (e) => ShipModule.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
+      data: (json['data'] as List)
+          .map<ShipModule>(
+            (e) => ShipModule.fromJson(e as Map<String, dynamic>),
+          )
+          .toList(),
     );
   }
 

@@ -8,11 +8,9 @@ enum ShipConditionEventComponent {
   factory ShipConditionEventComponent.fromJson(String json) {
     return ShipConditionEventComponent.values.firstWhere(
       (value) => value.value == json,
-      orElse:
-          () =>
-              throw FormatException(
-                'Unknown ShipConditionEventComponent value: $json',
-              ),
+      orElse: () => throw FormatException(
+        'Unknown ShipConditionEventComponent value: $json',
+      ),
     );
   }
 

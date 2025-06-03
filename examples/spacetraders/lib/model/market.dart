@@ -18,36 +18,25 @@ class Market {
   factory Market.fromJson(Map<String, dynamic> json) {
     return Market(
       symbol: json['symbol'] as String,
-      exports:
-          (json['exports'] as List)
-              .map<TradeGood>(
-                (e) => TradeGood.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
-      imports:
-          (json['imports'] as List)
-              .map<TradeGood>(
-                (e) => TradeGood.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
-      exchange:
-          (json['exchange'] as List)
-              .map<TradeGood>(
-                (e) => TradeGood.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
-      transactions:
-          (json['transactions'] as List?)
-              ?.map<MarketTransaction>(
-                (e) => MarketTransaction.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
-      tradeGoods:
-          (json['tradeGoods'] as List?)
-              ?.map<MarketTradeGood>(
-                (e) => MarketTradeGood.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
+      exports: (json['exports'] as List)
+          .map<TradeGood>((e) => TradeGood.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      imports: (json['imports'] as List)
+          .map<TradeGood>((e) => TradeGood.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      exchange: (json['exchange'] as List)
+          .map<TradeGood>((e) => TradeGood.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      transactions: (json['transactions'] as List?)
+          ?.map<MarketTransaction>(
+            (e) => MarketTransaction.fromJson(e as Map<String, dynamic>),
+          )
+          .toList(),
+      tradeGoods: (json['tradeGoods'] as List?)
+          ?.map<MarketTradeGood>(
+            (e) => MarketTradeGood.fromJson(e as Map<String, dynamic>),
+          )
+          .toList(),
     );
   }
 

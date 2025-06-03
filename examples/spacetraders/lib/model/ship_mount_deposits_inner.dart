@@ -19,11 +19,8 @@ enum ShipMountDepositsInner {
   factory ShipMountDepositsInner.fromJson(String json) {
     return ShipMountDepositsInner.values.firstWhere(
       (value) => value.value == json,
-      orElse:
-          () =>
-              throw FormatException(
-                'Unknown ShipMountDepositsInner value: $json',
-              ),
+      orElse: () =>
+          throw FormatException('Unknown ShipMountDepositsInner value: $json'),
     );
   }
 

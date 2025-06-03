@@ -14,11 +14,9 @@ enum ShipRefineRequestProduce {
   factory ShipRefineRequestProduce.fromJson(String json) {
     return ShipRefineRequestProduce.values.firstWhere(
       (value) => value.value == json,
-      orElse:
-          () =>
-              throw FormatException(
-                'Unknown ShipRefineRequestProduce value: $json',
-              ),
+      orElse: () => throw FormatException(
+        'Unknown ShipRefineRequestProduce value: $json',
+      ),
     );
   }
 

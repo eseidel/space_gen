@@ -9,8 +9,8 @@ enum ShipNavFlightMode {
   factory ShipNavFlightMode.fromJson(String json) {
     return ShipNavFlightMode.values.firstWhere(
       (value) => value.value == json,
-      orElse:
-          () => throw FormatException('Unknown ShipNavFlightMode value: $json'),
+      orElse: () =>
+          throw FormatException('Unknown ShipNavFlightMode value: $json'),
     );
   }
 

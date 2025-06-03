@@ -3,7 +3,7 @@ name: spacetraders
 version: 1.0.0
 
 environment:
-  sdk: '>=3.7.0 <4.0.0'
+  sdk: '>=3.8.0 <4.0.0'
 
 dependencies:
   collection: ^1.19.0
@@ -12,4 +12,4 @@ dependencies:
 
 dev_dependencies:
   test: ^1.26.0
-  very_good_analysis: ^7.0.0
+  very_good_analysis: ^8.0.0

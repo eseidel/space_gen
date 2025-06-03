@@ -18,22 +18,20 @@ class ShipRefine201ResponseData {
     return ShipRefine201ResponseData(
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
       cooldown: Cooldown.fromJson(json['cooldown'] as Map<String, dynamic>),
-      produced:
-          (json['produced'] as List)
-              .map<ShipRefine201ResponseDataProducedInner>(
-                (e) => ShipRefine201ResponseDataProducedInner.fromJson(
-                  e as Map<String, dynamic>,
-                ),
-              )
-              .toList(),
-      consumed:
-          (json['consumed'] as List)
-              .map<ShipRefine201ResponseDataConsumedInner>(
-                (e) => ShipRefine201ResponseDataConsumedInner.fromJson(
-                  e as Map<String, dynamic>,
-                ),
-              )
-              .toList(),
+      produced: (json['produced'] as List)
+          .map<ShipRefine201ResponseDataProducedInner>(
+            (e) => ShipRefine201ResponseDataProducedInner.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
+          .toList(),
+      consumed: (json['consumed'] as List)
+          .map<ShipRefine201ResponseDataConsumedInner>(
+            (e) => ShipRefine201ResponseDataConsumedInner.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
+          .toList(),
     );
   }
 

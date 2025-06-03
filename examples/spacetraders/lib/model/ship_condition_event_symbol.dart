@@ -32,11 +32,9 @@ enum ShipConditionEventSymbol {
   factory ShipConditionEventSymbol.fromJson(String json) {
     return ShipConditionEventSymbol.values.firstWhere(
       (value) => value.value == json,
-      orElse:
-          () =>
-              throw FormatException(
-                'Unknown ShipConditionEventSymbol value: $json',
-              ),
+      orElse: () => throw FormatException(
+        'Unknown ShipConditionEventSymbol value: $json',
+      ),
     );
   }
 

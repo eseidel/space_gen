@@ -40,22 +40,20 @@ class GetStatus200Response {
       serverResets: GetStatus200ResponseServerResets.fromJson(
         json['serverResets'] as Map<String, dynamic>,
       ),
-      announcements:
-          (json['announcements'] as List)
-              .map<GetStatus200ResponseAnnouncementsInner>(
-                (e) => GetStatus200ResponseAnnouncementsInner.fromJson(
-                  e as Map<String, dynamic>,
-                ),
-              )
-              .toList(),
-      links:
-          (json['links'] as List)
-              .map<GetStatus200ResponseLinksInner>(
-                (e) => GetStatus200ResponseLinksInner.fromJson(
-                  e as Map<String, dynamic>,
-                ),
-              )
-              .toList(),
+      announcements: (json['announcements'] as List)
+          .map<GetStatus200ResponseAnnouncementsInner>(
+            (e) => GetStatus200ResponseAnnouncementsInner.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
+          .toList(),
+      links: (json['links'] as List)
+          .map<GetStatus200ResponseLinksInner>(
+            (e) => GetStatus200ResponseLinksInner.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
+          .toList(),
     );
   }
 

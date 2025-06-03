@@ -17,12 +17,11 @@ class RemoveShipModule201ResponseData {
   factory RemoveShipModule201ResponseData.fromJson(Map<String, dynamic> json) {
     return RemoveShipModule201ResponseData(
       agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
-      modules:
-          (json['modules'] as List)
-              .map<ShipModule>(
-                (e) => ShipModule.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
+      modules: (json['modules'] as List)
+          .map<ShipModule>(
+            (e) => ShipModule.fromJson(e as Map<String, dynamic>),
+          )
+          .toList(),
       cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
       transaction: ShipModificationTransaction.fromJson(
         json['transaction'] as Map<String, dynamic>,
