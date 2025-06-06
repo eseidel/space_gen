@@ -68,7 +68,7 @@ class FleetApi {
     final response = await client.invokeApi(
       method: Method.get,
       path: '/my/ships',
-      parameters: {'page': page, 'limit': limit},
+      queryParameters: {'page': page.toString(), 'limit': limit.toString()},
     );
 
     if (response.statusCode == 200) {
@@ -86,7 +86,7 @@ class FleetApi {
     final response = await client.invokeApi(
       method: Method.post,
       path: '/my/ships',
-      parameters: {'purchaseShipRequest': purchaseShipRequest.toJson()},
+      bodyJson: purchaseShipRequest.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -217,7 +217,7 @@ class FleetApi {
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'survey': survey?.toJson()},
+      bodyJson: survey?.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -239,7 +239,7 @@ class FleetApi {
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'jettisonRequest': jettisonRequest.toJson()},
+      bodyJson: jettisonRequest.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -261,7 +261,7 @@ class FleetApi {
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'jumpShipRequest': jumpShipRequest.toJson()},
+      bodyJson: jumpShipRequest.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -379,7 +379,7 @@ class FleetApi {
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'navigateShipRequest': navigateShipRequest.toJson()},
+      bodyJson: navigateShipRequest.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -401,7 +401,7 @@ class FleetApi {
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'warpShipRequest': warpShipRequest.toJson()},
+      bodyJson: warpShipRequest.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -441,7 +441,7 @@ class FleetApi {
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'purchaseCargoRequest': purchaseCargoRequest.toJson()},
+      bodyJson: purchaseCargoRequest.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -463,7 +463,7 @@ class FleetApi {
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'shipRefineRequest': shipRefineRequest.toJson()},
+      bodyJson: shipRefineRequest.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -485,7 +485,7 @@ class FleetApi {
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'refuelShipRequest': refuelShipRequest?.toJson()},
+      bodyJson: refuelShipRequest?.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -543,7 +543,7 @@ class FleetApi {
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'sellCargoRequest': sellCargoRequest.toJson()},
+      bodyJson: sellCargoRequest.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -601,7 +601,7 @@ class FleetApi {
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'transferCargoRequest': transferCargoRequest.toJson()},
+      bodyJson: transferCargoRequest.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -659,9 +659,7 @@ class FleetApi {
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {
-        'installShipModuleRequest': installShipModuleRequest.toJson(),
-      },
+      bodyJson: installShipModuleRequest.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -683,7 +681,7 @@ class FleetApi {
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'removeShipModuleRequest': removeShipModuleRequest.toJson()},
+      bodyJson: removeShipModuleRequest.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -723,7 +721,7 @@ class FleetApi {
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'installMountRequest': installMountRequest.toJson()},
+      bodyJson: installMountRequest.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -745,7 +743,7 @@ class FleetApi {
         '{shipSymbol}',
         shipSymbol,
       ),
-      parameters: {'removeMountRequest': removeMountRequest.toJson()},
+      bodyJson: removeMountRequest.toJson(),
     );
 
     if (response.statusCode == 200) {
@@ -779,7 +777,7 @@ class FleetApi {
     final response = await client.invokeApi(
       method: Method.patch,
       path: '/my/ships/{shipSymbol}/nav'.replaceAll('{shipSymbol}', shipSymbol),
-      parameters: {'patchShipNavRequest': patchShipNavRequest?.toJson()},
+      bodyJson: patchShipNavRequest?.toJson(),
     );
 
     if (response.statusCode == 200) {

@@ -18,7 +18,7 @@ class FactionsApi {
     final response = await client.invokeApi(
       method: Method.get,
       path: '/factions',
-      parameters: {'page': page, 'limit': limit},
+      queryParameters: {'page': page.toString(), 'limit': limit.toString()},
     );
 
     if (response.statusCode == 200) {
@@ -55,7 +55,7 @@ class FactionsApi {
     final response = await client.invokeApi(
       method: Method.get,
       path: '/my/factions',
-      parameters: {'page': page, 'limit': limit},
+      queryParameters: {'page': page.toString(), 'limit': limit.toString()},
     );
 
     if (response.statusCode == 200) {

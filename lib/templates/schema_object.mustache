@@ -43,7 +43,7 @@ class {{ typeName }} {
     }
 
     {{#properties}}
-    {{^mutableModels}}final{{/mutableModels}} {{^isNullable}}{{{ type }}}{{/isNullable}} {{#isNullable}}{{{ nullableType }}}{{/isNullable}} {{ dartName }};
+    {{^mutableModels}}final{{/mutableModels}} {{^dartIsNullable}}{{{ type }}}{{/dartIsNullable}} {{#dartIsNullable}}{{{ nullableType }}}{{/dartIsNullable}} {{ dartName }};
     {{/properties}}
 
     {{#hasAdditionalProperties}}

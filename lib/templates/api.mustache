@@ -28,12 +28,15 @@ class {{ className }} {
             .replaceAll('{{{ bracketedName }}}', {{{ toJson }}})
             {{/pathParameters}},
             {{#hasQueryParameters}}
-            parameters: {
+            queryParameters: {
                 {{#queryParameters}}
-                '{{{ name }}}': {{{ toJson }}},
+                '{{{ name }}}': {{#isNullable}}?{{/isNullable}}{{{ toJson }}}.toString(),
                 {{/queryParameters}}
             },
             {{/hasQueryParameters}}
+            {{#requestBody}}
+            bodyJson: {{{ toJson }}},
+            {{/requestBody}}
         );
 
         if (response.statusCode == 200) {

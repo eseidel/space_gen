@@ -15,26 +15,39 @@ class ApiClient {
   final Client client;
   final Map<String, String> defaultHeaders;
 
-  Map<String, String> get headers => <String, String>{
-    ...defaultHeaders,
-    'Content-Type': 'application/json',
-  };
-
-  Uri resolvePath(String path) => baseUri.resolve(path).resolve(path);
+  // baseUri can contain a path, so we need to resolve the passed path relative
+  // to it.  The passed path will always be absolute (leading slash) but should
+  // be interpreted as relative to the baseUri.
+  Uri resolvePath(String path) => Uri.parse('$baseUri$path');
 
   Future<Response> invokeApi({
     required Method method,
     required String path,
-    Map<String, dynamic> parameters = const {},
+    Map<String, String> queryParameters = const {},
+    // Body is nullable to allow for post requests which have an optional body
+    // to not have to generate two separate calls depending on whether the
+    // body is present or not.
+    Map<String, dynamic>? bodyJson,
   }) async {
     final uri = resolvePath(path);
-    final body = method != Method.get ? jsonEncode(parameters) : null;
+    if (method == Method.get && body != null) {
+      throw ArgumentError('Body is not allowed for GET requests');
+    }
+
+    final maybeContentType = <String, String>{
+      ...defaultHeaders,
+      if (bodyJson != null) 'Content-Type': 'application/json',
+    };
+    // Just pass null to http if we have no headers to set.
+    // This makes our calls match openapi (and thus our tests pass).
+    final headers = maybeContentType.isEmpty ? null : maybeContentType;
+    final body = bodyJson != null ? jsonEncode(bodyJson) : null;
 
     try {
       switch (method) {
         case Method.get:
           final withParams = uri.replace(
-            queryParameters: {...baseUri.queryParameters, ...parameters},
+            queryParameters: {...baseUri.queryParameters, ...queryParameters},
           );
           return client.get(withParams, headers: headers);
         case Method.post:

@@ -26,7 +26,7 @@ class SystemsApi {
     final response = await client.invokeApi(
       method: Method.get,
       path: '/systems',
-      parameters: {'page': page, 'limit': limit},
+      queryParameters: {'page': page.toString(), 'limit': limit.toString()},
     );
 
     if (response.statusCode == 200) {
@@ -69,11 +69,11 @@ class SystemsApi {
         '{systemSymbol}',
         systemSymbol,
       ),
-      parameters: {
-        'page': page,
-        'limit': limit,
-        'type': type?.toJson(),
-        'traits': traits,
+      queryParameters: {
+        'page': page.toString(),
+        'limit': limit.toString(),
+        'type': ?type?.toJson(),
+        'traits': traits.toString(),
       },
     );
 
@@ -137,9 +137,7 @@ class SystemsApi {
           '/systems/{systemSymbol}/waypoints/{waypointSymbol}/construction/supply'
               .replaceAll('{systemSymbol}', systemSymbol)
               .replaceAll('{waypointSymbol}', waypointSymbol),
-      parameters: {
-        'supplyConstructionRequest': supplyConstructionRequest.toJson(),
-      },
+      bodyJson: supplyConstructionRequest.toJson(),
     );
 
     if (response.statusCode == 200) {

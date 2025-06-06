@@ -30,7 +30,7 @@ class AccountsApi {
     final response = await client.invokeApi(
       method: Method.post,
       path: '/register',
-      parameters: {'registerRequest': registerRequest.toJson()},
+      bodyJson: registerRequest.toJson(),
     );
 
     if (response.statusCode == 200) {
