@@ -68,20 +68,20 @@ void main() {
 
     Future<void> renderToDirectory({
       required Map<String, dynamic> spec,
-      required Directory outDir,
-      required Logger logger,
+      Directory? outDir,
+      Logger? logger,
     }) async {
-      final fs = outDir.fileSystem;
+      final out = outDir ?? MemoryFileSystem.test().directory('spacetraders');
+      final fs = out.fileSystem;
       final specFile = fs.file('spec.json')
         ..createSync(recursive: true)
         ..writeAsStringSync(jsonEncode(spec));
-      final logger = _MockLogger();
       await runWithLogger(
-        logger,
+        logger ?? _MockLogger(),
         () => loadAndRenderSpec(
           specUri: Uri.file(specFile.path),
-          packageName: outDir.path.split('/').last,
-          outDir: outDir,
+          packageName: out.path.split('/').last,
+          outDir: out,
           templateDir: templateDir,
           runProcess: runProcess,
         ),
@@ -112,11 +112,8 @@ void main() {
     });
 
     test('empty spec throws format exception', () async {
-      final fs = MemoryFileSystem.test();
-      final out = fs.directory('spacetraders');
-      final logger = _MockLogger();
       await expectLater(
-        () => renderToDirectory(spec: {}, outDir: out, logger: logger),
+        () => renderToDirectory(spec: {}),
         throwsA(isA<FormatException>()),
       );
     });
@@ -134,8 +131,7 @@ void main() {
         },
       };
       final out = fs.directory('spacetraders');
-      final logger = _MockLogger();
-      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+      await renderToDirectory(spec: spec, outDir: out);
       expect(out, exists);
       expect(out.childFile('foo.txt'), isNot(exists));
       expect(
@@ -209,9 +205,7 @@ void main() {
       };
       final out = fs.directory('spacetraders');
 
-      final logger = _MockLogger();
-
-      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+      await renderToDirectory(spec: spec, outDir: out);
       expect(out.existsSync(), isTrue);
       expect(out.childFile('lib/api.dart'), exists);
       expect(out.childFile('lib/api_client.dart'), exists);
@@ -304,13 +298,12 @@ void main() {
         },
       };
       final out = fs.directory('spacetraders');
-      final logger = _MockLogger();
 
       File outFile(String path) => out.childFile(path);
       File apiFile(String path) =>
           out.childDirectory('lib/api').childFile(path);
 
-      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+      await renderToDirectory(spec: spec, outDir: out);
       expect(out.existsSync(), isTrue);
       expect(outFile('lib/api.dart'), exists);
       expect(outFile('lib/api_client.dart'), exists);
@@ -377,9 +370,8 @@ void main() {
         },
       };
       final out = fs.directory('spacetraders');
-      final logger = _MockLogger();
 
-      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+      await renderToDirectory(spec: spec, outDir: out);
       expect(out.childFile('lib/model/user.dart'), exists);
       expect(out.childFile('lib/model/multiplier.dart'), exists);
     });
@@ -436,9 +428,8 @@ void main() {
         },
       };
       final out = fs.directory('spacetraders');
-      final logger = _MockLogger();
 
-      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+      await renderToDirectory(spec: spec, outDir: out);
       expect(out.childFile('lib/model/get_user200_response.dart'), exists);
       expect(out.childFile('lib/model/user.dart'), exists);
     });
@@ -474,9 +465,8 @@ void main() {
         },
       };
       final out = fs.directory('spacetraders');
-      final logger = _MockLogger();
 
-      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+      await renderToDirectory(spec: spec, outDir: out);
       expect(out.childFile('lib/model/get_user200_response.dart'), exists);
     });
 
@@ -524,9 +514,8 @@ void main() {
         },
       };
       final out = fs.directory('spacetraders');
-      final logger = _MockLogger();
 
-      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+      await renderToDirectory(spec: spec, outDir: out);
       expect(
         out.childDirectory('lib/model'),
         hasFiles([
@@ -573,9 +562,8 @@ void main() {
         },
       };
       final out = fs.directory('spacetraders');
-      final logger = _MockLogger();
 
-      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+      await renderToDirectory(spec: spec, outDir: out);
       expect(
         out.childFile('lib/model/purchase_cargo_request.dart'),
         isNot(exists),
@@ -618,9 +606,8 @@ void main() {
         },
       };
       final out = fs.directory('spacetraders');
-      final logger = _MockLogger();
 
-      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+      await renderToDirectory(spec: spec, outDir: out);
       expect(out.childDirectory('lib/api'), hasFiles(['default_api.dart']));
     });
 
@@ -659,8 +646,8 @@ void main() {
         },
       };
       final out = fs.directory('spacetraders');
-      final logger = _MockLogger();
-      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+
+      await renderToDirectory(spec: spec, outDir: out);
       expect(
         out.childDirectory('lib/model'),
         hasFiles(['get_user200_response.dart']),
@@ -710,11 +697,45 @@ void main() {
         },
       };
       final out = fs.directory('spacetraders');
-      final logger = _MockLogger();
 
-      await renderToDirectory(spec: spec, outDir: out, logger: logger);
+      await renderToDirectory(spec: spec, outDir: out);
       expect(out.childFile('lib/api/default_api.dart'), exists);
       expect(out.childDirectory('lib/model'), isNot(exists));
+    });
+
+    test('in=cookie and in=header not supported', () async {
+      final fs = MemoryFileSystem.test();
+      Map<String, dynamic> withIn(String sendIn) {
+        return {
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'summary': 'Get user',
+                'parameters': [
+                  {
+                    'name': 'foo',
+                    'schema': {'type': 'string'},
+                    'in': sendIn,
+                  },
+                ],
+              },
+            },
+          },
+        };
+      }
+
+      await expectLater(renderToDirectory(spec: withIn('query')), completes);
+      await expectLater(
+        renderToDirectory(spec: withIn('cookie')),
+        throwsA(isA<UnimplementedError>()),
+      );
+      await expectLater(
+        renderToDirectory(spec: withIn('header')),
+        throwsA(isA<UnimplementedError>()),
+      );
     });
   });
 }

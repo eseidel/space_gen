@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:spacetraders/api_client.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model/create_chart201_response.dart';
 import 'package:spacetraders/model/create_ship_ship_scan201_response.dart';
 import 'package:spacetraders/model/create_ship_system_scan201_response.dart';
@@ -71,13 +73,20 @@ class FleetApi {
       queryParameters: {'page': page.toString(), 'limit': limit.toString()},
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetMyShips200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getMyShips');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getMyShips',
+    );
   }
 
   Future<PurchaseShip201Response> purchaseShip(
@@ -89,13 +98,20 @@ class FleetApi {
       bodyJson: purchaseShipRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return PurchaseShip201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load purchaseShip');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $purchaseShip',
+    );
   }
 
   Future<GetMyShip200Response> getMyShip(String shipSymbol) async {
@@ -104,13 +120,20 @@ class FleetApi {
       path: '/my/ships/{shipSymbol}'.replaceAll('{shipSymbol}', shipSymbol),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetMyShip200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getMyShip');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getMyShip',
+    );
   }
 
   Future<CreateChart201Response> createChart(String shipSymbol) async {
@@ -122,13 +145,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return CreateChart201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load createChart');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $createChart',
+    );
   }
 
   Future<NegotiateContract201Response> negotiateContract(
@@ -142,13 +172,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return NegotiateContract201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load negotiateContract');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $negotiateContract',
+    );
   }
 
   Future<GetShipCooldown200Response> getShipCooldown(String shipSymbol) async {
@@ -160,13 +197,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetShipCooldown200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getShipCooldown');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getShipCooldown',
+    );
   }
 
   Future<DockShip200Response> dockShip(String shipSymbol) async {
@@ -178,13 +222,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return DockShip200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load dockShip');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $dockShip',
+    );
   }
 
   Future<ExtractResources201Response> extractResources(
@@ -198,13 +249,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return ExtractResources201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load extractResources');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $extractResources',
+    );
   }
 
   Future<ExtractResourcesWithSurvey201Response> extractResourcesWithSurvey(
@@ -220,13 +278,20 @@ class FleetApi {
       bodyJson: survey?.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return ExtractResourcesWithSurvey201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load extractResourcesWithSurvey');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $extractResourcesWithSurvey',
+    );
   }
 
   Future<Jettison200Response> jettison(
@@ -242,13 +307,20 @@ class FleetApi {
       bodyJson: jettisonRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return Jettison200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load jettison');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $jettison',
+    );
   }
 
   Future<JumpShip200Response> jumpShip(
@@ -264,13 +336,20 @@ class FleetApi {
       bodyJson: jumpShipRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return JumpShip200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load jumpShip');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $jumpShip',
+    );
   }
 
   Future<CreateShipSystemScan201Response> createShipSystemScan(
@@ -284,13 +363,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return CreateShipSystemScan201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load createShipSystemScan');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $createShipSystemScan',
+    );
   }
 
   Future<CreateShipWaypointScan201Response> createShipWaypointScan(
@@ -304,13 +390,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return CreateShipWaypointScan201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load createShipWaypointScan');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $createShipWaypointScan',
+    );
   }
 
   Future<CreateShipShipScan201Response> createShipShipScan(
@@ -324,13 +417,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return CreateShipShipScan201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load createShipShipScan');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $createShipShipScan',
+    );
   }
 
   Future<GetScrapShip200Response> getScrapShip(String shipSymbol) async {
@@ -342,13 +442,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetScrapShip200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getScrapShip');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getScrapShip',
+    );
   }
 
   Future<ScrapShip200Response> scrapShip(String shipSymbol) async {
@@ -360,13 +467,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return ScrapShip200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load scrapShip');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $scrapShip',
+    );
   }
 
   Future<NavigateShip200Response> navigateShip(
@@ -382,13 +496,20 @@ class FleetApi {
       bodyJson: navigateShipRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return NavigateShip200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load navigateShip');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $navigateShip',
+    );
   }
 
   Future<WarpShip200Response> warpShip(
@@ -404,13 +525,20 @@ class FleetApi {
       bodyJson: warpShipRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return WarpShip200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load warpShip');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $warpShip',
+    );
   }
 
   Future<OrbitShip200Response> orbitShip(String shipSymbol) async {
@@ -422,13 +550,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return OrbitShip200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load orbitShip');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $orbitShip',
+    );
   }
 
   Future<PurchaseCargo201Response> purchaseCargo(
@@ -444,13 +579,20 @@ class FleetApi {
       bodyJson: purchaseCargoRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return PurchaseCargo201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load purchaseCargo');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $purchaseCargo',
+    );
   }
 
   Future<ShipRefine201Response> shipRefine(
@@ -466,13 +608,20 @@ class FleetApi {
       bodyJson: shipRefineRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return ShipRefine201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load shipRefine');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $shipRefine',
+    );
   }
 
   Future<RefuelShip200Response> refuelShip(
@@ -488,13 +637,20 @@ class FleetApi {
       bodyJson: refuelShipRequest?.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return RefuelShip200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load refuelShip');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $refuelShip',
+    );
   }
 
   Future<GetRepairShip200Response> getRepairShip(String shipSymbol) async {
@@ -506,13 +662,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetRepairShip200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getRepairShip');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getRepairShip',
+    );
   }
 
   Future<RepairShip200Response> repairShip(String shipSymbol) async {
@@ -524,13 +687,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return RepairShip200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load repairShip');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $repairShip',
+    );
   }
 
   Future<SellCargo201Response> sellCargo(
@@ -546,13 +716,20 @@ class FleetApi {
       bodyJson: sellCargoRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return SellCargo201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load sellCargo');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $sellCargo',
+    );
   }
 
   Future<SiphonResources201Response> siphonResources(String shipSymbol) async {
@@ -564,13 +741,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return SiphonResources201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load siphonResources');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $siphonResources',
+    );
   }
 
   Future<CreateSurvey201Response> createSurvey(String shipSymbol) async {
@@ -582,13 +766,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return CreateSurvey201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load createSurvey');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $createSurvey',
+    );
   }
 
   Future<TransferCargo200Response> transferCargo(
@@ -604,13 +795,20 @@ class FleetApi {
       bodyJson: transferCargoRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return TransferCargo200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load transferCargo');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $transferCargo',
+    );
   }
 
   Future<GetMyShipCargo200Response> getMyShipCargo(String shipSymbol) async {
@@ -622,13 +820,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetMyShipCargo200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getMyShipCargo');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getMyShipCargo',
+    );
   }
 
   Future<GetShipModules200Response> getShipModules(String shipSymbol) async {
@@ -640,13 +845,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetShipModules200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getShipModules');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getShipModules',
+    );
   }
 
   Future<InstallShipModule201Response> installShipModule(
@@ -662,13 +874,20 @@ class FleetApi {
       bodyJson: installShipModuleRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return InstallShipModule201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load installShipModule');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $installShipModule',
+    );
   }
 
   Future<RemoveShipModule201Response> removeShipModule(
@@ -684,13 +903,20 @@ class FleetApi {
       bodyJson: removeShipModuleRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return RemoveShipModule201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load removeShipModule');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $removeShipModule',
+    );
   }
 
   Future<GetMounts200Response> getMounts(String shipSymbol) async {
@@ -702,13 +928,20 @@ class FleetApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetMounts200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getMounts');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getMounts',
+    );
   }
 
   Future<InstallMount201Response> installMount(
@@ -724,13 +957,20 @@ class FleetApi {
       bodyJson: installMountRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return InstallMount201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load installMount');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $installMount',
+    );
   }
 
   Future<RemoveMount201Response> removeMount(
@@ -746,13 +986,20 @@ class FleetApi {
       bodyJson: removeMountRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return RemoveMount201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load removeMount');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $removeMount',
+    );
   }
 
   Future<GetShipNav200Response> getShipNav(String shipSymbol) async {
@@ -761,13 +1008,20 @@ class FleetApi {
       path: '/my/ships/{shipSymbol}/nav'.replaceAll('{shipSymbol}', shipSymbol),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetShipNav200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getShipNav');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getShipNav',
+    );
   }
 
   Future<PatchShipNav200Response> patchShipNav(
@@ -780,12 +1034,19 @@ class FleetApi {
       bodyJson: patchShipNavRequest?.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return PatchShipNav200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load patchShipNav');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $patchShipNav',
+    );
   }
 }

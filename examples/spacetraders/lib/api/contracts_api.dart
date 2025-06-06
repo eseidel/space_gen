@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:spacetraders/api_client.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model/accept_contract200_response.dart';
 import 'package:spacetraders/model/deliver_contract200_response.dart';
 import 'package:spacetraders/model/deliver_contract_request.dart';
@@ -24,13 +26,20 @@ class ContractsApi {
       queryParameters: {'page': page.toString(), 'limit': limit.toString()},
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetContracts200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getContracts');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getContracts',
+    );
   }
 
   Future<GetContract200Response> getContract(String contractId) async {
@@ -39,13 +48,20 @@ class ContractsApi {
       path: '/my/contracts/{contractId}'.replaceAll('{contractId}', contractId),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetContract200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getContract');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getContract',
+    );
   }
 
   Future<AcceptContract200Response> acceptContract(String contractId) async {
@@ -57,13 +73,20 @@ class ContractsApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return AcceptContract200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load acceptContract');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $acceptContract',
+    );
   }
 
   Future<FulfillContract200Response> fulfillContract(String contractId) async {
@@ -75,13 +98,20 @@ class ContractsApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return FulfillContract200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load fulfillContract');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $fulfillContract',
+    );
   }
 
   Future<DeliverContract200Response> deliverContract(
@@ -97,12 +127,19 @@ class ContractsApi {
       bodyJson: deliverContractRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return DeliverContract200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load deliverContract');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $deliverContract',
+    );
   }
 }

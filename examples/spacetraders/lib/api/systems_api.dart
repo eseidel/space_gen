@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:spacetraders/api_client.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model/get_construction200_response.dart';
 import 'package:spacetraders/model/get_jump_gate200_response.dart';
 import 'package:spacetraders/model/get_market200_response.dart';
@@ -30,13 +32,20 @@ class SystemsApi {
       queryParameters: {'page': page.toString(), 'limit': limit.toString()},
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetSystems200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getSystems');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getSystems',
+    );
   }
 
   Future<GetSystem200Response> getSystem(String systemSymbol) async {
@@ -48,13 +57,20 @@ class SystemsApi {
       ),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetSystem200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getSystem');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getSystem',
+    );
   }
 
   Future<GetSystemWaypoints200Response> getSystemWaypoints(
@@ -78,13 +94,20 @@ class SystemsApi {
       },
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetSystemWaypoints200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getSystemWaypoints');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getSystemWaypoints',
+    );
   }
 
   Future<GetWaypoint200Response> getWaypoint(
@@ -98,13 +121,20 @@ class SystemsApi {
           .replaceAll('{waypointSymbol}', waypointSymbol),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetWaypoint200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getWaypoint');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getWaypoint',
+    );
   }
 
   Future<GetConstruction200Response> getConstruction(
@@ -118,13 +148,20 @@ class SystemsApi {
           .replaceAll('{waypointSymbol}', waypointSymbol),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetConstruction200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getConstruction');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getConstruction',
+    );
   }
 
   Future<SupplyConstruction201Response> supplyConstruction(
@@ -141,13 +178,20 @@ class SystemsApi {
       bodyJson: supplyConstructionRequest.toJson(),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return SupplyConstruction201Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load supplyConstruction');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $supplyConstruction',
+    );
   }
 
   Future<GetMarket200Response> getMarket(
@@ -161,13 +205,20 @@ class SystemsApi {
           .replaceAll('{waypointSymbol}', waypointSymbol),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetMarket200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getMarket');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getMarket',
+    );
   }
 
   Future<GetJumpGate200Response> getJumpGate(
@@ -181,13 +232,20 @@ class SystemsApi {
           .replaceAll('{waypointSymbol}', waypointSymbol),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetJumpGate200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getJumpGate');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getJumpGate',
+    );
   }
 
   Future<GetShipyard200Response> getShipyard(
@@ -201,12 +259,19 @@ class SystemsApi {
           .replaceAll('{waypointSymbol}', waypointSymbol),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetShipyard200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getShipyard');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getShipyard',
+    );
   }
 }

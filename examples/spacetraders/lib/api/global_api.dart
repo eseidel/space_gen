@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:spacetraders/api_client.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model/get_error_codes200_response.dart';
 import 'package:spacetraders/model/get_status200_response.dart';
 
@@ -13,13 +15,20 @@ class GlobalApi {
   Future<GetStatus200Response> getStatus() async {
     final response = await client.invokeApi(method: Method.get, path: '/');
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetStatus200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getStatus');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getStatus',
+    );
   }
 
   Future<GetErrorCodes200Response> getErrorCodes() async {
@@ -28,12 +37,19 @@ class GlobalApi {
       path: '/error-codes',
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
       return GetErrorCodes200Response.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,
       );
-    } else {
-      throw Exception('Failed to load getErrorCodes');
     }
+
+    throw ApiException(
+      response.statusCode,
+      'Unhandled response from $getErrorCodes',
+    );
   }
 }

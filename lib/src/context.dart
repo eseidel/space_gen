@@ -86,7 +86,15 @@ extension _EndpointGeneration on Endpoint {
     final pathParameters = bySendIn['path'] ?? [];
     final queryParameters = bySendIn['query'] ?? [];
     final hasQueryParameters = queryParameters.isNotEmpty;
-
+    final cookieParameters = bySendIn['cookie'] ?? [];
+    if (cookieParameters.isNotEmpty) {
+      throw UnimplementedError('Cookie parameters are not yet supported.');
+    }
+    final headerParameters = bySendIn['header'] ?? [];
+    if (headerParameters.isNotEmpty) {
+      throw UnimplementedError('Header parameters are not yet supported.');
+    }
+ 
     return {
       'methodName': methodName,
       'httpMethod': method.name,
@@ -875,7 +883,8 @@ class _Context {
     final renderedModels = rendered.map(refRegistry.get<Schema>);
     _renderPublicApi(renderedModels);
     // Consider running pub upgrade here to ensure packages are up to date.
-    _runDart(['pub', 'get']);
+    // Might need to make offline configurable?
+    _runDart(['pub', 'get', '--offline']);
     // Run format first to add missing commas.
     _runDart(['format', '.']);
     // Then run fix to clean up various other things.
@@ -1072,7 +1081,11 @@ void _renderApi(_RenderContext renderContext, _Context context, Api api) {
       .toList();
   renderContext.collectApi(api);
 
-  final imports = renderContext.sortedPackageImports(context);
+  final imports = {
+    ...renderContext.sortedPackageImports(context),
+    'dart:io', // For HttpStatus
+    'package:${context.packageName}/api_exception.dart',
+  };
 
   // The OpenAPI generator only includes the APIs in the api/ directory
   // all other classes and enums go in the model/ directory even ones
