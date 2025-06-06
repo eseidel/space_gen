@@ -34,7 +34,7 @@ class ApiClient {
     Map<String, dynamic>? bodyJson,
   }) async {
     final uri = resolvePath(path);
-    if (method == Method.get && body != null) {
+    if (method == Method.get && bodyJson != null) {
       throw ArgumentError('Body is not allowed for GET requests');
     }
 
