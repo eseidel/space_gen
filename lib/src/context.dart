@@ -94,7 +94,7 @@ extension _EndpointGeneration on Endpoint {
     if (headerParameters.isNotEmpty) {
       throw UnimplementedError('Header parameters are not yet supported.');
     }
- 
+
     return {
       'methodName': methodName,
       'httpMethod': method.name,

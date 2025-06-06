@@ -30,6 +30,11 @@ dart run space_gen
 * GetSupplyChain200ResponseDataExportToImportMap is unnecessary?
 * Simplify hasAdditionalProperties.
 * Handle dynamic better (e.g. RefuelShipRequest.fromCargo)
+* Fix toString hack for queryParameters.
+
+Is the body sometimes passed in as an object, and sometimes created by
+the endpoint?  Or is it always created by the endpoint?
+
 
 ## Advantages over Open API Generator 7.0.0
 * Dart 3.0+ only (sound null safety)
