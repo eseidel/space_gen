@@ -29,7 +29,7 @@ dart run space_gen
 * Wire up Authentication and sending of bearer header.
 * GetSupplyChain200ResponseDataExportToImportMap is unnecessary?
 * Simplify hasAdditionalProperties.
-* Handle dynamic better (e.g. RefuelShipRequest.fromCargo)
+* Remove anyOf hack for RefuelShipRequest.fromCargo.
 * Fix toString hack for queryParameters.
 
 Is the body sometimes passed in as an object, and sometimes created by

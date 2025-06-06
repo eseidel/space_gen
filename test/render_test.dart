@@ -704,7 +704,6 @@ void main() {
     });
 
     test('in=cookie and in=header not supported', () async {
-      final fs = MemoryFileSystem.test();
       Map<String, dynamic> withIn(String sendIn) {
         return {
           'servers': [
