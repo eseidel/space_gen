@@ -1,7 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
-import 'package:space_gen/src/logger.dart';
 
 /// A typedef representing a json object.
 typedef Json = Map<String, dynamic>;
@@ -371,7 +370,9 @@ class Components extends Equatable {
 
 // Spec calls this the "OpenAPI Object"
 // https://spec.openapis.org/oas/v3.1.0#openapi-object
-
+// This is not a one-to-one mapping with the Spec, rather it is intended
+// as a superset that may include extra information from parsing
+// e.g. snakeCaseName in some cases.
 @immutable
 class Spec extends Equatable {
   const Spec(this.serverUrl, this.endpoints, this.components);
@@ -384,165 +385,4 @@ class Spec extends Equatable {
 
   @override
   List<Object?> get props => [serverUrl, endpoints, components];
-}
-
-class RefRegistry {
-  RefRegistry();
-
-  final objectsByUri = <Uri, dynamic>{};
-
-  Iterable<Uri> get uris => objectsByUri.keys;
-
-  T get<T>(Uri uri) {
-    final object = objectsByUri[uri];
-    if (object == null) {
-      throw StateError('$T not found: $uri');
-    }
-    if (object is! T) {
-      throw StateError('Expected $T, got $object');
-    }
-    return object;
-  }
-
-  void register(Uri uri, dynamic object) {
-    if (objectsByUri.containsKey(uri)) {
-      logger
-        ..warn('Object already registered: $uri')
-        ..info('before: ${objectsByUri[uri]}')
-        ..info('after: $object');
-      throw Exception('Object already registered: $uri');
-    }
-    if (object is Schema) {
-      final schema = object;
-      final byName = objectsByUri.entries
-          .where((e) => e.value is Schema)
-          .firstWhereOrNull(
-            (e) => (e.value as Schema).snakeName == schema.snakeName,
-          );
-      if (byName != null) {
-        logger
-          ..warn('Schema already registered by name: ${schema.snakeName}')
-          ..info('existing uri: ${byName.key}')
-          ..info('existing schema: ${byName.value}')
-          ..info('new uri: $uri')
-          ..info('new schema: $schema');
-      }
-    }
-    objectsByUri[uri] = object;
-  }
-}
-
-/// Json pointer is a string that can be used to reference a value in a json
-/// object.
-/// https://spec.openapis.org/oas/v3.1.0#json-pointer
-@immutable
-class JsonPointer extends Equatable {
-  /// Create a new JsonPointer from a list of parts.
-  const JsonPointer(this.parts);
-
-  /// The parts of the json pointer.
-  final List<String> parts;
-
-  /// This pointer encoded as a url-ready string.
-  String get location => '/${parts.map(urlEncode).join('/')}';
-
-  /// Encode a part of the json pointer as a url-ready string.
-  static String urlEncode(String part) =>
-      part.replaceAll('~', '~0').replaceAll('/', '~1');
-
-  @override
-  String toString() => '/${parts.join('/')}';
-
-  @override
-  List<Object?> get props => [parts];
-}
-
-/// Immutable context for parsing a spec.
-/// SchemaRegistry is internally mutable, so this is not truly immutable.
-class ParseContext {
-  ParseContext({
-    required this.baseUrl,
-    required this.pointerParts,
-    required this.snakeNameStack,
-    required this.refRegistry,
-    required this.isTopLevelComponent,
-  }) {
-    if (baseUrl.hasFragment) {
-      throw ArgumentError.value(
-        baseUrl,
-        'baseUrl',
-        'Base url cannot have a fragment',
-      );
-    }
-  }
-  ParseContext.initial(this.baseUrl)
-    : pointerParts = [],
-      snakeNameStack = [],
-      refRegistry = RefRegistry(),
-      isTopLevelComponent = false;
-
-  /// The base url of the spec being parsed.
-  final Uri baseUrl;
-
-  /// Json pointer location of the current schema.
-  final List<String> pointerParts;
-
-  /// Stack of name parts for the current schema.
-  final List<String> snakeNameStack;
-
-  /// Whether the current schema is a top-level component.
-  final bool isTopLevelComponent;
-
-  JsonPointer get pointer => JsonPointer(pointerParts);
-
-  String get snakeName {
-    // To match OpenAPI, we don't put a _ before numbers.
-    final buf = StringBuffer();
-    for (final e in snakeNameStack) {
-      if (buf.isNotEmpty && (e.isNotEmpty && int.tryParse(e[0]) == null)) {
-        buf.write('_');
-      }
-      buf.write(e);
-    }
-    return buf.toString();
-  }
-
-  // Registry of all the schemas we've parsed so far.
-  // RefRegistry is internally mutable.
-  final RefRegistry refRegistry;
-
-  ParseContext _addPart(String part) =>
-      copyWith(pointerParts: [...pointerParts, part]);
-
-  ParseContext key(String key) => _addPart(key);
-  ParseContext index(int index) => _addPart(index.toString());
-
-  void addObject(dynamic object) {
-    final uri = baseUrl.replace(fragment: pointer.toString());
-    refRegistry.register(uri, object);
-  }
-
-  /// Add a snake name to the current context.
-  /// Also resets the top-level component flag by default.
-  ParseContext addSnakeName(
-    String snakeName, {
-    bool isTopLevelComponent = false,
-  }) => copyWith(
-    snakeNameStack: [...snakeNameStack, snakeName],
-    isTopLevelComponent: isTopLevelComponent,
-  );
-
-  ParseContext copyWith({
-    List<String>? pointerParts,
-    List<String>? snakeNameStack,
-    bool? isTopLevelComponent,
-  }) {
-    return ParseContext(
-      baseUrl: baseUrl,
-      pointerParts: pointerParts ?? this.pointerParts,
-      snakeNameStack: snakeNameStack ?? this.snakeNameStack,
-      refRegistry: refRegistry,
-      isTopLevelComponent: isTopLevelComponent ?? this.isTopLevelComponent,
-    );
-  }
 }
