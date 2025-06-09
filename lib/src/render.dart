@@ -2,6 +2,7 @@ import 'package:file/file.dart';
 import 'package:space_gen/src/context.dart';
 import 'package:space_gen/src/loader.dart';
 import 'package:space_gen/src/logger.dart';
+import 'package:space_gen/src/parser.dart';
 import 'package:space_gen/src/spec.dart';
 import 'package:space_gen/src/visitor.dart';
 

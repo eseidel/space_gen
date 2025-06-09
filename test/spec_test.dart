@@ -1,3 +1,4 @@
+import 'package:space_gen/src/parser.dart';
 import 'package:space_gen/src/spec.dart';
 import 'package:test/test.dart';
 
