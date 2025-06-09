@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:file/file.dart';
 import 'package:space_gen/src/context.dart';
 import 'package:space_gen/src/loader.dart';
@@ -6,7 +7,7 @@ import 'package:space_gen/src/parser.dart';
 import 'package:space_gen/src/spec.dart';
 import 'package:space_gen/src/visitor.dart';
 
-void _printSpecStats(ParseContext parseContext, Spec spec) {
+void _printSpecStats(ParseContext parseContext, OpenApi spec) {
   logger.detail('Registered schemas:');
   for (final uri in parseContext.refRegistry.uris) {
     logger.detail('  - $uri');
@@ -14,7 +15,7 @@ void _printSpecStats(ParseContext parseContext, Spec spec) {
 
   // Print stats about the spec.
   logger.detail('Spec:');
-  for (final api in spec.tags) {
+  for (final api in spec.tags.sorted()) {
     logger.detail('  - $api');
     final endpoints = spec.endpoints.where((e) => e.tag == api);
     for (final endpoint in endpoints) {
@@ -37,7 +38,7 @@ Future<void> loadAndRenderSpec({
   final cache = Cache(fs);
   final parseContext = ParseContext.initial(specUri);
   final specJson = await cache.load(specUri);
-  final spec = parseSpec(specJson, parseContext);
+  final spec = parseOpenApi(specJson, parseContext);
   _printSpecStats(parseContext, spec);
 
   // Pre-warm the cache. Rendering assumes all refs are present in the cache.

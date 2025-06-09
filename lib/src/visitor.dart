@@ -2,7 +2,7 @@ import 'package:space_gen/src/spec.dart';
 
 /// Subclass this and override the methods you want to visit.
 abstract class Visitor {
-  void visitSpec(Spec spec) {}
+  void visitRoot(OpenApi root) {}
   void visitEndpoint(Endpoint endpoint) {}
   void visitParameter(Parameter parameter) {}
   void visitReference<T>(RefOr<T> ref) {}
@@ -22,10 +22,10 @@ class _RefCollector extends Visitor {
   }
 }
 
-Iterable<String> collectRefs(Spec spec) {
+Iterable<String> collectRefs(OpenApi root) {
   final refs = <String>{};
   final collector = _RefCollector(refs);
-  SpecWalker(collector).walkSpec(spec);
+  SpecWalker(collector).walkRoot(root);
   return refs;
 }
 
@@ -36,9 +36,9 @@ class SpecWalker {
 
   final Visitor visitor;
 
-  void walkSpec(Spec spec) {
-    visitor.visitSpec(spec);
-    for (final endpoint in spec.endpoints) {
+  void walkRoot(OpenApi root) {
+    visitor.visitRoot(root);
+    for (final endpoint in root.endpoints) {
       _endpoint(endpoint);
     }
   }

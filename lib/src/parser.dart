@@ -5,35 +5,83 @@ import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/spec.dart';
 import 'package:space_gen/src/string.dart';
 
+T _required<T>(ParseContext context, Json json, String key) {
+  final value = json[key];
+  if (value == null) {
+    throw FormatException(
+      'Required key not found: $key in ${context.pointer}: $json',
+    );
+  }
+  return value as T;
+}
+
+void _expect(bool condition, ParseContext context, Json json, String message) {
+  if (!condition) {
+    throw FormatException('$message in ${context.pointer}');
+  }
+}
+
+T? _optional<T>(ParseContext context, Json json, String key) {
+  final value = json[key];
+  if (value is T?) {
+    return value;
+  }
+  throw FormatException(
+    'Key $key is not of type $T: $value (in ${context.pointer})',
+  );
+}
+
+// void _unimplemented(Json json, String key) {
+//   final value = json[key];
+//   if (value != null) {
+//     throw UnimplementedError('Unsupported key: $key in $json');
+//   }
+// }
+
+void _ignored(ParseContext context, Json json, String key) {
+  final value = json[key];
+  if (value != null) {
+    logger.detail('Ignoring key: $key in ${context.pointer}');
+  }
+}
+
+void _warn(ParseContext context, Json json, String message) {
+  logger.warn('$message in ${context.pointer}');
+}
+
+void _error(ParseContext context, Json json, String message) {
+  throw FormatException('$message in ${context.pointer}');
+}
+
 /// Parse a parameter from a json object.
 Parameter parseParameter({required Json json, required ParseContext context}) {
-  final schema = _optional<Json>(json, 'schema');
+  final schema = _optional<Json>(context, json, 'schema');
   final hasSchema = schema != null;
-  final hasContent = _optional<Json>(json, 'content') != null;
+  final hasContent = _optional<Json>(context, json, 'content') != null;
 
   // Common fields.
-  final name = _required<String>(json, 'name');
-  final description = _optional<String>(json, 'description');
-  final required = _optional<bool>(json, 'required') ?? false;
-  final sendIn = SendIn.fromJson(_required<String>(json, 'in'));
-  _ignored(json, 'deprecated');
-  _ignored(json, 'allowEmptyValue');
+  final name = _required<String>(context, json, 'name');
+  final description = _optional<String>(context, json, 'description');
+  final required = _optional<bool>(context, json, 'required') ?? false;
+  final sendIn = SendIn.fromJson(_required<String>(context, json, 'in'));
+  _ignored(context, json, 'deprecated');
+  _ignored(context, json, 'allowEmptyValue');
 
   final SchemaRef type;
   if (hasSchema) {
     if (hasContent) {
-      _error(json, 'Parameter cannot have both schema and content');
+      _error(context, json, 'Parameter cannot have both schema and content');
     }
     // Schema fields.
     type = parseSchemaOrRef(json: schema, context: context.key('schema'));
-    _ignored(json, 'style');
-    _ignored(json, 'explode');
-    _ignored(json, 'allowReserved');
-    _ignored(json, 'example');
-    _ignored(json, 'examples');
+    _ignored(context, json, 'style');
+    _ignored(context, json, 'explode');
+    _ignored(context, json, 'allowReserved');
+    _ignored(context, json, 'example');
+    _ignored(context, json, 'examples');
   } else {
     if (!hasSchema && !hasContent) {
-      _error(json, 'Parameter must have either schema or content');
+      _error(context, json, 'Parameter must have either schema or content');
     }
     // Content fields.
     // Use an explicit throw so Dart can see `type` is always set.
@@ -78,16 +126,16 @@ Schema parseSchema(Json json, ParseContext context) {
     );
   }
 
-  _ignored(json, 'nullable');
-  _ignored(json, 'readOnly');
-  _ignored(json, 'writeOnly');
-  _ignored(json, 'discriminator');
-  _ignored(json, 'xml');
-  _ignored(json, 'example');
-  _ignored(json, 'examples');
-  _ignored(json, 'externalDocs');
+  _ignored(context, json, 'nullable');
+  _ignored(context, json, 'readOnly');
+  _ignored(context, json, 'writeOnly');
+  _ignored(context, json, 'discriminator');
+  _ignored(context, json, 'xml');
+  _ignored(context, json, 'example');
+  _ignored(context, json, 'examples');
+  _ignored(context, json, 'externalDocs');
 
-  final defaultValue = _optional<dynamic>(json, 'default');
+  final defaultValue = _optional<dynamic>(context, json, 'default');
 
   final required = json['required'] as List<dynamic>? ?? [];
   final description = json['description'] as String? ?? '';
@@ -238,13 +286,13 @@ Map<String, SchemaRef> parseProperties({
 }
 
 RequestBody parseRequestBody(Json requestBodyJson, ParseContext context) {
-  final content = _required<Json>(requestBodyJson, 'content');
-  final applicationJson = _required<Json>(content, 'application/json');
+  final content = _required<Json>(context, requestBodyJson, 'content');
+  final applicationJson = _required<Json>(context, content, 'application/json');
   final schema = parseSchemaOrRef(
-    json: _required<Json>(applicationJson, 'schema'),
+    json: _required<Json>(context, applicationJson, 'schema'),
     context: context.addSnakeName('request').key('requestBody'),
   );
-  _ignored(requestBodyJson, 'description');
+  _ignored(context, requestBodyJson, 'description');
 
   final isRequired = requestBodyJson['required'] as bool? ?? false;
   final body = RequestBody(
@@ -270,12 +318,13 @@ Endpoint parseEndpoint({
   final context = parentContext.addSnakeName(snakeName);
 
   final responses = parseResponses(
-    _optional<Json>(json, 'responses'),
+    _optional<Json>(context, json, 'responses'),
     context.key('responses'),
   );
-  final tags = _optional<List<dynamic>>(json, 'tags');
+  final tags = _optional<List<dynamic>>(context, json, 'tags');
   final tag = tags?.firstOrNull as String? ?? 'Default';
-  final parametersJson = _optional<List<dynamic>>(json, 'parameters') ?? [];
+  final parametersJson =
+      _optional<List<dynamic>>(context, json, 'parameters') ?? [];
   final parameters = parametersJson
       .cast<Json>()
       .indexed
@@ -407,17 +456,48 @@ Components parseComponents(Json? json, ParseContext context) {
   return Components(schemas: schemas, requestBodies: requestBodies);
 }
 
-Spec parseSpec(Json json, ParseContext context) {
-  final servers = _required<List<dynamic>>(json, 'servers');
-  final firstServer = servers.first as Json;
-  final serverUrl = _required<String>(firstServer, 'url');
+Info parseInfo(Json json, ParseContext context) {
+  final title = _required<String>(context, json, 'title');
+  final version = _required<String>(context, json, 'version');
+  _ignored(context, json, 'summary');
+  _ignored(context, json, 'description');
+  _ignored(context, json, 'termsOfService');
+  _ignored(context, json, 'contact');
+  _ignored(context, json, 'license');
+  return Info(title, version);
+}
 
-  final paths = _required<Json>(json, 'paths');
+OpenApi parseOpenApi(Json json, ParseContext context) {
+  final minimumVersion = Version.parse('3.1.0');
+  final versionString = _required<String>(context, json, 'openapi');
+  final version = Version.parse(versionString);
+  if (version < minimumVersion) {
+    _warn(
+      context,
+      json,
+      '$version may not be supported, only tested with 3.1.0',
+    );
+  }
+
+  final infoJson = _required<Json>(context, json, 'info');
+  final info = parseInfo(infoJson, context.key('info'));
+
+  final servers = _required<List<dynamic>>(context, json, 'servers');
+  final firstServer = servers.first as Json;
+  final serverUrl = _required<String>(context, firstServer, 'url');
+
+  final paths = _required<Json>(context, json, 'paths');
   final endpoints = <Endpoint>[];
   for (final pathEntry in paths.entries) {
     final path = pathEntry.key;
-    _expect(path.isNotEmpty, json, 'Path cannot be empty');
-    _expect(path.startsWith('/'), json, 'Path must start with /: $path');
+    final pathContext = context.key('paths').key(path);
+    _expect(path.isNotEmpty, pathContext, json, 'Path cannot be empty');
+    _expect(
+      path.startsWith('/'),
+      pathContext,
+      json,
+      'Path must start with /: $path',
+    );
     final pathValue = pathEntry.value as Json;
     for (final method in Method.values) {
       final methodValue = pathValue[method.key] as Json?;
@@ -426,7 +506,7 @@ Spec parseSpec(Json json, ParseContext context) {
       }
       endpoints.add(
         parseEndpoint(
-          parentContext: context.key('paths').key(path).key(method.key),
+          parentContext: pathContext.key(method.key),
           path: path,
           json: methodValue,
           method: method,
@@ -438,47 +518,13 @@ Spec parseSpec(Json json, ParseContext context) {
     json['components'] as Json?,
     context.key('components'),
   );
-  return Spec(Uri.parse(serverUrl), endpoints, components);
-}
-
-T _required<T>(Json json, String key) {
-  final value = json[key];
-  if (value == null) {
-    throw FormatException('Required key not found: $key in $json');
-  }
-  return value as T;
-}
-
-void _expect(bool condition, Json json, String message) {
-  if (!condition) {
-    throw FormatException('$message in $json');
-  }
-}
-
-T? _optional<T>(Json json, String key) {
-  final value = json[key];
-  if (value is T?) {
-    return value;
-  }
-  throw FormatException('Key $key is not of type $T: $value (from $json)');
-}
-
-// void _unimplemented(Json json, String key) {
-//   final value = json[key];
-//   if (value != null) {
-//     throw UnimplementedError('Unsupported key: $key in $json');
-//   }
-// }
-
-void _ignored(Json json, String key) {
-  final value = json[key];
-  if (value != null) {
-    logger.detail('Ignoring key: $key in $json');
-  }
-}
-
-void _error(Json json, String message) {
-  throw FormatException('$message in $json');
+  return OpenApi(
+    serverUrl: Uri.parse(serverUrl),
+    version: version,
+    info: info,
+    endpoints: endpoints,
+    components: components,
+  );
 }
 
 class RefRegistry {

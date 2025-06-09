@@ -42,8 +42,9 @@ class Api {
   String get fileName => '${name.toLowerCase()}_api';
 }
 
-extension SpecGeneration on Spec {
+extension OpenApiGeneration on OpenApi {
   List<Api> get apis => tags
+      .sorted()
       .map(
         (tag) => Api(
           name: tag,
@@ -681,7 +682,7 @@ class _Context {
   final Uri specUrl;
 
   /// The spec being rendered.
-  final Spec spec;
+  final OpenApi spec;
 
   /// The output directory.
   final Directory outDir;
@@ -939,7 +940,7 @@ void renderSpec({
   required Uri specUri,
   required String packageName,
   required Directory outDir,
-  required Spec spec,
+  required OpenApi spec,
   required RefRegistry refRegistry,
   Directory? templateDir,
   RunProcess? runProcess,

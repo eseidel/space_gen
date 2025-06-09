@@ -1,6 +1,8 @@
-import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
+import 'package:version/version.dart';
+
+export 'package:version/version.dart';
 
 /// A typedef representing a json object.
 typedef Json = Map<String, dynamic>;
@@ -368,21 +370,47 @@ class Components extends Equatable {
   List<Object?> get props => [schemas, requestBodies];
 }
 
-// Spec calls this the "OpenAPI Object"
-// https://spec.openapis.org/oas/v3.1.0#openapi-object
-// This is not a one-to-one mapping with the Spec, rather it is intended
-// as a superset that may include extra information from parsing
-// e.g. snakeCaseName in some cases.
 @immutable
-class Spec extends Equatable {
-  const Spec(this.serverUrl, this.endpoints, this.components);
+class Info extends Equatable {
+  const Info(this.title, this.version);
+  final String title;
+  final String version;
+  @override
+  List<Object?> get props => [title, version];
+}
 
+/// The OpenAPI object.  The root object of a spec.
+/// https://spec.openapis.org/oas/v3.1.0#openapi-object
+/// Objects in this library are not a one-to-one mapping with the spec,
+/// and may include extra information from parsing e.g. snakeCaseName.
+@immutable
+class OpenApi extends Equatable {
+  const OpenApi({
+    required this.serverUrl,
+    required this.version,
+    required this.info,
+    required this.endpoints,
+    required this.components,
+  });
+
+  /// The server url of the spec.
   final Uri serverUrl;
+
+  /// The version of the spec.
+  final Version version;
+
+  /// The info of the spec.
+  final Info info;
+
+  /// The endpoints of the spec.
   final List<Endpoint> endpoints;
+
+  /// The components of the spec.
   final Components components;
 
-  List<String> get tags => endpoints.map((e) => e.tag).toSet().sorted();
+  /// Set of all endpoint tags in the spec.
+  Set<String> get tags => endpoints.map((e) => e.tag).toSet();
 
   @override
-  List<Object?> get props => [serverUrl, endpoints, components];
+  List<Object?> get props => [serverUrl, info, endpoints, components];
 }

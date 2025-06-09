@@ -92,6 +92,8 @@ void main() {
       final fs = MemoryFileSystem.test();
       final out = fs.directory('spacetraders');
       final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
         'servers': [
           {'url': 'https://api.spacetraders.io/v2'},
         ],
@@ -121,6 +123,8 @@ void main() {
     test('smoke test with simple spec', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
         'servers': [
           {'url': 'https://api.spacetraders.io/v2'},
         ],
@@ -148,6 +152,8 @@ void main() {
     test('with real endpoints', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
         'servers': [
           {'url': 'https://api.spacetraders.io/v2'},
         ],
@@ -218,6 +224,8 @@ void main() {
     test('with request body', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
         'servers': [
           {'url': 'https://api.spacetraders.io/v2'},
         ],
@@ -322,6 +330,8 @@ void main() {
     test('with newtype', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
         'servers': [
           {'url': 'https://api.spacetraders.io/v2'},
         ],
@@ -379,6 +389,8 @@ void main() {
     test('with default enum value', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
         'servers': [
           {'url': 'https://api.spacetraders.io/v2'},
         ],
@@ -437,6 +449,8 @@ void main() {
     test('with additionalProperties', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
         'servers': [
           {'url': 'https://api.spacetraders.io/v2'},
         ],
@@ -473,6 +487,8 @@ void main() {
     test('with inner types', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
         'servers': [
           {'url': 'https://api.spacetraders.io/v2'},
         ],
@@ -528,6 +544,8 @@ void main() {
     test('with request body ref', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
         'servers': [
           {'url': 'https://api.spacetraders.io/v2'},
         ],
@@ -574,6 +592,8 @@ void main() {
     test('with boolean and unknown type', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
         'servers': [
           {'url': 'https://api.spacetraders.io/v2'},
         ],
@@ -614,6 +634,8 @@ void main() {
     test('with datetime', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
         'servers': [
           {'url': 'https://api.spacetraders.io/v2'},
         ],
@@ -657,6 +679,8 @@ void main() {
     test('with array', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
         'servers': [
           {'url': 'https://api.spacetraders.io/v2'},
         ],
@@ -706,6 +730,8 @@ void main() {
     test('in=cookie and in=header not supported', () async {
       Map<String, dynamic> withIn(String sendIn) {
         return {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
           'servers': [
             {'url': 'https://api.spacetraders.io/v2'},
           ],
