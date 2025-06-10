@@ -10,8 +10,7 @@ void main() {
   group('OpenApi', () {
     OpenApi parseTestSpec(Map<String, dynamic> json) {
       return parseOpenApi(
-        json,
-        ParseContext.initial(Uri.parse('file:///foo.json')),
+        MapContext.initial(Uri.parse('file:///foo.json'), json),
       );
     }
 
@@ -59,7 +58,20 @@ void main() {
           'enum': [1, 2, 3],
         },
       };
-      expect(() => parseTestSchemas(json), throwsA(isA<UnimplementedError>()));
+      expect(
+        () => parseTestSchemas(json),
+        throwsA(
+          isA<UnimplementedError>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              'enumValues for type=SchemaType.number not supported in '
+              'MapContext(/components/schemas/NumberEnum, '
+              '{type: number, enum: [1, 2, 3]})',
+            ),
+          ),
+        ),
+      );
     });
 
     test('equals', () {
@@ -167,7 +179,81 @@ void main() {
           ],
         },
       };
-      expect(() => parseTestSchemas(json), throwsA(isA<UnimplementedError>()));
+      expect(
+        () => parseTestSchemas(json),
+        throwsA(
+          isA<UnimplementedError>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              'anyOf with 2 items not supported in '
+              'MapContext(/components/schemas/User, '
+              '{anyOf: [{type: boolean}, {type: string}]})',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('allOf with one item', () {
+      final json = {
+        'User': {
+          'allOf': [
+            {'type': 'boolean'},
+          ],
+        },
+      };
+      final schemas = parseTestSchemas(json);
+      expect(schemas['User']!.type, SchemaType.boolean);
+    });
+
+    test('allOf with multiple items', () {
+      final json = {
+        'User': {
+          'allOf': [
+            {'type': 'boolean'},
+            {'type': 'string'},
+          ],
+        },
+      };
+      expect(
+        () => parseTestSchemas(json),
+        throwsA(
+          isA<UnimplementedError>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              'allOf with 2 items not supported in '
+              'MapContext(/components/schemas/User, '
+              '{allOf: [{type: boolean}, {type: string}]})',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('oneOf not supported', () {
+      final json = {
+        'User': {
+          'oneOf': [
+            {'type': 'boolean'},
+          ],
+        },
+      };
+      expect(
+        () => parseTestSchemas(json),
+        throwsA(
+          isA<UnimplementedError>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              'oneOf not supported in '
+              'MapContext(/components/schemas/User, '
+              '{oneOf: [{type: boolean}]})',
+            ),
+          ),
+        ),
+      );
     });
 
     test('components schemas as ref not supported', () {
@@ -261,9 +347,53 @@ void main() {
         ),
       );
     });
-    test('warn on version below 3.1.0', () {
+
+    test('content is not supported', () {
       final json = {
-        'openapi': '3.0.0',
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'summary': 'Get user',
+              'parameters': [
+                {
+                  'name': 'foo',
+                  'in': 'query',
+                  'content': {
+                    'application/json': {
+                      'schema': {'type': 'boolean'},
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      };
+      expect(
+        () => parseTestSpec(json),
+        throwsA(
+          isA<UnimplementedError>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              "'content' not supported in "
+              'MapContext(/paths//users/get/parameters/0, {name: foo, '
+              'in: query, content: {application/json: '
+              '{schema: {type: boolean}}}})',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('warn on version below 3.0.0', () {
+      final json = {
+        'openapi': '2.9.9',
         'info': {'title': 'Space Traders API', 'version': '1.0.0.a.b.c'},
         'servers': [
           {'url': 'https://api.spacetraders.io/v2'},
@@ -279,10 +409,10 @@ void main() {
       final spec = runWithLogger(logger, () => parseTestSpec(json));
       verify(
         () => logger.warn(
-          '3.0.0 may not be supported, only tested with 3.1.0 in /',
+          '2.9.9 < 3.0.0, the lowest known supported version. in /',
         ),
       ).called(1);
-      expect(spec.version, Version.parse('3.0.0'));
+      expect(spec.version, Version.parse('2.9.9'));
       // Info.version is the version of the spec, not the version of the OpenAPI
       // schema used to generate it and can be an arbitrary string.
       expect(spec.info.version, '1.0.0.a.b.c');
@@ -310,7 +440,7 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              'Key responses is not of type Map<String, dynamic>: true (in /paths//users/get)',
+              "'responses' is not of type Map<String, dynamic>: true in /paths//users/get",
             ),
           ),
         ),
@@ -333,6 +463,264 @@ void main() {
             (e) => e.message,
             'message',
             equals('Path cannot be empty in /paths/'),
+          ),
+        ),
+      );
+    });
+
+    test('info is required', () {
+      final json = {
+        'openapi': '3.1.0',
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+      };
+      expect(
+        () => parseTestSpec(json),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals('Key info is required in /'),
+          ),
+        ),
+      );
+    });
+    test('servers is required', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+      };
+      expect(
+        () => parseTestSpec(json),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals('Key servers is required in /'),
+          ),
+        ),
+      );
+    });
+
+    test('path parameters must be strings', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'summary': 'Get user',
+              'parameters': [
+                {
+                  'name': 'foo',
+                  'in': 'path',
+                  'schema': {'type': 'number'},
+                },
+              ],
+            },
+          },
+        },
+      };
+      expect(
+        () => parseTestSpec(json),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              'Path parameters must be strings in /paths//users/get/parameters/0',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('path parameters must be required', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'summary': 'Get user',
+              'parameters': [
+                {
+                  'name': 'foo',
+                  'in': 'path',
+                  'schema': {'type': 'string'},
+                  // required is missing and defaults to false.
+                },
+              ],
+            },
+          },
+        },
+      };
+      expect(
+        () => parseTestSpec(json),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              'Path parameters must be required in /paths//users/get/parameters/0',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('multiple responses not supported', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {'description': 'OK'},
+                '201': {'description': 'Created'},
+              },
+            },
+          },
+        },
+      };
+      expect(
+        () => parseTestSpec(json),
+        throwsA(
+          isA<UnimplementedError>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              'Multiple responses not supported in '
+              'MapContext(/paths//users/get/responses, '
+              '{200: {description: OK}, 201: {description: Created}})',
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('responses without content are ignored', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+      final spec = parseTestSpec(json);
+      // This is not correct, but documents our current behavior.
+      expect(spec.endpoints.first.responses, isEmpty);
+    });
+  });
+
+  group('ParseContext', () {
+    test('MapContext.childAsMap throws on missing child', () {
+      final context = MapContext.initial(Uri.parse('file:///foo.json'), {
+        'foo': {'bar': 'baz'},
+      });
+      expect(context.pointer, const JsonPointer([]));
+      expect(context.childAsMap('foo'), isA<MapContext>());
+      expect(
+        () => context.childAsList('foo'),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals("'foo' is not of type List<dynamic>: {bar: baz} in /"),
+          ),
+        ),
+      );
+      expect(
+        () => context.childAsMap('bar'),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            equals('Key not found: bar in /'),
+          ),
+        ),
+      );
+    });
+
+    test('MapContext.childAsList throws on missing child', () {
+      final context = MapContext.initial(Uri.parse('file:///foo.json'), {
+        'foo': ['bar'],
+      });
+      expect(context.pointer, const JsonPointer([]));
+      expect(context.childAsList('foo'), isA<ListContext>());
+      expect(
+        () => context.childAsMap('foo'),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals("'foo' is not of type Map<String, dynamic>: [bar] in /"),
+          ),
+        ),
+      );
+      expect(
+        () => context.childAsMap('bar'),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            equals('Key not found: bar in /'),
+          ),
+        ),
+      );
+    });
+
+    test('ListContext.indexAsMap throws on missing child', () {
+      final context = ListContext(
+        baseUrl: Uri.parse('file:///foo.json'),
+        pointerParts: const ['root'],
+        snakeNameStack: const [],
+        refRegistry: RefRegistry(),
+        isTopLevelComponent: false,
+        json: [
+          {'foo': 'bar'},
+          'baz',
+        ],
+      );
+      expect(context.pointer, const JsonPointer(['root']));
+      expect(context.indexAsMap(0), isA<MapContext>());
+      expect(
+        () => context.indexAsMap(1),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals('Index 1 is not of type Map<String, dynamic>: baz in /root'),
+          ),
+        ),
+      );
+      expect(
+        () => context.indexAsMap(2),
+        throwsA(
+          isA<RangeError>().having(
+            (e) => e.message,
+            'message',
+            equals('Invalid value'),
           ),
         ),
       );

@@ -354,7 +354,7 @@ class Response extends Equatable {
 
 @immutable
 class Components extends Equatable {
-  const Components({required this.schemas, required this.requestBodies});
+  const Components({this.schemas = const {}, this.requestBodies = const {}});
 
   final Map<String, Schema> schemas;
   // final Map<String, Parameter> parameters;

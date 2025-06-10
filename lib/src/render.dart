@@ -36,10 +36,10 @@ Future<void> loadAndRenderSpec({
 
   // Load the spec and warm the cache before rendering.
   final cache = Cache(fs);
-  final parseContext = ParseContext.initial(specUri);
   final specJson = await cache.load(specUri);
-  final spec = parseOpenApi(specJson, parseContext);
-  _printSpecStats(parseContext, spec);
+  final context = MapContext.initial(specUri, specJson);
+  final spec = parseOpenApi(context);
+  _printSpecStats(context, spec);
 
   // Pre-warm the cache. Rendering assumes all refs are present in the cache.
   for (final ref in collectRefs(spec)) {
@@ -58,7 +58,7 @@ Future<void> loadAndRenderSpec({
 
   renderSpec(
     spec: spec,
-    refRegistry: parseContext.refRegistry,
+    refRegistry: context.refRegistry,
     specUri: specUri,
     outDir: outDir,
     packageName: packageName,
