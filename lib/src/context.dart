@@ -62,6 +62,12 @@ extension _EndpointGeneration on Endpoint {
 
   Uri uri(_Context context) => Uri.parse('${context.spec.serverUrl}$path');
 
+  /// The type of the response.
+  /// If there are multiple responses, we return the first one with a content
+  /// type.
+  SchemaRef? get responseTypeRef =>
+      responses.contentfulResponses.firstOrNull?.content;
+
   Map<String, dynamic> toTemplateContext(_Context context) {
     final serverParameters = parameters
         .map((param) => param.toTemplateContext(context))
@@ -73,8 +79,8 @@ extension _EndpointGeneration on Endpoint {
     // body if it exists.
     final dartParameters = [...serverParameters, ?requestBody];
 
-    final firstResponse = context._maybeResolve(responses.firstOrNull?.content);
-    final returnType = firstResponse?.typeName(context) ?? 'void';
+    final returnType =
+        context._maybeResolve(responseTypeRef)?.typeName(context) ?? 'void';
 
     final namedParameters = dartParameters.where((p) => p['required'] == false);
     final positionalParameters = dartParameters.where(
@@ -998,7 +1004,8 @@ class _RenderContext {
   // TODO(eseidel): Could use Visitor for this?
   void collectApi(Api api) {
     for (final endpoint in api.endpoints) {
-      for (final response in endpoint.responses) {
+      visitRef(endpoint.responseTypeRef);
+      for (final response in endpoint.responses.contentfulResponses) {
         visitRef(response.content);
       }
       for (final param in endpoint.parameters) {

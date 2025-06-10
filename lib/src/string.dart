@@ -8,6 +8,7 @@ String snakeFromCamel(String camel) {
   return snake.startsWith('_') ? snake.substring(1) : snake;
 }
 
+/// Convert snake_case to CamelCase.
 String camelFromSnake(String snake) {
   return snake.splitMapJoin(
     RegExp('_'),
@@ -16,7 +17,10 @@ String camelFromSnake(String snake) {
   );
 }
 
-// Converts from SCREAMING_CAPS to camelCase.
+/// Convert kebab-case to snake_case.
+String snakeFromKebab(String kebab) => kebab.replaceAll('-', '_');
+
+/// Converts from SCREAMING_CAPS to camelCase.
 String camelFromScreamingCaps(String caps) {
   final camel = caps.splitMapJoin(
     RegExp('_'),

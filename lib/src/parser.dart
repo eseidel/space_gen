@@ -57,13 +57,20 @@ MapContext? _optionalMap(MapContext parent, String key) {
   return parent.childAsMap(key);
 }
 
-ListContext? _optionalList(MapContext parent, String key) {
+Iterable<T> _mapOptionalList<T>(
+  MapContext parent,
+  String key,
+  T Function(MapContext, int) parse,
+) sync* {
   final value = parent[key];
   if (value == null) {
-    return null;
+    return;
   }
-  _expectType<List<dynamic>>(parent, key, value);
-  return parent.childAsList(key);
+
+  final list = parent.childAsList(key);
+  for (var i = 0; i < list.length; i++) {
+    yield parse(list.indexAsMap(i), i);
+  }
 }
 
 Never _unimplemented(ParseContext json, String message) {
@@ -117,15 +124,16 @@ Parameter parseParameter(MapContext json) {
   } else if (hasSchema && hasContent) {
     _error(json, 'Parameter cannot have both schema and content');
   } else {
-    _error(json, 'Parameter must have either schema or content, not both');
+    _error(json, 'Parameter must have either schema or content.');
   }
 
   if (sendIn == SendIn.cookie) {
     _unimplemented(json, 'in=cookie');
   }
   if (sendIn == SendIn.path) {
-    if (type.schema?.type != SchemaType.string) {
-      _error(json, 'Path parameters must be strings');
+    final schemaType = type.schema?.type;
+    if (schemaType != SchemaType.string && schemaType != SchemaType.integer) {
+      _error(json, 'Path parameters must be strings or integers');
     }
     if (required != true) {
       _error(json, 'Path parameters must be required');
@@ -270,7 +278,10 @@ SchemaRef parseSchemaOrRef(MapContext json) {
 /// Parse a schema or a reference to a schema.
 /// https://spec.openapis.org/oas/v3.0.0#schemaObject
 /// https://spec.openapis.org/oas/v3.0.0#relative-references-in-urls
-RefOr<RequestBody> parseRequestBodyOrRef(MapContext json) {
+RefOr<RequestBody>? parseRequestBodyOrRef(MapContext? json) {
+  if (json == null) {
+    return null;
+  }
   if (json.containsKey(r'$ref')) {
     return RefOr<RequestBody>.ref(json[r'$ref'] as String);
   }
@@ -300,35 +311,30 @@ Endpoint parseEndpoint({
   required String path,
   required Method method,
 }) {
-  final operationId = _optional<String>(endpointJson, 'operationId');
-  final snakeName = (operationId ?? Uri.parse(path).pathSegments.last)
-      .replaceAll('-', '_');
-
+  final snakeName = snakeFromKebab(
+    _optional<String>(endpointJson, 'operationId') ??
+        Uri.parse(path).pathSegments.last,
+  );
   final context = endpointJson.addSnakeName(snakeName);
-  final responsesJson = _optionalMap(context, 'responses');
-  final responses = responsesJson == null
-      ? <Response>[]
-      : parseResponses(responsesJson);
+  // Operation does not mention 'responses' as being required, but
+  // the Responses object says at least one response is required.
+  final responses = parseResponses(_requiredMap(context, 'responses'));
+  if (responses.contentfulResponses.length > 1) {
+    _unimplemented(context, 'Multiple responses with content');
+  }
+  if (responses.isEmpty) {
+    _error(context, 'Responses are required');
+  }
   final tags = _optional<List<dynamic>>(context, 'tags');
   final tag = tags?.firstOrNull as String? ?? 'Default';
-  final parametersJson = _optionalList(context, 'parameters');
-  final parameters = parametersJson == null
-      ? <Parameter>[]
-      : parametersJson.indexed
-            .map(
-              (indexed) => parseParameter(
-                context
-                    .childAsList('parameters')
-                    .indexAsMap(indexed.$1)
-                    .addSnakeName('parameter${indexed.$1}'),
-              ),
-            )
-            .toList();
-  final requestBodyJson = _optionalMap(context, 'requestBody');
-  RefOr<RequestBody>? requestBody;
-  if (requestBodyJson != null) {
-    requestBody = parseRequestBodyOrRef(requestBodyJson);
-  }
+  final parameters = _mapOptionalList(
+    context,
+    'parameters',
+    (child, index) => parseParameter(child.addSnakeName('parameter$index')),
+  ).toList();
+  final requestBody = parseRequestBodyOrRef(
+    _optionalMap(context, 'requestBody'),
+  );
   return Endpoint(
     path: path,
     method: method,
@@ -340,25 +346,38 @@ Endpoint parseEndpoint({
   );
 }
 
-List<Response> parseResponses(MapContext responsesJson) {
-  final responseCodes = responsesJson.keys.toList()..remove('204');
-  if (responseCodes.length != 1) {
-    _unimplemented(responsesJson, 'Multiple responses');
-  }
-
-  final responseCode = responseCodes.first;
-  final forCode = responsesJson
-      .childAsMap(responseCode)
-      .addSnakeName(responseCode);
-  final content = _optionalMap(forCode, 'content');
+Response _parseResponse(MapContext responseJson) {
+  final description = _required<String>(responseJson, 'description');
+  _ignored<dynamic>(responseJson, 'headers');
+  _ignored<dynamic>(responseJson, 'links');
+  final content = _optionalMap(responseJson, 'content');
   if (content == null) {
-    return [];
+    return Response(description: description);
   }
   final jsonResponse = _requiredMap(content, 'application/json');
   final schema = jsonResponse.childAsMap('schema').addSnakeName('response');
-  return [
-    Response(code: int.parse(responseCode), content: parseSchemaOrRef(schema)),
-  ];
+  return Response(description: description, content: parseSchemaOrRef(schema));
+}
+
+Responses parseResponses(MapContext responsesJson) {
+  final responseCodes = responsesJson.keys.toList();
+
+  // We don't yet support default responses.
+  _ignored<Map<String, dynamic>>(responsesJson, 'default');
+  responseCodes.remove('default');
+
+  final responses = <int, Response>{};
+  for (final responseCode in responseCodes) {
+    final responseJson = responsesJson
+        .childAsMap(responseCode)
+        .addSnakeName(responseCode);
+    final responseCodeInt = int.tryParse(responseCode);
+    if (responseCodeInt == null) {
+      _error(responsesJson, 'Invalid response code: $responseCode');
+    }
+    responses[responseCodeInt] = _parseResponse(responseJson);
+  }
+  return Responses(responses: responses);
 }
 
 Map<String, T> _parseComponent<T>(
@@ -662,8 +681,6 @@ class ListContext extends ParseContext {
   }
 
   int get length => json.length;
-
-  Iterable<(int, dynamic)> get indexed => json.indexed;
 
   final List<dynamic> json;
 }

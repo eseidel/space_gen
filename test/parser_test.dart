@@ -23,7 +23,12 @@ void main() {
         ],
         'paths': {
           '/users': {
-            'get': {'summary': 'Get user'},
+            'get': {
+              'summary': 'Get user',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
           },
         },
         'components': {'schemas': schemasJson},
@@ -41,7 +46,12 @@ void main() {
         ],
         'paths': {
           '/users': {
-            'get': {'summary': 'Get user'},
+            'get': {
+              'summary': 'Get user',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
           },
         },
       };
@@ -83,16 +93,23 @@ void main() {
         ],
         'paths': {
           '/users': {
-            'get': {'summary': 'Get user'},
-            'parameters': [
-              {'name': 'foo', 'in': 'query', 'required': true},
-            ],
-            'responses': {
-              '200': {
-                'description': 'OK',
-                'content': {
-                  'application/json': {
-                    'schema': {'type': 'object'},
+            'get': {
+              'summary': 'Get user',
+              'parameters': [
+                {
+                  'name': 'foo',
+                  'in': 'query',
+                  'required': true,
+                  'schema': {'type': 'string'},
+                },
+              ],
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {'type': 'object'},
+                    },
                   },
                 },
               },
@@ -113,7 +130,12 @@ void main() {
         ],
         'paths': {
           '/users': {
-            'get': {'summary': 'Get user'},
+            'get': {
+              'summary': 'Get user',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
           },
         },
       };
@@ -303,6 +325,9 @@ void main() {
                   },
                 },
               ],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
             },
           },
         },
@@ -332,6 +357,9 @@ void main() {
               'parameters': [
                 {'name': 'foo', 'in': 'query'},
               ],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
             },
           },
         },
@@ -370,6 +398,9 @@ void main() {
                   },
                 },
               ],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
             },
           },
         },
@@ -400,7 +431,12 @@ void main() {
         ],
         'paths': {
           '/users': {
-            'get': {'summary': 'Get user'},
+            'get': {
+              'summary': 'Get user',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
           },
         },
       };
@@ -521,6 +557,9 @@ void main() {
                   'schema': {'type': 'number'},
                 },
               ],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
             },
           },
         },
@@ -532,7 +571,8 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              'Path parameters must be strings in /paths//users/get/parameters/0',
+              'Path parameters must be strings or integers in '
+              '/paths//users/get/parameters/0',
             ),
           ),
         ),
@@ -558,6 +598,9 @@ void main() {
                   // required is missing and defaults to false.
                 },
               ],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
             },
           },
         },
@@ -576,7 +619,7 @@ void main() {
       );
     });
 
-    test('multiple responses not supported', () {
+    test('multiple responses with content not supported', () {
       final json = {
         'openapi': '3.1.0',
         'info': {'title': 'Space Traders API', 'version': '1.0.0'},
@@ -587,8 +630,22 @@ void main() {
           '/users': {
             'get': {
               'responses': {
-                '200': {'description': 'OK'},
-                '201': {'description': 'Created'},
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {'type': 'boolean'},
+                    },
+                  },
+                },
+                '201': {
+                  'description': 'Created',
+                  'content': {
+                    'application/json': {
+                      'schema': {'type': 'string'},
+                    },
+                  },
+                },
               },
             },
           },
@@ -600,17 +657,52 @@ void main() {
           isA<UnimplementedError>().having(
             (e) => e.message,
             'message',
-            equals(
-              'Multiple responses not supported in '
-              'MapContext(/paths//users/get/responses, '
-              '{200: {description: OK}, 201: {description: Created}})',
-            ),
+            contains('Multiple responses with content not supported'),
           ),
         ),
       );
     });
 
-    test('responses without content are ignored', () {
+    test('multiple responses with content ignores empty responses', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {'type': 'boolean'},
+                    },
+                  },
+                },
+                '204': {
+                  'description': 'No content',
+                  'content': {
+                    'application/json': {
+                      // This doesn't error because schema is empty.
+                      // This is a hack for Space Traders get-cooldown.
+                      'schema': {'description': 'No content'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+      final spec = parseTestSpec(json);
+      expect(spec.endpoints.first.responses[200]!.content, isNotNull);
+      expect(spec.endpoints.first.responses[204]!.content, isNotNull);
+    });
+
+    test('only integers and default are supported as response codes', () {
       final json = {
         'openapi': '3.1.0',
         'info': {'title': 'Space Traders API', 'version': '1.0.0'},
@@ -622,14 +714,76 @@ void main() {
             'get': {
               'responses': {
                 '200': {'description': 'OK'},
+                'barf': {'description': 'Barf'},
               },
             },
           },
         },
       };
-      final spec = parseTestSpec(json);
-      // This is not correct, but documents our current behavior.
-      expect(spec.endpoints.first.responses, isEmpty);
+      expect(
+        () => parseTestSpec(json),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              'Invalid response code: barf in /paths//users/get/responses',
+            ),
+          ),
+        ),
+      );
+    });
+    test('default response is not supported', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                'default': {'description': 'Default'},
+                '201': {'description': 'Created'},
+              },
+            },
+          },
+        },
+      };
+      final logger = _MockLogger();
+      final spec = runWithLogger(logger, () => parseTestSpec(json));
+      verify(
+        () => logger.detail(
+          'Ignoring key: default in /paths//users/get/responses',
+        ),
+      ).called(1);
+      expect(spec.endpoints.first.responses[200], isNull);
+    });
+
+    test('responses are required', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {'responses': <String, dynamic>{}},
+          },
+        },
+      };
+      expect(
+        () => parseTestSpec(json),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals('Responses are required in /paths//users/get'),
+          ),
+        ),
+      );
     });
   });
 

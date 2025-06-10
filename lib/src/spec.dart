@@ -310,7 +310,7 @@ class Endpoint extends Equatable {
   final String tag;
 
   /// The responses of this endpoint.
-  final List<Response> responses;
+  final Responses responses;
 
   /// The snake name of this endpoint (e.g. get_user)
   /// Typically the operationId, or the last path segment if not present.
@@ -334,22 +334,63 @@ class Endpoint extends Equatable {
   ];
 }
 
+/// A map of response codes to responses.
+/// https://spec.openapis.org/oas/v3.1.0#responses-object
+@immutable
+class Responses extends Equatable {
+  /// Create a new responses object.
+  const Responses({required this.responses});
+
+  /// The responses of this endpoint.
+  final Map<int, Response> responses;
+
+  // default is not yet supported.
+
+  /// The contentful responses of this endpoint.
+  List<Response> get contentfulResponses =>
+      responses.values.where(Response.hasContent).toList();
+
+  /// Whether this endpoint has any responses.
+  bool get isEmpty => responses.isEmpty;
+
+  Response? operator [](int code) => responses[code];
+
+  @override
+  List<Object?> get props => [responses];
+}
+
 /// A response from an endpoint.
 /// https://spec.openapis.org/oas/v3.1.0#response-object
 @immutable
 class Response extends Equatable {
   /// Create a new response.
-  const Response({required this.code, required this.content});
+  const Response({required this.description, this.content});
 
-  /// The status code of this response.
-  final int code;
+  /// The description of this response.
+  final String description;
 
   /// The content of this response.
   /// The official spec has a map here by mime type, but we only support json.
-  final SchemaRef content;
+  final SchemaRef? content;
+
+  /// Whether this response has content.
+  /// We only support json, so we check for a schema with a type.
+  /// This is a bit of a hack for the space traders spec which has a 204
+  /// response with an empty schema.
+  static bool hasContent(Response response) {
+    final content = response.content;
+    if (content == null) {
+      return false;
+    }
+    final schema = content.schema;
+    if (schema == null) {
+      return false;
+    }
+    return schema.type != SchemaType.unknown;
+  }
 
   @override
-  List<Object?> get props => [code, content];
+  List<Object?> get props => [description, content];
 }
 
 @immutable

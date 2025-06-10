@@ -99,7 +99,12 @@ void main() {
         ],
         'paths': {
           '/users': {
-            'get': {'summary': 'Get user'},
+            'get': {
+              'summary': 'Get user',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
           },
         },
       };
@@ -130,7 +135,12 @@ void main() {
         ],
         'paths': {
           '/users': {
-            'get': {'summary': 'Get user'},
+            'get': {
+              'summary': 'Get user',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
           },
         },
       };
@@ -556,6 +566,9 @@ void main() {
               'requestBody': {
                 r'$ref': '#/components/requestBodies/PurchaseCargoRequest',
               },
+              'responses': {
+                '201': {'description': 'Purchased goods successfully.'},
+              },
             },
           },
         },
@@ -686,30 +699,32 @@ void main() {
         ],
         'paths': {
           '/my/ships': {
-            'get': {'operationId': 'get-my-ships'},
-            'responses': {
-              '200': {
-                'description': 'Default Response',
-                'content': {
-                  'application/json': {
-                    'schema': {
-                      'type': 'object',
-                      'properties': {
-                        'foo': {
-                          'type': 'array',
-                          'items': {'type': 'string'},
-                        },
-                        'bar': {
-                          'type': 'array',
-                          'items': {'type': 'number'},
-                        },
-                        'baz': {
-                          'type': 'array',
-                          'items': {'type': 'integer'},
-                        },
-                        'qux': {
-                          'type': 'array',
-                          'items': {'type': 'boolean'},
+            'get': {
+              'operationId': 'get-my-ships',
+              'responses': {
+                '200': {
+                  'description': 'Default Response',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'properties': {
+                          'foo': {
+                            'type': 'array',
+                            'items': {'type': 'string'},
+                          },
+                          'bar': {
+                            'type': 'array',
+                            'items': {'type': 'number'},
+                          },
+                          'baz': {
+                            'type': 'array',
+                            'items': {'type': 'integer'},
+                          },
+                          'qux': {
+                            'type': 'array',
+                            'items': {'type': 'boolean'},
+                          },
                         },
                       },
                     },
@@ -724,7 +739,10 @@ void main() {
 
       await renderToDirectory(spec: spec, outDir: out);
       expect(out.childFile('lib/api/default_api.dart'), exists);
-      expect(out.childDirectory('lib/model'), isNot(exists));
+      expect(
+        out.childDirectory('lib/model'),
+        hasFiles(['get_my_ships200_response.dart']),
+      );
     });
 
     test('in=cookie and in=header not supported', () async {
@@ -746,6 +764,9 @@ void main() {
                     'in': sendIn,
                   },
                 ],
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
               },
             },
           },
@@ -761,6 +782,31 @@ void main() {
         renderToDirectory(spec: withIn('header')),
         throwsA(isA<UnimplementedError>()),
       );
+    });
+
+    test('responses without content are ignored', () async {
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+      final fs = MemoryFileSystem.test();
+      final out = fs.directory('spacetraders');
+
+      await renderToDirectory(spec: spec, outDir: out);
+      expect(out.childFile('lib/api/default_api.dart'), exists);
+      expect(out.childDirectory('lib/model'), isNot(exists));
     });
   });
 }
