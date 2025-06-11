@@ -265,6 +265,16 @@ enum Method {
   String get key => name.toLowerCase();
 }
 
+@immutable
+class MediaType extends Equatable {
+  const MediaType({required this.schema});
+
+  final SchemaRef schema;
+
+  @override
+  List<Object?> get props => [schema];
+}
+
 /// Request body is sorta a schema, but it's a bit different.
 /// https://spec.openapis.org/oas/v3.0.0#requestBodyObject
 /// Notably "required" is a boolean, not a list of strings.
@@ -272,21 +282,25 @@ enum Method {
 class RequestBody extends Equatable {
   const RequestBody({
     required this.pointer,
+    required this.description,
+    required this.content,
     required this.isRequired,
-    required this.schema,
   });
 
   /// The pointer to this request body.
   final String pointer;
 
+  /// The description of the request body.
+  final String? description;
+
+  /// The content of the request body.
+  final Map<String, MediaType> content;
+
   /// Whether the request body is required.
   final bool isRequired;
 
-  /// The schema of the application/json content.
-  final SchemaRef schema;
-
   @override
-  List<Object?> get props => [pointer, isRequired, schema];
+  List<Object?> get props => [pointer, description, content, isRequired];
 }
 
 /// An endpoint is a path with a method.

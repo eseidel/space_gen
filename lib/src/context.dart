@@ -613,7 +613,9 @@ extension _ParameterGeneration on Parameter {
 
 extension _RequestBodyGeneration on RequestBody {
   Map<String, dynamic> toTemplateContext(_Context context) {
-    final schema = context._maybeResolve<Schema>(this.schema);
+    final schema = context._maybeResolve<Schema>(
+      content['application/json']?.schema,
+    );
     if (schema == null) {
       throw StateError('Schema is null: $this');
     }
@@ -1018,7 +1020,9 @@ class _RenderContext {
   }
 
   void collectRequestBody(RequestBody requestBody) {
-    visitRef(requestBody.schema);
+    for (final value in requestBody.content.values) {
+      visitRef(value.schema);
+    }
   }
 
   /// Collect a schema if it needs to be rendered.
