@@ -157,6 +157,7 @@ class Schema extends Equatable {
     required this.format,
     required this.additionalProperties,
     required this.defaultValue,
+    required this.example,
     required this.useNewType,
   }) {
     if (type == SchemaType.object && snakeName.isEmpty) {
@@ -182,6 +183,10 @@ class Schema extends Equatable {
 
   /// The required properties of this schema.
   final List<String> required;
+
+  /// The example value for this schema.
+  // Not currently used by the generator.
+  final dynamic example;
 
   /// The description of this schema.
   final String description;
