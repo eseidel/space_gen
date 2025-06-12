@@ -37,6 +37,13 @@ class {{ className }} {
             {{#requestBody}}
             bodyJson: {{{ toJson }}},
             {{/requestBody}}
+            {{#hasHeaderParameters}}
+            headerParameters: {
+                {{#headerParameters}}
+                '{{{ name }}}': {{{ toJson }}},
+                {{/headerParameters}}
+            },
+            {{/hasHeaderParameters}}
         );
 
         if (response.statusCode >= HttpStatus.badRequest) {

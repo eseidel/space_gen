@@ -32,6 +32,7 @@ class ApiClient {
     // to not have to generate two separate calls depending on whether the
     // body is present or not.
     Map<String, dynamic>? bodyJson,
+    Map<String, String> headerParameters = const {},
   }) async {
     final uri = resolvePath(path);
     if (method == Method.get && bodyJson != null) {
@@ -42,6 +43,7 @@ class ApiClient {
       ...defaultHeaders,
       if (bodyJson != null)
         'Content-Type': 'application/json',
+      ...headerParameters,
     };
     // Just pass null to http if we have no headers to set.
     // This makes our calls match openapi (and thus our tests pass).

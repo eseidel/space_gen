@@ -10,6 +10,10 @@ import 'package:space_gen/src/parser.dart';
 import 'package:space_gen/src/spec.dart';
 import 'package:space_gen/src/string.dart';
 
+void _unimplemented(String message, String pointer) {
+  throw UnimplementedError('$message at $pointer');
+}
+
 class Paths {
   static String apiFilePath(Api api) {
     // openapi generator does not use /src/ in the path.
@@ -30,6 +34,28 @@ class Paths {
   }
 }
 
+/// A convenience class created for each operation within a path item
+/// for compatibility with our existing rendering code.
+class Endpoint {
+  const Endpoint({
+    required this.method,
+    required this.pathItem,
+    required this.operation,
+  });
+
+  final Method method;
+  final PathItem pathItem;
+  final Operation operation;
+
+  String get path => pathItem.path;
+
+  String get tag => pathItem.tags.firstOrNull ?? 'Default';
+
+  String get snakeName => operation.snakeName;
+
+  List<Parameter> get parameters => operation.parameters;
+}
+
 /// The spec calls these tags, but the Dart openapi generator groups endpoints
 /// by tag into an API class so we do too.
 class Api {
@@ -43,6 +69,18 @@ class Api {
 }
 
 extension OpenApiGeneration on OpenApi {
+  /// The endpoints of the spec.
+  List<Endpoint> get endpoints => paths.paths.values
+      .expand(
+        (p) => p.operations.entries.map(
+          (e) => Endpoint(method: e.key, pathItem: p, operation: e.value),
+        ),
+      )
+      .toList();
+
+  /// Set of all endpoint tags in the spec.
+  Set<String> get tags => endpoints.map((e) => e.tag).toSet();
+
   List<Api> get apis => tags
       .sorted()
       .map(
@@ -65,22 +103,30 @@ extension _EndpointGeneration on Endpoint {
   /// The type of the response.
   /// If there are multiple responses, we return the first one with a content
   /// type.
-  SchemaRef? get responseTypeRef =>
-      responses.contentfulResponses.firstOrNull?.content;
+  SchemaRef? get responseType {
+    final responses = operation.responses;
+    final content = responses.contentfulResponses.firstOrNull?.content;
+    if (content == null) {
+      return null;
+    }
+    return _contentSchemaRef(content, path);
+  }
 
   Map<String, dynamic> toTemplateContext(_Context context) {
     final serverParameters = parameters
         .map((param) => param.toTemplateContext(context))
         .toList();
 
-    final bodyObject = context._maybeResolve<RequestBody>(this.requestBody);
+    final bodyObject = context._maybeResolve<RequestBody>(
+      operation.requestBody,
+    );
     final requestBody = bodyObject?.toTemplateContext(context);
     // Parameters as passed to the Dart function call, including the request
     // body if it exists.
     final dartParameters = [...serverParameters, ?requestBody];
 
     final returnType =
-        context._maybeResolve(responseTypeRef)?.typeName(context) ?? 'void';
+        context._maybeResolve(responseType)?.typeName(context) ?? 'void';
 
     final namedParameters = dartParameters.where((p) => p['required'] == false);
     final positionalParameters = dartParameters.where(
@@ -96,12 +142,10 @@ extension _EndpointGeneration on Endpoint {
     final hasQueryParameters = queryParameters.isNotEmpty;
     final cookieParameters = bySendIn['cookie'] ?? [];
     if (cookieParameters.isNotEmpty) {
-      throw UnimplementedError('Cookie parameters are not yet supported.');
+      _unimplemented('Cookie parameters are not yet supported.', path);
     }
     final headerParameters = bySendIn['header'] ?? [];
-    if (headerParameters.isNotEmpty) {
-      throw UnimplementedError('Header parameters are not yet supported.');
-    }
+    final hasHeaderParameters = headerParameters.isNotEmpty;
 
     return {
       'methodName': methodName,
@@ -116,6 +160,8 @@ extension _EndpointGeneration on Endpoint {
       'pathParameters': pathParameters,
       'hasQueryParameters': hasQueryParameters,
       'queryParameters': queryParameters,
+      'hasHeaderParameters': hasHeaderParameters,
+      'headerParameters': headerParameters,
       'requestBody': requestBody,
       // TODO(eseidel): remove void support, it's unused.
       'returnIsVoid': returnType == 'void',
@@ -611,14 +657,27 @@ extension _ParameterGeneration on Parameter {
   }
 }
 
+SchemaRef? _contentSchemaRef(Map<String, MediaType> content, String pointer) {
+  final schemaRef = content['application/json']?.schema;
+  if (schemaRef != null) {
+    return schemaRef;
+  }
+  // If there is no application/json media type, use the first one.
+  // This is a hack to make petstore work enough for now.
+  final firstKey = content.keys.first;
+  logger
+    ..warn('No application/json media type found for $pointer')
+    ..detail('Using first media type: $firstKey');
+  return content[firstKey]?.schema;
+}
+
 extension _RequestBodyGeneration on RequestBody {
   Map<String, dynamic> toTemplateContext(_Context context) {
-    final schema = context._maybeResolve<Schema>(
-      content['application/json']?.schema,
-    );
-    if (schema == null) {
+    final schemaRef = _contentSchemaRef(content, pointer);
+    if (schemaRef == null) {
       throw StateError('Schema is null: $this');
     }
+    final schema = context._resolve(schemaRef);
     final typeName = schema.typeName(context);
     final paramName = typeName[0].toLowerCase() + typeName.substring(1);
     // TODO(eseidel): Share code with Parameter.toTemplateContext.
@@ -1006,15 +1065,17 @@ class _RenderContext {
   // TODO(eseidel): Could use Visitor for this?
   void collectApi(Api api) {
     for (final endpoint in api.endpoints) {
-      visitRef(endpoint.responseTypeRef);
-      for (final response in endpoint.responses.contentfulResponses) {
-        visitRef(response.content);
+      visitRef(endpoint.responseType);
+      for (final response in endpoint.operation.responses.contentfulResponses) {
+        for (final mediaType in response.content!.values) {
+          visitRef(mediaType.schema);
+        }
       }
       for (final param in endpoint.parameters) {
         visitRef(param.type);
       }
-      if (endpoint.requestBody != null) {
-        visitRef(endpoint.requestBody);
+      if (endpoint.operation.requestBody != null) {
+        visitRef(endpoint.operation.requestBody);
       }
     }
   }

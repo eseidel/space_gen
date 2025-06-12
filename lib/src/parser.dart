@@ -138,9 +138,6 @@ Parameter parseParameter(MapContext json) {
     _error(json, 'Parameter must have either schema or content.');
   }
 
-  if (sendIn == SendIn.cookie) {
-    _unimplemented(json, 'in=cookie');
-  }
   if (sendIn == SendIn.path) {
     final schemaType = type.schema?.type;
     if (schemaType != SchemaType.string && schemaType != SchemaType.integer) {
@@ -163,6 +160,10 @@ Parameter parseParameter(MapContext json) {
 
 /// Parse a schema from a json object.
 Schema parseSchema(MapContext json) {
+  if (json.containsKey(r'$ref')) {
+    _error(json, r'$ref not expected');
+  }
+
   final type = SchemaType.fromJson(
     _optional<String>(json, 'type') ?? 'unknown',
   );
@@ -307,19 +308,8 @@ RefOr<RequestBody>? parseRequestBodyOrRef(MapContext? json) {
   return RefOr<RequestBody>.object(body);
 }
 
-Map<String, MediaType> _parseContent(MapContext contentJson) {
-  final mediaTypes = <String, MediaType>{};
-  for (final mimeType in contentJson.keys) {
-    final schema = parseSchemaOrRef(
-      contentJson.childAsMap(mimeType).childAsMap('schema'),
-    );
-    mediaTypes[mimeType] = MediaType(schema: schema);
-  }
-  return mediaTypes;
-}
-
 RequestBody parseRequestBody(MapContext json) {
-  final content = _parseContent(_requiredMap(json, 'content'));
+  final content = _parseMediaTypes(_requiredMap(json, 'content'));
   final description = _optional<String>(json, 'description');
 
   final isRequired = json['required'] as bool? ?? false;
@@ -334,29 +324,16 @@ RequestBody parseRequestBody(MapContext json) {
   return body;
 }
 
-/// Parse an endpoint from a json object.
-Endpoint parseEndpoint({
-  required MapContext endpointJson,
-  required String path,
-  required Method method,
-}) {
+Operation _parseOperation(MapContext operationJson, String path) {
   final snakeName = snakeFromKebab(
-    _optional<String>(endpointJson, 'operationId') ??
+    _optional<String>(operationJson, 'operationId') ??
         Uri.parse(path).pathSegments.last,
   );
-  final context = endpointJson.addSnakeName(snakeName);
-  _ignored<String>(context, 'summary');
-  // Operation does not mention 'responses' as being required, but
-  // the Responses object says at least one response is required.
-  final responses = parseResponses(_requiredMap(context, 'responses'));
-  if (responses.contentfulResponses.length > 1) {
-    _unimplemented(context, 'Multiple responses with content');
-  }
-  if (responses.isEmpty) {
-    _error(context, 'Responses are required');
-  }
-  final tags = _optional<List<dynamic>>(context, 'tags');
-  final tag = tags?.firstOrNull as String? ?? 'Default';
+  final context = operationJson.addSnakeName(snakeName);
+
+  final summary = _optional<String>(context, 'summary');
+  final description = _optional<String>(context, 'description');
+  final tags = _optional<List<dynamic>>(context, 'tags')?.cast<String>() ?? [];
   final parameters = _mapOptionalList(
     context,
     'parameters',
@@ -365,16 +342,87 @@ Endpoint parseEndpoint({
   final requestBody = parseRequestBodyOrRef(
     _optionalMap(context, 'requestBody'),
   );
-  _warnUnused(context);
-  return Endpoint(
-    path: path,
-    method: method,
-    tag: tag,
-    responses: responses,
+  final deprecated = _optional<bool>(context, 'deprecated') ?? false;
+  final responses = parseResponses(_requiredMap(context, 'responses'));
+
+  // Operation does not mention 'responses' as being required, but
+  // the Responses object says at least one response is required.
+  if (responses.contentfulResponses.length > 1) {
+    _unimplemented(context, 'Multiple responses with content');
+  }
+  if (responses.isEmpty) {
+    _error(context, 'Responses are required');
+  }
+  return Operation(
+    tags: tags,
     snakeName: snakeName,
+    summary: summary ?? '',
+    description: description ?? '',
     parameters: parameters,
     requestBody: requestBody,
+    responses: responses,
+    deprecated: deprecated,
   );
+}
+
+Map<Method, Operation> _parseOperations(MapContext context, String path) {
+  final operations = <Method, Operation>{};
+  for (final method in Method.values) {
+    final methodValue = _optionalMap(context, method.key);
+    if (methodValue == null) {
+      continue;
+    }
+    final operation = _parseOperation(methodValue, path);
+    operations[method] = operation;
+  }
+  return operations;
+}
+
+/// Parse a path item from a json object.
+/// https://spec.openapis.org/oas/v3.1.0#path-item-object
+PathItem parsePathItem({
+  required MapContext pathItemJson,
+  required String path,
+}) {
+  // TODO(eseidel): Support $ref
+  // if (pathItemJson.containsKey(r'$ref')) {
+  //   final ref = pathItemJson[r'$ref'] as String;
+  //   _warnUnused(pathItemJson);
+  //   return RefOr<PathItem>.ref(ref);
+  // }
+  final summary = _optional<String>(pathItemJson, 'summary');
+  _ignored<List<dynamic>>(pathItemJson, 'parameters');
+  // final parameters = _mapOptionalList(
+  //   pathItemJson,
+  //   'parameters',
+  //   (child, index) => parseParameter(child.addSnakeName('parameter$index')),
+  // ).toList();
+
+  final description = _optional<String>(pathItemJson, 'description');
+  final operations = _parseOperations(pathItemJson, path);
+
+  _warnUnused(pathItemJson);
+  return PathItem(
+    path: path,
+    summary: summary ?? '',
+    description: description ?? '',
+    // parameters: parameters,
+    operations: operations,
+  );
+}
+
+Map<String, MediaType> _parseMediaTypes(MapContext contentJson) {
+  final mediaTypes = <String, MediaType>{};
+  for (final mimeType in contentJson.keys) {
+    final schema = parseSchemaOrRef(
+      contentJson.childAsMap(mimeType).childAsMap('schema'),
+    );
+    mediaTypes[mimeType] = MediaType(schema: schema);
+  }
+  if (mediaTypes.isEmpty) {
+    _error(contentJson, 'Empty content');
+  }
+  return mediaTypes;
 }
 
 Response _parseResponse(MapContext responseJson) {
@@ -385,9 +433,8 @@ Response _parseResponse(MapContext responseJson) {
   if (content == null) {
     return Response(description: description);
   }
-  final jsonResponse = _requiredMap(content, 'application/json');
-  final schema = jsonResponse.childAsMap('schema').addSnakeName('response');
-  return Response(description: description, content: parseSchemaOrRef(schema));
+  final mediaTypes = _parseMediaTypes(content.addSnakeName('response'));
+  return Response(description: description, content: mediaTypes);
 }
 
 Responses parseResponses(MapContext responsesJson) {
@@ -486,6 +533,28 @@ Info parseInfo(MapContext json) {
   return Info(title, version);
 }
 
+/// Parse the paths section of a spec.
+/// https://spec.openapis.org/oas/v3.1.0#paths-object
+Paths parsePaths(MapContext pathsJson) {
+  final paths = <String, PathItem>{};
+  // Paths object only has patterned fields, so we just walk the keys.
+  for (final path in pathsJson.keys) {
+    final pathItemJson = _optionalMap(pathsJson, path);
+    if (pathItemJson == null) {
+      continue;
+    }
+    _expect(pathItemJson.isNotEmpty, pathItemJson, 'Path cannot be empty');
+    _expect(
+      path.startsWith('/'),
+      pathItemJson,
+      'Path must start with /: $path',
+    );
+
+    paths[path] = parsePathItem(pathItemJson: pathItemJson, path: path);
+  }
+  return Paths(paths: paths);
+}
+
 OpenApi parseOpenApi(MapContext json) {
   final minimumVersion = Version.parse('3.0.0');
   final versionString = _required<String>(json, 'openapi');
@@ -503,29 +572,14 @@ OpenApi parseOpenApi(MapContext json) {
   final firstServer = servers.indexAsMap(0);
   final serverUrl = _required<String>(firstServer, 'url');
 
-  final paths = _requiredMap(json, 'paths');
-  final endpoints = <Endpoint>[];
-  for (final path in paths.keys) {
-    final pathContext = paths.childAsMap(path);
-    _expect(path.isNotEmpty, pathContext, 'Path cannot be empty');
-    _expect(path.startsWith('/'), pathContext, 'Path must start with /: $path');
-    for (final method in Method.values) {
-      final methodValue = _optionalMap(pathContext, method.key);
-      if (methodValue == null) {
-        continue;
-      }
-      endpoints.add(
-        parseEndpoint(endpointJson: methodValue, path: path, method: method),
-      );
-    }
-  }
+  final paths = parsePaths(_requiredMap(json, 'paths'));
   final components = parseComponents(_optionalMap(json, 'components'));
   _warnUnused(json);
   return OpenApi(
     serverUrl: Uri.parse(serverUrl),
     version: version,
     info: info,
-    endpoints: endpoints,
+    paths: paths,
     components: components,
   );
 }
@@ -669,6 +723,8 @@ class MapContext extends ParseContext {
     json: json,
     usedKeys: usedKeys,
   );
+
+  bool get isNotEmpty => json.isNotEmpty;
 
   dynamic operator [](String key) {
     _markUsed(key);

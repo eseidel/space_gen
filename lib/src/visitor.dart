@@ -3,7 +3,8 @@ import 'package:space_gen/src/spec.dart';
 /// Subclass this and override the methods you want to visit.
 abstract class Visitor {
   void visitRoot(OpenApi root) {}
-  void visitEndpoint(Endpoint endpoint) {}
+  void visitPathItem(PathItem pathItem) {}
+  void visitOperation(Operation operation) {}
   void visitParameter(Parameter parameter) {}
   void visitReference<T>(RefOr<T> ref) {}
   void visitSchema(Schema schema) {}
@@ -38,20 +39,36 @@ class SpecWalker {
 
   void walkRoot(OpenApi root) {
     visitor.visitRoot(root);
-    for (final endpoint in root.endpoints) {
-      _endpoint(endpoint);
+    for (final path in root.paths.paths.values) {
+      _pathItem(path);
     }
   }
 
-  void _endpoint(Endpoint endpoint) {
-    visitor.visitEndpoint(endpoint);
-    for (final parameter in endpoint.parameters) {
+  void _pathItem(PathItem pathItem) {
+    visitor.visitPathItem(pathItem);
+    // for (final parameter in pathItem.parameters) {
+    //   _parameter(parameter);
+    // }
+    for (final operation in pathItem.operations.values) {
+      _operation(operation);
+    }
+  }
+
+  void _operation(Operation operation) {
+    visitor.visitOperation(operation);
+    for (final response in operation.responses.responses.values) {
+      final content = response.content;
+      if (content == null) {
+        continue;
+      }
+      for (final mediaType in content.values) {
+        _ref(mediaType.schema);
+      }
+    }
+    for (final parameter in operation.parameters) {
       _parameter(parameter);
     }
-    for (final response in endpoint.responses.contentfulResponses) {
-      _maybeRef(response.content);
-    }
-    _maybeRef(endpoint.requestBody);
+    _maybeRef(operation.requestBody);
   }
 
   void _parameter(Parameter parameter) {

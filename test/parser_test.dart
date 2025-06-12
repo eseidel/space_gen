@@ -58,7 +58,7 @@ void main() {
       final logger = _MockLogger();
       final spec = runWithLogger(logger, () => parseTestSpec(specJson));
       expect(spec.serverUrl, Uri.parse('https://api.spacetraders.io/v2'));
-      expect(spec.endpoints.first.path, '/users');
+      expect(spec.paths.keys.first, '/users');
     });
 
     test('parse with invalid enum', () {
@@ -764,8 +764,14 @@ void main() {
         },
       };
       final spec = parseTestSpec(json);
-      expect(spec.endpoints.first.responses[200]!.content, isNotNull);
-      expect(spec.endpoints.first.responses[204]!.content, isNotNull);
+      expect(
+        spec.paths['/users'].operations[Method.get]!.responses[200]!.content,
+        isNotNull,
+      );
+      expect(
+        spec.paths['/users'].operations[Method.get]!.responses[204]!.content,
+        isNotNull,
+      );
     });
 
     test('only integers and default are supported as response codes', () {
@@ -819,7 +825,10 @@ void main() {
       };
       final logger = _MockLogger();
       final spec = runWithLogger(logger, () => parseTestSpec(json));
-      expect(spec.endpoints.first.responses[200], isNull);
+      expect(
+        spec.paths['/users'].operations[Method.get]!.responses[200],
+        isNull,
+      );
     });
 
     test('responses are required', () {
@@ -844,6 +853,87 @@ void main() {
             equals('Responses are required in /paths//users/get'),
           ),
         ),
+      );
+    });
+
+    test('request body with empty content is not supported', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'post': {
+              'summary': 'Post user',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+              'requestBody': {'content': <String, dynamic>{}},
+            },
+          },
+        },
+      };
+      expect(
+        () => parseTestSpec(json),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals('Empty content in /paths//users/post/requestBody/content'),
+          ),
+        ),
+      );
+    });
+
+    // This is a hack to make petstore work enough for now.
+    test('default to first media type if no application/json', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'post': {
+              'summary': 'Post user',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+              'requestBody': {
+                'content': {
+                  'application/xml': {
+                    'schema': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+      final logger = _MockLogger();
+      final spec = runWithLogger(logger, () => parseTestSpec(json));
+      expect(
+        spec
+            .paths['/users']
+            .operations[Method.post]!
+            .requestBody
+            ?.object
+            ?.content,
+        isNotNull,
+      );
+      expect(
+        spec
+            .paths['/users']
+            .operations[Method.post]!
+            .requestBody
+            ?.object
+            ?.content
+            .keys
+            .first,
+        'application/xml',
       );
     });
   });

@@ -265,10 +265,14 @@ enum Method {
   String get key => name.toLowerCase();
 }
 
+/// A media type is a mime type and a schema.
+/// https://spec.openapis.org/oas/v3.0.0#mediaTypeObject
 @immutable
 class MediaType extends Equatable {
+  /// Create a new media type.
   const MediaType({required this.schema});
 
+  /// 3.0.1 seems to allow a ref in MediaType, but 3.1.0 does not.
   final SchemaRef schema;
 
   @override
@@ -303,53 +307,94 @@ class RequestBody extends Equatable {
   List<Object?> get props => [pointer, description, content, isRequired];
 }
 
-/// An endpoint is a path with a method.
-/// Spec splits this into a "path item" and a "operation" object.
-/// https://spec.openapis.org/oas/v3.0.0#path-item-object
-@immutable
-class Endpoint extends Equatable {
-  /// Create a new endpoint.
-  const Endpoint({
-    required this.path,
-    required this.method,
-    required this.tag,
+class Operation extends Equatable {
+  const Operation({
+    required this.tags,
+    required this.snakeName,
+    required this.summary,
+    required this.description,
     required this.responses,
     required this.parameters,
-    required this.snakeName,
     required this.requestBody,
+    required this.deprecated,
   });
 
-  /// The path of this endpoint (e.g. /my/user/{name})
-  final String path;
-
-  /// The method of this endpoint (e.g. GET, POST, etc.)
-  final Method method;
-
-  /// A tag for grouping endpoints.
-  final String tag;
-
-  /// The responses of this endpoint.
-  final Responses responses;
+  /// A list of tags for this operation.
+  final List<String> tags;
 
   /// The snake name of this endpoint (e.g. get_user)
   /// Typically the operationId, or the last path segment if not present.
   final String snakeName;
 
-  /// The parameters of this endpoint.
+  /// The summary of this operation.
+  final String summary;
+
+  /// The description of this operation.
+  final String? description;
+
+  /// The responses of this operation.
+  final Responses responses;
+
+  /// The parameters of this operation.
   final List<Parameter> parameters;
 
-  /// The request body of this endpoint.
+  /// The request body of this operation.
   final RefOr<RequestBody>? requestBody;
+
+  /// Whether this operation is deprecated.
+  final bool deprecated;
+
+  @override
+  List<Object?> get props => [
+    tags,
+    snakeName,
+    summary,
+    description,
+    responses,
+    parameters,
+    requestBody,
+    deprecated,
+  ];
+}
+
+/// An endpoint is a path with a method.
+/// https://spec.openapis.org/oas/v3.0.0#path-item-object
+@immutable
+class PathItem extends Equatable {
+  /// Create a new endpoint.
+  const PathItem({
+    required this.path,
+    required this.operations,
+    required this.summary,
+    required this.description,
+    // required this.parameters,
+  });
+
+  /// The path of this endpoint (e.g. /my/user/{name})
+  final String path;
+
+  /// The operations supported by this path.
+  final Map<Method, Operation> operations;
+
+  /// The default summary for all operations in this path.
+  final String? summary;
+
+  /// The default description for all operations in this path.
+  final String? description;
+
+  /// Parameters available to all operations in this path.
+  // final List<Parameter> parameters;
+
+  Set<String> get tags =>
+      operations.values.map((e) => e.tags.firstOrNull ?? 'Default').toSet();
 
   @override
   List<Object?> get props => [
     path,
-    method,
-    tag,
-    responses,
-    snakeName,
-    parameters,
-    requestBody,
+    operations,
+    summary,
+    description,
+    // parameters,
   ];
 }
 
@@ -389,8 +434,7 @@ class Response extends Equatable {
   final String description;
 
   /// The content of this response.
-  /// The official spec has a map here by mime type, but we only support json.
-  final SchemaRef? content;
+  final Map<String, MediaType>? content;
 
   /// Whether this response has content.
   /// We only support json, so we check for a schema with a type.
@@ -401,11 +445,14 @@ class Response extends Equatable {
     if (content == null) {
       return false;
     }
-    final schema = content.schema;
-    if (schema == null) {
-      return false;
+    for (final mediaType in content.values) {
+      final schemaRef = mediaType.schema;
+      // This does not resolve the schema, so it will not work with refs.
+      if (schemaRef.schema?.type != SchemaType.unknown) {
+        return true;
+      }
     }
-    return schema.type != SchemaType.unknown;
+    return false;
   }
 
   @override
@@ -439,6 +486,21 @@ class Info extends Equatable {
   List<Object?> get props => [title, version];
 }
 
+/// A map of paths to path items.
+/// https://spec.openapis.org/oas/v3.1.0#paths-object
+@immutable
+class Paths extends Equatable {
+  const Paths({required this.paths});
+
+  final Map<String, PathItem> paths;
+
+  Iterable<String> get keys => paths.keys;
+  PathItem operator [](String path) => paths[path]!;
+
+  @override
+  List<Object?> get props => [paths];
+}
+
 /// The OpenAPI object.  The root object of a spec.
 /// https://spec.openapis.org/oas/v3.1.0#openapi-object
 /// Objects in this library are not a one-to-one mapping with the spec,
@@ -449,7 +511,7 @@ class OpenApi extends Equatable {
     required this.serverUrl,
     required this.version,
     required this.info,
-    required this.endpoints,
+    required this.paths,
     required this.components,
   });
 
@@ -462,15 +524,12 @@ class OpenApi extends Equatable {
   /// The info of the spec.
   final Info info;
 
-  /// The endpoints of the spec.
-  final List<Endpoint> endpoints;
+  /// The paths of the spec.
+  final Paths paths;
 
   /// The components of the spec.
   final Components components;
 
-  /// Set of all endpoint tags in the spec.
-  Set<String> get tags => endpoints.map((e) => e.tag).toSet();
-
   @override
-  List<Object?> get props => [serverUrl, info, endpoints, components];
+  List<Object?> get props => [serverUrl, info, paths, components];
 }
