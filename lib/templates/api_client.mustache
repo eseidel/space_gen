@@ -8,6 +8,7 @@ enum Method {
   get,
   post,
   patch,
+  put,
 }
 
 class ApiClient {
@@ -61,6 +62,8 @@ class ApiClient {
           return client.post(uri, headers: headers, body: body);
         case Method.patch:
           return client.patch(uri, headers: headers, body: body);
+        case Method.put:
+          return client.put(uri, headers: headers, body: body);
       }
     } on SocketException catch (error, trace) {
       throw ApiException.withInner(
