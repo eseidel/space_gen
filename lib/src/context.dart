@@ -9,6 +9,7 @@ import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/parser.dart';
 import 'package:space_gen/src/spec.dart';
 import 'package:space_gen/src/string.dart';
+import 'package:space_gen/src/visitor.dart';
 
 void _unimplemented(String message, String pointer) {
   throw UnimplementedError('$message at $pointer');
@@ -853,20 +854,19 @@ class _Context {
       return refs.map((ref) => specUrl.resolve(ref.ref!)).toSet();
     }
 
-    Set<Uri> urisFromSchemas(List<Schema> schemas) {
+    Set<Uri> urisFromSchemas(Iterable<Schema> schemas) {
       return schemas
           .map((schema) => specUrl.replace(fragment: schema.pointer))
           .toSet();
     }
 
     for (final api in spec.apis) {
-      final renderContext = _RenderContext(specUri: specUrl);
-      _renderApi(renderContext, this, api);
+      final schemas = _renderApi(specUrl, this, api);
       // Api files only contain the API class, any inline schemas
       // end up in the model files.
       renderQueue.addAll([
-        ...urisFromSchemas(renderContext.inlineSchemas),
-        ...urisFromRefs(renderContext.importedSchemas),
+        ...urisFromSchemas(schemas.schemas),
+        ...urisFromRefs(schemas.refs),
       ]);
     }
 
@@ -881,8 +881,8 @@ class _Context {
       if (schema is Schema) {
         final renderContext = _renderSchema(this, schema);
         renderQueue.addAll([
-          ...urisFromSchemas(renderContext.inlineSchemas),
-          ...urisFromRefs(renderContext.importedSchemas),
+          ...urisFromSchemas(renderContext.schemas),
+          ...urisFromRefs(renderContext.refs),
         ]);
         rendered.add(uri);
       }
@@ -1025,99 +1025,66 @@ void renderSpec({
   ).render();
 }
 
-/// A per-file rendering context used for collecting imports and inline schemas.
-/// Used for a single API or model file.
-class _RenderContext {
-  /// Create a new render context.
-  _RenderContext({required this.specUri});
+class _RenderedSchemaVisitor extends Visitor {
+  final Set<RefOr<dynamic>> refs = {};
+  final Set<Schema> schemas = {};
 
-  /// The spec uri used for resolving internal references into full urls
-  /// which can be used to look up schemas in the schema registry.
-  final Uri specUri;
-
-  /// Schemas declared within this file, will be added to the rendering queue.
-  List<Schema> inlineSchemas = [];
-
-  /// Schemas imported by this file, will be added to the rendering queue.
-  Set<RefOr<dynamic>> importedSchemas = {};
-
-  /// Visit a schema reference and collect it if it is not already in the
-  /// importedSchemas set.
-  void visitRef<T>(RefOr<T>? ref) {
-    if (ref == null) {
-      return;
-    }
-    final object = ref.object;
-    if (object != null) {
-      if (object is Schema) {
-        collectSchema(object);
-      } else if (object is RequestBody) {
-        collectRequestBody(object);
-      } else {
-        throw StateError('Ref is not a schema or request body: $ref');
-      }
-    } else {
-      importedSchemas.add(ref);
+  @override
+  void visitReference<T>(RefOr<T> ref) {
+    // Only collect RefOr when ref is not null (object is null).
+    if (ref.ref != null) {
+      refs.add(ref);
     }
   }
 
-  /// Collect an API and all its endpoints and responses.
-  // TODO(eseidel): Could use Visitor for this?
-  void collectApi(Api api) {
-    for (final endpoint in api.endpoints) {
-      visitRef(endpoint.responseType);
-      for (final response in endpoint.operation.responses.contentfulResponses) {
-        for (final mediaType in response.content!.values) {
-          visitRef(mediaType.schema);
-        }
-      }
-      for (final param in endpoint.parameters) {
-        visitRef(param.type);
-      }
-      if (endpoint.operation.requestBody != null) {
-        visitRef(endpoint.operation.requestBody);
-      }
-    }
-  }
-
-  void collectRequestBody(RequestBody requestBody) {
-    for (final value in requestBody.content.values) {
-      visitRef(value.schema);
-    }
-  }
-
-  /// Collect a schema if it needs to be rendered.
-  void collectSchema(Schema schema) {
+  @override
+  void visitSchema(Schema schema) {
     if (schema.createsNewType) {
-      inlineSchemas.add(schema);
-    }
-    for (final entry in schema.properties.entries) {
-      visitRef(entry.value);
-    }
-    if (schema.type == SchemaType.array) {
-      visitRef(schema.items);
+      schemas.add(schema);
     }
   }
+}
+
+class _SchemaSet {
+  _SchemaSet(this.refs, this.schemas);
+
+  final Set<RefOr<dynamic>> refs;
+  final Set<Schema> schemas;
 
   /// Get the sorted package imports for this render context.
   List<String> sortedPackageImports(_Context context) {
     final imports = <String>{};
-    for (final ref in importedSchemas) {
+    for (final ref in refs) {
       imports.add(ref.packageImport(context));
     }
-    for (final schema in inlineSchemas) {
+    for (final schema in schemas) {
       imports.add(schema.packageImport(context));
     }
     return imports.toList()..sort();
   }
 }
 
-/// Starts a new RenderContext for rendering a new schema file.
-_RenderContext _renderSchema(_Context context, Schema schema) {
-  final renderContext = _RenderContext(specUri: context.specUrl)
-    ..collectSchema(schema);
+_SchemaSet _importsForSchema(Schema schema) {
+  final collector = _RenderedSchemaVisitor();
+  SpecWalker(collector).walkSchema(schema);
+  return _SchemaSet(collector.refs, collector.schemas);
+}
 
-  final imports = renderContext.sortedPackageImports(context);
+_SchemaSet _importsForApi(Api api) {
+  final collector = _RenderedSchemaVisitor();
+  // An Endpoint is a rendering-only concept.  The SpecWalker works on spec
+  // classes, so walk to PathItems within the endpoints.
+  for (final endpoint in api.endpoints) {
+    SpecWalker(collector).walkPathItem(endpoint.pathItem);
+  }
+  return _SchemaSet(collector.refs, collector.schemas);
+}
+
+/// Starts a new RenderContext for rendering a new schema file.
+_SchemaSet _renderSchema(_Context context, Schema schema) {
+  final schemas = _importsForSchema(schema);
+
+  final imports = schemas.sortedPackageImports(context);
   final Map<String, dynamic> schemaContext;
   final String template;
   switch (schema.renderType) {
@@ -1146,17 +1113,17 @@ _RenderContext _renderSchema(_Context context, Schema schema) {
     outPath: outPath,
     context: {'imports': imports, ...schemaContext},
   );
-  return renderContext;
+  return schemas;
 }
 
-void _renderApi(_RenderContext renderContext, _Context context, Api api) {
+_SchemaSet _renderApi(Uri schemaUrl, _Context context, Api api) {
+  final apiSchemas = _importsForApi(api);
   final endpoints = api.endpoints
       .map((e) => e.toTemplateContext(context))
       .toList();
-  renderContext.collectApi(api);
 
   final imports = {
-    ...renderContext.sortedPackageImports(context),
+    ...apiSchemas.sortedPackageImports(context),
     'dart:io', // For HttpStatus
     'package:${context.packageName}/api_exception.dart',
   };
@@ -1174,4 +1141,5 @@ void _renderApi(_RenderContext renderContext, _Context context, Api api) {
       'packageName': context.packageName,
     },
   );
+  return apiSchemas;
 }

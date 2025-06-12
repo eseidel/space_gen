@@ -6,6 +6,7 @@ abstract class Visitor {
   void visitPathItem(PathItem pathItem) {}
   void visitOperation(Operation operation) {}
   void visitParameter(Parameter parameter) {}
+  void visitRequestBody(RequestBody requestBody) {}
   void visitReference<T>(RefOr<T> ref) {}
   void visitSchema(Schema schema) {}
 }
@@ -40,11 +41,11 @@ class SpecWalker {
   void walkRoot(OpenApi root) {
     visitor.visitRoot(root);
     for (final path in root.paths.paths.values) {
-      _pathItem(path);
+      walkPathItem(path);
     }
   }
 
-  void _pathItem(PathItem pathItem) {
+  void walkPathItem(PathItem pathItem) {
     visitor.visitPathItem(pathItem);
     // for (final parameter in pathItem.parameters) {
     //   _parameter(parameter);
@@ -85,22 +86,36 @@ class SpecWalker {
   void _ref<T>(RefOr<T> ref) {
     visitor.visitReference(ref);
     final object = ref.object;
-    if (object is Schema?) {
-      _maybeSchema(object);
+    if (object == null) {
+      return;
+    }
+    if (object is Schema) {
+      walkSchema(object);
+    } else if (object is RequestBody) {
+      _requestBody(object);
+    } else {
+      throw UnimplementedError('Unknown ref type: ${object.runtimeType}');
     }
   }
 
-  void _maybeSchema(Schema? schema) {
-    if (schema != null) {
-      _schema(schema);
+  void _mediaType(MediaType mediaType) {
+    // visitor.visitMediaType(mediaType);
+    _ref(mediaType.schema);
+  }
+
+  void _requestBody(RequestBody requestBody) {
+    visitor.visitRequestBody(requestBody);
+    for (final mediaType in requestBody.content.values) {
+      _mediaType(mediaType);
     }
   }
 
-  void _schema(Schema schema) {
+  void walkSchema(Schema schema) {
     visitor.visitSchema(schema);
     for (final property in schema.properties.values) {
       _maybeRef(property);
     }
     _maybeRef(schema.items);
+    _maybeRef(schema.additionalProperties);
   }
 }
