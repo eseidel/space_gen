@@ -126,8 +126,14 @@ extension _EndpointGeneration on Endpoint {
     // body if it exists.
     final dartParameters = [...serverParameters, ?requestBody];
 
-    final returnType =
-        context._maybeResolve(responseType)?.typeName(context) ?? 'void';
+    final responseSchema = context._maybeResolve(responseType);
+    final returnType = responseSchema?.typeName(context) ?? 'void';
+    final responseFromJson = responseSchema?.fromJsonExpression(
+      'jsonDecode(response.body)',
+      context,
+      jsonIsNullable: false,
+      dartIsNullable: false,
+    );
 
     final namedParameters = dartParameters.where((p) => p['required'] == false);
     final positionalParameters = dartParameters.where(
@@ -164,9 +170,8 @@ extension _EndpointGeneration on Endpoint {
       'hasHeaderParameters': hasHeaderParameters,
       'headerParameters': headerParameters,
       'requestBody': requestBody,
-      // TODO(eseidel): remove void support, it's unused.
-      'returnIsVoid': returnType == 'void',
       'returnType': returnType,
+      'responseFromJson': responseFromJson,
     };
   }
 }
