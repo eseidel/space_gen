@@ -685,7 +685,10 @@ extension _RequestBodyGeneration on RequestBody {
     }
     final schema = context._resolve(schemaRef);
     final typeName = schema.typeName(context);
-    final paramName = typeName[0].toLowerCase() + typeName.substring(1);
+    // TODO(eseidel): Why don't we have a name for request bodies?
+    final paramName = (typeName[0].toLowerCase() + typeName.substring(1))
+        .split('<')
+        .first;
     // TODO(eseidel): Share code with Parameter.toTemplateContext.
     final isNullable = !isRequired;
     return {
