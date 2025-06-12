@@ -23,7 +23,7 @@ class ApiClient {
   // baseUri can contain a path, so we need to resolve the passed path relative
   // to it.  The passed path will always be absolute (leading slash) but should
   // be interpreted as relative to the baseUri.
-  Uri resolvePath(String path) => Uri.parse('${baseUri.toString()}$path');
+  Uri resolvePath(String path) => Uri.parse('$baseUri$path');
 
   Future<Response> invokeApi({
     required Method method,
