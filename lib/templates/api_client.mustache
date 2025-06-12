@@ -5,9 +5,10 @@ import 'package:http/http.dart';
 import 'package:{{{packageName}}}/api_exception.dart';
 
 enum Method {
+  delete,
   get,
-  post,
   patch,
+  post,
   put,
 }
 
@@ -53,15 +54,17 @@ class ApiClient {
 
     try {
       switch (method) {
+        case Method.delete:
+          return client.delete(uri, headers: headers);
         case Method.get:
           final withParams = uri.replace(
             queryParameters: {...baseUri.queryParameters, ...queryParameters},
           );
           return client.get(withParams, headers: headers);
-        case Method.post:
-          return client.post(uri, headers: headers, body: body);
         case Method.patch:
           return client.patch(uri, headers: headers, body: body);
+        case Method.post:
+          return client.post(uri, headers: headers, body: body);
         case Method.put:
           return client.put(uri, headers: headers, body: body);
       }
