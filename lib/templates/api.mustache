@@ -40,7 +40,7 @@ class {{ className }} {
             {{#hasHeaderParameters}}
             headerParameters: {
                 {{#headerParameters}}
-                '{{{ name }}}': {{{ toJson }}},
+                '{{{ name }}}': {{#isNullable}}?{{/isNullable}}{{{ toJson }}},
                 {{/headerParameters}}
             },
             {{/hasHeaderParameters}}
