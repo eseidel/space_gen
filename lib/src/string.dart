@@ -17,6 +17,11 @@ String camelFromSnake(String snake) {
   );
 }
 
+String lowercaseCamelFromSnake(String snake) {
+  final camel = camelFromSnake(snake);
+  return camel[0].toLowerCase() + camel.substring(1);
+}
+
 /// Convert kebab-case to snake_case.
 String snakeFromKebab(String kebab) => kebab.replaceAll('-', '_');
 

@@ -94,10 +94,7 @@ extension OpenApiGeneration on OpenApi {
 }
 
 extension _EndpointGeneration on Endpoint {
-  String get methodName {
-    final name = camelFromSnake(snakeName);
-    return name[0].toLowerCase() + name.substring(1);
-  }
+  String get methodName => lowercaseCamelFromSnake(snakeName);
 
   Uri uri(_Context context) => Uri.parse('${context.spec.serverUrl}$path');
 
@@ -638,9 +635,13 @@ extension _ParameterGeneration on Parameter {
       throw StateError('Type schema is null: $this');
     }
     final isNullable = !isRequired;
+    final specName = name;
+    final dartName = lowercaseCamelFromSnake(name);
+    final jsonName = name;
     return {
       'name': name,
-      'bracketedName': '{$name}',
+      'dartName': dartName,
+      'bracketedName': '{$specName}',
       'required': isRequired,
       'hasDefaultValue': typeSchema.defaultValue != null,
       'defaultValue': typeSchema.defaultValueString(context),
@@ -649,12 +650,12 @@ extension _ParameterGeneration on Parameter {
       'nullableType': typeSchema.nullableTypeName(context),
       'sendIn': sendIn.name,
       'toJson': typeSchema.toJsonExpression(
-        name,
+        dartName,
         context,
         dartIsNullable: isNullable,
       ),
       'fromJson': typeSchema.fromJsonExpression(
-        "json['$name']",
+        "json['$jsonName']",
         context,
         jsonIsNullable: isNullable,
         dartIsNullable: isNullable,
@@ -693,6 +694,7 @@ extension _RequestBodyGeneration on RequestBody {
     final isNullable = !isRequired;
     return {
       'name': paramName,
+      'dartName': paramName,
       'bracketedName': '{$paramName}',
       'required': isRequired,
       'hasDefaultValue': schema.defaultValue != null,

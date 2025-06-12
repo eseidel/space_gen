@@ -15,10 +15,10 @@ class {{ className }} {
     {{#endpoints}}
     Future<{{{ returnType }}}> {{{ methodName }}}(
         {{#positionalParameters}}
-        {{{ type }}} {{{ name }}},
+        {{{ type }}} {{{ dartName }}},
         {{/positionalParameters}}
         {{#hasNamedParameters}}
-        { {{#namedParameters}}{{#required}}required {{{ type }}}{{/required}}{{^required}}{{{ nullableType }}}{{/required}} {{{ name }}}{{#hasDefaultValue}} = {{{ defaultValue }}}{{/hasDefaultValue}},{{/namedParameters}} }
+        { {{#namedParameters}}{{#required}}required {{{ type }}}{{/required}}{{^required}}{{{ nullableType }}}{{/required}} {{{ dartName }}}{{#hasDefaultValue}} = {{{ defaultValue }}}{{/hasDefaultValue}},{{/namedParameters}} }
         {{/hasNamedParameters}}
     ) async {
         final response = await client.invokeApi(
