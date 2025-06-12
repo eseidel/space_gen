@@ -25,7 +25,7 @@ class {{ className }} {
             method: Method.{{{httpMethod}}},
             path: '{{{path}}}'
             {{#pathParameters}}
-            .replaceAll('{{{ bracketedName }}}', {{{ toJson }}})
+            .replaceAll('{{{ bracketedName }}}', "${ {{{ toJson }}} }")
             {{/pathParameters}},
             {{#hasQueryParameters}}
             queryParameters: {
