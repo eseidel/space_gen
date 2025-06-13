@@ -67,7 +67,7 @@ class SpecWalker {
       }
     }
     for (final parameter in operation.parameters) {
-      _parameter(parameter);
+      _ref(parameter);
     }
     _maybeRef(operation.requestBody);
   }
@@ -93,6 +93,8 @@ class SpecWalker {
       walkSchema(object);
     } else if (object is RequestBody) {
       _requestBody(object);
+    } else if (object is Parameter) {
+      _parameter(object);
     } else {
       throw UnimplementedError('Unknown ref type: ${object.runtimeType}');
     }

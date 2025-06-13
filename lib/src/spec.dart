@@ -336,7 +336,7 @@ class Operation extends Equatable {
   final Responses responses;
 
   /// The parameters of this operation.
-  final List<Parameter> parameters;
+  final List<RefOr<Parameter>> parameters;
 
   /// The request body of this operation.
   final RefOr<RequestBody>? requestBody;
@@ -461,10 +461,15 @@ class Response extends Equatable {
 
 @immutable
 class Components extends Equatable {
-  const Components({this.schemas = const {}, this.requestBodies = const {}});
+  const Components({
+    this.schemas = const {},
+    this.requestBodies = const {},
+    this.parameters = const {},
+  });
 
   final Map<String, Schema> schemas;
-  // final Map<String, Parameter> parameters;
+  final Map<String, Parameter> parameters;
+
   // final Map<String, SecurityScheme> securitySchemes;
   final Map<String, RequestBody> requestBodies;
   // final Map<String, Response> responses;
@@ -474,7 +479,7 @@ class Components extends Equatable {
   // final Map<String, Callback> callbacks;
 
   @override
-  List<Object?> get props => [schemas, requestBodies];
+  List<Object?> get props => [schemas, requestBodies, parameters];
 }
 
 @immutable

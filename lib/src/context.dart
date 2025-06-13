@@ -54,7 +54,7 @@ class Endpoint {
 
   String get snakeName => operation.snakeName;
 
-  List<Parameter> get parameters => operation.parameters;
+  List<RefOr<Parameter>> get parameters => operation.parameters;
 }
 
 /// The spec calls these tags, but the Dart openapi generator groups endpoints
@@ -111,9 +111,9 @@ extension _EndpointGeneration on Endpoint {
   }
 
   Map<String, dynamic> toTemplateContext(_Context context) {
-    final serverParameters = parameters
-        .map((param) => param.toTemplateContext(context))
-        .toList();
+    final serverParameters = parameters.map((param) {
+      return context._resolve<Parameter>(param).toTemplateContext(context);
+    }).toList();
 
     final bodyObject = context._maybeResolve<RequestBody>(
       operation.requestBody,

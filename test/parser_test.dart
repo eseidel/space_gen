@@ -936,6 +936,46 @@ void main() {
         'application/xml',
       );
     });
+
+    test('parameters can be refs', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'parameters': [
+                {r'$ref': '#/components/parameters/foo'},
+              ],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+        'components': {
+          'parameters': {
+            'foo': {
+              'name': 'foo',
+              'in': 'query',
+              'schema': {'type': 'string'},
+            },
+          },
+        },
+      };
+      final logger = _MockLogger();
+      final spec = runWithLogger(logger, () => parseTestSpec(json));
+      expect(spec.paths['/users'].operations[Method.get]!.parameters, [
+        isA<RefOr<Parameter>>().having(
+          (p) => p.ref,
+          'ref',
+          equals('#/components/parameters/foo'),
+        ),
+      ]);
+    });
   });
 
   group('ParseContext', () {

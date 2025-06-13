@@ -106,6 +106,14 @@ void _warnUnused(MapContext context) {
   }
 }
 
+RefOr<Parameter> parseParameterOrRef(MapContext json) {
+  if (json.containsKey(r'$ref')) {
+    final ref = json[r'$ref'] as String;
+    return RefOr<Parameter>.ref(ref);
+  }
+  return RefOr<Parameter>.object(parseParameter(json));
+}
+
 /// Parse a parameter from a json object.
 Parameter parseParameter(MapContext json) {
   final schema = _optionalMap(json, 'schema');
@@ -337,7 +345,8 @@ Operation _parseOperation(MapContext operationJson, String path) {
   final parameters = _mapOptionalList(
     context,
     'parameters',
-    (child, index) => parseParameter(child.addSnakeName('parameter$index')),
+    (child, index) =>
+        parseParameterOrRef(child.addSnakeName('parameter$index')),
   ).toList();
   final requestBody = parseRequestBodyOrRef(
     _optionalMap(context, 'requestBody'),
@@ -395,7 +404,8 @@ PathItem parsePathItem({
   // final parameters = _mapOptionalList(
   //   pathItemJson,
   //   'parameters',
-  //   (child, index) => parseParameter(child.addSnakeName('parameter$index')),
+  //   (child, index) => parseParameterOrRef(
+  //  child.addSnakeName('parameter$index')),
   // ).toList();
 
   final description = _optional<String>(pathItemJson, 'description');
@@ -486,7 +496,12 @@ Components parseComponents(MapContext? componentsJson) {
     return const Components();
   }
   final keys = componentsJson.keys.toList();
-  final supportedKeys = ['schemas', 'securitySchemes', 'requestBodies'];
+  final supportedKeys = [
+    'schemas',
+    'securitySchemes',
+    'requestBodies',
+    'parameters',
+  ];
 
   for (final key in keys) {
     if (!supportedKeys.contains(key)) {
@@ -517,8 +532,17 @@ Components parseComponents(MapContext? componentsJson) {
     'requestBodies',
     parseRequestBody,
   );
+  final parameters = _parseComponent<Parameter>(
+    componentsJson,
+    'parameters',
+    parseParameter,
+  );
   _warnUnused(componentsJson);
-  return Components(schemas: schemas, requestBodies: requestBodies);
+  return Components(
+    schemas: schemas,
+    requestBodies: requestBodies,
+    parameters: parameters,
+  );
 }
 
 Info parseInfo(MapContext json) {
