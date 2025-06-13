@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:file/file.dart';
 import 'package:http/http.dart' as http;
+import 'package:yaml/yaml.dart' as yaml;
 
 typedef Json = Map<String, dynamic>;
 
@@ -17,13 +18,25 @@ class Cache {
 
   // Does not check the cache, does handle both file and network urls.
   Future<Json> _fetchWithoutCache(Uri uri) async {
-    if (!uri.hasScheme || uri.scheme == 'file') {
-      final content = fs.file(uri.toFilePath()).readAsStringSync();
+    final isYaml = uri.path.endsWith('.yaml') || uri.path.endsWith('.yml');
+
+    Json decode(String content) {
+      if (isYaml) {
+        final yamlDoc = yaml.loadYaml(content);
+        // re-encode as json to get a valid json object.
+        final jsonString = jsonEncode(yamlDoc);
+        return jsonDecode(jsonString) as Json;
+      }
       return jsonDecode(content) as Json;
     }
 
+    if (!uri.hasScheme || uri.scheme == 'file') {
+      final content = fs.file(uri.toFilePath()).readAsStringSync();
+      return decode(content);
+    }
+
     final response = await client.get(uri);
-    return jsonDecode(response.body) as Json;
+    return decode(response.body);
   }
 
   Future<Json> load(Uri uri) async {
