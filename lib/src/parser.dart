@@ -86,13 +86,10 @@ Never _unimplemented(ParseContext json, String message) {
 void _ignored<T>(MapContext parent, String key, {bool warn = false}) {
   final value = parent[key];
   if (value != null) {
-    final message =
-        'Ignoring key: $key (${value.runtimeType}) in ${parent.pointer}';
+    _expectType<T>(parent, key, value);
+    final message = 'Ignoring key: $key ($T) in ${parent.pointer}';
     final method = warn ? logger.warn : logger.detail;
     method(message);
-  }
-  if (value != null) {
-    _expectType<T>(parent, key, value);
   }
 }
 
@@ -589,8 +586,8 @@ Components parseComponents(MapContext? componentsJson) {
   if (securitySchemesJson != null) {
     _warn(componentsJson, 'Ignoring securitySchemes');
   }
-  failIfPresent('links');
-  failIfPresent('callbacks');
+  _ignored<Map<String, dynamic>>(componentsJson, 'links');
+  _ignored<Map<String, dynamic>>(componentsJson, 'callbacks');
 
   _warnUnused(componentsJson);
   return Components(

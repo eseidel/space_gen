@@ -1043,6 +1043,40 @@ void main() {
         equals('#/components/responses/User'),
       );
     });
+    test('empty links are ignored', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+        'components': {
+          'links': <String, dynamic>{},
+          'callbacks': <String, dynamic>{},
+        },
+      };
+      final logger = _MockLogger();
+      runWithLogger(logger, () => parseTestSpec(json));
+      verify(
+        () => logger.detail(
+          'Ignoring key: links (Map<String, dynamic>) in /components',
+        ),
+      ).called(1);
+      verify(
+        () => logger.detail(
+          'Ignoring key: callbacks (Map<String, dynamic>) in /components',
+        ),
+      ).called(1);
+    });
   });
 
   group('ParseContext', () {
