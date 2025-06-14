@@ -11,7 +11,7 @@ import 'package:space_gen/src/spec.dart';
 import 'package:space_gen/src/string.dart';
 import 'package:space_gen/src/visitor.dart';
 
-void _unimplemented(String message, String pointer) {
+Never _unimplemented(String message, String pointer) {
   throw UnimplementedError('$message at $pointer');
 }
 
@@ -175,6 +175,95 @@ extension _EndpointGeneration on Endpoint {
 
 enum SchemaRenderType { enumeration, object, stringNewtype, numberNewtype, pod }
 
+extension _SchemaBaseGeneration on SchemaBase {
+  bool get createsNewType {
+    if (this is Schema) {
+      return (this as Schema).createsNewType;
+    }
+    // All other schema types create a new type.
+    return true;
+  }
+
+  String typeName(_Context context) {
+    if (this is Schema) {
+      return (this as Schema).typeName(context);
+    }
+    // TODO(eseidel): Support other schema types.
+    return 'dynamic';
+  }
+
+  String nullableTypeName(_Context context) {
+    final typeName = this.typeName(context);
+    return typeName.endsWith('?') ? typeName : '$typeName?';
+  }
+
+  String equalsExpression(String name, _Context context) {
+    if (this is Schema) {
+      return (this as Schema).equalsExpression(name, context);
+    }
+    // TODO(eseidel): Support other schema types.
+    _unimplemented('equalsExpression', pointer);
+  }
+
+  String toJsonExpression(
+    String dartName,
+    _Context context, {
+    required bool dartIsNullable,
+  }) {
+    if (this is Schema) {
+      return (this as Schema).toJsonExpression(
+        dartName,
+        context,
+        dartIsNullable: dartIsNullable,
+      );
+    }
+    // TODO(eseidel): Support other schema types.
+    _unimplemented('toJsonExpression', pointer);
+  }
+
+  String fromJsonExpression(
+    String jsonValue,
+    _Context context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) {
+    if (this is Schema) {
+      return (this as Schema).fromJsonExpression(
+        jsonValue,
+        context,
+        jsonIsNullable: jsonIsNullable,
+        dartIsNullable: dartIsNullable,
+      );
+    }
+    // TODO(eseidel): Support other schema types.
+    _unimplemented('fromJsonExpression', pointer);
+  }
+
+  String? defaultValueString(_Context context) {
+    if (this is Schema) {
+      return (this as Schema).defaultValueString(context);
+    }
+    // TODO(eseidel): Support other schema types.
+    _unimplemented('defaultValueString', pointer);
+  }
+
+  bool hasDefaultValue(_Context context) {
+    if (this is Schema) {
+      return (this as Schema).hasDefaultValue(context);
+    }
+    // TODO(eseidel): Support other schema types.
+    _unimplemented('hasDefaultValue', pointer);
+  }
+
+  dynamic get defaultValue {
+    if (this is Schema) {
+      return (this as Schema).defaultValue;
+    }
+    // TODO(eseidel): Support other schema types.
+    _unimplemented('defaultValue', pointer);
+  }
+}
+
 extension _SchemaGeneration on Schema {
   /// Schema name in file name format.
   String get fileName => snakeName;
@@ -223,7 +312,7 @@ extension _SchemaGeneration on Schema {
   bool get isEnum => type == SchemaType.string && enumValues.isNotEmpty;
 
   // Is a Map with a specified value type.
-  Schema? valueSchema(_Context context) {
+  SchemaBase? valueSchema(_Context context) {
     if (type != SchemaType.object) {
       return null;
     }
@@ -464,7 +553,7 @@ extension _SchemaGeneration on Schema {
   /// [property] is the schema of the property itself.
   Map<String, dynamic> propertyTemplateContext({
     required String jsonName,
-    required Schema property,
+    required SchemaBase property,
     required _Context context,
   }) {
     // Properties only need to avoid reserved words for openapi compat.

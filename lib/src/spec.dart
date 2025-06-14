@@ -133,22 +133,76 @@ class RefOr<T> extends Equatable {
   List<Object?> get props => [ref, object];
 }
 
-class SchemaRef extends RefOr<Schema> {
+class SchemaRef extends RefOr<SchemaBase> {
   const SchemaRef.ref(String super.ref) : super.ref();
-  const SchemaRef.schema(Schema super.schema) : super.object();
+  const SchemaRef.schema(SchemaBase super.schema) : super.object();
 
-  Schema? get schema => object;
+  SchemaBase? get schema => object;
+}
+
+sealed class SchemaBase extends Equatable {
+  const SchemaBase({
+    required this.pointer,
+    required this.snakeName,
+    required this.type,
+  });
+
+  final String pointer;
+  final String snakeName;
+  final SchemaType type;
+
+  @override
+  List<Object?> get props => [pointer, snakeName, type];
+}
+
+class SchemaAnyOf extends SchemaBase {
+  const SchemaAnyOf({
+    required super.pointer,
+    required super.snakeName,
+    required this.schemas,
+  }) : super(type: SchemaType.object);
+
+  final List<SchemaRef> schemas;
+
+  @override
+  List<Object?> get props => [super.props, schemas];
+}
+
+class SchemaAllOf extends SchemaBase {
+  const SchemaAllOf({
+    required super.pointer,
+    required super.snakeName,
+    required this.schemas,
+  }) : super(type: SchemaType.object);
+
+  final List<SchemaRef> schemas;
+
+  @override
+  List<Object?> get props => [super.props, schemas];
+}
+
+class SchemaOneOf extends SchemaBase {
+  const SchemaOneOf({
+    required super.pointer,
+    required super.snakeName,
+    required this.schemas,
+  }) : super(type: SchemaType.object);
+
+  final List<SchemaRef> schemas;
+
+  @override
+  List<Object?> get props => [super.props, schemas];
 }
 
 /// A schema is a json object that describes the shape of a json object.
 /// https://spec.openapis.org/oas/v3.0.0#schemaObject
 @immutable
-class Schema extends Equatable {
+class Schema extends SchemaBase {
   /// Create a new schema.
   Schema({
-    required this.pointer,
-    required this.snakeName,
-    required this.type,
+    required super.pointer,
+    required super.snakeName,
+    required super.type,
     required this.properties,
     required this.required,
     required this.description,
@@ -168,15 +222,6 @@ class Schema extends Equatable {
       );
     }
   }
-
-  /// Json pointer location of this schema.
-  final String pointer;
-
-  /// Name of this schema based on parse location.
-  final String snakeName;
-
-  /// The type of this schema.
-  final SchemaType type;
 
   /// The properties of this schema.
   final Map<String, SchemaRef> properties;
@@ -213,9 +258,7 @@ class Schema extends Equatable {
 
   @override
   List<Object?> get props => [
-    pointer,
-    snakeName,
-    type,
+    super.props,
     properties,
     required,
     description,
@@ -447,8 +490,18 @@ class Response extends Equatable {
     }
     for (final mediaType in content.values) {
       final schemaRef = mediaType.schema;
-      // This does not resolve the schema, so it will not work with refs.
-      if (schemaRef.schema?.type != SchemaType.unknown) {
+      final schema = schemaRef.schema;
+      if (schema == null) {
+        // Assume refs have content.
+        return true;
+      }
+      if (schema is Schema) {
+        // Any non-empty schema has content.
+        if (schema.type != SchemaType.unknown) {
+          return true;
+        }
+      } else {
+        // All collection-type schemas have content.
         return true;
       }
     }
@@ -467,7 +520,7 @@ class Components extends Equatable {
     this.parameters = const {},
   });
 
-  final Map<String, Schema> schemas;
+  final Map<String, SchemaBase> schemas;
   final Map<String, Parameter> parameters;
 
   // final Map<String, SecurityScheme> securitySchemes;

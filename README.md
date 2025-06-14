@@ -31,6 +31,7 @@ dart run space_gen
 * Simplify hasAdditionalProperties.
 * Remove anyOf hack for RefuelShipRequest.fromCargo.
 * Fix toString hack for queryParameters.
+* Move to a sealed class for Schema that allows for AnyOf, AllOf, OneOf variants?
 
 Is the body sometimes passed in as an object, and sometimes created by
 the endpoint?  Or is it always created by the endpoint?

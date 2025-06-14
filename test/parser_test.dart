@@ -14,7 +14,7 @@ void main() {
       );
     }
 
-    Map<String, Schema> parseTestSchemas(Map<String, dynamic> schemasJson) {
+    Map<String, SchemaBase> parseTestSchemas(Map<String, dynamic> schemasJson) {
       final specJson = {
         'openapi': '3.1.0',
         'info': {'title': 'Space Traders API', 'version': '1.0.0'},
@@ -121,6 +121,24 @@ void main() {
         'components': {
           'schemas': {
             'Foo': {'type': 'object'},
+            'Bar': {
+              'anyOf': [
+                {'type': 'boolean'},
+                {'type': 'string'},
+              ],
+            },
+            'Baz': {
+              'allOf': [
+                {'type': 'boolean'},
+                {'type': 'string'},
+              ],
+            },
+            'Qux': {
+              'oneOf': [
+                {'type': 'boolean'},
+                {'type': 'string'},
+              ],
+            },
           },
         },
       };
@@ -180,7 +198,7 @@ void main() {
       };
       final logger = _MockLogger();
       final schemas = runWithLogger(logger, () => parseTestSchemas(json));
-      final schema = schemas['User']!;
+      final schema = schemas['User']! as Schema;
       expect(schema.type, SchemaType.array);
       expect(schema.items!.ref, '#/components/schemas/Value');
     });
@@ -198,7 +216,7 @@ void main() {
       expect(schemas['User']!.type, SchemaType.boolean);
     });
 
-    test('anyOf not generally supported', () {
+    test('anyOf parses as SchemaAnyOf', () {
       final json = {
         'User': {
           'anyOf': [
@@ -208,20 +226,8 @@ void main() {
         },
       };
       final logger = _MockLogger();
-      expect(
-        () => runWithLogger(logger, () => parseTestSchemas(json)),
-        throwsA(
-          isA<UnimplementedError>().having(
-            (e) => e.message,
-            'message',
-            equals(
-              'anyOf with 2 items not supported in '
-              'MapContext(/components/schemas/User, '
-              '{anyOf: [{type: boolean}, {type: string}]})',
-            ),
-          ),
-        ),
-      );
+      final schemas = runWithLogger(logger, () => parseTestSchemas(json));
+      expect(schemas['User'], isA<SchemaAnyOf>());
     });
 
     test('allOf with one item', () {
@@ -247,20 +253,8 @@ void main() {
         },
       };
       final logger = _MockLogger();
-      expect(
-        () => runWithLogger(logger, () => parseTestSchemas(json)),
-        throwsA(
-          isA<UnimplementedError>().having(
-            (e) => e.message,
-            'message',
-            equals(
-              'allOf with 2 items not supported in '
-              'MapContext(/components/schemas/User, '
-              '{allOf: [{type: boolean}, {type: string}]})',
-            ),
-          ),
-        ),
-      );
+      final schemas = runWithLogger(logger, () => parseTestSchemas(json));
+      expect(schemas['User'], isA<SchemaAllOf>());
     });
 
     test('oneOf not supported', () {
@@ -272,20 +266,8 @@ void main() {
         },
       };
       final logger = _MockLogger();
-      expect(
-        () => runWithLogger(logger, () => parseTestSchemas(json)),
-        throwsA(
-          isA<UnimplementedError>().having(
-            (e) => e.message,
-            'message',
-            equals(
-              'oneOf not supported in '
-              'MapContext(/components/schemas/User, '
-              '{oneOf: [{type: boolean}]})',
-            ),
-          ),
-        ),
-      );
+      final schemas = runWithLogger(logger, () => parseTestSchemas(json));
+      expect(schemas['User'], isA<SchemaOneOf>());
     });
 
     test('components schemas as ref not supported', () {
@@ -301,7 +283,7 @@ void main() {
       };
       final logger = _MockLogger();
       final schemas = runWithLogger(logger, () => parseTestSchemas(json));
-      final schema = schemas['User']!;
+      final schema = schemas['User']! as Schema;
       expect(schema.type, SchemaType.object);
       expect(schema.properties['value']!.ref, '#/components/schemas/Value');
 
@@ -975,6 +957,33 @@ void main() {
           equals('#/components/parameters/foo'),
         ),
       ]);
+    });
+
+    test('ignores securitySchemes', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+        'components': {
+          'securitySchemes': {
+            'foo': {'type': 'http'},
+          },
+        },
+      };
+      final logger = _MockLogger();
+      runWithLogger(logger, () => parseTestSpec(json));
+      verify(() => logger.warn('Ignoring securitySchemes.')).called(1);
     });
   });
 

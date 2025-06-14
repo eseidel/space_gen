@@ -147,7 +147,8 @@ Parameter parseParameter(MapContext json) {
   }
 
   if (sendIn == SendIn.path) {
-    final schemaType = type.schema?.type;
+    final schema = type.schema;
+    final schemaType = schema?.type;
     if (schemaType != SchemaType.string && schemaType != SchemaType.integer) {
       _error(json, 'Path parameters must be strings or integers');
     }
@@ -251,16 +252,36 @@ SchemaRef parseSchemaOrRef(MapContext json) {
   }
 
   if (json.containsKey('oneOf')) {
-    // TODO(eseidel): Support oneOf
-    _unimplemented(json, 'oneOf');
+    final oneOf = json.childAsList('oneOf');
+    final schemas = <SchemaRef>[];
+    for (var i = 0; i < oneOf.length; i++) {
+      schemas.add(parseSchemaOrRef(oneOf.indexAsMap(i)));
+    }
+    return SchemaRef.schema(
+      SchemaOneOf(
+        pointer: json.pointer.toString(),
+        snakeName: json.snakeName,
+        schemas: schemas,
+      ),
+    );
   }
 
   if (json.containsKey('allOf')) {
     final allOf = json.childAsList('allOf');
-    if (allOf.length != 1) {
-      _unimplemented(json, 'allOf with ${allOf.length} items');
+    if (allOf.length == 1) {
+      return parseSchemaOrRef(allOf.indexAsMap(0));
     }
-    return parseSchemaOrRef(allOf.indexAsMap(0));
+    final schemas = <SchemaRef>[];
+    for (var i = 0; i < allOf.length; i++) {
+      schemas.add(parseSchemaOrRef(allOf.indexAsMap(i)));
+    }
+    return SchemaRef.schema(
+      SchemaAllOf(
+        pointer: json.pointer.toString(),
+        snakeName: json.snakeName,
+        schemas: schemas,
+      ),
+    );
   }
 
   if (json.containsKey('anyOf')) {
@@ -294,7 +315,17 @@ SchemaRef parseSchemaOrRef(MapContext json) {
       }
     }
 
-    _unimplemented(json, 'anyOf with ${anyOf.length} items');
+    final schemas = <SchemaRef>[];
+    for (var i = 0; i < anyOf.length; i++) {
+      schemas.add(parseSchemaOrRef(anyOf.indexAsMap(i)));
+    }
+    return SchemaRef.schema(
+      SchemaAnyOf(
+        pointer: json.pointer.toString(),
+        snakeName: json.snakeName,
+        schemas: schemas,
+      ),
+    );
   }
 
   return SchemaRef.schema(parseSchema(json));
@@ -517,7 +548,7 @@ Components parseComponents(MapContext? componentsJson) {
     logger.warn('Ignoring securitySchemes.');
   }
 
-  final schemas = _parseComponent<Schema>(componentsJson, 'schemas', (
+  final schemas = _parseComponent<SchemaBase>(componentsJson, 'schemas', (
     childContext,
   ) {
     final ref = parseSchemaOrRef(childContext);
