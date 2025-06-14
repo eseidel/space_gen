@@ -449,18 +449,18 @@ class Responses extends Equatable {
   const Responses({required this.responses});
 
   /// The responses of this endpoint.
-  final Map<int, Response> responses;
+  final Map<int, RefOr<Response>> responses;
 
   // default is not yet supported.
 
   /// The contentful responses of this endpoint.
-  List<Response> get contentfulResponses =>
+  List<RefOr<Response>> get contentfulResponses =>
       responses.values.where(Response.hasContent).toList();
 
   /// Whether this endpoint has any responses.
   bool get isEmpty => responses.isEmpty;
 
-  Response? operator [](int code) => responses[code];
+  RefOr<Response>? operator [](int code) => responses[code];
 
   @override
   List<Object?> get props => [responses];
@@ -483,8 +483,11 @@ class Response extends Equatable {
   /// We only support json, so we check for a schema with a type.
   /// This is a bit of a hack for the space traders spec which has a 204
   /// response with an empty schema.
-  static bool hasContent(Response response) {
-    final content = response.content;
+  static bool hasContent(RefOr<Response> response) {
+    if (response.ref != null) {
+      return true;
+    }
+    final content = response.object?.content;
     if (content == null) {
       return false;
     }
@@ -518,6 +521,7 @@ class Components extends Equatable {
     this.schemas = const {},
     this.requestBodies = const {},
     this.parameters = const {},
+    this.responses = const {},
   });
 
   final Map<String, SchemaBase> schemas;
@@ -525,7 +529,7 @@ class Components extends Equatable {
 
   // final Map<String, SecurityScheme> securitySchemes;
   final Map<String, RequestBody> requestBodies;
-  // final Map<String, Response> responses;
+  final Map<String, Response> responses;
   // final Map<String, Header> headers;
   // final Map<String, Example> examples;
   // final Map<String, Link> links;

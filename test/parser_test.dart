@@ -747,11 +747,21 @@ void main() {
       };
       final spec = parseTestSpec(json);
       expect(
-        spec.paths['/users'].operations[Method.get]!.responses[200]!.content,
+        spec
+            .paths['/users']
+            .operations[Method.get]!
+            .responses[200]!
+            .object
+            ?.content,
         isNotNull,
       );
       expect(
-        spec.paths['/users'].operations[Method.get]!.responses[204]!.content,
+        spec
+            .paths['/users']
+            .operations[Method.get]!
+            .responses[204]!
+            .object
+            ?.content,
         isNotNull,
       );
     });
@@ -983,7 +993,55 @@ void main() {
       };
       final logger = _MockLogger();
       runWithLogger(logger, () => parseTestSpec(json));
-      verify(() => logger.warn('Ignoring securitySchemes.')).called(1);
+      verify(
+        () => logger.warn('Ignoring securitySchemes in /components'),
+      ).called(1);
+    });
+
+    test('ref is not allowed everywhere', () {
+      final json = {
+        r'$ref': '#/components/schemas/User',
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+      };
+      expect(
+        () => parseTestSpec(json),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals(r'$ref not expected in /'),
+          ),
+        ),
+      );
+    });
+    test('response can be ref', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {r'$ref': '#/components/responses/User'},
+              },
+            },
+          },
+        },
+        'components': {
+          'responses': {
+            'User': {'description': 'User'},
+          },
+        },
+      };
+      final spec = parseTestSpec(json);
+      expect(
+        spec.paths['/users'].operations[Method.get]!.responses[200]!.ref,
+        equals('#/components/responses/User'),
+      );
     });
   });
 

@@ -6,6 +6,7 @@ abstract class Visitor {
   void visitPathItem(PathItem pathItem) {}
   void visitOperation(Operation operation) {}
   void visitParameter(Parameter parameter) {}
+  void visitResponse(Response response) {}
   void visitRequestBody(RequestBody requestBody) {}
   void visitReference<T>(RefOr<T> ref) {}
   void visitSchema(Schema schema) {}
@@ -58,13 +59,7 @@ class SpecWalker {
   void _operation(Operation operation) {
     visitor.visitOperation(operation);
     for (final response in operation.responses.responses.values) {
-      final content = response.content;
-      if (content == null) {
-        continue;
-      }
-      for (final mediaType in content.values) {
-        _ref(mediaType.schema);
-      }
+      _ref(response);
     }
     for (final parameter in operation.parameters) {
       _ref(parameter);
@@ -75,6 +70,16 @@ class SpecWalker {
   void _parameter(Parameter parameter) {
     visitor.visitParameter(parameter);
     _maybeRef(parameter.type);
+  }
+
+  void _response(Response response) {
+    visitor.visitResponse(response);
+    final content = response.content;
+    if (content != null) {
+      for (final mediaType in content.values) {
+        _mediaType(mediaType);
+      }
+    }
   }
 
   void _maybeRef<T>(RefOr<T>? ref) {
@@ -95,6 +100,8 @@ class SpecWalker {
       _requestBody(object);
     } else if (object is Parameter) {
       _parameter(object);
+    } else if (object is Response) {
+      _response(object);
     } else {
       throw UnimplementedError('Unknown ref type: ${object.runtimeType}');
     }

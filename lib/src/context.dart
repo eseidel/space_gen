@@ -101,9 +101,13 @@ extension _EndpointGeneration on Endpoint {
   /// The type of the response.
   /// If there are multiple responses, we return the first one with a content
   /// type.
-  SchemaRef? get responseType {
+  SchemaRef? responseType(_Context context) {
     final responses = operation.responses;
-    final content = responses.contentfulResponses.firstOrNull?.content;
+    final maybeResponseRef = responses.contentfulResponses.firstOrNull;
+    if (maybeResponseRef == null) {
+      return null;
+    }
+    final content = context._resolve(maybeResponseRef).content;
     if (content == null) {
       return null;
     }
@@ -123,7 +127,7 @@ extension _EndpointGeneration on Endpoint {
     // body if it exists.
     final dartParameters = [...serverParameters, ?requestBody];
 
-    final responseSchema = context._maybeResolve(responseType);
+    final responseSchema = context._maybeResolve(responseType(context));
     final returnType = responseSchema?.typeName(context) ?? 'void';
     final responseFromJson = responseSchema?.fromJsonExpression(
       'jsonDecode(response.body)',
