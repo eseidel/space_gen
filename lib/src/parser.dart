@@ -392,7 +392,7 @@ Operation _parseOperation(MapContext operationJson, String path) {
 
   // Operation does not mention 'responses' as being required, but
   // the Responses object says at least one response is required.
-  if (responses.contentfulResponses.length > 1) {
+  if (responses.successfulResponsesWithContent.length > 1) {
     _unimplemented(context, 'Multiple responses with content');
   }
   if (responses.isEmpty) {

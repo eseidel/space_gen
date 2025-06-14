@@ -667,7 +667,7 @@ void main() {
       );
     });
 
-    test('multiple responses with content not supported', () {
+    test('multiple successful responses with content not supported', () {
       final json = {
         'openapi': '3.1.0',
         'info': {'title': 'Space Traders API', 'version': '1.0.0'},
@@ -711,60 +711,119 @@ void main() {
       );
     });
 
-    test('multiple responses with content ignores empty responses', () {
-      final json = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {
-              'responses': {
-                '200': {
-                  'description': 'OK',
-                  'content': {
-                    'application/json': {
-                      'schema': {'type': 'boolean'},
+    test(
+      'multiple successful responses with content ignores empty responses',
+      () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {'type': 'boolean'},
+                      },
                     },
                   },
-                },
-                '204': {
-                  'description': 'No content',
-                  'content': {
-                    'application/json': {
-                      // This doesn't error because schema is empty.
-                      // This is a hack for Space Traders get-cooldown.
-                      'schema': {'description': 'No content'},
+                  '204': {
+                    'description': 'No content',
+                    'content': {
+                      'application/json': {
+                        // This doesn't error because schema is empty.
+                        // This is a hack for Space Traders get-cooldown.
+                        'schema': {'description': 'No content'},
+                      },
                     },
                   },
                 },
               },
             },
           },
-        },
-      };
-      final spec = parseTestSpec(json);
-      expect(
-        spec
-            .paths['/users']
-            .operations[Method.get]!
-            .responses[200]!
-            .object
-            ?.content,
-        isNotNull,
-      );
-      expect(
-        spec
-            .paths['/users']
-            .operations[Method.get]!
-            .responses[204]!
-            .object
-            ?.content,
-        isNotNull,
-      );
-    });
+        };
+        final spec = parseTestSpec(json);
+        expect(
+          spec
+              .paths['/users']
+              .operations[Method.get]!
+              .responses[200]!
+              .object
+              ?.content,
+          isNotNull,
+        );
+        expect(
+          spec
+              .paths['/users']
+              .operations[Method.get]!
+              .responses[204]!
+              .object
+              ?.content,
+          isNotNull,
+        );
+      },
+    );
+
+    test(
+      'multiple responses with content ignores non-successful responses',
+      () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {'type': 'boolean'},
+                      },
+                    },
+                  },
+                  '404': {
+                    'description': 'Not Found',
+                    'content': {
+                      'application/json': {
+                        'schema': {'type': 'boolean'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        };
+        final spec = parseTestSpec(json);
+        expect(
+          spec
+              .paths['/users']
+              .operations[Method.get]!
+              .responses[200]!
+              .object
+              ?.content,
+          isNotNull,
+        );
+        expect(
+          spec
+              .paths['/users']
+              .operations[Method.get]!
+              .responses[404]!
+              .object
+              ?.content,
+          isNotNull,
+        );
+      },
+    );
 
     test('only integers and default are supported as response codes', () {
       final json = {

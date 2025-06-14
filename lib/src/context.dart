@@ -103,7 +103,8 @@ extension _EndpointGeneration on Endpoint {
   /// type.
   SchemaRef? responseType(_Context context) {
     final responses = operation.responses;
-    final maybeResponseRef = responses.contentfulResponses.firstOrNull;
+    final maybeResponseRef =
+        responses.successfulResponsesWithContent.firstOrNull;
     if (maybeResponseRef == null) {
       return null;
     }
