@@ -267,6 +267,11 @@ extension _SchemaBaseGeneration on SchemaBase {
     // TODO(eseidel): Support other schema types.
     _unimplemented('defaultValue', pointer);
   }
+
+  /// package import string for this schema.
+  String packageImport(_Context context) {
+    return 'package:${context.packageName}/model/$snakeName.dart';
+  }
 }
 
 extension _SchemaGeneration on Schema {
@@ -713,11 +718,6 @@ extension _SchemaGeneration on Schema {
       'enumValues': enumValues.map(enumValueToTemplateContext).toList(),
     };
   }
-
-  /// package import string for this schema.
-  String packageImport(_Context context) {
-    return 'package:${context.packageName}/model/$snakeName.dart';
-  }
 }
 
 /// Extensions for rendering parameters.
@@ -958,7 +958,7 @@ class _Context {
       return refs.map((ref) => specUrl.resolve(ref.ref!)).toSet();
     }
 
-    Set<Uri> urisFromSchemas(Iterable<Schema> schemas) {
+    Set<Uri> urisFromSchemas(Iterable<SchemaBase> schemas) {
       return schemas
           .map((schema) => specUrl.replace(fragment: schema.pointer))
           .toSet();
@@ -1131,7 +1131,7 @@ void renderSpec({
 
 class _RenderedSchemaVisitor extends Visitor {
   final Set<RefOr<dynamic>> refs = {};
-  final Set<Schema> schemas = {};
+  final Set<SchemaBase> schemas = {};
 
   @override
   void visitReference<T>(RefOr<T> ref) {
@@ -1142,7 +1142,7 @@ class _RenderedSchemaVisitor extends Visitor {
   }
 
   @override
-  void visitSchema(Schema schema) {
+  void visitSchema(SchemaBase schema) {
     if (schema.createsNewType) {
       schemas.add(schema);
     }
@@ -1153,7 +1153,7 @@ class _SchemaSet {
   _SchemaSet(this.refs, this.schemas);
 
   final Set<RefOr<dynamic>> refs;
-  final Set<Schema> schemas;
+  final Set<SchemaBase> schemas;
 
   /// Get the sorted package imports for this render context.
   List<String> sortedPackageImports(_Context context) {

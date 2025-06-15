@@ -9,7 +9,7 @@ abstract class Visitor {
   void visitResponse(Response response) {}
   void visitRequestBody(RequestBody requestBody) {}
   void visitReference<T>(RefOr<T> ref) {}
-  void visitSchema(Schema schema) {}
+  void visitSchema(SchemaBase schema) {}
 }
 
 class _RefCollector extends Visitor {
@@ -94,7 +94,7 @@ class SpecWalker {
     if (object == null) {
       return;
     }
-    if (object is Schema) {
+    if (object is SchemaBase) {
       walkSchema(object);
     } else if (object is RequestBody) {
       _requestBody(object);
@@ -119,12 +119,14 @@ class SpecWalker {
     }
   }
 
-  void walkSchema(Schema schema) {
+  void walkSchema(SchemaBase schema) {
     visitor.visitSchema(schema);
-    for (final property in schema.properties.values) {
-      _maybeRef(property);
+    if (schema is Schema) {
+      for (final property in schema.properties.values) {
+        _maybeRef(property);
+      }
+      _maybeRef(schema.items);
+      _maybeRef(schema.additionalProperties);
     }
-    _maybeRef(schema.items);
-    _maybeRef(schema.additionalProperties);
   }
 }
