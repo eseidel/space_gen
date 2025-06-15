@@ -3,8 +3,10 @@ linter:
   rules:
     # We do not generate docs yet.
     public_member_api_docs: false
-    # Currently using SCREAMING_CAPS for enum values.
+{{#screamingCapsEnums}}
+    # When using SCREAMING_CAPS for enum values, we need to disable this rule.
     constant_identifier_names: false
+{{/screamingCapsEnums}}
 {{#mutableModels}}
     # When quirking to have mutable models, we need to disable this rule.
     avoid_equals_and_hash_code_on_mutable_classes: false

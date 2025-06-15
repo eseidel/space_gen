@@ -291,11 +291,12 @@ extension _SchemaGeneration on Schema {
   bool get createsNewType => type == SchemaType.object || isEnum || useNewType;
 
   /// The name of an enum value.
-  String enumValueName(String jsonName) {
-    // Dart style would be to use camelCase.
-    // return camelFromScreamingCaps(jsonName);
-    // OpenAPI uses screaming caps for enum values so we're matching for now.
-    return jsonName;
+  String enumValueName(_Context context, String jsonName) {
+    if (context.quirks.screamingCapsEnums) {
+      return jsonName;
+    }
+    // Dart style uses camelCase.
+    return camelFromScreamingCaps(jsonName);
   }
 
   /// The type of schema to render.
@@ -535,7 +536,7 @@ extension _SchemaGeneration on Schema {
     // If the type of this schema is an object we need to convert the default
     // value to that object type.
     if (isEnum && defaultValue is String) {
-      return '$className.${enumValueName(defaultValue as String)}';
+      return '$className.${enumValueName(context, defaultValue as String)}';
     }
     if (shouldApplyListDefaultToEmptyQuirk(context)) {
       return 'const []';
@@ -704,7 +705,7 @@ extension _SchemaGeneration on Schema {
     }
     final sharedPrefix = _sharedPrefix(enumValues);
     Map<String, dynamic> enumValueToTemplateContext(String value) {
-      var dartName = enumValueName(value);
+      var dartName = enumValueName(context, value);
       // OpenAPI also removes shared prefixes from enum values.
       dartName = dartName.replaceAll(sharedPrefix, '');
       // And avoids reserved words.
@@ -945,7 +946,10 @@ class _Context {
     _renderTemplate(
       template: 'analysis_options',
       outPath: 'analysis_options.yaml',
-      context: {'mutableModels': quirks.mutableModels},
+      context: {
+        'mutableModels': quirks.mutableModels,
+        'screamingCapsEnums': quirks.screamingCapsEnums,
+      },
     );
     _renderTemplate(template: 'gitignore', outPath: '.gitignore');
   }
@@ -1075,6 +1079,7 @@ class Quirks {
     // Avoiding ever having List? seems reasonable so we default to true.
     this.allListsDefaultToEmpty = true,
     this.nonNullableDefaultValues = false,
+    this.screamingCapsEnums = false,
   });
 
   const Quirks.openapi()
@@ -1083,6 +1088,7 @@ class Quirks {
         mutableModels: true,
         nonNullableDefaultValues: true,
         allListsDefaultToEmpty: true,
+        screamingCapsEnums: true,
       );
 
   /// Use "dynamic" instead of "Map\<String, dynamic\>" for passing to fromJson
@@ -1100,6 +1106,9 @@ class Quirks {
   /// value it can never be nullable.  Since OpenAPI also makes all Lists
   /// default to empty lists, this means that all Lists are non-nullable.
   final bool nonNullableDefaultValues;
+
+  /// OpenAPI uses SCREAMING_CAPS for enum values, but that's not Dart style.
+  final bool screamingCapsEnums;
 
   // Potential future quirks:
 
