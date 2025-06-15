@@ -163,13 +163,15 @@ Parameter parseParameter(MapContext json) {
   }
 
   _warnUnused(json);
-  return Parameter(
+  final parameter = Parameter(
     name: name,
     description: description,
     isRequired: required,
     sendIn: sendIn,
     type: type,
   );
+  json.addObject(parameter);
+  return parameter;
 }
 
 Header parseHeader(MapContext json) {
@@ -185,7 +187,9 @@ Header parseHeader(MapContext json) {
 
   final schema = _maybeSchemaOrRef(_optionalMap(json, 'schema'));
   _warnUnused(json);
-  return Header(description: description, schema: schema);
+  final header = Header(description: description, schema: schema);
+  json.addObject(header);
+  return header;
 }
 
 RefOr<Header> parseHeaderOrRef(MapContext json) {
@@ -582,7 +586,8 @@ Map<String, T> _parseComponent<T>(
       final childContext = valuesJson
           .childAsMap(name)
           .addSnakeName(snakeName, isTopLevelComponent: true);
-      values[name] = parse(childContext);
+      final value = parse(childContext);
+      values[name] = value;
     }
     _warnUnused(valuesJson);
   }
