@@ -113,6 +113,12 @@ void main() {
                       'schema': {'type': 'object'},
                     },
                   },
+                  'headers': {
+                    'X-Foo': {
+                      'description': 'Foo',
+                      'schema': {'type': 'string'},
+                    },
+                  },
                 },
               },
             },
@@ -320,31 +326,32 @@ void main() {
             'get': {
               'summary': 'Get user',
               'responses': {
-                '200': {'description': 'OK'},
+                '200': {
+                  'description': 'OK',
+                  'headers': {
+                    'X-Foo': {r'$ref': '#/components/headers/X-Foo'},
+                  },
+                },
               },
             },
           },
         },
         'components': {
           'headers': {
-            'X-Foo': {'type': 'string', 'description': 'Foo'},
+            'X-Foo': {
+              'description': 'Foo',
+              'schema': {'type': 'string'},
+            },
           },
         },
       };
-      final logger = _MockLogger();
-      expect(
-        () => runWithLogger(logger, () => parseTestSpec(json)),
-        throwsA(
-          isA<UnimplementedError>().having(
-            (e) => e.message,
-            'message',
-            equals(
-              'headers not supported in MapContext(/components, '
-              '{headers: {X-Foo: {type: string, description: Foo}}})',
-            ),
-          ),
-        ),
-      );
+      final spec = parseTestSpec(json);
+      expect(spec.components.headers['X-Foo']!.schema, isA<SchemaRef>());
+      final response =
+          spec.paths['/users'].operations[Method.get]!.responses[200]!.object!;
+      expect(response.headers, isNotNull);
+      expect(response.headers?['X-Foo'], isA<RefOr<Header>>());
+      expect(response.headers?['X-Foo']!.ref, '#/components/headers/X-Foo');
     });
 
     test('parameter with schema and content', () {

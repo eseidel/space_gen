@@ -172,6 +172,30 @@ Parameter parseParameter(MapContext json) {
   );
 }
 
+Header parseHeader(MapContext json) {
+  _refNotExpected(json);
+  final description = _required<String>(json, 'description');
+  _ignored<bool>(json, 'deprecated');
+  _ignored<bool>(json, 'allowEmptyValue');
+  _ignored<dynamic>(json, 'style');
+  _ignored<bool>(json, 'explode');
+  _ignored<bool>(json, 'allowReserved');
+  _ignored<dynamic>(json, 'example');
+  _ignored<Map<String, dynamic>>(json, 'examples');
+
+  final schema = _maybeSchemaOrRef(_optionalMap(json, 'schema'));
+  _warnUnused(json);
+  return Header(description: description, schema: schema);
+}
+
+RefOr<Header> parseHeaderOrRef(MapContext json) {
+  if (json.containsKey(r'$ref')) {
+    final ref = json[r'$ref'] as String;
+    return RefOr<Header>.ref(ref);
+  }
+  return RefOr<Header>.object(parseHeader(json));
+}
+
 /// Parse a schema from a json object.
 Schema parseSchema(MapContext json) {
   _refNotExpected(json);
@@ -242,6 +266,13 @@ Schema parseSchema(MapContext json) {
   json.addObject(schema);
   _warnUnused(json);
   return schema;
+}
+
+SchemaRef? _maybeSchemaOrRef(MapContext? json) {
+  if (json == null) {
+    return null;
+  }
+  return parseSchemaOrRef(json);
 }
 
 /// Parse a schema or a reference to a schema.
@@ -459,6 +490,13 @@ PathItem parsePathItem({
   );
 }
 
+Map<String, MediaType>? _maybeMediaTypes(MapContext? contentJson) {
+  if (contentJson == null) {
+    return null;
+  }
+  return _parseMediaTypes(contentJson);
+}
+
 Map<String, MediaType> _parseMediaTypes(MapContext contentJson) {
   _refNotExpected(contentJson);
   final mediaTypes = <String, MediaType>{};
@@ -483,17 +521,29 @@ RefOr<Response> parseResponseOrRef(MapContext json) {
   return RefOr<Response>.object(_parseResponse(json));
 }
 
+Map<String, RefOr<Header>>? _parseHeaders(MapContext? headersJson) {
+  if (headersJson == null) {
+    return null;
+  }
+  final headers = <String, RefOr<Header>>{};
+  for (final name in headersJson.keys) {
+    headers[name] = parseHeaderOrRef(headersJson.childAsMap(name));
+  }
+  return headers;
+}
+
 Response _parseResponse(MapContext responseJson) {
   _refNotExpected(responseJson);
   final description = _required<String>(responseJson, 'description');
-  _ignored<dynamic>(responseJson, 'headers');
+  final headers = _parseHeaders(_optionalMap(responseJson, 'headers'));
   _ignored<dynamic>(responseJson, 'links');
   final content = _optionalMap(responseJson, 'content');
-  if (content == null) {
-    return Response(description: description);
-  }
-  final mediaTypes = _parseMediaTypes(content.addSnakeName('response'));
-  return Response(description: description, content: mediaTypes);
+  final mediaTypes = _maybeMediaTypes(content?.addSnakeName('response'));
+  return Response(
+    description: description,
+    content: mediaTypes,
+    headers: headers,
+  );
 }
 
 Responses parseResponses(MapContext responsesJson) {
@@ -547,13 +597,6 @@ Components parseComponents(MapContext? componentsJson) {
   }
   _refNotExpected(componentsJson);
 
-  void failIfPresent(String key) {
-    final value = _optional<Map<String, dynamic>>(componentsJson, key);
-    if (value != null) {
-      _unimplemented(componentsJson, key);
-    }
-  }
-
   final schemas = _parseComponent<SchemaBase>(componentsJson, 'schemas', (
     childContext,
   ) {
@@ -581,7 +624,11 @@ Components parseComponents(MapContext? componentsJson) {
     'requestBodies',
     parseRequestBody,
   );
-  failIfPresent('headers');
+  final headers = _parseComponent<Header>(
+    componentsJson,
+    'headers',
+    parseHeader,
+  );
   final securitySchemesJson = _optionalMap(componentsJson, 'securitySchemes');
   if (securitySchemesJson != null) {
     _warn(componentsJson, 'Ignoring securitySchemes');
@@ -595,6 +642,7 @@ Components parseComponents(MapContext? componentsJson) {
     requestBodies: requestBodies,
     parameters: parameters,
     responses: responses,
+    headers: headers,
   );
 }
 

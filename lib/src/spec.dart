@@ -73,6 +73,19 @@ class Parameter extends Equatable {
   List<Object?> get props => [name, description, isRequired, sendIn, type];
 }
 
+@immutable
+class Header extends Equatable {
+  const Header({required this.description, required this.schema});
+
+  /// The description of the header.
+  final String description;
+
+  /// The type of the header.
+  final SchemaRef? schema;
+  @override
+  List<Object?> get props => [description, schema];
+}
+
 /// A type of schema.
 /// https://spec.openapis.org/oas/v3.0.0#schemaObject
 enum SchemaType {
@@ -477,13 +490,16 @@ class Responses extends Equatable {
 @immutable
 class Response extends Equatable {
   /// Create a new response.
-  const Response({required this.description, this.content});
+  const Response({required this.description, this.content, this.headers});
 
   /// The description of this response.
   final String description;
 
   /// The content of this response.
   final Map<String, MediaType>? content;
+
+  /// The possible headers for this response.
+  final Map<String, RefOr<Header>>? headers;
 
   /// Whether this response has content.
   /// We only support json, so we check for a schema with a type.
@@ -518,7 +534,7 @@ class Response extends Equatable {
   }
 
   @override
-  List<Object?> get props => [description, content];
+  List<Object?> get props => [description, content, headers];
 }
 
 @immutable
@@ -528,6 +544,7 @@ class Components extends Equatable {
     this.requestBodies = const {},
     this.parameters = const {},
     this.responses = const {},
+    this.headers = const {},
   });
 
   final Map<String, SchemaBase> schemas;
@@ -536,7 +553,7 @@ class Components extends Equatable {
   // final Map<String, SecurityScheme> securitySchemes;
   final Map<String, RequestBody> requestBodies;
   final Map<String, Response> responses;
-  // final Map<String, Header> headers;
+  final Map<String, Header> headers;
   // final Map<String, Example> examples;
   // final Map<String, Link> links;
   // final Map<String, Callback> callbacks;
