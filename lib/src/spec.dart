@@ -78,7 +78,7 @@ class Header extends Equatable {
   const Header({required this.description, required this.schema});
 
   /// The description of the header.
-  final String description;
+  final String? description;
 
   /// The type of the header.
   final SchemaRef? schema;

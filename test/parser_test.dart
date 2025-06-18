@@ -1143,6 +1143,92 @@ void main() {
         ),
       ).called(1);
     });
+    test('additionalProperties bool is ignored', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'additionalProperties': true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+      final logger = _MockLogger();
+      final spec = runWithLogger(logger, () => parseTestSpec(json));
+      final schema =
+          spec
+                  .paths['/users']
+                  .operations[Method.get]!
+                  .responses[200]!
+                  .object!
+                  .content!['application/json']!
+                  .schema
+                  .object!
+              as Schema;
+      expect(schema.additionalProperties, isNull);
+      verify(
+        () => logger.detail(
+          'Ignoring key: additionalProperties (bool) in /paths//users/get/responses/200/content/application/json/schema',
+        ),
+      ).called(1);
+    });
+    test('additionalProperties must be a boolean or a map', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'additionalProperties': 'foo',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+      expect(
+        () => parseTestSpec(json),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              'additionalProperties must be a boolean or a map in /paths//users/get/responses/200/content/application/json/schema',
+            ),
+          ),
+        ),
+      );
+    });
   });
 
   group('ParseContext', () {

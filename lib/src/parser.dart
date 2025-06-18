@@ -176,7 +176,7 @@ Parameter parseParameter(MapContext json) {
 
 Header parseHeader(MapContext json) {
   _refNotExpected(json);
-  final description = _required<String>(json, 'description');
+  final description = _optional<String>(json, 'description');
   _ignored<bool>(json, 'deprecated');
   _ignored<bool>(json, 'allowEmptyValue');
   _ignored<dynamic>(json, 'style');
@@ -245,11 +245,19 @@ Schema parseSchema(MapContext json) {
     }
   }
   final format = _optional<String>(json, 'format');
-  // This isn't quite correct, since it doesn't support boolean values.
-  final additionalProperties = _optionalMap(json, 'additionalProperties');
+  final additionalPropertiesJson = json['additionalProperties'];
   SchemaRef? additionalPropertiesSchema;
-  if (additionalProperties != null) {
-    additionalPropertiesSchema = parseSchemaOrRef(additionalProperties);
+  if (additionalPropertiesJson != null) {
+    if (additionalPropertiesJson is bool) {
+      _ignored<bool>(json, 'additionalProperties');
+    } else if (additionalPropertiesJson is Map<String, dynamic>) {
+      final additionalProperties = _optionalMap(json, 'additionalProperties');
+      if (additionalProperties != null) {
+        additionalPropertiesSchema = parseSchemaOrRef(additionalProperties);
+      }
+    } else {
+      _error(json, 'additionalProperties must be a boolean or a map');
+    }
   }
 
   final schema = Schema(
