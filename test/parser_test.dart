@@ -86,6 +86,17 @@ void main() {
       );
     });
 
+    test('infer enum type', () {
+      final json = {
+        'Enum': {
+          'enum': ['foo', 'bar', 'baz'],
+        },
+      };
+      final logger = _MockLogger();
+      final schemas = runWithLogger(logger, () => parseTestSchemas(json));
+      expect(schemas['Enum']!.type, SchemaType.string);
+    });
+
     test('OpenApi equals', () {
       final jsonOne = {
         'openapi': '3.1.0',

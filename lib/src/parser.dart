@@ -200,13 +200,40 @@ RefOr<Header> parseHeaderOrRef(MapContext json) {
   return RefOr<Header>.object(parseHeader(json));
 }
 
+SchemaType _determineType({
+  required String? type,
+  required List<dynamic>? enumValues,
+}) {
+  if (type != null) {
+    return SchemaType.fromJson(type);
+  }
+  if (enumValues != null) {
+    if (enumValues.isEmpty) {
+      return SchemaType.unknown;
+    }
+    if (enumValues.every((e) => e is String)) {
+      return SchemaType.string;
+    }
+    // This is wrong, enums can be any type, but we don't support that yet.
+    // This also doesn't support nullable types.
+  }
+  return SchemaType.unknown;
+}
+
 /// Parse a schema from a json object.
 Schema parseSchema(MapContext json) {
   _refNotExpected(json);
 
-  final type = SchemaType.fromJson(
-    _optional<String>(json, 'type') ?? 'unknown',
+  final enumValues = _optional<List<dynamic>>(json, 'enum');
+  // TODO(eseidel): type can be an array, but we don't support that yet.
+  final type = _determineType(
+    type: _optional<String>(json, 'type'),
+    enumValues: enumValues,
   );
+  // The rest of the code only supports string enums.
+  if (type != SchemaType.string && enumValues != null) {
+    _unimplemented(json, 'enumValues for type=$type');
+  }
   final propertiesJson = _optionalMap(json, 'properties');
   final properties = <String, SchemaRef>{};
   if (propertiesJson != null) {
@@ -238,12 +265,6 @@ Schema parseSchema(MapContext json) {
 
   final required = json['required'] as List<dynamic>? ?? [];
   final description = _optional<String>(json, 'description');
-  final enumValues = json['enum'] as List<dynamic>? ?? [];
-  if (enumValues.isNotEmpty) {
-    if (type != SchemaType.string) {
-      _unimplemented(json, 'enumValues for type=$type');
-    }
-  }
   final format = _optional<String>(json, 'format');
   final additionalPropertiesJson = json['additionalProperties'];
   SchemaRef? additionalPropertiesSchema;
@@ -268,7 +289,7 @@ Schema parseSchema(MapContext json) {
     required: required.cast<String>(),
     description: description ?? '',
     items: itemSchema,
-    enumValues: enumValues.cast<String>(),
+    enumValues: enumValues?.cast<String>() ?? [],
     format: format,
     additionalProperties: additionalPropertiesSchema,
     defaultValue: defaultValue,
