@@ -410,6 +410,69 @@ RequestBody parseRequestBody(MapContext json) {
   return body;
 }
 
+// This is a heuristic to help understand if two schemas are the same so we
+// can safely generate a single return value for a response.  We don't
+// currently support union response types.
+@visibleForTesting
+extension EqualIgnoringName on RefOr<SchemaBase> {
+  bool equalsIgnoringName(RefOr<SchemaBase> other) {
+    if (ref != null) {
+      return ref == other.ref;
+    }
+    final aSchema = object;
+    final bSchema = other.object;
+    if (aSchema == null || bSchema == null) {
+      return false;
+    }
+    if (aSchema.type != bSchema.type) {
+      return false;
+    }
+    if (aSchema.runtimeType != bSchema.runtimeType) {
+      return false;
+    }
+    final listEquals = const ListEquality<String>().equals;
+    final mapEquals = const MapEquality<String, SchemaRef>().equals;
+    switch (aSchema) {
+      case final Schema schema:
+        final b = bSchema as Schema;
+        return schema.type == b.type &&
+            mapEquals(schema.properties, b.properties) &&
+            listEquals(schema.required, b.required) &&
+            schema.items == b.items &&
+            listEquals(schema.enumValues, b.enumValues) &&
+            schema.format == b.format &&
+            schema.additionalProperties == b.additionalProperties &&
+            schema.defaultValue == b.defaultValue;
+      default:
+        return false;
+    }
+  }
+}
+
+void _checkMultipleResponsesWithDifferentContent(
+  MapContext context,
+  Responses responses,
+) {
+  final contentful = responses.successfulResponsesWithContent;
+  if (contentful.length < 2) {
+    return;
+  }
+  final schema = contentful.first.object?.content?['application/json']?.schema;
+  if (schema == null) {
+    throw StateError('schema is null');
+  }
+  for (final response in contentful) {
+    final responseSchema =
+        response.object?.content?['application/json']?.schema;
+    if (responseSchema != null && !responseSchema.equalsIgnoringName(schema)) {
+      _unimplemented(
+        context,
+        'Multiple responses with different content $schema != $responseSchema',
+      );
+    }
+  }
+}
+
 Operation _parseOperation(MapContext operationJson, String path) {
   _refNotExpected(operationJson);
   final snakeName = snakeFromKebab(
@@ -433,11 +496,9 @@ Operation _parseOperation(MapContext operationJson, String path) {
   final deprecated = _optional<bool>(context, 'deprecated') ?? false;
   final responses = parseResponses(_requiredMap(context, 'responses'));
 
+  _checkMultipleResponsesWithDifferentContent(context, responses);
   // Operation does not mention 'responses' as being required, but
   // the Responses object says at least one response is required.
-  if (responses.successfulResponsesWithContent.length > 1) {
-    _unimplemented(context, 'Multiple responses with content');
-  }
   if (responses.isEmpty) {
     _error(context, 'Responses are required');
   }

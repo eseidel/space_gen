@@ -674,7 +674,54 @@ void main() {
       );
     });
 
-    test('multiple successful responses with content not supported', () {
+    test(
+      'multiple successful responses with different content not supported',
+      () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {'type': 'boolean'},
+                      },
+                    },
+                  },
+                  '201': {
+                    'description': 'Created',
+                    'content': {
+                      'application/json': {
+                        'schema': {'type': 'string'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        };
+        expect(
+          () => parseTestSpec(json),
+          throwsA(
+            isA<UnimplementedError>().having(
+              (e) => e.message,
+              'message',
+              contains('Multiple responses with different content'),
+            ),
+          ),
+        );
+      },
+    );
+
+    test('multiple successful responses with same content is supported', () {
       final json = {
         'openapi': '3.1.0',
         'info': {'title': 'Space Traders API', 'version': '1.0.0'},
@@ -697,7 +744,7 @@ void main() {
                   'description': 'Created',
                   'content': {
                     'application/json': {
-                      'schema': {'type': 'string'},
+                      'schema': {'type': 'boolean'},
                     },
                   },
                 },
@@ -706,15 +753,24 @@ void main() {
           },
         },
       };
+      final spec = parseTestSpec(json);
       expect(
-        () => parseTestSpec(json),
-        throwsA(
-          isA<UnimplementedError>().having(
-            (e) => e.message,
-            'message',
-            contains('Multiple responses with content not supported'),
-          ),
-        ),
+        spec
+            .paths['/users']
+            .operations[Method.get]!
+            .responses[200]!
+            .object
+            ?.content,
+        isNotNull,
+      );
+      expect(
+        spec
+            .paths['/users']
+            .operations[Method.get]!
+            .responses[201]!
+            .object
+            ?.content,
+        isNotNull,
       );
     });
 
@@ -1334,6 +1390,113 @@ void main() {
       expect(pointerOne.hashCode, pointerTwo.hashCode);
       expect(pointerOne, isNot(pointerThree));
       expect(pointerOne.hashCode, isNot(pointerThree.hashCode));
+    });
+  });
+
+  group('EqualIgnoringName', () {
+    test('ref equals ref', () {
+      const a = RefOr<SchemaBase>.ref('#/components/schemas/User');
+      const b = RefOr<SchemaBase>.ref('#/components/schemas/User');
+      const c = RefOr<SchemaBase>.ref('#/components/schemas/Other');
+      expect(a.equalsIgnoringName(b), isTrue);
+      expect(a.equalsIgnoringName(c), isFalse);
+    });
+    test('object equals object with different name', () {
+      final a = RefOr<SchemaBase>.object(
+        Schema(
+          pointer: '#/components/schemas/User',
+          snakeName: 'foo_bar',
+          type: SchemaType.object,
+          properties: const {},
+          required: const [],
+          description: 'User',
+          items: const SchemaRef.ref('#/components/schemas/Item'),
+          enumValues: const [],
+          format: 'string',
+          additionalProperties: null,
+          defaultValue: 'User',
+          example: 'User',
+          useNewType: true,
+        ),
+      );
+      final b = RefOr<SchemaBase>.object(
+        Schema(
+          pointer: '#/components/schemas/Other',
+          snakeName: 'bar_baz',
+          type: SchemaType.object,
+          properties: const {},
+          required: const [],
+          description: 'User',
+          items: const SchemaRef.ref('#/components/schemas/Item'),
+          enumValues: const [],
+          format: 'string',
+          additionalProperties: null,
+          defaultValue: 'User',
+          example: 'User',
+          useNewType: true,
+        ),
+      );
+      final c = RefOr<SchemaBase>.object(
+        Schema(
+          pointer: '#/components/schemas/User',
+          snakeName: 'foo_baz',
+          type: SchemaType.string,
+          properties: const {},
+          required: const [],
+          description: 'User',
+          items: null,
+          enumValues: const [],
+          format: 'string',
+          additionalProperties: null,
+          defaultValue: 'User',
+          example: 'User',
+          useNewType: true,
+        ),
+      );
+      expect(a.equalsIgnoringName(a), isTrue);
+      expect(a.equalsIgnoringName(b), isTrue);
+      expect(a.equalsIgnoringName(c), isFalse);
+    });
+
+    test('object equals with different name 2', () {
+      // SchemaRef(null, Schema(name: users200_response, pointer: /paths//users/get/responses/200/content/application/json/schema, type: SchemaType.boolean, description: , useNewType: false)) != SchemaRef(null, Schema(name: users201_response, pointer: /paths//users/get/responses/201/content/application/json/schema, type: SchemaType.boolean, description: , useNewType: false)) not supported in MapContext(/paths//users/get, {responses: {200: {description: OK, content: {application/json: {schema: {type: boolean}}}}, 201: {description: Created, content: {application/json: {schema: {type: boolean}}}}}}
+      final a = RefOr<SchemaBase>.object(
+        Schema(
+          pointer:
+              '#/paths//users/get/responses/200/content/application/json/schema',
+          snakeName: 'users200_response',
+          type: SchemaType.boolean,
+          properties: const {},
+          required: const [],
+          description: 'OK',
+          items: null,
+          enumValues: const [],
+          format: null,
+          additionalProperties: null,
+          defaultValue: null,
+          example: null,
+          useNewType: false,
+        ),
+      );
+      final b = RefOr<SchemaBase>.object(
+        Schema(
+          pointer:
+              '#/paths//users/get/responses/201/content/application/json/schema',
+          snakeName: 'users201_response',
+          type: SchemaType.boolean,
+          properties: const {},
+          required: const [],
+          description: '',
+          items: null,
+          enumValues: const [],
+          format: null,
+          additionalProperties: null,
+          defaultValue: null,
+          example: null,
+          useNewType: false,
+        ),
+      );
+      expect(a.equalsIgnoringName(b), isTrue);
     });
   });
 }
