@@ -22,6 +22,14 @@ String lowercaseCamelFromSnake(String snake) {
   return camel[0].toLowerCase() + camel.substring(1);
 }
 
+String toSnakeCase(String unknown) {
+  // We don't know the casing the author used.
+  // First try to convert any UpperCase to snake_case.
+  final lowered = snakeFromCamel(unknown);
+  // Then convert any kebab-case to snake_case.
+  return snakeFromKebab(lowered);
+}
+
 /// Convert kebab-case to snake_case.
 String snakeFromKebab(String kebab) => kebab.replaceAll('-', '_');
 

@@ -500,7 +500,7 @@ void _checkMultipleResponsesWithDifferentContent(
 
 Operation _parseOperation(MapContext operationJson, String path) {
   _refNotExpected(operationJson);
-  final snakeName = snakeFromKebab(
+  final snakeName = toSnakeCase(
     _optional<String>(operationJson, 'operationId') ??
         Uri.parse(path).pathSegments.last,
   );

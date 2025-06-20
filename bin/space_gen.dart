@@ -1,6 +1,5 @@
 import 'package:args/args.dart';
 import 'package:file/local.dart';
-import 'package:space_gen/src/context.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/render.dart';
 
