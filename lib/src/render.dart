@@ -105,7 +105,7 @@ String renderSchema(
     refRegistry: RefRegistry(),
   );
   final resolvedSchema = resolveSchemaRef(
-    SchemaRef.schema(parsedSchema),
+    SchemaRef.schema(parsedSchema, const JsonPointer.empty()),
     resolveContext,
   );
   final templateProvider = templateDir == null

@@ -12,6 +12,10 @@ void _warn(String message, JsonPointer pointer) {
   logger.warn('$message in $pointer');
 }
 
+Never _error(String message, JsonPointer pointer) {
+  throw Exception('$message in $pointer');
+}
+
 class ResolveContext {
   ResolveContext({required this.specUrl, required this.refRegistry});
 
@@ -156,11 +160,11 @@ ResolvedRequestBody? _resolveRequestBody(
   }
   final requestBody = context._maybeResolve(ref);
   if (requestBody == null) {
-    throw Exception('Request body not found: $ref');
+    _error('Request body not found', ref.pointer);
   }
   final jsonSchema = requestBody.content['application/json']?.schema;
   if (jsonSchema == null) {
-    throw Exception('Request body is not json: $ref');
+    _error('Request body is not json', requestBody.pointer);
   }
   return ResolvedRequestBody(
     schema: resolveSchemaRef(jsonSchema, context),

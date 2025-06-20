@@ -112,9 +112,9 @@ void _warnUnused(MapContext context) {
 RefOr<Parameter> parseParameterOrRef(MapContext json) {
   if (json.containsKey(r'$ref')) {
     final ref = json[r'$ref'] as String;
-    return RefOr<Parameter>.ref(ref);
+    return RefOr<Parameter>.ref(ref, json.pointer);
   }
-  return RefOr<Parameter>.object(parseParameter(json));
+  return RefOr<Parameter>.object(parseParameter(json), json.pointer);
 }
 
 /// Parse a parameter from a json object.
@@ -203,9 +203,9 @@ Header parseHeader(MapContext json) {
 RefOr<Header> parseHeaderOrRef(MapContext json) {
   if (json.containsKey(r'$ref')) {
     final ref = json[r'$ref'] as String;
-    return RefOr<Header>.ref(ref);
+    return RefOr<Header>.ref(ref, json.pointer);
   }
-  return RefOr<Header>.object(parseHeader(json));
+  return RefOr<Header>.object(parseHeader(json), json.pointer);
 }
 
 SchemaType _determineType({
@@ -321,7 +321,7 @@ SchemaRef parseSchemaOrRef(MapContext json) {
   if (json.containsKey(r'$ref')) {
     final ref = json[r'$ref'] as String;
     _warnUnused(json);
-    return SchemaRef.ref(ref);
+    return SchemaRef.ref(ref, json.pointer);
   }
 
   if (json.containsKey('oneOf')) {
@@ -336,6 +336,7 @@ SchemaRef parseSchemaOrRef(MapContext json) {
         snakeName: json.snakeName,
         schemas: schemas,
       ),
+      json.pointer,
     );
   }
 
@@ -354,6 +355,7 @@ SchemaRef parseSchemaOrRef(MapContext json) {
         snakeName: json.snakeName,
         schemas: schemas,
       ),
+      json.pointer,
     );
   }
 
@@ -398,10 +400,11 @@ SchemaRef parseSchemaOrRef(MapContext json) {
         snakeName: json.snakeName,
         schemas: schemas,
       ),
+      json.pointer,
     );
   }
 
-  return SchemaRef.schema(parseSchema(json));
+  return SchemaRef.schema(parseSchema(json), json.pointer);
 }
 
 /// Parse a schema or a reference to a schema.
@@ -414,10 +417,10 @@ RefOr<RequestBody>? parseRequestBodyOrRef(MapContext? json) {
   if (json.containsKey(r'$ref')) {
     final ref = json[r'$ref'] as String;
     _warnUnused(json);
-    return RefOr<RequestBody>.ref(ref);
+    return RefOr<RequestBody>.ref(ref, json.pointer);
   }
   final body = parseRequestBody(json.addSnakeName('request'));
-  return RefOr<RequestBody>.object(body);
+  return RefOr<RequestBody>.object(body, json.pointer);
 }
 
 RequestBody parseRequestBody(MapContext json) {
@@ -616,9 +619,9 @@ RefOr<Response> parseResponseOrRef(MapContext json) {
   final ref = _optional<String>(json, r'$ref');
   if (ref != null) {
     _warnUnused(json);
-    return RefOr<Response>.ref(ref);
+    return RefOr<Response>.ref(ref, json.pointer);
   }
-  return RefOr<Response>.object(_parseResponse(json));
+  return RefOr<Response>.object(_parseResponse(json), json.pointer);
 }
 
 Map<String, RefOr<Header>>? _parseHeaders(MapContext? headersJson) {

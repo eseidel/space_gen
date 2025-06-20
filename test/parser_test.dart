@@ -1426,9 +1426,18 @@ void main() {
 
   group('EqualIgnoringName', () {
     test('ref equals ref', () {
-      const a = RefOr<SchemaBase>.ref('#/components/schemas/User');
-      const b = RefOr<SchemaBase>.ref('#/components/schemas/User');
-      const c = RefOr<SchemaBase>.ref('#/components/schemas/Other');
+      const a = RefOr<SchemaBase>.ref(
+        '#/components/schemas/User',
+        JsonPointer.empty(),
+      );
+      const b = RefOr<SchemaBase>.ref(
+        '#/components/schemas/User',
+        JsonPointer.empty(),
+      );
+      const c = RefOr<SchemaBase>.ref(
+        '#/components/schemas/Other',
+        JsonPointer.empty(),
+      );
       expect(a.equalsIgnoringName(b), isTrue);
       expect(a.equalsIgnoringName(c), isFalse);
     });
@@ -1441,13 +1450,17 @@ void main() {
           properties: const {},
           required: const [],
           description: 'User',
-          items: const SchemaRef.ref('#/components/schemas/Item'),
+          items: const SchemaRef.ref(
+            '#/components/schemas/Item',
+            JsonPointer.empty(),
+          ),
           enumValues: const [],
           format: 'string',
           additionalProperties: null,
           defaultValue: 'User',
           example: 'User',
         ),
+        const JsonPointer.empty(),
       );
       final b = RefOr<SchemaBase>.object(
         Schema(
@@ -1457,13 +1470,17 @@ void main() {
           properties: const {},
           required: const [],
           description: 'User',
-          items: const SchemaRef.ref('#/components/schemas/Item'),
+          items: const SchemaRef.ref(
+            '#/components/schemas/Item',
+            JsonPointer.empty(),
+          ),
           enumValues: const [],
           format: 'string',
           additionalProperties: null,
           defaultValue: 'User',
           example: 'User',
         ),
+        const JsonPointer.empty(),
       );
       final c = RefOr<SchemaBase>.object(
         Schema(
@@ -1480,6 +1497,7 @@ void main() {
           defaultValue: 'User',
           example: 'User',
         ),
+        const JsonPointer.empty(),
       );
       expect(a.equalsIgnoringName(a), isTrue);
       expect(a.equalsIgnoringName(b), isTrue);
@@ -1504,6 +1522,7 @@ void main() {
           defaultValue: null,
           example: null,
         ),
+        const JsonPointer.empty(),
       );
       final b = RefOr<SchemaBase>.object(
         Schema(
@@ -1522,6 +1541,7 @@ void main() {
           defaultValue: null,
           example: null,
         ),
+        const JsonPointer.empty(),
       );
       expect(a.equalsIgnoringName(b), isTrue);
     });

@@ -70,6 +70,8 @@ enum Method {
 /// https://spec.openapis.org/oas/v3.1.0#json-pointer
 @immutable
 class JsonPointer extends Equatable {
+  const JsonPointer.empty() : parts = const [];
+
   /// Create a new JsonPointer from a list of parts.
   const JsonPointer.fromParts(this.parts);
 

@@ -9,7 +9,10 @@ void main() {
         description: 'Foo',
         content: const {
           'application/json': MediaType(
-            schema: SchemaRef.ref('#/components/schemas/Foo'),
+            schema: SchemaRef.ref(
+              '#/components/schemas/Foo',
+              JsonPointer.empty(),
+            ),
           ),
         },
         isRequired: true,
@@ -19,24 +22,31 @@ void main() {
         description: 'Foo',
         content: const {
           'application/json': MediaType(
-            schema: SchemaRef.ref('#/components/schemas/Foo'),
+            schema: SchemaRef.ref(
+              '#/components/schemas/Foo',
+              JsonPointer.empty(),
+            ),
           ),
         },
         isRequired: true,
       );
-      final refOrOne = RefOr.object(bodyOne);
-      final refOrTwo = RefOr.object(bodyTwo);
+      final refOrOne = RefOr.object(bodyOne, const JsonPointer.empty());
+      final refOrTwo = RefOr.object(bodyTwo, const JsonPointer.empty());
       final refOrThree = RefOr.object(
         RequestBody(
           pointer: JsonPointer.parse('#/components/requestBodies/Bar'),
           description: 'Bar',
           content: const {
             'application/json': MediaType(
-              schema: SchemaRef.ref('#/components/schemas/Bar'),
+              schema: SchemaRef.ref(
+                '#/components/schemas/Bar',
+                JsonPointer.empty(),
+              ),
             ),
           },
           isRequired: true,
         ),
+        const JsonPointer.empty(),
       );
       expect(refOrOne, refOrTwo);
       expect(refOrOne, isNot(refOrThree));

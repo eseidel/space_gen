@@ -130,19 +130,22 @@ enum SchemaType {
 /// https://spec.openapis.org/oas/v3.0.0#schemaObject
 @immutable
 class RefOr<T> extends Equatable {
-  const RefOr.ref(this.ref) : object = null;
-  const RefOr.object(this.object) : ref = null;
+  const RefOr.ref(this.ref, this.pointer) : object = null;
+  const RefOr.object(this.object, this.pointer) : ref = null;
 
   final String? ref;
   final T? object;
+
+  final JsonPointer pointer;
 
   @override
   List<Object?> get props => [ref, object];
 }
 
 class SchemaRef extends RefOr<SchemaBase> {
-  const SchemaRef.ref(String super.ref) : super.ref();
-  const SchemaRef.schema(SchemaBase super.schema) : super.object();
+  const SchemaRef.ref(String super.ref, super.pointer) : super.ref();
+  const SchemaRef.schema(SchemaBase super.schema, super.pointer)
+    : super.object();
 
   SchemaBase? get schema => object;
 }
