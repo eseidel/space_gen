@@ -4,33 +4,33 @@ import 'package:test/test.dart';
 void main() {
   group('RefOr', () {
     test('equality', () {
-      const bodyOne = RequestBody(
-        pointer: '#/components/requestBodies/Foo',
+      final bodyOne = RequestBody(
+        pointer: JsonPointer.parse('#/components/requestBodies/Foo'),
         description: 'Foo',
-        content: {
+        content: const {
           'application/json': MediaType(
             schema: SchemaRef.ref('#/components/schemas/Foo'),
           ),
         },
         isRequired: true,
       );
-      const bodyTwo = RequestBody(
-        pointer: '#/components/requestBodies/Foo',
+      final bodyTwo = RequestBody(
+        pointer: JsonPointer.parse('#/components/requestBodies/Foo'),
         description: 'Foo',
-        content: {
+        content: const {
           'application/json': MediaType(
             schema: SchemaRef.ref('#/components/schemas/Foo'),
           ),
         },
         isRequired: true,
       );
-      const refOrOne = RefOr.object(bodyOne);
-      const refOrTwo = RefOr.object(bodyTwo);
-      const refOrThree = RefOr.object(
+      final refOrOne = RefOr.object(bodyOne);
+      final refOrTwo = RefOr.object(bodyTwo);
+      final refOrThree = RefOr.object(
         RequestBody(
-          pointer: '#/components/requestBodies/Bar',
+          pointer: JsonPointer.parse('#/components/requestBodies/Bar'),
           description: 'Bar',
-          content: {
+          content: const {
             'application/json': MediaType(
               schema: SchemaRef.ref('#/components/schemas/Bar'),
             ),

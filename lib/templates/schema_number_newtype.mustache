@@ -1,7 +1,3 @@
-{{#imports}}
-import '{{{.}}}';
-{{/imports}}
-
 extension type {{{ typeName }}}(double value) {
     factory {{ typeName }}.fromJson(num json) => {{ typeName }}(json.toDouble());
 

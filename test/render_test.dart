@@ -223,12 +223,24 @@ void main() {
 
       await renderToDirectory(spec: spec, outDir: out);
       expect(out.existsSync(), isTrue);
-      expect(out.childFile('lib/api.dart'), exists);
-      expect(out.childFile('lib/api_client.dart'), exists);
-      expect(out.childFile('lib/api/default_api.dart'), exists);
-      expect(out.childFile('lib/model/get_user200_response.dart'), exists);
-      expect(out.childFile('lib/model/account.dart'), exists);
-      expect(out.childFile('lib/model/account_role.dart'), exists);
+      expect(
+        out.childDirectory('lib'),
+        hasFiles([
+          'api.dart',
+          'api_exception.dart',
+          'api_client.dart',
+          'model_helpers.dart',
+        ]),
+      );
+      expect(out.childDirectory('lib/api'), hasFiles(['default_api.dart']));
+      expect(
+        out.childDirectory('lib/model'),
+        hasFiles([
+          'account.dart',
+          'account_role.dart',
+          'get_user200_response.dart',
+        ]),
+      );
     });
 
     test('with request body', () async {
@@ -392,8 +404,10 @@ void main() {
       final out = fs.directory('spacetraders');
 
       await renderToDirectory(spec: spec, outDir: out);
-      expect(out.childFile('lib/model/user.dart'), exists);
-      expect(out.childFile('lib/model/multiplier.dart'), exists);
+      expect(
+        out.childDirectory('lib/model'),
+        hasFiles(['get_user200_response.dart', 'user.dart', 'multiplier.dart']),
+      );
     });
 
     test('with default enum value', () async {
@@ -596,8 +610,8 @@ void main() {
 
       await renderToDirectory(spec: spec, outDir: out);
       expect(
-        out.childFile('lib/model/purchase_cargo_request.dart'),
-        isNot(exists),
+        out.childDirectory('lib/model'),
+        hasFiles(['purchase_cargo_request.dart']),
       );
       expect(out.childFile('lib/api/default_api.dart'), exists);
     });
@@ -856,5 +870,122 @@ void main() {
         );
       },
     );
+  });
+
+  group('renderSchema', () {
+    test('smoke test', () {
+      final schema = {
+        'type': 'object',
+        'properties': {
+          'foo': {'type': 'unknown'},
+        },
+      };
+      final result = renderSchema(schema);
+      expect(
+        result,
+        '@immutable\n'
+        'class Test {\n'
+        '    Test(\n'
+        '        {  this.foo,\n'
+        '         }\n'
+        '    );\n'
+        '\n'
+        '    factory Test.fromJson(Map<String, dynamic>\n'
+        '        json) {\n'
+        '        return Test(\n'
+        "            foo: json['foo'],\n"
+        '        );\n'
+        '    }\n'
+        '\n'
+        '    /// Convenience to create a nullable type from a nullable json object.\n'
+        '    /// Useful when parsing optional fields.\n'
+        '    static Test? maybeFromJson(Map<String, dynamic>? json) {\n'
+        '        if (json == null) {\n'
+        '            return null;\n'
+        '        }\n'
+        '        return Test.fromJson(json);\n'
+        '    }\n'
+        '\n'
+        '    final  dynamic? foo;\n'
+        '\n'
+        '\n'
+        '    Map<String, dynamic> toJson() {\n'
+        '        return {\n'
+        "            'foo': foo,\n"
+        '        };\n'
+        '    }\n'
+        '\n'
+        '    @override\n'
+        '    int get hashCode =>\n'
+        '          foo.hashCode;\n'
+        '\n'
+        '    @override\n'
+        '    bool operator ==(Object other) {\n'
+        '        if (identical(this, other)) return true;\n'
+        '        return other is Test\n'
+        '            && identical(foo, other.foo)\n'
+        '        ;\n'
+        '    }\n'
+        '}\n'
+        '',
+      );
+    });
+    test('with datetime', () {
+      final schema = {
+        'type': 'object',
+        'properties': {
+          'foo': {'type': 'string', 'format': 'date-time'},
+        },
+      };
+      final result = renderSchema(schema);
+      expect(
+        result,
+        '@immutable\n'
+        'class Test {\n'
+        '    Test(\n'
+        '        {  this.foo,\n'
+        '         }\n'
+        '    );\n'
+        '\n'
+        '    factory Test.fromJson(Map<String, dynamic>\n'
+        '        json) {\n'
+        '        return Test(\n'
+        "            foo: maybeParseDateTime(json['foo'] as String?) ,\n"
+        '        );\n'
+        '    }\n'
+        '\n'
+        '    /// Convenience to create a nullable type from a nullable json object.\n'
+        '    /// Useful when parsing optional fields.\n'
+        '    static Test? maybeFromJson(Map<String, dynamic>? json) {\n'
+        '        if (json == null) {\n'
+        '            return null;\n'
+        '        }\n'
+        '        return Test.fromJson(json);\n'
+        '    }\n'
+        '\n'
+        '    final  DateTime? foo;\n'
+        '\n'
+        '\n'
+        '    Map<String, dynamic> toJson() {\n'
+        '        return {\n'
+        "            'foo': foo?.toIso8601String(),\n"
+        '        };\n'
+        '    }\n'
+        '\n'
+        '    @override\n'
+        '    int get hashCode =>\n'
+        '          foo.hashCode;\n'
+        '\n'
+        '    @override\n'
+        '    bool operator ==(Object other) {\n'
+        '        if (identical(this, other)) return true;\n'
+        '        return other is Test\n'
+        '            && foo == other.foo\n'
+        '        ;\n'
+        '    }\n'
+        '}\n'
+        '',
+      );
+    });
   });
 }

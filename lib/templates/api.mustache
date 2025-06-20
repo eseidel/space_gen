@@ -1,12 +1,3 @@
-import 'dart:async';
-import 'dart:convert';
-
-import 'package:{{{packageName}}}/api_client.dart';
-import 'package:http/http.dart' as http;
-{{#imports}}
-import '{{{.}}}';
-{{/imports}}
-
 class {{ className }} {
     {{ className }}(ApiClient? client) : client = client ?? ApiClient();
 

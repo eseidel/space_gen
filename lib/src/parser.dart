@@ -1,5 +1,4 @@
 import 'package:collection/collection.dart';
-import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/spec.dart';
@@ -163,19 +162,26 @@ Parameter parseParameter(MapContext json) {
   }
 
   _warnUnused(json);
-  final parameter = Parameter(
+  return Parameter(
+    pointer: json.pointer,
     name: name,
     description: description,
     isRequired: required,
     sendIn: sendIn,
     type: type,
   );
-  json.addObject(parameter);
-  return parameter;
 }
 
 Header parseHeader(MapContext json) {
   _refNotExpected(json);
+
+  if (json.containsKey('name')) {
+    _error(json, 'Header name is not allowed');
+  }
+  if (json.containsKey('in')) {
+    _error(json, 'Header in is not allowed');
+  }
+
   final description = _optional<String>(json, 'description');
   _ignored<bool>(json, 'deprecated');
   _ignored<bool>(json, 'allowEmptyValue');
@@ -187,9 +193,11 @@ Header parseHeader(MapContext json) {
 
   final schema = _maybeSchemaOrRef(_optionalMap(json, 'schema'));
   _warnUnused(json);
-  final header = Header(description: description, schema: schema);
-  json.addObject(header);
-  return header;
+  return Header(
+    pointer: json.pointer,
+    description: description,
+    schema: schema,
+  );
 }
 
 RefOr<Header> parseHeaderOrRef(MapContext json) {
@@ -281,8 +289,9 @@ Schema parseSchema(MapContext json) {
     }
   }
 
+  _warnUnused(json);
   final schema = Schema(
-    pointer: json.pointer.toString(),
+    pointer: json.pointer,
     snakeName: json.snakeName,
     type: type,
     properties: properties,
@@ -294,10 +303,7 @@ Schema parseSchema(MapContext json) {
     additionalProperties: additionalPropertiesSchema,
     defaultValue: defaultValue,
     example: example,
-    useNewType: json.isTopLevelComponent,
   );
-  json.addObject(schema);
-  _warnUnused(json);
   return schema;
 }
 
@@ -326,7 +332,7 @@ SchemaRef parseSchemaOrRef(MapContext json) {
     }
     return SchemaRef.schema(
       SchemaOneOf(
-        pointer: json.pointer.toString(),
+        pointer: json.pointer,
         snakeName: json.snakeName,
         schemas: schemas,
       ),
@@ -344,7 +350,7 @@ SchemaRef parseSchemaOrRef(MapContext json) {
     }
     return SchemaRef.schema(
       SchemaAllOf(
-        pointer: json.pointer.toString(),
+        pointer: json.pointer,
         snakeName: json.snakeName,
         schemas: schemas,
       ),
@@ -388,7 +394,7 @@ SchemaRef parseSchemaOrRef(MapContext json) {
     }
     return SchemaRef.schema(
       SchemaAnyOf(
-        pointer: json.pointer.toString(),
+        pointer: json.pointer,
         snakeName: json.snakeName,
         schemas: schemas,
       ),
@@ -420,15 +426,13 @@ RequestBody parseRequestBody(MapContext json) {
   final description = _optional<String>(json, 'description');
 
   final isRequired = json['required'] as bool? ?? false;
-  final body = RequestBody(
-    pointer: json.pointer.toString(),
+  _warnUnused(json);
+  return RequestBody(
+    pointer: json.pointer,
     isRequired: isRequired,
     description: description,
     content: content,
   );
-  json.addObject(body);
-  _warnUnused(json);
-  return body;
 }
 
 // This is a heuristic to help understand if two schemas are the same so we
@@ -524,6 +528,7 @@ Operation _parseOperation(MapContext operationJson, String path) {
     _error(context, 'Responses are required');
   }
   return Operation(
+    pointer: operationJson.pointer,
     tags: tags,
     snakeName: snakeName,
     summary: summary ?? '',
@@ -576,6 +581,7 @@ PathItem parsePathItem({
 
   _warnUnused(pathItemJson);
   return PathItem(
+    pointer: pathItemJson.pointer,
     path: path,
     summary: summary ?? '',
     description: description ?? '',
@@ -634,6 +640,7 @@ Response _parseResponse(MapContext responseJson) {
   final content = _optionalMap(responseJson, 'content');
   final mediaTypes = _maybeMediaTypes(content?.addSnakeName('response'));
   return Response(
+    pointer: responseJson.pointer,
     description: description,
     content: mediaTypes,
     headers: headers,
@@ -673,9 +680,7 @@ Map<String, T> _parseComponent<T>(
   if (valuesJson != null) {
     for (final name in valuesJson.keys) {
       final snakeName = snakeFromCamel(name);
-      final childContext = valuesJson
-          .childAsMap(name)
-          .addSnakeName(snakeName, isTopLevelComponent: true);
+      final childContext = valuesJson.childAsMap(name).addSnakeName(snakeName);
       final value = parse(childContext);
       values[name] = value;
     }
@@ -777,7 +782,8 @@ Paths parsePaths(MapContext pathsJson) {
   return Paths(paths: paths);
 }
 
-OpenApi parseOpenApi(MapContext json) {
+OpenApi parseOpenApi(Map<String, dynamic> openapiJson) {
+  final json = MapContext.initial(openapiJson);
   _refNotExpected(json);
   final minimumVersion = Version.parse('3.0.0');
   final versionString = _required<String>(json, 'openapi');
@@ -853,38 +859,10 @@ class RefRegistry {
   }
 }
 
-/// Json pointer is a string that can be used to reference a value in a json
-/// object.
-/// https://spec.openapis.org/oas/v3.1.0#json-pointer
-@immutable
-class JsonPointer extends Equatable {
-  /// Create a new JsonPointer from a list of parts.
-  const JsonPointer(this.parts);
-
-  /// The parts of the json pointer.
-  final List<String> parts;
-
-  /// This pointer encoded as a url-ready string.
-  String get location => '/${parts.map(urlEncode).join('/')}';
-
-  /// Encode a part of the json pointer as a url-ready string.
-  static String urlEncode(String part) =>
-      part.replaceAll('~', '~0').replaceAll('/', '~1');
-
-  @override
-  String toString() => '/${parts.join('/')}';
-
-  @override
-  List<Object?> get props => [parts];
-}
-
 class MapContext extends ParseContext {
   MapContext({
-    required super.baseUrl,
     required super.pointerParts,
     required super.snakeNameStack,
-    required super.refRegistry,
-    required super.isTopLevelComponent,
     required this.json,
     // Only exposed in the constructor so that addSnakeName can pass it to
     // prevent resetting the usedKeys set.
@@ -896,23 +874,13 @@ class MapContext extends ParseContext {
     required Map<String, dynamic> json,
     required String key,
   }) : this(
-         baseUrl: parent.baseUrl,
          pointerParts: [...parent.pointerParts, key],
          snakeNameStack: parent.snakeNameStack,
-         refRegistry: parent.refRegistry,
-         isTopLevelComponent: false,
          json: json,
        );
 
-  MapContext.initial(Uri baseUrl, Json json)
-    : this(
-        baseUrl: baseUrl,
-        pointerParts: [],
-        snakeNameStack: [],
-        refRegistry: RefRegistry(),
-        isTopLevelComponent: false,
-        json: json,
-      );
+  MapContext.initial(Json json)
+    : this(pointerParts: [], snakeNameStack: [], json: json);
 
   MapContext childAsMap(String key) {
     final value = json[key];
@@ -934,15 +902,9 @@ class MapContext extends ParseContext {
     return ListContext.fromParent(parent: this, json: child, key: key);
   }
 
-  MapContext addSnakeName(
-    String snakeName, {
-    bool isTopLevelComponent = false,
-  }) => MapContext(
-    baseUrl: baseUrl,
+  MapContext addSnakeName(String snakeName) => MapContext(
     pointerParts: pointerParts,
     snakeNameStack: [...snakeNameStack, snakeName],
-    refRegistry: refRegistry,
-    isTopLevelComponent: isTopLevelComponent,
     json: json,
     usedKeys: usedKeys,
   );
@@ -979,11 +941,8 @@ class MapContext extends ParseContext {
 
 class ListContext extends ParseContext {
   ListContext({
-    required super.baseUrl,
     required super.pointerParts,
     required super.snakeNameStack,
-    required super.refRegistry,
-    required super.isTopLevelComponent,
     required this.json,
   });
 
@@ -992,11 +951,8 @@ class ListContext extends ParseContext {
     required List<dynamic> json,
     required String key,
   }) : this(
-         baseUrl: parent.baseUrl,
          pointerParts: [...parent.pointerParts, key],
          snakeNameStack: parent.snakeNameStack,
-         refRegistry: parent.refRegistry,
-         isTopLevelComponent: false,
          json: json,
        );
 
@@ -1023,24 +979,7 @@ class ListContext extends ParseContext {
 /// Immutable context for parsing a spec.
 /// SchemaRegistry is internally mutable, so this is not truly immutable.
 abstract class ParseContext {
-  ParseContext({
-    required this.baseUrl,
-    required this.pointerParts,
-    required this.snakeNameStack,
-    required this.refRegistry,
-    required this.isTopLevelComponent,
-  }) {
-    if (baseUrl.hasFragment) {
-      throw ArgumentError.value(
-        baseUrl,
-        'baseUrl',
-        'Base url cannot have a fragment',
-      );
-    }
-  }
-
-  /// The base url of the spec being parsed.
-  final Uri baseUrl;
+  ParseContext({required this.pointerParts, required this.snakeNameStack});
 
   /// Json pointer location of the current schema.
   final List<String> pointerParts;
@@ -1048,10 +987,7 @@ abstract class ParseContext {
   /// Stack of name parts for the current schema.
   final List<String> snakeNameStack;
 
-  /// Whether the current schema is a top-level component.
-  final bool isTopLevelComponent;
-
-  JsonPointer get pointer => JsonPointer(pointerParts);
+  JsonPointer get pointer => JsonPointer.fromParts(pointerParts);
 
   String get snakeName {
     // To match OpenAPI, we don't put a _ before numbers.
@@ -1063,14 +999,5 @@ abstract class ParseContext {
       buf.write(e);
     }
     return buf.toString();
-  }
-
-  // Registry of all the schemas we've parsed so far.
-  // RefRegistry is internally mutable.
-  final RefRegistry refRegistry;
-
-  void addObject(dynamic object) {
-    final uri = baseUrl.replace(fragment: pointer.toString());
-    refRegistry.register(uri, object);
   }
 }

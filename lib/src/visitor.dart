@@ -2,13 +2,14 @@ import 'package:space_gen/src/spec.dart';
 
 /// Subclass this and override the methods you want to visit.
 abstract class Visitor {
-  void visitRoot(OpenApi root) {}
-  void visitPathItem(PathItem pathItem) {}
+  void visitHeader(Header header) {}
   void visitOperation(Operation operation) {}
   void visitParameter(Parameter parameter) {}
-  void visitResponse(Response response) {}
-  void visitRequestBody(RequestBody requestBody) {}
+  void visitPathItem(PathItem pathItem) {}
   void visitReference<T>(RefOr<T> ref) {}
+  void visitRequestBody(RequestBody requestBody) {}
+  void visitResponse(Response response) {}
+  void visitRoot(OpenApi root) {}
   void visitSchema(SchemaBase schema) {}
 }
 
@@ -39,11 +40,30 @@ class SpecWalker {
 
   final Visitor visitor;
 
+  void _walkComponents(Components components) {
+    for (final schema in components.schemas.values) {
+      walkSchema(schema);
+    }
+    for (final parameter in components.parameters.values) {
+      _parameter(parameter);
+    }
+    for (final requestBody in components.requestBodies.values) {
+      _requestBody(requestBody);
+    }
+    for (final response in components.responses.values) {
+      _response(response);
+    }
+    for (final header in components.headers.values) {
+      _header(header);
+    }
+  }
+
   void walkRoot(OpenApi root) {
     visitor.visitRoot(root);
     for (final path in root.paths.paths.values) {
       walkPathItem(path);
     }
+    _walkComponents(root.components);
   }
 
   void walkPathItem(PathItem pathItem) {
@@ -80,6 +100,11 @@ class SpecWalker {
         _mediaType(mediaType);
       }
     }
+  }
+
+  void _header(Header header) {
+    visitor.visitHeader(header);
+    _maybeRef(header.schema);
   }
 
   void _maybeRef<T>(RefOr<T>? ref) {

@@ -9,9 +9,7 @@ class _MockLogger extends Mock implements Logger {}
 void main() {
   group('parser', () {
     OpenApi parseTestSpec(Map<String, dynamic> json) {
-      return parseOpenApi(
-        MapContext.initial(Uri.parse('file:///foo.json'), json),
-      );
+      return parseOpenApi(json);
     }
 
     Map<String, SchemaBase> parseTestSchemas(Map<String, dynamic> schemasJson) {
@@ -78,7 +76,7 @@ void main() {
             'message',
             equals(
               'enumValues for type=SchemaType.number not supported in '
-              'MapContext(/components/schemas/NumberEnum, '
+              'MapContext(#/components/schemas/NumberEnum, '
               '{type: number, enum: [1, 2, 3]})',
             ),
           ),
@@ -317,7 +315,7 @@ void main() {
             'message',
             equals(
               r'$ref not supported in '
-              'MapContext(/components/schemas/User, '
+              'MapContext(#/components/schemas/User, '
               r'{$ref: #/components/schemas/Value})',
             ),
           ),
@@ -477,7 +475,7 @@ void main() {
             'message',
             equals(
               "'content' not supported in "
-              'MapContext(/paths//users/get/parameters/0, {name: foo, '
+              'MapContext(#/paths//users/get/parameters/0, {name: foo, '
               'in: query, content: {application/json: '
               '{schema: {type: boolean}}}})',
             ),
@@ -509,7 +507,7 @@ void main() {
       final spec = runWithLogger(logger, () => parseTestSpec(json));
       verify(
         () => logger.warn(
-          '2.9.9 < 3.0.0, the lowest known supported version. in /',
+          '2.9.9 < 3.0.0, the lowest known supported version. in #/',
         ),
       ).called(1);
       expect(spec.version, Version.parse('2.9.9'));
@@ -540,7 +538,7 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              "'responses' is not of type Map<String, dynamic>: true in /paths//users/get",
+              "'responses' is not of type Map<String, dynamic>: true in #/paths//users/get",
             ),
           ),
         ),
@@ -562,7 +560,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals('Path cannot be empty in /paths/'),
+            equals('Path cannot be empty in #/paths/'),
           ),
         ),
       );
@@ -581,7 +579,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals('Key info is required in /'),
+            equals('Key info is required in #/'),
           ),
         ),
       );
@@ -597,7 +595,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals('Key servers is required in /'),
+            equals('Key servers is required in #/'),
           ),
         ),
       );
@@ -636,8 +634,7 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              'Path parameters must be strings or integers in '
-              '/paths//users/get/parameters/0',
+              'Path parameters must be strings or integers in #/paths//users/get/parameters/0',
             ),
           ),
         ),
@@ -678,7 +675,7 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              'Path parameters must be required in /paths//users/get/parameters/0',
+              'Path parameters must be required in #/paths//users/get/parameters/0',
             ),
           ),
         ),
@@ -924,7 +921,7 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              'Invalid response code: barf in /paths//users/get/responses',
+              'Invalid response code: barf in #/paths//users/get/responses',
             ),
           ),
         ),
@@ -975,7 +972,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals('Responses are required in /paths//users/get'),
+            equals('Responses are required in #/paths//users/get'),
           ),
         ),
       );
@@ -1006,7 +1003,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals('Empty content in /paths//users/post/requestBody/content'),
+            equals('Empty content in #/paths//users/post/requestBody/content'),
           ),
         ),
       );
@@ -1127,7 +1124,7 @@ void main() {
       final logger = _MockLogger();
       runWithLogger(logger, () => parseTestSpec(json));
       verify(
-        () => logger.warn('Ignoring securitySchemes in /components'),
+        () => logger.warn('Ignoring securitySchemes in #/components'),
       ).called(1);
     });
 
@@ -1143,7 +1140,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals(r'$ref not expected in /'),
+            equals(r'$ref not expected in #/'),
           ),
         ),
       );
@@ -1201,12 +1198,12 @@ void main() {
       runWithLogger(logger, () => parseTestSpec(json));
       verify(
         () => logger.detail(
-          'Ignoring key: links (Map<String, dynamic>) in /components',
+          'Ignoring key: links (Map<String, dynamic>) in #/components',
         ),
       ).called(1);
       verify(
         () => logger.detail(
-          'Ignoring key: callbacks (Map<String, dynamic>) in /components',
+          'Ignoring key: callbacks (Map<String, dynamic>) in #/components',
         ),
       ).called(1);
     });
@@ -1252,7 +1249,7 @@ void main() {
       expect(schema.additionalProperties, isNull);
       verify(
         () => logger.detail(
-          'Ignoring key: additionalProperties (bool) in /paths//users/get/responses/200/content/application/json/schema',
+          'Ignoring key: additionalProperties (bool) in #/paths//users/get/responses/200/content/application/json/schema',
         ),
       ).called(1);
     });
@@ -1290,7 +1287,7 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              'additionalProperties must be a boolean or a map in /paths//users/get/responses/200/content/application/json/schema',
+              'additionalProperties must be a boolean or a map in #/paths//users/get/responses/200/content/application/json/schema',
             ),
           ),
         ),
@@ -1300,10 +1297,10 @@ void main() {
 
   group('ParseContext', () {
     test('MapContext.childAsMap throws on missing child', () {
-      final context = MapContext.initial(Uri.parse('file:///foo.json'), {
+      final context = MapContext.initial({
         'foo': {'bar': 'baz'},
       });
-      expect(context.pointer, const JsonPointer([]));
+      expect(context.pointer, const JsonPointer.fromParts([]));
       expect(context.childAsMap('foo'), isA<MapContext>());
       expect(
         () => context.childAsList('foo'),
@@ -1311,7 +1308,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals("'foo' is not of type List<dynamic>: {bar: baz} in /"),
+            equals("'foo' is not of type List<dynamic>: {bar: baz} in #/"),
           ),
         ),
       );
@@ -1321,17 +1318,17 @@ void main() {
           isA<StateError>().having(
             (e) => e.message,
             'message',
-            equals('Key not found: bar in /'),
+            equals('Key not found: bar in #/'),
           ),
         ),
       );
     });
 
     test('MapContext.childAsList throws on missing child', () {
-      final context = MapContext.initial(Uri.parse('file:///foo.json'), {
+      final context = MapContext.initial({
         'foo': ['bar'],
       });
-      expect(context.pointer, const JsonPointer([]));
+      expect(context.pointer, const JsonPointer.fromParts([]));
       expect(context.childAsList('foo'), isA<ListContext>());
       expect(
         () => context.childAsMap('foo'),
@@ -1339,7 +1336,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals("'foo' is not of type Map<String, dynamic>: [bar] in /"),
+            equals("'foo' is not of type Map<String, dynamic>: [bar] in #/"),
           ),
         ),
       );
@@ -1349,7 +1346,7 @@ void main() {
           isA<StateError>().having(
             (e) => e.message,
             'message',
-            equals('Key not found: bar in /'),
+            equals('Key not found: bar in #/'),
           ),
         ),
       );
@@ -1357,17 +1354,14 @@ void main() {
 
     test('ListContext.indexAsMap throws on missing child', () {
       final context = ListContext(
-        baseUrl: Uri.parse('file:///foo.json'),
         pointerParts: const ['root'],
         snakeNameStack: const [],
-        refRegistry: RefRegistry(),
-        isTopLevelComponent: false,
         json: [
           {'foo': 'bar'},
           'baz',
         ],
       );
-      expect(context.pointer, const JsonPointer(['root']));
+      expect(context.pointer, const JsonPointer.fromParts(['root']));
       expect(context.indexAsMap(0), isA<MapContext>());
       expect(
         () => context.indexAsMap(1),
@@ -1375,7 +1369,9 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals('Index 1 is not of type Map<String, dynamic>: baz in /root'),
+            equals(
+              'Index 1 is not of type Map<String, dynamic>: baz in #/root',
+            ),
           ),
         ),
       );
@@ -1394,9 +1390,9 @@ void main() {
 
   group('JsonPointer', () {
     test('equality', () {
-      const pointerOne = JsonPointer(['foo', 'bar']);
-      const pointerTwo = JsonPointer(['foo', 'bar']);
-      const pointerThree = JsonPointer(['foo', 'baz']);
+      const pointerOne = JsonPointer.fromParts(['foo', 'bar']);
+      const pointerTwo = JsonPointer.fromParts(['foo', 'bar']);
+      const pointerThree = JsonPointer.fromParts(['foo', 'baz']);
       expect(pointerOne, pointerTwo);
       expect(pointerOne.hashCode, pointerTwo.hashCode);
       expect(pointerOne, isNot(pointerThree));
@@ -1415,7 +1411,7 @@ void main() {
     test('object equals object with different name', () {
       final a = RefOr<SchemaBase>.object(
         Schema(
-          pointer: '#/components/schemas/User',
+          pointer: JsonPointer.parse('#/components/schemas/User'),
           snakeName: 'foo_bar',
           type: SchemaType.object,
           properties: const {},
@@ -1427,12 +1423,11 @@ void main() {
           additionalProperties: null,
           defaultValue: 'User',
           example: 'User',
-          useNewType: true,
         ),
       );
       final b = RefOr<SchemaBase>.object(
         Schema(
-          pointer: '#/components/schemas/Other',
+          pointer: JsonPointer.parse('#/components/schemas/Other'),
           snakeName: 'bar_baz',
           type: SchemaType.object,
           properties: const {},
@@ -1444,12 +1439,11 @@ void main() {
           additionalProperties: null,
           defaultValue: 'User',
           example: 'User',
-          useNewType: true,
         ),
       );
       final c = RefOr<SchemaBase>.object(
         Schema(
-          pointer: '#/components/schemas/User',
+          pointer: JsonPointer.parse('#/components/schemas/User'),
           snakeName: 'foo_baz',
           type: SchemaType.string,
           properties: const {},
@@ -1461,7 +1455,6 @@ void main() {
           additionalProperties: null,
           defaultValue: 'User',
           example: 'User',
-          useNewType: true,
         ),
       );
       expect(a.equalsIgnoringName(a), isTrue);
@@ -1470,11 +1463,11 @@ void main() {
     });
 
     test('object equals with different name 2', () {
-      // SchemaRef(null, Schema(name: users200_response, pointer: /paths//users/get/responses/200/content/application/json/schema, type: SchemaType.boolean, description: , useNewType: false)) != SchemaRef(null, Schema(name: users201_response, pointer: /paths//users/get/responses/201/content/application/json/schema, type: SchemaType.boolean, description: , useNewType: false)) not supported in MapContext(/paths//users/get, {responses: {200: {description: OK, content: {application/json: {schema: {type: boolean}}}}, 201: {description: Created, content: {application/json: {schema: {type: boolean}}}}}}
       final a = RefOr<SchemaBase>.object(
         Schema(
-          pointer:
-              '#/paths//users/get/responses/200/content/application/json/schema',
+          pointer: JsonPointer.parse(
+            '#/paths//users/get/responses/200/content/application/json/schema',
+          ),
           snakeName: 'users200_response',
           type: SchemaType.boolean,
           properties: const {},
@@ -1486,13 +1479,13 @@ void main() {
           additionalProperties: null,
           defaultValue: null,
           example: null,
-          useNewType: false,
         ),
       );
       final b = RefOr<SchemaBase>.object(
         Schema(
-          pointer:
-              '#/paths//users/get/responses/201/content/application/json/schema',
+          pointer: JsonPointer.parse(
+            '#/paths//users/get/responses/201/content/application/json/schema',
+          ),
           snakeName: 'users201_response',
           type: SchemaType.boolean,
           properties: const {},
@@ -1504,7 +1497,6 @@ void main() {
           additionalProperties: null,
           defaultValue: null,
           example: null,
-          useNewType: false,
         ),
       );
       expect(a.equalsIgnoringName(b), isTrue);

@@ -1,49 +1,22 @@
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
+import 'package:space_gen/src/types.dart';
 import 'package:version/version.dart';
 
+export 'package:space_gen/src/types.dart';
 export 'package:version/version.dart';
 
 /// A typedef representing a json object.
 typedef Json = Map<String, dynamic>;
 
-/// The "in" of a parameter.  "in" is a keyword in Dart, so we use SendIn.
-/// e.g. query, header, path, cookie.
-/// https://spec.openapis.org/oas/v3.0.0#parameter-object
-enum SendIn {
-  /// The query parameter is a parameter that is sent in the query string.
-  query,
-
-  /// The header parameter is a parameter that is sent in the header.
-  header,
-
-  /// The path parameter is a parameter that is sent in the path.
-  path,
-
-  /// The cookie parameter is a parameter that is sent in the cookie.
-  cookie;
-
-  /// Parse a SendIn from a json string.
-  static SendIn fromJson(String json) {
-    switch (json) {
-      case 'query':
-        return query;
-      case 'header':
-        return header;
-      case 'path':
-        return path;
-      case 'cookie':
-        return cookie;
-      default:
-        throw ArgumentError.value(json, 'json', 'Unknown SendIn');
-    }
-  }
+abstract class HasPointer {
+  JsonPointer get pointer;
 }
 
 /// A parameter is a parameter to an endpoint.
 /// https://spec.openapis.org/oas/v3.0.0#parameter-object
 @immutable
-class Parameter extends Equatable {
+class Parameter extends Equatable implements HasPointer {
   /// Create a new parameter.
   const Parameter({
     required this.name,
@@ -51,6 +24,7 @@ class Parameter extends Equatable {
     required this.type,
     required this.isRequired,
     required this.sendIn,
+    required this.pointer,
   });
 
   /// The name of the parameter.
@@ -69,21 +43,41 @@ class Parameter extends Equatable {
   /// The type of the parameter.
   final SchemaRef type;
 
+  /// Where this parameter is located in the spec.
   @override
-  List<Object?> get props => [name, description, isRequired, sendIn, type];
+  final JsonPointer pointer;
+
+  @override
+  List<Object?> get props => [
+    name,
+    description,
+    isRequired,
+    sendIn,
+    type,
+    pointer,
+  ];
 }
 
 @immutable
-class Header extends Equatable {
-  const Header({required this.description, required this.schema});
+class Header extends Equatable implements HasPointer {
+  const Header({
+    required this.description,
+    required this.schema,
+    required this.pointer,
+  });
 
   /// The description of the header.
   final String? description;
 
   /// The type of the header.
   final SchemaRef? schema;
+
+  /// Where this header is located in the spec.
   @override
-  List<Object?> get props => [description, schema];
+  final JsonPointer pointer;
+
+  @override
+  List<Object?> get props => [description, schema, pointer];
 }
 
 /// A type of schema.
@@ -153,15 +147,21 @@ class SchemaRef extends RefOr<SchemaBase> {
   SchemaBase? get schema => object;
 }
 
-sealed class SchemaBase extends Equatable {
+sealed class SchemaBase extends Equatable implements HasPointer {
   const SchemaBase({
     required this.pointer,
     required this.snakeName,
     required this.type,
   });
 
-  final String pointer;
+  /// Where this schema is located in the spec.
+  @override
+  final JsonPointer pointer;
+
+  /// The snake name of this schema.
   final String snakeName;
+
+  /// The type of this schema.
   final SchemaType type;
 
   @override
@@ -225,7 +225,6 @@ class Schema extends SchemaBase {
     required this.additionalProperties,
     required this.defaultValue,
     required this.example,
-    required this.useNewType,
   }) {
     if (type == SchemaType.object && snakeName.isEmpty) {
       throw ArgumentError.value(
@@ -265,10 +264,6 @@ class Schema extends SchemaBase {
   /// The default value of this schema.
   final dynamic defaultValue;
 
-  /// Whether to use the newtype pattern for this schema.
-  /// e.g. Wrap the underlying type in a named object.
-  final bool useNewType;
-
   @override
   List<Object?> get props => [
     super.props,
@@ -280,45 +275,13 @@ class Schema extends SchemaBase {
     format,
     additionalProperties,
     defaultValue,
-    useNewType,
   ];
 
   @override
   String toString() {
     return 'Schema(name: $snakeName, pointer: $pointer, type: $type, '
-        'description: $description, useNewType: $useNewType)';
+        'description: $description)';
   }
-}
-
-/// A method is a http method.
-/// https://spec.openapis.org/oas/v3.0.0#operation-object
-enum Method {
-  /// The GET method is used to retrieve a resource.
-  get,
-
-  /// The POST method is used to create a resource.
-  post,
-
-  /// The PUT method is used to update a resource.
-  put,
-
-  /// The DELETE method is used to delete a resource.
-  delete,
-
-  /// The PATCH method is used to update a resource.
-  patch,
-
-  /// The HEAD method is used to get the headers of a resource.
-  head,
-
-  /// The OPTIONS method is used to get the supported methods of a resource.
-  options,
-
-  /// The TRACE method is used to get the trace of a resource.
-  trace;
-
-  /// The method as a lowercase string.
-  String get key => name.toLowerCase();
 }
 
 /// A media type is a mime type and a schema.
@@ -339,7 +302,7 @@ class MediaType extends Equatable {
 /// https://spec.openapis.org/oas/v3.0.0#requestBodyObject
 /// Notably "required" is a boolean, not a list of strings.
 @immutable
-class RequestBody extends Equatable {
+class RequestBody extends Equatable implements HasPointer {
   const RequestBody({
     required this.pointer,
     required this.description,
@@ -347,8 +310,9 @@ class RequestBody extends Equatable {
     required this.isRequired,
   });
 
-  /// The pointer to this request body.
-  final String pointer;
+  /// Where this request body is located in the spec.
+  @override
+  final JsonPointer pointer;
 
   /// The description of the request body.
   final String? description;
@@ -363,8 +327,9 @@ class RequestBody extends Equatable {
   List<Object?> get props => [pointer, description, content, isRequired];
 }
 
-class Operation extends Equatable {
+class Operation extends Equatable implements HasPointer {
   const Operation({
+    required this.pointer,
     required this.tags,
     required this.snakeName,
     required this.summary,
@@ -374,6 +339,10 @@ class Operation extends Equatable {
     required this.requestBody,
     required this.deprecated,
   });
+
+  /// Where this operation is located in the spec.
+  @override
+  final JsonPointer pointer;
 
   /// A list of tags for this operation.
   final List<String> tags;
@@ -416,15 +385,20 @@ class Operation extends Equatable {
 /// An endpoint is a path with a method.
 /// https://spec.openapis.org/oas/v3.0.0#path-item-object
 @immutable
-class PathItem extends Equatable {
+class PathItem extends Equatable implements HasPointer {
   /// Create a new endpoint.
   const PathItem({
+    required this.pointer,
     required this.path,
     required this.operations,
     required this.summary,
     required this.description,
     // required this.parameters,
   });
+
+  /// Where this path item is located in the spec.
+  @override
+  final JsonPointer pointer;
 
   /// The path of this endpoint (e.g. /my/user/{name})
   final String path;
@@ -440,9 +414,6 @@ class PathItem extends Equatable {
 
   /// Parameters available to all operations in this path.
   // final List<Parameter> parameters;
-
-  Set<String> get tags =>
-      operations.values.map((e) => e.tags.firstOrNull ?? 'Default').toSet();
 
   @override
   List<Object?> get props => [
@@ -488,9 +459,18 @@ class Responses extends Equatable {
 /// A response from an endpoint.
 /// https://spec.openapis.org/oas/v3.1.0#response-object
 @immutable
-class Response extends Equatable {
+class Response extends Equatable implements HasPointer {
   /// Create a new response.
-  const Response({required this.description, this.content, this.headers});
+  const Response({
+    required this.pointer,
+    required this.description,
+    this.content,
+    this.headers,
+  });
+
+  /// Where this response is located in the spec.
+  @override
+  final JsonPointer pointer;
 
   /// The description of this response.
   final String description;
@@ -534,7 +514,7 @@ class Response extends Equatable {
   }
 
   @override
-  List<Object?> get props => [description, content, headers];
+  List<Object?> get props => [pointer, description, content, headers];
 }
 
 @immutable

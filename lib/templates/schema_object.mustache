@@ -1,10 +1,4 @@
-{{#imports}}
-import '{{{.}}}';
-{{/imports}}
-
 {{^mutableModels}}
-import 'package:meta/meta.dart';
-
 @immutable
 {{/mutableModels}}
 class {{ typeName }} {
