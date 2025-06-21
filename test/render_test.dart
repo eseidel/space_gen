@@ -870,6 +870,48 @@ void main() {
         );
       },
     );
+    test('multiple responses with different content', () async {
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {'type': 'boolean'},
+                    },
+                  },
+                },
+                '201': {
+                  'description': 'Created',
+                  'content': {
+                    'application/json': {
+                      'schema': {'type': 'string'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+      final fs = MemoryFileSystem.test();
+      final out = fs.directory('spacetraders');
+
+      await renderToDirectory(spec: spec, outDir: out);
+      expect(out.childFile('lib/api/default_api.dart'), exists);
+      expect(
+        out.childDirectory('lib/model'),
+        hasFiles(['users_response.dart']),
+      );
+    });
   });
 
   group('renderSchema', () {

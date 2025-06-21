@@ -1088,8 +1088,12 @@ class RenderOneOf extends RenderNewType {
   String jsonStorageType({required bool isNullable}) => 'dynamic';
 
   @override
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
-      throw UnimplementedError('RenderOneOf.toTemplateContext');
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
+    return {
+      'typeName': className,
+      'nullableTypeName': nullableTypeName(context),
+    };
+  }
 
   @override
   String fromJsonExpression(

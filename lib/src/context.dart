@@ -185,10 +185,16 @@ class RenderTreeWalker {
         maybeWalkSchema(schema.additionalProperties);
       case RenderArray():
         maybeWalkSchema(schema.items);
+      case RenderOneOf():
+        for (final schema in schema.schemas) {
+          walkSchema(schema);
+        }
       case RenderEnum():
       case RenderStringNewType():
       case RenderNumberNewType():
       case RenderPod():
+      case RenderUnknown():
+      case RenderVoid():
         break;
     }
   }
@@ -220,6 +226,7 @@ class RenderTreeWalker {
     for (final parameter in operation.parameters) {
       walkParameter(parameter);
     }
+    walkSchema(operation.returnType);
   }
 
   void walkRequestBody(RenderRequestBody requestBody) {
@@ -439,6 +446,7 @@ class FileRenderer {
       RenderStringNewType() => true,
       RenderNumberNewType() => true,
       RenderObject() => true,
+      RenderOneOf() => true,
       RenderArray() => false,
       RenderPod() => false,
       RenderUnknown() => false,
@@ -578,10 +586,11 @@ class SchemaRenderer {
       case RenderNumberNewType():
         schemaContext = schema.toTemplateContext(this);
         template = 'schema_number_newtype';
-      case RenderPod():
-        throw StateError('Pod schemas should not be rendered: $schema');
+      case RenderOneOf():
+        schemaContext = schema.toTemplateContext(this);
+        template = 'schema_one_of';
       default:
-        throw StateError('Unknown schema: $schema');
+        throw StateError('No code to render $schema');
     }
 
     return templateProvider.loadTemplate(template).renderString(schemaContext);
