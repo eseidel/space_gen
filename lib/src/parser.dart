@@ -232,12 +232,18 @@ SchemaType _determineType({
 Schema parseSchema(MapContext json) {
   _refNotExpected(json);
 
-  final enumValues = _optional<List<dynamic>>(json, 'enum');
+  var enumValues = _optional<List<dynamic>>(json, 'enum');
   // TODO(eseidel): type can be an array, but we don't support that yet.
   final type = _determineType(
     type: _optional<String>(json, 'type'),
     enumValues: enumValues,
   );
+  // GitHub's api only allows fork=true, not fork=false, but just ignoring
+  // that restriction for now.
+  if (type == SchemaType.boolean && enumValues != null) {
+    _warn(json, 'boolean enums are not supported, ignoring enum values');
+    enumValues = null;
+  }
   // The rest of the code only supports string enums.
   if (type != SchemaType.string && enumValues != null) {
     _unimplemented(json, 'enumValues for type=$type');

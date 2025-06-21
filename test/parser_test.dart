@@ -1103,6 +1103,55 @@ void main() {
         equals('find_pets_by_status'),
       );
     });
+
+    test('ignore boolean enums', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'boolean',
+                        'enum': [true],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+      final logger = _MockLogger();
+      final spec = runWithLogger(logger, () => parseTestSpec(json));
+      expect(
+        spec
+            .paths['/users']
+            .operations[Method.get]!
+            .responses[200]!
+            .object!
+            .content!['application/json']!
+            .schema
+            .object!
+            .type,
+        equals(SchemaType.boolean),
+      );
+      verify(
+        () => logger.warn(
+          'boolean enums are not supported, ignoring enum values in '
+          '#/paths//users/get/responses/200/content/application/json/schema',
+        ),
+      ).called(1);
+    });
   });
 
   group('ParseContext', () {

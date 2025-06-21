@@ -33,6 +33,7 @@ dart run space_gen
 * Fix toString hack for queryParameters.
 * Move to a sealed class for Schema that allows for AnyOf, AllOf, OneOf variants?
 * Support Parameter.explode.
+* Finish oneOf support.
 
 Is the body sometimes passed in as an object, and sometimes created by
 the endpoint?  Or is it always created by the endpoint?
