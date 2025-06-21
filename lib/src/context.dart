@@ -450,10 +450,12 @@ class FileRenderer {
   void _renderApis(List<Api> apis) {
     for (final api in apis) {
       final content = schemaRenderer.renderApi(api);
+      // TODO(eseidel): Make type imports dynamic based on used schemas.
       final imports = [
         const Import('dart:async'),
         const Import('dart:convert'),
         const Import('dart:io'),
+        const Import('dart:typed_data'), // For Uint8List.
         Import('package:$packageName/api_client.dart'),
         Import('package:$packageName/api_exception.dart'),
         const Import('package:http/http.dart', asName: 'http'),
