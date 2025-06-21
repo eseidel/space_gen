@@ -1112,6 +1112,38 @@ void main() {
         ),
       ).called(1);
     });
+
+    test('tags must be a list of strings', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'tags': [1, 2],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+      expect(
+        () => parseTestSpec(json),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              "'tags' is not a list of String: [1, 2] in #/paths//users/get",
+            ),
+          ),
+        ),
+      );
+    });
   });
 
   group('ParseContext', () {

@@ -53,6 +53,17 @@ T? _optional<T>(MapContext parent, String key) {
   return _expectType<T?>(parent, key, value);
 }
 
+List<T>? _optionalList<T>(MapContext parent, String key) {
+  final value = parent[key];
+  if (value == null) {
+    return null;
+  }
+  if (value is! List || !value.every((e) => e is T)) {
+    _error(parent, "'$key' is not a list of $T: $value");
+  }
+  return value.cast<T>();
+}
+
 MapContext? _optionalMap(MapContext parent, String key) {
   final value = parent[key];
   if (value == null) {
@@ -274,7 +285,7 @@ Schema parseSchema(MapContext json) {
 
   final defaultValue = _optional<dynamic>(json, 'default');
 
-  final required = json['required'] as List<dynamic>? ?? [];
+  final required = _optionalList<String>(json, 'required') ?? [];
   final description = _optional<String>(json, 'description');
   final format = _optional<String>(json, 'format');
   final additionalPropertiesJson = json['additionalProperties'];
@@ -451,7 +462,7 @@ Operation parseOperation(MapContext operationJson, String path) {
 
   final summary = _optional<String>(context, 'summary');
   final description = _optional<String>(context, 'description');
-  final tags = _optional<List<dynamic>>(context, 'tags')?.cast<String>() ?? [];
+  final tags = _optionalList<String>(context, 'tags') ?? [];
   final parameters = _mapOptionalList(
     context,
     'parameters',

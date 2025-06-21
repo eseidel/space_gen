@@ -168,7 +168,23 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       pointer: schema.pointer,
     );
   }
-  throw Exception('Schema is not a single schema: $schema');
+  if (schema is SchemaAllOf) {
+    final allOf = schema;
+    return ResolvedAllOf(
+      schemas: allOf.schemas.map((e) => resolveSchemaRef(e, context)).toList(),
+      snakeName: schema.snakeName,
+      pointer: schema.pointer,
+    );
+  }
+  if (schema is SchemaAnyOf) {
+    final anyOf = schema;
+    return ResolvedAnyOf(
+      schemas: anyOf.schemas.map((e) => resolveSchemaRef(e, context)).toList(),
+      snakeName: schema.snakeName,
+      pointer: schema.pointer,
+    );
+  }
+  _error('Missing code to resolve schema: $schema', schema.pointer);
 }
 
 ResolvedRequestBody? _resolveRequestBody(
@@ -214,6 +230,11 @@ bool _canBePathParameter(ResolvedSchema schema) {
   if (schema is ResolvedOneOf) {
     return schema.schemas.every(_canBePathParameter);
   }
+
+  /// Note this will be wrong if we support non-string, non-integer enums.
+  if (schema is ResolvedEnum) {
+    return true;
+  }
   return false;
 }
 
@@ -224,7 +245,7 @@ List<ResolvedParameter> _resolveParameters(
   return parameters.map((parameter) {
     final resolved = context._resolve(parameter);
     final type = resolveSchemaRef(resolved.type, context);
-    if (!_canBePathParameter(type)) {
+    if (resolved.sendIn == SendIn.path && !_canBePathParameter(type)) {
       _error('Path parameters must be strings or integers', resolved.pointer);
     }
     return ResolvedParameter(
@@ -533,6 +554,8 @@ class ResolvedEnum extends ResolvedSchema {
   });
 
   /// The values of the resolved schema.
+  // If we support non-string, non-integer enums, we will need to fix path
+  // parameter validation to only allow string and integer enum types.
   final List<String> values;
 
   final dynamic defaultValue;
