@@ -988,4 +988,70 @@ void main() {
       );
     });
   });
+
+  group('renderOperation', () {
+    test('smoke test', () {
+      final operation = {
+        'tags': ['pet'],
+        'summary': 'Uploads an image.',
+        'operationId': 'uploadFile',
+        'parameters': [
+          {
+            'name': 'petId',
+            'in': 'path',
+            'description': 'ID of pet to update',
+            'required': true,
+            'schema': {'type': 'integer', 'format': 'int64'},
+          },
+        ],
+        'requestBody': {
+          'content': {
+            'application/octet-stream': {
+              'schema': {'type': 'string', 'format': 'binary'},
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'successful operation'},
+        },
+      };
+      final result = renderOperation(
+        path: '/pet/{petId}/uploadImage',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      expect(
+        result,
+        'class PetApi {\n'
+        '    PetApi(ApiClient? client) : client = client ?? ApiClient();\n'
+        '\n'
+        '    final ApiClient client;\n'
+        '\n'
+        '    Future<void> uploadFile(\n'
+        '        int petId,\n'
+        '        { Uint8List? uint8List, }\n'
+        '    ) async {\n'
+        '        final response = await client.invokeApi(\n'
+        '            method: Method.post,\n'
+        "            path: '/pet/{petId}/uploadImage'\n"
+        '            .replaceAll(\'{petId}\', "\${ petId }")\n'
+        '            ,\n'
+        '            body: uint8List,\n'
+        '        );\n'
+        '\n'
+        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+        '            throw ApiException(response.statusCode, response.body.toString());\n'
+        '        }\n'
+        '\n'
+        '        if (response.body.isNotEmpty) {\n'
+        '            return ;\n'
+        '        }\n'
+        '\n'
+        "        throw ApiException(response.statusCode, 'Unhandled response from \$uploadFile');\n"
+        '    }\n'
+        '}\n'
+        '',
+      );
+    });
+  });
 }

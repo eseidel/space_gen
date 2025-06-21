@@ -99,3 +99,13 @@ class JsonPointer extends Equatable {
   @override
   List<Object?> get props => [parts];
 }
+
+/// Known supported mime types for this library.
+enum MimeType {
+  applicationJson('application/json'),
+  applicationOctetStream('application/octet-stream');
+
+  const MimeType(this.value);
+
+  final String value;
+}

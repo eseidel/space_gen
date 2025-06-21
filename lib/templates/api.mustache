@@ -26,7 +26,7 @@ class {{ className }} {
             },
             {{/hasQueryParameters}}
             {{#requestBody}}
-            body: {{{ toJson }}},
+            body: {{{ encodedBody }}},
             {{/requestBody}}
             {{#hasHeaderParameters}}
             headerParameters: {

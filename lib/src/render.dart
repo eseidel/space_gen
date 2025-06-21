@@ -7,6 +7,7 @@ import 'package:space_gen/src/parser.dart';
 import 'package:space_gen/src/render_tree.dart';
 import 'package:space_gen/src/resolver.dart';
 import 'package:space_gen/src/spec.dart';
+import 'package:space_gen/src/string.dart';
 import 'package:space_gen/src/visitor.dart';
 
 export 'package:space_gen/src/context.dart' show Quirks;
@@ -72,7 +73,6 @@ void renderSpec({
   final renderSpec = toRenderSpec(spec);
   // SchemaRenderer is responsible for rendering schemas and APIs into strings.
   final schemaRenderer = SchemaRenderer(
-    specUrl: specUri,
     templateProvider: templateProvider,
     quirks: quirks,
   );
@@ -93,30 +93,53 @@ void renderSpec({
 String renderSchema(
   Map<String, dynamic> schemaJson, {
   String schemaName = 'test',
-  Directory? templateDir,
   Quirks quirks = const Quirks(),
 }) {
-  final specUri = Uri.parse('https://example.com');
   final parsedSchema = parseSchema(
     MapContext.initial(schemaJson).addSnakeName(schemaName),
   );
-  final resolveContext = ResolveContext(
-    specUrl: specUri,
-    refRegistry: RefRegistry(),
-  );
   final resolvedSchema = resolveSchemaRef(
     SchemaRef.schema(parsedSchema, const JsonPointer.empty()),
-    resolveContext,
+    ResolveContext.test(),
   );
-  final templateProvider = templateDir == null
-      ? TemplateProvider.defaultLocation()
-      : TemplateProvider.fromDirectory(templateDir);
+  final templateProvider = TemplateProvider.defaultLocation();
 
   final renderSchema = toRenderSchema(resolvedSchema);
   final schemaRenderer = SchemaRenderer(
-    specUrl: specUri,
     templateProvider: templateProvider,
     quirks: quirks,
   );
   return schemaRenderer.renderSchema(renderSchema);
+}
+
+@visibleForTesting
+String renderOperation({
+  required String path,
+  required Map<String, dynamic> operationJson,
+  required Uri serverUrl,
+  Quirks quirks = const Quirks(),
+}) {
+  final parsedOperation = parseOperation(
+    MapContext.initial(operationJson),
+    path,
+  );
+  final resolvedOperation = resolveOperation(
+    path: path,
+    method: Method.post,
+    operation: parsedOperation,
+    context: ResolveContext.test(),
+  );
+  final renderOperation = toRenderOperation(resolvedOperation);
+  final templateProvider = TemplateProvider.defaultLocation();
+  final schemaRenderer = SchemaRenderer(
+    templateProvider: templateProvider,
+    quirks: quirks,
+  );
+  final tag = resolvedOperation.tags.firstOrNull ?? 'Default';
+  final className = '${tag.capitalize()}Api';
+  final endpoint = Endpoint(serverUrl: serverUrl, operation: renderOperation);
+  return schemaRenderer.renderEndpoints(
+    className: className,
+    endpoints: [endpoint],
+  );
 }

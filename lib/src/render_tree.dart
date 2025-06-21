@@ -94,6 +94,8 @@ RenderSchema toRenderSchema(ResolvedSchema schema) {
         snakeName: schema.snakeName,
         pointer: schema.pointer,
       );
+    case SchemaBinary():
+      return RenderBinary(snakeName: schema.snakeName, pointer: schema.pointer);
     default:
       _unimplemented('Unknown schema: $schema', schema.pointer);
   }
@@ -120,11 +122,20 @@ RenderRequestBody? toRenderRequestBody(ResolvedRequestBody? requestBody) {
   if (requestBody == null) {
     return null;
   }
-  return RenderRequestBody(
-    description: requestBody.description,
-    required: requestBody.required,
-    schema: toRenderSchema(requestBody.schema),
-  );
+  switch (requestBody.mimeType) {
+    case MimeType.applicationJson:
+      return RenderRequestBodyJson(
+        schema: toRenderSchema(requestBody.schema),
+        description: requestBody.description,
+        required: requestBody.required,
+      );
+    case MimeType.applicationOctetStream:
+      return RenderRequestBodyOctetStream(
+        schema: toRenderSchema(requestBody.schema),
+        description: requestBody.description,
+        required: requestBody.required,
+      );
+  }
 }
 
 RenderOperation toRenderOperation(ResolvedOperation operation) {
@@ -248,7 +259,7 @@ class RenderOperation {
   final String? description;
 }
 
-class RenderRequestBody {
+abstract class RenderRequestBody {
   const RenderRequestBody({
     required this.schema,
     required this.description,
@@ -264,12 +275,26 @@ class RenderRequestBody {
   /// Whether the request body is required.
   final bool required;
 
+  String requestBodyClassName(SchemaRenderer context) {
+    // TODO(eseidel): Why don't we have a name for request bodies?
+    final typeName = schema.typeName(context);
+    return (typeName[0].toLowerCase() + typeName.substring(1)).split('<').first;
+  }
+
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context);
+}
+
+class RenderRequestBodyJson extends RenderRequestBody {
+  const RenderRequestBodyJson({
+    required super.schema,
+    required super.description,
+    required super.required,
+  });
+
+  @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     final typeName = schema.typeName(context);
-    // TODO(eseidel): Why don't we have a name for request bodies?
-    final paramName = (typeName[0].toLowerCase() + typeName.substring(1))
-        .split('<')
-        .first;
+    final paramName = requestBodyClassName(context);
     // TODO(eseidel): Share code with Parameter.toTemplateContext.
     final isNullable = !required;
     return {
@@ -281,17 +306,35 @@ class RenderRequestBody {
       'defaultValue': schema.defaultValueString(context),
       'type': typeName,
       'nullableType': schema.nullableTypeName(context),
-      'toJson': schema.toJsonExpression(
+      'encodedBody': schema.toJsonExpression(
         paramName,
         context,
         dartIsNullable: isNullable,
       ),
-      'fromJson': schema.fromJsonExpression(
-        'json',
-        context,
-        jsonIsNullable: isNullable,
-        dartIsNullable: isNullable,
-      ),
+    };
+  }
+}
+
+class RenderRequestBodyOctetStream extends RenderRequestBody {
+  const RenderRequestBodyOctetStream({
+    required super.schema,
+    required super.description,
+    required super.required,
+  });
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
+    final paramName = requestBodyClassName(context);
+    return {
+      'name': paramName,
+      'dartName': paramName,
+      'bracketedName': '{$paramName}',
+      'required': required,
+      'hasDefaultValue': schema.defaultValue != null,
+      'defaultValue': schema.defaultValueString(context),
+      'type': schema.typeName(context),
+      'nullableType': schema.nullableTypeName(context),
+      'encodedBody': paramName,
     };
   }
 }
@@ -1037,4 +1080,44 @@ class RenderVoid extends RenderSchema {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
       throw UnimplementedError('RenderVoid.toTemplateContext');
+}
+
+class RenderBinary extends RenderSchema {
+  const RenderBinary({required super.snakeName, required super.pointer});
+
+  @override
+  dynamic get defaultValue => null;
+
+  @override
+  String typeName(SchemaRenderer context) => 'Uint8List';
+
+  @override
+  String equalsExpression(String name, SchemaRenderer context) =>
+      'identical($name, other.$name)';
+
+  @override
+  bool get createsNewType => false;
+
+  @override
+  String jsonStorageType({required bool isNullable}) =>
+      'throw UnimplementedError("RenderBinary.jsonStorageType")';
+
+  @override
+  String toJsonExpression(
+    String dartName,
+    SchemaRenderer context, {
+    required bool dartIsNullable,
+  }) => 'throw UnimplementedError("RenderBinary.toJson")';
+
+  @override
+  String fromJsonExpression(
+    String jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) => 'throw UnimplementedError("RenderBinary.fromJson")';
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
+      throw UnimplementedError('RenderBinary.toTemplateContext');
 }

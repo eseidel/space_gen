@@ -501,7 +501,7 @@ void _checkMultipleResponsesWithDifferentContent(
   }
 }
 
-Operation _parseOperation(MapContext operationJson, String path) {
+Operation parseOperation(MapContext operationJson, String path) {
   _refNotExpected(operationJson);
   final snakeName = toSnakeCase(
     _optional<String>(operationJson, 'operationId') ??
@@ -551,7 +551,7 @@ Map<Method, Operation> _parseOperations(MapContext context, String path) {
     if (methodValue == null) {
       continue;
     }
-    final operation = _parseOperation(methodValue, path);
+    final operation = parseOperation(methodValue, path);
     operations[method] = operation;
   }
   return operations;
