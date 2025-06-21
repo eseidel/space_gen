@@ -151,11 +151,8 @@ Parameter parseParameter(MapContext json) {
   }
 
   if (sendIn == SendIn.path) {
-    final schema = type.schema;
-    final schemaType = schema?.type;
-    if (schemaType != SchemaType.string && schemaType != SchemaType.integer) {
-      _error(json, 'Path parameters must be strings or integers');
-    }
+    // Path parameter type validation is done during resolution since
+    // type could be a ref until then.
     if (required != true) {
       _error(json, 'Path parameters must be required');
     }

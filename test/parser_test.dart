@@ -601,46 +601,6 @@ void main() {
       );
     });
 
-    test('path parameters must be strings', () {
-      final json = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {
-              'summary': 'Get user',
-              'parameters': [
-                {
-                  'name': 'foo',
-                  'in': 'path',
-                  'schema': {'type': 'number'},
-                },
-              ],
-              'responses': {
-                '200': {'description': 'OK'},
-              },
-            },
-          },
-        },
-      };
-      final logger = _MockLogger();
-      expect(
-        () => runWithLogger(logger, () => parseTestSpec(json)),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            equals(
-              'Path parameters must be strings or integers in #/paths//users/get/parameters/0',
-            ),
-          ),
-        ),
-      );
-    });
-
     test('path parameters must be required', () {
       final json = {
         'openapi': '3.1.0',

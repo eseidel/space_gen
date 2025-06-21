@@ -36,14 +36,14 @@ bool isTopLevelComponent(JsonPointer pointer) {
 
 RenderSchema toRenderSchema(ResolvedSchema schema) {
   switch (schema) {
-    case SchemaEnum():
+    case ResolvedEnum():
       return RenderEnum(
         snakeName: schema.snakeName,
         values: schema.values,
         pointer: schema.pointer,
         defaultValue: schema.defaultValue,
       );
-    case SchemaObject():
+    case ResolvedObject():
       return RenderObject(
         snakeName: schema.snakeName,
         properties: schema.properties.map(
@@ -53,7 +53,7 @@ RenderSchema toRenderSchema(ResolvedSchema schema) {
         additionalProperties: maybeRenderSchema(schema.additionalProperties),
         required: schema.required,
       );
-    case SchemaPod():
+    case ResolvedPod():
       // Unclear if this is an OpenApi generator quirk or desired behavior,
       // but openapi creates a new file for each top level component, even
       // if it's a simple type.  Matching this behavior for now.
@@ -78,7 +78,7 @@ RenderSchema toRenderSchema(ResolvedSchema schema) {
         pointer: schema.pointer,
         defaultValue: schema.defaultValue,
       );
-    case SchemaArray():
+    case ResolvedArray():
       return RenderArray(
         snakeName: schema.snakeName,
         items:
@@ -87,14 +87,14 @@ RenderSchema toRenderSchema(ResolvedSchema schema) {
         pointer: schema.pointer,
         defaultValue: schema.defaultValue,
       );
-    case SchemaVoid():
+    case ResolvedVoid():
       return RenderVoid(snakeName: schema.snakeName, pointer: schema.pointer);
-    case SchemaUnknown():
+    case ResolvedUnknown():
       return RenderUnknown(
         snakeName: schema.snakeName,
         pointer: schema.pointer,
       );
-    case SchemaBinary():
+    case ResolvedBinary():
       return RenderBinary(snakeName: schema.snakeName, pointer: schema.pointer);
     default:
       _unimplemented('Unknown schema: $schema', schema.pointer);
