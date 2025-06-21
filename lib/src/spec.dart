@@ -101,6 +101,10 @@ enum SchemaType {
   /// An object.
   object,
 
+  /// Null.
+  null_,
+
+  // TODO(eseidel): Remove unknown type and just use a separate class.
   /// If 'type' is missing.
   unknown; // if 'type' is missing.
 
@@ -119,6 +123,8 @@ enum SchemaType {
         return array;
       case 'object':
         return object;
+      case 'null':
+        return null_;
       // Intentionally fall through for unknown.
       default:
         throw FormatException('Unknown SchemaType: $json');

@@ -3,6 +3,7 @@
 // than serialization/deserialization with the openapi spec.
 // This also discards all non-json values.
 
+import 'package:equatable/equatable.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/parser.dart';
 import 'package:space_gen/src/spec.dart';
@@ -76,7 +77,17 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   if (schema == null) {
     throw Exception('Schema not found: $ref');
   }
+
   if (schema is Schema) {
+    ResolvedPod pod(PodType type) {
+      return ResolvedPod(
+        type: type,
+        pointer: schema.pointer,
+        snakeName: schema.snakeName,
+        defaultValue: schema.defaultValue,
+      );
+    }
+
     if (schema.type == SchemaType.object) {
       return ResolvedObject(
         pointer: schema.pointer,
@@ -107,47 +118,29 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
         );
       }
       if (schema.format == 'date-time') {
-        return ResolvedPod(
-          type: PodType.dateTime,
-          pointer: schema.pointer,
-          snakeName: schema.snakeName,
-          defaultValue: schema.defaultValue,
-        );
+        return pod(PodType.dateTime);
       }
-      return ResolvedPod(
-        type: PodType.string,
-        pointer: schema.pointer,
-        snakeName: schema.snakeName,
-        defaultValue: schema.defaultValue,
-      );
+      return pod(PodType.string);
     }
     if (schema.type == SchemaType.integer) {
-      return ResolvedPod(
-        type: PodType.integer,
-        pointer: schema.pointer,
-        snakeName: schema.snakeName,
-        defaultValue: schema.defaultValue,
-      );
+      return pod(PodType.integer);
     }
     if (schema.type == SchemaType.number) {
-      return ResolvedPod(
-        type: PodType.number,
-        pointer: schema.pointer,
-        snakeName: schema.snakeName,
-        defaultValue: schema.defaultValue,
-      );
+      return pod(PodType.number);
     }
     if (schema.type == SchemaType.boolean) {
-      return ResolvedPod(
-        type: PodType.boolean,
-        pointer: schema.pointer,
-        snakeName: schema.snakeName,
-        defaultValue: schema.defaultValue,
-      );
+      return pod(PodType.boolean);
+    }
+    if (schema.type == SchemaType.null_) {
+      return pod(PodType.null_);
     }
     if (schema.type == SchemaType.array) {
+      final items = _maybeResolveSchemaRef(schema.items, context);
+      if (items == null) {
+        _error('items must be a schema for type=array', schema.pointer);
+      }
       return ResolvedArray(
-        items: _maybeResolveSchemaRef(schema.items, context),
+        items: items,
         snakeName: schema.snakeName,
         pointer: schema.pointer,
         defaultValue: schema.defaultValue,
@@ -170,16 +163,59 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   }
   if (schema is SchemaAllOf) {
     final allOf = schema;
+    final schemas = allOf.schemas
+        .map((e) => resolveSchemaRef(e, context))
+        .toList();
+    // Elide the allOf if there is only one schema.
+    // Probably should only do this for the pod case?  Since in the object
+    // case allOf should probably create a new object?
+    if (schemas.length == 1) {
+      return schemas.first;
+    }
+    for (final schema in schemas) {
+      if (schema is! ResolvedObject) {
+        _error('allOf only supports objects', schema.pointer);
+      }
+    }
     return ResolvedAllOf(
-      schemas: allOf.schemas.map((e) => resolveSchemaRef(e, context)).toList(),
+      schemas: schemas,
       snakeName: schema.snakeName,
       pointer: schema.pointer,
     );
   }
   if (schema is SchemaAnyOf) {
     final anyOf = schema;
+    final schemas = anyOf.schemas
+        .map((e) => resolveSchemaRef(e, context))
+        .toList();
+    // Elide the anyOf if there is only one schema.
+    if (schemas.length == 1) {
+      return schemas.first;
+    }
+    // Dart doesn't have union types, but commonly openapi specs come from
+    // typescript where foo(bar) and foo([bar]) are the same, we elide the
+    // anyOf and just use the array in that case.
+    if (schemas.length == 2) {
+      final first = schemas.first;
+      final second = schemas.last;
+      if (first is ResolvedArray && first.items == second) {
+        return first;
+      } else if (second is ResolvedArray && second.items == first) {
+        return second;
+      }
+      // If one of the schemas is null, we can just return the other schema.
+      // We may need to copy it to make it nullable?
+      if (first is ResolvedPod && second is ResolvedPod) {
+        if (first.type == PodType.null_) {
+          return second;
+        }
+        if (second.type == PodType.null_) {
+          return first;
+        }
+      }
+    }
     return ResolvedAnyOf(
-      schemas: anyOf.schemas.map((e) => resolveSchemaRef(e, context)).toList(),
+      schemas: schemas,
       snakeName: schema.snakeName,
       pointer: schema.pointer,
     );
@@ -217,8 +253,18 @@ ResolvedRequestBody? _resolveRequestBody(
       required: requestBody.isRequired,
     );
   }
+  final textPlainSchema = content['text/plain']?.schema;
+  if (textPlainSchema != null) {
+    return ResolvedRequestBody(
+      mimeType: MimeType.textPlain,
+      schema: resolveSchemaRef(textPlainSchema, context),
+      description: requestBody.description,
+      required: requestBody.isRequired,
+    );
+  }
   _error(
-    'Request body has no application/json or application/octet-stream schema',
+    'Request body has no application/json, '
+    'application/octet-stream, or text/plain schema',
     requestBody.pointer,
   );
 }
@@ -503,7 +549,7 @@ class ResolvedResponse {
   final ResolvedSchema content;
 }
 
-abstract class ResolvedSchema {
+abstract class ResolvedSchema extends Equatable {
   const ResolvedSchema({required this.snakeName, required this.pointer});
 
   /// Where this schema is located in the spec.
@@ -511,16 +557,19 @@ abstract class ResolvedSchema {
 
   /// The snake name of the resolved schema.
   final String snakeName;
+
+  @override
+  List<Object?> get props => [pointer, snakeName];
 }
 
-enum PodType { string, integer, number, boolean, dateTime }
+enum PodType { string, integer, number, boolean, dateTime, null_ }
 
 class ResolvedPod extends ResolvedSchema {
   const ResolvedPod({
     required super.snakeName,
     required super.pointer,
-    required this.defaultValue,
     required this.type,
+    this.defaultValue,
   });
 
   /// The type of the resolved schema.
@@ -528,6 +577,9 @@ class ResolvedPod extends ResolvedSchema {
 
   /// The default value of the pop type.
   final dynamic defaultValue;
+
+  @override
+  List<Object?> get props => [super.props, type, defaultValue];
 }
 
 class ResolvedArray extends ResolvedSchema {
@@ -535,14 +587,17 @@ class ResolvedArray extends ResolvedSchema {
     required super.pointer,
     required super.snakeName,
     required this.items,
-    required this.defaultValue,
+    this.defaultValue,
   });
 
   /// type of the items in the array
-  final ResolvedSchema? items;
+  final ResolvedSchema items;
 
   /// The default value of the array type.
   final dynamic defaultValue;
+
+  @override
+  List<Object?> get props => [super.props, items, defaultValue];
 }
 
 class ResolvedEnum extends ResolvedSchema {
@@ -558,7 +613,11 @@ class ResolvedEnum extends ResolvedSchema {
   // parameter validation to only allow string and integer enum types.
   final List<String> values;
 
+  /// The default value of the enum type.
   final dynamic defaultValue;
+
+  @override
+  List<Object?> get props => [super.props, values, defaultValue];
 }
 
 class ResolvedObject extends ResolvedSchema {
@@ -579,6 +638,14 @@ class ResolvedObject extends ResolvedSchema {
 
   /// The required properties of the resolved schema.
   final List<String> required;
+
+  @override
+  List<Object?> get props => [
+    super.props,
+    properties,
+    additionalProperties,
+    required,
+  ];
 }
 
 /// An unknown schema, typically means empty (e.g. schema: {})
@@ -595,6 +662,9 @@ abstract class ResolvedSchemaCollection extends ResolvedSchema {
 
   /// The schemas of the resolved schema collection.
   final List<ResolvedSchema> schemas;
+
+  @override
+  List<Object?> get props => [super.props, schemas];
 }
 
 class ResolvedOneOf extends ResolvedSchemaCollection {

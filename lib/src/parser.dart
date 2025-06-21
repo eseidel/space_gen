@@ -236,9 +236,56 @@ SchemaType _determineType({
   return SchemaType.unknown;
 }
 
+SchemaBase? _handleCollectionTypes(MapContext json) {
+  if (json.containsKey('oneOf')) {
+    final oneOf = json.childAsList('oneOf');
+    final schemas = <SchemaRef>[];
+    for (var i = 0; i < oneOf.length; i++) {
+      schemas.add(parseSchemaOrRef(oneOf.indexAsMap(i)));
+    }
+    return SchemaOneOf(
+      pointer: json.pointer,
+      snakeName: json.snakeName,
+      schemas: schemas,
+    );
+  }
+
+  if (json.containsKey('allOf')) {
+    final allOf = json.childAsList('allOf');
+    final schemas = <SchemaRef>[];
+    for (var i = 0; i < allOf.length; i++) {
+      schemas.add(parseSchemaOrRef(allOf.indexAsMap(i)));
+    }
+    return SchemaAllOf(
+      pointer: json.pointer,
+      snakeName: json.snakeName,
+      schemas: schemas,
+    );
+  }
+
+  if (json.containsKey('anyOf')) {
+    final anyOf = json.childAsList('anyOf');
+    final schemas = <SchemaRef>[];
+    for (var i = 0; i < anyOf.length; i++) {
+      schemas.add(parseSchemaOrRef(anyOf.indexAsMap(i)));
+    }
+    return SchemaAnyOf(
+      pointer: json.pointer,
+      snakeName: json.snakeName,
+      schemas: schemas,
+    );
+  }
+  return null;
+}
+
 /// Parse a schema from a json object.
-Schema parseSchema(MapContext json) {
+SchemaBase parseSchema(MapContext json) {
   _refNotExpected(json);
+
+  final collectionType = _handleCollectionTypes(json);
+  if (collectionType != null) {
+    return collectionType;
+  }
 
   var enumValues = _optional<List<dynamic>>(json, 'enum');
   // TODO(eseidel): type can be an array, but we don't support that yet.
@@ -292,7 +339,32 @@ Schema parseSchema(MapContext json) {
   SchemaRef? additionalPropertiesSchema;
   if (additionalPropertiesJson != null) {
     if (additionalPropertiesJson is bool) {
-      _ignored<bool>(json, 'additionalProperties');
+      if (additionalPropertiesJson) {
+        // Create a synthetic "unknown" schema for additionalProperties=true.
+        // Could do this at the resolver level instead.
+        additionalPropertiesSchema = SchemaRef.schema(
+          // The name and pointer are never used, but need to be unique to
+          // avoid the resolver from throwing a duplicate name error.
+          Schema(
+            pointer: JsonPointer.fromParts([
+              ...json.pointerParts,
+              'additionalProperties',
+            ]),
+            snakeName: 'additionalProperties',
+            type: SchemaType.unknown,
+            properties: const <String, SchemaRef>{},
+            required: const <String>[],
+            description: '',
+            items: null,
+            enumValues: const <String>[],
+            format: null,
+            additionalProperties: null,
+            defaultValue: null,
+            example: null,
+          ),
+          json.pointer,
+        );
+      }
     } else if (additionalPropertiesJson is Map<String, dynamic>) {
       final additionalProperties = _optionalMap(json, 'additionalProperties');
       if (additionalProperties != null) {
@@ -337,87 +409,6 @@ SchemaRef parseSchemaOrRef(MapContext json) {
     _warnUnused(json);
     return SchemaRef.ref(ref, json.pointer);
   }
-
-  if (json.containsKey('oneOf')) {
-    final oneOf = json.childAsList('oneOf');
-    final schemas = <SchemaRef>[];
-    for (var i = 0; i < oneOf.length; i++) {
-      schemas.add(parseSchemaOrRef(oneOf.indexAsMap(i)));
-    }
-    return SchemaRef.schema(
-      SchemaOneOf(
-        pointer: json.pointer,
-        snakeName: json.snakeName,
-        schemas: schemas,
-      ),
-      json.pointer,
-    );
-  }
-
-  if (json.containsKey('allOf')) {
-    final allOf = json.childAsList('allOf');
-    if (allOf.length == 1) {
-      return parseSchemaOrRef(allOf.indexAsMap(0));
-    }
-    final schemas = <SchemaRef>[];
-    for (var i = 0; i < allOf.length; i++) {
-      schemas.add(parseSchemaOrRef(allOf.indexAsMap(i)));
-    }
-    return SchemaRef.schema(
-      SchemaAllOf(
-        pointer: json.pointer,
-        snakeName: json.snakeName,
-        schemas: schemas,
-      ),
-      json.pointer,
-    );
-  }
-
-  if (json.containsKey('anyOf')) {
-    final anyOf = json.childAsList('anyOf');
-    if (anyOf.length == 1) {
-      return parseSchemaOrRef(anyOf.indexAsMap(0));
-    }
-    if (anyOf.length == 2) {
-      final first = anyOf.indexAsMap(0);
-      final second = anyOf.indexAsMap(1);
-
-      // Two special case hacks to make space_traders work for now.
-      // One is if one is a type and the other is type=null, we just
-      // pretend the first is just marked nullable.
-      if (first.containsKey('type') && second.containsKey('type')) {
-        final firstType = first['type'] as String;
-        final secondType = second['type'] as String;
-        if (firstType == 'boolean' && secondType == 'null') {
-          return parseSchemaOrRef(first);
-        }
-      }
-
-      // The second hack is if one is an array of ref and the second is
-      // that ref, we just pretend it's just an array of that ref.
-      if (first.containsKey('items') && second.containsKey(r'$ref')) {
-        final items = first['items'] as Json;
-        final ref = second[r'$ref'] as String;
-        if (items[r'$ref'] == ref) {
-          return parseSchemaOrRef(first);
-        }
-      }
-    }
-
-    final schemas = <SchemaRef>[];
-    for (var i = 0; i < anyOf.length; i++) {
-      schemas.add(parseSchemaOrRef(anyOf.indexAsMap(i)));
-    }
-    return SchemaRef.schema(
-      SchemaAnyOf(
-        pointer: json.pointer,
-        snakeName: json.snakeName,
-        schemas: schemas,
-      ),
-      json.pointer,
-    );
-  }
-
   return SchemaRef.schema(parseSchema(json), json.pointer);
 }
 
@@ -868,10 +859,7 @@ class MapContext extends ParseContext {
     return json[key];
   }
 
-  bool containsKey(String key) {
-    final json = this.json;
-    return json.containsKey(key);
-  }
+  bool containsKey(String key) => json.containsKey(key);
 
   Iterable<String> get keys => json.keys;
 

@@ -96,6 +96,37 @@ RenderSchema toRenderSchema(ResolvedSchema schema) {
       );
     case ResolvedBinary():
       return RenderBinary(snakeName: schema.snakeName, pointer: schema.pointer);
+    case ResolvedOneOf():
+      return RenderOneOf(
+        snakeName: schema.snakeName,
+        schemas: schema.schemas.map(toRenderSchema).toList(),
+        pointer: schema.pointer,
+      );
+    case ResolvedAllOf():
+      // Generate a synthetic object type for allOf.
+      final properties = <String, RenderSchema>{};
+      for (final schema in schema.schemas) {
+        final renderSchema = toRenderSchema(schema);
+        if (renderSchema is RenderObject) {
+          properties.addAll(renderSchema.properties);
+        }
+      }
+      return RenderObject(
+        snakeName: schema.snakeName,
+        properties: properties,
+        pointer: schema.pointer,
+      );
+    case ResolvedAnyOf():
+      // The resolver already makes anyOf with 1 schema to just be that schema.
+      // For multiple schemas, we just generate a oneOf, which is wrong.
+      // anyOf means that at least one of the schemas must be valid.
+      // Which presumably translates into a single schema with all properties
+      // nullable?  Unclear.
+      return RenderOneOf(
+        snakeName: schema.snakeName,
+        schemas: schema.schemas.map(toRenderSchema).toList(),
+        pointer: schema.pointer,
+      );
     default:
       _unimplemented('Unknown schema: $schema', schema.pointer);
   }
@@ -135,6 +166,12 @@ RenderRequestBody? toRenderRequestBody(ResolvedRequestBody? requestBody) {
         description: requestBody.description,
         required: requestBody.required,
       );
+    case MimeType.textPlain:
+      return RenderRequestBodyTextPlain(
+        schema: toRenderSchema(requestBody.schema),
+        description: requestBody.description,
+        required: requestBody.required,
+      );
   }
 }
 
@@ -144,7 +181,13 @@ RenderSchema _determineReturnType(ResolvedOperation operation) {
   final successful = responses.where(
     (e) => e.statusCode >= 200 && e.statusCode < 300,
   );
-  if (successful.length < 2) {
+  if (successful.isEmpty) {
+    return RenderVoid(
+      snakeName: '${operation.snakeName}_response',
+      pointer: operation.pointer,
+    );
+  }
+  if (successful.length == 1) {
     return toRenderSchema(successful.first.content);
   }
   final renderSchemas = successful
@@ -367,6 +410,30 @@ class RenderRequestBodyOctetStream extends RenderRequestBody {
   }
 }
 
+class RenderRequestBodyTextPlain extends RenderRequestBody {
+  const RenderRequestBodyTextPlain({
+    required super.schema,
+    required super.description,
+    required super.required,
+  });
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
+    final paramName = requestBodyClassName(context);
+    return {
+      'name': paramName,
+      'dartName': paramName,
+      'bracketedName': '{$paramName}',
+      'required': required,
+      'hasDefaultValue': schema.defaultValue != null,
+      'defaultValue': schema.defaultValueString(context),
+      'type': schema.typeName(context),
+      'nullableType': schema.nullableTypeName(context),
+      'encodedBody': paramName,
+    };
+  }
+}
+
 class RenderResponse {
   const RenderResponse({
     required this.statusCode,
@@ -470,6 +537,9 @@ abstract class RenderSchema {
     // Intentionally ignoring pointer, snakeName and defaultValue.
     return true;
   }
+
+  @override
+  String toString() => '$runtimeType(snakeName: $snakeName, pointer: $pointer)';
 }
 
 // Plain old data types (string, number, boolean)
@@ -500,6 +570,8 @@ class RenderPod extends RenderSchema {
         return 'bool';
       case PodType.dateTime:
         return 'DateTime';
+      case PodType.null_:
+        _unimplemented('RenderPod(null).typeName', pointer);
     }
   }
 
@@ -515,6 +587,8 @@ class RenderPod extends RenderSchema {
         return isNullable ? 'num?' : 'num';
       case PodType.boolean:
         return isNullable ? 'bool?' : 'bool';
+      case PodType.null_:
+        _unimplemented('RenderPod(null).jsonStorageType', pointer);
     }
   }
 
@@ -566,6 +640,8 @@ class RenderPod extends RenderSchema {
         return '($jsonValue as $jsonType).toDouble() $orDefault';
       case PodType.boolean:
         return '($jsonValue as $jsonType) $orDefault';
+      case PodType.null_:
+        _unimplemented('RenderPod(null).fromJsonExpression', pointer);
     }
   }
 

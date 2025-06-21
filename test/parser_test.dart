@@ -184,80 +184,6 @@ void main() {
       expect(specOne.hashCode, isNot(specThree.hashCode));
     });
 
-    test('anyOf nullable hack', () {
-      final json = {
-        'User': {
-          'anyOf': [
-            {'type': 'boolean'},
-            {'type': 'null'},
-          ],
-        },
-      };
-      final logger = _MockLogger();
-      final schemas = runWithLogger(logger, () => parseTestSchemas(json));
-      expect(schemas['User']!.type, SchemaType.boolean);
-    });
-
-    test('anyOf array hack', () {
-      final json = {
-        'User': {
-          'anyOf': [
-            {
-              'type': 'array',
-              'items': {r'$ref': '#/components/schemas/Value'},
-            },
-            {r'$ref': '#/components/schemas/Value'},
-          ],
-        },
-        'Value': {'type': 'boolean'},
-      };
-      final logger = _MockLogger();
-      final schemas = runWithLogger(logger, () => parseTestSchemas(json));
-      final schema = schemas['User']! as Schema;
-      expect(schema.type, SchemaType.array);
-      expect(schema.items!.ref, '#/components/schemas/Value');
-    });
-
-    test('anyOf with one value', () {
-      final json = {
-        'User': {
-          'anyOf': [
-            {'type': 'boolean'},
-          ],
-        },
-      };
-      final logger = _MockLogger();
-      final schemas = runWithLogger(logger, () => parseTestSchemas(json));
-      expect(schemas['User']!.type, SchemaType.boolean);
-    });
-
-    test('anyOf parses as SchemaAnyOf', () {
-      final json = {
-        'User': {
-          'anyOf': [
-            {'type': 'boolean'},
-            {'type': 'string'},
-          ],
-        },
-      };
-      final logger = _MockLogger();
-      final schemas = runWithLogger(logger, () => parseTestSchemas(json));
-      expect(schemas['User'], isA<SchemaAnyOf>());
-    });
-
-    test('allOf with one item', () {
-      final json = {
-        'User': {
-          'allOf': [
-            {'type': 'boolean'},
-          ],
-        },
-      };
-      final logger = _MockLogger();
-      final schemas = runWithLogger(logger, () => parseTestSchemas(json));
-      expect(schemas['User']!.type, SchemaType.boolean);
-    });
-
     test('allOf with multiple items', () {
       final json = {
         'User': {
@@ -953,7 +879,7 @@ void main() {
         ),
       ).called(1);
     });
-    test('additionalProperties bool is ignored', () {
+    test('additionalProperties=true is treated as unknown', () {
       final json = {
         'openapi': '3.1.0',
         'info': {'title': 'Space Traders API', 'version': '1.0.0'},
@@ -980,8 +906,7 @@ void main() {
           },
         },
       };
-      final logger = _MockLogger();
-      final spec = runWithLogger(logger, () => parseTestSpec(json));
+      final spec = parseTestSpec(json);
       final schema =
           spec
                   .paths['/users']
@@ -992,12 +917,9 @@ void main() {
                   .schema
                   .object!
               as Schema;
-      expect(schema.additionalProperties, isNull);
-      verify(
-        () => logger.detail(
-          'Ignoring key: additionalProperties (bool) in #/paths//users/get/responses/200/content/application/json/schema',
-        ),
-      ).called(1);
+      expect(schema.type, SchemaType.object);
+      expect(schema.additionalProperties, isNotNull);
+      expect(schema.additionalProperties!.object!.type, SchemaType.unknown);
     });
     test('additionalProperties must be a boolean or a map', () {
       final json = {

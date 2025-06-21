@@ -103,7 +103,8 @@ class JsonPointer extends Equatable {
 /// Known supported mime types for this library.
 enum MimeType {
   applicationJson('application/json'),
-  applicationOctetStream('application/octet-stream');
+  applicationOctetStream('application/octet-stream'),
+  textPlain('text/plain');
 
   const MimeType(this.value);
 
