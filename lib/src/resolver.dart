@@ -224,6 +224,7 @@ ResolvedOperation resolveOperation({
   final requestBody = _resolveRequestBody(operation.requestBody, context);
   final responses = _resolveResponses(operation.responses, context);
   return ResolvedOperation(
+    pointer: operation.pointer,
     snakeName: operation.snakeName,
     tags: operation.tags,
     summary: operation.summary,
@@ -400,6 +401,7 @@ class ResolvedOperation {
   const ResolvedOperation({
     required this.method,
     required this.path,
+    required this.pointer,
     required this.snakeName,
     required this.requestBody,
     required this.responses,
@@ -411,6 +413,9 @@ class ResolvedOperation {
 
   /// The method of the resolved operation.
   final Method method;
+
+  /// The pointer of the resolved operation.
+  final JsonPointer pointer;
 
   /// The path of the resolved operation.
   final String path;

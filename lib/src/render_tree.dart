@@ -138,10 +138,38 @@ RenderRequestBody? toRenderRequestBody(ResolvedRequestBody? requestBody) {
   }
 }
 
-RenderOperation toRenderOperation(ResolvedOperation operation) {
-  // TODO(eseidel): handle multiple content-ful response types.
-  final returnType = toRenderSchema(operation.responses.first.content);
+RenderSchema _determineReturnType(ResolvedOperation operation) {
+  final responses = operation.responses;
+  // Figure out how many different successful responses there are.
+  final successful = responses.where(
+    (e) => e.statusCode >= 200 && e.statusCode < 300,
+  );
+  if (successful.length < 2) {
+    return toRenderSchema(successful.first.content);
+  }
+  final renderSchemas = successful
+      .expand((e) => [toRenderSchema(e.content)])
+      .toList();
+  // We don't implement hashCode/equals but rather equalsIgnoringName
+  final distinctSchemas = <RenderSchema>{};
+  for (final schema in renderSchemas) {
+    if (!distinctSchemas.any((e) => e.equalsIgnoringName(schema))) {
+      distinctSchemas.add(schema);
+    }
+  }
+  // If there are multiple and they are different, generate a OneOf type.
+  if (distinctSchemas.length > 1) {
+    return RenderOneOf(
+      snakeName: '${operation.snakeName}_response',
+      schemas: distinctSchemas.toList(),
+      pointer: operation.pointer,
+    );
+  }
+  return distinctSchemas.first;
+}
 
+RenderOperation toRenderOperation(ResolvedOperation operation) {
+  final returnType = _determineReturnType(operation);
   return RenderOperation(
     snakeName: operation.snakeName,
     method: operation.method,
@@ -418,6 +446,30 @@ abstract class RenderSchema {
   bool hasDefaultValue(SchemaRenderer context) => defaultValue != null;
 
   Map<String, dynamic> toTemplateContext(SchemaRenderer context);
+
+  static bool maybeEqualsIgnoringName(RenderSchema? a, RenderSchema? b) {
+    if (a == null && b == null) {
+      return true;
+    }
+    if (a == null || b == null) {
+      return false;
+    }
+    return a.equalsIgnoringName(b);
+  }
+
+  // This is a heuristic to help understand if two schemas are the same so we
+  // can safely generate a single return value for a response.  We don't
+  // currently support union response types.
+  bool equalsIgnoringName(RenderSchema other) {
+    if (runtimeType != other.runtimeType) {
+      return false;
+    }
+    if (createsNewType != other.createsNewType) {
+      return false;
+    }
+    // Intentionally ignoring pointer, snakeName and defaultValue.
+    return true;
+  }
 }
 
 // Plain old data types (string, number, boolean)
@@ -426,7 +478,7 @@ class RenderPod extends RenderSchema {
     required super.snakeName,
     required this.type,
     required super.pointer,
-    required this.defaultValue,
+    this.defaultValue,
   });
 
   /// The type of the resolved schema.
@@ -520,6 +572,12 @@ class RenderPod extends RenderSchema {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
       throw UnimplementedError('RenderPod.toTemplateContext');
+
+  @override
+  bool equalsIgnoringName(RenderSchema other) =>
+      (other is RenderPod) &&
+      type == other.type &&
+      super.equalsIgnoringName(other);
 }
 
 abstract class RenderNewType extends RenderSchema {
@@ -536,9 +594,8 @@ abstract class RenderNewType extends RenderSchema {
   String typeName(SchemaRenderer context) => className;
 
   @override
-  String equalsExpression(String name, SchemaRenderer context) {
-    return '$name == other.$name';
-  }
+  String equalsExpression(String name, SchemaRenderer context) =>
+      '$name == other.$name';
 
   @override
   String toJsonExpression(
@@ -629,9 +686,9 @@ class RenderObject extends RenderNewType {
   const RenderObject({
     required super.snakeName,
     required this.properties,
-    required this.additionalProperties,
-    required this.required,
     required super.pointer,
+    this.additionalProperties,
+    this.required = const [],
   });
 
   /// The properties of the resolved schema.
@@ -776,6 +833,40 @@ class RenderObject extends RenderNewType {
     final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
     return '$className.$jsonMethod($jsonValue as $jsonType) $orDefault';
   }
+
+  // This would probably be easier if we did a copyWith and then compared with
+  // normal equals provided by Equatable.
+  @override
+  bool equalsIgnoringName(RenderSchema other) {
+    if (other is! RenderObject) {
+      return false;
+    }
+    if (!const SetEquality<String>().equals(
+      properties.keys.toSet(),
+      other.properties.keys.toSet(),
+    )) {
+      return false;
+    }
+    for (final entry in properties.entries) {
+      final otherEntry = other.properties[entry.key];
+      if (otherEntry == null) {
+        return false;
+      }
+      if (!entry.value.equalsIgnoringName(otherEntry)) {
+        return false;
+      }
+    }
+    if (!RenderSchema.maybeEqualsIgnoringName(
+      additionalProperties,
+      other.additionalProperties,
+    )) {
+      return false;
+    }
+    if (!const ListEquality<String>().equals(required, other.required)) {
+      return false;
+    }
+    return super.equalsIgnoringName(other);
+  }
 }
 
 class RenderArray extends RenderSchema {
@@ -783,7 +874,7 @@ class RenderArray extends RenderSchema {
     required super.snakeName,
     required this.items,
     required super.pointer,
-    required this.defaultValue,
+    this.defaultValue,
   });
 
   /// The items of the resolved schema.
@@ -870,6 +961,15 @@ class RenderArray extends RenderSchema {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
       throw UnimplementedError('RenderArray.toTemplateContext');
+
+  @override
+  bool equalsIgnoringName(RenderSchema other) {
+    if (other is! RenderArray) {
+      return false;
+    }
+    return items.equalsIgnoringName(other.items) &&
+        super.equalsIgnoringName(other);
+  }
 }
 
 class RenderEnum extends RenderNewType {
@@ -877,7 +977,7 @@ class RenderEnum extends RenderNewType {
     required super.snakeName,
     required this.values,
     required super.pointer,
-    required this.defaultValue,
+    this.defaultValue,
   });
 
   @override
@@ -947,6 +1047,64 @@ class RenderEnum extends RenderNewType {
 
   /// The values of the resolved schema.
   final List<String> values;
+
+  @override
+  bool equalsIgnoringName(RenderSchema other) {
+    if (other is! RenderEnum) {
+      return false;
+    }
+    return values == other.values && super.equalsIgnoringName(other);
+  }
+}
+
+class RenderOneOf extends RenderNewType {
+  const RenderOneOf({
+    required super.snakeName,
+    required this.schemas,
+    required super.pointer,
+  });
+
+  /// The schemas of the resolved schema.
+  final List<RenderSchema> schemas;
+
+  @override
+  bool equalsIgnoringName(RenderSchema other) {
+    if (other is! RenderOneOf) {
+      return false;
+    }
+    if (schemas.length != other.schemas.length) {
+      return false;
+    }
+    for (var i = 0; i < schemas.length; i++) {
+      if (!schemas[i].equalsIgnoringName(other.schemas[i])) {
+        return false;
+      }
+    }
+    return super.equalsIgnoringName(other);
+  }
+
+  // We can potentially do better than dynamic by comparing the schemas.
+  @override
+  String jsonStorageType({required bool isNullable}) => 'dynamic';
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
+      throw UnimplementedError('RenderOneOf.toTemplateContext');
+
+  @override
+  String fromJsonExpression(
+    String jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) {
+    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
+    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
+    return '$className.$jsonMethod($jsonValue as $jsonType)';
+  }
+
+  @override
+  dynamic get defaultValue => null;
 }
 
 class RenderParameter {

@@ -104,6 +104,7 @@ enum SchemaType {
   /// If 'type' is missing.
   unknown; // if 'type' is missing.
 
+  // Should this be parseSchemaType instead?
   static SchemaType fromJson(String json) {
     switch (json) {
       case 'string':
@@ -118,10 +119,9 @@ enum SchemaType {
         return array;
       case 'object':
         return object;
-      case 'unknown':
-        return unknown;
+      // Intentionally fall through for unknown.
       default:
-        throw ArgumentError.value(json, 'json', 'Unknown SchemaType');
+        throw FormatException('Unknown SchemaType: $json');
     }
   }
 }
@@ -440,16 +440,6 @@ class Responses extends Equatable {
 
   // default is not yet supported.
 
-  /// The contentful responses of this endpoint.
-  Iterable<RefOr<Response>> get successfulResponsesWithContent {
-    final successfulResponseKeys = responses.keys.where(
-      (e) => e >= 200 && e < 300,
-    );
-    return successfulResponseKeys
-        .map((e) => responses[e]!)
-        .where(Response.hasContent);
-  }
-
   /// Whether this endpoint has any responses.
   bool get isEmpty => responses.isEmpty;
 
@@ -483,38 +473,6 @@ class Response extends Equatable implements HasPointer {
 
   /// The possible headers for this response.
   final Map<String, RefOr<Header>>? headers;
-
-  /// Whether this response has content.
-  /// We only support json, so we check for a schema with a type.
-  /// This is a bit of a hack for the space traders spec which has a 204
-  /// response with an empty schema.
-  static bool hasContent(RefOr<Response> response) {
-    if (response.ref != null) {
-      return true;
-    }
-    final content = response.object?.content;
-    if (content == null) {
-      return false;
-    }
-    for (final mediaType in content.values) {
-      final schemaRef = mediaType.schema;
-      final schema = schemaRef.schema;
-      if (schema == null) {
-        // Assume refs have content.
-        return true;
-      }
-      if (schema is Schema) {
-        // Any non-empty schema has content.
-        if (schema.type != SchemaType.unknown) {
-          return true;
-        }
-      } else {
-        // All collection-type schemas have content.
-        return true;
-      }
-    }
-    return false;
-  }
 
   @override
   List<Object?> get props => [pointer, description, content, headers];

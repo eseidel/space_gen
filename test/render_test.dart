@@ -876,9 +876,7 @@ void main() {
     test('smoke test', () {
       final schema = {
         'type': 'object',
-        'properties': {
-          'foo': {'type': 'unknown'},
-        },
+        'properties': {'foo': <String, dynamic>{}},
       };
       final result = renderSchema(schema);
       expect(
@@ -1048,6 +1046,232 @@ void main() {
         '        }\n'
         '\n'
         "        throw ApiException(response.statusCode, 'Unhandled response from \$uploadFile');\n"
+        '    }\n'
+        '}\n'
+        '',
+      );
+    });
+
+    test('multiple successful responses with different content not supported', () {
+      final json = {
+        'responses': {
+          '200': {
+            'description': 'OK',
+            'content': {
+              'application/json': {
+                'schema': {'type': 'boolean'},
+              },
+            },
+          },
+          '201': {
+            'description': 'Created',
+            'content': {
+              'application/json': {
+                'schema': {'type': 'string'},
+              },
+            },
+          },
+        },
+      };
+      final result = renderOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(
+        result,
+        'class DefaultApi {\n'
+        '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
+        '\n'
+        '    final ApiClient client;\n'
+        '\n'
+        '    Future<UsersResponse> users(\n'
+        '    ) async {\n'
+        '        final response = await client.invokeApi(\n'
+        '            method: Method.post,\n'
+        "            path: '/users'\n"
+        ',\n'
+        '        );\n'
+        '\n'
+        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+        '            throw ApiException(response.statusCode, response.body.toString());\n'
+        '        }\n'
+        '\n'
+        '        if (response.body.isNotEmpty) {\n'
+        '            return UsersResponse.fromJson(jsonDecode(response.body) as dynamic);\n'
+        '        }\n'
+        '\n'
+        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+        '    }\n'
+        '}\n'
+        '',
+      );
+    });
+
+    test('multiple successful responses with same content is supported', () {
+      final json = {
+        'responses': {
+          '200': {
+            'description': 'OK',
+            'content': {
+              'application/json': {
+                'schema': {'type': 'boolean'},
+              },
+            },
+          },
+          '201': {
+            'description': 'Created',
+            'content': {
+              'application/json': {
+                'schema': {'type': 'boolean'},
+              },
+            },
+          },
+        },
+      };
+      final result = renderOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(
+        result,
+        'class DefaultApi {\n'
+        '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
+        '\n'
+        '    final ApiClient client;\n'
+        '\n'
+        '    Future<bool> users(\n'
+        '    ) async {\n'
+        '        final response = await client.invokeApi(\n'
+        '            method: Method.post,\n'
+        "            path: '/users'\n"
+        ',\n'
+        '        );\n'
+        '\n'
+        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+        '            throw ApiException(response.statusCode, response.body.toString());\n'
+        '        }\n'
+        '\n'
+        '        if (response.body.isNotEmpty) {\n'
+        '            return (jsonDecode(response.body) as bool) ;\n'
+        '        }\n'
+        '\n'
+        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+        '    }\n'
+        '}\n'
+        '',
+      );
+    });
+
+    test('multiple successful responses with content ignores empty responses', () {
+      final json = {
+        'responses': {
+          '200': {
+            'description': 'OK',
+            'content': {
+              'application/json': {
+                'schema': {'type': 'boolean'},
+              },
+            },
+          },
+          '204': {
+            'description': 'No content',
+            'content': {
+              'application/json': {
+                // This doesn't error because schema is empty.
+                // This is a hack for Space Traders get-cooldown.
+                'schema': {'description': 'No content'},
+              },
+            },
+          },
+        },
+      };
+      final result = renderOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(
+        result,
+        'class DefaultApi {\n'
+        '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
+        '\n'
+        '    final ApiClient client;\n'
+        '\n'
+        '    Future<UsersResponse> users(\n'
+        '    ) async {\n'
+        '        final response = await client.invokeApi(\n'
+        '            method: Method.post,\n'
+        "            path: '/users'\n"
+        ',\n'
+        '        );\n'
+        '\n'
+        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+        '            throw ApiException(response.statusCode, response.body.toString());\n'
+        '        }\n'
+        '\n'
+        '        if (response.body.isNotEmpty) {\n'
+        '            return UsersResponse.fromJson(jsonDecode(response.body) as dynamic);\n'
+        '        }\n'
+        '\n'
+        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+        '    }\n'
+        '}\n'
+        '',
+      );
+    });
+
+    test('multiple responses with content ignores non-successful responses', () {
+      final json = {
+        'responses': {
+          '200': {
+            'description': 'OK',
+            'content': {
+              'application/json': {
+                'schema': {'type': 'boolean'},
+              },
+            },
+          },
+          '404': {
+            'description': 'Not Found',
+            'content': {
+              'application/json': {
+                'schema': {'type': 'boolean'},
+              },
+            },
+          },
+        },
+      };
+      final result = renderOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(
+        result,
+        'class DefaultApi {\n'
+        '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
+        '\n'
+        '    final ApiClient client;\n'
+        '\n'
+        '    Future<bool> users(\n'
+        '    ) async {\n'
+        '        final response = await client.invokeApi(\n'
+        '            method: Method.post,\n'
+        "            path: '/users'\n"
+        ',\n'
+        '        );\n'
+        '\n'
+        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+        '            throw ApiException(response.statusCode, response.body.toString());\n'
+        '        }\n'
+        '\n'
+        '        if (response.body.isNotEmpty) {\n'
+        '            return (jsonDecode(response.body) as bool) ;\n'
+        '        }\n'
+        '\n'
+        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
         '    }\n'
         '}\n'
         '',

@@ -57,7 +57,7 @@ class Endpoint {
     // body if it exists.
     final dartParameters = [...serverParameters, ?requestBody];
 
-    final responseSchema = operation.responses.first.content;
+    final responseSchema = operation.returnType;
     final returnType = responseSchema.typeName(context);
     final responseFromJson = responseSchema.fromJsonExpression(
       'jsonDecode(response.body)',
