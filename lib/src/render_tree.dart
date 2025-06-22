@@ -127,6 +127,12 @@ RenderSchema toRenderSchema(ResolvedSchema schema) {
         schemas: schema.schemas.map(toRenderSchema).toList(),
         pointer: schema.pointer,
       );
+    case ResolvedMap():
+      return RenderMap(
+        snakeName: schema.snakeName,
+        valueSchema: toRenderSchema(schema.valueSchema),
+        pointer: schema.pointer,
+      );
     default:
       _unimplemented('Unknown schema: $schema', schema.pointer);
   }
@@ -570,8 +576,6 @@ class RenderPod extends RenderSchema {
         return 'bool';
       case PodType.dateTime:
         return 'DateTime';
-      case PodType.null_:
-        _unimplemented('RenderPod(null).typeName', pointer);
     }
   }
 
@@ -587,8 +591,6 @@ class RenderPod extends RenderSchema {
         return isNullable ? 'num?' : 'num';
       case PodType.boolean:
         return isNullable ? 'bool?' : 'bool';
-      case PodType.null_:
-        _unimplemented('RenderPod(null).jsonStorageType', pointer);
     }
   }
 
@@ -640,8 +642,6 @@ class RenderPod extends RenderSchema {
         return '($jsonValue as $jsonType).toDouble() $orDefault';
       case PodType.boolean:
         return '($jsonValue as $jsonType) $orDefault';
-      case PodType.null_:
-        _unimplemented('RenderPod(null).fromJsonExpression', pointer);
     }
   }
 
@@ -1044,6 +1044,77 @@ class RenderArray extends RenderSchema {
       return false;
     }
     return items.equalsIgnoringName(other.items) &&
+        super.equalsIgnoringName(other);
+  }
+}
+
+class RenderMap extends RenderSchema {
+  const RenderMap({
+    required super.snakeName,
+    required this.valueSchema,
+    required super.pointer,
+    this.defaultValue,
+  });
+
+  final RenderSchema valueSchema;
+
+  @override
+  final dynamic defaultValue;
+
+  @override
+  String typeName(SchemaRenderer context) =>
+      'Map<String, ${valueSchema.typeName(context)}>';
+
+  @override
+  String equalsExpression(String name, SchemaRenderer context) =>
+      'mapsEqual($name, other.$name)';
+
+  @override
+  bool get createsNewType => false;
+
+  @override
+  String jsonStorageType({required bool isNullable}) => 'Map<String, dynamic>';
+
+  @override
+  String toJsonExpression(
+    String dartName,
+    SchemaRenderer context, {
+    required bool dartIsNullable,
+  }) {
+    final valueToJson = valueSchema.toJsonExpression(
+      'value',
+      context,
+      dartIsNullable: false,
+    );
+    return '$dartName.map((key, value) => MapEntry(key, $valueToJson)).toMap()';
+  }
+
+  @override
+  String fromJsonExpression(
+    String jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) {
+    final valueFromJson = valueSchema.fromJsonExpression(
+      'value',
+      context,
+      jsonIsNullable: false,
+      dartIsNullable: false,
+    );
+    return '$jsonValue.map((key, value) => MapEntry(key, $valueFromJson)).toMap()';
+  }
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
+      throw UnimplementedError('RenderMap.toTemplateContext');
+
+  @override
+  bool equalsIgnoringName(RenderSchema other) {
+    if (other is! RenderMap) {
+      return false;
+    }
+    return valueSchema.equalsIgnoringName(other.valueSchema) &&
         super.equalsIgnoringName(other);
   }
 }

@@ -10,7 +10,7 @@ abstract class Visitor {
   void visitRequestBody(RequestBody requestBody) {}
   void visitResponse(Response response) {}
   void visitRoot(OpenApi root) {}
-  void visitSchema(SchemaBase schema) {}
+  void visitSchema(Schema schema) {}
 }
 
 class _RefCollector extends Visitor {
@@ -119,7 +119,7 @@ class SpecWalker {
     if (object == null) {
       return;
     }
-    if (object is SchemaBase) {
+    if (object is Schema) {
       walkSchema(object);
     } else if (object is RequestBody) {
       _requestBody(object);
@@ -144,14 +144,28 @@ class SpecWalker {
     }
   }
 
-  void walkSchema(SchemaBase schema) {
+  void walkSchema(Schema schema) {
     visitor.visitSchema(schema);
-    if (schema is Schema) {
-      for (final property in schema.properties.values) {
-        _maybeRef(property);
-      }
-      _maybeRef(schema.items);
-      _maybeRef(schema.additionalProperties);
+    switch (schema) {
+      case SchemaObject():
+        for (final property in schema.properties.values) {
+          _maybeRef(property);
+        }
+        _maybeRef(schema.additionalProperties);
+      case SchemaArray():
+        _maybeRef(schema.items);
+      case SchemaEnum():
+      case SchemaMap():
+      case SchemaUnknown():
+      case SchemaPod():
+      case SchemaNull():
+        break;
+      case SchemaCombiner():
+        for (final schema in schema.schemas) {
+          _maybeRef(schema);
+        }
+      default:
+        throw UnimplementedError('Unknown schema type: ${schema.runtimeType}');
     }
   }
 }

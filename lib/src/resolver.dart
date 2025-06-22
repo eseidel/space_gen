@@ -33,7 +33,7 @@ class ResolveContext {
   final RefRegistry refRegistry;
 
   /// The registry of all the objects we've parsed so far.
-  /// Resolve a nullable [SchemaRef] into a nullable [Schema].
+  /// Resolve a nullable [SchemaRef] into a nullable [SchemaObject].
   T? _maybeResolve<T>(RefOr<T>? ref) {
     if (ref == null) {
       return null;
@@ -41,7 +41,7 @@ class ResolveContext {
     return _resolve(ref);
   }
 
-  /// Resolve a [SchemaRef] into a [Schema].
+  /// Resolve a [SchemaRef] into a [SchemaObject].
   T _resolve<T>(RefOr<T> ref) {
     if (ref.object != null) {
       return ref.object!;
@@ -50,7 +50,7 @@ class ResolveContext {
     return _resolveUri(uri);
   }
 
-  /// Resolve a uri into a [Schema].
+  /// Resolve a uri into a [SchemaObject].
   T _resolveUri<T>(Uri uri) => refRegistry.get<T>(uri);
 }
 
@@ -78,80 +78,46 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     throw Exception('Schema not found: $ref');
   }
 
-  if (schema is Schema) {
-    ResolvedPod pod(PodType type) {
-      return ResolvedPod(
-        type: type,
-        pointer: schema.pointer,
-        snakeName: schema.snakeName,
-        defaultValue: schema.defaultValue,
-      );
+  if (schema is SchemaObject) {
+    return ResolvedObject(
+      pointer: schema.pointer,
+      properties: schema.properties.map((key, value) {
+        return MapEntry(key, resolveSchemaRef(value, context));
+      }),
+      snakeName: schema.snakeName,
+      additionalProperties: _maybeResolveSchemaRef(
+        schema.additionalProperties,
+        context,
+      ),
+      required: schema.required,
+    );
+  } else if (schema is SchemaEnum) {
+    return ResolvedEnum(
+      pointer: schema.pointer,
+      defaultValue: schema.defaultValue,
+      values: schema.enumValues,
+      snakeName: schema.snakeName,
+    );
+  } else if (schema is SchemaBinary) {
+    return ResolvedBinary(pointer: schema.pointer, snakeName: schema.snakeName);
+  } else if (schema is SchemaPod) {
+    return ResolvedPod(
+      type: schema.type,
+      pointer: schema.pointer,
+      snakeName: schema.snakeName,
+      defaultValue: schema.defaultValue,
+    );
+  } else if (schema is SchemaArray) {
+    final items = _maybeResolveSchemaRef(schema.items, context);
+    if (items == null) {
+      _error('items must be a schema for type=array', schema.pointer);
     }
-
-    if (schema.type == SchemaType.object) {
-      return ResolvedObject(
-        pointer: schema.pointer,
-        properties: schema.properties.map((key, value) {
-          return MapEntry(key, resolveSchemaRef(value, context));
-        }),
-        snakeName: schema.snakeName,
-        additionalProperties: _maybeResolveSchemaRef(
-          schema.additionalProperties,
-          context,
-        ),
-        required: schema.required,
-      );
-    }
-    if (schema.type == SchemaType.string) {
-      if (schema.enumValues.isNotEmpty) {
-        return ResolvedEnum(
-          pointer: schema.pointer,
-          defaultValue: schema.defaultValue,
-          values: schema.enumValues,
-          snakeName: schema.snakeName,
-        );
-      }
-      if (schema.format == 'binary') {
-        return ResolvedBinary(
-          pointer: schema.pointer,
-          snakeName: schema.snakeName,
-        );
-      }
-      if (schema.format == 'date-time') {
-        return pod(PodType.dateTime);
-      }
-      return pod(PodType.string);
-    }
-    if (schema.type == SchemaType.integer) {
-      return pod(PodType.integer);
-    }
-    if (schema.type == SchemaType.number) {
-      return pod(PodType.number);
-    }
-    if (schema.type == SchemaType.boolean) {
-      return pod(PodType.boolean);
-    }
-    if (schema.type == SchemaType.null_) {
-      return pod(PodType.null_);
-    }
-    if (schema.type == SchemaType.array) {
-      final items = _maybeResolveSchemaRef(schema.items, context);
-      if (items == null) {
-        _error('items must be a schema for type=array', schema.pointer);
-      }
-      return ResolvedArray(
-        items: items,
-        snakeName: schema.snakeName,
-        pointer: schema.pointer,
-        defaultValue: schema.defaultValue,
-      );
-    }
-    if (schema.type == SchemaType.unknown) {
-      return ResolvedUnknown(
-        snakeName: schema.snakeName,
-        pointer: schema.pointer,
-      );
-    }
+    return ResolvedArray(
+      items: items,
+      snakeName: schema.snakeName,
+      pointer: schema.pointer,
+      defaultValue: schema.defaultValue,
+    );
   }
   if (schema is SchemaOneOf) {
     final oneOf = schema;
@@ -174,7 +140,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     }
     for (final schema in schemas) {
       if (schema is! ResolvedObject) {
-        _error('allOf only supports objects', schema.pointer);
+        _error('allOf only supports objects: $schema', allOf.pointer);
       }
     }
     return ResolvedAllOf(
@@ -205,17 +171,31 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       }
       // If one of the schemas is null, we can just return the other schema.
       // We may need to copy it to make it nullable?
-      if (first is ResolvedPod && second is ResolvedPod) {
-        if (first.type == PodType.null_) {
-          return second;
-        }
-        if (second.type == PodType.null_) {
-          return first;
-        }
+      if (first is ResolvedPod && second is ResolvedNull) {
+        return first;
+      }
+      if (first is ResolvedNull && second is ResolvedPod) {
+        return second;
       }
     }
     return ResolvedAnyOf(
       schemas: schemas,
+      snakeName: schema.snakeName,
+      pointer: schema.pointer,
+    );
+  }
+  if (schema is SchemaNull) {
+    return ResolvedNull(snakeName: schema.snakeName, pointer: schema.pointer);
+  }
+  if (schema is SchemaUnknown) {
+    return ResolvedUnknown(
+      snakeName: schema.snakeName,
+      pointer: schema.pointer,
+    );
+  }
+  if (schema is SchemaMap) {
+    return ResolvedMap(
+      valueSchema: resolveSchemaRef(schema.valueSchema, context),
       snakeName: schema.snakeName,
       pointer: schema.pointer,
     );
@@ -395,7 +375,7 @@ class RegistryBuilder extends Visitor {
   @override
   void visitRequestBody(RequestBody requestBody) => add(requestBody);
   @override
-  void visitSchema(SchemaBase schema) => add(schema);
+  void visitSchema(Schema schema) => add(schema);
   @override
   void visitHeader(Header header) => add(header);
 }
@@ -560,9 +540,10 @@ abstract class ResolvedSchema extends Equatable {
 
   @override
   List<Object?> get props => [pointer, snakeName];
-}
 
-enum PodType { string, integer, number, boolean, dateTime, null_ }
+  @override
+  String toString() => '$runtimeType(snakeName: $snakeName, pointer: $pointer)';
+}
 
 class ResolvedPod extends ResolvedSchema {
   const ResolvedPod({
@@ -697,4 +678,18 @@ class ResolvedVoid extends ResolvedSchema {
 
 class ResolvedBinary extends ResolvedSchema {
   const ResolvedBinary({required super.snakeName, required super.pointer});
+}
+
+class ResolvedNull extends ResolvedSchema {
+  const ResolvedNull({required super.snakeName, required super.pointer});
+}
+
+class ResolvedMap extends ResolvedSchema {
+  const ResolvedMap({
+    required super.snakeName,
+    required super.pointer,
+    required this.valueSchema,
+  });
+
+  final ResolvedSchema valueSchema;
 }

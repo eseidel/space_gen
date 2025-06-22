@@ -83,6 +83,8 @@ class JsonPointer extends Equatable {
     return JsonPointer.fromParts(string.substring(2).split('/'));
   }
 
+  JsonPointer add(String part) => JsonPointer.fromParts([...parts, part]);
+
   /// The parts of the json pointer.
   final List<String> parts;
 
@@ -110,3 +112,5 @@ enum MimeType {
 
   final String value;
 }
+
+enum PodType { string, integer, number, boolean, dateTime }

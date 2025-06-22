@@ -216,27 +216,37 @@ RefOr<Header> parseHeaderOrRef(MapContext json) {
   return RefOr<Header>.object(parseHeader(json), json.pointer);
 }
 
-SchemaType _determineType({
-  required String? type,
-  required List<dynamic>? enumValues,
-}) {
-  if (type != null) {
-    return SchemaType.fromJson(type);
+PodType? determinePodType(MapContext json) {
+  final type = _optional<String>(json, 'type');
+  final validButIgnored = ['array', 'object', 'null', null];
+  if (validButIgnored.contains(type)) {
+    return null;
   }
-  if (enumValues != null) {
-    if (enumValues.isEmpty) {
-      return SchemaType.unknown;
-    }
-    if (enumValues.every((e) => e is String)) {
-      return SchemaType.string;
-    }
-    // This is wrong, enums can be any type, but we don't support that yet.
-    // This also doesn't support nullable types.
+  final mapped = {
+    'integer': PodType.integer,
+    'number': PodType.number,
+    'boolean': PodType.boolean,
+  }[type];
+  if (mapped != null) {
+    return mapped;
   }
-  return SchemaType.unknown;
+  if (type == 'string') {
+    final format = _optional<String>(json, 'format');
+    if (format == 'binary') {
+      return null;
+    }
+    if (format == 'date-time') {
+      return PodType.dateTime;
+    }
+    if (format != null) {
+      _warn(json, 'Unknown string format: $format');
+    }
+    return PodType.string;
+  }
+  _error(json, 'Unknown pod type: $type');
 }
 
-SchemaBase? _handleCollectionTypes(MapContext json) {
+Schema? _handleCollectionTypes(MapContext json) {
   if (json.containsKey('oneOf')) {
     final oneOf = json.childAsList('oneOf');
     final schemas = <SchemaRef>[];
@@ -278,49 +288,155 @@ SchemaBase? _handleCollectionTypes(MapContext json) {
   return null;
 }
 
-/// Parse a schema from a json object.
-SchemaBase parseSchema(MapContext json) {
-  _refNotExpected(json);
+SchemaRef? _handleAdditionalProperties(MapContext parent) {
+  final value = parent['additionalProperties'];
+  if (value == null) {
+    return null;
+  }
+  if (value is bool) {
+    if (value) {
+      return SchemaRef.schema(
+        SchemaUnknown(
+          pointer: parent.pointer.add('additionalProperties'),
+          snakeName: 'additionalProperties',
+          description: parent['description'] as String?,
+        ),
+        parent.pointer,
+      );
+    }
+    return null;
+  }
+  if (value is Map<String, dynamic>) {
+    return parseSchemaOrRef(parent.childAsMap('additionalProperties'));
+  }
+  _error(parent, 'additionalProperties must be a boolean or a map');
+}
 
+SchemaEnum? _handleEnum({
+  required MapContext json,
+  required PodType? podType,
+  required String? type,
+  required dynamic defaultValue,
+}) {
+  final enumValues = _optional<List<dynamic>>(json, 'enum');
+
+  if (enumValues == null) {
+    return null;
+  }
+  // We will infer the type from the enum values if not provided.
+  if (type != null && podType != PodType.string) {
+    // boolean enums are valid but not yet supported (or particularly
+    // consequential to ignore). GitHub uses one for fork=true.
+    if (podType == PodType.boolean) {
+      _ignored<String>(json, 'type');
+      return null;
+    } else {
+      _unimplemented(json, 'enumValues for type=$type');
+    }
+  }
+  if (!enumValues.every((e) => e is String)) {
+    _error(json, 'enumValues must be a list of strings: $enumValues');
+  }
+  // This also implicitly validates that the type of the default value
+  // matches the type of the enum values.
+  if (defaultValue != null && !enumValues.contains(defaultValue)) {
+    _error(json, 'defaultValue must be one of the enum values: $defaultValue');
+  }
+  return SchemaEnum(
+    pointer: json.pointer,
+    snakeName: json.snakeName,
+    defaultValue: defaultValue as String?,
+    enumValues: enumValues.cast<String>(),
+  );
+}
+
+Schema _createCorrectSchemaSubtype(MapContext json) {
   final collectionType = _handleCollectionTypes(json);
   if (collectionType != null) {
     return collectionType;
   }
 
-  var enumValues = _optional<List<dynamic>>(json, 'enum');
   // TODO(eseidel): type can be an array, but we don't support that yet.
-  final type = _determineType(
-    type: _optional<String>(json, 'type'),
-    enumValues: enumValues,
-  );
-  // GitHub's api only allows fork=true, not fork=false, but just ignoring
-  // that restriction for now.
-  if (type == SchemaType.boolean && enumValues != null) {
-    _warn(json, 'boolean enums are not supported, ignoring enum values');
-    enumValues = null;
-  }
-  // The rest of the code only supports string enums.
-  if (type != SchemaType.string && enumValues != null) {
-    _unimplemented(json, 'enumValues for type=$type');
-  }
-  final propertiesJson = _optionalMap(json, 'properties');
-  final properties = <String, SchemaRef>{};
-  if (propertiesJson != null) {
-    for (final name in propertiesJson.json.keys) {
-      final snakeName = snakeFromCamel(name);
-      final childContext = propertiesJson
-          .childAsMap(name)
-          .addSnakeName(snakeName);
-      properties[name] = parseSchemaOrRef(childContext);
-    }
-  }
-  final items = _optionalMap(json, 'items');
-  SchemaRef? itemSchema;
-  if (items != null) {
-    const innerName = 'inner'; // Matching OpenAPI.
-    itemSchema = parseSchemaOrRef(items.addSnakeName(innerName));
+  final podType = determinePodType(json);
+  final type = _optional<String>(json, 'type');
+  if (type == 'null') {
+    return SchemaNull(pointer: json.pointer, snakeName: json.snakeName);
   }
 
+  if (type == 'string') {
+    final format = _optional<String>(json, 'format');
+    if (format == 'binary') {
+      return SchemaBinary(pointer: json.pointer, snakeName: json.snakeName);
+    }
+  }
+
+  final defaultValue = _optional<dynamic>(json, 'default');
+  final enumSchema = _handleEnum(
+    json: json,
+    podType: podType,
+    type: type,
+    defaultValue: defaultValue,
+  );
+  if (enumSchema != null) {
+    return enumSchema;
+  }
+
+  if (podType != null) {
+    return SchemaPod(
+      pointer: json.pointer,
+      snakeName: json.snakeName,
+      type: podType,
+      defaultValue: defaultValue,
+    );
+  }
+
+  if (type == 'array') {
+    final items = _optionalMap(json, 'items');
+
+    if (items == null) {
+      _error(json, 'items is required for type=array');
+    }
+    const innerName = 'inner'; // Matching OpenAPI.
+    final itemSchema = parseSchemaOrRef(items.addSnakeName(innerName));
+    return SchemaArray(
+      pointer: json.pointer,
+      snakeName: json.snakeName,
+      items: itemSchema,
+      defaultValue: defaultValue,
+    );
+  }
+
+  final description = _optional<String>(json, 'description');
+
+  final additionalPropertiesSchema = _handleAdditionalProperties(json);
+
+  final propertiesJson = _optionalMap(json, 'properties');
+  if (propertiesJson == null) {
+    if (additionalPropertiesSchema == null) {
+      return SchemaUnknown(
+        pointer: json.pointer,
+        snakeName: json.snakeName,
+        description: description,
+      );
+    }
+    return SchemaMap(
+      pointer: json.pointer,
+      snakeName: json.snakeName,
+      valueSchema: additionalPropertiesSchema,
+      description: description,
+    );
+  }
+
+  final properties = <String, SchemaRef>{};
+  for (final name in propertiesJson.json.keys) {
+    final snakeName = snakeFromCamel(name);
+    final childContext = propertiesJson
+        .childAsMap(name)
+        .addSnakeName(snakeName);
+    properties[name] = parseSchemaOrRef(childContext);
+  }
+
+  // Some of these probably apply to enum and array types.
   _ignored<bool>(json, 'nullable');
   _ignored<bool>(json, 'readOnly');
   _ignored<bool>(json, 'writeOnly');
@@ -330,66 +446,25 @@ SchemaBase parseSchema(MapContext json) {
   _ignored<dynamic>(json, 'examples');
   _ignored<dynamic>(json, 'externalDocs');
 
-  final defaultValue = _optional<dynamic>(json, 'default');
-
   final required = _optionalList<String>(json, 'required') ?? [];
-  final description = _optional<String>(json, 'description');
-  final format = _optional<String>(json, 'format');
-  final additionalPropertiesJson = json['additionalProperties'];
-  SchemaRef? additionalPropertiesSchema;
-  if (additionalPropertiesJson != null) {
-    if (additionalPropertiesJson is bool) {
-      if (additionalPropertiesJson) {
-        // Create a synthetic "unknown" schema for additionalProperties=true.
-        // Could do this at the resolver level instead.
-        additionalPropertiesSchema = SchemaRef.schema(
-          // The name and pointer are never used, but need to be unique to
-          // avoid the resolver from throwing a duplicate name error.
-          Schema(
-            pointer: JsonPointer.fromParts([
-              ...json.pointerParts,
-              'additionalProperties',
-            ]),
-            snakeName: 'additionalProperties',
-            type: SchemaType.unknown,
-            properties: const <String, SchemaRef>{},
-            required: const <String>[],
-            description: '',
-            items: null,
-            enumValues: const <String>[],
-            format: null,
-            additionalProperties: null,
-            defaultValue: null,
-            example: null,
-          ),
-          json.pointer,
-        );
-      }
-    } else if (additionalPropertiesJson is Map<String, dynamic>) {
-      final additionalProperties = _optionalMap(json, 'additionalProperties');
-      if (additionalProperties != null) {
-        additionalPropertiesSchema = parseSchemaOrRef(additionalProperties);
-      }
-    } else {
-      _error(json, 'additionalProperties must be a boolean or a map');
-    }
-  }
 
-  _warnUnused(json);
-  final schema = Schema(
+  return SchemaObject(
     pointer: json.pointer,
     snakeName: json.snakeName,
-    type: type,
     properties: properties,
     required: required.cast<String>(),
     description: description ?? '',
-    items: itemSchema,
-    enumValues: enumValues?.cast<String>() ?? [],
-    format: format,
     additionalProperties: additionalPropertiesSchema,
     defaultValue: defaultValue,
     example: example,
   );
+}
+
+/// Parse a schema from a json object.
+Schema parseSchema(MapContext json) {
+  _refNotExpected(json);
+  final schema = _createCorrectSchemaSubtype(json);
+  _warnUnused(json);
   return schema;
 }
 
@@ -640,7 +715,7 @@ Components parseComponents(MapContext? componentsJson) {
   }
   _refNotExpected(componentsJson);
 
-  final schemas = _parseComponent<SchemaBase>(componentsJson, 'schemas', (
+  final schemas = _parseComponent<Schema>(componentsJson, 'schemas', (
     childContext,
   ) {
     // TODO(eseidel): This should call parseSchema instead.
@@ -766,10 +841,10 @@ class RefRegistry {
   T get<T>(Uri uri) {
     final object = objectsByUri[uri];
     if (object == null) {
-      throw StateError('$T not found: $uri');
+      throw FormatException('$T not found: $uri');
     }
     if (object is! T) {
-      throw StateError('Expected $T, got $object');
+      throw FormatException('Expected $T, got $object');
     }
     return object;
   }
@@ -782,12 +857,12 @@ class RefRegistry {
         ..info('after: $object');
       throw Exception('Object already registered: $uri');
     }
-    if (object is Schema) {
+    if (object is SchemaObject) {
       final schema = object;
       final byName = objectsByUri.entries
-          .where((e) => e.value is Schema)
+          .where((e) => e.value is SchemaObject)
           .firstWhereOrNull(
-            (e) => (e.value as Schema).snakeName == schema.snakeName,
+            (e) => (e.value as SchemaObject).snakeName == schema.snakeName,
           );
       if (byName != null) {
         logger

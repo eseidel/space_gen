@@ -505,7 +505,8 @@ void main() {
       final out = fs.directory('spacetraders');
 
       await renderToDirectory(spec: spec, outDir: out);
-      expect(out.childFile('lib/model/get_user200_response.dart'), exists);
+      // No model files are needed for the Map.
+      expect(out.childDirectory('lib/model').existsSync(), isFalse);
     });
 
     test('with inner types', () async {
@@ -1172,6 +1173,67 @@ void main() {
         '',
       );
     });
+
+    test('map type', () {
+      final schema = {
+        'type': 'object',
+        'properties': {
+          'map': {
+            'type': 'object',
+            'additionalProperties': {'type': 'string'},
+          },
+        },
+      };
+      final result = renderSchema(schema);
+      expect(
+        result,
+        '@immutable\n'
+        'class Test {\n'
+        '    Test(\n'
+        '        {  this.map,\n'
+        '         }\n'
+        '    );\n'
+        '\n'
+        '    factory Test.fromJson(Map<String, dynamic>\n'
+        '        json) {\n'
+        '        return Test(\n'
+        "            map: json['map'].map((key, value) => MapEntry(key, value as String )).toMap(),\n"
+        '        );\n'
+        '    }\n'
+        '\n'
+        '    /// Convenience to create a nullable type from a nullable json object.\n'
+        '    /// Useful when parsing optional fields.\n'
+        '    static Test? maybeFromJson(Map<String, dynamic>? json) {\n'
+        '        if (json == null) {\n'
+        '            return null;\n'
+        '        }\n'
+        '        return Test.fromJson(json);\n'
+        '    }\n'
+        '\n'
+        '    final  Map<String, String>? map;\n'
+        '\n'
+        '\n'
+        '    Map<String, dynamic> toJson() {\n'
+        '        return {\n'
+        "            'map': map.map((key, value) => MapEntry(key, value)).toMap(),\n"
+        '        };\n'
+        '    }\n'
+        '\n'
+        '    @override\n'
+        '    int get hashCode =>\n'
+        '          map.hashCode;\n'
+        '\n'
+        '    @override\n'
+        '    bool operator ==(Object other) {\n'
+        '        if (identical(this, other)) return true;\n'
+        '        return other is Test\n'
+        '            && mapsEqual(map, other.map)\n'
+        '        ;\n'
+        '    }\n'
+        '}\n'
+        '',
+      );
+    });
   });
 
   group('renderOperation', () {
@@ -1200,11 +1262,18 @@ void main() {
           '200': {'description': 'successful operation'},
         },
       };
-      final result = renderOperation(
-        path: '/pet/{petId}/uploadImage',
-        operationJson: operation,
-        serverUrl: Uri.parse('https://example.com'),
+      final logger = _MockLogger();
+      final result = runWithLogger(
+        logger,
+        () => renderOperation(
+          path: '/pet/{petId}/uploadImage',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        ),
       );
+      verify(
+        () => logger.detail('Unused keys: format in #/parameters/0/schema'),
+      ).called(1);
       expect(
         result,
         'class PetApi {\n'

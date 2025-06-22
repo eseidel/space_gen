@@ -27,11 +27,7 @@ dart run space_gen
 * Generate tests. https://github.com/eseidel/space_gen/issues/1
 * Handle min/max in newtype types.
 * Wire up Authentication and sending of bearer header.
-* GetSupplyChain200ResponseDataExportToImportMap is unnecessary?
-* Simplify hasAdditionalProperties.
-* Remove anyOf hack for RefuelShipRequest.fromCargo.
 * Fix toString hack for queryParameters.
-* Move to a sealed class for Schema that allows for AnyOf, AllOf, OneOf variants?
 * Support Parameter.explode.
 * Finish oneOf support.
 

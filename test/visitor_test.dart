@@ -15,7 +15,7 @@ class _CountingVisitor extends Visitor {
   void visitRoot(OpenApi root) => count('root');
 
   @override
-  void visitSchema(SchemaBase schema) => count('schema');
+  void visitSchema(Schema schema) => count('schema');
 
   @override
   void visitParameter(Parameter parameter) => count('parameter');

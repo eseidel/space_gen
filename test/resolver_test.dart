@@ -181,7 +181,10 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              'allOf only supports objects in #/paths//users/get/responses/200/content/application/json/schema/allOf/0',
+              'allOf only supports objects: '
+              'ResolvedPod(snakeName: users200_response, pointer: '
+              '#/paths//users/get/responses/200/content/application/json/schema/allOf/0) '
+              'in #/paths//users/get/responses/200/content/application/json/schema',
             ),
           ),
         ),
@@ -395,7 +398,7 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              'items must be a schema for type=array in #/paths//users/get/responses/200/content/application/json/schema',
+              'items is required for type=array in #/paths//users/get/responses/200/content/application/json/schema',
             ),
           ),
         ),
@@ -412,6 +415,103 @@ void main() {
             'message',
             equals(
               "'items' is not of type Map<String, dynamic>: true in #/paths//users/get/responses/200/content/application/json/schema",
+            ),
+          ),
+        ),
+      );
+    });
+    test('schema not found', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'summary': 'Get user',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Missing'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+      final logger = _MockLogger();
+      expect(
+        () => runWithLogger(logger, () => parseAndResolveTestSpec(json)),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              'Schema? not found: '
+              'https://api.spacetraders.io/v2#/components/schemas/Missing',
+            ),
+          ),
+        ),
+      );
+    });
+    test('schema ref to wrong object type', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'summary': 'Get user',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        r'$ref': '#/components/requestBodies/RequestBody',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'requestBodies': {
+            'RequestBody': {
+              'type': 'object',
+              'content': {
+                'application/json': {
+                  'schema': {'type': 'string'},
+                },
+              },
+            },
+          },
+        },
+      };
+      final logger = _MockLogger();
+      expect(
+        () => runWithLogger(logger, () => parseAndResolveTestSpec(json)),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              'Expected Schema?, got '
+              'RequestBody(#/components/requestBodies/RequestBody, null, '
+              '{application/json: MediaType(SchemaRef(null, '
+              'SchemaPod([#/components/requestBodies/RequestBody/content/application/json/schema, '
+              'request_body], PodType.string, null)))}, false)',
             ),
           ),
         ),

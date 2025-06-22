@@ -80,58 +80,6 @@ class Header extends Equatable implements HasPointer {
   List<Object?> get props => [description, schema, pointer];
 }
 
-/// A type of schema.
-/// https://spec.openapis.org/oas/v3.0.0#schemaObject
-enum SchemaType {
-  /// A string.
-  string,
-
-  /// A number.
-  number,
-
-  /// An integer.
-  integer,
-
-  /// A boolean.
-  boolean,
-
-  /// An array.
-  array,
-
-  /// An object.
-  object,
-
-  /// Null.
-  null_,
-
-  // TODO(eseidel): Remove unknown type and just use a separate class.
-  /// If 'type' is missing.
-  unknown; // if 'type' is missing.
-
-  // Should this be parseSchemaType instead?
-  static SchemaType fromJson(String json) {
-    switch (json) {
-      case 'string':
-        return string;
-      case 'number':
-        return number;
-      case 'integer':
-        return integer;
-      case 'boolean':
-        return boolean;
-      case 'array':
-        return array;
-      case 'object':
-        return object;
-      case 'null':
-        return null_;
-      // Intentionally fall through for unknown.
-      default:
-        throw FormatException('Unknown SchemaType: $json');
-    }
-  }
-}
-
 /// An object which either holds a schema or a reference to a schema.
 /// https://spec.openapis.org/oas/v3.0.0#schemaObject
 @immutable
@@ -148,20 +96,15 @@ class RefOr<T> extends Equatable {
   List<Object?> get props => [ref, object];
 }
 
-class SchemaRef extends RefOr<SchemaBase> {
+class SchemaRef extends RefOr<Schema> {
   const SchemaRef.ref(String super.ref, super.pointer) : super.ref();
-  const SchemaRef.schema(SchemaBase super.schema, super.pointer)
-    : super.object();
+  const SchemaRef.schema(Schema super.schema, super.pointer) : super.object();
 
-  SchemaBase? get schema => object;
+  Schema? get schema => object;
 }
 
-sealed class SchemaBase extends Equatable implements HasPointer {
-  const SchemaBase({
-    required this.pointer,
-    required this.snakeName,
-    required this.type,
-  });
+sealed class Schema extends Equatable implements HasPointer {
+  const Schema({required this.pointer, required this.snakeName});
 
   /// Where this schema is located in the spec.
   @override
@@ -170,72 +113,152 @@ sealed class SchemaBase extends Equatable implements HasPointer {
   /// The snake name of this schema.
   final String snakeName;
 
-  /// The type of this schema.
-  final SchemaType type;
-
   @override
-  List<Object?> get props => [pointer, snakeName, type];
+  List<Object?> get props => [pointer, snakeName];
 }
 
-class SchemaAnyOf extends SchemaBase {
+class SchemaPod extends Schema {
+  const SchemaPod({
+    required super.pointer,
+    required super.snakeName,
+    required this.type,
+    required this.defaultValue,
+  });
+
+  final PodType type;
+
+  final dynamic defaultValue;
+
+  @override
+  List<Object?> get props => [super.props, type, defaultValue];
+}
+
+abstract class SchemaObjectBase extends Schema {
+  const SchemaObjectBase({required super.pointer, required super.snakeName});
+}
+
+/// Map isn't a type in the spec, but rather inferred by having
+/// additionalProperties and no other properties.
+class SchemaMap extends Schema {
+  const SchemaMap({
+    required super.pointer,
+    required super.snakeName,
+    required this.valueSchema,
+    required this.description,
+  });
+
+  final SchemaRef valueSchema;
+
+  final String? description;
+
+  @override
+  List<Object?> get props => [super.props, valueSchema, description];
+}
+
+class SchemaBinary extends Schema {
+  const SchemaBinary({required super.pointer, required super.snakeName});
+}
+
+class SchemaEnum extends Schema {
+  const SchemaEnum({
+    required super.pointer,
+    required super.snakeName,
+    required this.defaultValue,
+    required this.enumValues,
+  });
+
+  final String? defaultValue;
+
+  // Only string enums are supported for now.
+  final List<String> enumValues;
+
+  @override
+  List<Object?> get props => [super.props, defaultValue, enumValues];
+}
+
+class SchemaNull extends Schema {
+  const SchemaNull({required super.pointer, required super.snakeName});
+}
+
+class SchemaArray extends Schema {
+  const SchemaArray({
+    required super.pointer,
+    required super.snakeName,
+    required this.items,
+    required this.defaultValue,
+  });
+
+  final SchemaRef items;
+
+  final dynamic defaultValue;
+
+  @override
+  List<Object?> get props => [super.props, items, defaultValue];
+}
+
+class SchemaUnknown extends Schema {
+  const SchemaUnknown({
+    required super.pointer,
+    required super.snakeName,
+    required this.description,
+  });
+
+  final String? description;
+}
+
+abstract class SchemaCombiner extends SchemaObjectBase {
+  const SchemaCombiner({
+    required super.pointer,
+    required super.snakeName,
+    required this.schemas,
+  });
+
+  final List<SchemaRef> schemas;
+
+  @override
+  List<Object?> get props => [super.props, schemas];
+}
+
+class SchemaAnyOf extends SchemaCombiner {
   const SchemaAnyOf({
     required super.pointer,
     required super.snakeName,
-    required this.schemas,
-  }) : super(type: SchemaType.object);
-
-  final List<SchemaRef> schemas;
-
-  @override
-  List<Object?> get props => [super.props, schemas];
+    required super.schemas,
+  });
 }
 
-class SchemaAllOf extends SchemaBase {
+class SchemaAllOf extends SchemaCombiner {
   const SchemaAllOf({
     required super.pointer,
     required super.snakeName,
-    required this.schemas,
-  }) : super(type: SchemaType.object);
-
-  final List<SchemaRef> schemas;
-
-  @override
-  List<Object?> get props => [super.props, schemas];
+    required super.schemas,
+  });
 }
 
-class SchemaOneOf extends SchemaBase {
+class SchemaOneOf extends SchemaCombiner {
   const SchemaOneOf({
     required super.pointer,
     required super.snakeName,
-    required this.schemas,
-  }) : super(type: SchemaType.object);
-
-  final List<SchemaRef> schemas;
-
-  @override
-  List<Object?> get props => [super.props, schemas];
+    required super.schemas,
+  });
 }
 
 /// A schema is a json object that describes the shape of a json object.
 /// https://spec.openapis.org/oas/v3.0.0#schemaObject
 @immutable
-class Schema extends SchemaBase {
+class SchemaObject extends SchemaObjectBase {
   /// Create a new schema.
-  Schema({
+  SchemaObject({
     required super.pointer,
     required super.snakeName,
-    required super.type,
     required this.properties,
     required this.required,
     required this.description,
-    required this.items,
-    required this.enumValues,
-    required this.format,
     required this.additionalProperties,
     required this.defaultValue,
     required this.example,
   }) {
-    if (type == SchemaType.object && snakeName.isEmpty) {
+    if (snakeName.isEmpty) {
       throw ArgumentError.value(
         snakeName,
         'snakeName',
@@ -257,15 +280,6 @@ class Schema extends SchemaBase {
   /// The description of this schema.
   final String description;
 
-  /// The items of this schema.
-  final SchemaRef? items;
-
-  /// The enum values of this schema.
-  final List<String> enumValues;
-
-  /// The format of this schema.
-  final String? format;
-
   /// The additional properties of this schema.
   /// Used for specifying T for Map\<String, T\>.
   final SchemaRef? additionalProperties;
@@ -279,16 +293,13 @@ class Schema extends SchemaBase {
     properties,
     required,
     description,
-    items,
-    enumValues,
-    format,
     additionalProperties,
     defaultValue,
   ];
 
   @override
   String toString() {
-    return 'Schema(name: $snakeName, pointer: $pointer, type: $type, '
+    return 'Schema(name: $snakeName, pointer: $pointer, '
         'description: $description)';
   }
 }
@@ -494,7 +505,7 @@ class Components extends Equatable {
     this.headers = const {},
   });
 
-  final Map<String, SchemaBase> schemas;
+  final Map<String, Schema> schemas;
   final Map<String, Parameter> parameters;
 
   // final Map<String, SecurityScheme> securitySchemes;

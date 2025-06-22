@@ -1,5 +1,4 @@
 import 'package:space_gen/src/render_tree.dart';
-import 'package:space_gen/src/resolver.dart';
 import 'package:space_gen/src/types.dart';
 import 'package:test/test.dart';
 
