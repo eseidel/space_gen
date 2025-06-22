@@ -1217,6 +1217,19 @@ void main() {
         ),
       );
     });
+
+    test('kebab names in components', () {
+      final json = {
+        'foo-bar': {'type': 'string'},
+      };
+      final spec = parseTestSchemas(json);
+      expect(spec['foo-bar'], isA<SchemaPod>());
+      expect(
+        spec['foo-bar']!.pointer,
+        const JsonPointer.fromParts(['components', 'schemas', 'foo-bar']),
+      );
+      expect(spec['foo-bar']!.snakeName, equals('foo_bar'));
+    });
   });
 
   group('ParseContext', () {

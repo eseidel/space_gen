@@ -720,7 +720,7 @@ Map<String, T> _parseComponent<T>(
   final values = <String, T>{};
   if (valuesJson != null) {
     for (final name in valuesJson.keys) {
-      final snakeName = snakeFromCamel(name);
+      final snakeName = toSnakeCase(name);
       final childContext = valuesJson.childAsMap(name).addSnakeName(snakeName);
       final value = parse(childContext);
       values[name] = value;

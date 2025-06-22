@@ -4,13 +4,15 @@ import 'package:space_gen/src/context.dart';
 import 'package:space_gen/src/loader.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/parser.dart';
+import 'package:space_gen/src/quirks.dart';
 import 'package:space_gen/src/render_tree.dart';
 import 'package:space_gen/src/resolver.dart';
+import 'package:space_gen/src/schema_renderer.dart';
 import 'package:space_gen/src/spec.dart';
 import 'package:space_gen/src/string.dart';
 import 'package:space_gen/src/visitor.dart';
 
-export 'package:space_gen/src/context.dart' show Quirks;
+export 'package:space_gen/src/quirks.dart';
 
 Future<void> loadAndRenderSpec({
   required Uri specUri,

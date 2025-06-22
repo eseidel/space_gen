@@ -1,8 +1,17 @@
 import 'package:collection/collection.dart';
-import 'package:space_gen/space_gen.dart';
 import 'package:space_gen/src/resolver.dart';
+// Any code that depends on SchemaRenderer probably should be moved out
+// of this file and into the schema_renderer.dart file.
+import 'package:space_gen/src/schema_renderer.dart';
 import 'package:space_gen/src/string.dart';
 import 'package:space_gen/src/types.dart';
+
+String avoidReservedWord(String value) {
+  if (isReservedWord(value)) {
+    return '${value}_';
+  }
+  return value;
+}
 
 Never _unimplemented(String message, JsonPointer pointer) {
   throw UnimplementedError('$message at $pointer');
@@ -225,6 +234,7 @@ RenderSchema _determineReturnType(ResolvedOperation operation) {
 RenderOperation toRenderOperation(ResolvedOperation operation) {
   final returnType = _determineReturnType(operation);
   return RenderOperation(
+    pointer: operation.pointer,
     snakeName: operation.snakeName,
     method: operation.method,
     path: operation.path,
@@ -286,6 +296,107 @@ class RenderSpec {
       .toList();
 }
 
+/// A convenience class created for each operation within a path item
+/// for compatibility with our existing rendering code.
+class Endpoint {
+  const Endpoint({required this.operation, required this.serverUrl});
+
+  /// The server url of the endpoint.
+  final Uri serverUrl;
+
+  /// The operation of the endpoint.
+  final RenderOperation operation;
+
+  /// The method of the endpoint.
+  Method get method => operation.method;
+
+  String get path => operation.path;
+
+  String get tag => operation.tags.firstOrNull ?? 'Default';
+
+  String get snakeName => operation.snakeName;
+
+  List<RenderParameter> get parameters => operation.parameters;
+
+  String get methodName => lowercaseCamelFromSnake(snakeName);
+
+  Uri get uri => Uri.parse('$serverUrl$path');
+
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
+    final serverParameters = parameters.map((param) {
+      return param.toTemplateContext(context);
+    }).toList();
+
+    final requestBody = operation.requestBody?.toTemplateContext(context);
+    // Parameters as passed to the Dart function call, including the request
+    // body if it exists.
+    final dartParameters = [...serverParameters, ?requestBody];
+
+    final responseSchema = operation.returnType;
+    final returnType = responseSchema.typeName(context);
+    final responseFromJson = responseSchema.fromJsonExpression(
+      'jsonDecode(response.body)',
+      context,
+      jsonIsNullable: false,
+      dartIsNullable: false,
+    );
+
+    final namedParameters = dartParameters.where((p) => p['required'] == false);
+    final positionalParameters = dartParameters.where(
+      (p) => p['required'] == true,
+    );
+
+    // TODO(eseidel): This grouping should happen before converting to
+    // template context while we still have strong types.
+    final bySendIn = serverParameters.groupListsBy((p) => p['sendIn']);
+
+    final pathParameters = bySendIn['path'] ?? [];
+    final queryParameters = bySendIn['query'] ?? [];
+    final hasQueryParameters = queryParameters.isNotEmpty;
+    final cookieParameters = bySendIn['cookie'] ?? [];
+    if (cookieParameters.isNotEmpty) {
+      _unimplemented(
+        'Cookie parameters are not yet supported.',
+        operation.pointer,
+      );
+    }
+    final headerParameters = bySendIn['header'] ?? [];
+    final hasHeaderParameters = headerParameters.isNotEmpty;
+
+    return {
+      'methodName': methodName,
+      'httpMethod': method.name,
+      'path': path,
+      'url': uri,
+      // Parameters grouped for dart parameter generation.
+      'positionalParameters': positionalParameters,
+      'hasNamedParameters': namedParameters.isNotEmpty,
+      'namedParameters': namedParameters,
+      // Parameters grouped for call to server.
+      'pathParameters': pathParameters,
+      'hasQueryParameters': hasQueryParameters,
+      'queryParameters': queryParameters,
+      'hasHeaderParameters': hasHeaderParameters,
+      'headerParameters': headerParameters,
+      'requestBody': requestBody,
+      'returnType': returnType,
+      'responseFromJson': responseFromJson,
+    };
+  }
+}
+
+/// The spec calls these tags, but the Dart openapi generator groups endpoints
+/// by tag into an API class so we do too.
+class Api {
+  const Api({required this.name, required this.endpoints});
+
+  final String name;
+  final List<Endpoint> endpoints;
+
+  String get className => '${name.capitalize()}Api';
+  String get fileName => '${name.toLowerCase()}_api';
+}
+
 class RenderPath {
   const RenderPath({required this.path, required this.operations});
 
@@ -298,6 +409,7 @@ class RenderPath {
 
 class RenderOperation {
   const RenderOperation({
+    required this.pointer,
     required this.method,
     required this.path,
     required this.snakeName,
@@ -312,6 +424,8 @@ class RenderOperation {
 
   /// The method of the resolved operation.
   final Method method;
+
+  final JsonPointer pointer;
 
   /// The path of the resolved operation.
   final String path;
