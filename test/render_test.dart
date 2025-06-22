@@ -1234,6 +1234,34 @@ void main() {
         '',
       );
     });
+
+    test('empty object', () {
+      final schema = {'type': 'object', 'properties': <String, dynamic>{}};
+      final result = renderSchema(schema);
+      expect(
+        result,
+        '@immutable\n'
+        'class Test {\n'
+        '    const Test();\n'
+        '\n'
+        '    factory Test.fromJson(Map<String, dynamic> _) {\n'
+        '        return const Test();\n'
+        '    }\n'
+        '\n'
+        '    /// Convenience to create a nullable type from a nullable json object.\n'
+        '    /// Useful when parsing optional fields.\n'
+        '    static Test? maybeFromJson(Map<String, dynamic>? json) {\n'
+        '        if (json == null) {\n'
+        '            return null;\n'
+        '        }\n'
+        '        return Test.fromJson(json);\n'
+        '    }\n'
+        '\n'
+        '    Map<String, dynamic> toJson() => const {};\n'
+        '}\n'
+        '',
+      );
+    });
   });
 
   group('renderOperation', () {

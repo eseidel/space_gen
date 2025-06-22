@@ -589,6 +589,9 @@ class SchemaRenderer {
       case RenderOneOf():
         schemaContext = schema.toTemplateContext(this);
         template = 'schema_one_of';
+      case RenderEmptyObject():
+        schemaContext = schema.toTemplateContext(this);
+        template = 'schema_empty_object';
       default:
         throw StateError('No code to render $schema');
     }

@@ -1,0 +1,19 @@
+@immutable
+class {{ typeName }} {
+    const {{ typeName }}();
+
+    factory {{ typeName }}.fromJson(Map<String, dynamic> _) {
+        return const {{ typeName }}();
+    }
+
+    /// Convenience to create a nullable type from a nullable json object.
+    /// Useful when parsing optional fields.
+    static {{ nullableTypeName }} maybeFromJson(Map<String, dynamic>? json) {
+        if (json == null) {
+            return null;
+        }
+        return {{ typeName }}.fromJson(json);
+    }
+
+    Map<String, dynamic> toJson() => const {};
+}

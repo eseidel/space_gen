@@ -441,6 +441,14 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
       description: description,
     );
   }
+  // The difference between an empty object and an unknown object is subtle
+  // and probably not correct.  GitHub has an explicitly empty object, which is
+  // used either an an alternative to nullable, or as a way to indicate an
+  // empty response.  Those aren't "dynamic" types, but unclear if they need
+  // a separate class either.
+  if (propertiesJson.keys.isEmpty) {
+    return SchemaEmptyObject(pointer: json.pointer, snakeName: json.snakeName);
+  }
 
   final properties = <String, SchemaRef>{};
   for (final name in propertiesJson.json.keys) {

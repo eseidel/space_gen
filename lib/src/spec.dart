@@ -196,6 +196,7 @@ class SchemaArray extends Schema {
   List<Object?> get props => [super.props, items, defaultValue];
 }
 
+// Renders as dynamic.
 class SchemaUnknown extends Schema {
   const SchemaUnknown({
     required super.pointer,
@@ -204,6 +205,14 @@ class SchemaUnknown extends Schema {
   });
 
   final String? description;
+
+  @override
+  List<Object?> get props => [super.props, description];
+}
+
+// Parses as a single, constant object, renders to json as {}.
+class SchemaEmptyObject extends Schema {
+  const SchemaEmptyObject({required super.pointer, required super.snakeName});
 }
 
 abstract class SchemaCombiner extends SchemaObjectBase {

@@ -133,6 +133,11 @@ RenderSchema toRenderSchema(ResolvedSchema schema) {
         valueSchema: toRenderSchema(schema.valueSchema),
         pointer: schema.pointer,
       );
+    case ResolvedEmptyObject():
+      return RenderEmptyObject(
+        snakeName: schema.snakeName,
+        pointer: schema.pointer,
+      );
     default:
       _unimplemented('Unknown schema: $schema', schema.pointer);
   }
@@ -1429,4 +1434,35 @@ class RenderBinary extends RenderSchema {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
       throw UnimplementedError('RenderBinary.toTemplateContext');
+}
+
+class RenderEmptyObject extends RenderNewType {
+  const RenderEmptyObject({required super.snakeName, required super.pointer});
+
+  @override
+  dynamic get defaultValue => null;
+
+  @override
+  String jsonStorageType({required bool isNullable}) => 'Map<String, dynamic>';
+
+  @override
+  String toJsonExpression(
+    String dartName,
+    SchemaRenderer context, {
+    required bool dartIsNullable,
+  }) => 'throw UnimplementedError("RenderEmptyObject.toJson")';
+
+  @override
+  String fromJsonExpression(
+    String jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) => 'throw UnimplementedError("RenderEmptyObject.fromJson")';
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
+    'typeName': className,
+    'nullableTypeName': nullableTypeName(context),
+  };
 }

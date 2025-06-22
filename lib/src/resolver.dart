@@ -200,6 +200,12 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       pointer: schema.pointer,
     );
   }
+  if (schema is SchemaEmptyObject) {
+    return ResolvedEmptyObject(
+      pointer: schema.pointer,
+      snakeName: schema.snakeName,
+    );
+  }
   _error('Missing code to resolve schema: $schema', schema.pointer);
 }
 
@@ -692,4 +698,8 @@ class ResolvedMap extends ResolvedSchema {
   });
 
   final ResolvedSchema valueSchema;
+}
+
+class ResolvedEmptyObject extends ResolvedSchema {
+  const ResolvedEmptyObject({required super.snakeName, required super.pointer});
 }
