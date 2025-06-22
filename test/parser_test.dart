@@ -989,29 +989,56 @@ void main() {
       });
     });
 
-    test('operationId with camelCase names', () {
-      final json = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {
-              'operationId': 'findPetsByStatus',
-              'responses': {
-                '200': {'description': 'OK'},
+    group('operationId', () {
+      test('operationId with camelCase names', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'operationId': 'findPetsByStatus',
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
               },
             },
           },
-        },
-      };
-      final spec = parseOpenApi(json);
-      expect(
-        spec.paths['/users'].operations[Method.get]!.snakeName,
-        equals('find_pets_by_status'),
-      );
+        };
+        final spec = parseOpenApi(json);
+        expect(
+          spec.paths['/users'].operations[Method.get]!.snakeName,
+          equals('find_pets_by_status'),
+        );
+      });
+
+      test('operationId with / in name', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users/foo/bar': {
+              'get': {
+                'operationId': 'users/foo/bar',
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+        };
+        final spec = parseOpenApi(json);
+        expect(
+          spec.paths['/users/foo/bar'].operations[Method.get]!.snakeName,
+          equals('bar'),
+        );
+      });
     });
 
     group('enums', () {

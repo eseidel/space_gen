@@ -541,12 +541,20 @@ RequestBody parseRequestBody(MapContext json) {
   );
 }
 
+String _snakeNameForOperation(MapContext operationJson, String path) {
+  final operationId = _optional<String>(operationJson, 'operationId');
+  if (operationId != null) {
+    // Some specs, including GitHub, put the full path in the operationId.
+    // Since we group based on tags, ignoring the path prefix for now.
+    final parts = operationId.split('/');
+    return toSnakeCase(parts.last);
+  }
+  return toSnakeCase(Uri.parse(path).pathSegments.last);
+}
+
 Operation parseOperation(MapContext operationJson, String path) {
   _refNotExpected(operationJson);
-  final snakeName = toSnakeCase(
-    _optional<String>(operationJson, 'operationId') ??
-        Uri.parse(path).pathSegments.last,
-  );
+  final snakeName = _snakeNameForOperation(operationJson, path);
   final context = operationJson.addSnakeName(snakeName);
 
   final summary = _optional<String>(context, 'summary');
