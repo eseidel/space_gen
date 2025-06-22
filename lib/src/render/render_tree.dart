@@ -632,8 +632,15 @@ abstract class RenderSchema {
   });
 
   /// The default value of this schema as a string.
-  String? defaultValueString(SchemaRenderer context) =>
-      defaultValue?.toString();
+  String? defaultValueString(SchemaRenderer context) {
+    if (defaultValue == null) {
+      return null;
+    }
+    if (defaultValue is String) {
+      return quoteString(defaultValue as String);
+    }
+    return defaultValue.toString();
+  }
 
   bool hasDefaultValue(SchemaRenderer context) => defaultValue != null;
 
@@ -1255,7 +1262,7 @@ class RenderEnum extends RenderNewType {
       return jsonName;
     }
     // Dart style uses camelCase.
-    return camelFromScreamingCaps(jsonName);
+    return camelFromScreamingCaps(snakeFromKebab(jsonName));
   }
 
   @override

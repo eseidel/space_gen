@@ -44,17 +44,27 @@ String camelFromScreamingCaps(String caps) {
 }
 
 bool isReservedWord(String word) {
+  // Eventually we should add them all:
+  // https://dart.dev/language/keywords
   const reservedWords = {
-    'void',
-    'int',
-    'double',
-    'num',
     'bool',
+    'default',
+    'double',
     'dynamic',
-    'yield',
+    'false',
+    'int',
+    'null',
+    'num',
     'required',
+    'true',
+    'void',
+    'yield',
   };
   return reservedWords.contains(word);
+}
+
+String quoteString(String string) {
+  return '"${string.replaceAll('"', r'\"')}"';
 }
 
 extension CapitalizeString on String {

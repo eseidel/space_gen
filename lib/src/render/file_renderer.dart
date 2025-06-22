@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
+import 'package:equatable/equatable.dart';
 import 'package:file/file.dart';
 import 'package:path/path.dart' as p;
 import 'package:space_gen/src/logger.dart';
@@ -44,7 +45,8 @@ Set<RenderSchema> collectSchemasUnderSchema(RenderSchema schema) {
   return collector.schemas;
 }
 
-class Import {
+// Could make this comparable to have a nicer sort for our test results.
+class Import extends Equatable {
   const Import(this.path, {this.asName});
 
   final String path;
@@ -53,6 +55,9 @@ class Import {
   Map<String, dynamic> toTemplateContext() {
     return {'path': path, 'asName': asName};
   }
+
+  @override
+  List<Object?> get props => [path, asName];
 }
 
 /// Responsible for determining the layout of the files and rendering the
@@ -226,7 +231,7 @@ class FileRenderer {
     for (final api in apis) {
       final content = schemaRenderer.renderApi(api);
       // TODO(eseidel): Make type imports dynamic based on used schemas.
-      final imports = [
+      final imports = {
         const Import('dart:async'),
         const Import('dart:convert'),
         const Import('dart:io'),
@@ -234,7 +239,7 @@ class FileRenderer {
         Import('package:$packageName/api_client.dart'),
         Import('package:$packageName/api_exception.dart'),
         const Import('package:http/http.dart', asName: 'http'),
-      ];
+      };
 
       final apiSchemas = collectSchemasUnderApi(
         api,
@@ -244,7 +249,10 @@ class FileRenderer {
           .toList();
       imports.addAll(apiImports);
 
-      final importsContext = imports.map((i) => i.toTemplateContext()).toList();
+      final importsContext = imports
+          .sortedBy((i) => i.path)
+          .map((i) => i.toTemplateContext())
+          .toList();
       final outPath = apiFilePath(api);
       _renderTemplate(
         template: 'add_imports',
@@ -264,18 +272,18 @@ class FileRenderer {
           .map((s) => Import(modelPackageImport(this, s)))
           .toList();
 
-      final imports = [
+      final imports = {
         const Import('dart:convert'),
         const Import('dart:io'),
         const Import('package:meta/meta.dart'),
         Import('package:$packageName/model_helpers.dart'),
         ...referencedImports,
-      ];
+      };
 
-      final importsContext = [
-        ...imports,
-        ...referencedImports,
-      ].map((i) => i.toTemplateContext()).toList();
+      final importsContext = imports
+          .sortedBy((i) => i.path)
+          .map((i) => i.toTemplateContext())
+          .toList();
 
       final outPath = modelFilePath(schema);
       _renderTemplate(
