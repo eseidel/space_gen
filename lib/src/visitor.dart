@@ -159,6 +159,7 @@ class SpecWalker {
       case SchemaUnknown():
       case SchemaPod():
       case SchemaNull():
+      case SchemaBinary():
         break;
       case SchemaCombiner():
         for (final schema in schema.schemas) {
