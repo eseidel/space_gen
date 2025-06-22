@@ -57,115 +57,7 @@ void main() {
     });
   });
 
-  group('parser', () {
-    OpenApi parseTestSpec(Map<String, dynamic> json) {
-      return parseOpenApi(json);
-    }
-
-    Map<String, Schema> parseTestSchemas(Map<String, dynamic> schemasJson) {
-      final specJson = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {
-              'summary': 'Get user',
-              'responses': {
-                '200': {'description': 'OK'},
-              },
-            },
-          },
-        },
-        'components': {'schemas': schemasJson},
-      };
-      final spec = parseTestSpec(specJson);
-      return spec.components.schemas;
-    }
-
-    test('parse', () {
-      final specJson = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {
-              'summary': 'Get user',
-              'responses': {
-                '200': {'description': 'OK'},
-              },
-            },
-          },
-        },
-      };
-      final logger = _MockLogger();
-      final spec = runWithLogger(logger, () => parseTestSpec(specJson));
-      expect(spec.serverUrl, Uri.parse('https://api.spacetraders.io/v2'));
-      expect(spec.paths.keys.first, '/users');
-    });
-
-    test('parse with invalid enum', () {
-      final json = {
-        'NumberEnum': {
-          // This is valid according to the spec, but we don't support it.
-          'type': 'number',
-          'enum': [1, 2, 3],
-        },
-      };
-      final logger = _MockLogger();
-      expect(
-        () => runWithLogger(logger, () => parseTestSchemas(json)),
-        throwsA(
-          isA<UnimplementedError>().having(
-            (e) => e.message,
-            'message',
-            equals(
-              'enumValues for type=number not supported in '
-              'MapContext(#/components/schemas/NumberEnum, '
-              '{type: number, enum: [1, 2, 3]})',
-            ),
-          ),
-        ),
-      );
-    });
-    test('enum values must match type', () {
-      final json = {
-        'Enum': {
-          'type': 'string',
-          'enum': ['foo', 1],
-        },
-      };
-      final logger = _MockLogger();
-      expect(
-        () => runWithLogger(logger, () => parseTestSchemas(json)),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            equals(
-              'enumValues must be a list of strings: [foo, 1] '
-              'in #/components/schemas/Enum',
-            ),
-          ),
-        ),
-      );
-    });
-    test('infer enum type', () {
-      final json = {
-        'Enum': {
-          'enum': ['foo', 'bar', 'baz'],
-        },
-      };
-      final logger = _MockLogger();
-      final schemas = runWithLogger(logger, () => parseTestSchemas(json));
-      expect(schemas['Enum'], isA<SchemaEnum>());
-    });
-
+  group('Schema equality', () {
     test('OpenApi equals', () {
       final jsonOne = {
         'openapi': '3.1.0',
@@ -258,15 +150,63 @@ void main() {
         },
       };
       final logger = _MockLogger();
-      final specOne = runWithLogger(logger, () => parseTestSpec(jsonOne));
-      final specTwo = runWithLogger(logger, () => parseTestSpec(jsonOne));
-      final specThree = runWithLogger(logger, () => parseTestSpec(jsonTwo));
+      final specOne = runWithLogger(logger, () => parseOpenApi(jsonOne));
+      final specTwo = runWithLogger(logger, () => parseOpenApi(jsonOne));
+      final specThree = runWithLogger(logger, () => parseOpenApi(jsonTwo));
       expect(specOne, specTwo);
       expect(specOne, isNot(specThree));
       expect(specOne.hashCode, specTwo.hashCode);
       expect(specOne.hashCode, isNot(specThree.hashCode));
     });
+  });
 
+  group('parser', () {
+    Map<String, Schema> parseTestSchemas(Map<String, dynamic> schemasJson) {
+      final specJson = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'summary': 'Get user',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+        'components': {'schemas': schemasJson},
+      };
+      final spec = parseOpenApi(specJson);
+      return spec.components.schemas;
+    }
+
+    test('parse', () {
+      final specJson = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'summary': 'Get user',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+      final logger = _MockLogger();
+      final spec = runWithLogger(logger, () => parseOpenApi(specJson));
+      expect(spec.serverUrl, Uri.parse('https://api.spacetraders.io/v2'));
+      expect(spec.paths.keys.first, '/users');
+    });
     test('allOf with multiple items', () {
       final json = {
         'User': {
@@ -363,7 +303,7 @@ void main() {
           },
         },
       };
-      final spec = parseTestSpec(json);
+      final spec = parseOpenApi(json);
       expect(spec.components.headers['X-Foo']!.schema, isA<SchemaRef>());
       final response =
           spec.paths['/users'].operations[Method.get]!.responses[200]!.object!;
@@ -403,7 +343,7 @@ void main() {
         },
       };
       expect(
-        () => parseTestSpec(json),
+        () => parseOpenApi(json),
         throwsA(
           isA<FormatException>().having(
             (e) => e.message,
@@ -435,7 +375,7 @@ void main() {
         },
       };
       expect(
-        () => parseTestSpec(json),
+        () => parseOpenApi(json),
         throwsA(
           isA<FormatException>().having(
             (e) => e.message,
@@ -477,7 +417,7 @@ void main() {
       };
       final logger = _MockLogger();
       expect(
-        () => runWithLogger(logger, () => parseTestSpec(json)),
+        () => runWithLogger(logger, () => parseOpenApi(json)),
         throwsA(
           isA<UnimplementedError>().having(
             (e) => e.message,
@@ -513,7 +453,7 @@ void main() {
       };
 
       final logger = _MockLogger();
-      final spec = runWithLogger(logger, () => parseTestSpec(json));
+      final spec = runWithLogger(logger, () => parseOpenApi(json));
       verify(
         () => logger.warn(
           '2.9.9 < 3.0.0, the lowest known supported version. in #/',
@@ -523,35 +463,6 @@ void main() {
       // Info.version is the version of the spec, not the version of the OpenAPI
       // schema used to generate it and can be an arbitrary string.
       expect(spec.info.version, '1.0.0.a.b.c');
-    });
-
-    test('wrong type for responses', () {
-      final json = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            // This should throw a FormatException for having an optional
-            // key of the wrong type.
-            'get': {'responses': true},
-          },
-        },
-      };
-      expect(
-        () => parseTestSpec(json),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            equals(
-              "'responses' is not of type Map<String, dynamic>: true in #/paths//users/get",
-            ),
-          ),
-        ),
-      );
     });
 
     test('empty paths', () {
@@ -564,7 +475,7 @@ void main() {
         'paths': {'': <String, dynamic>{}},
       };
       expect(
-        () => parseTestSpec(json),
+        () => parseOpenApi(json),
         throwsA(
           isA<FormatException>().having(
             (e) => e.message,
@@ -583,7 +494,7 @@ void main() {
         ],
       };
       expect(
-        () => parseTestSpec(json),
+        () => parseOpenApi(json),
         throwsA(
           isA<FormatException>().having(
             (e) => e.message,
@@ -599,7 +510,7 @@ void main() {
         'info': {'title': 'Space Traders API', 'version': '1.0.0'},
       };
       expect(
-        () => parseTestSpec(json),
+        () => parseOpenApi(json),
         throwsA(
           isA<FormatException>().having(
             (e) => e.message,
@@ -638,7 +549,7 @@ void main() {
       };
       final logger = _MockLogger();
       expect(
-        () => runWithLogger(logger, () => parseTestSpec(json)),
+        () => runWithLogger(logger, () => parseOpenApi(json)),
         throwsA(
           isA<FormatException>().having(
             (e) => e.message,
@@ -651,86 +562,116 @@ void main() {
       );
     });
 
-    test('only integers and default are supported as response codes', () {
-      final json = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {
-              'responses': {
-                '200': {'description': 'OK'},
-                'barf': {'description': 'Barf'},
-              },
+    group('responses', () {
+      test('wrong type for responses', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              // This should throw a FormatException for having an optional
+              // key of the wrong type.
+              'get': {'responses': true},
             },
           },
-        },
-      };
-      expect(
-        () => parseTestSpec(json),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            equals(
-              'Invalid response code: barf in #/paths//users/get/responses',
+        };
+        expect(
+          () => parseOpenApi(json),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              equals(
+                "'responses' is not of type Map<String, dynamic>: true in #/paths//users/get",
+              ),
             ),
           ),
-        ),
-      );
-    });
-    test('default response is not supported', () {
-      final json = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {
-              'responses': {
-                'default': {'description': 'Default'},
-                '201': {'description': 'Created'},
+        );
+      });
+      test('only integers and default are supported as response codes', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  '200': {'description': 'OK'},
+                  'barf': {'description': 'Barf'},
+                },
               },
             },
           },
-        },
-      };
-      final logger = _MockLogger();
-      final spec = runWithLogger(logger, () => parseTestSpec(json));
-      expect(
-        spec.paths['/users'].operations[Method.get]!.responses[200],
-        isNull,
-      );
-    });
-
-    test('responses are required', () {
-      final json = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {'responses': <String, dynamic>{}},
-          },
-        },
-      };
-      expect(
-        () => parseTestSpec(json),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            equals('Responses are required in #/paths//users/get'),
+        };
+        expect(
+          () => parseOpenApi(json),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              equals(
+                'Invalid response code: barf in #/paths//users/get/responses',
+              ),
+            ),
           ),
-        ),
-      );
+        );
+      });
+      test('default response is not supported', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  'default': {'description': 'Default'},
+                  '201': {'description': 'Created'},
+                },
+              },
+            },
+          },
+        };
+        final logger = _MockLogger();
+        final spec = runWithLogger(logger, () => parseOpenApi(json));
+        expect(
+          spec.paths['/users'].operations[Method.get]!.responses[200],
+          isNull,
+        );
+      });
+
+      test('responses are required', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {'responses': <String, dynamic>{}},
+            },
+          },
+        };
+        expect(
+          () => parseOpenApi(json),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              equals('Responses are required in #/paths//users/get'),
+            ),
+          ),
+        );
+      });
     });
 
     test('request body with empty content is not supported', () {
@@ -753,7 +694,7 @@ void main() {
         },
       };
       expect(
-        () => parseTestSpec(json),
+        () => parseOpenApi(json),
         throwsA(
           isA<FormatException>().having(
             (e) => e.message,
@@ -791,7 +732,7 @@ void main() {
         },
       };
       final logger = _MockLogger();
-      final spec = runWithLogger(logger, () => parseTestSpec(json));
+      final spec = runWithLogger(logger, () => parseOpenApi(json));
       expect(
         spec
             .paths['/users']
@@ -812,46 +753,6 @@ void main() {
             .first,
         'application/xml',
       );
-    });
-
-    test('parameters can be refs', () {
-      final json = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {
-              'parameters': [
-                {r'$ref': '#/components/parameters/foo'},
-              ],
-              'responses': {
-                '200': {'description': 'OK'},
-              },
-            },
-          },
-        },
-        'components': {
-          'parameters': {
-            'foo': {
-              'name': 'foo',
-              'in': 'query',
-              'schema': {'type': 'string'},
-            },
-          },
-        },
-      };
-      final logger = _MockLogger();
-      final spec = runWithLogger(logger, () => parseTestSpec(json));
-      expect(spec.paths['/users'].operations[Method.get]!.parameters, [
-        isA<RefOr<Parameter>>().having(
-          (p) => p.ref,
-          'ref',
-          equals('#/components/parameters/foo'),
-        ),
-      ]);
     });
 
     test('ignores securitySchemes', () {
@@ -877,57 +778,99 @@ void main() {
         },
       };
       final logger = _MockLogger();
-      runWithLogger(logger, () => parseTestSpec(json));
+      runWithLogger(logger, () => parseOpenApi(json));
       verify(
         () => logger.warn('Ignoring securitySchemes in #/components'),
       ).called(1);
     });
 
-    test('ref is not allowed everywhere', () {
-      final json = {
-        r'$ref': '#/components/schemas/User',
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-      };
-      expect(
-        () => parseTestSpec(json),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            equals(r'$ref not expected in #/'),
+    group('refs', () {
+      test('ref is not allowed everywhere', () {
+        final json = {
+          r'$ref': '#/components/schemas/User',
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        };
+        expect(
+          () => parseOpenApi(json),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              equals(r'$ref not expected in #/'),
+            ),
           ),
-        ),
-      );
-    });
-    test('response can be ref', () {
-      final json = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {
-              'responses': {
-                '200': {r'$ref': '#/components/responses/User'},
+        );
+      });
+      test('parameters can be refs', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'parameters': [
+                  {r'$ref': '#/components/parameters/foo'},
+                ],
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
               },
             },
           },
-        },
-        'components': {
-          'responses': {
-            'User': {'description': 'User'},
+          'components': {
+            'parameters': {
+              'foo': {
+                'name': 'foo',
+                'in': 'query',
+                'schema': {'type': 'string'},
+              },
+            },
           },
-        },
-      };
-      final spec = parseTestSpec(json);
-      expect(
-        spec.paths['/users'].operations[Method.get]!.responses[200]!.ref,
-        equals('#/components/responses/User'),
-      );
+        };
+        final logger = _MockLogger();
+        final spec = runWithLogger(logger, () => parseOpenApi(json));
+        expect(spec.paths['/users'].operations[Method.get]!.parameters, [
+          isA<RefOr<Parameter>>().having(
+            (p) => p.ref,
+            'ref',
+            equals('#/components/parameters/foo'),
+          ),
+        ]);
+      });
+      test('response can be ref', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  '200': {r'$ref': '#/components/responses/User'},
+                },
+              },
+            },
+          },
+          'components': {
+            'responses': {
+              'User': {'description': 'User'},
+            },
+          },
+        };
+        final spec = parseOpenApi(json);
+        expect(
+          spec.paths['/users'].operations[Method.get]!.responses[200]!.ref,
+          equals('#/components/responses/User'),
+        );
+      });
     });
+
     test('empty links are ignored', () {
       final json = {
         'openapi': '3.1.0',
@@ -950,7 +893,7 @@ void main() {
         },
       };
       final logger = _MockLogger();
-      runWithLogger(logger, () => parseTestSpec(json));
+      runWithLogger(logger, () => parseOpenApi(json));
       verify(
         () => logger.detail(
           'Ignoring key: links (Map<String, dynamic>) in #/components',
@@ -962,24 +905,27 @@ void main() {
         ),
       ).called(1);
     });
-    test('additionalProperties=true is treated as unknown', () {
-      final json = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {
-              'responses': {
-                '200': {
-                  'description': 'OK',
-                  'content': {
-                    'application/json': {
-                      'schema': {
-                        'type': 'object',
-                        'additionalProperties': true,
+
+    group('additionalProperties', () {
+      test('additionalProperties=true is treated as unknown', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          'type': 'object',
+                          'additionalProperties': true,
+                        },
                       },
                     },
                   },
@@ -987,39 +933,39 @@ void main() {
               },
             },
           },
-        },
-      };
-      final spec = parseTestSpec(json);
-      final schema = spec
-          .paths['/users']
-          .operations[Method.get]!
-          .responses[200]!
-          .object!
-          .content!['application/json']!
-          .schema
-          .object!;
-      expect(schema, isA<SchemaMap>());
-      final map = schema as SchemaMap;
-      expect(map.valueSchema.object, isA<SchemaUnknown>());
-    });
-    test('additionalProperties must be a boolean or a map', () {
-      final json = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {
-              'responses': {
-                '200': {
-                  'description': 'OK',
-                  'content': {
-                    'application/json': {
-                      'schema': {
-                        'type': 'object',
-                        'additionalProperties': 'foo',
+        };
+        final spec = parseOpenApi(json);
+        final schema = spec
+            .paths['/users']
+            .operations[Method.get]!
+            .responses[200]!
+            .object!
+            .content!['application/json']!
+            .schema
+            .object!;
+        expect(schema, isA<SchemaMap>());
+        final map = schema as SchemaMap;
+        expect(map.valueSchema.object, isA<SchemaUnknown>());
+      });
+      test('additionalProperties must be a boolean or a map', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          'type': 'object',
+                          'additionalProperties': 'foo',
+                        },
                       },
                     },
                   },
@@ -1027,21 +973,22 @@ void main() {
               },
             },
           },
-        },
-      };
-      expect(
-        () => parseTestSpec(json),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            equals(
-              'additionalProperties must be a boolean or a map in #/paths//users/get/responses/200/content/application/json/schema',
+        };
+        expect(
+          () => parseOpenApi(json),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              equals(
+                'additionalProperties must be a boolean or a map in #/paths//users/get/responses/200/content/application/json/schema',
+              ),
             ),
           ),
-        ),
-      );
+        );
+      });
     });
+
     test('operationId with camelCase names', () {
       final json = {
         'openapi': '3.1.0',
@@ -1060,7 +1007,7 @@ void main() {
           },
         },
       };
-      final spec = parseTestSpec(json);
+      final spec = parseOpenApi(json);
       expect(
         spec.paths['/users'].operations[Method.get]!.snakeName,
         equals('find_pets_by_status'),
@@ -1068,6 +1015,62 @@ void main() {
     });
 
     group('enums', () {
+      test('parse with invalid enum', () {
+        final json = {
+          'NumberEnum': {
+            // This is valid according to the spec, but we don't support it.
+            'type': 'number',
+            'enum': [1, 2, 3],
+          },
+        };
+        final logger = _MockLogger();
+        expect(
+          () => runWithLogger(logger, () => parseTestSchemas(json)),
+          throwsA(
+            isA<UnimplementedError>().having(
+              (e) => e.message,
+              'message',
+              equals(
+                'enumValues for type=number not supported in '
+                'MapContext(#/components/schemas/NumberEnum, '
+                '{type: number, enum: [1, 2, 3]})',
+              ),
+            ),
+          ),
+        );
+      });
+      test('enum values must match type', () {
+        final json = {
+          'Enum': {
+            'type': 'string',
+            'enum': ['foo', 1],
+          },
+        };
+        final logger = _MockLogger();
+        expect(
+          () => runWithLogger(logger, () => parseTestSchemas(json)),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              equals(
+                'enumValues must be a list of strings: [foo, 1] '
+                'in #/components/schemas/Enum',
+              ),
+            ),
+          ),
+        );
+      });
+      test('infer enum type', () {
+        final json = {
+          'Enum': {
+            'enum': ['foo', 'bar', 'baz'],
+          },
+        };
+        final logger = _MockLogger();
+        final schemas = runWithLogger(logger, () => parseTestSchemas(json));
+        expect(schemas['Enum'], isA<SchemaEnum>());
+      });
       test('ignore boolean enums', () {
         final json = {
           'openapi': '3.1.0',
@@ -1096,7 +1099,7 @@ void main() {
           },
         };
         final logger = _MockLogger();
-        final spec = runWithLogger(logger, () => parseTestSpec(json));
+        final spec = runWithLogger(logger, () => parseOpenApi(json));
         expect(
           spec
               .paths['/users']
@@ -1202,7 +1205,7 @@ void main() {
         },
       };
       expect(
-        () => parseTestSpec(json),
+        () => parseOpenApi(json),
         throwsA(
           isA<FormatException>().having(
             (e) => e.message,
