@@ -31,10 +31,10 @@ class TemplateProvider {
 
   final Directory templateDir;
 
-  Template loadTemplate(String name) {
+  Template load(String name) {
     return Template(
       templateDir.childFile('$name.mustache').readAsStringSync(),
-      partialResolver: loadTemplate,
+      partialResolver: load,
       name: name,
     );
   }
@@ -179,7 +179,7 @@ class FileRenderer {
   FileRenderer({
     required this.outDir,
     required this.packageName,
-    required this.templateProvider,
+    required this.templates,
     required this.schemaRenderer,
     RunProcess? runProcess,
   }) : fs = outDir.fileSystem,
@@ -196,7 +196,7 @@ class FileRenderer {
 
   /// The provider of templates.  Could be different from the one used by
   /// the schema renderer, so we hold our own.
-  final TemplateProvider templateProvider;
+  final TemplateProvider templates;
 
   /// The function to run a process. Allows for mocking in tests.
   final RunProcess runProcess;
@@ -254,9 +254,7 @@ class FileRenderer {
     required String outPath,
     Map<String, dynamic> context = const {},
   }) {
-    final output = templateProvider
-        .loadTemplate(template)
-        .renderString(context);
+    final output = templates.load(template).renderString(context);
     _writeFile(path: outPath, content: output);
   }
 

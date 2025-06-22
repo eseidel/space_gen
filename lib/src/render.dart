@@ -24,6 +24,10 @@ Future<void> loadAndRenderSpec({
 }) async {
   final fs = outDir.fileSystem;
 
+  final templates = templateDir == null
+      ? TemplateProvider.defaultLocation()
+      : TemplateProvider.fromDirectory(templateDir);
+
   // Load the spec and warm the cache before rendering.
   final cache = Cache(fs);
   final specJson = await cache.load(specUri);
@@ -39,52 +43,25 @@ Future<void> loadAndRenderSpec({
     await cache.load(resolved);
   }
 
+  // Resolve all references in the spec.
   final resolved = resolveSpec(spec);
-  logger.info('Generating $specUri to ${outDir.path}');
+  // Convert the resolved spec into render objects.
+  final renderSpec = toRenderSpec(resolved);
+  // SchemaRenderer is responsible for rendering schemas and APIs into strings.
+  final schemaRenderer = SchemaRenderer(templates: templates, quirks: quirks);
 
+  logger.info('Generating $specUri to ${outDir.path}');
   // Could make clearing of the directory optional.
   if (outDir.existsSync()) {
     outDir.deleteSync(recursive: true);
   }
-
-  renderSpec(
-    spec: resolved,
-    specUri: specUri,
-    outDir: outDir,
-    packageName: packageName,
-    templateDir: templateDir,
-    runProcess: runProcess,
-    quirks: quirks,
-  );
-}
-
-void renderSpec({
-  required Uri specUri,
-  required String packageName,
-  required Directory outDir,
-  required ResolvedSpec spec,
-  Directory? templateDir,
-  RunProcess? runProcess,
-  Quirks quirks = const Quirks(),
-}) {
-  final templateProvider = templateDir == null
-      ? TemplateProvider.defaultLocation()
-      : TemplateProvider.fromDirectory(templateDir);
-
-  // Prepare a resolved spec for rendering converting into render objects.
-  final renderSpec = toRenderSpec(spec);
-  // SchemaRenderer is responsible for rendering schemas and APIs into strings.
-  final schemaRenderer = SchemaRenderer(
-    templateProvider: templateProvider,
-    quirks: quirks,
-  );
 
   // FileRenderer is responsible for deciding the layout of the files
   // and rendering the rest of directory structure.
   FileRenderer(
     outDir: outDir,
     packageName: packageName,
-    templateProvider: templateProvider,
+    templates: templates,
     runProcess: runProcess,
     schemaRenderer: schemaRenderer,
   ).render(renderSpec);
@@ -104,13 +81,10 @@ String renderSchema(
     SchemaRef.schema(parsedSchema, const JsonPointer.empty()),
     ResolveContext.test(),
   );
-  final templateProvider = TemplateProvider.defaultLocation();
+  final templates = TemplateProvider.defaultLocation();
 
   final renderSchema = toRenderSchema(resolvedSchema);
-  final schemaRenderer = SchemaRenderer(
-    templateProvider: templateProvider,
-    quirks: quirks,
-  );
+  final schemaRenderer = SchemaRenderer(templates: templates, quirks: quirks);
   return schemaRenderer.renderSchema(renderSchema);
 }
 
@@ -134,7 +108,7 @@ String renderOperation({
   final renderOperation = toRenderOperation(resolvedOperation);
   final templateProvider = TemplateProvider.defaultLocation();
   final schemaRenderer = SchemaRenderer(
-    templateProvider: templateProvider,
+    templates: templateProvider,
     quirks: quirks,
   );
   final tag = resolvedOperation.tags.firstOrNull ?? 'Default';

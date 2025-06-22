@@ -5,13 +5,10 @@ import 'package:space_gen/src/render_tree.dart';
 /// Context for rendering the spec.
 class SchemaRenderer {
   /// Create a new context for rendering the spec.
-  SchemaRenderer({
-    required this.templateProvider,
-    this.quirks = const Quirks(),
-  });
+  SchemaRenderer({required this.templates, this.quirks = const Quirks()});
 
   /// The provider of templates.
-  final TemplateProvider templateProvider;
+  final TemplateProvider templates;
 
   /// The quirks to use for rendering.
   final Quirks quirks;
@@ -47,14 +44,14 @@ class SchemaRenderer {
         throw StateError('No code to render $schema');
     }
 
-    return templateProvider.loadTemplate(template).renderString(schemaContext);
+    return templates.load(template).renderString(schemaContext);
   }
 
   String renderEndpoints({
     required String className,
     required List<Endpoint> endpoints,
   }) {
-    return templateProvider.loadTemplate('api').renderString({
+    return templates.load('api').renderString({
       'className': className,
       'endpoints': endpoints.map((e) => e.toTemplateContext(this)).toList(),
     });
