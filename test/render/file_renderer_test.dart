@@ -954,5 +954,30 @@ void main() {
       await renderToDirectory(spec: spec, outDir: out);
       expect(out.childFile('lib/model/empty_object.dart'), exists);
     });
+
+    test('tag with kebab case', () async {
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'tags': ['foo-bar'],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+      final fs = MemoryFileSystem.test();
+      final out = fs.directory('spacetraders');
+
+      await renderToDirectory(spec: spec, outDir: out);
+      expect(out.childFile('lib/api/foo_bar_api.dart'), exists);
+    });
   });
 }

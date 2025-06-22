@@ -289,7 +289,7 @@ class RenderSpec {
       .sorted()
       .map(
         (tag) => Api(
-          name: tag,
+          name: toSnakeCase(tag),
           endpoints: endpoints.where((e) => e.tag == tag).toList(),
         ),
       )
