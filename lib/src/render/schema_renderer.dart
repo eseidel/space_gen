@@ -1,6 +1,6 @@
-import 'package:space_gen/src/context.dart';
 import 'package:space_gen/src/quirks.dart';
-import 'package:space_gen/src/render_tree.dart';
+import 'package:space_gen/src/render/render_tree.dart';
+import 'package:space_gen/src/render/templates.dart';
 
 /// Context for rendering the spec.
 class SchemaRenderer {

@@ -1,18 +1,39 @@
 import 'package:file/file.dart';
 import 'package:meta/meta.dart';
-import 'package:space_gen/src/context.dart';
 import 'package:space_gen/src/loader.dart';
 import 'package:space_gen/src/logger.dart';
+import 'package:space_gen/src/parse/spec.dart';
+import 'package:space_gen/src/parse/visitor.dart';
 import 'package:space_gen/src/parser.dart';
 import 'package:space_gen/src/quirks.dart';
-import 'package:space_gen/src/render_tree.dart';
+import 'package:space_gen/src/render/file_renderer.dart';
+import 'package:space_gen/src/render/render_tree.dart';
+import 'package:space_gen/src/render/schema_renderer.dart';
+import 'package:space_gen/src/render/templates.dart';
 import 'package:space_gen/src/resolver.dart';
-import 'package:space_gen/src/schema_renderer.dart';
-import 'package:space_gen/src/spec.dart';
 import 'package:space_gen/src/string.dart';
-import 'package:space_gen/src/visitor.dart';
 
 export 'package:space_gen/src/quirks.dart';
+
+class _RefCollector extends Visitor {
+  _RefCollector(this._refs);
+
+  final Set<String> _refs;
+
+  @override
+  void visitReference<T>(RefOr<T> ref) {
+    if (ref.ref != null) {
+      _refs.add(ref.ref!);
+    }
+  }
+}
+
+Iterable<String> collectRefs(OpenApi root) {
+  final refs = <String>{};
+  final collector = _RefCollector(refs);
+  SpecWalker(collector).walkRoot(root);
+  return refs;
+}
 
 Future<void> loadAndRenderSpec({
   required Uri specUri,

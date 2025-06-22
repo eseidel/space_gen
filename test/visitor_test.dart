@@ -1,6 +1,6 @@
+import 'package:space_gen/src/parse/spec.dart';
+import 'package:space_gen/src/parse/visitor.dart';
 import 'package:space_gen/src/parser.dart';
-import 'package:space_gen/src/spec.dart';
-import 'package:space_gen/src/visitor.dart';
 import 'package:test/test.dart';
 
 class _CountingVisitor extends Visitor {

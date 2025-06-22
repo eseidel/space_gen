@@ -1,8 +1,8 @@
 import 'package:collection/collection.dart';
-import 'package:space_gen/src/resolver.dart';
 // Any code that depends on SchemaRenderer probably should be moved out
 // of this file and into the schema_renderer.dart file.
-import 'package:space_gen/src/schema_renderer.dart';
+import 'package:space_gen/src/render/schema_renderer.dart';
+import 'package:space_gen/src/resolver.dart';
 import 'package:space_gen/src/string.dart';
 import 'package:space_gen/src/types.dart';
 

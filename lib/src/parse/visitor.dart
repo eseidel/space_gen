@@ -1,4 +1,4 @@
-import 'package:space_gen/src/spec.dart';
+import 'package:space_gen/src/parse/spec.dart';
 
 /// Subclass this and override the methods you want to visit.
 abstract class Visitor {
@@ -11,26 +11,6 @@ abstract class Visitor {
   void visitResponse(Response response) {}
   void visitRoot(OpenApi root) {}
   void visitSchema(Schema schema) {}
-}
-
-class _RefCollector extends Visitor {
-  _RefCollector(this._refs);
-
-  final Set<String> _refs;
-
-  @override
-  void visitReference<T>(RefOr<T> ref) {
-    if (ref.ref != null) {
-      _refs.add(ref.ref!);
-    }
-  }
-}
-
-Iterable<String> collectRefs(OpenApi root) {
-  final refs = <String>{};
-  final collector = _RefCollector(refs);
-  SpecWalker(collector).walkRoot(root);
-  return refs;
 }
 
 // Would be nice if Dart had a generic way to do this, without needing to

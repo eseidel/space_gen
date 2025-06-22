@@ -1,7 +1,7 @@
 import 'package:mocktail/mocktail.dart';
 import 'package:space_gen/src/logger.dart';
+import 'package:space_gen/src/parse/spec.dart';
 import 'package:space_gen/src/parser.dart';
-import 'package:space_gen/src/spec.dart';
 import 'package:test/test.dart';
 
 class _MockLogger extends Mock implements Logger {}

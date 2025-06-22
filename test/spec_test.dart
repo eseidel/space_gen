@@ -1,4 +1,4 @@
-import 'package:space_gen/src/spec.dart';
+import 'package:space_gen/src/parse/spec.dart';
 import 'package:test/test.dart';
 
 void main() {

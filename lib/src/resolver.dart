@@ -5,9 +5,9 @@
 
 import 'package:equatable/equatable.dart';
 import 'package:space_gen/src/logger.dart';
+import 'package:space_gen/src/parse/spec.dart';
+import 'package:space_gen/src/parse/visitor.dart';
 import 'package:space_gen/src/parser.dart';
-import 'package:space_gen/src/spec.dart';
-import 'package:space_gen/src/visitor.dart';
 
 void _warn(String message, JsonPointer pointer) {
   logger.warn('$message in $pointer');

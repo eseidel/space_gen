@@ -1,7 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:space_gen/src/logger.dart';
-import 'package:space_gen/src/spec.dart';
+import 'package:space_gen/src/parse/spec.dart';
 import 'package:space_gen/src/string.dart';
 
 T _required<T>(MapContext json, String key) {

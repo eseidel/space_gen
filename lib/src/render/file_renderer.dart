@@ -2,15 +2,13 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:file/file.dart';
-import 'package:file/local.dart';
-import 'package:mustache_template/mustache_template.dart';
 import 'package:path/path.dart' as p;
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/quirks.dart';
-import 'package:space_gen/src/render_tree.dart';
-import 'package:space_gen/src/schema_renderer.dart';
-
-enum SchemaRenderType { enumeration, object, stringNewtype, numberNewtype, pod }
+import 'package:space_gen/src/render/render_tree.dart';
+import 'package:space_gen/src/render/schema_renderer.dart';
+import 'package:space_gen/src/render/templates.dart';
+import 'package:space_gen/src/render/tree_visitor.dart';
 
 typedef RunProcess =
     ProcessResult Function(
@@ -18,118 +16,6 @@ typedef RunProcess =
       List<String> arguments, {
       String? workingDirectory,
     });
-
-class TemplateProvider {
-  TemplateProvider.fromDirectory(this.templateDir) {
-    if (!templateDir.existsSync()) {
-      throw Exception('Template directory does not exist: ${templateDir.path}');
-    }
-  }
-
-  TemplateProvider.defaultLocation()
-    : templateDir = const LocalFileSystem().directory('lib/templates');
-
-  final Directory templateDir;
-
-  Template load(String name) {
-    return Template(
-      templateDir.childFile('$name.mustache').readAsStringSync(),
-      partialResolver: load,
-      name: name,
-    );
-  }
-}
-
-class RenderTreeVisitor {
-  void visitSchema(RenderSchema schema) {}
-  void visitApi(Api api) {}
-  void visitEndpoint(Endpoint endpoint) {}
-  void visitOperation(RenderOperation operation) {}
-  void visitParameter(RenderParameter parameter) {}
-  void visitRequestBody(RenderRequestBody requestBody) {}
-  void visitResponse(RenderResponse response) {}
-}
-
-class RenderTreeWalker {
-  RenderTreeWalker({required this.visitor});
-  final RenderTreeVisitor visitor;
-
-  void walkRoot(RenderSpec spec) {
-    for (final api in spec.apis) {
-      walkApi(api);
-    }
-  }
-
-  void maybeWalkSchema(RenderSchema? schema) {
-    if (schema != null) {
-      walkSchema(schema);
-    }
-  }
-
-  void walkSchema(RenderSchema schema) {
-    visitor.visitSchema(schema);
-    switch (schema) {
-      case RenderObject():
-        for (final property in schema.properties.values) {
-          walkSchema(property);
-        }
-        maybeWalkSchema(schema.additionalProperties);
-      case RenderArray():
-        maybeWalkSchema(schema.items);
-      case RenderOneOf():
-        for (final schema in schema.schemas) {
-          walkSchema(schema);
-        }
-      case RenderEnum():
-      case RenderStringNewType():
-      case RenderNumberNewType():
-      case RenderPod():
-      case RenderUnknown():
-      case RenderVoid():
-        break;
-    }
-  }
-
-  void walkApi(Api api) {
-    for (final endpoint in api.endpoints) {
-      walkEndpoint(endpoint);
-    }
-  }
-
-  void walkEndpoint(Endpoint endpoint) {
-    visitor.visitEndpoint(endpoint);
-    walkOperation(endpoint.operation);
-  }
-
-  void walkParameter(RenderParameter parameter) {
-    visitor.visitParameter(parameter);
-    walkSchema(parameter.type);
-  }
-
-  void walkOperation(RenderOperation operation) {
-    visitor.visitOperation(operation);
-    if (operation.requestBody != null) {
-      walkRequestBody(operation.requestBody!);
-    }
-    for (final response in operation.responses) {
-      walkResponse(response);
-    }
-    for (final parameter in operation.parameters) {
-      walkParameter(parameter);
-    }
-    walkSchema(operation.returnType);
-  }
-
-  void walkRequestBody(RenderRequestBody requestBody) {
-    visitor.visitRequestBody(requestBody);
-    walkSchema(requestBody.schema);
-  }
-
-  void walkResponse(RenderResponse response) {
-    visitor.visitResponse(response);
-    walkSchema(response.content);
-  }
-}
 
 class _ModelCollector extends RenderTreeVisitor {
   final Set<RenderSchema> schemas = {};
