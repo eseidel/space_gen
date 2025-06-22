@@ -913,5 +913,46 @@ void main() {
         hasFiles(['users_response.dart']),
       );
     });
+    test('empty object creates new file', () async {
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/empty-object'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'empty-object': {
+              'title': 'Empty Object',
+              'description': 'An object without any properties.',
+              'type': 'object',
+              'properties': <String, dynamic>{},
+              'additionalProperties': false,
+            },
+          },
+        },
+      };
+      final fs = MemoryFileSystem.test();
+      final out = fs.directory('spacetraders');
+
+      await renderToDirectory(spec: spec, outDir: out);
+      expect(out.childFile('lib/model/empty_object.dart'), exists);
+    });
   });
 }

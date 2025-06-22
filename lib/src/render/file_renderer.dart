@@ -217,15 +217,7 @@ class FileRenderer {
 
   bool rendersToSeparateFile(RenderSchema schema) {
     return switch (schema) {
-      RenderEnum() => true,
-      RenderStringNewType() => true,
-      RenderNumberNewType() => true,
-      RenderObject() => true,
-      RenderOneOf() => true,
-      RenderArray() => false,
-      RenderPod() => false,
-      RenderUnknown() => false,
-      RenderVoid() => false,
+      RenderNewType() => true,
       RenderSchema() => false,
     };
   }
