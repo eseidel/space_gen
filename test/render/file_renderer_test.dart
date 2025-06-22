@@ -55,7 +55,7 @@ void main() {
     const localFs = LocalFileSystem();
     // https://github.com/dart-lang/test/issues/110
     final templatesUri = (reflectClass(_EmptyClass).owner! as LibraryMirror).uri
-        .resolve('../lib/templates');
+        .resolve('../../lib/templates');
     final templateDir = localFs.directory(templatesUri.path);
 
     io.ProcessResult runProcess(
