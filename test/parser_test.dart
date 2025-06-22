@@ -1067,24 +1067,26 @@ void main() {
       );
     });
 
-    test('ignore boolean enums', () {
-      final json = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {
-              'responses': {
-                '200': {
-                  'description': 'OK',
-                  'content': {
-                    'application/json': {
-                      'schema': {
-                        'type': 'boolean',
-                        'enum': [true],
+    group('enums', () {
+      test('ignore boolean enums', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          'type': 'boolean',
+                          'enum': [true],
+                        },
                       },
                     },
                   },
@@ -1092,27 +1094,93 @@ void main() {
               },
             },
           },
-        },
-      };
-      final logger = _MockLogger();
-      final spec = runWithLogger(logger, () => parseTestSpec(json));
-      expect(
-        spec
-            .paths['/users']
-            .operations[Method.get]!
-            .responses[200]!
-            .object!
-            .content!['application/json']!
-            .schema
-            .object,
-        isA<SchemaPod>().having((s) => s.type, 'type', equals(PodType.boolean)),
-      );
-      verify(
-        () => logger.detail(
-          'Ignoring key: type (String) in '
-          '#/paths//users/get/responses/200/content/application/json/schema',
-        ),
-      ).called(1);
+        };
+        final logger = _MockLogger();
+        final spec = runWithLogger(logger, () => parseTestSpec(json));
+        expect(
+          spec
+              .paths['/users']
+              .operations[Method.get]!
+              .responses[200]!
+              .object!
+              .content!['application/json']!
+              .schema
+              .object,
+          isA<SchemaPod>().having(
+            (s) => s.type,
+            'type',
+            equals(PodType.boolean),
+          ),
+        );
+        verify(
+          () => logger.detail(
+            'Ignoring key: type (String) in '
+            '#/paths//users/get/responses/200/content/application/json/schema',
+          ),
+        ).called(1);
+      });
+
+      test('defaultValue for enum is valid value when converted to string', () {
+        final json = {
+          'make_latest': {
+            'type': 'string',
+            'enum': ['true', 'false', 'legacy'],
+            'default': true,
+          },
+        };
+        final logger = _MockLogger();
+        final schemas = runWithLogger(logger, () => parseTestSchemas(json));
+        expect(
+          schemas['make_latest'],
+          isA<SchemaEnum>().having(
+            (e) => e.defaultValue,
+            'defaultValue',
+            equals('true'),
+          ),
+        );
+      });
+
+      test('null is valid for nullable enum', () {
+        final json = {
+          'conclusion': {
+            'type': 'string',
+            'enum': ['success', 'failure', null],
+            'nullable': true,
+          },
+        };
+        final logger = _MockLogger();
+        final schemas = runWithLogger(logger, () => parseTestSchemas(json));
+        expect(
+          schemas['conclusion'],
+          isA<SchemaEnum>().having(
+            (e) => e.enumValues,
+            'enumValues',
+            equals(['success', 'failure']),
+          ),
+        );
+      });
+
+      test('defaultValue must be a valid enum value', () {
+        final json = {
+          'conclusion': {
+            'type': 'string',
+            'enum': ['success', 'failure'],
+            'default': 'neutral',
+          },
+        };
+        expect(
+          () => parseTestSchemas(json),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              equals(
+                'defaultValue must be one of the enum values: neutral in #/components/schemas/conclusion',
+              ),
+            ),
+          ),
+        );
+      });
     });
 
     test('tags must be a list of strings', () {

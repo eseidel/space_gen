@@ -330,23 +330,38 @@ SchemaEnum? _handleEnum({
     if (podType == PodType.boolean) {
       _ignored<String>(json, 'type');
       return null;
-    } else {
-      _unimplemented(json, 'enumValues for type=$type');
     }
+    _unimplemented(json, 'enumValues for type=$type');
   }
-  if (!enumValues.every((e) => e is String)) {
+  // TODO(eseidel): null should only be valid when enum is nullable.
+  final nonNullValues = enumValues.where((e) => e != null).toList();
+  if (nonNullValues.any((e) => e is! String)) {
     _error(json, 'enumValues must be a list of strings: $enumValues');
   }
-  // This also implicitly validates that the type of the default value
-  // matches the type of the enum values.
-  if (defaultValue != null && !enumValues.contains(defaultValue)) {
-    _error(json, 'defaultValue must be one of the enum values: $defaultValue');
+  final typedEnumValues = nonNullValues.cast<String>();
+  String? typedDefaultValue;
+  if (defaultValue != null) {
+    if (!nonNullValues.contains(defaultValue)) {
+      // Try converting to a string and looking again.
+      // In GitHub spec, they have a defaultValue of true (boolean) despite the
+      // enum being strings (with 'true' as a valid value), so we convert the
+      // default value to the enum type before checking if it's valid.
+      typedDefaultValue = defaultValue.toString();
+      if (!nonNullValues.contains(typedDefaultValue)) {
+        _error(
+          json,
+          'defaultValue must be one of the enum values: $defaultValue',
+        );
+      }
+    } else {
+      typedDefaultValue = defaultValue as String?;
+    }
   }
   return SchemaEnum(
     pointer: json.pointer,
     snakeName: json.snakeName,
-    defaultValue: defaultValue as String?,
-    enumValues: enumValues.cast<String>(),
+    defaultValue: typedDefaultValue,
+    enumValues: typedEnumValues,
   );
 }
 
