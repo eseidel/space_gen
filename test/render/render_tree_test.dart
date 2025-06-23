@@ -1,8 +1,19 @@
+import 'package:space_gen/src/quirks.dart';
 import 'package:space_gen/src/render/render_tree.dart';
 import 'package:space_gen/src/types.dart';
 import 'package:test/test.dart';
 
 void main() {
+  group('variableSafeName', () {
+    test('basic', () {
+      const quirks = Quirks();
+      String makeSafe(String jsonName) => variableSafeName(quirks, jsonName);
+      expect(makeSafe('a-b'), 'aB');
+      expect(makeSafe('a b'), 'aB');
+      expect(makeSafe('a b'), 'aB');
+      expect(makeSafe('aB'), 'aB');
+    });
+  });
   group('equalsIgnoringName', () {
     test('RenderObject', () {
       const a = RenderObject(

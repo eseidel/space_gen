@@ -47,7 +47,7 @@ String variableSafeName(Quirks quirks, String jsonName) {
   // This should probably only apply to enums?
   if (!quirks.screamingCapsEnums) {
     // Dart style uses camelCase.
-    escapedName = camelFromScreamingCaps(escapedName);
+    escapedName = toLowerCamelCase(escapedName);
   }
   // first char must be a letter.
   if (escapedName.isEmpty) {

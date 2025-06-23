@@ -33,8 +33,20 @@ String toSnakeCase(String unknown) {
 /// Convert kebab-case to snake_case.
 String snakeFromKebab(String kebab) => kebab.replaceAll('-', '_');
 
-/// Converts from SCREAMING_CAPS to camelCase.
-String camelFromScreamingCaps(String caps) {
+/// Converts from SCREAMING_CAPS, snake_case or kebab-case to camelCase.
+String toLowerCamelCase(String caps) {
+  // Our SCREAMING_CAPS logic is not safe for camelCase input,
+  // so we check for it first.
+  final isScreamingCaps = RegExp(r'^[A-Z0-9_]+$').hasMatch(caps);
+  if (!isScreamingCaps) {
+    final snake = snakeFromKebab(caps);
+    // Still convert snake_case to camelCase.
+    if (snake.contains('_')) {
+      return lowercaseCamelFromSnake(snake);
+    }
+    return caps;
+  }
+  // SCREAMING_CAPS -> lowerCamelCase
   final camel = caps.splitMapJoin(
     RegExp('_'),
     onMatch: (m) => '',

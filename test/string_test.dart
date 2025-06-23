@@ -17,9 +17,11 @@ void main() {
     expect(camelFromSnake('Camel_from_snake'), 'CamelFromSnake');
   });
 
-  test('camelFromScreamingCaps', () {
-    expect(camelFromScreamingCaps('CAMEL_FROM_CAPS'), 'camelFromCaps');
-    expect(camelFromScreamingCaps('camel_from_caps'), 'camelFromCaps');
+  test('toLowerCamelCase', () {
+    expect(toLowerCamelCase('CAMEL_FROM_CAPS'), 'camelFromCaps');
+    expect(toLowerCamelCase('camel_from_caps'), 'camelFromCaps');
+    expect(toLowerCamelCase('camelFromCaps'), 'camelFromCaps');
+    expect(toLowerCamelCase('camel-from-caps'), 'camelFromCaps');
   });
 
   test('isReservedWord', () {
