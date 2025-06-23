@@ -795,6 +795,7 @@ class RenderPod extends RenderSchema {
       jsonIsNullable: jsonIsNullable,
       dartIsNullable: dartIsNullable,
     );
+    final access = jsonIsNullable ? '?' : '';
     switch (type) {
       case PodType.dateTime:
         if (jsonIsNullable) {
@@ -805,9 +806,9 @@ class RenderPod extends RenderSchema {
       case PodType.string:
         return '$jsonValue as $jsonType $orDefault';
       case PodType.integer:
-        return '($jsonValue as $jsonType).toInt() $orDefault';
+        return '($jsonValue as $jsonType)$access.toInt() $orDefault';
       case PodType.number:
-        return '($jsonValue as $jsonType).toDouble() $orDefault';
+        return '($jsonValue as $jsonType)$access.toDouble() $orDefault';
       case PodType.boolean:
         return '($jsonValue as $jsonType) $orDefault';
     }
@@ -922,7 +923,8 @@ class RenderNumberNewType extends RenderNewType {
       jsonIsNullable: jsonIsNullable,
       dartIsNullable: dartIsNullable,
     );
-    return '$className(($jsonValue as $jsonType).toDouble() $orDefault)';
+    final access = jsonIsNullable ? '?' : '';
+    return '$className(($jsonValue as $jsonType)$access.toDouble() $orDefault)';
   }
 }
 

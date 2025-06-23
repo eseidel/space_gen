@@ -68,14 +68,14 @@ class {{ typeName }} {
           {{/hasAdditionalProperties}}
         {{/hasOneProperty}}
         {{^hasOneProperty}}
-        Object.hash(
+        Object.hashAll([
           {{#properties}}
           {{ dartName }},
           {{/properties}}
           {{#hasAdditionalProperties}}
           {{additionalPropertiesName}},
           {{/hasAdditionalProperties}}
-        );
+        ]);
         {{/hasOneProperty}}
 
     @override
