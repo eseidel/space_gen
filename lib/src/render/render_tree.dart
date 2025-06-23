@@ -1416,9 +1416,13 @@ class RenderOneOf extends RenderNewType {
     return super.equalsIgnoringName(other);
   }
 
-  // We can potentially do better than dynamic by comparing the schemas.
   @override
-  String jsonStorageType({required bool isNullable}) => 'dynamic';
+  String jsonStorageType({required bool isNullable}) {
+    if (schemas.any((s) => s is RenderPod)) {
+      return 'dynamic';
+    }
+    return 'Map<String, dynamic>';
+  }
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
