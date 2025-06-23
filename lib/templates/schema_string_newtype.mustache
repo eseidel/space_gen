@@ -1,5 +1,14 @@
 extension type {{{ typeName }}}(String value) {
     factory {{ typeName }}.fromJson(String json) => {{ typeName }}(json);
 
+    /// Convenience to create a nullable type from a nullable json object.
+    /// Useful when parsing optional fields.
+    static {{ nullableTypeName }} maybeFromJson(String? json) {
+        if (json == null) {
+            return null;
+        }
+        return {{ typeName }}.fromJson(json);
+    }
+
     String toJson() => value;
 }

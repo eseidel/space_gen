@@ -866,6 +866,7 @@ class RenderStringNewType extends RenderNewType {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
     'typeName': className,
+    'nullableTypeName': nullableTypeName(context),
   };
 
   @override
@@ -886,7 +887,8 @@ class RenderStringNewType extends RenderNewType {
       jsonIsNullable: jsonIsNullable,
       dartIsNullable: dartIsNullable,
     );
-    return '$className(($jsonValue as $jsonType) $orDefault)';
+    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
+    return '$className.$jsonMethod($jsonValue as $jsonType) $orDefault';
   }
 }
 
@@ -903,6 +905,7 @@ class RenderNumberNewType extends RenderNewType {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
     'typeName': className,
+    'nullableTypeName': nullableTypeName(context),
   };
 
   @override
@@ -923,8 +926,8 @@ class RenderNumberNewType extends RenderNewType {
       jsonIsNullable: jsonIsNullable,
       dartIsNullable: dartIsNullable,
     );
-    final access = jsonIsNullable ? '?' : '';
-    return '$className(($jsonValue as $jsonType)$access.toDouble() $orDefault)';
+    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
+    return '$className.$jsonMethod($jsonValue as $jsonType) $orDefault';
   }
 }
 
