@@ -19,32 +19,18 @@ class SchemaRenderer {
 
   /// Renders a schema to a string, does not render the imports.
   String renderSchema(RenderSchema schema) {
-    final Map<String, dynamic> schemaContext;
-    final String template;
-    switch (schema) {
-      case RenderEnum():
-        schemaContext = schema.toTemplateContext(this);
-        template = 'schema_enum';
-      case RenderObject():
-        schemaContext = schema.toTemplateContext(this);
-        template = 'schema_object';
-      case RenderStringNewType():
-        schemaContext = schema.toTemplateContext(this);
-        template = 'schema_string_newtype';
-      case RenderNumberNewType():
-        schemaContext = schema.toTemplateContext(this);
-        template = 'schema_number_newtype';
-      case RenderOneOf():
-        schemaContext = schema.toTemplateContext(this);
-        template = 'schema_one_of';
-      case RenderEmptyObject():
-        schemaContext = schema.toTemplateContext(this);
-        template = 'schema_empty_object';
-      default:
-        throw StateError('No code to render $schema');
-    }
-
-    return templates.load(template).renderString(schemaContext);
+    final template = switch (schema) {
+      RenderEnum() => 'schema_enum',
+      RenderObject() => 'schema_object',
+      RenderStringNewType() => 'schema_string_newtype',
+      RenderNumberNewType() => 'schema_number_newtype',
+      RenderOneOf() => 'schema_one_of',
+      RenderEmptyObject() => 'schema_empty_object',
+      _ => throw StateError('No code to render $schema'),
+    };
+    return templates
+        .load(template)
+        .renderString(schema.toTemplateContext(this));
   }
 
   String renderEndpoints({
