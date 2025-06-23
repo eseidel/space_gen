@@ -1,6 +1,6 @@
 enum {{ typeName }} {
     {{#enumValues}}
-    {{ enumValueName }}._('{{ enumValue }}'),
+    {{ enumValueName }}._({{{ enumValue }}}),
     {{/enumValues}}
     ;
 

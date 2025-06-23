@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:space_gen/src/quirks.dart';
 // Any code that depends on SchemaRenderer probably should be moved out
 // of this file and into the schema_renderer.dart file.
 import 'package:space_gen/src/render/schema_renderer.dart';
@@ -27,239 +28,275 @@ String _sharedPrefix(List<String> values) {
   return prefix;
 }
 
-RenderSchema? maybeRenderSchema(ResolvedSchema? schema) {
-  if (schema == null) {
-    return null;
+/// Convert an enum value to a variable name.
+String variableSafeName(Quirks quirks, String jsonName) {
+  // Make +1 in the github spec render as plus_1.
+  var escapedName = jsonName
+      .replaceAll('+', 'plus_')
+      // ' is most commonly used as an apostrophe so just stripping it.
+      .replaceAll("'", '')
+      // Since jsonName is a raw string, it could have non-legal characters.
+      // We need to escape them.
+      // TODO(eseidel): Tweak this to make nicer names.
+      .replaceAll(RegExp('[^a-zA-Z0-9_]'), '_');
+  // first char must be a letter.
+  if (escapedName.isEmpty) {
+    return 'a';
   }
-  return toRenderSchema(schema);
+  final isDigit = RegExp('[0-9]').hasMatch(escapedName[0]);
+  if (isDigit) {
+    escapedName = 'n$escapedName';
+  }
+  // This should probably only apply to enums?
+  if (!quirks.screamingCapsEnums) {
+    // Dart style uses camelCase.
+    escapedName = camelFromScreamingCaps(escapedName);
+  }
+  // camelFromScreamingCaps removes '_', so do the avoid last.
+  return avoidReservedWord(escapedName);
 }
 
-bool isTopLevelComponent(JsonPointer pointer) {
-  if (pointer.parts.length != 3) {
-    return false;
-  }
-  final first = pointer.parts[0];
-  final second = pointer.parts[1];
-  return first == 'components' && second == 'schemas';
-}
+class SpecResolver {
+  const SpecResolver(this.quirks);
 
-RenderSchema toRenderSchema(ResolvedSchema schema) {
-  switch (schema) {
-    case ResolvedEnum():
-      return RenderEnum(
-        snakeName: schema.snakeName,
-        values: schema.values,
-        pointer: schema.pointer,
-        defaultValue: schema.defaultValue,
-      );
-    case ResolvedObject():
-      return RenderObject(
-        snakeName: schema.snakeName,
-        properties: schema.properties.map(
-          (name, value) => MapEntry(name, toRenderSchema(value)),
-        ),
-        pointer: schema.pointer,
-        additionalProperties: maybeRenderSchema(schema.additionalProperties),
-        required: schema.required,
-      );
-    case ResolvedPod():
-      // Unclear if this is an OpenApi generator quirk or desired behavior,
-      // but openapi creates a new file for each top level component, even
-      // if it's a simple type.  Matching this behavior for now.
-      final useNewType = isTopLevelComponent(schema.pointer);
-      if (useNewType && schema.type == PodType.string) {
-        return RenderStringNewType(
+  final Quirks quirks;
+
+  RenderSchema? maybeRenderSchema(ResolvedSchema? schema) {
+    if (schema == null) {
+      return null;
+    }
+    return toRenderSchema(schema);
+  }
+
+  bool isTopLevelComponent(JsonPointer pointer) {
+    if (pointer.parts.length != 3) {
+      return false;
+    }
+    final first = pointer.parts[0];
+    final second = pointer.parts[1];
+    return first == 'components' && second == 'schemas';
+  }
+
+  RenderSchema toRenderSchema(ResolvedSchema schema) {
+    switch (schema) {
+      case ResolvedEnum():
+        return RenderEnum(
           snakeName: schema.snakeName,
+          values: schema.values,
+          names: RenderEnum.variableNamesFor(quirks, schema.values),
           pointer: schema.pointer,
-          defaultValue: schema.defaultValue as String?,
+          defaultValue: schema.defaultValue,
         );
-      }
-      if (useNewType && schema.type == PodType.number) {
-        return RenderNumberNewType(
+      case ResolvedObject():
+        return RenderObject(
           snakeName: schema.snakeName,
+          properties: schema.properties.map(
+            (name, value) => MapEntry(name, toRenderSchema(value)),
+          ),
           pointer: schema.pointer,
-          defaultValue: schema.defaultValue as double?,
+          additionalProperties: maybeRenderSchema(schema.additionalProperties),
+          required: schema.required,
         );
-      }
-      return RenderPod(
-        snakeName: schema.snakeName,
-        type: schema.type,
-        pointer: schema.pointer,
-        defaultValue: schema.defaultValue,
-      );
-    case ResolvedArray():
-      return RenderArray(
-        snakeName: schema.snakeName,
-        items:
-            maybeRenderSchema(schema.items) ??
-            RenderUnknown(snakeName: schema.snakeName, pointer: schema.pointer),
-        pointer: schema.pointer,
-        defaultValue: schema.defaultValue,
-      );
-    case ResolvedVoid():
-      return RenderVoid(snakeName: schema.snakeName, pointer: schema.pointer);
-    case ResolvedUnknown():
-      return RenderUnknown(
-        snakeName: schema.snakeName,
-        pointer: schema.pointer,
-      );
-    case ResolvedBinary():
-      return RenderBinary(snakeName: schema.snakeName, pointer: schema.pointer);
-    case ResolvedOneOf():
-      return RenderOneOf(
-        snakeName: schema.snakeName,
-        schemas: schema.schemas.map(toRenderSchema).toList(),
-        pointer: schema.pointer,
-      );
-    case ResolvedAllOf():
-      // Generate a synthetic object type for allOf.
-      final properties = <String, RenderSchema>{};
-      for (final schema in schema.schemas) {
-        final renderSchema = toRenderSchema(schema);
-        if (renderSchema is RenderObject) {
-          properties.addAll(renderSchema.properties);
+      case ResolvedPod():
+        // Unclear if this is an OpenApi generator quirk or desired behavior,
+        // but openapi creates a new file for each top level component, even
+        // if it's a simple type.  Matching this behavior for now.
+        final useNewType = isTopLevelComponent(schema.pointer);
+        if (useNewType && schema.type == PodType.string) {
+          return RenderStringNewType(
+            snakeName: schema.snakeName,
+            pointer: schema.pointer,
+            defaultValue: schema.defaultValue as String?,
+          );
         }
-      }
-      return RenderObject(
-        snakeName: schema.snakeName,
-        properties: properties,
-        pointer: schema.pointer,
-      );
-    case ResolvedAnyOf():
-      // The resolver already makes anyOf with 1 schema to just be that schema.
-      // For multiple schemas, we just generate a oneOf, which is wrong.
-      // anyOf means that at least one of the schemas must be valid.
-      // Which presumably translates into a single schema with all properties
-      // nullable?  Unclear.
-      return RenderOneOf(
-        snakeName: schema.snakeName,
-        schemas: schema.schemas.map(toRenderSchema).toList(),
-        pointer: schema.pointer,
-      );
-    case ResolvedMap():
-      return RenderMap(
-        snakeName: schema.snakeName,
-        valueSchema: toRenderSchema(schema.valueSchema),
-        pointer: schema.pointer,
-      );
-    case ResolvedEmptyObject():
-      return RenderEmptyObject(
-        snakeName: schema.snakeName,
-        pointer: schema.pointer,
-      );
-    default:
-      _unimplemented('Unknown schema: $schema', schema.pointer);
-  }
-}
-
-RenderParameter toRenderParameter(ResolvedParameter parameter) {
-  return RenderParameter(
-    name: parameter.name,
-    sendIn: parameter.sendIn,
-    required: parameter.required,
-    type: toRenderSchema(parameter.schema),
-  );
-}
-
-RenderResponse toRenderResponse(ResolvedResponse response) {
-  return RenderResponse(
-    statusCode: response.statusCode,
-    description: response.description,
-    content: toRenderSchema(response.content),
-  );
-}
-
-RenderRequestBody? toRenderRequestBody(ResolvedRequestBody? requestBody) {
-  if (requestBody == null) {
-    return null;
-  }
-  switch (requestBody.mimeType) {
-    case MimeType.applicationJson:
-      return RenderRequestBodyJson(
-        schema: toRenderSchema(requestBody.schema),
-        description: requestBody.description,
-        required: requestBody.required,
-      );
-    case MimeType.applicationOctetStream:
-      return RenderRequestBodyOctetStream(
-        schema: toRenderSchema(requestBody.schema),
-        description: requestBody.description,
-        required: requestBody.required,
-      );
-    case MimeType.textPlain:
-      return RenderRequestBodyTextPlain(
-        schema: toRenderSchema(requestBody.schema),
-        description: requestBody.description,
-        required: requestBody.required,
-      );
-  }
-}
-
-RenderSchema _determineReturnType(ResolvedOperation operation) {
-  final responses = operation.responses;
-  // Figure out how many different successful responses there are.
-  final successful = responses.where(
-    (e) => e.statusCode >= 200 && e.statusCode < 300,
-  );
-  if (successful.isEmpty) {
-    return RenderVoid(
-      snakeName: '${operation.snakeName}_response',
-      pointer: operation.pointer,
-    );
-  }
-  if (successful.length == 1) {
-    return toRenderSchema(successful.first.content);
-  }
-  final renderSchemas = successful
-      .expand((e) => [toRenderSchema(e.content)])
-      .toList();
-  // We don't implement hashCode/equals but rather equalsIgnoringName
-  final distinctSchemas = <RenderSchema>{};
-  for (final schema in renderSchemas) {
-    if (!distinctSchemas.any((e) => e.equalsIgnoringName(schema))) {
-      distinctSchemas.add(schema);
+        if (useNewType && schema.type == PodType.number) {
+          return RenderNumberNewType(
+            snakeName: schema.snakeName,
+            pointer: schema.pointer,
+            defaultValue: schema.defaultValue as double?,
+          );
+        }
+        return RenderPod(
+          snakeName: schema.snakeName,
+          type: schema.type,
+          pointer: schema.pointer,
+          defaultValue: schema.defaultValue,
+        );
+      case ResolvedArray():
+        return RenderArray(
+          snakeName: schema.snakeName,
+          items: toRenderSchema(schema.items),
+          pointer: schema.pointer,
+          defaultValue: schema.defaultValue,
+        );
+      case ResolvedVoid():
+        return RenderVoid(snakeName: schema.snakeName, pointer: schema.pointer);
+      case ResolvedUnknown():
+        return RenderUnknown(
+          snakeName: schema.snakeName,
+          pointer: schema.pointer,
+        );
+      case ResolvedBinary():
+        return RenderBinary(
+          snakeName: schema.snakeName,
+          pointer: schema.pointer,
+        );
+      case ResolvedOneOf():
+        return RenderOneOf(
+          snakeName: schema.snakeName,
+          schemas: schema.schemas.map(toRenderSchema).toList(),
+          pointer: schema.pointer,
+        );
+      case ResolvedAllOf():
+        // Generate a synthetic object type for allOf.
+        final properties = <String, RenderSchema>{};
+        for (final schema in schema.schemas) {
+          final renderSchema = toRenderSchema(schema);
+          if (renderSchema is RenderObject) {
+            properties.addAll(renderSchema.properties);
+          }
+        }
+        return RenderObject(
+          snakeName: schema.snakeName,
+          properties: properties,
+          pointer: schema.pointer,
+        );
+      case ResolvedAnyOf():
+        // The resolver already makes anyOf with 1 schema to just be that schema.
+        // For multiple schemas, we just generate a oneOf, which is wrong.
+        // anyOf means that at least one of the schemas must be valid.
+        // Which presumably translates into a single schema with all properties
+        // nullable?  Unclear.
+        return RenderOneOf(
+          snakeName: schema.snakeName,
+          schemas: schema.schemas.map(toRenderSchema).toList(),
+          pointer: schema.pointer,
+        );
+      case ResolvedMap():
+        return RenderMap(
+          snakeName: schema.snakeName,
+          valueSchema: toRenderSchema(schema.valueSchema),
+          pointer: schema.pointer,
+        );
+      case ResolvedEmptyObject():
+        return RenderEmptyObject(
+          snakeName: schema.snakeName,
+          pointer: schema.pointer,
+        );
+      default:
+        _unimplemented('Unknown schema: $schema', schema.pointer);
     }
   }
-  // If there are multiple and they are different, generate a OneOf type.
-  if (distinctSchemas.length > 1) {
-    return RenderOneOf(
-      snakeName: '${operation.snakeName}_response',
-      schemas: distinctSchemas.toList(),
-      pointer: operation.pointer,
+
+  RenderParameter toRenderParameter(ResolvedParameter parameter) {
+    return RenderParameter(
+      name: parameter.name,
+      sendIn: parameter.sendIn,
+      required: parameter.required,
+      type: toRenderSchema(parameter.schema),
     );
   }
-  return distinctSchemas.first;
-}
 
-RenderOperation toRenderOperation(ResolvedOperation operation) {
-  final returnType = _determineReturnType(operation);
-  return RenderOperation(
-    pointer: operation.pointer,
-    snakeName: operation.snakeName,
-    method: operation.method,
-    path: operation.path,
-    summary: operation.summary,
-    description: operation.description,
-    tags: operation.tags,
-    parameters: operation.parameters.map(toRenderParameter).toList(),
-    responses: operation.responses.map(toRenderResponse).toList(),
-    requestBody: toRenderRequestBody(operation.requestBody),
-    returnType: returnType,
-  );
-}
+  RenderResponse toRenderResponse(ResolvedResponse response) {
+    return RenderResponse(
+      statusCode: response.statusCode,
+      description: response.description,
+      content: toRenderSchema(response.content),
+    );
+  }
 
-RenderPath toRenderPath(ResolvedPath pathItem) {
-  return RenderPath(
-    path: pathItem.path,
-    operations: pathItem.operations.map(toRenderOperation).toList(),
-  );
-}
+  RenderRequestBody? toRenderRequestBody(ResolvedRequestBody? requestBody) {
+    if (requestBody == null) {
+      return null;
+    }
+    switch (requestBody.mimeType) {
+      case MimeType.applicationJson:
+        return RenderRequestBodyJson(
+          schema: toRenderSchema(requestBody.schema),
+          description: requestBody.description,
+          required: requestBody.required,
+        );
+      case MimeType.applicationOctetStream:
+        return RenderRequestBodyOctetStream(
+          schema: toRenderSchema(requestBody.schema),
+          description: requestBody.description,
+          required: requestBody.required,
+        );
+      case MimeType.textPlain:
+        return RenderRequestBodyTextPlain(
+          schema: toRenderSchema(requestBody.schema),
+          description: requestBody.description,
+          required: requestBody.required,
+        );
+    }
+  }
 
-RenderSpec toRenderSpec(ResolvedSpec spec) {
-  return RenderSpec(
-    serverUrl: spec.serverUrl,
-    paths: spec.paths.map(toRenderPath).toList(),
-  );
+  RenderSchema _determineReturnType(ResolvedOperation operation) {
+    final responses = operation.responses;
+    // Figure out how many different successful responses there are.
+    final successful = responses.where(
+      (e) => e.statusCode >= 200 && e.statusCode < 300,
+    );
+    if (successful.isEmpty) {
+      return RenderVoid(
+        snakeName: '${operation.snakeName}_response',
+        pointer: operation.pointer,
+      );
+    }
+    if (successful.length == 1) {
+      return toRenderSchema(successful.first.content);
+    }
+    final renderSchemas = successful
+        .expand((e) => [toRenderSchema(e.content)])
+        .toList();
+    // We don't implement hashCode/equals but rather equalsIgnoringName
+    final distinctSchemas = <RenderSchema>{};
+    for (final schema in renderSchemas) {
+      if (!distinctSchemas.any((e) => e.equalsIgnoringName(schema))) {
+        distinctSchemas.add(schema);
+      }
+    }
+    // If there are multiple and they are different, generate a OneOf type.
+    if (distinctSchemas.length > 1) {
+      return RenderOneOf(
+        snakeName: '${operation.snakeName}_response',
+        schemas: distinctSchemas.toList(),
+        pointer: operation.pointer,
+      );
+    }
+    return distinctSchemas.first;
+  }
+
+  RenderOperation toRenderOperation(ResolvedOperation operation) {
+    final returnType = _determineReturnType(operation);
+    return RenderOperation(
+      pointer: operation.pointer,
+      snakeName: operation.snakeName,
+      method: operation.method,
+      path: operation.path,
+      summary: operation.summary,
+      description: operation.description,
+      tags: operation.tags,
+      parameters: operation.parameters.map(toRenderParameter).toList(),
+      responses: operation.responses.map(toRenderResponse).toList(),
+      requestBody: toRenderRequestBody(operation.requestBody),
+      returnType: returnType,
+    );
+  }
+
+  RenderPath toRenderPath(ResolvedPath pathItem) {
+    return RenderPath(
+      path: pathItem.path,
+      operations: pathItem.operations.map(toRenderOperation).toList(),
+    );
+  }
+
+  RenderSpec toRenderSpec(ResolvedSpec spec) {
+    return RenderSpec(
+      serverUrl: spec.serverUrl,
+      paths: spec.paths.map(toRenderPath).toList(),
+    );
+  }
 }
 
 // Convert a resolved spec to a spec that can be rendered.
@@ -930,9 +967,7 @@ class RenderObject extends RenderNewType {
     required RenderSchema property,
     required SchemaRenderer context,
   }) {
-    // Properties only need to avoid reserved words for openapi compat.
-    // TODO(eseidel): Remove this once we've migrated to the new generator.
-    final dartName = avoidReservedWord(jsonName);
+    final dartName = variableSafeName(context.quirks, jsonName);
     final hasDefaultValue = property.hasDefaultValue(context);
     final jsonIsNullable = !required.contains(jsonName);
     final dartIsNullable = propertyDartIsNullable(
@@ -946,7 +981,7 @@ class RenderObject extends RenderNewType {
     final useRequired = required.contains(jsonName) && !hasDefaultValue;
     return {
       'dartName': dartName,
-      'jsonName': jsonName,
+      'jsonName': quoteString(jsonName),
       'useRequired': useRequired,
       'dartIsNullable': dartIsNullable,
       'hasDefaultValue': hasDefaultValue,
@@ -1246,24 +1281,34 @@ class RenderMap extends RenderSchema {
 }
 
 class RenderEnum extends RenderNewType {
-  const RenderEnum({
+  RenderEnum({
     required super.snakeName,
     required this.values,
+    required this.names,
     required super.pointer,
     this.defaultValue,
-  });
+  }) : assert(
+         names.length == values.length,
+         'names and values must have the same length',
+       );
+
+  static List<String> variableNamesFor(Quirks quirks, List<String> values) {
+    final sharedPrefix = _sharedPrefix(values);
+    String toShortVariableName(String value) {
+      var dartName = variableSafeName(quirks, value);
+      // OpenAPI also removes shared prefixes from enum values.
+      dartName = dartName.replaceAll(sharedPrefix, '');
+      // Avoid reserved words again in case removing the prefix caused
+      // a reserved word collision.
+      dartName = avoidReservedWord(dartName);
+      return dartName;
+    }
+
+    return values.map(toShortVariableName).toList();
+  }
 
   @override
   final dynamic defaultValue;
-
-  /// The name of an enum value.
-  String enumValueName(SchemaRenderer context, String jsonName) {
-    if (context.quirks.screamingCapsEnums) {
-      return jsonName;
-    }
-    // Dart style uses camelCase.
-    return camelFromScreamingCaps(snakeFromKebab(jsonName));
-  }
 
   @override
   String jsonStorageType({required bool isNullable}) {
@@ -1273,14 +1318,11 @@ class RenderEnum extends RenderNewType {
   /// Template context for an enum schema.
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final sharedPrefix = _sharedPrefix(values);
     Map<String, dynamic> enumValueToTemplateContext(String value) {
-      var dartName = enumValueName(context, value);
-      // OpenAPI also removes shared prefixes from enum values.
-      dartName = dartName.replaceAll(sharedPrefix, '');
-      // And avoids reserved words.
-      dartName = avoidReservedWord(dartName);
-      return {'enumValueName': dartName, 'enumValue': value};
+      return {
+        'enumValueName': variableNameFor(value),
+        'enumValue': quoteString(value),
+      };
     }
 
     return {
@@ -1296,7 +1338,7 @@ class RenderEnum extends RenderNewType {
     // If the type of this schema is an object we need to convert the default
     // value to that object type.
     if (defaultValue is String) {
-      return '$className.${enumValueName(context, defaultValue as String)}';
+      return '$className.${variableNameFor(defaultValue as String)}';
     }
     return defaultValue?.toString();
   }
@@ -1321,12 +1363,23 @@ class RenderEnum extends RenderNewType {
   /// The values of the resolved schema.
   final List<String> values;
 
+  /// The names of the resolved schema.
+  final List<String> names;
+
+  String variableNameFor(String value) => names[values.indexOf(value)];
+
   @override
   bool equalsIgnoringName(RenderSchema other) {
     if (other is! RenderEnum) {
       return false;
     }
-    return values == other.values && super.equalsIgnoringName(other);
+    if (!const ListEquality<String>().equals(values, other.values)) {
+      return false;
+    }
+    if (!const ListEquality<String>().equals(names, other.names)) {
+      return false;
+    }
+    return super.equalsIgnoringName(other);
   }
 }
 

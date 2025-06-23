@@ -776,7 +776,7 @@ void main() {
         '    final ApiClient client;\n'
         '\n'
         '    Future<void> users(\n'
-        '        { String? foo = "bar", }\n'
+        "        { String? foo = 'bar', }\n"
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
@@ -796,6 +796,144 @@ void main() {
         '        }\n'
         '\n'
         "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+        '    }\n'
+        '}\n'
+        '',
+      );
+    });
+    test('enum with invalid characters', () {
+      final json = {
+        'type': 'string',
+        'enum': ['+1', "don't"],
+      };
+      final result = renderSchema(json);
+      expect(
+        result,
+        'enum Test {\n'
+        "    plus1._('+1'),\n"
+        "    dont._('don\\'t'),\n"
+        '    ;\n'
+        '\n'
+        '    const Test._(this.value);\n'
+        '\n'
+        '    factory Test.fromJson(String json) {\n'
+        '        return Test.values.firstWhere(\n'
+        '            (value) => value.value == json,\n'
+        '            orElse: () =>\n'
+        "                throw FormatException('Unknown Test value: \$json')\n"
+        '        );\n'
+        '    }\n'
+        '\n'
+        '    /// Convenience to create a nullable type from a nullable json object.\n'
+        '    /// Useful when parsing optional fields.\n'
+        '    static Test? maybeFromJson(String? json) {\n'
+        '        if (json == null) {\n'
+        '            return null;\n'
+        '        }\n'
+        '        return Test.fromJson(json);\n'
+        '    }\n'
+        '\n'
+        '    final String value;\n'
+        '\n'
+        '    String toJson() => value;\n'
+        '\n'
+        '    @override\n'
+        '    String toString() => value;\n'
+        '}\n'
+        '',
+      );
+    });
+
+    test('properties with invalid names', () {
+      final json = {
+        'type': 'object',
+        'properties': {
+          'foo-bar': {'type': 'string'},
+          '_not_private': {'type': 'string'},
+          'bar baz': {'type': 'string'},
+          '123': {'type': 'string'},
+          '+1': {'type': 'string'},
+          "don't": {'type': 'string'},
+          'default': {'type': 'string'},
+        },
+      };
+      final result = renderSchema(json);
+      expect(
+        result,
+        '@immutable\n'
+        'class Test {\n'
+        '    Test(\n'
+        '        {  this.fooBar, this.notPrivate, this.barBaz, this.n123, this.plus1, this.dont, this.default_,\n'
+        '         }\n'
+        '    );\n'
+        '\n'
+        '    factory Test.fromJson(Map<String, dynamic>\n'
+        '        json) {\n'
+        '        return Test(\n'
+        "            fooBar: json['foo-bar'] as String? ,\n"
+        "            notPrivate: json['_not_private'] as String? ,\n"
+        "            barBaz: json['bar baz'] as String? ,\n"
+        "            n123: json['123'] as String? ,\n"
+        "            plus1: json['+1'] as String? ,\n"
+        "            dont: json['don't'] as String? ,\n"
+        "            default_: json['default'] as String? ,\n"
+        '        );\n'
+        '    }\n'
+        '\n'
+        '    /// Convenience to create a nullable type from a nullable json object.\n'
+        '    /// Useful when parsing optional fields.\n'
+        '    static Test? maybeFromJson(Map<String, dynamic>? json) {\n'
+        '        if (json == null) {\n'
+        '            return null;\n'
+        '        }\n'
+        '        return Test.fromJson(json);\n'
+        '    }\n'
+        '\n'
+        '    final  String? fooBar;\n'
+        '    final  String? notPrivate;\n'
+        '    final  String? barBaz;\n'
+        '    final  String? n123;\n'
+        '    final  String? plus1;\n'
+        '    final  String? dont;\n'
+        '    final  String? default_;\n'
+        '\n'
+        '\n'
+        '    Map<String, dynamic> toJson() {\n'
+        '        return {\n'
+        "            'foo-bar': fooBar,\n"
+        "            '_not_private': notPrivate,\n"
+        "            'bar baz': barBaz,\n"
+        "            '123': n123,\n"
+        "            '+1': plus1,\n"
+        "            'don\\'t': dont,\n"
+        "            'default': default_,\n"
+        '        };\n'
+        '    }\n'
+        '\n'
+        '    @override\n'
+        '    int get hashCode =>\n'
+        '        Object.hash(\n'
+        '          fooBar,\n'
+        '          notPrivate,\n'
+        '          barBaz,\n'
+        '          n123,\n'
+        '          plus1,\n'
+        '          dont,\n'
+        '          default_,\n'
+        '        );\n'
+        '\n'
+        '    @override\n'
+        '    bool operator ==(Object other) {\n'
+        '        if (identical(this, other)) return true;\n'
+        '        return other is Test\n'
+        '            && fooBar == other.fooBar\n'
+        '            && notPrivate == other.notPrivate\n'
+        '            && barBaz == other.barBaz\n'
+        '            && n123 == other.n123\n'
+        '            && plus1 == other.plus1\n'
+        '            && dont == other.dont\n'
+        '            && default_ == other.default_\n'
+        '        ;\n'
         '    }\n'
         '}\n'
         '',

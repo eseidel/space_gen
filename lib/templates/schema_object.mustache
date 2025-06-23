@@ -49,7 +49,7 @@ class {{ typeName }} {
     Map<String, dynamic> toJson() {
         return {
             {{#properties}}
-            '{{ jsonName }}': {{{ toJson }}},
+            {{{ jsonName }}}: {{{ toJson }}},
             {{/properties}}
             {{#hasAdditionalProperties}}
             ...{{additionalPropertiesName}}.map((key, value) => MapEntry(key, {{{ valueToJson }}})),

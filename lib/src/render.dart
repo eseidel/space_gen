@@ -66,8 +66,9 @@ Future<void> loadAndRenderSpec({
 
   // Resolve all references in the spec.
   final resolved = resolveSpec(spec);
+  final resolver = SpecResolver(quirks);
   // Convert the resolved spec into render objects.
-  final renderSpec = toRenderSpec(resolved);
+  final renderSpec = resolver.toRenderSpec(resolved);
   // SchemaRenderer is responsible for rendering schemas and APIs into strings.
   final schemaRenderer = SchemaRenderer(templates: templates, quirks: quirks);
 
@@ -102,9 +103,10 @@ String renderSchema(
     SchemaRef.schema(parsedSchema, const JsonPointer.empty()),
     ResolveContext.test(),
   );
+  final resolver = SpecResolver(quirks);
   final templates = TemplateProvider.defaultLocation();
 
-  final renderSchema = toRenderSchema(resolvedSchema);
+  final renderSchema = resolver.toRenderSchema(resolvedSchema);
   final schemaRenderer = SchemaRenderer(templates: templates, quirks: quirks);
   return schemaRenderer.renderSchema(renderSchema);
 }
@@ -126,7 +128,8 @@ String renderOperation({
     operation: parsedOperation,
     context: ResolveContext.test(),
   );
-  final renderOperation = toRenderOperation(resolvedOperation);
+  final resolver = SpecResolver(quirks);
+  final renderOperation = resolver.toRenderOperation(resolvedOperation);
   final templateProvider = TemplateProvider.defaultLocation();
   final schemaRenderer = SchemaRenderer(
     templates: templateProvider,

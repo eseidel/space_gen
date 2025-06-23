@@ -123,23 +123,26 @@ void main() {
     });
 
     test('RenderEnum', () {
-      const a = RenderEnum(
+      final a = RenderEnum(
         snakeName: 'a',
-        pointer: JsonPointer.empty(),
+        pointer: const JsonPointer.empty(),
+        names: ['a', 'b', 'c'],
         values: ['a', 'b', 'c'],
       );
       expect(a.equalsIgnoringName(a), isTrue);
 
-      const b = RenderEnum(
+      final b = RenderEnum(
         snakeName: 'b',
-        pointer: JsonPointer.empty(),
+        pointer: const JsonPointer.empty(),
+        names: ['a', 'b', 'c'],
         values: ['a', 'b', 'c'],
       );
       expect(a.equalsIgnoringName(b), isTrue);
 
-      const c = RenderEnum(
+      final c = RenderEnum(
         snakeName: 'a',
-        pointer: JsonPointer.empty(),
+        pointer: const JsonPointer.empty(),
+        names: ['a', 'b'],
         values: ['a', 'b'],
       );
       expect(a.equalsIgnoringName(c), isFalse);
