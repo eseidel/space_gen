@@ -316,12 +316,16 @@ class FileRenderer {
     _renderPublicApi(spec.apis, schemas);
     // Consider running pub upgrade here to ensure packages are up to date.
     // Might need to make offline configurable?
+    logger.info('Running pub get...');
     _runDart(['pub', 'get', '--offline']);
     // Run format first to add missing commas.
+    logger.info('Running dart format...');
     _runDart(['format', '.']);
     // Then run fix to clean up various other things.
+    logger.info('Running dart fix...');
     _runDart(['fix', '.', '--apply']);
     // Run format again to fix wrapping of lines.
+    logger.info('Running dart format...');
     _runDart(['format', '.']);
   }
 }
