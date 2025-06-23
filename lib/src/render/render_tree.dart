@@ -733,33 +733,43 @@ class RenderPod extends RenderSchema {
 
   @override
   String typeName(SchemaRenderer context) {
-    switch (type) {
-      case PodType.string:
-        return 'String';
-      case PodType.integer:
-        return 'int';
-      case PodType.number:
-        return 'double';
-      case PodType.boolean:
-        return 'bool';
-      case PodType.dateTime:
-        return 'DateTime';
-    }
+    return switch (type) {
+      PodType.string => 'String',
+      PodType.integer => 'int',
+      PodType.number => 'double',
+      PodType.boolean => 'bool',
+      PodType.dateTime => 'DateTime',
+      PodType.uri => 'Uri',
+    };
   }
 
   @override
   String jsonStorageType({required bool isNullable}) {
-    switch (type) {
-      case PodType.string:
-      case PodType.dateTime:
-        return isNullable ? 'String?' : 'String';
-      case PodType.integer:
-        return isNullable ? 'int?' : 'int';
-      case PodType.number:
-        return isNullable ? 'num?' : 'num';
-      case PodType.boolean:
-        return isNullable ? 'bool?' : 'bool';
+    return switch (type) {
+      PodType.string ||
+      PodType.dateTime ||
+      PodType.uri => isNullable ? 'String?' : 'String',
+      PodType.integer => isNullable ? 'int?' : 'int',
+      PodType.number => isNullable ? 'num?' : 'num',
+      PodType.boolean => isNullable ? 'bool?' : 'bool',
+    };
+  }
+
+  /// The default value of this schema as a string.
+  @override
+  String? defaultValueString(SchemaRenderer context) {
+    if (defaultValue == null) {
+      return null;
     }
+    return switch (type) {
+      PodType.dateTime =>
+        'DateTime.parse(${quoteString(defaultValue as String)})',
+      PodType.uri => 'Uri.parse(${quoteString(defaultValue as String)})',
+      PodType.string => quoteString(defaultValue as String),
+      PodType.integer ||
+      PodType.number ||
+      PodType.boolean => defaultValue.toString(),
+    };
   }
 
   @override
@@ -802,6 +812,12 @@ class RenderPod extends RenderSchema {
           return 'maybeParseDateTime($jsonValue as $jsonType) $orDefault';
         } else {
           return 'DateTime.parse($jsonValue as $jsonType)';
+        }
+      case PodType.uri:
+        if (jsonIsNullable) {
+          return 'maybeParseUri($jsonValue as $jsonType) $orDefault';
+        } else {
+          return 'Uri.parse($jsonValue as $jsonType)';
         }
       case PodType.string:
         return '$jsonValue as $jsonType $orDefault';

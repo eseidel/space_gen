@@ -7,6 +7,13 @@ DateTime? maybeParseDateTime(String? value) {
   return DateTime.parse(value);
 }
 
+Uri? maybeParseUri(String? value) {
+  if (value == null) {
+    return null;
+  }
+  return Uri.parse(value);
+}
+
 bool listsEqual<T>(List<T>? a, List<T>? b) {
   final deepEquals = const DeepCollectionEquality().equals;
   return deepEquals(a, b);

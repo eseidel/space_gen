@@ -238,6 +238,9 @@ PodType? determinePodType(MapContext json) {
     if (format == 'date-time') {
       return PodType.dateTime;
     }
+    if (format == 'uri') {
+      return PodType.uri;
+    }
     if (format != null) {
       _warn(json, 'Unknown string format: $format');
     }

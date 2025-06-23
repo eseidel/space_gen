@@ -27,6 +27,7 @@ void main() {
       expect(parse('string'), PodType.string);
       expect(parse('string', format: 'binary'), isNull);
       expect(parse('string', format: 'date-time'), PodType.dateTime);
+      expect(parse('string', format: 'uri'), PodType.uri);
       expect(parse('string', format: 'foo', expectLogs: true), PodType.string);
       verify(() => logger.warn('Unknown string format: foo in #/')).called(1);
       expect(parse('number'), PodType.number);
