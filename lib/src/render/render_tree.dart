@@ -30,15 +30,25 @@ String _sharedPrefix(List<String> values) {
 
 /// Convert an enum value to a variable name.
 String variableSafeName(Quirks quirks, String jsonName) {
-  // Make +1 in the github spec render as plus_1.
-  var escapedName = jsonName
+  var escapedName = jsonName.replaceAll(' ', '_');
+  escapedName = escapedName
+      // These are kinda hacky for the GitHub spec which has +1 and -1 as names.
       .replaceAll('+', 'plus_')
+      .replaceAll(RegExp('^-'), 'minus_')
+      // Replace any remaining skewers with underscores.
+      .replaceAll('-', '_')
       // ' is most commonly used as an apostrophe so just stripping it.
       .replaceAll("'", '')
       // Since jsonName is a raw string, it could have non-legal characters.
       // We need to escape them.
       // TODO(eseidel): Tweak this to make nicer names.
       .replaceAll(RegExp('[^a-zA-Z0-9_]'), '_');
+
+  // This should probably only apply to enums?
+  if (!quirks.screamingCapsEnums) {
+    // Dart style uses camelCase.
+    escapedName = camelFromScreamingCaps(escapedName);
+  }
   // first char must be a letter.
   if (escapedName.isEmpty) {
     return 'a';
@@ -46,11 +56,6 @@ String variableSafeName(Quirks quirks, String jsonName) {
   final isDigit = RegExp('[0-9]').hasMatch(escapedName[0]);
   if (isDigit) {
     escapedName = 'n$escapedName';
-  }
-  // This should probably only apply to enums?
-  if (!quirks.screamingCapsEnums) {
-    // Dart style uses camelCase.
-    escapedName = camelFromScreamingCaps(escapedName);
   }
   // camelFromScreamingCaps removes '_', so do the avoid last.
   return avoidReservedWord(escapedName);

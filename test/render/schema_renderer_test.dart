@@ -804,13 +804,14 @@ void main() {
     test('enum with invalid characters', () {
       final json = {
         'type': 'string',
-        'enum': ['+1', "don't"],
+        'enum': ['+1', '-1', "don't"],
       };
       final result = renderSchema(json);
       expect(
         result,
         'enum Test {\n'
         "    plus1._('+1'),\n"
+        "    minus1._('-1'),\n"
         "    dont._('don\\'t'),\n"
         '    ;\n'
         '\n'
@@ -853,6 +854,7 @@ void main() {
           'bar baz': {'type': 'string'},
           '123': {'type': 'string'},
           '+1': {'type': 'string'},
+          '-1': {'type': 'string'},
           "don't": {'type': 'string'},
           'default': {'type': 'string'},
         },
@@ -863,7 +865,7 @@ void main() {
         '@immutable\n'
         'class Test {\n'
         '    Test(\n'
-        '        {  this.fooBar, this.notPrivate, this.barBaz, this.n123, this.plus1, this.dont, this.default_,\n'
+        '        {  this.fooBar, this.notPrivate, this.barBaz, this.n123, this.plus1, this.minus1, this.dont, this.default_,\n'
         '         }\n'
         '    );\n'
         '\n'
@@ -875,6 +877,7 @@ void main() {
         "            barBaz: json['bar baz'] as String? ,\n"
         "            n123: json['123'] as String? ,\n"
         "            plus1: json['+1'] as String? ,\n"
+        "            minus1: json['-1'] as String? ,\n"
         "            dont: json['don't'] as String? ,\n"
         "            default_: json['default'] as String? ,\n"
         '        );\n'
@@ -894,6 +897,7 @@ void main() {
         '    final  String? barBaz;\n'
         '    final  String? n123;\n'
         '    final  String? plus1;\n'
+        '    final  String? minus1;\n'
         '    final  String? dont;\n'
         '    final  String? default_;\n'
         '\n'
@@ -905,6 +909,7 @@ void main() {
         "            'bar baz': barBaz,\n"
         "            '123': n123,\n"
         "            '+1': plus1,\n"
+        "            '-1': minus1,\n"
         "            'don\\'t': dont,\n"
         "            'default': default_,\n"
         '        };\n'
@@ -918,6 +923,7 @@ void main() {
         '          barBaz,\n'
         '          n123,\n'
         '          plus1,\n'
+        '          minus1,\n'
         '          dont,\n'
         '          default_,\n'
         '        );\n'
@@ -931,6 +937,7 @@ void main() {
         '            && barBaz == other.barBaz\n'
         '            && n123 == other.n123\n'
         '            && plus1 == other.plus1\n'
+        '            && minus1 == other.minus1\n'
         '            && dont == other.dont\n'
         '            && default_ == other.default_\n'
         '        ;\n'
