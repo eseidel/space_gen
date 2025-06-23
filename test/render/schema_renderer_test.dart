@@ -288,7 +288,7 @@ void main() {
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
         '        return Test(\n'
-        "            map: json['map'].map((key, value) => MapEntry(key, value as String )).toMap(),\n"
+        "            map: {for (var entry in (json['map'] as Map<String, dynamic>).entries) entry.key: entry.value as String },\n"
         '        );\n'
         '    }\n'
         '\n'
@@ -306,7 +306,7 @@ void main() {
         '\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            'map': map.map((key, value) => MapEntry(key, value)).toMap(),\n"
+        "            'map': {for (var entry in map.entries) entry.key: entry.value},\n"
         '        };\n'
         '    }\n'
         '\n'

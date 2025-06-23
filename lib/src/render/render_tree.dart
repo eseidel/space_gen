@@ -1248,11 +1248,11 @@ class RenderMap extends RenderSchema {
     required bool dartIsNullable,
   }) {
     final valueToJson = valueSchema.toJsonExpression(
-      'value',
+      'entry.value',
       context,
       dartIsNullable: false,
     );
-    return '$dartName.map((key, value) => MapEntry(key, $valueToJson)).toMap()';
+    return '{for (var entry in $dartName.entries) entry.key: $valueToJson}';
   }
 
   @override
@@ -1262,13 +1262,15 @@ class RenderMap extends RenderSchema {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
+    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
     final valueFromJson = valueSchema.fromJsonExpression(
-      'value',
+      'entry.value',
       context,
       jsonIsNullable: false,
       dartIsNullable: false,
     );
-    return '$jsonValue.map((key, value) => MapEntry(key, $valueFromJson)).toMap()';
+    // TODO(eseidel): Support orDefault?
+    return '{for (var entry in ($jsonValue as $jsonType).entries) entry.key: $valueFromJson}';
   }
 
   @override
