@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:file/file.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/quirks.dart';
@@ -45,6 +46,22 @@ Set<RenderSchema> collectSchemasUnderSchema(RenderSchema schema) {
   return collector.schemas;
 }
 
+@visibleForTesting
+void logNameCollisions(Iterable<RenderSchema> schemas) {
+  // List schemas with name collisions but different pointers.
+  final nameCollisions = schemas.groupListsBy((s) => s.snakeName);
+  for (final entry in nameCollisions.entries) {
+    if (entry.value.length > 1) {
+      logger.warn(
+        'Schema ${entry.key} has ${entry.value.length} name collisions',
+      );
+      for (final schema in entry.value) {
+        logger.info('${schema.pointer}');
+      }
+    }
+  }
+}
+
 // Could make this comparable to have a nicer sort for our test results.
 class Import extends Equatable {
   const Import(this.path, {this.asName});
@@ -60,6 +77,81 @@ class Import extends Equatable {
   List<Object?> get props => [path, asName];
 }
 
+class Formatter {
+  Formatter({RunProcess? runProcess})
+    : runProcess = runProcess ?? Process.runSync;
+
+  /// The function to run a process. Allows for mocking in tests.
+  final RunProcess runProcess;
+
+  /// Run a dart command.
+  void _runDart(List<String> args, {required String workingDirectory}) {
+    final command = 'dart ${args.join(' ')}';
+    logger
+      ..info('Running $command')
+      ..detail('$command in $workingDirectory');
+    final stopwatch = Stopwatch()..start();
+    final result = runProcess(
+      Platform.executable,
+      args,
+      workingDirectory: workingDirectory,
+    );
+    if (result.exitCode != 0) {
+      logger.info(result.stderr as String);
+      throw Exception('Failed to run dart ${args.join(' ')}');
+    }
+    final ms = stopwatch.elapsed.inMilliseconds;
+    logger
+      ..detail(result.stdout as String)
+      ..info('$command took $ms ms');
+  }
+
+  void formatAndFix({required String pkgDir}) {
+    // Consider running pub upgrade here to ensure packages are up to date.
+    // Might need to make offline configurable?
+    _runDart(['pub', 'get', '--offline'], workingDirectory: pkgDir);
+    // Run format first to add missing commas.
+    _runDart(['format', '.'], workingDirectory: pkgDir);
+    // Then run fix to clean up various other things.
+    _runDart(['fix', '.', '--apply'], workingDirectory: pkgDir);
+    // Run format again to fix wrapping of lines.
+    _runDart(['format', '.'], workingDirectory: pkgDir);
+  }
+}
+
+class FileWriter {
+  FileWriter({required this.outDir}) : fs = outDir.fileSystem;
+
+  /// The output directory.
+  final Directory outDir;
+
+  /// The file system where the rendered files will go.
+  final FileSystem fs;
+
+  final Set<String> _writtenFiles = {};
+
+  /// Ensure a file exists.
+  File _ensureFile(String path) {
+    final file = fs.file(p.join(outDir.path, path));
+    file.parent.createSync(recursive: true);
+    return file;
+  }
+
+  /// Write a file.
+  void writeFile({required String path, required String content}) {
+    if (_writtenFiles.contains(path)) {
+      throw Exception('File $path already written');
+    }
+    _writtenFiles.add(path);
+    _ensureFile(path).writeAsStringSync(content);
+  }
+
+  /// Create a directory.
+  void createOutDir() {
+    fs.directory(outDir.path).createSync(recursive: true);
+  }
+}
+
 /// Responsible for determining the layout of the files and rendering the
 /// for the directory structure of the rendered spec.
 ///
@@ -68,29 +160,25 @@ class Import extends Equatable {
 /// rendering to other directory structures.
 class FileRenderer {
   FileRenderer({
-    required this.outDir,
     required this.packageName,
     required this.templates,
     required this.schemaRenderer,
-    RunProcess? runProcess,
-  }) : fs = outDir.fileSystem,
-       runProcess = runProcess ?? Process.runSync;
-
-  /// The output directory.
-  final Directory outDir;
-
-  /// The file system where the rendered files will go.
-  final FileSystem fs;
+    required this.formatter,
+    required this.fileWriter,
+  });
 
   /// The package name this spec is being rendered into.
   final String packageName;
+
+  /// The file writer to use for writing the files.
+  final FileWriter fileWriter;
 
   /// The provider of templates.  Could be different from the one used by
   /// the schema renderer, so we hold our own.
   final TemplateProvider templates;
 
-  /// The function to run a process. Allows for mocking in tests.
-  final RunProcess runProcess;
+  /// The formatter to use for formatting the files.
+  final Formatter formatter;
 
   /// The renderer for schemas and APIs.
   final SchemaRenderer schemaRenderer;
@@ -127,18 +215,6 @@ class FileRenderer {
   //   return 'package:${context.packageName}/model/$snakeName.dart';
   // }
 
-  /// Ensure a file exists.
-  File _ensureFile(String path) {
-    final file = fs.file(p.join(outDir.path, path));
-    file.parent.createSync(recursive: true);
-    return file;
-  }
-
-  /// Write a file.
-  void _writeFile({required String path, required String content}) {
-    _ensureFile(path).writeAsStringSync(content);
-  }
-
   /// Render a template.
   void _renderTemplate({
     required String template,
@@ -146,13 +222,13 @@ class FileRenderer {
     Map<String, dynamic> context = const {},
   }) {
     final output = templates.load(template).renderString(context);
-    _writeFile(path: outPath, content: output);
+    fileWriter.writeFile(path: outPath, content: output);
   }
 
   /// Render the package directory including
   /// pubspec, analysis_options, and gitignore.
   void _renderDirectory() {
-    outDir.createSync(recursive: true);
+    fileWriter.createOutDir();
     _renderTemplate(
       template: 'pubspec',
       outPath: 'pubspec.yaml',
@@ -184,28 +260,6 @@ class FileRenderer {
       template: 'model_helpers',
       outPath: 'lib/model_helpers.dart',
     );
-  }
-
-  /// Run a dart command.
-  void _runDart(List<String> args) {
-    final command = 'dart ${args.join(' ')}';
-    logger
-      ..info('Running $command')
-      ..detail('$command in ${outDir.path}');
-    final stopwatch = Stopwatch()..start();
-    final result = runProcess(
-      Platform.executable,
-      args,
-      workingDirectory: outDir.path,
-    );
-    if (result.exitCode != 0) {
-      logger.info(result.stderr as String);
-      throw Exception('Failed to run dart ${args.join(' ')}');
-    }
-    final ms = stopwatch.elapsed.inMilliseconds;
-    logger
-      ..detail(result.stdout as String)
-      ..info('$command took $ms ms');
   }
 
   /// Render the public API file.
@@ -315,20 +369,14 @@ class FileRenderer {
     _renderApis(spec.apis);
 
     final schemas = collectAllSchemas(spec).where(rendersToSeparateFile);
+    logNameCollisions(schemas);
+
     // Render the models (schemas).
     _renderModels(schemas);
     // Render the api client.
     _renderApiClient(spec);
     // Render the combined api.dart exporting all rendered schemas.
     _renderPublicApi(spec.apis, schemas);
-    // Consider running pub upgrade here to ensure packages are up to date.
-    // Might need to make offline configurable?
-    _runDart(['pub', 'get', '--offline']);
-    // Run format first to add missing commas.
-    _runDart(['format', '.']);
-    // Then run fix to clean up various other things.
-    _runDart(['fix', '.', '--apply']);
-    // Run format again to fix wrapping of lines.
-    _runDart(['format', '.']);
+    formatter.formatAndFix(pkgDir: fileWriter.outDir.path);
   }
 }

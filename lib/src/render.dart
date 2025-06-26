@@ -78,14 +78,17 @@ Future<void> loadAndRenderSpec({
     outDir.deleteSync(recursive: true);
   }
 
+  final formatter = Formatter(runProcess: runProcess);
+  final fileWriter = FileWriter(outDir: outDir);
+
   // FileRenderer is responsible for deciding the layout of the files
   // and rendering the rest of directory structure.
   FileRenderer(
-    outDir: outDir,
     packageName: packageName,
     templates: templates,
-    runProcess: runProcess,
     schemaRenderer: schemaRenderer,
+    formatter: formatter,
+    fileWriter: fileWriter,
   ).render(renderSpec);
 }
 

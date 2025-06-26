@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:equatable/equatable.dart';
 import 'package:space_gen/src/quirks.dart';
 // Any code that depends on SchemaRenderer probably should be moved out
 // of this file and into the schema_renderer.dart file.
@@ -619,7 +620,7 @@ class RenderResponse {
   final RenderSchema content;
 }
 
-abstract class RenderSchema {
+abstract class RenderSchema extends Equatable {
   const RenderSchema({required this.snakeName, required this.pointer});
 
   /// The snake name of the resolved schema.
@@ -632,6 +633,9 @@ abstract class RenderSchema {
   bool get createsNewType;
 
   dynamic get defaultValue;
+
+  @override
+  List<Object?> get props => [snakeName, pointer];
 
   String orDefaultExpression({
     required SchemaRenderer context,
@@ -730,6 +734,9 @@ class RenderPod extends RenderSchema {
 
   @override
   final dynamic defaultValue;
+
+  @override
+  List<Object?> get props => [super.props, type, defaultValue];
 
   @override
   String typeName(SchemaRenderer context) {
@@ -880,6 +887,9 @@ class RenderStringNewType extends RenderNewType {
   final String? defaultValue;
 
   @override
+  List<Object?> get props => [super.props, defaultValue];
+
+  @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
     'typeName': className,
     'nullableTypeName': nullableTypeName(context),
@@ -917,6 +927,9 @@ class RenderNumberNewType extends RenderNewType {
 
   @override
   final double? defaultValue;
+
+  @override
+  List<Object?> get props => [super.props, defaultValue];
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
@@ -964,6 +977,14 @@ class RenderObject extends RenderNewType {
 
   /// The required properties of the resolved schema.
   final List<String> required;
+
+  @override
+  List<Object?> get props => [
+    super.props,
+    properties,
+    additionalProperties,
+    required,
+  ];
 
   @override
   dynamic get defaultValue => null;
@@ -1146,6 +1167,9 @@ class RenderArray extends RenderSchema {
   @override
   final dynamic defaultValue;
 
+  @override
+  List<Object?> get props => [super.props, items, defaultValue];
+
   /// The type name of this schema.
   @override
   String typeName(SchemaRenderer context) => 'List<${items.typeName(context)}>';
@@ -1249,6 +1273,9 @@ class RenderMap extends RenderSchema {
   final dynamic defaultValue;
 
   @override
+  List<Object?> get props => [super.props, valueSchema, defaultValue];
+
+  @override
   String typeName(SchemaRenderer context) =>
       'Map<String, ${valueSchema.typeName(context)}>';
 
@@ -1309,7 +1336,7 @@ class RenderMap extends RenderSchema {
 }
 
 class RenderEnum extends RenderNewType {
-  RenderEnum({
+  const RenderEnum({
     required super.snakeName,
     required this.values,
     required this.names,
@@ -1337,6 +1364,15 @@ class RenderEnum extends RenderNewType {
 
   @override
   final dynamic defaultValue;
+
+  /// The values of the resolved schema.
+  final List<String> values;
+
+  /// The names of the resolved schema.
+  final List<String> names;
+
+  @override
+  List<Object?> get props => [super.props, values, names, defaultValue];
 
   @override
   String jsonStorageType({required bool isNullable}) {
@@ -1388,12 +1424,6 @@ class RenderEnum extends RenderNewType {
     return '$className.$jsonMethod($jsonValue as $jsonType) $orDefault';
   }
 
-  /// The values of the resolved schema.
-  final List<String> values;
-
-  /// The names of the resolved schema.
-  final List<String> names;
-
   String variableNameFor(String value) => names[values.indexOf(value)];
 
   @override
@@ -1420,6 +1450,9 @@ class RenderOneOf extends RenderNewType {
 
   /// The schemas of the resolved schema.
   final List<RenderSchema> schemas;
+
+  @override
+  List<Object?> get props => [super.props, schemas];
 
   @override
   bool equalsIgnoringName(RenderSchema other) {

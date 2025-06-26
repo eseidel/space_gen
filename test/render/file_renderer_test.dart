@@ -8,6 +8,9 @@ import 'package:file/memory.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/render.dart';
+import 'package:space_gen/src/render/file_renderer.dart';
+import 'package:space_gen/src/render/render_tree.dart';
+import 'package:space_gen/src/types.dart';
 import 'package:test/test.dart';
 
 class _MockLogger extends Mock implements Logger {}
@@ -979,5 +982,56 @@ void main() {
       await renderToDirectory(spec: spec, outDir: out);
       expect(out.childFile('lib/api/foo_bar_api.dart'), exists);
     });
+  });
+
+  group('Formatter', () {
+    test('format and fix error', () {
+      io.ProcessResult runProcess(
+        String executable,
+        List<String> arguments, {
+        String? workingDirectory,
+      }) {
+        return io.ProcessResult(0, 1, '', 'Error');
+      }
+
+      final logger = _MockLogger();
+      final formatter = Formatter(runProcess: runProcess);
+      expect(
+        () => runWithLogger(
+          logger,
+          () => formatter.formatAndFix(pkgDir: '/tmp/spacetraders'),
+        ),
+        throwsA(isA<Exception>()),
+      );
+      verify(() => logger.info('Error')).called(1);
+    });
+  });
+
+  group('FileWriter', () {
+    test('writing twice throws', () {
+      final fs = MemoryFileSystem.test();
+      final out = fs.directory('spacetraders');
+
+      final fileWriter = FileWriter(outDir: out)
+        ..writeFile(path: 'foo.dart', content: 'foo');
+      expect(
+        () => fileWriter.writeFile(path: 'foo.dart', content: 'bar'),
+        throwsA(isA<Exception>()),
+      );
+    });
+  });
+
+  test('logNameCollisions', () {
+    final logger = _MockLogger();
+    runWithLogger(
+      logger,
+      () => logNameCollisions([
+        RenderUnknown(snakeName: 'foo', pointer: JsonPointer.parse('#/foo')),
+        RenderUnknown(snakeName: 'foo', pointer: JsonPointer.parse('#/bar')),
+      ]),
+    );
+    verify(() => logger.warn('Schema foo has 2 name collisions')).called(1);
+    verify(() => logger.info('#/foo')).called(1);
+    verify(() => logger.info('#/bar')).called(1);
   });
 }
