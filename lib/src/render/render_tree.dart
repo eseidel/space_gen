@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
+import 'package:meta/meta.dart';
 import 'package:space_gen/src/quirks.dart';
 // Any code that depends on SchemaRenderer probably should be moved out
 // of this file and into the schema_renderer.dart file.
@@ -63,6 +64,7 @@ String variableSafeName(Quirks quirks, String jsonName) {
 }
 
 // Could make this comparable to have a nicer sort for our test results.
+@immutable
 class Import extends Equatable {
   const Import(this.path, {this.asName});
 
@@ -116,7 +118,7 @@ class SpecResolver {
           ),
           pointer: schema.pointer,
           additionalProperties: maybeRenderSchema(schema.additionalProperties),
-          required: schema.required,
+          requiredProperties: schema.requiredProperties,
         );
       case ResolvedPod():
         // Unclear if this is an OpenApi generator quirk or desired behavior,
@@ -213,7 +215,7 @@ class SpecResolver {
     return RenderParameter(
       name: parameter.name,
       sendIn: parameter.sendIn,
-      required: parameter.required,
+      isRequired: parameter.isRequired,
       type: toRenderSchema(parameter.schema),
     );
   }
@@ -235,19 +237,19 @@ class SpecResolver {
         return RenderRequestBodyJson(
           schema: toRenderSchema(requestBody.schema),
           description: requestBody.description,
-          required: requestBody.required,
+          isRequired: requestBody.isRequired,
         );
       case MimeType.applicationOctetStream:
         return RenderRequestBodyOctetStream(
           schema: toRenderSchema(requestBody.schema),
           description: requestBody.description,
-          required: requestBody.required,
+          isRequired: requestBody.isRequired,
         );
       case MimeType.textPlain:
         return RenderRequestBodyTextPlain(
           schema: toRenderSchema(requestBody.schema),
           description: requestBody.description,
-          required: requestBody.required,
+          isRequired: requestBody.isRequired,
         );
     }
   }
@@ -517,7 +519,7 @@ abstract class RenderRequestBody {
   const RenderRequestBody({
     required this.schema,
     required this.description,
-    required this.required,
+    required this.isRequired,
   });
 
   /// The schema of the request body.
@@ -527,7 +529,7 @@ abstract class RenderRequestBody {
   final String? description;
 
   /// Whether the request body is required.
-  final bool required;
+  final bool isRequired;
 
   String requestBodyClassName(SchemaRenderer context) {
     // TODO(eseidel): Why don't we have a name for request bodies?
@@ -542,7 +544,7 @@ class RenderRequestBodyJson extends RenderRequestBody {
   const RenderRequestBodyJson({
     required super.schema,
     required super.description,
-    required super.required,
+    required super.isRequired,
   });
 
   @override
@@ -550,12 +552,12 @@ class RenderRequestBodyJson extends RenderRequestBody {
     final typeName = schema.typeName(context);
     final paramName = requestBodyClassName(context);
     // TODO(eseidel): Share code with Parameter.toTemplateContext.
-    final isNullable = !required;
+    final isNullable = !isRequired;
     return {
       'name': paramName,
       'dartName': paramName,
       'bracketedName': '{$paramName}',
-      'required': required,
+      'required': isRequired,
       'hasDefaultValue': schema.defaultValue != null,
       'defaultValue': schema.defaultValueString(context),
       'type': typeName,
@@ -573,7 +575,7 @@ class RenderRequestBodyOctetStream extends RenderRequestBody {
   const RenderRequestBodyOctetStream({
     required super.schema,
     required super.description,
-    required super.required,
+    required super.isRequired,
   });
 
   @override
@@ -583,7 +585,7 @@ class RenderRequestBodyOctetStream extends RenderRequestBody {
       'name': paramName,
       'dartName': paramName,
       'bracketedName': '{$paramName}',
-      'required': required,
+      'required': isRequired,
       'hasDefaultValue': schema.defaultValue != null,
       'defaultValue': schema.defaultValueString(context),
       'type': schema.typeName(context),
@@ -597,7 +599,7 @@ class RenderRequestBodyTextPlain extends RenderRequestBody {
   const RenderRequestBodyTextPlain({
     required super.schema,
     required super.description,
-    required super.required,
+    required super.isRequired,
   });
 
   @override
@@ -607,7 +609,7 @@ class RenderRequestBodyTextPlain extends RenderRequestBody {
       'name': paramName,
       'dartName': paramName,
       'bracketedName': '{$paramName}',
-      'required': required,
+      'required': isRequired,
       'hasDefaultValue': schema.defaultValue != null,
       'defaultValue': schema.defaultValueString(context),
       'type': schema.typeName(context),
@@ -983,7 +985,7 @@ class RenderObject extends RenderNewType {
     required this.properties,
     required super.pointer,
     this.additionalProperties,
-    this.required = const [],
+    this.requiredProperties = const [],
   });
 
   /// The properties of the resolved schema.
@@ -993,14 +995,14 @@ class RenderObject extends RenderNewType {
   final RenderSchema? additionalProperties;
 
   /// The required properties of the resolved schema.
-  final List<String> required;
+  final List<String> requiredProperties;
 
   @override
   List<Object?> get props => [
     super.props,
     properties,
     additionalProperties,
-    required,
+    requiredProperties,
   ];
 
   @override
@@ -1017,7 +1019,7 @@ class RenderObject extends RenderNewType {
     required SchemaRenderer context,
     required bool propertyHasDefaultValue,
   }) {
-    final inRequiredList = required.contains(jsonName);
+    final inRequiredList = requiredProperties.contains(jsonName);
     if (context.quirks.nonNullableDefaultValues) {
       return !inRequiredList && !propertyHasDefaultValue;
     }
@@ -1033,7 +1035,7 @@ class RenderObject extends RenderNewType {
   }) {
     final dartName = variableSafeName(context.quirks, jsonName);
     final hasDefaultValue = property.hasDefaultValue(context);
-    final jsonIsNullable = !required.contains(jsonName);
+    final jsonIsNullable = !requiredProperties.contains(jsonName);
     final dartIsNullable = propertyDartIsNullable(
       jsonName: jsonName,
       context: context,
@@ -1042,7 +1044,8 @@ class RenderObject extends RenderNewType {
 
     // Means that the constructor parameter is required which is only true if
     // both the json property is required and it does not have a default.
-    final useRequired = required.contains(jsonName) && !hasDefaultValue;
+    final useRequired =
+        requiredProperties.contains(jsonName) && !hasDefaultValue;
     return {
       'dartName': dartName,
       'jsonName': quoteString(jsonName),
@@ -1163,7 +1166,10 @@ class RenderObject extends RenderNewType {
     )) {
       return false;
     }
-    if (!const ListEquality<String>().equals(required, other.required)) {
+    if (!const ListEquality<String>().equals(
+      requiredProperties,
+      other.requiredProperties,
+    )) {
       return false;
     }
     return super.equalsIgnoringName(other);
@@ -1523,7 +1529,7 @@ class RenderParameter {
   const RenderParameter({
     required this.name,
     required this.type,
-    required this.required,
+    required this.isRequired,
     required this.sendIn,
   });
 
@@ -1537,10 +1543,10 @@ class RenderParameter {
   final SendIn sendIn;
 
   /// Whether the parameter is required.
-  final bool required;
+  final bool isRequired;
 
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final isNullable = !required;
+    final isNullable = !isRequired;
     final specName = name;
     final dartName = lowercaseCamelFromSnake(name);
     final jsonName = name;
@@ -1548,7 +1554,7 @@ class RenderParameter {
       'name': name,
       'dartName': dartName,
       'bracketedName': '{$specName}',
-      'required': required,
+      'required': isRequired,
       'hasDefaultValue': type.defaultValue != null,
       'defaultValue': type.defaultValueString(context),
       'isNullable': isNullable,

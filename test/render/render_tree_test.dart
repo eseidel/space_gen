@@ -68,7 +68,7 @@ void main() {
         snakeName: 'a',
         pointer: JsonPointer.empty(),
         properties: <String, RenderSchema>{},
-        required: ['a'],
+        requiredProperties: ['a'],
       );
       expect(a.equalsIgnoringName(f), isFalse);
 
@@ -137,24 +137,24 @@ void main() {
       final a = RenderEnum(
         snakeName: 'a',
         pointer: const JsonPointer.empty(),
-        names: ['a', 'b', 'c'],
-        values: ['a', 'b', 'c'],
+        names: const ['a', 'b', 'c'],
+        values: const ['a', 'b', 'c'],
       );
       expect(a.equalsIgnoringName(a), isTrue);
 
       final b = RenderEnum(
         snakeName: 'b',
         pointer: const JsonPointer.empty(),
-        names: ['a', 'b', 'c'],
-        values: ['a', 'b', 'c'],
+        names: const ['a', 'b', 'c'],
+        values: const ['a', 'b', 'c'],
       );
       expect(a.equalsIgnoringName(b), isTrue);
 
       final c = RenderEnum(
         snakeName: 'a',
         pointer: const JsonPointer.empty(),
-        names: ['a', 'b'],
-        values: ['a', 'b'],
+        names: const ['a', 'b'],
+        values: const ['a', 'b'],
       );
       expect(a.equalsIgnoringName(c), isFalse);
     });

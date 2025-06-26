@@ -528,7 +528,7 @@ void main() {
         ),
         properties: const {},
         additionalProperties: null,
-        required: const [],
+        requiredProperties: const [],
       );
       final schema2 = ResolvedObject(
         snakeName: 'Foo',
@@ -537,7 +537,7 @@ void main() {
         ),
         properties: const {},
         additionalProperties: null,
-        required: const [],
+        requiredProperties: const [],
       );
       expect(schema1, equals(schema1));
       // Different pointer.

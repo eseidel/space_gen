@@ -284,11 +284,16 @@ class FileRenderer {
       const Import('package:http/http.dart', asName: 'http'),
     };
 
-    final apiSchemas = collectSchemasUnderApi(api).where(rendersToSeparateFile);
-    final apiImports = apiSchemas
+    final apiSchemas = collectSchemasUnderApi(api);
+    final inlineSchemas = apiSchemas.where((s) => !rendersToSeparateFile(s));
+    final importedSchemas = apiSchemas.where(rendersToSeparateFile);
+    final apiImports = importedSchemas
         .map((s) => Import(modelPackageImport(this, s)))
         .toList();
-    imports.addAll(apiImports);
+    imports.addAll({
+      ...inlineSchemas.expand((s) => s.additionalImports),
+      ...apiImports,
+    });
     return imports;
   }
 

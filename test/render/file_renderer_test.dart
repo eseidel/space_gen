@@ -1071,5 +1071,64 @@ void main() {
         const Import('package:spacetraders/model_helpers.dart'),
       });
     });
+
+    test('imports for api', () {
+      final templates = TemplateProvider.defaultLocation();
+      final schemaRenderer = SchemaRenderer(templates: templates);
+      final formatter = Formatter();
+      final fileRenderer = FileRenderer(
+        packageName: 'spacetraders',
+        schemaRenderer: schemaRenderer,
+        templates: templates,
+        formatter: formatter,
+        fileWriter: FileWriter(
+          outDir: MemoryFileSystem.test().directory('spacetraders'),
+        ),
+      );
+      final api = Api(
+        name: 'foo',
+        endpoints: [
+          Endpoint(
+            operation: RenderOperation(
+              path: '/bar',
+              snakeName: 'bar',
+              pointer: JsonPointer.parse('#/bar'),
+              method: Method.get,
+              tags: ['foo'],
+              returnType: RenderVoid(
+                snakeName: 'bar',
+                pointer: JsonPointer.parse('#/bar'),
+              ),
+              summary: 'Bar',
+              description: 'Bar description',
+              parameters: [
+                RenderParameter(
+                  name: 'foo',
+                  type: RenderBinary(
+                    snakeName: 'foo',
+                    pointer: JsonPointer.parse('#/foo'),
+                  ),
+                  isRequired: true,
+                  sendIn: SendIn.query,
+                ),
+              ],
+              requestBody: null,
+              responses: <RenderResponse>[],
+            ),
+            serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+          ),
+        ],
+      );
+      final imports = fileRenderer.importsForApi(api);
+      expect(imports, {
+        const Import('dart:async'),
+        const Import('dart:convert'),
+        const Import('dart:io'),
+        const Import('package:spacetraders/api_client.dart'),
+        const Import('package:spacetraders/api_exception.dart'),
+        const Import('package:http/http.dart', asName: 'http'),
+        const Import('dart:typed_data'), // Uint8List from RenderBinary.
+      });
+    });
   });
 }

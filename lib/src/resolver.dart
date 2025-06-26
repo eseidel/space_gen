@@ -89,7 +89,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
         schema.additionalProperties,
         context,
       ),
-      required: schema.required,
+      requiredProperties: schema.requiredProperties,
     );
   } else if (schema is SchemaEnum) {
     return ResolvedEnum(
@@ -227,7 +227,7 @@ ResolvedRequestBody? _resolveRequestBody(
       mimeType: MimeType.applicationJson,
       schema: resolveSchemaRef(jsonSchema, context),
       description: requestBody.description,
-      required: requestBody.isRequired,
+      isRequired: requestBody.isRequired,
     );
   }
   final octetStreamSchema = content['application/octet-stream']?.schema;
@@ -236,7 +236,7 @@ ResolvedRequestBody? _resolveRequestBody(
       mimeType: MimeType.applicationOctetStream,
       schema: resolveSchemaRef(octetStreamSchema, context),
       description: requestBody.description,
-      required: requestBody.isRequired,
+      isRequired: requestBody.isRequired,
     );
   }
   final textPlainSchema = content['text/plain']?.schema;
@@ -245,7 +245,7 @@ ResolvedRequestBody? _resolveRequestBody(
       mimeType: MimeType.textPlain,
       schema: resolveSchemaRef(textPlainSchema, context),
       description: requestBody.description,
-      required: requestBody.isRequired,
+      isRequired: requestBody.isRequired,
     );
   }
   _error(
@@ -284,7 +284,7 @@ List<ResolvedParameter> _resolveParameters(
       name: resolved.name,
       sendIn: resolved.sendIn,
       description: resolved.description,
-      required: resolved.isRequired,
+      isRequired: resolved.isRequired,
       schema: type,
     );
   }).toList();
@@ -431,7 +431,7 @@ class ResolvedParameter {
     required this.name,
     required this.sendIn,
     required this.description,
-    required this.required,
+    required this.isRequired,
     required this.schema,
   });
 
@@ -445,7 +445,7 @@ class ResolvedParameter {
   final String? description;
 
   /// Whether the parameter is required.
-  final bool required;
+  final bool isRequired;
 
   /// The schema of the resolved parameter.
   final ResolvedSchema schema;
@@ -455,7 +455,7 @@ class ResolvedRequestBody {
   const ResolvedRequestBody({
     required this.schema,
     required this.description,
-    required this.required,
+    required this.isRequired,
     required this.mimeType,
   });
 
@@ -469,7 +469,7 @@ class ResolvedRequestBody {
   final String? description;
 
   /// Whether the request body is required.
-  final bool required;
+  final bool isRequired;
 }
 
 class ResolvedOperation {
@@ -612,7 +612,7 @@ class ResolvedObject extends ResolvedSchema {
     required this.properties,
     required super.snakeName,
     required this.additionalProperties,
-    required this.required,
+    required this.requiredProperties,
     required super.pointer,
   });
 
@@ -624,14 +624,14 @@ class ResolvedObject extends ResolvedSchema {
   final ResolvedSchema? additionalProperties;
 
   /// The required properties of the resolved schema.
-  final List<String> required;
+  final List<String> requiredProperties;
 
   @override
   List<Object?> get props => [
     super.props,
     properties,
     additionalProperties,
-    required,
+    requiredProperties,
   ];
 }
 

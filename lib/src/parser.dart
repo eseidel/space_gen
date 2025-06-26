@@ -138,7 +138,7 @@ Parameter parseParameter(MapContext json) {
   // Common fields.
   final name = _required<String>(json, 'name');
   final description = _optional<String>(json, 'description');
-  final required = _optional<bool>(json, 'required') ?? false;
+  final isRequired = _optional<bool>(json, 'required') ?? false;
   final sendIn = SendIn.fromJson(_required<String>(json, 'in'));
   _ignored<bool>(json, 'deprecated');
   _ignored<bool>(json, 'allowEmptyValue');
@@ -164,7 +164,7 @@ Parameter parseParameter(MapContext json) {
   if (sendIn == SendIn.path) {
     // Path parameter type validation is done during resolution since
     // type could be a ref until then.
-    if (required != true) {
+    if (isRequired != true) {
       _error(json, 'Path parameters must be required');
     }
   }
@@ -174,7 +174,7 @@ Parameter parseParameter(MapContext json) {
     pointer: json.pointer,
     name: name,
     description: description,
-    isRequired: required,
+    isRequired: isRequired,
     sendIn: sendIn,
     type: type,
   );
@@ -481,13 +481,13 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   _ignored<dynamic>(json, 'examples');
   _ignored<dynamic>(json, 'externalDocs');
 
-  final required = _optionalList<String>(json, 'required') ?? [];
+  final requiredProperties = _optionalList<String>(json, 'required') ?? [];
 
   return SchemaObject(
     pointer: json.pointer,
     snakeName: json.snakeName,
     properties: properties,
-    required: required.cast<String>(),
+    requiredProperties: requiredProperties.cast<String>(),
     description: description ?? '',
     additionalProperties: additionalPropertiesSchema,
     defaultValue: defaultValue,

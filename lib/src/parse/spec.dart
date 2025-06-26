@@ -261,7 +261,7 @@ class SchemaObject extends SchemaObjectBase {
     required super.pointer,
     required super.snakeName,
     required this.properties,
-    required this.required,
+    required this.requiredProperties,
     required this.description,
     required this.additionalProperties,
     required this.defaultValue,
@@ -280,7 +280,7 @@ class SchemaObject extends SchemaObjectBase {
   final Map<String, SchemaRef> properties;
 
   /// The required properties of this schema.
-  final List<String> required;
+  final List<String> requiredProperties;
 
   /// The example value for this schema.
   // Not currently used by the generator.
