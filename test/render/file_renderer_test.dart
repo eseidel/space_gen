@@ -10,6 +10,8 @@ import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/render.dart';
 import 'package:space_gen/src/render/file_renderer.dart';
 import 'package:space_gen/src/render/render_tree.dart';
+import 'package:space_gen/src/render/schema_renderer.dart';
+import 'package:space_gen/src/render/templates.dart';
 import 'package:space_gen/src/types.dart';
 import 'package:test/test.dart';
 
@@ -1033,5 +1035,41 @@ void main() {
     verify(() => logger.warn('Schema foo has 2 name collisions')).called(1);
     verify(() => logger.info('#/foo')).called(1);
     verify(() => logger.info('#/bar')).called(1);
+  });
+
+  group('FileRenderer', () {
+    test('imports for model', () {
+      final templates = TemplateProvider.defaultLocation();
+      final schemaRenderer = SchemaRenderer(templates: templates);
+      final formatter = Formatter();
+      final fileRenderer = FileRenderer(
+        packageName: 'spacetraders',
+        schemaRenderer: schemaRenderer,
+        templates: templates,
+        formatter: formatter,
+        fileWriter: FileWriter(
+          outDir: MemoryFileSystem.test().directory('spacetraders'),
+        ),
+      );
+      final schema = RenderObject(
+        snakeName: 'foo',
+        pointer: JsonPointer.parse('#/foo'),
+        properties: {
+          'bar': RenderBinary(
+            snakeName: 'bar',
+            pointer: JsonPointer.parse('#/bar'),
+          ),
+        },
+      );
+      final imports = fileRenderer.importsForModel(schema);
+      expect(imports, {
+        const Import('dart:convert'),
+        const Import('dart:io'),
+        const Import('package:meta/meta.dart'),
+        const Import('package:spacetraders/model/foo.dart'),
+        const Import('dart:typed_data'), // Uint8List from RenderBinary.
+        const Import('package:spacetraders/model_helpers.dart'),
+      });
+    });
   });
 }

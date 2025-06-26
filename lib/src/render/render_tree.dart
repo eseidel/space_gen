@@ -62,6 +62,21 @@ String variableSafeName(Quirks quirks, String jsonName) {
   return avoidReservedWord(escapedName);
 }
 
+// Could make this comparable to have a nicer sort for our test results.
+class Import extends Equatable {
+  const Import(this.path, {this.asName});
+
+  final String path;
+  final String? asName;
+
+  Map<String, dynamic> toTemplateContext() {
+    return {'path': path, 'asName': asName};
+  }
+
+  @override
+  List<Object?> get props => [path, asName];
+}
+
 class SpecResolver {
   const SpecResolver(this.quirks);
 
@@ -633,6 +648,8 @@ abstract class RenderSchema extends Equatable {
   bool get createsNewType;
 
   dynamic get defaultValue;
+
+  Iterable<Import> get additionalImports => const [];
 
   @override
   List<Object?> get props => [snakeName, pointer];
@@ -1640,6 +1657,12 @@ class RenderBinary extends RenderSchema {
 
   @override
   dynamic get defaultValue => null;
+
+  @override
+  Iterable<Import> get additionalImports => [
+    ...super.additionalImports,
+    const Import('dart:typed_data'),
+  ];
 
   @override
   String typeName(SchemaRenderer context) => 'Uint8List';

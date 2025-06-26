@@ -254,7 +254,9 @@ Schema? _handleCollectionTypes(MapContext json) {
     final oneOf = json.childAsList('oneOf');
     final schemas = <SchemaRef>[];
     for (var i = 0; i < oneOf.length; i++) {
-      schemas.add(parseSchemaOrRef(oneOf.indexAsMap(i)));
+      schemas.add(
+        parseSchemaOrRef(oneOf.indexAsMap(i).addSnakeName('oneOf$i')),
+      );
     }
     return SchemaOneOf(
       pointer: json.pointer,
@@ -267,7 +269,9 @@ Schema? _handleCollectionTypes(MapContext json) {
     final allOf = json.childAsList('allOf');
     final schemas = <SchemaRef>[];
     for (var i = 0; i < allOf.length; i++) {
-      schemas.add(parseSchemaOrRef(allOf.indexAsMap(i)));
+      schemas.add(
+        parseSchemaOrRef(allOf.indexAsMap(i).addSnakeName('allOf$i')),
+      );
     }
     return SchemaAllOf(
       pointer: json.pointer,
@@ -280,7 +284,9 @@ Schema? _handleCollectionTypes(MapContext json) {
     final anyOf = json.childAsList('anyOf');
     final schemas = <SchemaRef>[];
     for (var i = 0; i < anyOf.length; i++) {
-      schemas.add(parseSchemaOrRef(anyOf.indexAsMap(i)));
+      schemas.add(
+        parseSchemaOrRef(anyOf.indexAsMap(i).addSnakeName('anyOf$i')),
+      );
     }
     return SchemaAnyOf(
       pointer: json.pointer,
@@ -548,9 +554,7 @@ String _snakeNameForOperation(MapContext operationJson, String path) {
   final operationId = _optional<String>(operationJson, 'operationId');
   if (operationId != null) {
     // Some specs, including GitHub, put the full path in the operationId.
-    // Since we group based on tags, ignoring the path prefix for now.
-    final parts = operationId.split('/');
-    return toSnakeCase(parts.last);
+    return toSnakeCase(operationId.replaceAll('/', '_'));
   }
   return toSnakeCase(Uri.parse(path).pathSegments.last);
 }
@@ -749,18 +753,11 @@ Components parseComponents(MapContext? componentsJson) {
   }
   _refNotExpected(componentsJson);
 
-  final schemas = _parseComponent<Schema>(componentsJson, 'schemas', (
-    childContext,
-  ) {
-    // TODO(eseidel): This should call parseSchema instead.
-    // But currently depends on anyOf hacks in parseSchemaOrRef.
-    final ref = parseSchemaOrRef(childContext);
-    final schema = ref.schema;
-    if (schema == null) {
-      _unimplemented(childContext, r'$ref');
-    }
-    return schema;
-  });
+  final schemas = _parseComponent<Schema>(
+    componentsJson,
+    'schemas',
+    parseSchema,
+  );
   final responses = _parseComponent<Response>(
     componentsJson,
     'responses',

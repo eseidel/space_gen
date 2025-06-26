@@ -182,7 +182,7 @@ void main() {
             'message',
             equals(
               'allOf only supports objects: '
-              'ResolvedPod(snakeName: users200_response, pointer: '
+              'ResolvedPod(snakeName: users200_response_allOf0, pointer: '
               '#/paths//users/get/responses/200/content/application/json/schema/allOf/0) '
               'in #/paths//users/get/responses/200/content/application/json/schema',
             ),

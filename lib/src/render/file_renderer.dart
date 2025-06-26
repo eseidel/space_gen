@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
-import 'package:equatable/equatable.dart';
 import 'package:file/file.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
@@ -60,21 +59,6 @@ void logNameCollisions(Iterable<RenderSchema> schemas) {
       }
     }
   }
-}
-
-// Could make this comparable to have a nicer sort for our test results.
-class Import extends Equatable {
-  const Import(this.path, {this.asName});
-
-  final String path;
-  final String? asName;
-
-  Map<String, dynamic> toTemplateContext() {
-    return {'path': path, 'asName': asName};
-  }
-
-  @override
-  List<Object?> get props => [path, asName];
 }
 
 class Formatter {
@@ -288,28 +272,30 @@ class FileRenderer {
     };
   }
 
+  @visibleForTesting
+  Iterable<Import> importsForApi(Api api) {
+    // TODO(eseidel): Make type imports dynamic based on used schemas.
+    final imports = {
+      const Import('dart:async'),
+      const Import('dart:convert'),
+      const Import('dart:io'),
+      Import('package:$packageName/api_client.dart'),
+      Import('package:$packageName/api_exception.dart'),
+      const Import('package:http/http.dart', asName: 'http'),
+    };
+
+    final apiSchemas = collectSchemasUnderApi(api).where(rendersToSeparateFile);
+    final apiImports = apiSchemas
+        .map((s) => Import(modelPackageImport(this, s)))
+        .toList();
+    imports.addAll(apiImports);
+    return imports;
+  }
+
   void _renderApis(List<Api> apis) {
     for (final api in apis) {
       final content = schemaRenderer.renderApi(api);
-      // TODO(eseidel): Make type imports dynamic based on used schemas.
-      final imports = {
-        const Import('dart:async'),
-        const Import('dart:convert'),
-        const Import('dart:io'),
-        const Import('dart:typed_data'), // For Uint8List.
-        Import('package:$packageName/api_client.dart'),
-        Import('package:$packageName/api_exception.dart'),
-        const Import('package:http/http.dart', asName: 'http'),
-      };
-
-      final apiSchemas = collectSchemasUnderApi(
-        api,
-      ).where(rendersToSeparateFile);
-      final apiImports = apiSchemas
-          .map((s) => Import(modelPackageImport(this, s)))
-          .toList();
-      imports.addAll(apiImports);
-
+      final imports = importsForApi(api);
       final importsContext = imports
           .sortedBy((i) => i.path)
           .map((i) => i.toTemplateContext())
@@ -323,24 +309,35 @@ class FileRenderer {
     }
   }
 
-  void _renderModels(Iterable<RenderSchema> schemas) {
+  @visibleForTesting
+  Iterable<Import> importsForModel(RenderSchema schema) {
+    final referencedSchemas = collectSchemasUnderSchema(schema);
+    final localSchemas = referencedSchemas.where(
+      (s) => !rendersToSeparateFile(s),
+    );
+    final importedSchemas = referencedSchemas
+        .where(rendersToSeparateFile)
+        .toSet();
+    final referencedImports = importedSchemas
+        .map((s) => Import(modelPackageImport(this, s)))
+        .toList();
+
+    final imports = {
+      const Import('dart:convert'),
+      const Import('dart:io'),
+      const Import('package:meta/meta.dart'),
+      Import('package:$packageName/model_helpers.dart'),
+      ...schema.additionalImports,
+      ...localSchemas.expand((s) => s.additionalImports),
+      ...referencedImports,
+    };
+    return imports;
+  }
+
+  void renderModels(Iterable<RenderSchema> schemas) {
     for (final schema in schemas) {
       final content = schemaRenderer.renderSchema(schema);
-      final referencedSchemas = collectSchemasUnderSchema(
-        schema,
-      ).where(rendersToSeparateFile).toSet();
-      final referencedImports = referencedSchemas
-          .map((s) => Import(modelPackageImport(this, s)))
-          .toList();
-
-      final imports = {
-        const Import('dart:convert'),
-        const Import('dart:io'),
-        const Import('package:meta/meta.dart'),
-        Import('package:$packageName/model_helpers.dart'),
-        ...referencedImports,
-      };
-
+      final imports = importsForModel(schema);
       final importsContext = imports
           .sortedBy((i) => i.path)
           .map((i) => i.toTemplateContext())
@@ -372,7 +369,7 @@ class FileRenderer {
     logNameCollisions(schemas);
 
     // Render the models (schemas).
-    _renderModels(schemas);
+    renderModels(schemas);
     // Render the api client.
     _renderApiClient(spec);
     // Render the combined api.dart exporting all rendered schemas.

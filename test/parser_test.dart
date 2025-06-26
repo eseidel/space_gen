@@ -260,14 +260,10 @@ void main() {
       expect(
         () => runWithLogger(logger, () => parseTestSchemas(json2)),
         throwsA(
-          isA<UnimplementedError>().having(
+          isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals(
-              r'$ref not supported in '
-              'MapContext(#/components/schemas/User, '
-              r'{$ref: #/components/schemas/Value})',
-            ),
+            equals(r'$ref not expected in #/components/schemas/User'),
           ),
         ),
       );
@@ -1037,7 +1033,7 @@ void main() {
         final spec = parseOpenApi(json);
         expect(
           spec.paths['/users/foo/bar'].operations[Method.get]!.snakeName,
-          equals('bar'),
+          equals('users_foo_bar'),
         );
       });
     });
