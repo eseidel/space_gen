@@ -30,6 +30,7 @@ dart run space_gen
 * Fix toString hack for queryParameters.
 * Support Parameter.explode.
 * Finish oneOf support.
+* Remove the 'prop' hack for GitHub spec.
 
 Is the body sometimes passed in as an object, and sometimes created by
 the endpoint?  Or is it always created by the endpoint?

@@ -241,9 +241,9 @@ void main() {
       expect(
         out.childDirectory('lib/model'),
         hasFiles([
-          'account.dart',
-          'account_role.dart',
           'get_user200_response.dart',
+          'account.dart',
+          'account_role_prop.dart',
         ]),
       );
     });
@@ -346,10 +346,10 @@ void main() {
       expect(
         out.childDirectory('lib/model'),
         hasFiles([
-          'purchase_cargo201_response.dart',
-          'purchase_cargo201_response_data.dart',
-          'purchase_cargo201_response_data_cargo.dart',
           'purchase_cargo_request.dart',
+          'purchase_cargo201_response.dart',
+          'purchase_cargo201_response_data_prop.dart',
+          'purchase_cargo201_response_data_prop_cargo_prop.dart',
         ]),
       );
     });
@@ -566,7 +566,7 @@ void main() {
         out.childDirectory('lib/model'),
         hasFiles([
           'get_my_factions200_response.dart',
-          'get_my_factions200_response_data_inner.dart',
+          'get_my_factions200_response_data_prop_inner.dart',
         ]),
       );
     });

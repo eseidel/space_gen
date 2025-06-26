@@ -464,7 +464,10 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     final snakeName = snakeFromCamel(name);
     final childContext = propertiesJson
         .childAsMap(name)
-        .addSnakeName(snakeName);
+        .addSnakeName(snakeName)
+        // TODO(eseidel): Remove this once we have a better way to detect
+        // and avoid name collisions.
+        .addSnakeName('prop');
     properties[name] = parseSchemaOrRef(childContext);
   }
 
@@ -728,15 +731,19 @@ Responses parseResponses(MapContext responsesJson) {
 Map<String, T> _parseComponent<T>(
   MapContext json,
   String key,
-  T Function(MapContext) parse,
-) {
+  T Function(MapContext) parse, {
+  String? extraSnakeName,
+}) {
   _refNotExpected(json);
   final valuesJson = _optionalMap(json, key);
   final values = <String, T>{};
   if (valuesJson != null) {
     for (final name in valuesJson.keys) {
       final snakeName = toSnakeCase(name);
-      final childContext = valuesJson.childAsMap(name).addSnakeName(snakeName);
+      var childContext = valuesJson.childAsMap(name).addSnakeName(snakeName);
+      if (extraSnakeName != null) {
+        childContext = childContext.addSnakeName(extraSnakeName);
+      }
       final value = parse(childContext);
       values[name] = value;
     }
@@ -767,6 +774,7 @@ Components parseComponents(MapContext? componentsJson) {
     componentsJson,
     'parameters',
     parseParameter,
+    extraSnakeName: 'param',
   );
   final requestBodies = _parseComponent<RequestBody>(
     componentsJson,
