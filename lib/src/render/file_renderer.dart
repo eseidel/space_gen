@@ -188,7 +188,11 @@ class FileRenderer {
 
   /// Run a dart command.
   void _runDart(List<String> args) {
-    logger.detail('dart ${args.join(' ')} in ${outDir.path}');
+    final command = 'dart ${args.join(' ')}';
+    logger
+      ..info('Running $command')
+      ..detail('$command in ${outDir.path}');
+    final stopwatch = Stopwatch()..start();
     final result = runProcess(
       Platform.executable,
       args,
@@ -198,7 +202,10 @@ class FileRenderer {
       logger.info(result.stderr as String);
       throw Exception('Failed to run dart ${args.join(' ')}');
     }
-    logger.detail(result.stdout as String);
+    final ms = stopwatch.elapsed.inMilliseconds;
+    logger
+      ..detail(result.stdout as String)
+      ..info('$command took $ms ms');
   }
 
   /// Render the public API file.
@@ -316,16 +323,12 @@ class FileRenderer {
     _renderPublicApi(spec.apis, schemas);
     // Consider running pub upgrade here to ensure packages are up to date.
     // Might need to make offline configurable?
-    logger.info('Running pub get...');
     _runDart(['pub', 'get', '--offline']);
     // Run format first to add missing commas.
-    logger.info('Running dart format...');
     _runDart(['format', '.']);
     // Then run fix to clean up various other things.
-    logger.info('Running dart fix...');
     _runDart(['fix', '.', '--apply']);
     // Run format again to fix wrapping of lines.
-    logger.info('Running dart format...');
     _runDart(['format', '.']);
   }
 }
