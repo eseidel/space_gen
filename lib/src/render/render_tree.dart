@@ -816,7 +816,7 @@ class RenderPod extends RenderSchema {
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
-      '$name == other.$name';
+      'this.$name == other.$name';
 
   @override
   bool get createsNewType => false;
@@ -904,7 +904,7 @@ abstract class RenderNewType extends RenderSchema {
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
-      '$name == other.$name';
+      'this.$name == other.$name';
 
   @override
   String toJsonExpression(
@@ -1224,7 +1224,7 @@ class RenderArray extends RenderSchema {
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
-      'listsEqual($name, other.$name)';
+      'listsEqual(this.$name, other.$name)';
 
   @override
   bool get createsNewType => false;
@@ -1332,7 +1332,7 @@ class RenderMap extends RenderSchema {
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
-      'mapsEqual($name, other.$name)';
+      'mapsEqual(this.$name, other.$name)';
 
   @override
   bool get createsNewType => false;
@@ -1623,7 +1623,7 @@ class RenderUnknown extends RenderSchema {
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
-      'identical($name, other.$name)';
+      'identical(this.$name, other.$name)';
 
   @override
   bool get createsNewType => false;
@@ -1657,7 +1657,7 @@ class RenderUnknown extends RenderSchema {
       throw UnimplementedError('RenderUnknown.toTemplateContext');
 }
 
-class RenderVoid extends RenderSchema {
+class RenderVoid extends RenderNoJson {
   const RenderVoid({required super.snakeName, required super.pointer});
 
   @override
@@ -1675,18 +1675,31 @@ class RenderVoid extends RenderSchema {
   bool get createsNewType => false;
 
   @override
+  String fromJsonExpression(
+    String jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) => ''; // Unclear if this is correct. The one usage is for returning
+  // a void type, maybe we need a "return expression" value instead?
+}
+
+abstract class RenderNoJson extends RenderSchema {
+  const RenderNoJson({required super.snakeName, required super.pointer});
+
+  @override
   bool get onlyJsonTypes => false;
 
   @override
   String jsonStorageType({required bool isNullable}) =>
-      'throw UnimplementedError("RenderVoid.jsonStorageType")';
+      'throw UnimplementedError("$runtimeType.jsonStorageType")';
 
   @override
   String toJsonExpression(
     String dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
-  }) => 'throw UnimplementedError("RenderVoid.toJson")';
+  }) => 'throw UnimplementedError("$runtimeType.toJson")';
 
   @override
   String fromJsonExpression(
@@ -1694,21 +1707,18 @@ class RenderVoid extends RenderSchema {
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
-  }) => ''; // Unclear if this is correct.
+  }) => 'throw UnimplementedError("$runtimeType.fromJson")';
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
-      throw UnimplementedError('RenderVoid.toTemplateContext');
+      throw UnimplementedError('$runtimeType.toTemplateContext');
 }
 
-class RenderBinary extends RenderSchema {
+class RenderBinary extends RenderNoJson {
   const RenderBinary({required super.snakeName, required super.pointer});
 
   @override
   dynamic get defaultValue => null;
-
-  @override
-  bool get onlyJsonTypes => false;
 
   @override
   Iterable<Import> get additionalImports => [
@@ -1721,33 +1731,10 @@ class RenderBinary extends RenderSchema {
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
-      'identical($name, other.$name)';
+      'listsEqual(this.$name, other.$name)';
 
   @override
   bool get createsNewType => false;
-
-  @override
-  String jsonStorageType({required bool isNullable}) =>
-      'throw UnimplementedError("RenderBinary.jsonStorageType")';
-
-  @override
-  String toJsonExpression(
-    String dartName,
-    SchemaRenderer context, {
-    required bool dartIsNullable,
-  }) => 'throw UnimplementedError("RenderBinary.toJson")';
-
-  @override
-  String fromJsonExpression(
-    String jsonValue,
-    SchemaRenderer context, {
-    required bool jsonIsNullable,
-    required bool dartIsNullable,
-  }) => 'throw UnimplementedError("RenderBinary.fromJson")';
-
-  @override
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
-      throw UnimplementedError('RenderBinary.toTemplateContext');
 }
 
 class RenderEmptyObject extends RenderNewType {
@@ -1764,7 +1751,7 @@ class RenderEmptyObject extends RenderNewType {
     String dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
-  }) => 'throw UnimplementedError("RenderEmptyObject.toJson")';
+  }) => 'const <String, dynamic>{}';
 
   @override
   String fromJsonExpression(
@@ -1772,7 +1759,7 @@ class RenderEmptyObject extends RenderNewType {
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
-  }) => 'throw UnimplementedError("RenderEmptyObject.fromJson")';
+  }) => 'const $className()';
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
