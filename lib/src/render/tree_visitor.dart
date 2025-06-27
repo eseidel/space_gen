@@ -40,6 +40,8 @@ class RenderTreeWalker {
         for (final schema in schema.schemas) {
           walkSchema(schema);
         }
+      case RenderMap():
+        walkSchema(schema.valueSchema);
       case RenderEnum():
       case RenderStringNewType():
       case RenderNumberNewType():
