@@ -3,6 +3,8 @@ linter:
   rules:
     # We do not generate docs yet.
     public_member_api_docs: false
+    # Temporary, we should remove this and annotate long lines.
+    lines_longer_than_80_chars: false
 {{#screamingCapsEnums}}
     # When using SCREAMING_CAPS for enum values, we need to disable this rule.
     constant_identifier_names: false

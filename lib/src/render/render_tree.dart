@@ -669,7 +669,7 @@ abstract class RenderSchema extends Equatable {
       if (defaultValue == null) {
         throw StateError('No default value for nullable property: $this');
       }
-      return '?? $defaultValue';
+      return ' ?? $defaultValue';
     }
     return '';
   }
@@ -854,24 +854,24 @@ class RenderPod extends RenderSchema {
     switch (type) {
       case PodType.dateTime:
         if (jsonIsNullable) {
-          return 'maybeParseDateTime($jsonValue as $jsonType) $orDefault';
+          return 'maybeParseDateTime($jsonValue as $jsonType)$orDefault';
         } else {
           return 'DateTime.parse($jsonValue as $jsonType)';
         }
       case PodType.uri:
         if (jsonIsNullable) {
-          return 'maybeParseUri($jsonValue as $jsonType) $orDefault';
+          return 'maybeParseUri($jsonValue as $jsonType)$orDefault';
         } else {
           return 'Uri.parse($jsonValue as $jsonType)';
         }
       case PodType.string:
         return '$jsonValue as $jsonType $orDefault';
       case PodType.integer:
-        return '($jsonValue as $jsonType)$access.toInt() $orDefault';
+        return '($jsonValue as $jsonType)$access.toInt()$orDefault';
       case PodType.number:
-        return '($jsonValue as $jsonType)$access.toDouble() $orDefault';
+        return '($jsonValue as $jsonType)$access.toDouble()$orDefault';
       case PodType.boolean:
-        return '($jsonValue as $jsonType) $orDefault';
+        return '($jsonValue as $jsonType)$orDefault';
     }
   }
 
@@ -955,7 +955,7 @@ class RenderStringNewType extends RenderNewType {
       dartIsNullable: dartIsNullable,
     );
     final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-    return '$className.$jsonMethod($jsonValue as $jsonType) $orDefault';
+    return '$className.$jsonMethod($jsonValue as $jsonType)$orDefault';
   }
 }
 
@@ -997,7 +997,7 @@ class RenderNumberNewType extends RenderNewType {
       dartIsNullable: dartIsNullable,
     );
     final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-    return '$className.$jsonMethod($jsonValue as $jsonType) $orDefault';
+    return '$className.$jsonMethod($jsonValue as $jsonType)$orDefault';
   }
 }
 
@@ -1157,7 +1157,7 @@ class RenderObject extends RenderNewType {
       dartIsNullable: dartIsNullable,
     );
     final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-    return '$className.$jsonMethod($jsonValue as $jsonType) $orDefault';
+    return '$className.$jsonMethod($jsonValue as $jsonType)$orDefault';
   }
 
   // This would probably be easier if we did a copyWith and then compared with
@@ -1287,10 +1287,10 @@ class RenderArray extends RenderSchema {
     );
     // If it doesn't create a new type we can just cast the list.
     if (!items.createsNewType) {
-      return '$castAsList.cast<$itemTypeName>() $orDefault';
+      return '$castAsList.cast<$itemTypeName>()$orDefault';
     }
     return '$castAsList.map<$itemTypeName>('
-        '(e) => $itemsFromJson).toList() $orDefault';
+        '(e) => $itemsFromJson).toList()$orDefault';
   }
 
   @override
@@ -1365,12 +1365,8 @@ class RenderMap extends RenderSchema {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
-    // If the value schema is a pod type we can just return the json value.
-    // This skips validation, which might not be OK?
-    if (valueSchema is RenderPod) {
-      // Should this be '?$jsonValue'? to skip the key on null?
-      return jsonValue;
-    }
+    // We could probably do a smaller cast if the value schema is only json
+    // types.
     final jsonType = jsonStorageType(isNullable: jsonIsNullable);
     final valueFromJson = valueSchema.fromJsonExpression(
       'value',
@@ -1379,6 +1375,7 @@ class RenderMap extends RenderSchema {
       dartIsNullable: false,
     );
     // TODO(eseidel): Support orDefault?
+    // Should this have a leading ? to skip the key on null?
     return '($jsonValue as $jsonType)?.map((key, value) => '
         'MapEntry(key, $valueFromJson))';
   }
@@ -1483,7 +1480,7 @@ class RenderEnum extends RenderNewType {
       dartIsNullable: dartIsNullable,
     );
     final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-    return '$className.$jsonMethod($jsonValue as $jsonType) $orDefault';
+    return '$className.$jsonMethod($jsonValue as $jsonType)$orDefault';
   }
 
   String variableNameFor(String value) => names[values.indexOf(value)];
