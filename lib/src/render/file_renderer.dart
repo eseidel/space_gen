@@ -277,7 +277,7 @@ class FileRenderer {
     // TODO(eseidel): Make type imports dynamic based on used schemas.
     final imports = {
       const Import('dart:async'),
-      const Import('dart:convert'),
+      const Import('dart:convert'), // jsonDecode, for decoding response body.
       const Import('dart:io'),
       Import('package:$packageName/api_client.dart'),
       Import('package:$packageName/api_exception.dart'),

@@ -4,10 +4,10 @@
 class {{ typeName }} {
     {{ typeName }}(
         {{#hasProperties}}
-        { {{#properties}}{{#useRequired}}required{{/useRequired}} this.{{{ dartName }}}{{#hasDefaultValue}} = {{{ defaultValue }}}{{/hasDefaultValue}},{{/properties}}
+        { {{#properties}}{{{ argumentLine }}}, {{/properties}}
         {{#hasAdditionalProperties}}required this.{{additionalPropertiesName}},{{/hasAdditionalProperties}} }
         {{/hasProperties}}
-    );
+    ){{{assignmentsLine}}};
 
     factory {{ typeName }}.fromJson({{{fromJsonJsonType}}}
     {{#castFromJsonArg}}

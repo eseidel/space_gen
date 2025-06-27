@@ -55,6 +55,9 @@ String toLowerCamelCase(String caps) {
   return camel[0].toLowerCase() + camel.substring(1);
 }
 
+/// Converts from SCREAMING_CAPS, snake_case or kebab-case to CamelCase.
+String toUpperCamelCase(String snake) => toLowerCamelCase(snake).capitalize();
+
 bool isReservedWord(String word) {
   // Eventually we should add them all:
   // https://dart.dev/language/keywords

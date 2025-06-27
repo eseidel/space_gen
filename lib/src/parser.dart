@@ -255,7 +255,7 @@ Schema? _handleCollectionTypes(MapContext json) {
     final schemas = <SchemaRef>[];
     for (var i = 0; i < oneOf.length; i++) {
       schemas.add(
-        parseSchemaOrRef(oneOf.indexAsMap(i).addSnakeName('oneOf$i')),
+        parseSchemaOrRef(oneOf.indexAsMap(i).addSnakeName('one_of_$i')),
       );
     }
     return SchemaOneOf(
@@ -270,7 +270,7 @@ Schema? _handleCollectionTypes(MapContext json) {
     final schemas = <SchemaRef>[];
     for (var i = 0; i < allOf.length; i++) {
       schemas.add(
-        parseSchemaOrRef(allOf.indexAsMap(i).addSnakeName('allOf$i')),
+        parseSchemaOrRef(allOf.indexAsMap(i).addSnakeName('all_of_$i')),
       );
     }
     return SchemaAllOf(
@@ -285,7 +285,7 @@ Schema? _handleCollectionTypes(MapContext json) {
     final schemas = <SchemaRef>[];
     for (var i = 0; i < anyOf.length; i++) {
       schemas.add(
-        parseSchemaOrRef(anyOf.indexAsMap(i).addSnakeName('anyOf$i')),
+        parseSchemaOrRef(anyOf.indexAsMap(i).addSnakeName('any_of_$i')),
       );
     }
     return SchemaAnyOf(

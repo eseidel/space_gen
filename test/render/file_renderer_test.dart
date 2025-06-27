@@ -1086,7 +1086,7 @@ void main() {
         ),
       );
       final api = Api(
-        name: 'foo',
+        snakeName: 'foo',
         endpoints: [
           Endpoint(
             operation: RenderOperation(
