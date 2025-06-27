@@ -7,6 +7,12 @@ on:
     branches: [ "main" ]
 
 jobs:
+  cspell:
+    name: 🔤 Check Spelling
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/spell_check.yml@v1
+    with:
+      config: cspell.config.yaml
+
   build:
     runs-on: ubuntu-latest
 
