@@ -1524,6 +1524,7 @@ class RenderEnum extends RenderNewType {
          'names and values must have the same length',
        );
 
+  @visibleForTesting
   static List<String> variableNamesFor(Quirks quirks, List<String> values) {
     final sharedPrefix = _sharedPrefix(values);
     String toShortVariableName(String value) {

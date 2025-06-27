@@ -139,7 +139,7 @@ String renderOperation({
     quirks: quirks,
   );
   final tag = resolvedOperation.tags.firstOrNull ?? 'Default';
-  final className = '${tag.capitalize()}Api';
+  final className = '${tag.capitalizeFirst()}Api';
   final endpoint = Endpoint(serverUrl: serverUrl, operation: renderOperation);
   return schemaRenderer.renderEndpoints(
     className: className,

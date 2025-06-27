@@ -13,6 +13,25 @@ void main() {
       expect(makeSafe('a b'), 'aB');
       expect(makeSafe('aB'), 'aB');
     });
+
+    test('enum names', () {
+      const quirks = Quirks();
+      expect(quirks.screamingCapsEnums, isFalse);
+      final names = RenderEnum.variableNamesFor(quirks, [
+        'shortCamel',
+        'TallCamel',
+        'snake_case',
+        'skewer-case',
+        'ALL_CAPS',
+      ]);
+      expect(names, [
+        'shortCamel',
+        'tallCamel',
+        'snakeCase',
+        'skewerCase',
+        'allCaps',
+      ]);
+    });
   });
   group('equalsIgnoringName', () {
     test('RenderObject', () {

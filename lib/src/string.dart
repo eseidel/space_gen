@@ -13,14 +13,12 @@ String camelFromSnake(String snake) {
   return snake.splitMapJoin(
     RegExp('_'),
     onMatch: (m) => '',
-    onNonMatch: (n) => n.capitalize(),
+    onNonMatch: (n) => n.capitalizeFirst(),
   );
 }
 
-String lowercaseCamelFromSnake(String snake) {
-  final camel = camelFromSnake(snake);
-  return camel[0].toLowerCase() + camel.substring(1);
-}
+String lowercaseCamelFromSnake(String snake) =>
+    camelFromSnake(snake).lowerFirst();
 
 String toSnakeCase(String unknown) {
   // We don't know the casing the author used.
@@ -44,19 +42,20 @@ String toLowerCamelCase(String caps) {
     if (snake.contains('_')) {
       return lowercaseCamelFromSnake(snake);
     }
-    return caps;
+    return caps.lowerFirst();
   }
   // SCREAMING_CAPS -> lowerCamelCase
   final camel = caps.splitMapJoin(
     RegExp('_'),
     onMatch: (m) => '',
-    onNonMatch: (n) => n.toLowerCase().capitalize(),
+    onNonMatch: (n) => n.toLowerCase().capitalizeFirst(),
   );
-  return camel[0].toLowerCase() + camel.substring(1);
+  return camel.lowerFirst();
 }
 
 /// Converts from SCREAMING_CAPS, snake_case or kebab-case to CamelCase.
-String toUpperCamelCase(String snake) => toLowerCamelCase(snake).capitalize();
+String toUpperCamelCase(String snake) =>
+    toLowerCamelCase(snake).capitalizeFirst();
 
 bool isReservedWord(String word) {
   // Eventually we should add them all:
@@ -84,10 +83,17 @@ String quoteString(String string) {
 }
 
 extension CapitalizeString on String {
-  String capitalize() {
+  String capitalizeFirst() {
     if (isEmpty) {
       return this;
     }
     return '${this[0].toUpperCase()}${substring(1)}';
+  }
+
+  String lowerFirst() {
+    if (isEmpty) {
+      return this;
+    }
+    return '${this[0].toLowerCase()}${substring(1)}';
   }
 }
