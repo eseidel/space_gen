@@ -675,10 +675,7 @@ void main() {
               'enum': ['a', 'b', 'c'],
             },
           },
-          'a_unknown': {
-            'type': 'array',
-            'items': {'type': 'object'},
-          },
+          'a_unknown': {'type': 'array', 'items': <String, dynamic>{}},
         },
       };
       final result = renderSchema(schema);
@@ -732,11 +729,11 @@ void main() {
         "            'a_int': aInt,\n"
         "            'a_number': aNumber,\n"
         "            'a_boolean': aBoolean,\n"
-        "            'a_date_time': aDateTime,\n"
-        "            'a_uri': aUri,\n"
-        "            'a_array_of_string': aArrayOfString?.map((e) => e.toJson()).toList(),\n"
+        "            'a_date_time': aDateTime?.map((e) => e.toIso8601String()).toList(),\n"
+        "            'a_uri': aUri?.map((e) => e.toString()).toList(),\n"
+        "            'a_array_of_string': aArrayOfString,\n"
         "            'a_enum': aEnum?.map((e) => e.toJson()).toList(),\n"
-        "            'a_unknown': aUnknown?.map((e) => e.toJson()).toList(),\n"
+        "            'a_unknown': aUnknown,\n"
         '        };\n'
         '    }\n'
         '\n'
