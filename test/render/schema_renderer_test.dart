@@ -1,3 +1,6 @@
+// We don't have a good way to shorten the literal strings from the
+// expected generated code, so ignoring 80c for now.
+// ignore_for_file: lines_longer_than_80_chars
 import 'package:mocktail/mocktail.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/render.dart';
