@@ -1159,6 +1159,14 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     return validations.join(',\n');
   }
 
+  String buildInitializers(SchemaRenderer context) {
+    final validations = buildValidations(context);
+    if (validations.isEmpty) {
+      return '';
+    }
+    return ': $validations';
+  }
+
   String newTypeFromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
@@ -1187,7 +1195,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
       'doc_comment': createDocComment(body: description, indent: 4),
       'typeName': typeName(context),
       'nullableTypeName': nullableTypeName(context),
-      'validations': buildValidations(context),
+      'initializers': buildInitializers(context),
     };
   }
 
