@@ -108,11 +108,13 @@ class SpecResolver {
           values: schema.values,
           names: RenderEnum.variableNamesFor(quirks, schema.values),
           pointer: schema.pointer,
+          description: schema.description,
           defaultValue: schema.defaultValue,
         );
       case ResolvedObject():
         return RenderObject(
           snakeName: schema.snakeName,
+          description: schema.description,
           properties: schema.properties.map(
             (name, value) => MapEntry(name, toRenderSchema(value)),
           ),
@@ -128,6 +130,7 @@ class SpecResolver {
         if (useNewType && schema.type == PodType.string) {
           return RenderStringNewType(
             snakeName: schema.snakeName,
+            description: schema.description,
             pointer: schema.pointer,
             defaultValue: schema.defaultValue as String?,
           );
@@ -135,6 +138,7 @@ class SpecResolver {
         if (useNewType && schema.type == PodType.number) {
           return RenderNumberNewType(
             snakeName: schema.snakeName,
+            description: schema.description,
             pointer: schema.pointer,
             defaultValue: schema.defaultValue as double?,
           );
@@ -142,6 +146,7 @@ class SpecResolver {
         return RenderPod(
           snakeName: schema.snakeName,
           type: schema.type,
+          description: schema.description,
           pointer: schema.pointer,
           defaultValue: schema.defaultValue,
         );
@@ -155,26 +160,34 @@ class SpecResolver {
         return RenderArray(
           snakeName: schema.snakeName,
           items: toRenderSchema(schema.items),
+          description: schema.description,
           pointer: schema.pointer,
           defaultValue: defaultValue,
         );
       case ResolvedVoid():
-        return RenderVoid(snakeName: schema.snakeName, pointer: schema.pointer);
+        return RenderVoid(
+          snakeName: schema.snakeName,
+          pointer: schema.pointer,
+          description: schema.description,
+        );
       case ResolvedUnknown():
         return RenderUnknown(
           snakeName: schema.snakeName,
           pointer: schema.pointer,
+          description: schema.description,
         );
       case ResolvedBinary():
         return RenderBinary(
           snakeName: schema.snakeName,
           pointer: schema.pointer,
+          description: schema.description,
         );
       case ResolvedOneOf():
         return RenderOneOf(
           snakeName: schema.snakeName,
           schemas: schema.schemas.map(toRenderSchema).toList(),
           pointer: schema.pointer,
+          description: schema.description,
         );
       case ResolvedAllOf():
         // Generate a synthetic object type for allOf.
@@ -187,6 +200,7 @@ class SpecResolver {
         }
         return RenderObject(
           snakeName: schema.snakeName,
+          description: schema.description,
           properties: properties,
           pointer: schema.pointer,
         );
@@ -200,10 +214,12 @@ class SpecResolver {
           snakeName: schema.snakeName,
           schemas: schema.schemas.map(toRenderSchema).toList(),
           pointer: schema.pointer,
+          description: schema.description,
         );
       case ResolvedMap():
         return RenderMap(
           snakeName: schema.snakeName,
+          description: schema.description,
           valueSchema: toRenderSchema(schema.valueSchema),
           pointer: schema.pointer,
         );
@@ -211,6 +227,7 @@ class SpecResolver {
         return RenderEmptyObject(
           snakeName: schema.snakeName,
           pointer: schema.pointer,
+          description: schema.description,
         );
       default:
         _unimplemented('Unknown schema: $schema', schema.pointer);
@@ -219,6 +236,7 @@ class SpecResolver {
 
   RenderParameter toRenderParameter(ResolvedParameter parameter) {
     return RenderParameter(
+      description: parameter.description,
       name: parameter.name,
       sendIn: parameter.sendIn,
       isRequired: parameter.isRequired,
@@ -268,6 +286,7 @@ class SpecResolver {
     );
     if (successful.isEmpty) {
       return RenderVoid(
+        description: operation.description,
         snakeName: '${operation.snakeName}_response',
         pointer: operation.pointer,
       );
@@ -291,6 +310,7 @@ class SpecResolver {
         snakeName: '${operation.snakeName}_response',
         schemas: distinctSchemas.toList(),
         pointer: operation.pointer,
+        description: operation.description,
       );
     }
     return distinctSchemas.first;
@@ -355,6 +375,7 @@ class RenderSpec {
       .sorted()
       .map(
         (tag) => Api(
+          description: 'Endpoints with tag $tag',
           snakeName: toSnakeCase(tag),
           endpoints: endpoints.where((e) => e.tag == tag).toList(),
         ),
@@ -372,6 +393,12 @@ class Endpoint {
 
   /// The operation of the endpoint.
   final RenderOperation operation;
+
+  /// The summary of the endpoint.
+  String? get summary => operation.summary;
+
+  /// The description of the endpoint.
+  String? get description => operation.description;
 
   /// The method of the endpoint.
   Method get method => operation.method;
@@ -429,7 +456,11 @@ class Endpoint {
     final headerParameters = bySendIn['header'] ?? [];
     final hasHeaderParameters = headerParameters.isNotEmpty;
 
+    // Endpoints could get summary and description from
+    // *both* Path and Operation objects.  Unclear how we should display both.
     return {
+      'endpoint_summary': summary,
+      'endpoint_description': description,
       'methodName': methodName,
       'httpMethod': method.name,
       'path': path,
@@ -454,9 +485,14 @@ class Endpoint {
 /// The spec calls these tags, but the Dart openapi generator groups endpoints
 /// by tag into an API class so we do too.
 class Api {
-  const Api({required this.snakeName, required this.endpoints});
+  const Api({
+    required this.snakeName,
+    required this.endpoints,
+    required this.description,
+  });
 
   final String snakeName;
+  final String description;
   final List<Endpoint> endpoints;
 
   String get className => '${toUpperCamelCase(snakeName)}Api';
@@ -515,7 +551,7 @@ class RenderOperation {
   final List<String> tags;
 
   /// The summary of the resolved operation.
-  final String summary;
+  final String? summary;
 
   /// The description of the resolved operation.
   final String? description;
@@ -560,6 +596,8 @@ class RenderRequestBodyJson extends RenderRequestBody {
     // TODO(eseidel): Share code with Parameter.toTemplateContext.
     final isNullable = !isRequired;
     return {
+      // Request body does not have a summary.
+      'request_body_description': description,
       'name': paramName,
       'dartName': paramName,
       'bracketedName': '{$paramName}',
@@ -588,6 +626,7 @@ class RenderRequestBodyOctetStream extends RenderRequestBody {
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     final paramName = requestBodyClassName(context);
     return {
+      'request_body_description': description,
       'name': paramName,
       'dartName': paramName,
       'bracketedName': '{$paramName}',
@@ -644,13 +683,22 @@ class RenderResponse {
 }
 
 abstract class RenderSchema extends Equatable {
-  const RenderSchema({required this.snakeName, required this.pointer});
+  const RenderSchema({
+    required this.snakeName,
+    required this.pointer,
+    required this.description,
+  });
 
   /// The snake name of the resolved schema.
   final String snakeName;
 
   /// The pointer of the resolved schema.
   final JsonPointer pointer;
+
+  /// Schema objects do not have a summary to my knowledge.
+
+  /// The description of the resolved schema.
+  final String? description;
 
   /// Whether this schema creates a new type and thus needs to be rendered.
   bool get createsNewType;
@@ -759,6 +807,7 @@ abstract class RenderSchema extends Equatable {
 class RenderPod extends RenderSchema {
   const RenderPod({
     required super.snakeName,
+    required super.description,
     required this.type,
     required super.pointer,
     this.defaultValue,
@@ -911,7 +960,11 @@ class RenderPod extends RenderSchema {
 }
 
 abstract class RenderNewType extends RenderSchema {
-  const RenderNewType({required super.snakeName, required super.pointer});
+  const RenderNewType({
+    required super.snakeName,
+    required super.pointer,
+    required super.description,
+  });
 
   /// Whether this new type creates a new type and thus needs to be rendered.
   @override
@@ -944,6 +997,7 @@ abstract class RenderNewType extends RenderSchema {
 class RenderStringNewType extends RenderNewType {
   const RenderStringNewType({
     required super.snakeName,
+    required super.description,
     required super.pointer,
     required this.defaultValue,
   });
@@ -959,6 +1013,7 @@ class RenderStringNewType extends RenderNewType {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
+    'description': description,
     'typeName': className,
     'nullableTypeName': nullableTypeName(context),
   };
@@ -989,6 +1044,7 @@ class RenderStringNewType extends RenderNewType {
 class RenderNumberNewType extends RenderNewType {
   const RenderNumberNewType({
     required super.snakeName,
+    required super.description,
     required super.pointer,
     required this.defaultValue,
   });
@@ -1004,6 +1060,7 @@ class RenderNumberNewType extends RenderNewType {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
+    'description': description,
     'typeName': className,
     'nullableTypeName': nullableTypeName(context),
   };
@@ -1034,6 +1091,7 @@ class RenderNumberNewType extends RenderNewType {
 class RenderObject extends RenderNewType {
   const RenderObject({
     required super.snakeName,
+    required super.description,
     required this.properties,
     required super.pointer,
     this.additionalProperties,
@@ -1210,6 +1268,7 @@ class RenderObject extends RenderNewType {
       throw StateError('Object schema has no properties: $this');
     }
     return {
+      'description': description,
       'typeName': className,
       'nullableTypeName': nullableTypeName(context),
       'hasProperties': hasProperties,
@@ -1297,6 +1356,7 @@ class RenderArray extends RenderSchema {
     required super.snakeName,
     required this.items,
     required super.pointer,
+    required super.description,
     this.defaultValue,
   });
 
@@ -1425,6 +1485,7 @@ class RenderMap extends RenderSchema {
     required super.snakeName,
     required this.valueSchema,
     required super.pointer,
+    required super.description,
     this.defaultValue,
   });
 
@@ -1524,6 +1585,7 @@ class RenderEnum extends RenderNewType {
     required this.values,
     required this.names,
     required super.pointer,
+    required super.description,
     this.defaultValue,
   }) : assert(
          names.length == values.length,
@@ -1577,6 +1639,7 @@ class RenderEnum extends RenderNewType {
     }
 
     return {
+      'description': description,
       'typeName': className,
       'nullableTypeName': nullableTypeName(context),
       'enumValues': values.map(enumValueToTemplateContext).toList(),
@@ -1633,6 +1696,7 @@ class RenderOneOf extends RenderNewType {
     required super.snakeName,
     required this.schemas,
     required super.pointer,
+    required super.description,
   });
 
   /// The schemas of the resolved schema.
@@ -1673,6 +1737,7 @@ class RenderOneOf extends RenderNewType {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     return {
+      'description': description,
       'typeName': className,
       'nullableTypeName': nullableTypeName(context),
     };
@@ -1696,6 +1761,7 @@ class RenderOneOf extends RenderNewType {
 
 class RenderParameter {
   const RenderParameter({
+    required this.description,
     required this.name,
     required this.type,
     required this.isRequired,
@@ -1704,6 +1770,9 @@ class RenderParameter {
 
   /// The name of the parameter.
   final String name;
+
+  /// The description of the parameter.
+  final String? description;
 
   /// The type of the parameter.
   final RenderSchema type;
@@ -1720,6 +1789,7 @@ class RenderParameter {
     final dartName = lowercaseCamelFromSnake(name);
     final jsonName = name;
     return {
+      'parameter_description': description,
       'name': name,
       'dartName': dartName,
       'bracketedName': '{$specName}',
@@ -1746,7 +1816,11 @@ class RenderParameter {
 }
 
 class RenderUnknown extends RenderSchema {
-  const RenderUnknown({required super.snakeName, required super.pointer});
+  const RenderUnknown({
+    required super.snakeName,
+    required super.pointer,
+    required super.description,
+  });
 
   @override
   dynamic get defaultValue => null;
@@ -1794,7 +1868,11 @@ class RenderUnknown extends RenderSchema {
 }
 
 class RenderVoid extends RenderNoJson {
-  const RenderVoid({required super.snakeName, required super.pointer});
+  const RenderVoid({
+    required super.snakeName,
+    required super.pointer,
+    required super.description,
+  });
 
   @override
   dynamic get defaultValue =>
@@ -1824,7 +1902,11 @@ class RenderVoid extends RenderNoJson {
 }
 
 abstract class RenderNoJson extends RenderSchema {
-  const RenderNoJson({required super.snakeName, required super.pointer});
+  const RenderNoJson({
+    required super.snakeName,
+    required super.pointer,
+    required super.description,
+  });
 
   @override
   bool get onlyJsonTypes => false;
@@ -1854,7 +1936,11 @@ abstract class RenderNoJson extends RenderSchema {
 }
 
 class RenderBinary extends RenderNoJson {
-  const RenderBinary({required super.snakeName, required super.pointer});
+  const RenderBinary({
+    required super.snakeName,
+    required super.pointer,
+    required super.description,
+  });
 
   @override
   dynamic get defaultValue => null;
@@ -1880,7 +1966,11 @@ class RenderBinary extends RenderNoJson {
 }
 
 class RenderEmptyObject extends RenderNewType {
-  const RenderEmptyObject({required super.snakeName, required super.pointer});
+  const RenderEmptyObject({
+    required super.snakeName,
+    required super.pointer,
+    required super.description,
+  });
 
   @override
   dynamic get defaultValue => null;
@@ -1908,6 +1998,7 @@ class RenderEmptyObject extends RenderNewType {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
+    'description': description,
     'typeName': className,
     'nullableTypeName': nullableTypeName(context),
   };

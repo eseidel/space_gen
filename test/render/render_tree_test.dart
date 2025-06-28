@@ -38,6 +38,7 @@ void main() {
       const a = RenderObject(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        description: 'Foo',
         properties: <String, RenderSchema>{},
       );
       expect(a.equalsIgnoringName(a), isTrue);
@@ -45,6 +46,7 @@ void main() {
       const b = RenderObject(
         snakeName: 'b',
         pointer: JsonPointer.empty(),
+        description: 'Foo',
         properties: <String, RenderSchema>{},
       );
       expect(a.equalsIgnoringName(b), isTrue);
@@ -52,8 +54,13 @@ void main() {
       const c = RenderObject(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        description: 'Foo',
         properties: <String, RenderSchema>{
-          'a': RenderUnknown(snakeName: 'a', pointer: JsonPointer.empty()),
+          'a': RenderUnknown(
+            snakeName: 'a',
+            pointer: JsonPointer.empty(),
+            description: 'Foo',
+          ),
         },
       );
       expect(a.equalsIgnoringName(c), isFalse);
@@ -61,11 +68,13 @@ void main() {
       const d = RenderObject(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        description: 'Foo',
         properties: <String, RenderSchema>{
           'a': RenderPod(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
             type: PodType.string,
+            description: 'Foo',
           ),
         },
       );
@@ -74,11 +83,13 @@ void main() {
       const e = RenderObject(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        description: 'Foo',
         properties: <String, RenderSchema>{},
         additionalProperties: RenderPod(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
           type: PodType.string,
+          description: 'Foo',
         ),
       );
       expect(a.equalsIgnoringName(e), isFalse);
@@ -86,6 +97,7 @@ void main() {
       const f = RenderObject(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        description: 'Foo',
         properties: <String, RenderSchema>{},
         requiredProperties: ['a'],
       );
@@ -94,11 +106,13 @@ void main() {
       const g = RenderObject(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        description: 'Foo',
         properties: <String, RenderSchema>{},
         additionalProperties: RenderPod(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
           type: PodType.boolean,
+          description: 'Foo',
         ),
       );
       expect(e.equalsIgnoringName(g), isFalse);
@@ -106,11 +120,13 @@ void main() {
       const h = RenderObject(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        description: 'Foo',
         properties: <String, RenderSchema>{
           'e': RenderPod(
             snakeName: 'e',
             pointer: JsonPointer.empty(),
             type: PodType.string,
+            description: 'Foo',
           ),
         },
       );
@@ -121,10 +137,12 @@ void main() {
       const a = RenderArray(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        description: 'Foo',
         items: RenderPod(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
           type: PodType.string,
+          description: 'Foo',
         ),
       );
       expect(a.equalsIgnoringName(a), isTrue);
@@ -132,10 +150,12 @@ void main() {
       const b = RenderArray(
         snakeName: 'b',
         pointer: JsonPointer.empty(),
+        description: 'Foo',
         items: RenderPod(
           snakeName: 'b',
           pointer: JsonPointer.empty(),
           type: PodType.string,
+          description: 'Foo',
         ),
       );
       expect(a.equalsIgnoringName(b), isTrue);
@@ -143,10 +163,12 @@ void main() {
       const c = RenderArray(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        description: 'Foo',
         items: RenderPod(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
           type: PodType.boolean,
+          description: 'Foo',
         ),
       );
       expect(a.equalsIgnoringName(c), isFalse);
@@ -156,6 +178,7 @@ void main() {
       final a = RenderEnum(
         snakeName: 'a',
         pointer: const JsonPointer.empty(),
+        description: 'Foo',
         names: const ['a', 'b', 'c'],
         values: const ['a', 'b', 'c'],
       );
@@ -164,6 +187,7 @@ void main() {
       final b = RenderEnum(
         snakeName: 'b',
         pointer: const JsonPointer.empty(),
+        description: 'Foo',
         names: const ['a', 'b', 'c'],
         values: const ['a', 'b', 'c'],
       );
@@ -172,6 +196,7 @@ void main() {
       final c = RenderEnum(
         snakeName: 'a',
         pointer: const JsonPointer.empty(),
+        description: 'Foo',
         names: const ['a', 'b'],
         values: const ['a', 'b'],
       );
@@ -182,11 +207,13 @@ void main() {
       const a = RenderOneOf(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        description: 'Foo',
         schemas: [
           RenderPod(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
             type: PodType.string,
+            description: 'Foo',
           ),
         ],
       );
@@ -195,11 +222,13 @@ void main() {
       const b = RenderOneOf(
         snakeName: 'b',
         pointer: JsonPointer.empty(),
+        description: 'Foo',
         schemas: [
           RenderPod(
             snakeName: 'b',
             pointer: JsonPointer.empty(),
             type: PodType.string,
+            description: 'Foo',
           ),
         ],
       );
@@ -208,16 +237,19 @@ void main() {
       const c = RenderOneOf(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        description: 'Foo',
         schemas: [
           RenderPod(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
             type: PodType.string,
+            description: 'Foo',
           ),
           RenderPod(
             snakeName: 'b',
             pointer: JsonPointer.empty(),
             type: PodType.string,
+            description: 'Foo',
           ),
         ],
       );

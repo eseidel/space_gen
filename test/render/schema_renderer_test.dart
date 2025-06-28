@@ -334,7 +334,6 @@ void main() {
       final result = renderSchema(schema);
       expect(
         result,
-        '\n'
         'sealed class Test {\n'
         '    static Test fromJson(dynamic jsonArg) {\n'
         '        // Determine which schema to use based on the json.\n'
@@ -378,7 +377,6 @@ void main() {
       final result = renderSchema(schema);
       expect(
         result,
-        '\n'
         'sealed class Test {\n'
         '    static Test fromJson(dynamic jsonArg) {\n'
         '        // Determine which schema to use based on the json.\n'
@@ -413,7 +411,6 @@ void main() {
       // anyOf currently renders as a oneOf, which is wrong.
       expect(
         result,
-        '\n'
         'sealed class Test {\n'
         '    static Test fromJson(dynamic jsonArg) {\n'
         '        // Determine which schema to use based on the json.\n'
@@ -938,6 +935,7 @@ void main() {
         '\n'
         '    const Test._(this.value);\n'
         '\n'
+        '    /// Creates a Test from a json string.\n'
         '    factory Test.fromJson(String json) {\n'
         '        return Test.values.firstWhere(\n'
         '            (value) => value.value == json,\n'
@@ -955,10 +953,14 @@ void main() {
         '        return Test.fromJson(json);\n'
         '    }\n'
         '\n'
+        '    /// The value of the enum, as a string.  This is the exact value\n'
+        '    /// from the OpenAPI spec and will be used for network transport.\n'
         '    final String value;\n'
         '\n'
+        '    /// Converts the enum to a json string.\n'
         '    String toJson() => value;\n'
         '\n'
+        '    /// Returns the string value of the enum.\n'
         '    @override\n'
         '    String toString() => value;\n'
         '}\n'
@@ -1109,11 +1111,13 @@ void main() {
       ).called(1);
       expect(
         result,
+        '/// Test API\n'
         'class PetApi {\n'
         '    PetApi(ApiClient? client) : client = client ?? ApiClient();\n'
         '\n'
         '    final ApiClient client;\n'
         '\n'
+        '    /// Uploads an image.\n'
         '    Future<void> uploadFile(\n'
         '        int petId,\n'
         '        { Uint8List? uint8List, }\n'
@@ -1164,11 +1168,13 @@ void main() {
       );
       expect(
         result,
+        '/// Test API\n'
         'class PetApi {\n'
         '    PetApi(ApiClient? client) : client = client ?? ApiClient();\n'
         '\n'
         '    final ApiClient client;\n'
         '\n'
+        '    /// Uploads an image.\n'
         '    Future<void> uploadFile(\n'
         '        { String? string, }\n'
         '    ) async {\n'
@@ -1222,6 +1228,7 @@ void main() {
       );
       expect(
         result,
+        '/// Test API\n'
         'class DefaultApi {\n'
         '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
         '\n'
@@ -1278,6 +1285,7 @@ void main() {
       );
       expect(
         result,
+        '/// Test API\n'
         'class DefaultApi {\n'
         '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
         '\n'
@@ -1336,6 +1344,7 @@ void main() {
       );
       expect(
         result,
+        '/// Test API\n'
         'class DefaultApi {\n'
         '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
         '\n'
@@ -1392,6 +1401,7 @@ void main() {
       );
       expect(
         result,
+        '/// Test API\n'
         'class DefaultApi {\n'
         '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
         '\n'
@@ -1434,11 +1444,13 @@ void main() {
       );
       expect(
         result,
+        '/// Test API\n'
         'class DefaultApi {\n'
         '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
         '\n'
         '    final ApiClient client;\n'
         '\n'
+        '    /// Get user\n'
         '    Future<void> users(\n'
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
@@ -1484,11 +1496,13 @@ void main() {
       );
       expect(
         result,
+        '/// Test API\n'
         'class DefaultApi {\n'
         '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
         '\n'
         '    final ApiClient client;\n'
         '\n'
+        '    /// Get user\n'
         '    Future<void> users(\n'
         "        { String? foo = 'bar', }\n"
         '    ) async {\n'
@@ -1547,11 +1561,13 @@ void main() {
         // This expectation is wrong.  foo should just default to null
         // even when quirking for OpenAPI.  Example:
         // https://github.com/eseidel/space_traders/blob/a40923167bb6fec2069ec3c42b6ff69c7fc14439/packages/openapi/lib/api/systems_api.dart#L482
+        '/// Test API\n'
         'class DefaultApi {\n'
         '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
         '\n'
         '    final ApiClient client;\n'
         '\n'
+        '    /// Get user\n'
         '    Future<void> users(\n'
         '        { List<String>? foo = const [], }\n'
         '    ) async {\n'

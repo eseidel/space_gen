@@ -34,16 +34,21 @@ class SchemaRenderer {
   }
 
   String renderEndpoints({
+    required String? description,
     required String className,
     required List<Endpoint> endpoints,
   }) {
     return templates.load('api').renderString({
+      'api_description': description,
       'className': className,
       'endpoints': endpoints.map((e) => e.toTemplateContext(this)).toList(),
     });
   }
 
   /// Renders an api to a string, does not render the imports.
-  String renderApi(Api api) =>
-      renderEndpoints(className: api.className, endpoints: api.endpoints);
+  String renderApi(Api api) => renderEndpoints(
+    description: api.description,
+    className: api.className,
+    endpoints: api.endpoints,
+  );
 }

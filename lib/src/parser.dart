@@ -249,7 +249,7 @@ PodType? determinePodType(MapContext json) {
   _error(json, 'Unknown pod type: $type');
 }
 
-Schema? _handleCollectionTypes(MapContext json) {
+Schema? _handleCollectionTypes(MapContext json, String? description) {
   if (json.containsKey('oneOf')) {
     final oneOf = json.childAsList('oneOf');
     final schemas = <SchemaRef>[];
@@ -262,6 +262,7 @@ Schema? _handleCollectionTypes(MapContext json) {
       pointer: json.pointer,
       snakeName: json.snakeName,
       schemas: schemas,
+      description: description,
     );
   }
 
@@ -277,6 +278,7 @@ Schema? _handleCollectionTypes(MapContext json) {
       pointer: json.pointer,
       snakeName: json.snakeName,
       schemas: schemas,
+      description: description,
     );
   }
 
@@ -292,6 +294,7 @@ Schema? _handleCollectionTypes(MapContext json) {
       pointer: json.pointer,
       snakeName: json.snakeName,
       schemas: schemas,
+      description: description,
     );
   }
   return null;
@@ -326,6 +329,7 @@ SchemaEnum? _handleEnum({
   required PodType? podType,
   required String? type,
   required dynamic defaultValue,
+  required String? description,
 }) {
   final enumValues = _optional<List<dynamic>>(json, 'enum');
 
@@ -367,6 +371,7 @@ SchemaEnum? _handleEnum({
     }
   }
   return SchemaEnum(
+    description: description,
     pointer: json.pointer,
     snakeName: json.snakeName,
     defaultValue: typedDefaultValue,
@@ -375,7 +380,11 @@ SchemaEnum? _handleEnum({
 }
 
 Schema _createCorrectSchemaSubtype(MapContext json) {
-  final collectionType = _handleCollectionTypes(json);
+  // Unclear what to do with title. Is it like summary?
+  _ignored<String>(json, 'title');
+  final description = _optional<String>(json, 'description');
+
+  final collectionType = _handleCollectionTypes(json, description);
   if (collectionType != null) {
     return collectionType;
   }
@@ -384,13 +393,21 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   final podType = determinePodType(json);
   final type = _optional<String>(json, 'type');
   if (type == 'null') {
-    return SchemaNull(pointer: json.pointer, snakeName: json.snakeName);
+    return SchemaNull(
+      pointer: json.pointer,
+      snakeName: json.snakeName,
+      description: description,
+    );
   }
 
   if (type == 'string') {
     final format = _optional<String>(json, 'format');
     if (format == 'binary') {
-      return SchemaBinary(pointer: json.pointer, snakeName: json.snakeName);
+      return SchemaBinary(
+        pointer: json.pointer,
+        snakeName: json.snakeName,
+        description: description,
+      );
     }
   }
 
@@ -400,6 +417,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     podType: podType,
     type: type,
     defaultValue: defaultValue,
+    description: description,
   );
   if (enumSchema != null) {
     return enumSchema;
@@ -409,6 +427,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     return SchemaPod(
       pointer: json.pointer,
       snakeName: json.snakeName,
+      description: description,
       type: podType,
       defaultValue: defaultValue,
     );
@@ -427,10 +446,9 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
       snakeName: json.snakeName,
       items: itemSchema,
       defaultValue: defaultValue,
+      description: description,
     );
   }
-
-  final description = _optional<String>(json, 'description');
 
   final additionalPropertiesSchema = _handleAdditionalProperties(json);
 
@@ -456,7 +474,11 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   // empty response.  Those aren't "dynamic" types, but unclear if they need
   // a separate class either.
   if (propertiesJson.keys.isEmpty) {
-    return SchemaEmptyObject(pointer: json.pointer, snakeName: json.snakeName);
+    return SchemaEmptyObject(
+      pointer: json.pointer,
+      snakeName: json.snakeName,
+      description: description,
+    );
   }
 
   final properties = <String, SchemaRef>{};
@@ -488,7 +510,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     snakeName: json.snakeName,
     properties: properties,
     requiredProperties: requiredProperties.cast<String>(),
-    description: description ?? '',
+    description: description,
     additionalProperties: additionalPropertiesSchema,
     defaultValue: defaultValue,
     example: example,
@@ -590,8 +612,8 @@ Operation parseOperation(MapContext operationJson, String path) {
     pointer: operationJson.pointer,
     tags: tags,
     snakeName: snakeName,
-    summary: summary ?? '',
-    description: description ?? '',
+    summary: summary,
+    description: description,
     parameters: parameters,
     requestBody: requestBody,
     responses: responses,
@@ -642,8 +664,8 @@ PathItem parsePathItem({
   return PathItem(
     pointer: pathItemJson.pointer,
     path: path,
-    summary: summary ?? '',
-    description: description ?? '',
+    summary: summary,
+    description: description,
     // parameters: parameters,
     operations: operations,
   );

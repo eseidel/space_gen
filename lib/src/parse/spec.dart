@@ -104,7 +104,11 @@ class SchemaRef extends RefOr<Schema> {
 }
 
 sealed class Schema extends Equatable implements HasPointer {
-  const Schema({required this.pointer, required this.snakeName});
+  const Schema({
+    required this.pointer,
+    required this.snakeName,
+    required this.description,
+  });
 
   /// Where this schema is located in the spec.
   @override
@@ -113,20 +117,28 @@ sealed class Schema extends Equatable implements HasPointer {
   /// The snake name of this schema.
   final String snakeName;
 
+  /// The description of this schema.
+  final String? description;
+
   @override
-  List<Object?> get props => [pointer, snakeName];
+  List<Object?> get props => [pointer, snakeName, description];
 }
 
+/// A schema which is a POD (plain old data) type.
 class SchemaPod extends Schema {
   const SchemaPod({
     required super.pointer,
     required super.snakeName,
+    required super.description,
     required this.type,
     required this.defaultValue,
   });
 
+  /// The type of data.
   final PodType type;
 
+  /// The default value of the data.
+  // TODO(eseidel): This should be typed.
   final dynamic defaultValue;
 
   @override
@@ -134,7 +146,11 @@ class SchemaPod extends Schema {
 }
 
 abstract class SchemaObjectBase extends Schema {
-  const SchemaObjectBase({required super.pointer, required super.snakeName});
+  const SchemaObjectBase({
+    required super.pointer,
+    required super.snakeName,
+    required super.description,
+  });
 }
 
 /// Map isn't a type in the spec, but rather inferred by having
@@ -143,30 +159,34 @@ class SchemaMap extends Schema {
   const SchemaMap({
     required super.pointer,
     required super.snakeName,
+    required super.description,
     required this.valueSchema,
-    required this.description,
   });
 
   final SchemaRef valueSchema;
 
-  final String? description;
-
   @override
-  List<Object?> get props => [super.props, valueSchema, description];
+  List<Object?> get props => [super.props, valueSchema];
 }
 
 class SchemaBinary extends Schema {
-  const SchemaBinary({required super.pointer, required super.snakeName});
+  const SchemaBinary({
+    required super.pointer,
+    required super.snakeName,
+    required super.description,
+  });
 }
 
 class SchemaEnum extends Schema {
   const SchemaEnum({
     required super.pointer,
     required super.snakeName,
+    required super.description,
     required this.defaultValue,
     required this.enumValues,
   });
 
+  /// The default value of the enum.
   final String? defaultValue;
 
   // Only string enums are supported for now.
@@ -177,13 +197,18 @@ class SchemaEnum extends Schema {
 }
 
 class SchemaNull extends Schema {
-  const SchemaNull({required super.pointer, required super.snakeName});
+  const SchemaNull({
+    required super.pointer,
+    required super.snakeName,
+    required super.description,
+  });
 }
 
 class SchemaArray extends Schema {
   const SchemaArray({
     required super.pointer,
     required super.snakeName,
+    required super.description,
     required this.items,
     required this.defaultValue,
   });
@@ -201,10 +226,8 @@ class SchemaUnknown extends Schema {
   const SchemaUnknown({
     required super.pointer,
     required super.snakeName,
-    required this.description,
+    required super.description,
   });
-
-  final String? description;
 
   @override
   List<Object?> get props => [super.props, description];
@@ -212,7 +235,11 @@ class SchemaUnknown extends Schema {
 
 // Parses as a single, constant object, renders to json as {}.
 class SchemaEmptyObject extends Schema {
-  const SchemaEmptyObject({required super.pointer, required super.snakeName});
+  const SchemaEmptyObject({
+    required super.pointer,
+    required super.snakeName,
+    required super.description,
+  });
 }
 
 abstract class SchemaCombiner extends SchemaObjectBase {
@@ -220,6 +247,7 @@ abstract class SchemaCombiner extends SchemaObjectBase {
     required super.pointer,
     required super.snakeName,
     required this.schemas,
+    required super.description,
   });
 
   final List<SchemaRef> schemas;
@@ -233,6 +261,7 @@ class SchemaAnyOf extends SchemaCombiner {
     required super.pointer,
     required super.snakeName,
     required super.schemas,
+    required super.description,
   });
 }
 
@@ -241,6 +270,7 @@ class SchemaAllOf extends SchemaCombiner {
     required super.pointer,
     required super.snakeName,
     required super.schemas,
+    required super.description,
   });
 }
 
@@ -249,6 +279,7 @@ class SchemaOneOf extends SchemaCombiner {
     required super.pointer,
     required super.snakeName,
     required super.schemas,
+    required super.description,
   });
 }
 
@@ -260,9 +291,9 @@ class SchemaObject extends SchemaObjectBase {
   SchemaObject({
     required super.pointer,
     required super.snakeName,
+    required super.description,
     required this.properties,
     required this.requiredProperties,
-    required this.description,
     required this.additionalProperties,
     required this.defaultValue,
     required this.example,
@@ -286,9 +317,6 @@ class SchemaObject extends SchemaObjectBase {
   // Not currently used by the generator.
   final dynamic example;
 
-  /// The description of this schema.
-  final String description;
-
   /// The additional properties of this schema.
   /// Used for specifying T for Map\<String, T\>.
   final SchemaRef? additionalProperties;
@@ -300,7 +328,8 @@ class SchemaObject extends SchemaObjectBase {
   List<Object?> get props => [
     super.props,
     properties,
-    required,
+    requiredProperties,
+    example,
     description,
     additionalProperties,
     defaultValue,
@@ -381,7 +410,7 @@ class Operation extends Equatable implements HasPointer {
   final String snakeName;
 
   /// The summary of this operation.
-  final String summary;
+  final String? summary;
 
   /// The description of this operation.
   final String? description;

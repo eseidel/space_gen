@@ -1028,8 +1028,16 @@ void main() {
     runWithLogger(
       logger,
       () => logNameCollisions([
-        RenderUnknown(snakeName: 'foo', pointer: JsonPointer.parse('#/foo')),
-        RenderUnknown(snakeName: 'foo', pointer: JsonPointer.parse('#/bar')),
+        RenderUnknown(
+          snakeName: 'foo',
+          pointer: JsonPointer.parse('#/foo'),
+          description: 'Foo description',
+        ),
+        RenderUnknown(
+          snakeName: 'foo',
+          pointer: JsonPointer.parse('#/bar'),
+          description: 'Bar description',
+        ),
       ]),
     );
     verify(() => logger.warn('Schema foo has 2 name collisions')).called(1);
@@ -1054,10 +1062,12 @@ void main() {
       final schema = RenderObject(
         snakeName: 'foo',
         pointer: JsonPointer.parse('#/foo'),
+        description: 'Foo description',
         properties: {
           'bar': RenderBinary(
             snakeName: 'bar',
             pointer: JsonPointer.parse('#/bar'),
+            description: 'Bar description',
           ),
         },
       );
@@ -1087,6 +1097,7 @@ void main() {
       );
       final api = Api(
         snakeName: 'foo',
+        description: 'Foo description',
         endpoints: [
           Endpoint(
             operation: RenderOperation(
@@ -1098,15 +1109,18 @@ void main() {
               returnType: RenderVoid(
                 snakeName: 'bar',
                 pointer: JsonPointer.parse('#/bar'),
+                description: 'Bar description',
               ),
               summary: 'Bar',
               description: 'Bar description',
               parameters: [
                 RenderParameter(
                   name: 'foo',
+                  description: 'Foo description',
                   type: RenderBinary(
                     snakeName: 'foo',
                     pointer: JsonPointer.parse('#/foo'),
+                    description: 'Foo description',
                   ),
                   isRequired: true,
                   sendIn: SendIn.query,
