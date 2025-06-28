@@ -35,6 +35,15 @@ Iterable<String> collectRefs(OpenApi root) {
   return refs;
 }
 
+void validatePackageName(String packageName) {
+  // Validate that packageName is a valid dart package name.
+  // Should be snake_case starting with a letter.
+  final validRegexp = RegExp(r'^[a-z][a-z0-9_]{0,63}$');
+  if (!validRegexp.hasMatch(packageName)) {
+    throw FormatException('"$packageName" is not a valid dart package name.');
+  }
+}
+
 Future<void> loadAndRenderSpec({
   required Uri specUri,
   required String packageName,
@@ -44,6 +53,7 @@ Future<void> loadAndRenderSpec({
   Quirks quirks = const Quirks(),
 }) async {
   final fs = outDir.fileSystem;
+  validatePackageName(packageName);
 
   final templates = templateDir == null
       ? TemplateProvider.defaultLocation()

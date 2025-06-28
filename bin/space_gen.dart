@@ -1,5 +1,6 @@
 import 'package:args/args.dart';
 import 'package:file/local.dart';
+import 'package:path/path.dart' as p;
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/render.dart';
 
@@ -30,7 +31,7 @@ Future<int> run(List<String> arguments) async {
 
   final specUri = Uri.parse(results['in'] as String);
   final outDir = fs.directory(results['out'] as String);
-  final packageName = outDir.path.split('/').last;
+  final packageName = p.basename(outDir.path);
   final quirks = results['openapi'] as bool
       ? const Quirks.openapi()
       : const Quirks();
