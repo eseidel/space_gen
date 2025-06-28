@@ -1303,7 +1303,10 @@ void main() {
       final result = renderSchema(json);
       expect(
         result,
-        'extension type Test(String value) {\n'
+        'extension type const Test._(String value) {\n'
+        '    const Test(this.value): assert(value.length <= 10, "Invalid value: \$value"),\n'
+        'assert(value.length >= 1, "Invalid value: \$value");\n'
+        '\n'
         '    factory Test.fromJson(String json) => Test(json);\n'
         '\n'
         '    /// Convenience to create a nullable type from a nullable json object.\n'
