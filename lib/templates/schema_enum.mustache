@@ -1,3 +1,6 @@
+{{#description}}
+/// {{{ description }}}
+{{/description}}
 enum {{ typeName }} {
     {{#enumValues}}
     {{ enumValueName }}._({{{ enumValue }}}),
@@ -6,6 +9,7 @@ enum {{ typeName }} {
 
     const {{typeName}}._(this.value);
 
+    /// Creates a {{ typeName }} from a json string.
     factory {{ typeName }}.fromJson(String json) {
         return {{ typeName }}.values.firstWhere(
             (value) => value.value == json,
@@ -23,10 +27,14 @@ enum {{ typeName }} {
         return {{ typeName }}.fromJson(json);
     }
 
+    /// The value of the enum, as a string.  This is the exact value
+    /// from the OpenAPI spec and will be used for network transport.
     final String value;
 
+    /// Converts the enum to a json string.
     String toJson() => value;
 
+    /// Returns the string value of the enum.
     @override
     String toString() => value;
 }

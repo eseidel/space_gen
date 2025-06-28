@@ -511,7 +511,7 @@ void main() {
               'RequestBody(#/components/requestBodies/RequestBody, null, '
               '{application/json: MediaType(SchemaRef(null, '
               'SchemaPod([#/components/requestBodies/RequestBody/content/application/json/schema, '
-              'request_body], PodType.string, null)))}, false)',
+              'request_body, null], PodType.string, null)))}, false)',
             ),
           ),
         ),
@@ -526,6 +526,7 @@ void main() {
         pointer: JsonPointer.parse(
           '#/paths//users/get/responses/200/content/application/json/schema',
         ),
+        description: 'Foo',
         properties: const {},
         additionalProperties: null,
         requiredProperties: const [],
@@ -535,6 +536,7 @@ void main() {
         pointer: JsonPointer.parse(
           '#/paths//users/get/responses/201/content/application/json/schema',
         ),
+        description: 'Foo',
         properties: const {},
         additionalProperties: null,
         requiredProperties: const [],
@@ -553,19 +555,23 @@ void main() {
       final schema1 = ResolvedArray(
         snakeName: 'Foo',
         pointer: pointer200,
+        description: 'Foo',
         items: ResolvedPod(
           type: PodType.string,
           pointer: pointer200,
           snakeName: 'Foo',
+          description: 'Foo',
         ),
       );
       final schema2 = ResolvedArray(
         snakeName: 'Foo',
         pointer: pointer201,
+        description: 'Foo',
         items: ResolvedPod(
           type: PodType.string,
           pointer: pointer200,
           snakeName: 'Foo',
+          description: 'Foo',
         ),
       );
       expect(schema1, equals(schema1));
@@ -579,10 +585,12 @@ void main() {
             ResolvedArray(
               snakeName: 'Foo',
               pointer: pointer200,
+              description: 'Foo',
               items: ResolvedPod(
                 type: PodType.integer,
                 pointer: pointer200,
                 snakeName: 'Foo',
+                description: 'Foo',
               ),
             ),
           ),
@@ -595,6 +603,7 @@ void main() {
         pointer: JsonPointer.parse(
           '#/paths//users/get/responses/200/content/application/json/schema',
         ),
+        description: 'Foo',
         values: const ['bar', 'baz'],
         defaultValue: null,
       );
@@ -603,6 +612,7 @@ void main() {
         pointer: JsonPointer.parse(
           '#/paths//users/get/responses/200/content/application/json/schema',
         ),
+        description: 'Foo',
         values: const ['bar', 'qux'],
         defaultValue: null,
       );
@@ -617,22 +627,26 @@ void main() {
       final schema1 = ResolvedAnyOf(
         snakeName: 'Foo',
         pointer: pointer200,
+        description: 'Foo',
         schemas: [
           ResolvedPod(
             type: PodType.string,
             pointer: pointer200,
             snakeName: 'Foo',
+            description: 'Foo',
           ),
         ],
       );
       final schema2 = ResolvedAnyOf(
         snakeName: 'Foo',
         pointer: pointer200,
+        description: 'Foo',
         schemas: [
           ResolvedPod(
             type: PodType.string,
             pointer: pointer200,
             snakeName: 'Foo',
+            description: 'Foo',
           ),
         ],
       );

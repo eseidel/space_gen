@@ -152,6 +152,7 @@ String renderOperation({
   final className = '${tag.capitalizeFirst()}Api';
   final endpoint = Endpoint(serverUrl: serverUrl, operation: renderOperation);
   return schemaRenderer.renderEndpoints(
+    description: 'Test API',
     className: className,
     endpoints: [endpoint],
   );

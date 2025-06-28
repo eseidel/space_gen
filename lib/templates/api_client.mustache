@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart';
 import 'package:{{{packageName}}}/api_exception.dart';
 
+/// The HTTP methods supported by the API.
 enum Method {
   delete,
   get,
@@ -11,9 +12,12 @@ enum Method {
   post,
   put;
 
+  /// Whether the method supports a request body.
   bool get supportsBody => this != get && this != delete;
 }
 
+/// The client interface for the API.
+/// Subclasses can override [invokeApi] to add custom behavior.
 class ApiClient {
   ApiClient({Uri? baseUri, Client? client, this.defaultHeaders = const {}})
       : baseUri = baseUri ?? Uri.parse('{{{baseUri}}}'),
