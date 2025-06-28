@@ -33,6 +33,35 @@ void main() {
       ]);
     });
   });
+
+  group('createDocComment', () {
+    test('basic', () {
+      expect(
+        createDocComment(title: 'Foo', body: 'Bar', indent: 4),
+        '/// Foo\n    /// Bar\n    ',
+      );
+      expect(createDocComment(title: 'Foo', body: 'Bar'), '/// Foo\n/// Bar\n');
+    });
+
+    test('empty', () {
+      expect(createDocComment(indent: 4), isNull);
+    });
+
+    test('title only', () {
+      expect(
+        createDocComment(title: 'Foo\nBar', indent: 4),
+        '/// Foo\n    /// Bar\n    ',
+      );
+    });
+
+    test('body only', () {
+      expect(
+        createDocComment(body: 'Bar\nBaz', indent: 4),
+        '/// Bar\n    /// Baz\n    ',
+      );
+    });
+  });
+
   group('equalsIgnoringName', () {
     test('RenderObject', () {
       const a = RenderObject(

@@ -63,6 +63,35 @@ String variableSafeName(Quirks quirks, String jsonName) {
   return avoidReservedWord(escapedName);
 }
 
+String wrapAsDocComment(String value, {required int indent}) {
+  final lines = value.split('\n');
+  final commentedLines = lines.map((line) => ' ' * indent + '/// $line');
+  return commentedLines.join('\n');
+}
+
+/// Doc comments are meant to be inserted right before the type declaration
+/// *not* on a separate line.  They will add their own new-line at the end if
+/// necessary and will match the passed in indent for any lines after the first
+/// including after the trailing new-line.
+String? createDocComment({String? title, String? body, int indent = 0}) {
+  if (title == null && body == null) {
+    return null;
+  }
+  final parts = <String>[];
+  if (title != null) {
+    parts.add(wrapAsDocComment(title, indent: indent));
+  }
+  if (body != null) {
+    parts.add(wrapAsDocComment(body, indent: indent));
+  }
+  if (parts.isEmpty) {
+    return null;
+  }
+  // Remove leading whitespace from just the first line.
+  // This makes it easier to use from within a mustache template.
+  return '${parts.join('\n').trimLeft()}\n${' ' * indent}';
+}
+
 // Could make this comparable to have a nicer sort for our test results.
 @immutable
 class Import extends Equatable {
@@ -475,8 +504,11 @@ class Endpoint {
     // Endpoints could get summary and description from
     // *both* Path and Operation objects.  Unclear how we should display both.
     return {
-      'endpoint_summary': summary,
-      'endpoint_description': description,
+      'endpoint_doc_comment': createDocComment(
+        title: summary,
+        body: description,
+        indent: 4,
+      ),
       'methodName': methodName,
       'httpMethod': method.name,
       'path': path,
@@ -612,8 +644,10 @@ class RenderRequestBodyJson extends RenderRequestBody {
     // TODO(eseidel): Share code with Parameter.toTemplateContext.
     final isNullable = !isRequired;
     return {
-      // Request body does not have a summary.
-      'request_body_description': description,
+      'request_body_doc_comment': createDocComment(
+        body: description,
+        indent: 4,
+      ),
       'name': paramName,
       'dartName': paramName,
       'bracketedName': '{$paramName}',
@@ -642,7 +676,10 @@ class RenderRequestBodyOctetStream extends RenderRequestBody {
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     final paramName = requestBodyClassName(context);
     return {
-      'request_body_description': description,
+      'request_body_doc_comment': createDocComment(
+        body: description,
+        indent: 4,
+      ),
       'name': paramName,
       'dartName': paramName,
       'bracketedName': '{$paramName}',
@@ -1017,7 +1054,7 @@ class RenderStringNewType extends RenderNewType {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
-    'description': description,
+    'doc_comment': createDocComment(body: description, indent: 4),
     'typeName': typeName(context),
     'nullableTypeName': nullableTypeName(context),
   };
@@ -1140,7 +1177,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
   }
 
   Map<String, dynamic> toNewTypeTemplateContext(SchemaRenderer context) => {
-    'description': description,
+    'doc_comment': createDocComment(body: description, indent: 4),
     'typeName': typeName(context),
     'nullableTypeName': nullableTypeName(context),
     'validations': buildValidations(context),
@@ -1152,7 +1189,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
       return toNewTypeTemplateContext(context);
     }
     return {
-      'description': description,
+      'doc_comment': createDocComment(body: description, indent: 4),
       'nullableTypeName': nullableTypeName(context),
       'validations': buildValidations(context),
       'fromJson': fromJsonExpression(
@@ -1438,7 +1475,7 @@ class RenderObject extends RenderNewType {
       throw StateError('Object schema has no properties: $this');
     }
     return {
-      'description': description,
+      'doc_comment': createDocComment(body: description, indent: 4),
       'typeName': typeName(context),
       'nullableTypeName': nullableTypeName(context),
       'hasProperties': hasProperties,
@@ -1809,7 +1846,7 @@ class RenderEnum extends RenderNewType {
     }
 
     return {
-      'description': description,
+      'doc_comment': createDocComment(body: description, indent: 4),
       'typeName': typeName(context),
       'nullableTypeName': nullableTypeName(context),
       'enumValues': values.map(enumValueToTemplateContext).toList(),
@@ -1907,7 +1944,7 @@ class RenderOneOf extends RenderNewType {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     return {
-      'description': description,
+      'doc_comment': createDocComment(body: description, indent: 4),
       'typeName': typeName(context),
       'nullableTypeName': nullableTypeName(context),
     };
@@ -1959,7 +1996,7 @@ class RenderParameter {
     final dartName = lowercaseCamelFromSnake(name);
     final jsonName = name;
     return {
-      'parameter_description': description,
+      'parameter_description': createDocComment(body: description, indent: 4),
       'name': name,
       'dartName': dartName,
       'bracketedName': '{$specName}',
@@ -2168,7 +2205,7 @@ class RenderEmptyObject extends RenderNewType {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
-    'description': description,
+    'doc_comment': createDocComment(body: description, indent: 4),
     'typeName': typeName(context),
     'nullableTypeName': nullableTypeName(context),
   };

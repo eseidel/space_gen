@@ -42,7 +42,7 @@ class SchemaRenderer {
     required List<Endpoint> endpoints,
   }) {
     return templates.load('api').renderString({
-      'api_description': description,
+      'api_doc_comment': createDocComment(title: null, body: description),
       'className': className,
       'endpoints': endpoints.map((e) => e.toTemplateContext(this)).toList(),
     });

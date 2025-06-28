@@ -1,7 +1,4 @@
-{{#description}}
-/// {{{ description }}}
-{{/description}}
-extension type {{{ typeName }}}(String value) {
+{{{ doc_comment }}}extension type {{{ typeName }}}(String value) {
     factory {{ typeName }}.fromJson(String json) => {{ typeName }}(json);
 
     /// Convenience to create a nullable type from a nullable json object.
