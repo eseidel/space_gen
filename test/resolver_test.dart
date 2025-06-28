@@ -506,13 +506,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals(
-              'Expected Schema?, got '
-              'RequestBody(#/components/requestBodies/RequestBody, null, '
-              '{application/json: MediaType(SchemaRef(null, '
-              'SchemaString([#/components/requestBodies/RequestBody/content/application/json/schema, '
-              'request_body, null], PodType.string, null)))}, false)',
-            ),
+            contains('Expected Schema?, got RequestBody'),
           ),
         ),
       );

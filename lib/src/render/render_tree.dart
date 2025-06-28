@@ -799,7 +799,8 @@ abstract class RenderSchema extends Equatable {
     return typeName.endsWith('?') ? typeName : '$typeName?';
   }
 
-  String equalsExpression(String name, SchemaRenderer context);
+  String equalsExpression(String name, SchemaRenderer context) =>
+      'this.$name == other.$name';
 
   String jsonStorageType({required bool isNullable});
 
@@ -928,10 +929,6 @@ class RenderPod extends RenderSchema {
   }
 
   @override
-  String equalsExpression(String name, SchemaRenderer context) =>
-      'this.$name == other.$name';
-
-  @override
   bool get createsNewType => false;
 
   @override
@@ -1013,10 +1010,6 @@ abstract class RenderNewType extends RenderSchema {
   String typeName(SchemaRenderer context) => className;
 
   @override
-  String equalsExpression(String name, SchemaRenderer context) =>
-      'this.$name == other.$name';
-
-  @override
   String toJsonExpression(
     String dartName,
     SchemaRenderer context, {
@@ -1084,10 +1077,6 @@ class RenderString extends RenderSchema {
   bool get onlyJsonTypes => !createsNewType;
 
   @override
-  String equalsExpression(String name, SchemaRenderer context) =>
-      'this.$name == other.$name';
-
-  @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
     'doc_comment': createDocComment(body: description, indent: 4),
     'typeName': typeName(context),
@@ -1098,14 +1087,12 @@ class RenderString extends RenderSchema {
   String jsonStorageType({required bool isNullable}) =>
       isNullable ? 'String?' : 'String';
 
-  @override
-  String fromJsonExpression(
+  String newTypeFromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
-    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
     final orDefault = orDefaultExpression(
       context: context,
       jsonIsNullable: jsonIsNullable,
@@ -1113,8 +1100,34 @@ class RenderString extends RenderSchema {
     );
     final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
     final className = camelFromSnake(snakeName);
+    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
     final castedValue = '$jsonValue as $jsonType';
     return '$className.$jsonMethod($castedValue)$orDefault';
+  }
+
+  @override
+  String fromJsonExpression(
+    String jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) {
+    if (createsNewType) {
+      return newTypeFromJsonExpression(
+        jsonValue,
+        context,
+        jsonIsNullable: jsonIsNullable,
+        dartIsNullable: dartIsNullable,
+      );
+    }
+    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
+    final orDefault = orDefaultExpression(
+      context: context,
+      jsonIsNullable: jsonIsNullable,
+      dartIsNullable: dartIsNullable,
+    );
+    final castedValue = '$jsonValue as $jsonType';
+    return '$castedValue$orDefault';
   }
 
   @override
@@ -1197,10 +1210,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     }
     return defaultValue?.toString();
   }
-
-  @override
-  String equalsExpression(String name, SchemaRenderer context) =>
-      'this.$name == other.$name';
 
   @visibleForTesting
   String buildValidations(SchemaRenderer context) {
@@ -1736,8 +1745,10 @@ class RenderArray extends RenderSchema {
     if (other is! RenderArray) {
       return false;
     }
-    return items.equalsIgnoringName(other.items) &&
-        super.equalsIgnoringName(other);
+    if (!items.equalsIgnoringName(other.items)) {
+      return false;
+    }
+    return super.equalsIgnoringName(other);
   }
 }
 
@@ -2088,10 +2099,6 @@ class RenderUnknown extends RenderSchema {
 
   @override
   String typeName(SchemaRenderer context) => 'dynamic';
-
-  @override
-  String equalsExpression(String name, SchemaRenderer context) =>
-      'identical(this.$name, other.$name)';
 
   @override
   bool get createsNewType => false;

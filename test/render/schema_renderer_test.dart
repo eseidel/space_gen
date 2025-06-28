@@ -58,7 +58,7 @@ void main() {
         '    bool operator ==(Object other) {\n'
         '        if (identical(this, other)) return true;\n'
         '        return other is Test\n'
-        '            && identical(this.foo, other.foo)\n'
+        '            && this.foo == other.foo\n'
         '        ;\n'
         '    }\n'
         '}\n',

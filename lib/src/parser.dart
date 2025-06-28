@@ -465,6 +465,16 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     return enumSchema;
   }
 
+  if (podType != null) {
+    return SchemaPod(
+      pointer: json.pointer,
+      snakeName: json.snakeName,
+      description: description,
+      type: podType,
+      defaultValue: defaultValue,
+    );
+  }
+
   if (type == 'string') {
     return SchemaString(
       pointer: json.pointer,
@@ -480,16 +490,6 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   final schema = _handleNumberTypes(json, type: type, description: description);
   if (schema != null) {
     return schema;
-  }
-
-  if (podType != null) {
-    return SchemaPod(
-      pointer: json.pointer,
-      snakeName: json.snakeName,
-      description: description,
-      type: podType,
-      defaultValue: defaultValue,
-    );
   }
 
   if (type == 'array') {
