@@ -1322,6 +1322,11 @@ void main() {
         '}\n',
       );
     });
+
+    test('renderSchema throws for non-new-type schemas', () {
+      final json = {'type': 'string'};
+      expect(() => renderSchema(json), throwsA(isA<StateError>()));
+    });
   });
 
   group('renderOperation', () {
