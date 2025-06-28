@@ -1,4 +1,6 @@
-{{{ doc_comment }}}extension type {{{ typeName }}}(String value) {
+{{{ doc_comment }}}extension type const {{{ typeName }}}._(String value) {
+    const {{ typeName }}(this.value){{{initializers}}};
+
     factory {{ typeName }}.fromJson(String json) => {{ typeName }}(json);
 
     /// Convenience to create a nullable type from a nullable json object.

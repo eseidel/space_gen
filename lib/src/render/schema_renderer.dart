@@ -19,17 +19,17 @@ class SchemaRenderer {
 
   /// Renders a schema to a string, does not render the imports.
   String renderSchema(RenderSchema schema) {
+    if (!schema.createsNewType) {
+      throw StateError('No code to render non-newtype: $schema');
+    }
     final template = switch (schema) {
       RenderEnum() => 'schema_enum',
       RenderObject() => 'schema_object',
-      RenderStringNewType() => 'schema_string_newtype',
-      RenderInteger() || RenderNumber() =>
-        schema.createsNewType
-            ? 'schema_number_newtype'
-            : throw StateError('No code to render non-newtype number: $schema'),
+      RenderString() => 'schema_string_newtype',
+      RenderInteger() || RenderNumber() => 'schema_number_newtype',
       RenderOneOf() => 'schema_one_of',
       RenderEmptyObject() => 'schema_empty_object',
-      _ => throw StateError('No code to render $schema'),
+      RenderSchema() => throw StateError('No code to render $schema'),
     };
     return templates
         .load(template)
@@ -42,7 +42,7 @@ class SchemaRenderer {
     required List<Endpoint> endpoints,
   }) {
     return templates.load('api').renderString({
-      'api_doc_comment': createDocComment(title: null, body: description),
+      'api_doc_comment': createDocComment(body: description),
       'className': className,
       'endpoints': endpoints.map((e) => e.toTemplateContext(this)).toList(),
     });

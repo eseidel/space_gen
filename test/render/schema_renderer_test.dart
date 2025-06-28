@@ -58,7 +58,7 @@ void main() {
         '    bool operator ==(Object other) {\n'
         '        if (identical(this, other)) return true;\n'
         '        return other is Test\n'
-        '            && identical(this.foo, other.foo)\n'
+        '            && this.foo == other.foo\n'
         '        ;\n'
         '    }\n'
         '}\n',
@@ -1289,6 +1289,43 @@ void main() {
           '}\n',
         );
       });
+    });
+  });
+
+  group('string validations', () {
+    test('maxLength and minLength can be const', () {
+      final json = {
+        'type': 'string',
+        'default': 'foo',
+        'maxLength': 10,
+        'minLength': 1,
+      };
+      final result = renderSchema(json);
+      expect(
+        result,
+        'extension type const Test._(String value) {\n'
+        '    const Test(this.value): assert(value.length <= 10, "Invalid value: \$value"),\n'
+        'assert(value.length >= 1, "Invalid value: \$value");\n'
+        '\n'
+        '    factory Test.fromJson(String json) => Test(json);\n'
+        '\n'
+        '    /// Convenience to create a nullable type from a nullable json object.\n'
+        '    /// Useful when parsing optional fields.\n'
+        '    static Test? maybeFromJson(String? json) {\n'
+        '        if (json == null) {\n'
+        '            return null;\n'
+        '        }\n'
+        '        return Test.fromJson(json);\n'
+        '    }\n'
+        '\n'
+        '    String toJson() => value;\n'
+        '}\n',
+      );
+    });
+
+    test('renderSchema throws for non-new-type schemas', () {
+      final json = {'type': 'string'};
+      expect(() => renderSchema(json), throwsA(isA<StateError>()));
     });
   });
 

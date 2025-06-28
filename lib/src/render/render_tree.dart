@@ -152,24 +152,21 @@ class SpecResolver {
           requiredProperties: schema.requiredProperties,
         );
       case ResolvedPod():
-        // Unclear if this is an OpenApi generator quirk or desired behavior,
-        // but openapi creates a new file for each top level component, even
-        // if it's a simple type.  Matching this behavior for now.
-        final hasExplicitName = isTopLevelComponent(schema.pointer);
-        if (hasExplicitName && schema.type == PodType.string) {
-          return RenderStringNewType(
-            snakeName: schema.snakeName,
-            description: schema.description,
-            pointer: schema.pointer,
-            defaultValue: schema.defaultValue as String?,
-          );
-        }
         return RenderPod(
           snakeName: schema.snakeName,
           type: schema.type,
           description: schema.description,
           pointer: schema.pointer,
           defaultValue: schema.defaultValue,
+        );
+      case ResolvedString():
+        return RenderString(
+          snakeName: schema.snakeName,
+          description: schema.description,
+          pointer: schema.pointer,
+          defaultValue: schema.defaultValue,
+          maxLength: schema.maxLength,
+          minLength: schema.minLength,
         );
       case ResolvedNumber():
         return RenderNumber(
@@ -801,7 +798,8 @@ abstract class RenderSchema extends Equatable {
     return typeName.endsWith('?') ? typeName : '$typeName?';
   }
 
-  String equalsExpression(String name, SchemaRenderer context);
+  String equalsExpression(String name, SchemaRenderer context) =>
+      'this.$name == other.$name';
 
   String jsonStorageType({required bool isNullable});
 
@@ -880,8 +878,8 @@ class RenderPod extends RenderSchema {
   @override
   bool get onlyJsonTypes {
     return switch (type) {
-      // These are already json types.
-      PodType.string || PodType.boolean => true,
+      // Bool is already a json type.
+      PodType.boolean => true,
       // These require serialization to a string.
       PodType.dateTime || PodType.uri => false,
     };
@@ -891,7 +889,7 @@ class RenderPod extends RenderSchema {
   bool get defaultCanConstConstruct {
     return switch (type) {
       PodType.dateTime || PodType.uri => false,
-      PodType.string || PodType.boolean => true,
+      PodType.boolean => true,
     };
   }
 
@@ -901,7 +899,6 @@ class RenderPod extends RenderSchema {
   @override
   String typeName(SchemaRenderer context) {
     return switch (type) {
-      PodType.string => 'String',
       PodType.boolean => 'bool',
       PodType.dateTime => 'DateTime',
       PodType.uri => 'Uri',
@@ -911,9 +908,7 @@ class RenderPod extends RenderSchema {
   @override
   String jsonStorageType({required bool isNullable}) {
     return switch (type) {
-      PodType.string ||
-      PodType.dateTime ||
-      PodType.uri => isNullable ? 'String?' : 'String',
+      PodType.dateTime || PodType.uri => isNullable ? 'String?' : 'String',
       PodType.boolean => isNullable ? 'bool?' : 'bool',
     };
   }
@@ -928,14 +923,9 @@ class RenderPod extends RenderSchema {
       PodType.dateTime =>
         'DateTime.parse(${quoteString(defaultValue as String)})',
       PodType.uri => 'Uri.parse(${quoteString(defaultValue as String)})',
-      PodType.string => quoteString(defaultValue as String),
       PodType.boolean => defaultValue.toString(),
     };
   }
-
-  @override
-  String equalsExpression(String name, SchemaRenderer context) =>
-      'this.$name == other.$name';
 
   @override
   bool get createsNewType => false;
@@ -981,7 +971,6 @@ class RenderPod extends RenderSchema {
           return 'maybeParseUri($castedValue)$orDefault';
         }
         return 'Uri.parse($castedValue)';
-      case PodType.string:
       case PodType.boolean:
         // 'as' has higher precedence than '??' so no parens are needed.
         return '$castedValue$orDefault';
@@ -1020,10 +1009,6 @@ abstract class RenderNewType extends RenderSchema {
   String typeName(SchemaRenderer context) => className;
 
   @override
-  String equalsExpression(String name, SchemaRenderer context) =>
-      'this.$name == other.$name';
-
-  @override
   String toJsonExpression(
     String dartName,
     SchemaRenderer context, {
@@ -1034,33 +1019,94 @@ abstract class RenderNewType extends RenderSchema {
   }
 }
 
-class RenderStringNewType extends RenderNewType {
-  const RenderStringNewType({
+class RenderString extends RenderSchema {
+  const RenderString({
     required super.snakeName,
     required super.description,
     required super.pointer,
     required this.defaultValue,
+    required this.maxLength,
+    required this.minLength,
   });
 
   @override
   final String? defaultValue;
 
+  /// The maximum length of the string.
+  final int? maxLength;
+
+  /// The minimum length of the string.
+  final int? minLength;
+
   @override
   bool get defaultCanConstConstruct => true;
 
   @override
-  List<Object?> get props => [super.props, defaultValue];
+  List<Object?> get props => [super.props, defaultValue, maxLength, minLength];
+
+  @override
+  String typeName(SchemaRenderer context) =>
+      createsNewType ? camelFromSnake(snakeName) : 'String';
+
+  /// The default value of this schema as a string.
+  @override
+  String? defaultValueString(SchemaRenderer context) {
+    final value = defaultValue;
+    return value == null ? null : quoteString(value);
+  }
+
+  @override
+  bool get createsNewType =>
+      hasExplicitName || maxLength != null || minLength != null;
+
+  @override
+  bool get onlyJsonTypes => !createsNewType;
+
+  @visibleForTesting
+  String buildValidations(SchemaRenderer context) {
+    final validations = <String>[];
+    void add(String condition) =>
+        validations.add('assert($condition, "Invalid value: \$value")');
+
+    if (maxLength != null) add('value.length <= $maxLength');
+    if (minLength != null) add('value.length >= $minLength');
+    // TODO(eseidel): Add pattern validation.
+    return validations.join(',\n');
+  }
+
+  String buildInitializers(SchemaRenderer context) {
+    final validations = buildValidations(context);
+    return validations.isEmpty ? '' : ': $validations';
+  }
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
     'doc_comment': createDocComment(body: description, indent: 4),
     'typeName': typeName(context),
     'nullableTypeName': nullableTypeName(context),
+    'initializers': buildInitializers(context),
   };
 
   @override
-  String jsonStorageType({required bool isNullable}) {
-    return isNullable ? 'String?' : 'String';
+  String jsonStorageType({required bool isNullable}) =>
+      isNullable ? 'String?' : 'String';
+
+  String newTypeFromJsonExpression(
+    String jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) {
+    final orDefault = orDefaultExpression(
+      context: context,
+      jsonIsNullable: jsonIsNullable,
+      dartIsNullable: dartIsNullable,
+    );
+    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
+    final className = camelFromSnake(snakeName);
+    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
+    final castedValue = '$jsonValue as $jsonType';
+    return '$className.$jsonMethod($castedValue)$orDefault';
   }
 
   @override
@@ -1070,16 +1116,43 @@ class RenderStringNewType extends RenderNewType {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
+    if (createsNewType) {
+      return newTypeFromJsonExpression(
+        jsonValue,
+        context,
+        jsonIsNullable: jsonIsNullable,
+        dartIsNullable: dartIsNullable,
+      );
+    }
     final jsonType = jsonStorageType(isNullable: jsonIsNullable);
     final orDefault = orDefaultExpression(
       context: context,
       jsonIsNullable: jsonIsNullable,
       dartIsNullable: dartIsNullable,
     );
-    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
     final castedValue = '$jsonValue as $jsonType';
-    return '$className.$jsonMethod($castedValue)$orDefault';
+    return '$castedValue$orDefault';
   }
+
+  @override
+  String toJsonExpression(
+    String dartName,
+    SchemaRenderer context, {
+    required bool dartIsNullable,
+  }) {
+    if (createsNewType) {
+      return dartIsNullable ? '$dartName?.toJson()' : '$dartName.toJson()';
+    }
+    return dartName;
+  }
+
+  @override
+  bool equalsIgnoringName(RenderSchema other) =>
+      (other is RenderString) &&
+      defaultValue == other.defaultValue &&
+      maxLength == other.maxLength &&
+      minLength == other.minLength &&
+      super.equalsIgnoringName(other);
 }
 
 abstract class RenderNumeric<T extends num> extends RenderSchema {
@@ -1149,10 +1222,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     }
     return defaultValue?.toString();
   }
-
-  @override
-  String equalsExpression(String name, SchemaRenderer context) =>
-      'this.$name == other.$name';
 
   @visibleForTesting
   String buildValidations(SchemaRenderer context) {
@@ -1247,6 +1316,17 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     }
     return dartName;
   }
+
+  @override
+  bool equalsIgnoringName(RenderSchema other) =>
+      (other is RenderNumeric<T>) &&
+      defaultValue == other.defaultValue &&
+      maximum == other.maximum &&
+      minimum == other.minimum &&
+      exclusiveMaximum == other.exclusiveMaximum &&
+      exclusiveMinimum == other.exclusiveMinimum &&
+      multipleOf == other.multipleOf &&
+      super.equalsIgnoringName(other);
 }
 
 class RenderNumber extends RenderNumeric<double> {
@@ -1688,8 +1768,10 @@ class RenderArray extends RenderSchema {
     if (other is! RenderArray) {
       return false;
     }
-    return items.equalsIgnoringName(other.items) &&
-        super.equalsIgnoringName(other);
+    if (!items.equalsIgnoringName(other.items)) {
+      return false;
+    }
+    return super.equalsIgnoringName(other);
   }
 }
 
@@ -2040,10 +2122,6 @@ class RenderUnknown extends RenderSchema {
 
   @override
   String typeName(SchemaRenderer context) => 'dynamic';
-
-  @override
-  String equalsExpression(String name, SchemaRenderer context) =>
-      'identical(this.$name, other.$name)';
 
   @override
   bool get createsNewType => false;

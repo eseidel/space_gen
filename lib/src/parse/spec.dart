@@ -145,6 +145,24 @@ class SchemaPod extends Schema {
   List<Object?> get props => [super.props, type, defaultValue];
 }
 
+class SchemaString extends Schema {
+  const SchemaString({
+    required super.pointer,
+    required super.snakeName,
+    required super.description,
+    required this.defaultValue,
+    required this.maxLength,
+    required this.minLength,
+  });
+
+  final String? defaultValue;
+  final int? maxLength;
+  final int? minLength;
+
+  @override
+  List<Object?> get props => [super.props, defaultValue, maxLength, minLength];
+}
+
 abstract class SchemaNumeric<T extends num> extends Schema {
   const SchemaNumeric({
     required super.pointer,

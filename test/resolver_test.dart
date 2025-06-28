@@ -182,7 +182,7 @@ void main() {
             'message',
             equals(
               'allOf only supports objects: '
-              'ResolvedPod(snakeName: users200_response_all_of_0, pointer: '
+              'ResolvedString(snakeName: users200_response_all_of_0, pointer: '
               '#/paths//users/get/responses/200/content/application/json/schema/allOf/0) '
               'in #/paths//users/get/responses/200/content/application/json/schema',
             ),
@@ -506,13 +506,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals(
-              'Expected Schema?, got '
-              'RequestBody(#/components/requestBodies/RequestBody, null, '
-              '{application/json: MediaType(SchemaRef(null, '
-              'SchemaPod([#/components/requestBodies/RequestBody/content/application/json/schema, '
-              'request_body, null], PodType.string, null)))}, false)',
-            ),
+            contains('Expected Schema?, got RequestBody'),
           ),
         ),
       );
@@ -557,7 +551,7 @@ void main() {
         pointer: pointer200,
         description: 'Foo',
         items: ResolvedPod(
-          type: PodType.string,
+          type: PodType.boolean,
           pointer: pointer200,
           snakeName: 'Foo',
           description: 'Foo',
@@ -568,7 +562,7 @@ void main() {
         pointer: pointer201,
         description: 'Foo',
         items: ResolvedPod(
-          type: PodType.string,
+          type: PodType.boolean,
           pointer: pointer200,
           snakeName: 'Foo',
           description: 'Foo',
@@ -596,6 +590,30 @@ void main() {
         ),
       );
     });
+    test('RenderString equality', () {
+      final schema1 = ResolvedString(
+        snakeName: 'Foo',
+        pointer: JsonPointer.parse(
+          '#/paths//users/get/responses/200/content/application/json/schema',
+        ),
+        description: 'Foo',
+        defaultValue: 'foo',
+        maxLength: 10,
+        minLength: 1,
+      );
+      final schema2 = ResolvedString(
+        snakeName: 'Foo',
+        pointer: JsonPointer.parse(
+          '#/paths//users/get/responses/200/content/application/json/schema',
+        ),
+        description: 'Foo',
+        defaultValue: 'foo',
+      );
+      expect(schema1, equals(schema1));
+      // Different values.
+      expect(schema1, isNot(equals(schema2)));
+    });
+
     test('ResolvedEnum equality', () {
       final schema1 = ResolvedEnum(
         snakeName: 'Foo',
@@ -629,7 +647,7 @@ void main() {
         description: 'Foo',
         schemas: [
           ResolvedPod(
-            type: PodType.string,
+            type: PodType.boolean,
             pointer: pointer200,
             snakeName: 'Foo',
             description: 'Foo',
@@ -642,7 +660,7 @@ void main() {
         description: 'Foo',
         schemas: [
           ResolvedPod(
-            type: PodType.string,
+            type: PodType.boolean,
             pointer: pointer200,
             snakeName: 'Foo',
             description: 'Foo',
