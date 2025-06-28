@@ -590,6 +590,30 @@ void main() {
         ),
       );
     });
+    test('RenderString equality', () {
+      final schema1 = ResolvedString(
+        snakeName: 'Foo',
+        pointer: JsonPointer.parse(
+          '#/paths//users/get/responses/200/content/application/json/schema',
+        ),
+        description: 'Foo',
+        defaultValue: 'foo',
+        maxLength: 10,
+        minLength: 1,
+      );
+      final schema2 = ResolvedString(
+        snakeName: 'Foo',
+        pointer: JsonPointer.parse(
+          '#/paths//users/get/responses/200/content/application/json/schema',
+        ),
+        description: 'Foo',
+        defaultValue: 'foo',
+      );
+      expect(schema1, equals(schema1));
+      // Different values.
+      expect(schema1, isNot(equals(schema2)));
+    });
+
     test('ResolvedEnum equality', () {
       final schema1 = ResolvedEnum(
         snakeName: 'Foo',
