@@ -377,8 +377,11 @@ SchemaEnum? _handleEnum({
   );
 }
 
-Schema? _handleNumberTypes(MapContext json, String? description) {
-  final type = _optional<String>(json, 'type');
+Schema? _handleNumberTypes(
+  MapContext json, {
+  required String? type,
+  required String? description,
+}) {
   if (type == 'integer') {
     return SchemaInteger(
       pointer: json.pointer,
@@ -440,11 +443,6 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     }
   }
 
-  final schema = _handleNumberTypes(json, description);
-  if (schema != null) {
-    return schema;
-  }
-
   final defaultValue = _optional<dynamic>(json, 'default');
   final enumSchema = _handleEnum(
     json: json,
@@ -455,6 +453,11 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   );
   if (enumSchema != null) {
     return enumSchema;
+  }
+
+  final schema = _handleNumberTypes(json, type: type, description: description);
+  if (schema != null) {
+    return schema;
   }
 
   if (podType != null) {

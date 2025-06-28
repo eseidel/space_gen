@@ -265,12 +265,7 @@ class FileRenderer {
     );
   }
 
-  bool rendersToSeparateFile(RenderSchema schema) {
-    return switch (schema) {
-      RenderNewType() => true,
-      RenderSchema() => false,
-    };
-  }
+  bool rendersToSeparateFile(RenderSchema schema) => schema.createsNewType;
 
   @visibleForTesting
   Iterable<Import> importsForApi(Api api) {

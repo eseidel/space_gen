@@ -347,6 +347,7 @@ void main() {
         out.childDirectory('lib/model'),
         hasFiles([
           'purchase_cargo_request.dart',
+          'purchase_cargo_request_units_prop.dart',
           'purchase_cargo201_response.dart',
           'purchase_cargo201_response_data_prop.dart',
           'purchase_cargo201_response_data_prop_cargo_prop.dart',
