@@ -30,8 +30,8 @@ void main() {
       expect(parse('string', format: 'uri'), PodType.uri);
       expect(parse('string', format: 'foo', expectLogs: true), PodType.string);
       verify(() => logger.warn('Unknown string format: foo in #/')).called(1);
-      expect(parse('number'), PodType.number);
-      expect(parse('integer'), PodType.integer);
+      expect(parse('number'), isNull);
+      expect(parse('integer'), isNull);
       expect(parse('boolean'), PodType.boolean);
       expect(parse('array'), isNull);
       expect(parse('object'), isNull);

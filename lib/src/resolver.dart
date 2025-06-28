@@ -114,6 +114,30 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       description: schema.description,
       defaultValue: schema.defaultValue,
     );
+  } else if (schema is SchemaInteger) {
+    return ResolvedInteger(
+      pointer: schema.pointer,
+      snakeName: schema.snakeName,
+      description: schema.description,
+      defaultValue: schema.defaultValue,
+      maximum: schema.maximum,
+      minimum: schema.minimum,
+      exclusiveMaximum: schema.exclusiveMaximum,
+      exclusiveMinimum: schema.exclusiveMinimum,
+      multipleOf: schema.multipleOf,
+    );
+  } else if (schema is SchemaNumber) {
+    return ResolvedNumber(
+      pointer: schema.pointer,
+      snakeName: schema.snakeName,
+      description: schema.description,
+      defaultValue: schema.defaultValue,
+      maximum: schema.maximum,
+      minimum: schema.minimum,
+      exclusiveMaximum: schema.exclusiveMaximum,
+      exclusiveMinimum: schema.exclusiveMinimum,
+      multipleOf: schema.multipleOf,
+    );
   } else if (schema is SchemaArray) {
     final items = _maybeResolveSchemaRef(schema.items, context);
     if (items == null) {
@@ -275,7 +299,10 @@ ResolvedRequestBody? _resolveRequestBody(
 
 bool _canBePathParameter(ResolvedSchema schema) {
   if (schema is ResolvedPod) {
-    return schema.type == PodType.string || schema.type == PodType.integer;
+    return schema.type == PodType.string;
+  }
+  if (schema is ResolvedInteger) {
+    return true;
   }
   if (schema is ResolvedOneOf) {
     return schema.schemas.every(_canBePathParameter);
@@ -582,6 +609,87 @@ abstract class ResolvedSchema extends Equatable {
 
   @override
   String toString() => '$runtimeType(snakeName: $snakeName, pointer: $pointer)';
+}
+
+abstract class ResolvedNumeric<T extends num> extends ResolvedSchema {
+  const ResolvedNumeric({
+    required super.snakeName,
+    required super.pointer,
+    required super.description,
+    this.defaultValue,
+    this.maximum,
+    this.minimum,
+    this.exclusiveMaximum,
+    this.exclusiveMinimum,
+    this.multipleOf,
+  });
+
+  /// The default value of the resolved schema.
+  final T? defaultValue;
+
+  /// The maximum value of the resolved schema.
+  final T? maximum;
+
+  /// The minimum value of the resolved schema.
+  final T? minimum;
+
+  /// The exclusive maximum value of the resolved schema.
+  final T? exclusiveMaximum;
+
+  /// The exclusive minimum value of the resolved schema.
+  final T? exclusiveMinimum;
+
+  /// The multiple of value of the resolved schema.
+  final T? multipleOf;
+
+  /// Whether this schema is a component.
+  bool get isComponent => false;
+
+  bool get createsNewType =>
+      isComponent ||
+      maximum != null ||
+      minimum != null ||
+      exclusiveMaximum != null ||
+      exclusiveMinimum != null ||
+      multipleOf != null;
+
+  @override
+  List<Object?> get props => [
+    super.props,
+    maximum,
+    minimum,
+    exclusiveMaximum,
+    exclusiveMinimum,
+    multipleOf,
+  ];
+}
+
+class ResolvedNumber extends ResolvedNumeric<double> {
+  const ResolvedNumber({
+    required super.snakeName,
+    required super.pointer,
+    required super.description,
+    super.maximum,
+    super.minimum,
+    super.exclusiveMaximum,
+    super.exclusiveMinimum,
+    super.multipleOf,
+    super.defaultValue,
+  });
+}
+
+class ResolvedInteger extends ResolvedNumeric<int> {
+  const ResolvedInteger({
+    required super.snakeName,
+    required super.pointer,
+    required super.description,
+    super.maximum,
+    super.minimum,
+    super.exclusiveMaximum,
+    super.exclusiveMinimum,
+    super.multipleOf,
+    super.defaultValue,
+  });
 }
 
 class ResolvedPod extends ResolvedSchema {

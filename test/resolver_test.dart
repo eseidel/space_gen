@@ -586,8 +586,7 @@ void main() {
               snakeName: 'Foo',
               pointer: pointer200,
               description: 'Foo',
-              items: ResolvedPod(
-                type: PodType.integer,
+              items: ResolvedInteger(
                 pointer: pointer200,
                 snakeName: 'Foo',
                 description: 'Foo',

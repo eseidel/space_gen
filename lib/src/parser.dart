@@ -222,13 +222,11 @@ PodType? determinePodType(MapContext json) {
   if (validButIgnored.contains(type)) {
     return null;
   }
-  final mapped = {
-    'integer': PodType.integer,
-    'number': PodType.number,
-    'boolean': PodType.boolean,
-  }[type];
-  if (mapped != null) {
-    return mapped;
+  if (type == 'boolean') {
+    return PodType.boolean;
+  }
+  if (type == 'integer' || type == 'number') {
+    return null;
   }
   if (type == 'string') {
     final format = _optional<String>(json, 'format');
@@ -379,6 +377,37 @@ SchemaEnum? _handleEnum({
   );
 }
 
+Schema? _handleNumberTypes(MapContext json, String? description) {
+  final type = _optional<String>(json, 'type');
+  if (type == 'integer') {
+    return SchemaInteger(
+      pointer: json.pointer,
+      snakeName: json.snakeName,
+      description: description,
+      defaultValue: _optional<int>(json, 'default'),
+      minimum: _optional<int>(json, 'minimum'),
+      maximum: _optional<int>(json, 'maximum'),
+      exclusiveMinimum: _optional<int>(json, 'exclusiveMinimum'),
+      exclusiveMaximum: _optional<int>(json, 'exclusiveMaximum'),
+      multipleOf: _optional<int>(json, 'multipleOf'),
+    );
+  }
+  if (type == 'number') {
+    return SchemaNumber(
+      pointer: json.pointer,
+      snakeName: json.snakeName,
+      description: description,
+      defaultValue: _optional<double>(json, 'default'),
+      minimum: _optional<double>(json, 'minimum'),
+      maximum: _optional<double>(json, 'maximum'),
+      exclusiveMinimum: _optional<double>(json, 'exclusiveMinimum'),
+      exclusiveMaximum: _optional<double>(json, 'exclusiveMaximum'),
+      multipleOf: _optional<double>(json, 'multipleOf'),
+    );
+  }
+  return null;
+}
+
 Schema _createCorrectSchemaSubtype(MapContext json) {
   // Unclear what to do with title. Is it like summary?
   _ignored<String>(json, 'title');
@@ -409,6 +438,11 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
         description: description,
       );
     }
+  }
+
+  final schema = _handleNumberTypes(json, description);
+  if (schema != null) {
+    return schema;
   }
 
   final defaultValue = _optional<dynamic>(json, 'default');

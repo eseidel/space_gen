@@ -145,6 +145,55 @@ class SchemaPod extends Schema {
   List<Object?> get props => [super.props, type, defaultValue];
 }
 
+abstract class SchemaNumeric<T extends num> extends Schema {
+  const SchemaNumeric({
+    required super.pointer,
+    required super.snakeName,
+    required super.description,
+    required this.defaultValue,
+    required this.minimum,
+    required this.maximum,
+    required this.exclusiveMinimum,
+    required this.exclusiveMaximum,
+    required this.multipleOf,
+  });
+
+  final T? defaultValue;
+  final T? minimum;
+  final T? maximum;
+  final T? exclusiveMinimum;
+  final T? exclusiveMaximum;
+  final T? multipleOf;
+}
+
+class SchemaInteger extends SchemaNumeric<int> {
+  const SchemaInteger({
+    required super.pointer,
+    required super.snakeName,
+    required super.description,
+    required super.defaultValue,
+    required super.minimum,
+    required super.maximum,
+    required super.exclusiveMinimum,
+    required super.exclusiveMaximum,
+    required super.multipleOf,
+  });
+}
+
+class SchemaNumber extends SchemaNumeric<double> {
+  const SchemaNumber({
+    required super.pointer,
+    required super.snakeName,
+    required super.description,
+    required super.defaultValue,
+    required super.minimum,
+    required super.maximum,
+    required super.exclusiveMinimum,
+    required super.exclusiveMaximum,
+    required super.multipleOf,
+  });
+}
+
 abstract class SchemaObjectBase extends Schema {
   const SchemaObjectBase({
     required super.pointer,

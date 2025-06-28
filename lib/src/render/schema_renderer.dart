@@ -23,7 +23,10 @@ class SchemaRenderer {
       RenderEnum() => 'schema_enum',
       RenderObject() => 'schema_object',
       RenderStringNewType() => 'schema_string_newtype',
-      RenderNumberNewType() => 'schema_number_newtype',
+      RenderInteger() || RenderNumber() =>
+        schema.createsNewType
+            ? 'schema_number_newtype'
+            : throw StateError('No code to render non-newtype number: $schema'),
       RenderOneOf() => 'schema_one_of',
       RenderEmptyObject() => 'schema_empty_object',
       _ => throw StateError('No code to render $schema'),
