@@ -61,8 +61,7 @@ void main() {
         '            && identical(this.foo, other.foo)\n'
         '        ;\n'
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
     test('with datetime', () {
@@ -122,8 +121,7 @@ void main() {
         '            && this.foo == other.foo\n'
         '        ;\n'
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -184,8 +182,7 @@ void main() {
         '            && this.foo == other.foo\n'
         '        ;\n'
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -243,8 +240,7 @@ void main() {
         '            && this.foo == other.foo\n'
         '        ;\n'
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -319,8 +315,7 @@ void main() {
         '            && this.bar == other.bar\n'
         '        ;\n'
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -352,8 +347,7 @@ void main() {
         '\n'
         '    /// Require all subclasses to implement toJson.\n'
         '    dynamic toJson();\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -395,8 +389,7 @@ void main() {
         '\n'
         '    /// Require all subclasses to implement toJson.\n'
         '    dynamic toJson();\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -429,8 +422,7 @@ void main() {
         '\n'
         '    /// Require all subclasses to implement toJson.\n'
         '    dynamic toJson();\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -490,8 +482,7 @@ void main() {
         '            && mapsEqual(this.map, other.map)\n'
         '        ;\n'
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -628,8 +619,7 @@ void main() {
         '            && mapsEqual(this.mUnknown, other.mUnknown)\n'
         '        ;\n'
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -766,8 +756,7 @@ void main() {
         '            && listsEqual(this.aUnknown, other.aUnknown)\n'
         '        ;\n'
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -794,8 +783,7 @@ void main() {
         '    }\n'
         '\n'
         '    Map<String, dynamic> toJson() => const {};\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -852,8 +840,7 @@ void main() {
         '            && this.a == other.a\n'
         '        ;\n'
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -914,8 +901,7 @@ void main() {
         '            && listsEqual(this.a, other.a)\n'
         '        ;\n'
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -963,8 +949,7 @@ void main() {
         '    /// Returns the string value of the enum.\n'
         '    @override\n'
         '    String toString() => value;\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -1065,8 +1050,7 @@ void main() {
         '            && this.default_ == other.default_\n'
         '        ;\n'
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -1086,7 +1070,7 @@ void main() {
         expect(
           result,
           'extension type const Test._(double value) {\n'
-          '    const Test(this.value)assert(value <= 10, "Invalid value: \$value"),\n'
+          '    const Test(this.value): assert(value <= 10, "Invalid value: \$value"),\n'
           'assert(value >= 1, "Invalid value: \$value"),\n'
           'assert(value < 0, "Invalid value: \$value"),\n'
           'assert(value > 9, "Invalid value: \$value"),\n'
@@ -1104,8 +1088,7 @@ void main() {
           '    }\n'
           '\n'
           '    double toJson() => value;\n'
-          '}\n'
-          '',
+          '}\n',
         );
       });
 
@@ -1124,7 +1107,7 @@ void main() {
         expect(
           result,
           'extension type const Test._(double value) {\n'
-          '    const Test(this.value)assert(value <= 10.2, "Invalid value: \$value"),\n'
+          '    const Test(this.value): assert(value <= 10.2, "Invalid value: \$value"),\n'
           'assert(value >= 1.2, "Invalid value: \$value"),\n'
           'assert(value < 0.0, "Invalid value: \$value"),\n'
           'assert(value > 9.0, "Invalid value: \$value"),\n'
@@ -1142,8 +1125,7 @@ void main() {
           '    }\n'
           '\n'
           '    double toJson() => value;\n'
-          '}\n'
-          '',
+          '}\n',
         );
       });
     });
@@ -1218,8 +1200,7 @@ void main() {
         '\n'
         "        throw ApiException(response.statusCode, 'Unhandled response from \$uploadFile');\n"
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -1273,8 +1254,7 @@ void main() {
         '\n'
         "        throw ApiException(response.statusCode, 'Unhandled response from \$uploadFile');\n"
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -1330,8 +1310,7 @@ void main() {
         '\n'
         "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -1387,8 +1366,7 @@ void main() {
         '\n'
         "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -1446,8 +1424,7 @@ void main() {
         '\n'
         "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -1503,8 +1480,7 @@ void main() {
         '\n'
         "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -1547,8 +1523,7 @@ void main() {
         '\n'
         "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
 
@@ -1603,8 +1578,7 @@ void main() {
         '\n'
         "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
     test('openapi quirks all lists to empty default', () {
@@ -1668,8 +1642,7 @@ void main() {
         '\n'
         "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
   });
