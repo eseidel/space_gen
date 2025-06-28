@@ -545,7 +545,7 @@ void main() {
         '        json) {\n'
         '        return Test(\n'
         "            mString: (json['m_string'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, value as String )),\n"
-        "            mInt: (json['m_int'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, (value as int).toInt())),\n"
+        "            mInt: (json['m_int'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, (value as int))),\n"
         "            mNumber: (json['m_number'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, (value as num).toDouble())),\n"
         "            mBoolean: (json['m_boolean'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, (value as bool))),\n"
         "            mDateTime: (json['m_date_time'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, DateTime.parse(value as String))),\n"
@@ -1069,18 +1069,18 @@ void main() {
         final result = renderSchema(json);
         expect(
           result,
-          'extension type const Test._(double value) {\n'
+          'extension type const Test._(int value) {\n'
           '    const Test(this.value): assert(value <= 10, "Invalid value: \$value"),\n'
           'assert(value >= 1, "Invalid value: \$value"),\n'
           'assert(value < 0, "Invalid value: \$value"),\n'
           'assert(value > 9, "Invalid value: \$value"),\n'
           'assert(value % 2 == 0, "Invalid value: \$value");\n'
           '\n'
-          '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
+          '    factory Test.fromJson(int json) => Test(json);\n'
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
           '    /// Useful when parsing optional fields.\n'
-          '    static Test? maybeFromJson(double? json) {\n'
+          '    static Test? maybeFromJson(int? json) {\n'
           '        if (json == null) {\n'
           '            return null;\n'
           '        }\n'
@@ -1088,7 +1088,8 @@ void main() {
           '    }\n'
           '\n'
           '    double toJson() => value;\n'
-          '}\n',
+          '}\n'
+          '',
         );
       });
 
@@ -1117,7 +1118,7 @@ void main() {
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
           '    /// Useful when parsing optional fields.\n'
-          '    static Test? maybeFromJson(double? json) {\n'
+          '    static Test? maybeFromJson(num? json) {\n'
           '        if (json == null) {\n'
           '            return null;\n'
           '        }\n'
@@ -1125,6 +1126,167 @@ void main() {
           '    }\n'
           '\n'
           '    double toJson() => value;\n'
+          '}\n'
+          '',
+        );
+      });
+      test('number with default values', () {
+        final json = {'type': 'number', 'default': 1.2, 'maximum': 10.2};
+        final result = renderSchema(json);
+        expect(
+          result,
+          'extension type const Test._(double value) {\n'
+          '    const Test(this.value): assert(value <= 10.2, "Invalid value: \$value");\n'
+          '\n'
+          '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(num? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    double toJson() => value;\n'
+          '}\n',
+        );
+      });
+      test('number property with default values', () {
+        final json = {
+          'type': 'object',
+          'properties': {
+            'a': {'type': 'number', 'default': 1.2, 'maximum': 10.2},
+          },
+        };
+        final result = renderSchema(json);
+        expect(
+          result,
+          '@immutable\n'
+          'class Test {\n'
+          '    Test(\n'
+          '        { this.a = TestAProp(1.2), \n'
+          '         }\n'
+          '    );\n'
+          '\n'
+          '    factory Test.fromJson(Map<String, dynamic>\n'
+          '        json) {\n'
+          '        return Test(\n'
+          "            a: TestAProp.maybeFromJson(json['a']),\n"
+          '        );\n'
+          '    }\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(Map<String, dynamic>? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    final  TestAProp? a;\n'
+          '\n'
+          '\n'
+          '    Map<String, dynamic> toJson() {\n'
+          '        return {\n'
+          "            'a': a?.toJson(),\n"
+          '        };\n'
+          '    }\n'
+          '\n'
+          '    @override\n'
+          '    int get hashCode =>\n'
+          '          a.hashCode;\n'
+          '\n'
+          '    @override\n'
+          '    bool operator ==(Object other) {\n'
+          '        if (identical(this, other)) return true;\n'
+          '        return other is Test\n'
+          '            && this.a == other.a\n'
+          '        ;\n'
+          '    }\n'
+          '}\n',
+        );
+      });
+
+      test('integer with default values', () {
+        final json = {'type': 'integer', 'default': 1, 'minimum': 0};
+        final result = renderSchema(json);
+        expect(
+          result,
+          'extension type const Test._(int value) {\n'
+          '    const Test(this.value): assert(value >= 0, "Invalid value: \$value");\n'
+          '\n'
+          '    factory Test.fromJson(int json) => Test(json);\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(int? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    double toJson() => value;\n'
+          '}\n',
+        );
+      });
+
+      test('integer property with default values', () {
+        final json = {
+          'type': 'object',
+          'properties': {
+            'a': {'type': 'integer', 'default': 1, 'minimum': 0},
+          },
+        };
+        final result = renderSchema(json);
+        expect(
+          result,
+          '@immutable\n'
+          'class Test {\n'
+          '    Test(\n'
+          '        { this.a = TestAProp(1), \n'
+          '         }\n'
+          '    );\n'
+          '\n'
+          '    factory Test.fromJson(Map<String, dynamic>\n'
+          '        json) {\n'
+          '        return Test(\n'
+          "            a: TestAProp.maybeFromJson(json['a']),\n"
+          '        );\n'
+          '    }\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(Map<String, dynamic>? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    final  TestAProp? a;\n'
+          '\n'
+          '\n'
+          '    Map<String, dynamic> toJson() {\n'
+          '        return {\n'
+          "            'a': a?.toJson(),\n"
+          '        };\n'
+          '    }\n'
+          '\n'
+          '    @override\n'
+          '    int get hashCode =>\n'
+          '          a.hashCode;\n'
+          '\n'
+          '    @override\n'
+          '    bool operator ==(Object other) {\n'
+          '        if (identical(this, other)) return true;\n'
+          '        return other is Test\n'
+          '            && this.a == other.a\n'
+          '        ;\n'
+          '    }\n'
           '}\n',
         );
       });
@@ -1643,6 +1805,66 @@ void main() {
         "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
         '    }\n'
         '}\n',
+      );
+    });
+
+    test('optional newtype parameters', () {
+      final json = {
+        'operationId': 'get-agents',
+        'summary': 'List all public agent details.',
+        'tags': ['Agents'],
+        'description': 'List all public agent details.',
+        'parameters': [
+          {
+            'schema': {'type': 'integer', 'minimum': 1, 'default': 1},
+            'in': 'query',
+            'name': 'page',
+            'description': 'What entry offset to request',
+          },
+        ],
+        'responses': {
+          '200': {'description': 'Successfully fetched agents details.'},
+        },
+      };
+      final result = renderOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(
+        result,
+        '/// Test API\n'
+        'class AgentsApi {\n'
+        '    AgentsApi(ApiClient? client) : client = client ?? ApiClient();\n'
+        '\n'
+        '    final ApiClient client;\n'
+        '\n'
+        '    /// List all public agent details.\n'
+        '    /// List all public agent details.\n'
+        '    Future<void> getAgents(\n'
+        '        { GetAgentsParameter0? page = GetAgentsParameter0(1), }\n'
+        '    ) async {\n'
+        '        final response = await client.invokeApi(\n'
+        '            method: Method.post,\n'
+        "            path: '/users'\n"
+        ',\n'
+        '            queryParameters: {\n'
+        "                'page': ?page?.toJson().toString(),\n"
+        '            },\n'
+        '        );\n'
+        '\n'
+        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+        '            throw ApiException(response.statusCode, response.body.toString());\n'
+        '        }\n'
+        '\n'
+        '        if (response.body.isNotEmpty) {\n'
+        '            return ;\n'
+        '        }\n'
+        '\n'
+        "        throw ApiException(response.statusCode, 'Unhandled response from \$getAgents');\n"
+        '    }\n'
+        '}\n'
+        '',
       );
     });
   });
