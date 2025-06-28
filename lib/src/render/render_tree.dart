@@ -969,23 +969,22 @@ class RenderPod extends RenderSchema {
       jsonIsNullable: jsonIsNullable,
       dartIsNullable: dartIsNullable,
     );
+    final castedValue = '$jsonValue as $jsonType';
     switch (type) {
       case PodType.dateTime:
         if (jsonIsNullable) {
-          return 'maybeParseDateTime($jsonValue as $jsonType)$orDefault';
-        } else {
-          return 'DateTime.parse($jsonValue as $jsonType)';
+          return 'maybeParseDateTime($castedValue)$orDefault';
         }
+        return 'DateTime.parse($castedValue)';
       case PodType.uri:
         if (jsonIsNullable) {
-          return 'maybeParseUri($jsonValue as $jsonType)$orDefault';
-        } else {
-          return 'Uri.parse($jsonValue as $jsonType)';
+          return 'maybeParseUri($castedValue)$orDefault';
         }
+        return 'Uri.parse($castedValue)';
       case PodType.string:
-        return '$jsonValue as $jsonType $orDefault';
       case PodType.boolean:
-        return '($jsonValue as $jsonType)$orDefault';
+        // 'as' has higher precedence than '??' so no parens are needed.
+        return '$castedValue$orDefault';
     }
   }
 
@@ -1078,7 +1077,8 @@ class RenderStringNewType extends RenderNewType {
       dartIsNullable: dartIsNullable,
     );
     final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-    return '$className.$jsonMethod($jsonValue as $jsonType)$orDefault';
+    final castedValue = '$jsonValue as $jsonType';
+    return '$className.$jsonMethod($castedValue)$orDefault';
   }
 }
 
@@ -1187,13 +1187,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
       'jsonType': jsonStorageType(isNullable: false),
       'nullableTypeName': nullableTypeName(context),
       'initializers': buildInitializers(context),
-      'fromJson': fromJsonExpression(
-        'value',
-        context,
-        jsonIsNullable: false,
-        dartIsNullable: false,
-      ),
-      'toJson': toJsonExpression('value', context, dartIsNullable: false),
       'jsonToDartCall': jsonToDartCall(jsonIsNullable: false),
     };
   }
@@ -1213,8 +1206,9 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     );
     final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
     final className = camelFromSnake(snakeName);
-    // We don't need to cast the jsonValue to the jsonType in the newtype case.
-    return '$className.$jsonMethod($jsonValue)$orDefault';
+    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
+    final castedValue = '$jsonValue as $jsonType';
+    return '$className.$jsonMethod($castedValue)$orDefault';
   }
 
   @override
