@@ -1,5 +1,5 @@
 {{{ doc_comment }}}extension type const {{{ typeName }}}._(double value) {
-    const {{ typeName }}(this.value){{{validations}}};
+    const {{ typeName }}(this.value){{{initializers}}};
 
     factory {{ typeName }}.fromJson(num json) => {{ typeName }}(json.toDouble());
 
