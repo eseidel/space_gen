@@ -483,7 +483,6 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
       defaultValue: _optional<String>(json, 'default'),
       maxLength: _optional<int>(json, 'maxLength'),
       minLength: _optional<int>(json, 'minLength'),
-      pattern: _optional<String>(json, 'pattern'),
     );
   }
 

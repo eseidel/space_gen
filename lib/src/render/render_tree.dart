@@ -167,7 +167,6 @@ class SpecResolver {
           defaultValue: schema.defaultValue,
           maxLength: schema.maxLength,
           minLength: schema.minLength,
-          pattern: schema.pattern,
         );
       case ResolvedNumber():
         return RenderNumber(
@@ -1028,7 +1027,6 @@ class RenderString extends RenderSchema {
     required this.defaultValue,
     required this.maxLength,
     required this.minLength,
-    required this.pattern,
   });
 
   @override
@@ -1040,20 +1038,11 @@ class RenderString extends RenderSchema {
   /// The minimum length of the string.
   final int? minLength;
 
-  /// The pattern of the string.
-  final String? pattern;
-
   @override
   bool get defaultCanConstConstruct => true;
 
   @override
-  List<Object?> get props => [
-    super.props,
-    defaultValue,
-    maxLength,
-    minLength,
-    pattern,
-  ];
+  List<Object?> get props => [super.props, defaultValue, maxLength, minLength];
 
   @override
   String typeName(SchemaRenderer context) =>
@@ -1068,19 +1057,34 @@ class RenderString extends RenderSchema {
 
   @override
   bool get createsNewType =>
-      hasExplicitName ||
-      maxLength != null ||
-      minLength != null ||
-      pattern != null;
+      hasExplicitName || maxLength != null || minLength != null;
 
   @override
   bool get onlyJsonTypes => !createsNewType;
+
+  @visibleForTesting
+  String buildValidations(SchemaRenderer context) {
+    final validations = <String>[];
+    void add(String condition) =>
+        validations.add('assert($condition, "Invalid value: \$value")');
+
+    if (maxLength != null) add('value.length <= $maxLength');
+    if (minLength != null) add('value.length >= $minLength');
+    // TODO(eseidel): Add pattern validation.
+    return validations.join(',\n');
+  }
+
+  String buildInitializers(SchemaRenderer context) {
+    final validations = buildValidations(context);
+    return validations.isEmpty ? '' : ': $validations';
+  }
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
     'doc_comment': createDocComment(body: description, indent: 4),
     'typeName': typeName(context),
     'nullableTypeName': nullableTypeName(context),
+    'initializers': buildInitializers(context),
   };
 
   @override
@@ -1148,7 +1152,6 @@ class RenderString extends RenderSchema {
       defaultValue == other.defaultValue &&
       maxLength == other.maxLength &&
       minLength == other.minLength &&
-      pattern == other.pattern &&
       super.equalsIgnoringName(other);
 }
 

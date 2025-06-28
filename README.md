@@ -63,6 +63,7 @@ slacks).
 - Support 'default' for objects.
 - Make RenderPod and RenderEnum typed.
 - Wrap description doc comments to 80c.
+- Support 'pattern' string validation.
 
 Is the body sometimes passed in as an object, and sometimes created by
 the endpoint? Or is it always created by the endpoint?

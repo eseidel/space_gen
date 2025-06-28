@@ -1292,6 +1292,35 @@ void main() {
     });
   });
 
+  group('string validations', () {
+    test('maxLength and minLength can be const', () {
+      final json = {
+        'type': 'string',
+        'default': 'foo',
+        'maxLength': 10,
+        'minLength': 1,
+      };
+      final result = renderSchema(json);
+      expect(
+        result,
+        'extension type Test(String value) {\n'
+        '    factory Test.fromJson(String json) => Test(json);\n'
+        '\n'
+        '    /// Convenience to create a nullable type from a nullable json object.\n'
+        '    /// Useful when parsing optional fields.\n'
+        '    static Test? maybeFromJson(String? json) {\n'
+        '        if (json == null) {\n'
+        '            return null;\n'
+        '        }\n'
+        '        return Test.fromJson(json);\n'
+        '    }\n'
+        '\n'
+        '    String toJson() => value;\n'
+        '}\n',
+      );
+    });
+  });
+
   group('renderOperation', () {
     test('application/octet-stream', () {
       final operation = {
