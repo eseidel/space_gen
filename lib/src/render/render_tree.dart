@@ -1142,6 +1142,15 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
   bool get defaultCanConstConstruct => true;
 
   @override
+  String? defaultValueString(SchemaRenderer context) {
+    if (createsNewType) {
+      final typeName = camelFromSnake(snakeName);
+      return '$typeName($defaultValue)';
+    }
+    return defaultValue?.toString();
+  }
+
+  @override
   String equalsExpression(String name, SchemaRenderer context) =>
       'this.$name == other.$name';
 
@@ -1161,10 +1170,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
 
   String buildInitializers(SchemaRenderer context) {
     final validations = buildValidations(context);
-    if (validations.isEmpty) {
-      return '';
-    }
-    return ': $validations';
+    return validations.isEmpty ? '' : ': $validations';
   }
 
   @override
@@ -1241,7 +1247,12 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     String dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
-  }) => createsNewType ? '$dartName.toJson()' : dartName;
+  }) {
+    if (createsNewType) {
+      return dartIsNullable ? '$dartName?.toJson()' : '$dartName.toJson()';
+    }
+    return dartName;
+  }
 }
 
 class RenderNumber extends RenderNumeric<double> {
@@ -1258,12 +1269,8 @@ class RenderNumber extends RenderNumeric<double> {
   });
 
   @override
-  String typeName(SchemaRenderer context) {
-    if (createsNewType) {
-      return camelFromSnake(snakeName);
-    }
-    return 'double';
-  }
+  String typeName(SchemaRenderer context) =>
+      createsNewType ? camelFromSnake(snakeName) : 'double';
 
   @override
   String jsonStorageType({required bool isNullable}) =>
@@ -1288,12 +1295,8 @@ class RenderInteger extends RenderNumeric<int> {
   });
 
   @override
-  String typeName(SchemaRenderer context) {
-    if (createsNewType) {
-      return camelFromSnake(snakeName);
-    }
-    return 'int';
-  }
+  String typeName(SchemaRenderer context) =>
+      createsNewType ? camelFromSnake(snakeName) : 'int';
 
   @override
   String jsonStorageType({required bool isNullable}) =>
