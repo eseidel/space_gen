@@ -162,6 +162,79 @@ void main() {
       expect(d.equalsIgnoringName(h), isFalse);
     });
 
+    test('RenderString', () {
+      const a = RenderString(
+        snakeName: 'a',
+        pointer: JsonPointer.empty(),
+        description: 'Foo',
+        defaultValue: 'foo',
+        maxLength: 10,
+        minLength: 1,
+      );
+      expect(a.equalsIgnoringName(a), isTrue);
+
+      const b = RenderString(
+        snakeName: 'b',
+        pointer: JsonPointer.empty(),
+        description: 'Foo',
+        defaultValue: 'foo',
+        maxLength: null,
+        minLength: 1,
+      );
+      expect(a.equalsIgnoringName(b), isFalse);
+
+      const c = RenderString(
+        snakeName: 'a',
+        pointer: JsonPointer.empty(),
+        description: 'Foo',
+        defaultValue: 'foo',
+        maxLength: 10,
+        minLength: null,
+      );
+      expect(a.equalsIgnoringName(c), isFalse);
+    });
+
+    test('RenderInteger', () {
+      const a = RenderInteger(
+        snakeName: 'a',
+        pointer: JsonPointer.empty(),
+        description: 'Foo',
+        defaultValue: 1,
+        maximum: 10,
+        minimum: 1,
+        exclusiveMaximum: 10,
+        exclusiveMinimum: 1,
+        multipleOf: 1,
+      );
+      expect(a.equalsIgnoringName(a), isTrue);
+
+      const b = RenderInteger(
+        snakeName: 'b',
+        pointer: JsonPointer.empty(),
+        description: 'Foo',
+        defaultValue: 1,
+        maximum: null,
+        minimum: 1,
+        exclusiveMaximum: null,
+        exclusiveMinimum: null,
+        multipleOf: null,
+      );
+      expect(a.equalsIgnoringName(b), isFalse);
+
+      const c = RenderInteger(
+        snakeName: 'a',
+        pointer: JsonPointer.empty(),
+        description: 'Foo',
+        defaultValue: 1,
+        maximum: 10,
+        minimum: null,
+        exclusiveMaximum: null,
+        exclusiveMinimum: null,
+        multipleOf: 1,
+      );
+      expect(b.equalsIgnoringName(c), isFalse);
+    });
+
     test('RenderArray', () {
       const a = RenderArray(
         snakeName: 'a',
