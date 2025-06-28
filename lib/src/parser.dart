@@ -53,6 +53,16 @@ T? _optional<T>(MapContext parent, String key) {
   return _expectType<T?>(parent, key, value);
 }
 
+// Double has to be parsed as a num since Dart's json parser will treat
+// '1' as an int, even if we expect it to be a double.
+double? _optionalDouble(MapContext parent, String key) {
+  final value = parent[key];
+  if (value == null) {
+    return null;
+  }
+  return _expectType<num?>(parent, key, value)?.toDouble();
+}
+
 List<T>? _optionalList<T>(MapContext parent, String key) {
   final value = parent[key];
   if (value == null) {
@@ -222,13 +232,11 @@ PodType? determinePodType(MapContext json) {
   if (validButIgnored.contains(type)) {
     return null;
   }
-  final mapped = {
-    'integer': PodType.integer,
-    'number': PodType.number,
-    'boolean': PodType.boolean,
-  }[type];
-  if (mapped != null) {
-    return mapped;
+  if (type == 'boolean') {
+    return PodType.boolean;
+  }
+  if (type == 'integer' || type == 'number') {
+    return null;
   }
   if (type == 'string') {
     final format = _optional<String>(json, 'format');
@@ -379,6 +387,40 @@ SchemaEnum? _handleEnum({
   );
 }
 
+Schema? _handleNumberTypes(
+  MapContext json, {
+  required String? type,
+  required String? description,
+}) {
+  if (type == 'integer') {
+    return SchemaInteger(
+      pointer: json.pointer,
+      snakeName: json.snakeName,
+      description: description,
+      defaultValue: _optional<int>(json, 'default'),
+      minimum: _optional<int>(json, 'minimum'),
+      maximum: _optional<int>(json, 'maximum'),
+      exclusiveMinimum: _optional<int>(json, 'exclusiveMinimum'),
+      exclusiveMaximum: _optional<int>(json, 'exclusiveMaximum'),
+      multipleOf: _optional<int>(json, 'multipleOf'),
+    );
+  }
+  if (type == 'number') {
+    return SchemaNumber(
+      pointer: json.pointer,
+      snakeName: json.snakeName,
+      description: description,
+      defaultValue: _optionalDouble(json, 'default'),
+      minimum: _optionalDouble(json, 'minimum'),
+      maximum: _optionalDouble(json, 'maximum'),
+      exclusiveMinimum: _optionalDouble(json, 'exclusiveMinimum'),
+      exclusiveMaximum: _optionalDouble(json, 'exclusiveMaximum'),
+      multipleOf: _optionalDouble(json, 'multipleOf'),
+    );
+  }
+  return null;
+}
+
 Schema _createCorrectSchemaSubtype(MapContext json) {
   // Unclear what to do with title. Is it like summary?
   _ignored<String>(json, 'title');
@@ -421,6 +463,11 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   );
   if (enumSchema != null) {
     return enumSchema;
+  }
+
+  final schema = _handleNumberTypes(json, type: type, description: description);
+  if (schema != null) {
+    return schema;
   }
 
   if (podType != null) {

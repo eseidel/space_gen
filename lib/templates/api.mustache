@@ -1,19 +1,10 @@
-{{#api_description}}
-/// {{{ . }}}
-{{/api_description}}
-class {{ className }} {
+{{{ api_doc_comment }}}class {{ className }} {
     {{ className }}(ApiClient? client) : client = client ?? ApiClient();
 
     final ApiClient client;
 
     {{#endpoints}}
-    {{#endpoint_summary}}
-    /// {{{ . }}}
-    {{/endpoint_summary}}
-    {{#endpoint_description}}
-    /// {{{ . }}}
-    {{/endpoint_description}}
-    Future<{{{ returnType }}}> {{{ methodName }}}(
+    {{{ endpoint_doc_comment }}}Future<{{{ returnType }}}> {{{ methodName }}}(
         {{#positionalParameters}}
         {{{ type }}} {{{ dartName }}},
         {{/positionalParameters}}

@@ -1,9 +1,4 @@
-{{#description}}
-/// {{{ . }}}
-{{/description}}
-{{^mutableModels}}
-@immutable
-{{/mutableModels}}
+{{{ doc_comment }}}{{^mutableModels}}@immutable{{/mutableModels}}
 class {{ typeName }} {
     {{ typeName }}(
         {{#hasProperties}}

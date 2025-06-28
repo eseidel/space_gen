@@ -44,7 +44,8 @@ class RenderTreeWalker {
         walkSchema(schema.valueSchema);
       case RenderEnum():
       case RenderStringNewType():
-      case RenderNumberNewType():
+      case RenderInteger():
+      case RenderNumber():
       case RenderPod():
       case RenderUnknown():
       case RenderVoid():

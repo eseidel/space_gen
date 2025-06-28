@@ -63,6 +63,35 @@ String variableSafeName(Quirks quirks, String jsonName) {
   return avoidReservedWord(escapedName);
 }
 
+String wrapAsDocComment(String value, {required int indent}) {
+  final lines = value.split('\n');
+  final commentedLines = lines.map((line) => ' ' * indent + '/// $line');
+  return commentedLines.join('\n');
+}
+
+/// Doc comments are meant to be inserted right before the type declaration
+/// *not* on a separate line.  They will add their own new-line at the end if
+/// necessary and will match the passed in indent for any lines after the first
+/// including after the trailing new-line.
+String? createDocComment({String? title, String? body, int indent = 0}) {
+  if (title == null && body == null) {
+    return null;
+  }
+  final parts = <String>[];
+  if (title != null) {
+    parts.add(wrapAsDocComment(title, indent: indent));
+  }
+  if (body != null) {
+    parts.add(wrapAsDocComment(body, indent: indent));
+  }
+  if (parts.isEmpty) {
+    return null;
+  }
+  // Remove leading whitespace from just the first line.
+  // This makes it easier to use from within a mustache template.
+  return '${parts.join('\n').trimLeft()}\n${' ' * indent}';
+}
+
 // Could make this comparable to have a nicer sort for our test results.
 @immutable
 class Import extends Equatable {
@@ -79,6 +108,15 @@ class Import extends Equatable {
   List<Object?> get props => [path, asName];
 }
 
+bool isTopLevelComponent(JsonPointer pointer) {
+  if (pointer.parts.length != 3) {
+    return false;
+  }
+  final first = pointer.parts[0];
+  final second = pointer.parts[1];
+  return first == 'components' && second == 'schemas';
+}
+
 class SpecResolver {
   const SpecResolver(this.quirks);
 
@@ -89,15 +127,6 @@ class SpecResolver {
       return null;
     }
     return toRenderSchema(schema);
-  }
-
-  bool isTopLevelComponent(JsonPointer pointer) {
-    if (pointer.parts.length != 3) {
-      return false;
-    }
-    final first = pointer.parts[0];
-    final second = pointer.parts[1];
-    return first == 'components' && second == 'schemas';
   }
 
   RenderSchema toRenderSchema(ResolvedSchema schema) {
@@ -126,21 +155,13 @@ class SpecResolver {
         // Unclear if this is an OpenApi generator quirk or desired behavior,
         // but openapi creates a new file for each top level component, even
         // if it's a simple type.  Matching this behavior for now.
-        final useNewType = isTopLevelComponent(schema.pointer);
-        if (useNewType && schema.type == PodType.string) {
+        final hasExplicitName = isTopLevelComponent(schema.pointer);
+        if (hasExplicitName && schema.type == PodType.string) {
           return RenderStringNewType(
             snakeName: schema.snakeName,
             description: schema.description,
             pointer: schema.pointer,
             defaultValue: schema.defaultValue as String?,
-          );
-        }
-        if (useNewType && schema.type == PodType.number) {
-          return RenderNumberNewType(
-            snakeName: schema.snakeName,
-            description: schema.description,
-            pointer: schema.pointer,
-            defaultValue: schema.defaultValue as double?,
           );
         }
         return RenderPod(
@@ -149,6 +170,30 @@ class SpecResolver {
           description: schema.description,
           pointer: schema.pointer,
           defaultValue: schema.defaultValue,
+        );
+      case ResolvedNumber():
+        return RenderNumber(
+          snakeName: schema.snakeName,
+          description: schema.description,
+          pointer: schema.pointer,
+          defaultValue: schema.defaultValue,
+          maximum: schema.maximum,
+          minimum: schema.minimum,
+          exclusiveMaximum: schema.exclusiveMaximum,
+          exclusiveMinimum: schema.exclusiveMinimum,
+          multipleOf: schema.multipleOf,
+        );
+      case ResolvedInteger():
+        return RenderInteger(
+          snakeName: schema.snakeName,
+          description: schema.description,
+          pointer: schema.pointer,
+          defaultValue: schema.defaultValue,
+          maximum: schema.maximum,
+          minimum: schema.minimum,
+          exclusiveMaximum: schema.exclusiveMaximum,
+          exclusiveMinimum: schema.exclusiveMinimum,
+          multipleOf: schema.multipleOf,
         );
       case ResolvedArray():
         var defaultValue = schema.defaultValue;
@@ -459,8 +504,11 @@ class Endpoint {
     // Endpoints could get summary and description from
     // *both* Path and Operation objects.  Unclear how we should display both.
     return {
-      'endpoint_summary': summary,
-      'endpoint_description': description,
+      'endpoint_doc_comment': createDocComment(
+        title: summary,
+        body: description,
+        indent: 4,
+      ),
       'methodName': methodName,
       'httpMethod': method.name,
       'path': path,
@@ -596,8 +644,10 @@ class RenderRequestBodyJson extends RenderRequestBody {
     // TODO(eseidel): Share code with Parameter.toTemplateContext.
     final isNullable = !isRequired;
     return {
-      // Request body does not have a summary.
-      'request_body_description': description,
+      'request_body_doc_comment': createDocComment(
+        body: description,
+        indent: 4,
+      ),
       'name': paramName,
       'dartName': paramName,
       'bracketedName': '{$paramName}',
@@ -626,7 +676,10 @@ class RenderRequestBodyOctetStream extends RenderRequestBody {
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     final paramName = requestBodyClassName(context);
     return {
-      'request_body_description': description,
+      'request_body_doc_comment': createDocComment(
+        body: description,
+        indent: 4,
+      ),
       'name': paramName,
       'dartName': paramName,
       'bracketedName': '{$paramName}',
@@ -719,6 +772,11 @@ abstract class RenderSchema extends Equatable {
 
   @override
   List<Object?> get props => [snakeName, pointer];
+
+  // Unclear if this is an OpenApi generator quirk or desired behavior,
+  // but openapi creates a new file for each top level component, even
+  // if it's a simple type.  Matching this behavior for now.
+  bool get hasExplicitName => isTopLevelComponent(pointer);
 
   String orDefaultExpression({
     required SchemaRenderer context,
@@ -823,10 +881,7 @@ class RenderPod extends RenderSchema {
   bool get onlyJsonTypes {
     return switch (type) {
       // These are already json types.
-      PodType.string ||
-      PodType.integer ||
-      PodType.number ||
-      PodType.boolean => true,
+      PodType.string || PodType.boolean => true,
       // These require serialization to a string.
       PodType.dateTime || PodType.uri => false,
     };
@@ -836,10 +891,7 @@ class RenderPod extends RenderSchema {
   bool get defaultCanConstConstruct {
     return switch (type) {
       PodType.dateTime || PodType.uri => false,
-      PodType.string ||
-      PodType.integer ||
-      PodType.number ||
-      PodType.boolean => true,
+      PodType.string || PodType.boolean => true,
     };
   }
 
@@ -850,8 +902,6 @@ class RenderPod extends RenderSchema {
   String typeName(SchemaRenderer context) {
     return switch (type) {
       PodType.string => 'String',
-      PodType.integer => 'int',
-      PodType.number => 'double',
       PodType.boolean => 'bool',
       PodType.dateTime => 'DateTime',
       PodType.uri => 'Uri',
@@ -864,8 +914,6 @@ class RenderPod extends RenderSchema {
       PodType.string ||
       PodType.dateTime ||
       PodType.uri => isNullable ? 'String?' : 'String',
-      PodType.integer => isNullable ? 'int?' : 'int',
-      PodType.number => isNullable ? 'num?' : 'num',
       PodType.boolean => isNullable ? 'bool?' : 'bool',
     };
   }
@@ -881,8 +929,6 @@ class RenderPod extends RenderSchema {
         'DateTime.parse(${quoteString(defaultValue as String)})',
       PodType.uri => 'Uri.parse(${quoteString(defaultValue as String)})',
       PodType.string => quoteString(defaultValue as String),
-      PodType.integer ||
-      PodType.number ||
       PodType.boolean => defaultValue.toString(),
     };
   }
@@ -923,7 +969,6 @@ class RenderPod extends RenderSchema {
       jsonIsNullable: jsonIsNullable,
       dartIsNullable: dartIsNullable,
     );
-    final access = jsonIsNullable ? '?' : '';
     switch (type) {
       case PodType.dateTime:
         if (jsonIsNullable) {
@@ -939,10 +984,6 @@ class RenderPod extends RenderSchema {
         }
       case PodType.string:
         return '$jsonValue as $jsonType $orDefault';
-      case PodType.integer:
-        return '($jsonValue as $jsonType)$access.toInt()$orDefault';
-      case PodType.number:
-        return '($jsonValue as $jsonType)$access.toDouble()$orDefault';
       case PodType.boolean:
         return '($jsonValue as $jsonType)$orDefault';
     }
@@ -1013,8 +1054,8 @@ class RenderStringNewType extends RenderNewType {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
-    'description': description,
-    'typeName': className,
+    'doc_comment': createDocComment(body: description, indent: 4),
+    'typeName': typeName(context),
     'nullableTypeName': nullableTypeName(context),
   };
 
@@ -1041,37 +1082,84 @@ class RenderStringNewType extends RenderNewType {
   }
 }
 
-class RenderNumberNewType extends RenderNewType {
-  const RenderNumberNewType({
+abstract class RenderNumeric<T extends num> extends RenderSchema {
+  const RenderNumeric({
     required super.snakeName,
     required super.description,
     required super.pointer,
     required this.defaultValue,
+    required this.maximum,
+    required this.minimum,
+    required this.exclusiveMaximum,
+    required this.exclusiveMinimum,
+    required this.multipleOf,
   });
 
   @override
-  final double? defaultValue;
+  final T? defaultValue;
+
+  /// The maximum value of the number.
+  final T? maximum;
+
+  /// The minimum value of the number.
+  final T? minimum;
+
+  /// The exclusive maximum value of the number.
+  final T? exclusiveMaximum;
+
+  /// The exclusive minimum value of the number.
+  final T? exclusiveMinimum;
+
+  /// The multiple of value of the number.
+  final T? multipleOf;
 
   @override
-  List<Object?> get props => [super.props, defaultValue];
+  List<Object?> get props => [
+    super.props,
+    defaultValue,
+    maximum,
+    minimum,
+    exclusiveMaximum,
+    exclusiveMinimum,
+    multipleOf,
+    hasExplicitName,
+  ];
 
+  @override
+  bool get createsNewType =>
+      hasExplicitName ||
+      maximum != null ||
+      minimum != null ||
+      exclusiveMaximum != null ||
+      exclusiveMinimum != null ||
+      multipleOf != null;
+
+  @override
+  bool get onlyJsonTypes => !createsNewType;
+
+  // Careful, this might not be true depending on validations.
   @override
   bool get defaultCanConstConstruct => true;
 
   @override
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
-    'description': description,
-    'typeName': className,
-    'nullableTypeName': nullableTypeName(context),
-  };
+  String equalsExpression(String name, SchemaRenderer context) =>
+      'this.$name == other.$name';
 
-  @override
-  String jsonStorageType({required bool isNullable}) {
-    return isNullable ? 'num?' : 'num';
+  @visibleForTesting
+  String buildValidations(SchemaRenderer context) {
+    final validations = <String>[];
+    void add(String condition) =>
+        validations.add('assert($condition, "Invalid value: \$value")');
+
+    if (maximum != null) add('value <= $maximum');
+    if (minimum != null) add('value >= $minimum');
+    if (exclusiveMaximum != null) add('value < $exclusiveMaximum');
+    if (exclusiveMinimum != null) add('value > $exclusiveMinimum');
+    if (multipleOf != null) add('value % $multipleOf == 0');
+    return validations.join(',\n');
   }
 
-  @override
-  String fromJsonExpression(
+  String newTypeFromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
@@ -1084,8 +1172,116 @@ class RenderNumberNewType extends RenderNewType {
       dartIsNullable: dartIsNullable,
     );
     final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
+    final className = camelFromSnake(snakeName);
     return '$className.$jsonMethod($jsonValue as $jsonType)$orDefault';
   }
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
+    if (!createsNewType) {
+      throw StateError(
+        '$runtimeType.toTemplateContext called for non-new type: $this',
+      );
+    }
+    return {
+      'doc_comment': createDocComment(body: description, indent: 4),
+      'typeName': typeName(context),
+      'nullableTypeName': nullableTypeName(context),
+      'validations': buildValidations(context),
+    };
+  }
+
+  String get numToTypeCall;
+
+  @override
+  String fromJsonExpression(
+    String jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) {
+    if (createsNewType) {
+      return newTypeFromJsonExpression(
+        jsonValue,
+        context,
+        jsonIsNullable: jsonIsNullable,
+        dartIsNullable: dartIsNullable,
+      );
+    }
+    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
+    final orDefault = orDefaultExpression(
+      context: context,
+      jsonIsNullable: jsonIsNullable,
+      dartIsNullable: dartIsNullable,
+    );
+    final access = jsonIsNullable ? '?' : '';
+    return '($jsonValue as $jsonType)$access.$numToTypeCall$orDefault';
+  }
+
+  @override
+  String toJsonExpression(
+    String dartName,
+    SchemaRenderer context, {
+    required bool dartIsNullable,
+  }) => createsNewType ? '$dartName.toJson()' : dartName;
+}
+
+class RenderNumber extends RenderNumeric<double> {
+  const RenderNumber({
+    required super.snakeName,
+    required super.description,
+    required super.pointer,
+    required super.defaultValue,
+    required super.maximum,
+    required super.minimum,
+    required super.exclusiveMaximum,
+    required super.exclusiveMinimum,
+    required super.multipleOf,
+  });
+
+  @override
+  String typeName(SchemaRenderer context) {
+    if (createsNewType) {
+      return camelFromSnake(snakeName);
+    }
+    return 'double';
+  }
+
+  @override
+  String jsonStorageType({required bool isNullable}) =>
+      isNullable ? 'num?' : 'num';
+
+  @override
+  String get numToTypeCall => 'toDouble()';
+}
+
+class RenderInteger extends RenderNumeric<int> {
+  const RenderInteger({
+    required super.snakeName,
+    required super.description,
+    required super.pointer,
+    required super.defaultValue,
+    required super.maximum,
+    required super.minimum,
+    required super.exclusiveMaximum,
+    required super.exclusiveMinimum,
+    required super.multipleOf,
+  });
+
+  @override
+  String typeName(SchemaRenderer context) {
+    if (createsNewType) {
+      return camelFromSnake(snakeName);
+    }
+    return 'int';
+  }
+
+  @override
+  String jsonStorageType({required bool isNullable}) =>
+      isNullable ? 'int?' : 'int';
+
+  @override
+  String get numToTypeCall => 'toInt()';
 }
 
 class RenderObject extends RenderNewType {
@@ -1268,8 +1464,8 @@ class RenderObject extends RenderNewType {
       throw StateError('Object schema has no properties: $this');
     }
     return {
-      'description': description,
-      'typeName': className,
+      'doc_comment': createDocComment(body: description, indent: 4),
+      'typeName': typeName(context),
       'nullableTypeName': nullableTypeName(context),
       'hasProperties': hasProperties,
       // Special case behavior hashCode with only one property.
@@ -1639,8 +1835,8 @@ class RenderEnum extends RenderNewType {
     }
 
     return {
-      'description': description,
-      'typeName': className,
+      'doc_comment': createDocComment(body: description, indent: 4),
+      'typeName': typeName(context),
       'nullableTypeName': nullableTypeName(context),
       'enumValues': values.map(enumValueToTemplateContext).toList(),
     };
@@ -1737,8 +1933,8 @@ class RenderOneOf extends RenderNewType {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     return {
-      'description': description,
-      'typeName': className,
+      'doc_comment': createDocComment(body: description, indent: 4),
+      'typeName': typeName(context),
       'nullableTypeName': nullableTypeName(context),
     };
   }
@@ -1789,7 +1985,7 @@ class RenderParameter {
     final dartName = lowercaseCamelFromSnake(name);
     final jsonName = name;
     return {
-      'parameter_description': description,
+      'parameter_description': createDocComment(body: description, indent: 4),
       'name': name,
       'dartName': dartName,
       'bracketedName': '{$specName}',
@@ -1998,8 +2194,8 @@ class RenderEmptyObject extends RenderNewType {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
-    'description': description,
-    'typeName': className,
+    'doc_comment': createDocComment(body: description, indent: 4),
+    'typeName': typeName(context),
     'nullableTypeName': nullableTypeName(context),
   };
 }

@@ -586,8 +586,7 @@ void main() {
               snakeName: 'Foo',
               pointer: pointer200,
               description: 'Foo',
-              items: ResolvedPod(
-                type: PodType.integer,
+              items: ResolvedInteger(
                 pointer: pointer200,
                 snakeName: 'Foo',
                 description: 'Foo',
@@ -653,6 +652,48 @@ void main() {
       expect(schema1, equals(schema1));
       // Same schemas.
       expect(schema1, equals(schema2));
+    });
+    test('ResolvedNumber equality', () {
+      final schema1 = ResolvedNumber(
+        snakeName: 'Foo',
+        pointer: JsonPointer.parse(
+          '#/paths//users/get/responses/200/content/application/json/schema',
+        ),
+        description: 'Foo',
+      );
+      // Same schema.
+      expect(schema1, equals(schema1));
+      final schema2 = ResolvedNumber(
+        snakeName: 'Foo',
+        pointer: JsonPointer.parse(
+          '#/paths//users/get/responses/200/content/application/json/schema',
+        ),
+        description: 'Foo',
+        maximum: 10,
+      );
+      // Different schema.
+      expect(schema1, isNot(equals(schema2)));
+    });
+    test('ResolvedInteger equality', () {
+      final schema1 = ResolvedInteger(
+        snakeName: 'Foo',
+        pointer: JsonPointer.parse(
+          '#/paths//users/get/responses/200/content/application/json/schema',
+        ),
+        description: 'Foo',
+      );
+      // Same schema.
+      expect(schema1, equals(schema1));
+      final schema2 = ResolvedInteger(
+        snakeName: 'Foo',
+        pointer: JsonPointer.parse(
+          '#/paths//users/get/responses/200/content/application/json/schema',
+        ),
+        description: 'Foo',
+        maximum: 10,
+      );
+      // Different schema.
+      expect(schema1, isNot(equals(schema2)));
     });
   });
 }

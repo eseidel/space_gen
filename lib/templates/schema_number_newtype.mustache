@@ -1,7 +1,6 @@
-{{#description}}
-/// {{{ description }}}
-{{/description}}
-extension type {{{ typeName }}}(double value) {
+{{{ doc_comment }}}extension type const {{{ typeName }}}._(double value) {
+    const {{ typeName }}(this.value){{{validations}}};
+
     factory {{ typeName }}.fromJson(num json) => {{ typeName }}(json.toDouble());
 
     /// Convenience to create a nullable type from a nullable json object.
