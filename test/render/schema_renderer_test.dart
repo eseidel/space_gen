@@ -545,7 +545,7 @@ void main() {
         '        json) {\n'
         '        return Test(\n'
         "            mString: (json['m_string'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, value as String )),\n"
-        "            mInt: (json['m_int'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, (value as int).toInt())),\n"
+        "            mInt: (json['m_int'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, (value as int))),\n"
         "            mNumber: (json['m_number'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, (value as num).toDouble())),\n"
         "            mBoolean: (json['m_boolean'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, (value as bool))),\n"
         "            mDateTime: (json['m_date_time'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, DateTime.parse(value as String))),\n"
@@ -1069,18 +1069,18 @@ void main() {
         final result = renderSchema(json);
         expect(
           result,
-          'extension type const Test._(double value) {\n'
+          'extension type const Test._(int value) {\n'
           '    const Test(this.value): assert(value <= 10, "Invalid value: \$value"),\n'
           'assert(value >= 1, "Invalid value: \$value"),\n'
           'assert(value < 0, "Invalid value: \$value"),\n'
           'assert(value > 9, "Invalid value: \$value"),\n'
           'assert(value % 2 == 0, "Invalid value: \$value");\n'
           '\n'
-          '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
+          '    factory Test.fromJson(int json) => Test(json);\n'
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
           '    /// Useful when parsing optional fields.\n'
-          '    static Test? maybeFromJson(double? json) {\n'
+          '    static Test? maybeFromJson(int? json) {\n'
           '        if (json == null) {\n'
           '            return null;\n'
           '        }\n'
@@ -1088,7 +1088,8 @@ void main() {
           '    }\n'
           '\n'
           '    double toJson() => value;\n'
-          '}\n',
+          '}\n'
+          '',
         );
       });
 
@@ -1117,7 +1118,54 @@ void main() {
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
           '    /// Useful when parsing optional fields.\n'
-          '    static Test? maybeFromJson(double? json) {\n'
+          '    static Test? maybeFromJson(num? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    double toJson() => value;\n'
+          '}\n'
+          '',
+        );
+      });
+      test('number with default values', () {
+        final json = {'type': 'number', 'default': 1.2, 'maximum': 10.2};
+        final result = renderSchema(json);
+        expect(
+          result,
+          'extension type const Test._(double value) {\n'
+          '    const Test(this.value): assert(value <= 10.2, "Invalid value: \$value");\n'
+          '\n'
+          '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(num? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    double toJson() => value;\n'
+          '}\n',
+        );
+      });
+      test('integer with default values', () {
+        final json = {'type': 'integer', 'default': 1, 'minimum': 0};
+        final result = renderSchema(json);
+        expect(
+          result,
+          'extension type const Test._(int value) {\n'
+          '    const Test(this.value): assert(value >= 0, "Invalid value: \$value");\n'
+          '\n'
+          '    factory Test.fromJson(int json) => Test(json);\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(int? json) {\n'
           '        if (json == null) {\n'
           '            return null;\n'
           '        }\n'

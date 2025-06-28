@@ -1167,23 +1167,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     return ': $validations';
   }
 
-  String newTypeFromJsonExpression(
-    String jsonValue,
-    SchemaRenderer context, {
-    required bool jsonIsNullable,
-    required bool dartIsNullable,
-  }) {
-    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
-    final orDefault = orDefaultExpression(
-      context: context,
-      jsonIsNullable: jsonIsNullable,
-      dartIsNullable: dartIsNullable,
-    );
-    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-    final className = camelFromSnake(snakeName);
-    return '$className.$jsonMethod($jsonValue as $jsonType)$orDefault';
-  }
-
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     if (!createsNewType) {
@@ -1194,12 +1177,39 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     return {
       'doc_comment': createDocComment(body: description, indent: 4),
       'typeName': typeName(context),
+      'dartType': '$T',
+      'jsonType': jsonStorageType(isNullable: false),
       'nullableTypeName': nullableTypeName(context),
       'initializers': buildInitializers(context),
+      'fromJson': fromJsonExpression(
+        'value',
+        context,
+        jsonIsNullable: false,
+        dartIsNullable: false,
+      ),
+      'toJson': toJsonExpression('value', context, dartIsNullable: false),
+      'jsonToDartCall': jsonToDartCall(jsonIsNullable: false),
     };
   }
 
-  String get numToTypeCall;
+  String jsonToDartCall({required bool jsonIsNullable});
+
+  String newTypeFromJsonExpression(
+    String jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) {
+    final orDefault = orDefaultExpression(
+      context: context,
+      jsonIsNullable: jsonIsNullable,
+      dartIsNullable: dartIsNullable,
+    );
+    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
+    final className = camelFromSnake(snakeName);
+    // We don't need to cast the jsonValue to the jsonType in the newtype case.
+    return '$className.$jsonMethod($jsonValue)$orDefault';
+  }
 
   @override
   String fromJsonExpression(
@@ -1222,8 +1232,8 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
       jsonIsNullable: jsonIsNullable,
       dartIsNullable: dartIsNullable,
     );
-    final access = jsonIsNullable ? '?' : '';
-    return '($jsonValue as $jsonType)$access.$numToTypeCall$orDefault';
+    final toDartCall = jsonToDartCall(jsonIsNullable: jsonIsNullable);
+    return '($jsonValue as $jsonType)$toDartCall$orDefault';
   }
 
   @override
@@ -1260,7 +1270,8 @@ class RenderNumber extends RenderNumeric<double> {
       isNullable ? 'num?' : 'num';
 
   @override
-  String get numToTypeCall => 'toDouble()';
+  String jsonToDartCall({required bool jsonIsNullable}) =>
+      jsonIsNullable ? '?.toDouble()' : '.toDouble()';
 }
 
 class RenderInteger extends RenderNumeric<int> {
@@ -1288,8 +1299,9 @@ class RenderInteger extends RenderNumeric<int> {
   String jsonStorageType({required bool isNullable}) =>
       isNullable ? 'int?' : 'int';
 
+  // jsonType and dartType are both int, so we don't need to do anything.
   @override
-  String get numToTypeCall => 'toInt()';
+  String jsonToDartCall({required bool jsonIsNullable}) => '';
 }
 
 class RenderObject extends RenderNewType {
