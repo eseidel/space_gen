@@ -152,6 +152,7 @@ class SpecResolver {
           minimum: schema.minimum,
           exclusiveMaximum: schema.exclusiveMaximum,
           exclusiveMinimum: schema.exclusiveMinimum,
+          multipleOf: schema.multipleOf,
         );
       case ResolvedInteger():
         return RenderInteger(
@@ -163,6 +164,7 @@ class SpecResolver {
           minimum: schema.minimum,
           exclusiveMaximum: schema.exclusiveMaximum,
           exclusiveMinimum: schema.exclusiveMinimum,
+          multipleOf: schema.multipleOf,
         );
       case ResolvedArray():
         var defaultValue = schema.defaultValue;
@@ -1053,6 +1055,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     required this.minimum,
     required this.exclusiveMaximum,
     required this.exclusiveMinimum,
+    required this.multipleOf,
   });
 
   @override
@@ -1070,6 +1073,9 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
   /// The exclusive minimum value of the number.
   final T? exclusiveMinimum;
 
+  /// The multiple of value of the number.
+  final T? multipleOf;
+
   @override
   List<Object?> get props => [
     super.props,
@@ -1078,6 +1084,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     minimum,
     exclusiveMaximum,
     exclusiveMinimum,
+    multipleOf,
     hasExplicitName,
   ];
 
@@ -1087,7 +1094,8 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
       maximum != null ||
       minimum != null ||
       exclusiveMaximum != null ||
-      exclusiveMinimum != null;
+      exclusiveMinimum != null ||
+      multipleOf != null;
 
   @override
   bool get onlyJsonTypes => !createsNewType;
@@ -1110,6 +1118,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     if (minimum != null) add('value >= $minimum');
     if (exclusiveMaximum != null) add('value < $exclusiveMaximum');
     if (exclusiveMinimum != null) add('value > $exclusiveMinimum');
+    if (multipleOf != null) add('value % $multipleOf == 0');
     return validations.join(',\n');
   }
 
@@ -1209,6 +1218,7 @@ class RenderNumber extends RenderNumeric<double> {
     required super.minimum,
     required super.exclusiveMaximum,
     required super.exclusiveMinimum,
+    required super.multipleOf,
   });
 
   @override
@@ -1237,6 +1247,7 @@ class RenderInteger extends RenderNumeric<int> {
     required super.minimum,
     required super.exclusiveMaximum,
     required super.exclusiveMinimum,
+    required super.multipleOf,
   });
 
   @override
