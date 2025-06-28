@@ -53,6 +53,16 @@ T? _optional<T>(MapContext parent, String key) {
   return _expectType<T?>(parent, key, value);
 }
 
+// Double has to be parsed as a num since Dart's json parser will treat
+// '1' as an int, even if we expect it to be a double.
+double? _optionalDouble(MapContext parent, String key) {
+  final value = parent[key];
+  if (value == null) {
+    return null;
+  }
+  return _expectType<num?>(parent, key, value)?.toDouble();
+}
+
 List<T>? _optionalList<T>(MapContext parent, String key) {
   final value = parent[key];
   if (value == null) {
@@ -400,12 +410,12 @@ Schema? _handleNumberTypes(
       pointer: json.pointer,
       snakeName: json.snakeName,
       description: description,
-      defaultValue: _optional<double>(json, 'default'),
-      minimum: _optional<double>(json, 'minimum'),
-      maximum: _optional<double>(json, 'maximum'),
-      exclusiveMinimum: _optional<double>(json, 'exclusiveMinimum'),
-      exclusiveMaximum: _optional<double>(json, 'exclusiveMaximum'),
-      multipleOf: _optional<double>(json, 'multipleOf'),
+      defaultValue: _optionalDouble(json, 'default'),
+      minimum: _optionalDouble(json, 'minimum'),
+      maximum: _optionalDouble(json, 'maximum'),
+      exclusiveMinimum: _optionalDouble(json, 'exclusiveMinimum'),
+      exclusiveMaximum: _optionalDouble(json, 'exclusiveMaximum'),
+      multipleOf: _optionalDouble(json, 'multipleOf'),
     );
   }
   return null;

@@ -1069,6 +1069,82 @@ void main() {
         '',
       );
     });
+
+    group('number validations', () {
+      test('integer', () {
+        final json = {
+          'type': 'integer',
+          'minimum': 1,
+          'maximum': 10,
+          'multipleOf': 2,
+          // It doesn't make sense to have both exclusive and inclusive
+          // validations, but we support it anyway.
+          'exclusiveMinimum': 9,
+          'exclusiveMaximum': 0,
+        };
+        final result = renderSchema(json);
+        expect(
+          result,
+          'extension type const Test._(double value) {\n'
+          '    const Test(this.value)assert(value <= 10, "Invalid value: \$value"),\n'
+          'assert(value >= 1, "Invalid value: \$value"),\n'
+          'assert(value < 0, "Invalid value: \$value"),\n'
+          'assert(value > 9, "Invalid value: \$value");\n'
+          '\n'
+          '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(double? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    double toJson() => value;\n'
+          '}\n'
+          '',
+        );
+      });
+
+      test('number', () {
+        final json = {
+          'type': 'number',
+          'minimum': 1.2,
+          'maximum': 10.2,
+          'multipleOf': 2.2,
+          // It doesn't make sense to have both exclusive and inclusive
+          // validations, but we support it anyway.
+          'exclusiveMinimum': 9,
+          'exclusiveMaximum': 0,
+        };
+        final result = renderSchema(json);
+        expect(
+          result,
+          'extension type const Test._(double value) {\n'
+          '    const Test(this.value)assert(value <= 10.2, "Invalid value: \$value"),\n'
+          'assert(value >= 1.2, "Invalid value: \$value"),\n'
+          'assert(value < 0.0, "Invalid value: \$value"),\n'
+          'assert(value > 9.0, "Invalid value: \$value");\n'
+          '\n'
+          '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(double? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    double toJson() => value;\n'
+          '}\n'
+          '',
+        );
+      });
+    });
   });
 
   group('renderOperation', () {
