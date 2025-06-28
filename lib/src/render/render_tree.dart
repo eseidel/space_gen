@@ -969,25 +969,22 @@ class RenderPod extends RenderSchema {
       jsonIsNullable: jsonIsNullable,
       dartIsNullable: dartIsNullable,
     );
-    // TODO(eseidel): Check valueType to possibly avoid unnecessary cast.
     final castedValue = '$jsonValue as $jsonType';
     switch (type) {
       case PodType.dateTime:
         if (jsonIsNullable) {
           return 'maybeParseDateTime($castedValue)$orDefault';
-        } else {
-          return 'DateTime.parse($castedValue)';
         }
+        return 'DateTime.parse($castedValue)';
       case PodType.uri:
         if (jsonIsNullable) {
           return 'maybeParseUri($castedValue)$orDefault';
-        } else {
-          return 'Uri.parse($castedValue)';
         }
+        return 'Uri.parse($castedValue)';
       case PodType.string:
-        return '($castedValue)$orDefault';
       case PodType.boolean:
-        return '($castedValue)$orDefault';
+        // 'as' has higher precedence than '??' so no parens are needed.
+        return '$castedValue$orDefault';
     }
   }
 
@@ -1080,7 +1077,6 @@ class RenderStringNewType extends RenderNewType {
       dartIsNullable: dartIsNullable,
     );
     final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-    // TODO(eseidel): Check valueType to possibly avoid unnecessary cast.
     final castedValue = '$jsonValue as $jsonType';
     return '$className.$jsonMethod($castedValue)$orDefault';
   }
