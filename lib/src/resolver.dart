@@ -642,17 +642,6 @@ abstract class ResolvedNumeric<T extends num> extends ResolvedSchema {
   /// The multiple of value of the resolved schema.
   final T? multipleOf;
 
-  /// Whether this schema is a component.
-  bool get isComponent => false;
-
-  bool get createsNewType =>
-      isComponent ||
-      maximum != null ||
-      minimum != null ||
-      exclusiveMaximum != null ||
-      exclusiveMinimum != null ||
-      multipleOf != null;
-
   @override
   List<Object?> get props => [
     super.props,
