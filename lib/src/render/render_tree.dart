@@ -1139,14 +1139,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     return '$className.$jsonMethod($jsonValue as $jsonType)$orDefault';
   }
 
-  String newTypeToJsonExpression(
-    String dartName,
-    SchemaRenderer context, {
-    required bool dartIsNullable,
-  }) {
-    return '$dartName.toJson()';
-  }
-
   Map<String, dynamic> toNewTypeTemplateContext(SchemaRenderer context) => {
     'description': description,
     'typeName': typeName(context),
