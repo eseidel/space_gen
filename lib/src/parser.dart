@@ -252,7 +252,7 @@ PodType? determinePodType(MapContext json) {
     if (format != null) {
       _warn(json, 'Unknown string format: $format');
     }
-    return PodType.string;
+    return null;
   }
   _error(json, 'Unknown pod type: $type');
 }
@@ -345,7 +345,7 @@ SchemaEnum? _handleEnum({
     return null;
   }
   // We will infer the type from the enum values if not provided.
-  if (type != null && podType != PodType.string) {
+  if (type != null && type != 'string') {
     // boolean enums are valid but not yet supported (or particularly
     // consequential to ignore). GitHub uses one for fork=true.
     if (podType == PodType.boolean) {
@@ -463,6 +463,18 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   );
   if (enumSchema != null) {
     return enumSchema;
+  }
+
+  if (type == 'string') {
+    return SchemaString(
+      pointer: json.pointer,
+      snakeName: json.snakeName,
+      description: description,
+      defaultValue: _optional<String>(json, 'default'),
+      maxLength: _optional<int>(json, 'maxLength'),
+      minLength: _optional<int>(json, 'minLength'),
+      pattern: _optional<String>(json, 'pattern'),
+    );
   }
 
   final schema = _handleNumberTypes(json, type: type, description: description);

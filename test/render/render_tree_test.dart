@@ -102,7 +102,7 @@ void main() {
           'a': RenderPod(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
-            type: PodType.string,
+            type: PodType.boolean,
             description: 'Foo',
           ),
         },
@@ -117,7 +117,7 @@ void main() {
         additionalProperties: RenderPod(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          type: PodType.string,
+          type: PodType.boolean,
           description: 'Foo',
         ),
       );
@@ -154,7 +154,7 @@ void main() {
           'e': RenderPod(
             snakeName: 'e',
             pointer: JsonPointer.empty(),
-            type: PodType.string,
+            type: PodType.boolean,
             description: 'Foo',
           ),
         },
@@ -170,7 +170,7 @@ void main() {
         items: RenderPod(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          type: PodType.string,
+          type: PodType.boolean,
           description: 'Foo',
         ),
       );
@@ -183,7 +183,7 @@ void main() {
         items: RenderPod(
           snakeName: 'b',
           pointer: JsonPointer.empty(),
-          type: PodType.string,
+          type: PodType.boolean,
           description: 'Foo',
         ),
       );
@@ -241,7 +241,7 @@ void main() {
           RenderPod(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
-            type: PodType.string,
+            type: PodType.boolean,
             description: 'Foo',
           ),
         ],
@@ -256,7 +256,7 @@ void main() {
           RenderPod(
             snakeName: 'b',
             pointer: JsonPointer.empty(),
-            type: PodType.string,
+            type: PodType.boolean,
             description: 'Foo',
           ),
         ],
@@ -271,13 +271,13 @@ void main() {
           RenderPod(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
-            type: PodType.string,
+            type: PodType.boolean,
             description: 'Foo',
           ),
           RenderPod(
             snakeName: 'b',
             pointer: JsonPointer.empty(),
-            type: PodType.string,
+            type: PodType.boolean,
             description: 'Foo',
           ),
         ],

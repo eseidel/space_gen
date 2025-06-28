@@ -182,7 +182,7 @@ void main() {
             'message',
             equals(
               'allOf only supports objects: '
-              'ResolvedPod(snakeName: users200_response_all_of_0, pointer: '
+              'ResolvedString(snakeName: users200_response_all_of_0, pointer: '
               '#/paths//users/get/responses/200/content/application/json/schema/allOf/0) '
               'in #/paths//users/get/responses/200/content/application/json/schema',
             ),
@@ -510,7 +510,7 @@ void main() {
               'Expected Schema?, got '
               'RequestBody(#/components/requestBodies/RequestBody, null, '
               '{application/json: MediaType(SchemaRef(null, '
-              'SchemaPod([#/components/requestBodies/RequestBody/content/application/json/schema, '
+              'SchemaString([#/components/requestBodies/RequestBody/content/application/json/schema, '
               'request_body, null], PodType.string, null)))}, false)',
             ),
           ),
@@ -557,7 +557,7 @@ void main() {
         pointer: pointer200,
         description: 'Foo',
         items: ResolvedPod(
-          type: PodType.string,
+          type: PodType.boolean,
           pointer: pointer200,
           snakeName: 'Foo',
           description: 'Foo',
@@ -568,7 +568,7 @@ void main() {
         pointer: pointer201,
         description: 'Foo',
         items: ResolvedPod(
-          type: PodType.string,
+          type: PodType.boolean,
           pointer: pointer200,
           snakeName: 'Foo',
           description: 'Foo',
@@ -629,7 +629,7 @@ void main() {
         description: 'Foo',
         schemas: [
           ResolvedPod(
-            type: PodType.string,
+            type: PodType.boolean,
             pointer: pointer200,
             snakeName: 'Foo',
             description: 'Foo',
@@ -642,7 +642,7 @@ void main() {
         description: 'Foo',
         schemas: [
           ResolvedPod(
-            type: PodType.string,
+            type: PodType.boolean,
             pointer: pointer200,
             snakeName: 'Foo',
             description: 'Foo',

@@ -24,11 +24,11 @@ void main() {
         return determinePodType(MapContext.initial(json));
       }
 
-      expect(parse('string'), PodType.string);
+      expect(parse('string'), isNull);
       expect(parse('string', format: 'binary'), isNull);
       expect(parse('string', format: 'date-time'), PodType.dateTime);
       expect(parse('string', format: 'uri'), PodType.uri);
-      expect(parse('string', format: 'foo', expectLogs: true), PodType.string);
+      expect(parse('string', format: 'foo', expectLogs: true), isNull);
       verify(() => logger.warn('Unknown string format: foo in #/')).called(1);
       expect(parse('number'), isNull);
       expect(parse('integer'), isNull);
@@ -1247,7 +1247,7 @@ void main() {
         'foo-bar': {'type': 'string'},
       };
       final spec = parseTestSchemas(json);
-      expect(spec['foo-bar'], isA<SchemaPod>());
+      expect(spec['foo-bar'], isA<SchemaString>());
       expect(
         spec['foo-bar']!.pointer,
         const JsonPointer.fromParts(['components', 'schemas', 'foo-bar']),

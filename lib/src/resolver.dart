@@ -92,7 +92,8 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       ),
       requiredProperties: schema.requiredProperties,
     );
-  } else if (schema is SchemaEnum) {
+  }
+  if (schema is SchemaEnum) {
     return ResolvedEnum(
       pointer: schema.pointer,
       description: schema.description,
@@ -100,13 +101,15 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       values: schema.enumValues,
       snakeName: schema.snakeName,
     );
-  } else if (schema is SchemaBinary) {
+  }
+  if (schema is SchemaBinary) {
     return ResolvedBinary(
       pointer: schema.pointer,
       snakeName: schema.snakeName,
       description: schema.description,
     );
-  } else if (schema is SchemaPod) {
+  }
+  if (schema is SchemaPod) {
     return ResolvedPod(
       type: schema.type,
       pointer: schema.pointer,
@@ -114,7 +117,8 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       description: schema.description,
       defaultValue: schema.defaultValue,
     );
-  } else if (schema is SchemaInteger) {
+  }
+  if (schema is SchemaInteger) {
     return ResolvedInteger(
       pointer: schema.pointer,
       snakeName: schema.snakeName,
@@ -126,7 +130,19 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       exclusiveMinimum: schema.exclusiveMinimum,
       multipleOf: schema.multipleOf,
     );
-  } else if (schema is SchemaNumber) {
+  }
+  if (schema is SchemaString) {
+    return ResolvedString(
+      pointer: schema.pointer,
+      snakeName: schema.snakeName,
+      description: schema.description,
+      defaultValue: schema.defaultValue,
+      maxLength: schema.maxLength,
+      minLength: schema.minLength,
+      pattern: schema.pattern,
+    );
+  }
+  if (schema is SchemaNumber) {
     return ResolvedNumber(
       pointer: schema.pointer,
       snakeName: schema.snakeName,
@@ -298,10 +314,7 @@ ResolvedRequestBody? _resolveRequestBody(
 }
 
 bool _canBePathParameter(ResolvedSchema schema) {
-  if (schema is ResolvedPod) {
-    return schema.type == PodType.string;
-  }
-  if (schema is ResolvedInteger) {
+  if (schema is ResolvedString || schema is ResolvedInteger) {
     return true;
   }
   if (schema is ResolvedOneOf) {
@@ -609,6 +622,33 @@ abstract class ResolvedSchema extends Equatable {
 
   @override
   String toString() => '$runtimeType(snakeName: $snakeName, pointer: $pointer)';
+}
+
+class ResolvedString extends ResolvedSchema {
+  const ResolvedString({
+    required super.snakeName,
+    required super.pointer,
+    required super.description,
+    this.defaultValue,
+    this.maxLength,
+    this.minLength,
+    this.pattern,
+  });
+
+  /// The default value of the resolved schema.
+  final String? defaultValue;
+
+  /// The maximum length of the resolved schema.
+  final int? maxLength;
+
+  /// The minimum length of the resolved schema.
+  final int? minLength;
+
+  /// The pattern of the resolved schema.
+  final String? pattern;
+
+  @override
+  List<Object?> get props => [super.props, defaultValue];
 }
 
 abstract class ResolvedNumeric<T extends num> extends ResolvedSchema {

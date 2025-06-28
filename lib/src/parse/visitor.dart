@@ -140,6 +140,7 @@ class SpecWalker {
       case SchemaPod():
       case SchemaInteger():
       case SchemaNumber():
+      case SchemaString():
       case SchemaNull():
       case SchemaBinary():
       case SchemaEmptyObject():

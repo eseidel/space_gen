@@ -113,4 +113,4 @@ enum MimeType {
   final String value;
 }
 
-enum PodType { string, boolean, dateTime, uri }
+enum PodType { boolean, dateTime, uri }

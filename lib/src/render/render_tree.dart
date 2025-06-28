@@ -152,24 +152,22 @@ class SpecResolver {
           requiredProperties: schema.requiredProperties,
         );
       case ResolvedPod():
-        // Unclear if this is an OpenApi generator quirk or desired behavior,
-        // but openapi creates a new file for each top level component, even
-        // if it's a simple type.  Matching this behavior for now.
-        final hasExplicitName = isTopLevelComponent(schema.pointer);
-        if (hasExplicitName && schema.type == PodType.string) {
-          return RenderStringNewType(
-            snakeName: schema.snakeName,
-            description: schema.description,
-            pointer: schema.pointer,
-            defaultValue: schema.defaultValue as String?,
-          );
-        }
         return RenderPod(
           snakeName: schema.snakeName,
           type: schema.type,
           description: schema.description,
           pointer: schema.pointer,
           defaultValue: schema.defaultValue,
+        );
+      case ResolvedString():
+        return RenderString(
+          snakeName: schema.snakeName,
+          description: schema.description,
+          pointer: schema.pointer,
+          defaultValue: schema.defaultValue,
+          maxLength: schema.maxLength,
+          minLength: schema.minLength,
+          pattern: schema.pattern,
         );
       case ResolvedNumber():
         return RenderNumber(
@@ -880,8 +878,8 @@ class RenderPod extends RenderSchema {
   @override
   bool get onlyJsonTypes {
     return switch (type) {
-      // These are already json types.
-      PodType.string || PodType.boolean => true,
+      // Bool is already a json type.
+      PodType.boolean => true,
       // These require serialization to a string.
       PodType.dateTime || PodType.uri => false,
     };
@@ -891,7 +889,7 @@ class RenderPod extends RenderSchema {
   bool get defaultCanConstConstruct {
     return switch (type) {
       PodType.dateTime || PodType.uri => false,
-      PodType.string || PodType.boolean => true,
+      PodType.boolean => true,
     };
   }
 
@@ -901,7 +899,6 @@ class RenderPod extends RenderSchema {
   @override
   String typeName(SchemaRenderer context) {
     return switch (type) {
-      PodType.string => 'String',
       PodType.boolean => 'bool',
       PodType.dateTime => 'DateTime',
       PodType.uri => 'Uri',
@@ -911,9 +908,7 @@ class RenderPod extends RenderSchema {
   @override
   String jsonStorageType({required bool isNullable}) {
     return switch (type) {
-      PodType.string ||
-      PodType.dateTime ||
-      PodType.uri => isNullable ? 'String?' : 'String',
+      PodType.dateTime || PodType.uri => isNullable ? 'String?' : 'String',
       PodType.boolean => isNullable ? 'bool?' : 'bool',
     };
   }
@@ -928,7 +923,6 @@ class RenderPod extends RenderSchema {
       PodType.dateTime =>
         'DateTime.parse(${quoteString(defaultValue as String)})',
       PodType.uri => 'Uri.parse(${quoteString(defaultValue as String)})',
-      PodType.string => quoteString(defaultValue as String),
       PodType.boolean => defaultValue.toString(),
     };
   }
@@ -981,7 +975,6 @@ class RenderPod extends RenderSchema {
           return 'maybeParseUri($castedValue)$orDefault';
         }
         return 'Uri.parse($castedValue)';
-      case PodType.string:
       case PodType.boolean:
         // 'as' has higher precedence than '??' so no parens are needed.
         return '$castedValue$orDefault';
@@ -1034,22 +1027,65 @@ abstract class RenderNewType extends RenderSchema {
   }
 }
 
-class RenderStringNewType extends RenderNewType {
-  const RenderStringNewType({
+class RenderString extends RenderSchema {
+  const RenderString({
     required super.snakeName,
     required super.description,
     required super.pointer,
     required this.defaultValue,
+    required this.maxLength,
+    required this.minLength,
+    required this.pattern,
   });
 
   @override
   final String? defaultValue;
 
+  /// The maximum length of the string.
+  final int? maxLength;
+
+  /// The minimum length of the string.
+  final int? minLength;
+
+  /// The pattern of the string.
+  final String? pattern;
+
   @override
   bool get defaultCanConstConstruct => true;
 
   @override
-  List<Object?> get props => [super.props, defaultValue];
+  List<Object?> get props => [
+    super.props,
+    defaultValue,
+    maxLength,
+    minLength,
+    pattern,
+  ];
+
+  @override
+  String typeName(SchemaRenderer context) =>
+      createsNewType ? camelFromSnake(snakeName) : 'String';
+
+  /// The default value of this schema as a string.
+  @override
+  String? defaultValueString(SchemaRenderer context) {
+    final value = defaultValue;
+    return value == null ? null : quoteString(value);
+  }
+
+  @override
+  bool get createsNewType =>
+      hasExplicitName ||
+      maxLength != null ||
+      minLength != null ||
+      pattern != null;
+
+  @override
+  bool get onlyJsonTypes => !createsNewType;
+
+  @override
+  String equalsExpression(String name, SchemaRenderer context) =>
+      'this.$name == other.$name';
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
@@ -1059,9 +1095,8 @@ class RenderStringNewType extends RenderNewType {
   };
 
   @override
-  String jsonStorageType({required bool isNullable}) {
-    return isNullable ? 'String?' : 'String';
-  }
+  String jsonStorageType({required bool isNullable}) =>
+      isNullable ? 'String?' : 'String';
 
   @override
   String fromJsonExpression(
@@ -1077,8 +1112,21 @@ class RenderStringNewType extends RenderNewType {
       dartIsNullable: dartIsNullable,
     );
     final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
+    final className = camelFromSnake(snakeName);
     final castedValue = '$jsonValue as $jsonType';
     return '$className.$jsonMethod($castedValue)$orDefault';
+  }
+
+  @override
+  String toJsonExpression(
+    String dartName,
+    SchemaRenderer context, {
+    required bool dartIsNullable,
+  }) {
+    if (createsNewType) {
+      return dartIsNullable ? '$dartName?.toJson()' : '$dartName.toJson()';
+    }
+    return dartName;
   }
 }
 
