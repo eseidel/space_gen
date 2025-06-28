@@ -32,6 +32,7 @@ dart run space_gen
 * Finish oneOf support.
 * Remove the 'prop' hack for GitHub spec.
 * Split render tree into some sort of "types" library and types -> code gen.
+* Support 'default' for objects.
 
 Is the body sometimes passed in as an object, and sometimes created by
 the endpoint?  Or is it always created by the endpoint?
