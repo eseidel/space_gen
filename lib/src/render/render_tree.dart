@@ -1176,29 +1176,18 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     return '$className.$jsonMethod($jsonValue as $jsonType)$orDefault';
   }
 
-  Map<String, dynamic> toNewTypeTemplateContext(SchemaRenderer context) => {
-    'doc_comment': createDocComment(body: description, indent: 4),
-    'typeName': typeName(context),
-    'nullableTypeName': nullableTypeName(context),
-    'validations': buildValidations(context),
-  };
-
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    if (createsNewType) {
-      return toNewTypeTemplateContext(context);
+    if (!createsNewType) {
+      throw StateError(
+        '$runtimeType.toTemplateContext called for non-new type: $this',
+      );
     }
     return {
       'doc_comment': createDocComment(body: description, indent: 4),
+      'typeName': typeName(context),
       'nullableTypeName': nullableTypeName(context),
       'validations': buildValidations(context),
-      'fromJson': fromJsonExpression(
-        'value',
-        context,
-        jsonIsNullable: false,
-        dartIsNullable: false,
-      ),
-      'toJson': toJsonExpression('value', context, dartIsNullable: false),
     };
   }
 
