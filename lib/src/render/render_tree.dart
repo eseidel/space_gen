@@ -1141,6 +1141,15 @@ class RenderString extends RenderSchema {
     }
     return dartName;
   }
+
+  @override
+  bool equalsIgnoringName(RenderSchema other) =>
+      (other is RenderString) &&
+      defaultValue == other.defaultValue &&
+      maxLength == other.maxLength &&
+      minLength == other.minLength &&
+      pattern == other.pattern &&
+      super.equalsIgnoringName(other);
 }
 
 abstract class RenderNumeric<T extends num> extends RenderSchema {
@@ -1304,6 +1313,17 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     }
     return dartName;
   }
+
+  @override
+  bool equalsIgnoringName(RenderSchema other) =>
+      (other is RenderNumeric<T>) &&
+      defaultValue == other.defaultValue &&
+      maximum == other.maximum &&
+      minimum == other.minimum &&
+      exclusiveMaximum == other.exclusiveMaximum &&
+      exclusiveMinimum == other.exclusiveMinimum &&
+      multipleOf == other.multipleOf &&
+      super.equalsIgnoringName(other);
 }
 
 class RenderNumber extends RenderNumeric<double> {

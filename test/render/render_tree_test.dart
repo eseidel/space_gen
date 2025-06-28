@@ -140,7 +140,7 @@ void main() {
         additionalProperties: RenderPod(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          type: PodType.boolean,
+          type: PodType.dateTime,
           description: 'Foo',
         ),
       );
@@ -196,7 +196,7 @@ void main() {
         items: RenderPod(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          type: PodType.boolean,
+          type: PodType.dateTime,
           description: 'Foo',
         ),
       );
