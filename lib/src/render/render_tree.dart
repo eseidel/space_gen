@@ -477,7 +477,6 @@ class Endpoint {
       context,
       jsonIsNullable: false,
       dartIsNullable: false,
-      valueType: dynamic,
     );
 
     final namedParameters = dartParameters.where((p) => p['required'] == false);
@@ -815,7 +814,6 @@ abstract class RenderSchema extends Equatable {
   String fromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
-    required Type valueType,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   });
@@ -962,7 +960,6 @@ class RenderPod extends RenderSchema {
   String fromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
-    required Type valueType,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
@@ -1073,7 +1070,6 @@ class RenderStringNewType extends RenderNewType {
   String fromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
-    required Type valueType,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
@@ -1195,13 +1191,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
       'jsonType': jsonStorageType(isNullable: false),
       'nullableTypeName': nullableTypeName(context),
       'initializers': buildInitializers(context),
-      // 'fromJson': fromJsonExpression(
-      //   'value',
-      //   context,
-      //   jsonIsNullable: false,
-      //   dartIsNullable: false,
-      // ),
-      // 'toJson': toJsonExpression('value', context, dartIsNullable: false),
       'jsonToDartCall': jsonToDartCall(jsonIsNullable: false),
     };
   }
@@ -1211,7 +1200,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
   String newTypeFromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
-    required Type valueType,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
@@ -1222,15 +1210,15 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     );
     final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
     final className = camelFromSnake(snakeName);
-    // We don't need to cast the jsonValue to the jsonType in the newtype case.
-    return '$className.$jsonMethod($jsonValue)$orDefault';
+    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
+    final castedValue = '$jsonValue as $jsonType';
+    return '$className.$jsonMethod($castedValue)$orDefault';
   }
 
   @override
   String fromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
-    required Type valueType,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
@@ -1238,7 +1226,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
       return newTypeFromJsonExpression(
         jsonValue,
         context,
-        valueType: valueType,
         jsonIsNullable: jsonIsNullable,
         dartIsNullable: dartIsNullable,
       );
@@ -1457,7 +1444,6 @@ class RenderObject extends RenderNewType {
       'fromJson': property.fromJsonExpression(
         "json['$jsonName']",
         context,
-        valueType: dynamic,
         dartIsNullable: dartIsNullable,
         jsonIsNullable: jsonIsNullable,
       ),
@@ -1518,7 +1504,6 @@ class RenderObject extends RenderNewType {
       'valueFromJson': valueSchema?.fromJsonExpression(
         'value',
         context,
-        valueType: dynamic, // We could be more precise here.
         jsonIsNullable: isNullable,
         dartIsNullable: isNullable,
       ),
@@ -1532,7 +1517,6 @@ class RenderObject extends RenderNewType {
   String fromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
-    required Type valueType,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
@@ -1670,7 +1654,6 @@ class RenderArray extends RenderSchema {
   String fromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
-    required Type valueType,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
@@ -1688,7 +1671,6 @@ class RenderArray extends RenderSchema {
     final itemsFromJson = items.fromJsonExpression(
       'e',
       context,
-      valueType: dynamic,
       dartIsNullable: false,
       // Unless itemSchema itself has a nullable type this is always false.
       jsonIsNullable: false,
@@ -1782,7 +1764,6 @@ class RenderMap extends RenderSchema {
   String fromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
-    required Type valueType,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
@@ -1792,7 +1773,6 @@ class RenderMap extends RenderSchema {
     final valueFromJson = valueSchema.fromJsonExpression(
       'value',
       context,
-      valueType: dynamic,
       jsonIsNullable: false,
       dartIsNullable: false,
     );
@@ -1898,7 +1878,6 @@ class RenderEnum extends RenderNewType {
   String fromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
-    required Type valueType,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
@@ -1985,7 +1964,6 @@ class RenderOneOf extends RenderNewType {
   String fromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
-    required Type valueType,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
@@ -2047,7 +2025,6 @@ class RenderParameter {
       'fromJson': type.fromJsonExpression(
         "json['$jsonName']",
         context,
-        valueType: dynamic,
         jsonIsNullable: isNullable,
         dartIsNullable: isNullable,
       ),
@@ -2098,7 +2075,6 @@ class RenderUnknown extends RenderSchema {
   String fromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
-    required Type valueType,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) => jsonValue;
@@ -2136,7 +2112,6 @@ class RenderVoid extends RenderNoJson {
   String fromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
-    required Type valueType,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) => ''; // Unclear if this is correct. The one usage is for returning
@@ -2168,7 +2143,6 @@ abstract class RenderNoJson extends RenderSchema {
   String fromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
-    required Type valueType,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) => 'throw UnimplementedError("$runtimeType.fromJson")';
@@ -2235,7 +2209,6 @@ class RenderEmptyObject extends RenderNewType {
   String fromJsonExpression(
     String jsonValue,
     SchemaRenderer context, {
-    required Type valueType,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) => 'const $className()';

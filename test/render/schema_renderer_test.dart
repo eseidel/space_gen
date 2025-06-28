@@ -1172,7 +1172,7 @@ void main() {
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           '        return Test(\n'
-          "            a: TestAProp.maybeFromJson(json['a']),\n"
+          "            a: TestAProp.maybeFromJson(json['a'] as num?),\n"
           '        );\n'
           '    }\n'
           '\n'
@@ -1253,7 +1253,7 @@ void main() {
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           '        return Test(\n'
-          "            a: TestAProp.maybeFromJson(json['a']),\n"
+          "            a: TestAProp.maybeFromJson(json['a'] as int?),\n"
           '        );\n'
           '    }\n'
           '\n'
