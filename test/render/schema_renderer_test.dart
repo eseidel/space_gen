@@ -1066,30 +1066,8 @@ void main() {
           'exclusiveMinimum': 9,
           'exclusiveMaximum': 0,
         };
-        final result = renderSchema(json);
-        expect(
-          result,
-          'extension type const Test._(int value) {\n'
-          '    const Test(this.value): assert(value <= 10, "Invalid value: \$value"),\n'
-          'assert(value >= 1, "Invalid value: \$value"),\n'
-          'assert(value < 0, "Invalid value: \$value"),\n'
-          'assert(value > 9, "Invalid value: \$value"),\n'
-          'assert(value % 2 == 0, "Invalid value: \$value");\n'
-          '\n'
-          '    factory Test.fromJson(int json) => Test(json);\n'
-          '\n'
-          '    /// Convenience to create a nullable type from a nullable json object.\n'
-          '    /// Useful when parsing optional fields.\n'
-          '    static Test? maybeFromJson(int? json) {\n'
-          '        if (json == null) {\n'
-          '            return null;\n'
-          '        }\n'
-          '        return Test.fromJson(json);\n'
-          '    }\n'
-          '\n'
-          '    int toJson() => value;\n'
-          '}\n',
-        );
+        // validation does not force a new type.  We tried it, it was ugly.
+        expect(() => renderSchema(json), throwsA(isA<StateError>()));
       });
 
       test('number', () {
@@ -1103,54 +1081,13 @@ void main() {
           'exclusiveMinimum': 9,
           'exclusiveMaximum': 0,
         };
-        final result = renderSchema(json);
-        expect(
-          result,
-          'extension type const Test._(double value) {\n'
-          '    const Test(this.value): assert(value <= 10.2, "Invalid value: \$value"),\n'
-          'assert(value >= 1.2, "Invalid value: \$value"),\n'
-          'assert(value < 0.0, "Invalid value: \$value"),\n'
-          'assert(value > 9.0, "Invalid value: \$value"),\n'
-          'assert(value % 2.2 == 0, "Invalid value: \$value");\n'
-          '\n'
-          '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
-          '\n'
-          '    /// Convenience to create a nullable type from a nullable json object.\n'
-          '    /// Useful when parsing optional fields.\n'
-          '    static Test? maybeFromJson(num? json) {\n'
-          '        if (json == null) {\n'
-          '            return null;\n'
-          '        }\n'
-          '        return Test.fromJson(json);\n'
-          '    }\n'
-          '\n'
-          '    double toJson() => value;\n'
-          '}\n'
-          '',
-        );
+        // validation does not force a new type.  We tried it, it was ugly.
+        expect(() => renderSchema(json), throwsA(isA<StateError>()));
       });
       test('number with default values', () {
         final json = {'type': 'number', 'default': 1.2, 'maximum': 10.2};
-        final result = renderSchema(json);
-        expect(
-          result,
-          'extension type const Test._(double value) {\n'
-          '    const Test(this.value): assert(value <= 10.2, "Invalid value: \$value");\n'
-          '\n'
-          '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
-          '\n'
-          '    /// Convenience to create a nullable type from a nullable json object.\n'
-          '    /// Useful when parsing optional fields.\n'
-          '    static Test? maybeFromJson(num? json) {\n'
-          '        if (json == null) {\n'
-          '            return null;\n'
-          '        }\n'
-          '        return Test.fromJson(json);\n'
-          '    }\n'
-          '\n'
-          '    double toJson() => value;\n'
-          '}\n',
-        );
+        // validation does not force a new type.  We tried it, it was ugly.
+        expect(() => renderSchema(json), throwsA(isA<StateError>()));
       });
       test('number property with default values', () {
         final json = {
@@ -1165,14 +1102,14 @@ void main() {
           '@immutable\n'
           'class Test {\n'
           '    Test(\n'
-          '        { this.a = TestAProp(1.2), \n'
+          '        { this.a = 1.2, \n'
           '         }\n'
           '    );\n'
           '\n'
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           '        return Test(\n'
-          "            a: TestAProp.maybeFromJson(json['a'] as num?),\n"
+          "            a: (json['a'] as num?)?.toDouble(),\n"
           '        );\n'
           '    }\n'
           '\n'
@@ -1185,12 +1122,12 @@ void main() {
           '        return Test.fromJson(json);\n'
           '    }\n'
           '\n'
-          '    final  TestAProp? a;\n'
+          '    final  double? a;\n'
           '\n'
           '\n'
           '    Map<String, dynamic> toJson() {\n'
           '        return {\n'
-          "            'a': a?.toJson(),\n"
+          "            'a': a,\n"
           '        };\n'
           '    }\n'
           '\n'
@@ -1211,26 +1148,8 @@ void main() {
 
       test('integer with default values', () {
         final json = {'type': 'integer', 'default': 1, 'minimum': 0};
-        final result = renderSchema(json);
-        expect(
-          result,
-          'extension type const Test._(int value) {\n'
-          '    const Test(this.value): assert(value >= 0, "Invalid value: \$value");\n'
-          '\n'
-          '    factory Test.fromJson(int json) => Test(json);\n'
-          '\n'
-          '    /// Convenience to create a nullable type from a nullable json object.\n'
-          '    /// Useful when parsing optional fields.\n'
-          '    static Test? maybeFromJson(int? json) {\n'
-          '        if (json == null) {\n'
-          '            return null;\n'
-          '        }\n'
-          '        return Test.fromJson(json);\n'
-          '    }\n'
-          '\n'
-          '    int toJson() => value;\n'
-          '}\n',
-        );
+        // validation does not force a new type.  We tried it, it was ugly.
+        expect(() => renderSchema(json), throwsA(isA<StateError>()));
       });
 
       test('integer property with default values', () {
@@ -1246,14 +1165,14 @@ void main() {
           '@immutable\n'
           'class Test {\n'
           '    Test(\n'
-          '        { this.a = TestAProp(1), \n'
+          '        { this.a = 1, \n'
           '         }\n'
           '    );\n'
           '\n'
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           '        return Test(\n'
-          "            a: TestAProp.maybeFromJson(json['a'] as int?),\n"
+          "            a: (json['a'] as int?),\n"
           '        );\n'
           '    }\n'
           '\n'
@@ -1266,12 +1185,12 @@ void main() {
           '        return Test.fromJson(json);\n'
           '    }\n'
           '\n'
-          '    final  TestAProp? a;\n'
+          '    final  int? a;\n'
           '\n'
           '\n'
           '    Map<String, dynamic> toJson() {\n'
           '        return {\n'
-          "            'a': a?.toJson(),\n"
+          "            'a': a,\n"
           '        };\n'
           '    }\n'
           '\n'
@@ -1300,27 +1219,8 @@ void main() {
         'maxLength': 10,
         'minLength': 1,
       };
-      final result = renderSchema(json);
-      expect(
-        result,
-        'extension type const Test._(String value) {\n'
-        '    const Test(this.value): assert(value.length <= 10, "Invalid value: \$value"),\n'
-        'assert(value.length >= 1, "Invalid value: \$value");\n'
-        '\n'
-        '    factory Test.fromJson(String json) => Test(json);\n'
-        '\n'
-        '    /// Convenience to create a nullable type from a nullable json object.\n'
-        '    /// Useful when parsing optional fields.\n'
-        '    static Test? maybeFromJson(String? json) {\n'
-        '        if (json == null) {\n'
-        '            return null;\n'
-        '        }\n'
-        '        return Test.fromJson(json);\n'
-        '    }\n'
-        '\n'
-        '    String toJson() => value;\n'
-        '}\n',
-      );
+      // validation does not force a new type.  We tried it, it was ugly.
+      expect(() => renderSchema(json), throwsA(isA<StateError>()));
     });
 
     test('renderSchema throws for non-new-type schemas', () {
@@ -1878,14 +1778,14 @@ void main() {
         '    /// List all public agent details.\n'
         '    /// List all public agent details.\n'
         '    Future<void> getAgents(\n'
-        '        { GetAgentsParameter0? page = GetAgentsParameter0(1), }\n'
+        '        { int? page = 1, }\n'
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
         "            path: '/users'\n"
         ',\n'
         '            queryParameters: {\n'
-        "                'page': ?page?.toJson().toString(),\n"
+        "                'page': ?page.toString(),\n"
         '            },\n'
         '        );\n'
         '\n'
@@ -1899,8 +1799,7 @@ void main() {
         '\n'
         "        throw ApiException(response.statusCode, 'Unhandled response from \$getAgents');\n"
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
   });
