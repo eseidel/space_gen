@@ -1056,8 +1056,10 @@ class RenderString extends RenderSchema {
   }
 
   @override
-  bool get createsNewType =>
-      hasExplicitName || maxLength != null || minLength != null;
+  bool get createsNewType => hasExplicitName;
+  // Turns out generating new types just for validation was ugly.
+  // we will implement validation differently.
+  // || maxLength != null || minLength != null;
 
   @override
   bool get onlyJsonTypes => !createsNewType;
@@ -1199,13 +1201,14 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
   ];
 
   @override
-  bool get createsNewType =>
-      hasExplicitName ||
-      maximum != null ||
-      minimum != null ||
-      exclusiveMaximum != null ||
-      exclusiveMinimum != null ||
-      multipleOf != null;
+  bool get createsNewType => hasExplicitName;
+  // Turns out generating new types just for validation was ugly.
+  // we will implement validation differently.
+  // maximum != null ||
+  // minimum != null ||
+  // exclusiveMaximum != null ||
+  // exclusiveMinimum != null ||
+  // multipleOf != null;
 
   @override
   bool get onlyJsonTypes => !createsNewType;
