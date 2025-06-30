@@ -669,14 +669,11 @@ abstract class RenderRequestBody implements CanBeParameter {
   @override
   Iterable<String> get validationCalls => schema.validationCalls;
 
-  String get requestBodyParameterName {
-    // TODO(eseidel): Why don't we have a name for request bodies?
-    final typeName = schema.typeName;
-    return (typeName[0].toLowerCase() + typeName.substring(1)).split('<').first;
-  }
-
   @override
-  String get parameterName => requestBodyParameterName;
+  String get parameterName =>
+      // TODO(eseidel): Is there a name we can use instead of the typename?
+      // Removing any template parameters from the type.
+      schema.typeName.lowerFirst().split('<').first;
 }
 
 class RenderRequestBodyJson extends RenderRequestBody {
