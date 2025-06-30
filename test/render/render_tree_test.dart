@@ -62,6 +62,28 @@ void main() {
     });
   });
 
+  group('indentWithTrailingNewline', () {
+    test('basic', () {
+      expect(
+        indentWithTrailingNewline(['Foo', 'Bar'], indent: 4),
+        'Foo\n    Bar\n    ',
+      );
+    });
+
+    test('empty', () {
+      expect(indentWithTrailingNewline([], indent: 4), isNull);
+    });
+
+    test('single line', () {
+      expect(indentWithTrailingNewline(['Foo'], indent: 4), 'Foo\n    ');
+    });
+
+    test('trailing newline', () {
+      // This doesn't seem right?
+      expect(indentWithTrailingNewline(['Foo\n'], indent: 4), 'Foo\n\n    ');
+    });
+  });
+
   group('equalsIgnoringName', () {
     test('RenderObject', () {
       const a = RenderObject(
@@ -170,6 +192,7 @@ void main() {
         defaultValue: 'foo',
         maxLength: 10,
         minLength: 1,
+        pattern: 'foo',
       );
       expect(a.equalsIgnoringName(a), isTrue);
 
@@ -180,6 +203,7 @@ void main() {
         defaultValue: 'foo',
         maxLength: null,
         minLength: 1,
+        pattern: 'foo',
       );
       expect(a.equalsIgnoringName(b), isFalse);
 
@@ -190,6 +214,7 @@ void main() {
         defaultValue: 'foo',
         maxLength: 10,
         minLength: null,
+        pattern: 'foo',
       );
       expect(a.equalsIgnoringName(c), isFalse);
     });

@@ -63,10 +63,17 @@ String variableSafeName(Quirks quirks, String jsonName) {
   return avoidReservedWord(escapedName);
 }
 
-String wrapAsDocComment(String value, {required int indent}) {
+Iterable<String> _commentedLines(String value) {
   final lines = value.split('\n');
-  final commentedLines = lines.map((line) => ' ' * indent + '/// $line');
-  return commentedLines.join('\n');
+  return lines.map((line) => '/// $line');
+}
+
+String? indentWithTrailingNewline(List<String> lines, {required int indent}) {
+  if (lines.isEmpty) {
+    return null;
+  }
+  final indentString = ' ' * indent;
+  return '${lines.join('\n$indentString').trimLeft()}\n$indentString';
 }
 
 /// Doc comments are meant to be inserted right before the type declaration
@@ -77,19 +84,43 @@ String? createDocComment({String? title, String? body, int indent = 0}) {
   if (title == null && body == null) {
     return null;
   }
-  final parts = <String>[];
-  if (title != null) {
-    parts.add(wrapAsDocComment(title, indent: indent));
-  }
-  if (body != null) {
-    parts.add(wrapAsDocComment(body, indent: indent));
-  }
-  if (parts.isEmpty) {
+  final lines = <String>[
+    if (title != null) ..._commentedLines(title),
+    if (body != null) ..._commentedLines(body),
+  ];
+  if (lines.isEmpty) {
     return null;
   }
   // Remove leading whitespace from just the first line.
   // This makes it easier to use from within a mustache template.
-  return '${parts.join('\n').trimLeft()}\n${' ' * indent}';
+  return indentWithTrailingNewline(lines, indent: indent);
+}
+
+class Validation {
+  const Validation({
+    required this.condition,
+    required this.message,
+    this.canBeConst = false,
+  });
+
+  final String condition;
+  final String message;
+  final bool canBeConst;
+}
+
+/// A class that can be converted to a template context.
+// This only exists because RenderSchema handles both the conversion to
+// templates as well as being the "type object", once we split out type
+// objects we can simplify the RenderTree and this method moves into some
+// sort of class that knows how to convert type objects into template contexts.
+// ignore: one_member_abstracts
+abstract class ToTemplateContext {
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context);
+}
+
+abstract class CanBeParameter implements ToTemplateContext {
+  bool get isRequired;
+  Iterable<String> get validationStatements;
 }
 
 // Could make this comparable to have a nicer sort for our test results.
@@ -100,9 +131,7 @@ class Import extends Equatable {
   final String path;
   final String? asName;
 
-  Map<String, dynamic> toTemplateContext() {
-    return {'path': path, 'asName': asName};
-  }
+  Map<String, dynamic> toTemplateContext() => {'path': path, 'asName': asName};
 
   @override
   List<Object?> get props => [path, asName];
@@ -167,6 +196,7 @@ class SpecResolver {
           defaultValue: schema.defaultValue,
           maxLength: schema.maxLength,
           minLength: schema.minLength,
+          pattern: schema.pattern,
         );
       case ResolvedNumber():
         return RenderNumber(
@@ -427,7 +457,8 @@ class RenderSpec {
 
 /// A convenience class created for each operation within a path item
 /// for compatibility with our existing rendering code.
-class Endpoint {
+// TODO(eseidel): Could remove this in favor of RenderOperation?
+class Endpoint implements ToTemplateContext {
   const Endpoint({required this.operation, required this.serverUrl});
 
   /// The server url of the endpoint.
@@ -453,19 +484,17 @@ class Endpoint {
 
   List<RenderParameter> get parameters => operation.parameters;
 
+  RenderRequestBody? get requestBody => operation.requestBody;
+
   String get methodName => lowercaseCamelFromSnake(snakeName);
 
   Uri get uri => Uri.parse('$serverUrl$path');
 
+  @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final serverParameters = parameters.map((param) {
-      return param.toTemplateContext(context);
-    }).toList();
-
-    final requestBody = operation.requestBody?.toTemplateContext(context);
     // Parameters as passed to the Dart function call, including the request
     // body if it exists.
-    final dartParameters = [...serverParameters, ?requestBody];
+    final dartParameters = <CanBeParameter>[...parameters, ?requestBody];
 
     final responseSchema = operation.returnType;
     final returnType = responseSchema.typeName(context);
@@ -476,30 +505,41 @@ class Endpoint {
       dartIsNullable: false,
     );
 
-    final namedParameters = dartParameters.where((p) => p['required'] == false);
+    final namedParameters = dartParameters.where((p) => p.isRequired == false);
     final positionalParameters = dartParameters.where(
-      (p) => p['required'] == true,
+      (p) => p.isRequired == true,
     );
 
-    // TODO(eseidel): This grouping should happen before converting to
-    // template context while we still have strong types.
-    final bySendIn = serverParameters.groupListsBy((p) => p['sendIn']);
-
-    final pathParameters = bySendIn['path'] ?? [];
-    final queryParameters = bySendIn['query'] ?? [];
+    // Only explicit parameters (not request body) need to be split by sendIn.
+    final bySendIn = parameters.groupListsBy((p) => p.sendIn);
+    final pathParameters = bySendIn[SendIn.path] ?? [];
+    final queryParameters = bySendIn[SendIn.query] ?? [];
     final hasQueryParameters = queryParameters.isNotEmpty;
-    final cookieParameters = bySendIn['cookie'] ?? [];
+    final cookieParameters = bySendIn[SendIn.cookie] ?? [];
     if (cookieParameters.isNotEmpty) {
       _unimplemented(
         'Cookie parameters are not yet supported.',
         operation.pointer,
       );
     }
-    final headerParameters = bySendIn['header'] ?? [];
+    final headerParameters = bySendIn[SendIn.header] ?? [];
     final hasHeaderParameters = headerParameters.isNotEmpty;
+
+    final validationStatements = dartParameters.expand(
+      (p) => p.validationStatements,
+    );
+    final validationStatementsString = indentWithTrailingNewline(
+      validationStatements.toList(),
+      indent: 8,
+    );
+
+    Iterable<Map<String, dynamic>> toTemplateContexts(
+      Iterable<CanBeParameter> parameters,
+    ) => parameters.map((p) => p.toTemplateContext(context));
 
     // Endpoints could get summary and description from
     // *both* Path and Operation objects.  Unclear how we should display both.
+    // Currently only displaying summary/description from the Operation.
     return {
       'endpoint_doc_comment': createDocComment(
         title: summary,
@@ -511,18 +551,19 @@ class Endpoint {
       'path': path,
       'url': uri,
       // Parameters grouped for dart parameter generation.
-      'positionalParameters': positionalParameters,
+      'positionalParameters': toTemplateContexts(positionalParameters),
       'hasNamedParameters': namedParameters.isNotEmpty,
-      'namedParameters': namedParameters,
+      'namedParameters': toTemplateContexts(namedParameters),
       // Parameters grouped for call to server.
-      'pathParameters': pathParameters,
+      'pathParameters': toTemplateContexts(pathParameters),
       'hasQueryParameters': hasQueryParameters,
-      'queryParameters': queryParameters,
+      'queryParameters': toTemplateContexts(queryParameters),
       'hasHeaderParameters': hasHeaderParameters,
-      'headerParameters': headerParameters,
-      'requestBody': requestBody,
+      'headerParameters': toTemplateContexts(headerParameters),
+      'requestBody': requestBody?.toTemplateContext(context),
       'returnType': returnType,
       'responseFromJson': responseFromJson,
+      'validationStatements': validationStatementsString,
     };
   }
 }
@@ -602,7 +643,7 @@ class RenderOperation {
   final String? description;
 }
 
-abstract class RenderRequestBody {
+abstract class RenderRequestBody implements CanBeParameter {
   const RenderRequestBody({
     required this.schema,
     required this.description,
@@ -616,15 +657,17 @@ abstract class RenderRequestBody {
   final String? description;
 
   /// Whether the request body is required.
+  @override
   final bool isRequired;
+
+  @override
+  Iterable<String> get validationStatements => schema.validationStatements;
 
   String requestBodyClassName(SchemaRenderer context) {
     // TODO(eseidel): Why don't we have a name for request bodies?
     final typeName = schema.typeName(context);
     return (typeName[0].toLowerCase() + typeName.substring(1)).split('<').first;
   }
-
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context);
 }
 
 class RenderRequestBodyJson extends RenderRequestBody {
@@ -732,7 +775,7 @@ class RenderResponse {
   final RenderSchema content;
 }
 
-abstract class RenderSchema extends Equatable {
+abstract class RenderSchema extends Equatable implements ToTemplateContext {
   const RenderSchema({
     required this.snakeName,
     required this.pointer,
@@ -763,6 +806,17 @@ abstract class RenderSchema extends Equatable {
       hasDefaultValue(context) && !defaultCanConstConstruct;
 
   Iterable<Import> get additionalImports => const [];
+
+  Iterable<Validation> get validations => const [];
+
+  String get validationsAsConstAsserts => validations
+      .where((v) => v.canBeConst)
+      .map((v) => 'assert(${v.condition}, ${quoteString(v.message)})')
+      .join(',\n');
+
+  Iterable<String> get validationStatements => validations.map(
+    (v) => 'validateArg(${v.condition}, ${quoteString(v.message)});',
+  );
 
   /// Whether this schema only contains json types.
   bool get onlyJsonTypes;
@@ -828,8 +882,6 @@ abstract class RenderSchema extends Equatable {
   }
 
   bool hasDefaultValue(SchemaRenderer context) => defaultValue != null;
-
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context);
 
   static bool maybeEqualsIgnoringName(RenderSchema? a, RenderSchema? b) {
     if (a == null && b == null) {
@@ -1027,6 +1079,7 @@ class RenderString extends RenderSchema {
     required this.defaultValue,
     required this.maxLength,
     required this.minLength,
+    required this.pattern,
   });
 
   @override
@@ -1037,6 +1090,9 @@ class RenderString extends RenderSchema {
 
   /// The minimum length of the string.
   final int? minLength;
+
+  /// The pattern to match the string against.
+  final String? pattern;
 
   @override
   bool get defaultCanConstConstruct => true;
@@ -1057,28 +1113,36 @@ class RenderString extends RenderSchema {
 
   @override
   bool get createsNewType => hasExplicitName;
-  // Turns out generating new types just for validation was ugly.
-  // we will implement validation differently.
-  // || maxLength != null || minLength != null;
 
   @override
   bool get onlyJsonTypes => !createsNewType;
 
-  @visibleForTesting
-  String buildValidations(SchemaRenderer context) {
-    final validations = <String>[];
-    void add(String condition) =>
-        validations.add('assert($condition, "Invalid value: \$value")');
-
-    if (maxLength != null) add('value.length <= $maxLength');
-    if (minLength != null) add('value.length >= $minLength');
-    // TODO(eseidel): Add pattern validation.
-    return validations.join(',\n');
+  @override
+  Iterable<Validation> get validations {
+    return [
+      if (maxLength != null)
+        Validation(
+          condition: 'value.length <= $maxLength',
+          message: '\$value must be less than or equal to $maxLength',
+          canBeConst: true,
+        ),
+      if (minLength != null)
+        Validation(
+          condition: 'value.length >= $minLength',
+          message: '\$value must be greater than or equal to $minLength',
+          canBeConst: true,
+        ),
+      if (pattern != null)
+        Validation(
+          condition: 'value.matches(RegExp(${quoteString(pattern!)}))',
+          message: '\$value must match the pattern $pattern',
+        ),
+    ];
   }
 
   String buildInitializers(SchemaRenderer context) {
-    final validations = buildValidations(context);
-    return validations.isEmpty ? '' : ': $validations';
+    final asserts = validationsAsConstAsserts;
+    return asserts.isEmpty ? '' : ': $asserts';
   }
 
   @override
@@ -1202,13 +1266,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
 
   @override
   bool get createsNewType => hasExplicitName;
-  // Turns out generating new types just for validation was ugly.
-  // we will implement validation differently.
-  // maximum != null ||
-  // minimum != null ||
-  // exclusiveMaximum != null ||
-  // exclusiveMinimum != null ||
-  // multipleOf != null;
 
   @override
   bool get onlyJsonTypes => !createsNewType;
@@ -1226,23 +1283,40 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     return defaultValue?.toString();
   }
 
-  @visibleForTesting
-  String buildValidations(SchemaRenderer context) {
-    final validations = <String>[];
-    void add(String condition) =>
-        validations.add('assert($condition, "Invalid value: \$value")');
-
-    if (maximum != null) add('value <= $maximum');
-    if (minimum != null) add('value >= $minimum');
-    if (exclusiveMaximum != null) add('value < $exclusiveMaximum');
-    if (exclusiveMinimum != null) add('value > $exclusiveMinimum');
-    if (multipleOf != null) add('value % $multipleOf == 0');
-    return validations.join(',\n');
+  @override
+  List<Validation> get validations {
+    return [
+      if (maximum != null)
+        Validation(
+          condition: 'value <= $maximum',
+          message: r'$value must be less than or equal to $maximum',
+        ),
+      if (minimum != null)
+        Validation(
+          condition: 'value >= $minimum',
+          message: r'$value must be greater than or equal to $minimum',
+        ),
+      if (exclusiveMaximum != null)
+        Validation(
+          condition: 'value < $exclusiveMaximum',
+          message: r'$value must be less than $exclusiveMaximum',
+        ),
+      if (exclusiveMinimum != null)
+        Validation(
+          condition: 'value > $exclusiveMinimum',
+          message: r'$value must be greater than $exclusiveMinimum',
+        ),
+      if (multipleOf != null)
+        Validation(
+          condition: 'value % $multipleOf == 0',
+          message: r'$value must be a multiple of $multipleOf',
+        ),
+    ];
   }
 
   String buildInitializers(SchemaRenderer context) {
-    final validations = buildValidations(context);
-    return validations.isEmpty ? '' : ': $validations';
+    final asserts = validationsAsConstAsserts;
+    return asserts.isEmpty ? '' : ': $asserts';
   }
 
   @override
@@ -2057,7 +2131,7 @@ class RenderOneOf extends RenderNewType {
   dynamic get defaultValue => null;
 }
 
-class RenderParameter {
+class RenderParameter implements CanBeParameter {
   const RenderParameter({
     required this.description,
     required this.name,
@@ -2079,8 +2153,13 @@ class RenderParameter {
   final SendIn sendIn;
 
   /// Whether the parameter is required.
+  @override
   final bool isRequired;
 
+  @override
+  Iterable<String> get validationStatements => type.validationStatements;
+
+  @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     final isNullable = !isRequired;
     final specName = name;

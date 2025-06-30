@@ -1,5 +1,9 @@
 import 'package:meta/meta.dart';
 
+/// An exception thrown by the API client.
+///
+/// This is a wrapper around the underlying network exceptions.
+/// This is used to provide a standard exception type for clients to handle.
 @immutable
 class ApiException implements Exception {
   const ApiException(this.code, this.message)
@@ -24,5 +28,16 @@ class ApiException implements Exception {
     }
     return 'ApiException $code: $message '
         '(Inner exception: $innerException)\n\n$stackTrace';
+  }
+}
+
+/// Validates an argument.
+///
+/// This is a helper function that throws an exception if the condition is false.
+/// It is used to validate arguments in the generated code.
+// ignore: avoid_positional_boolean_parameters
+void validateArg(bool condition, String message) {
+  if (!condition) {
+    throw Exception(message);
   }
 }

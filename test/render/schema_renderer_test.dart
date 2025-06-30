@@ -15,7 +15,7 @@ void main() {
         'type': 'object',
         'properties': {'foo': <String, dynamic>{}},
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -75,7 +75,7 @@ void main() {
           },
         },
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -136,7 +136,7 @@ void main() {
           },
         },
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -194,7 +194,7 @@ void main() {
         },
         'required': ['foo'],
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -262,7 +262,7 @@ void main() {
         ],
       };
       final logger = _MockLogger();
-      final result = runWithLogger(logger, () => renderSchema(schema));
+      final result = runWithLogger(logger, () => renderTestSchema(schema));
       expect(
         result,
         '@immutable\n'
@@ -326,7 +326,7 @@ void main() {
           {'type': 'number'},
         ],
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         'sealed class Test {\n'
@@ -368,7 +368,7 @@ void main() {
           },
         ],
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         'sealed class Test {\n'
@@ -400,7 +400,7 @@ void main() {
           {'type': 'number'},
         ],
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       // anyOf currently renders as a oneOf, which is wrong.
       expect(
         result,
@@ -436,7 +436,7 @@ void main() {
           },
         },
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -531,7 +531,7 @@ void main() {
           'm_unknown': {'type': 'object', 'additionalProperties': true},
         },
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -668,7 +668,7 @@ void main() {
           'a_unknown': {'type': 'array', 'items': <String, dynamic>{}},
         },
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -762,7 +762,7 @@ void main() {
 
     test('empty object', () {
       final schema = {'type': 'object', 'properties': <String, dynamic>{}};
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -794,7 +794,7 @@ void main() {
           'a': {'type': 'object', 'properties': <String, dynamic>{}},
         },
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -855,7 +855,7 @@ void main() {
           },
         },
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -910,7 +910,7 @@ void main() {
         'type': 'string',
         'enum': ['+1', '-1', "don't"],
       };
-      final result = renderSchema(json);
+      final result = renderTestSchema(json);
       expect(
         result,
         'enum Test {\n'
@@ -967,7 +967,7 @@ void main() {
           'default': {'type': 'string'},
         },
       };
-      final result = renderSchema(json);
+      final result = renderTestSchema(json);
       expect(
         result,
         '@immutable\n'
@@ -1055,7 +1055,20 @@ void main() {
     });
 
     group('number validations', () {
-      test('integer', () {
+      test('integer non-named', () {
+        final json = {
+          'type': 'integer',
+          'minimum': 1,
+          'maximum': 10,
+          'multipleOf': 2,
+          'exclusiveMinimum': 9,
+          'exclusiveMaximum': 0,
+        };
+        // validation does not force a new type.  We tried it, it was ugly.
+        expect(() => renderTestSchema(json), throwsA(isA<StateError>()));
+      });
+
+      test('integer named', () {
         final json = {
           'type': 'integer',
           'minimum': 1,
@@ -1066,11 +1079,29 @@ void main() {
           'exclusiveMinimum': 9,
           'exclusiveMaximum': 0,
         };
-        // validation does not force a new type.  We tried it, it was ugly.
-        expect(() => renderSchema(json), throwsA(isA<StateError>()));
+        // named schemas get their own class and thus include validations.
+        expect(
+          renderTestSchema(json, asComponent: true),
+          'extension type const Test._(int value) {\n'
+          '    const Test(this.value);\n'
+          '\n'
+          '    factory Test.fromJson(int json) => Test(json);\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(int? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    int toJson() => value;\n'
+          '}\n',
+        );
       });
 
-      test('number', () {
+      test('number non-named', () {
         final json = {
           'type': 'number',
           'minimum': 1.2,
@@ -1082,12 +1113,58 @@ void main() {
           'exclusiveMaximum': 0,
         };
         // validation does not force a new type.  We tried it, it was ugly.
-        expect(() => renderSchema(json), throwsA(isA<StateError>()));
+        expect(() => renderTestSchema(json), throwsA(isA<StateError>()));
       });
-      test('number with default values', () {
+
+      test('number named', () {
+        final json = {
+          'type': 'number',
+          'minimum': 1.2,
+          'maximum': 10.2,
+          'multipleOf': 2.2,
+        };
+        expect(
+          renderTestSchema(json, asComponent: true),
+          'extension type const Test._(double value) {\n'
+          '    const Test(this.value);\n'
+          '\n'
+          '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(num? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    double toJson() => value;\n'
+          '}\n',
+        );
+      });
+
+      test('named number with default values', () {
         final json = {'type': 'number', 'default': 1.2, 'maximum': 10.2};
-        // validation does not force a new type.  We tried it, it was ugly.
-        expect(() => renderSchema(json), throwsA(isA<StateError>()));
+        expect(
+          renderTestSchema(json, asComponent: true),
+          'extension type const Test._(double value) {\n'
+          '    const Test(this.value);\n'
+          '\n'
+          '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(num? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    double toJson() => value;\n'
+          '}\n',
+        );
       });
       test('number property with default values', () {
         final json = {
@@ -1096,7 +1173,7 @@ void main() {
             'a': {'type': 'number', 'default': 1.2, 'maximum': 10.2},
           },
         };
-        final result = renderSchema(json);
+        final result = renderTestSchema(json);
         expect(
           result,
           '@immutable\n'
@@ -1146,10 +1223,27 @@ void main() {
         );
       });
 
-      test('integer with default values', () {
+      test('named integer with default values', () {
         final json = {'type': 'integer', 'default': 1, 'minimum': 0};
-        // validation does not force a new type.  We tried it, it was ugly.
-        expect(() => renderSchema(json), throwsA(isA<StateError>()));
+        expect(
+          renderTestSchema(json, asComponent: true),
+          'extension type const Test._(int value) {\n'
+          '    const Test(this.value);\n'
+          '\n'
+          '    factory Test.fromJson(int json) => Test(json);\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(int? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    int toJson() => value;\n'
+          '}\n',
+        );
       });
 
       test('integer property with default values', () {
@@ -1159,7 +1253,7 @@ void main() {
             'a': {'type': 'integer', 'default': 1, 'minimum': 0},
           },
         };
-        final result = renderSchema(json);
+        final result = renderTestSchema(json);
         expect(
           result,
           '@immutable\n'
@@ -1212,20 +1306,52 @@ void main() {
   });
 
   group('string validations', () {
-    test('maxLength and minLength can be const', () {
+    test('maxLength and minLength can be const in named string', () {
       final json = {
         'type': 'string',
         'default': 'foo',
         'maxLength': 10,
         'minLength': 1,
       };
-      // validation does not force a new type.  We tried it, it was ugly.
-      expect(() => renderSchema(json), throwsA(isA<StateError>()));
+      expect(
+        renderTestSchema(json, asComponent: true),
+        'extension type const Test._(String value) {\n'
+        "    const Test(this.value): assert(value.length <= 10, '\$value must be less than or equal to 10'),\n"
+        "assert(value.length >= 1, '\$value must be greater than or equal to 1');\n"
+        '\n'
+        '    factory Test.fromJson(String json) => Test(json);\n'
+        '\n'
+        '    /// Convenience to create a nullable type from a nullable json object.\n'
+        '    /// Useful when parsing optional fields.\n'
+        '    static Test? maybeFromJson(String? json) {\n'
+        '        if (json == null) {\n'
+        '            return null;\n'
+        '        }\n'
+        '        return Test.fromJson(json);\n'
+        '    }\n'
+        '\n'
+        '    String toJson() => value;\n'
+        '}\n',
+      );
     });
 
     test('renderSchema throws for non-new-type schemas', () {
       final json = {'type': 'string'};
-      expect(() => renderSchema(json), throwsA(isA<StateError>()));
+      expect(() => renderTestSchema(json), throwsA(isA<StateError>()));
+    });
+
+    // We used to force a new type for string validations, but it was ugly.
+    // renderSchema throws for for non-new-type schemas.  If we ever remove
+    // that throw, we should test the underlying RenderSchema instead.
+    test('string validations do not force a new type', () {
+      final json = {
+        'type': 'string',
+        'default': 'foo',
+        'maxLength': 10,
+        'minLength': 1,
+        'pattern': r'^[a-z]+$',
+      };
+      expect(() => renderTestSchema(json), throwsA(isA<StateError>()));
     });
   });
 
@@ -1258,7 +1384,7 @@ void main() {
       final logger = _MockLogger();
       final result = runWithLogger(
         logger,
-        () => renderOperation(
+        () => renderTestOperation(
           path: '/pet/{petId}/uploadImage',
           operationJson: operation,
           serverUrl: Uri.parse('https://example.com'),
@@ -1318,7 +1444,7 @@ void main() {
           '200': {'description': 'successful operation'},
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/pet/{petId}/uploadFile',
         operationJson: operation,
         serverUrl: Uri.parse('https://example.com'),
@@ -1377,7 +1503,7 @@ void main() {
           },
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1433,7 +1559,7 @@ void main() {
           },
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1491,7 +1617,7 @@ void main() {
           },
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1547,7 +1673,7 @@ void main() {
           },
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1589,7 +1715,7 @@ void main() {
           '400': {'description': 'Bad Request'},
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1640,7 +1766,7 @@ void main() {
           '200': {'description': 'OK'},
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1700,7 +1826,7 @@ void main() {
       const quirks = Quirks();
       // If this expectation changes, set an explicit quirks for renderOperation
       expect(quirks.allListsDefaultToEmpty, isTrue);
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1762,7 +1888,7 @@ void main() {
           '200': {'description': 'Successfully fetched agents details.'},
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1780,6 +1906,7 @@ void main() {
         '    Future<void> getAgents(\n'
         '        { int? page = 1, }\n'
         '    ) async {\n'
+        "        validateArg(value >= 1, '\$value must be greater than or equal to \$minimum');\n"
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
         "            path: '/users'\n"
@@ -1798,6 +1925,107 @@ void main() {
         '        }\n'
         '\n'
         "        throw ApiException(response.statusCode, 'Unhandled response from \$getAgents');\n"
+        '    }\n'
+        '}\n',
+      );
+    });
+
+    test('validation statements', () {
+      final json = {
+        'summary': 'Get user',
+        'parameters': [
+          {
+            'name': 'foo',
+            'in': 'query',
+            'description': 'Foo',
+            'schema': {
+              'type': 'string',
+              'minLength': 1,
+              'maxLength': 10,
+              'pattern': r'^[a-z]+$',
+            },
+          },
+          {
+            'name': 'bar',
+            'in': 'query',
+            'description': 'Bar',
+            'schema': {
+              'type': 'integer',
+              'minimum': 1,
+              'maximum': 10,
+              'exclusiveMinimum': 1,
+              'exclusiveMaximum': 10,
+              'multipleOf': 2,
+            },
+          },
+          {
+            'name': 'baz',
+            'in': 'query',
+            'description': 'Baz',
+            'schema': {
+              'type': 'number',
+              'multipleOf': 0.1,
+              'minimum': 0.1,
+              'maximum': 10,
+              'exclusiveMinimum': 0.1,
+              'exclusiveMaximum': 10.2,
+            },
+          },
+        ],
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(
+        result,
+        '/// Test API\n'
+        'class DefaultApi {\n'
+        '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
+        '\n'
+        '    final ApiClient client;\n'
+        '\n'
+        '    /// Get user\n'
+        '    Future<void> users(\n'
+        '        { String? foo,int? bar,double? baz, }\n'
+        '    ) async {\n'
+        "        validateArg(value.length <= 10, '\$value must be less than or equal to 10');\n"
+        "        validateArg(value.length >= 1, '\$value must be greater than or equal to 1');\n"
+        "        validateArg(value.matches(RegExp('^[a-z]+\$')), '\$value must match the pattern ^[a-z]+\$');\n"
+        "        validateArg(value <= 10, '\$value must be less than or equal to \$maximum');\n"
+        "        validateArg(value >= 1, '\$value must be greater than or equal to \$minimum');\n"
+        "        validateArg(value < 10, '\$value must be less than \$exclusiveMaximum');\n"
+        "        validateArg(value > 1, '\$value must be greater than \$exclusiveMinimum');\n"
+        "        validateArg(value % 2 == 0, '\$value must be a multiple of \$multipleOf');\n"
+        "        validateArg(value <= 10.0, '\$value must be less than or equal to \$maximum');\n"
+        "        validateArg(value >= 0.1, '\$value must be greater than or equal to \$minimum');\n"
+        "        validateArg(value < 10.2, '\$value must be less than \$exclusiveMaximum');\n"
+        "        validateArg(value > 0.1, '\$value must be greater than \$exclusiveMinimum');\n"
+        "        validateArg(value % 0.1 == 0, '\$value must be a multiple of \$multipleOf');\n"
+        '        final response = await client.invokeApi(\n'
+        '            method: Method.post,\n'
+        "            path: '/users'\n"
+        ',\n'
+        '            queryParameters: {\n'
+        "                'foo': ?foo.toString(),\n"
+        "                'bar': ?bar.toString(),\n"
+        "                'baz': ?baz.toString(),\n"
+        '            },\n'
+        '        );\n'
+        '\n'
+        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+        '            throw ApiException(response.statusCode, response.body.toString());\n'
+        '        }\n'
+        '\n'
+        '        if (response.body.isNotEmpty) {\n'
+        '            return ;\n'
+        '        }\n'
+        '\n'
+        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
         '    }\n'
         '}\n',
       );

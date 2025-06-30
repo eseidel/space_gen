@@ -63,11 +63,8 @@ slacks).
 - Support 'default' for objects.
 - Make RenderPod and RenderEnum typed.
 - Wrap description doc comments to 80c.
-- Support 'pattern' string validation.
-- Consider generating parameter validation different from stand-alone model validation.
-e.g. doFoo(int bar) (with 'bar' validating inside the doFoo call) vs.
-creating a Bar type and validating within the Bar constructor.
-This would remove a ton of separate types.
+- Recursively validations for properties of named schemas (currently only
+  do top-level const-ready validations).
 
 Is the body sometimes passed in as an object, and sometimes created by
 the endpoint? Or is it always created by the endpoint?

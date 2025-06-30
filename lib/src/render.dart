@@ -102,16 +102,30 @@ Future<void> loadAndRenderSpec({
   ).render(renderSpec);
 }
 
-/// Convenient for testing, should eventually clean up more and expose as API.
 @visibleForTesting
-String renderSchema(
+String renderTestSchema(
   Map<String, dynamic> schemaJson, {
   String schemaName = 'test',
   Quirks quirks = const Quirks(),
+  bool asComponent = false,
 }) {
-  final parsedSchema = parseSchema(
-    MapContext.initial(schemaJson).addSnakeName(schemaName),
-  );
+  final MapContext context;
+  // If asComponent is true, we need to parse the schema as though it were
+  // defined in #/components/schemas/schemaName, this is used to make
+  // hasExplicitName return true, and thus the schema be rendered as a
+  // separate class.
+  if (asComponent) {
+    context = MapContext(
+      pointerParts: ['components', 'schemas', schemaName],
+      snakeNameStack: [schemaName],
+      json: schemaJson,
+    );
+  } else {
+    // Otherwise parse as though the schema was defined in the root
+    // (which isn't realistic, but makes for short pointers).
+    context = MapContext.initial(schemaJson).addSnakeName(schemaName);
+  }
+  final parsedSchema = parseSchema(context);
   final resolvedSchema = resolveSchemaRef(
     SchemaRef.schema(parsedSchema, const JsonPointer.empty()),
     ResolveContext.test(),
@@ -125,7 +139,7 @@ String renderSchema(
 }
 
 @visibleForTesting
-String renderOperation({
+String renderTestOperation({
   required String path,
   required Map<String, dynamic> operationJson,
   required Uri serverUrl,
