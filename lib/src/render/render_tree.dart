@@ -68,12 +68,18 @@ Iterable<String> _commentedLines(String value) {
   return lines.map((line) => '/// $line');
 }
 
-String? indentWithTrailingNewline(List<String> lines, {required int indent}) {
+String? indentWithTrailingNewline(
+  List<String> lines, {
+  required int indent,
+  bool extraTrailingNewline = false,
+}) {
   if (lines.isEmpty) {
     return null;
   }
   final indentString = ' ' * indent;
-  return '${lines.join('\n$indentString').trimLeft()}\n$indentString';
+  final maybeNewline = extraTrailingNewline ? '\n' : '';
+  final joined = lines.join('\n$indentString').trimLeft();
+  return '$joined$maybeNewline\n$indentString';
 }
 
 /// Doc comments are meant to be inserted right before the type declaration
@@ -96,18 +102,6 @@ String? createDocComment({String? title, String? body, int indent = 0}) {
   return indentWithTrailingNewline(lines, indent: indent);
 }
 
-class Validation {
-  const Validation({
-    required this.condition,
-    required this.message,
-    this.canBeConst = false,
-  });
-
-  final String condition;
-  final String message;
-  final bool canBeConst;
-}
-
 /// A class that can be converted to a template context.
 // This only exists because RenderSchema handles both the conversion to
 // templates as well as being the "type object", once we split out type
@@ -121,7 +115,7 @@ abstract class ToTemplateContext {
 abstract class CanBeParameter implements ToTemplateContext {
   bool get isRequired;
   String get parameterName;
-  Iterable<String> validationStatements({required String name});
+  Iterable<String> get validationCalls;
 }
 
 // Could make this comparable to have a nicer sort for our test results.
@@ -491,6 +485,19 @@ class Endpoint implements ToTemplateContext {
 
   Uri get uri => Uri.parse('$serverUrl$path');
 
+  List<String> get validationStatements {
+    final statements = <String>[];
+    for (final parameter in parameters) {
+      final name = parameter.parameterName;
+      final isNullable = !parameter.isRequired;
+      final nameCall = isNullable ? '$name?.' : '$name.';
+      for (final call in parameter.validationCalls) {
+        statements.add('$nameCall$call;');
+      }
+    }
+    return statements;
+  }
+
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     // Parameters as passed to the Dart function call, including the request
@@ -526,12 +533,10 @@ class Endpoint implements ToTemplateContext {
     final headerParameters = bySendIn[SendIn.header] ?? [];
     final hasHeaderParameters = headerParameters.isNotEmpty;
 
-    final validationStatements = dartParameters.expand(
-      (p) => p.validationStatements(name: p.parameterName),
-    );
     final validationStatementsString = indentWithTrailingNewline(
-      validationStatements.toList(),
+      validationStatements,
       indent: 8,
+      extraTrailingNewline: true,
     );
 
     Iterable<Map<String, dynamic>> toTemplateContexts(
@@ -662,8 +667,7 @@ abstract class RenderRequestBody implements CanBeParameter {
   final bool isRequired;
 
   @override
-  Iterable<String> validationStatements({required String name}) =>
-      schema.validationStatements(name: name);
+  Iterable<String> get validationCalls => schema.validationCalls;
 
   String get requestBodyParameterName {
     // TODO(eseidel): Why don't we have a name for request bodies?
@@ -812,18 +816,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 
   Iterable<Import> get additionalImports => const [];
 
-  Iterable<Validation> buildValidations(String name) => const [];
-
-  String validationsAsConstAsserts({required String name}) =>
-      buildValidations(name)
-          .where((v) => v.canBeConst)
-          .map((v) => 'assert(${v.condition}, ${quoteString(v.message)})')
-          .join(',\n');
-
-  Iterable<String> validationStatements({required String name}) =>
-      buildValidations(
-        name,
-      ).map((v) => 'validateArg(${v.condition}, ${quoteString(v.message)});');
+  Iterable<String> get validationCalls => const [];
 
   /// Whether this schema only contains json types.
   bool get onlyJsonTypes;
@@ -1123,31 +1116,12 @@ class RenderString extends RenderSchema {
   bool get onlyJsonTypes => !createsNewType;
 
   @override
-  Iterable<Validation> buildValidations(String name) {
+  Iterable<String> get validationCalls {
     return [
-      if (maxLength != null)
-        Validation(
-          condition: '$name.length <= $maxLength',
-          message: '\$$name must be less than or equal to $maxLength',
-          canBeConst: true,
-        ),
-      if (minLength != null)
-        Validation(
-          condition: '$name.length >= $minLength',
-          message: '\$$name must be greater than or equal to $minLength',
-          canBeConst: true,
-        ),
-      if (pattern != null)
-        Validation(
-          condition: '$name.matches(RegExp(${quoteString(pattern!)}))',
-          message: '\$$name must match the pattern $pattern',
-        ),
+      if (maxLength != null) 'validateMaximumLength($maxLength)',
+      if (minLength != null) 'validateMinimumLength($minLength)',
+      if (pattern != null) 'validatePattern(${quoteString(pattern!)})',
     ];
-  }
-
-  String buildInitializers({required String name}) {
-    final asserts = validationsAsConstAsserts(name: name);
-    return asserts.isEmpty ? '' : ': $asserts';
   }
 
   @override
@@ -1155,7 +1129,6 @@ class RenderString extends RenderSchema {
     'doc_comment': createDocComment(body: description, indent: 4),
     'typeName': typeName,
     'nullableTypeName': nullableTypeName(context),
-    'initializers': buildInitializers(name: 'value'),
   };
 
   @override
@@ -1289,39 +1262,16 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
   }
 
   @override
-  List<Validation> buildValidations(String name) {
+  Iterable<String> get validationCalls {
     return [
-      if (maximum != null)
-        Validation(
-          condition: '$name <= $maximum',
-          message: '\$$name must be less than or equal to $maximum',
-        ),
-      if (minimum != null)
-        Validation(
-          condition: '$name >= $minimum',
-          message: '\$$name must be greater than or equal to $minimum',
-        ),
+      if (maximum != null) 'validateMaximum($maximum)',
+      if (minimum != null) 'validateMinimum($minimum)',
       if (exclusiveMaximum != null)
-        Validation(
-          condition: '$name < $exclusiveMaximum',
-          message: '\$$name must be less than $exclusiveMaximum',
-        ),
+        'validateExclusiveMaximum($exclusiveMaximum)',
       if (exclusiveMinimum != null)
-        Validation(
-          condition: '$name > $exclusiveMinimum',
-          message: '\$$name must be greater than $exclusiveMinimum',
-        ),
-      if (multipleOf != null)
-        Validation(
-          condition: '$name % $multipleOf == 0',
-          message: '\$$name must be a multiple of $multipleOf',
-        ),
+        'validateExclusiveMinimum($exclusiveMinimum)',
+      if (multipleOf != null) 'validateMultipleOf($multipleOf)',
     ];
-  }
-
-  String buildInitializers({required String name}) {
-    final asserts = validationsAsConstAsserts(name: name);
-    return asserts.isEmpty ? '' : ': $asserts';
   }
 
   @override
@@ -1337,7 +1287,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
       'dartType': '$T',
       'jsonType': jsonStorageType(isNullable: false),
       'nullableTypeName': nullableTypeName(context),
-      'initializers': buildInitializers(name: 'value'),
       'jsonToDartCall': jsonToDartCall(jsonIsNullable: false),
     };
   }
@@ -2162,8 +2111,7 @@ class RenderParameter implements CanBeParameter {
   final bool isRequired;
 
   @override
-  Iterable<String> validationStatements({required String name}) =>
-      type.validationStatements(name: name);
+  Iterable<String> get validationCalls => type.validationCalls;
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {

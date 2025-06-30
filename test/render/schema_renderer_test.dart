@@ -1316,8 +1316,7 @@ void main() {
       expect(
         renderTestSchema(json, asComponent: true),
         'extension type const Test._(String value) {\n'
-        "    const Test(this.value): assert(value.length <= 10, '\$value must be less than or equal to 10'),\n"
-        "assert(value.length >= 1, '\$value must be greater than or equal to 1');\n"
+        '    const Test(this.value);\n'
         '\n'
         '    factory Test.fromJson(String json) => Test(json);\n'
         '\n'
@@ -1906,7 +1905,8 @@ void main() {
         '    Future<void> getAgents(\n'
         '        { int? page = 1, }\n'
         '    ) async {\n'
-        "        validateArg(page >= 1, '\$page must be greater than or equal to 1');\n"
+        '        page?.validateMinimum(1);\n'
+        '\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
         "            path: '/users'\n"
@@ -1993,19 +1993,20 @@ void main() {
         '    Future<void> users(\n'
         '        { String? foo,int? bar,double? baz, }\n'
         '    ) async {\n'
-        "        validateArg(foo.length <= 10, '\$foo must be less than or equal to 10');\n"
-        "        validateArg(foo.length >= 1, '\$foo must be greater than or equal to 1');\n"
-        "        validateArg(foo.matches(RegExp('^[a-z]+\$')), '\$foo must match the pattern ^[a-z]+\$');\n"
-        "        validateArg(bar <= 10, '\$bar must be less than or equal to 10');\n"
-        "        validateArg(bar >= 1, '\$bar must be greater than or equal to 1');\n"
-        "        validateArg(bar < 10, '\$bar must be less than 10');\n"
-        "        validateArg(bar > 1, '\$bar must be greater than 1');\n"
-        "        validateArg(bar % 2 == 0, '\$bar must be a multiple of 2');\n"
-        "        validateArg(baz <= 10.0, '\$baz must be less than or equal to 10.0');\n"
-        "        validateArg(baz >= 0.1, '\$baz must be greater than or equal to 0.1');\n"
-        "        validateArg(baz < 10.2, '\$baz must be less than 10.2');\n"
-        "        validateArg(baz > 0.1, '\$baz must be greater than 0.1');\n"
-        "        validateArg(baz % 0.1 == 0, '\$baz must be a multiple of 0.1');\n"
+        '        foo?.validateMaximumLength(10);\n'
+        '        foo?.validateMinimumLength(1);\n'
+        "        foo?.validatePattern('^[a-z]+\$');\n"
+        '        bar?.validateMaximum(10);\n'
+        '        bar?.validateMinimum(1);\n'
+        '        bar?.validateExclusiveMaximum(10);\n'
+        '        bar?.validateExclusiveMinimum(1);\n'
+        '        bar?.validateMultipleOf(2);\n'
+        '        baz?.validateMaximum(10.0);\n'
+        '        baz?.validateMinimum(0.1);\n'
+        '        baz?.validateExclusiveMaximum(10.2);\n'
+        '        baz?.validateExclusiveMinimum(0.1);\n'
+        '        baz?.validateMultipleOf(0.1);\n'
+        '\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
         "            path: '/users'\n"
