@@ -110,28 +110,21 @@ String renderSchema(
   Quirks quirks = const Quirks(),
   bool asComponent = false,
 }) {
-  var context = MapContext.initial(schemaJson).addSnakeName(schemaName);
+  final MapContext context;
   // If asComponent is true, we need to parse the schema as though it were
-  // defined in /schemas/components/schemaName, this is used to make
+  // defined in #/components/schemas/schemaName, this is used to make
   // hasExplicitName return true, and thus the schema be rendered as a
   // separate class.
   if (asComponent) {
-    // TODO(eseidel): Add a nicer API to test named schemas.
-    context = MapContext.fromParent(
-      parent: context,
+    context = MapContext(
+      pointerParts: ['components', 'schemas', schemaName],
+      snakeNameStack: [schemaName],
       json: schemaJson,
-      key: 'components',
     );
-    context = MapContext.fromParent(
-      parent: context,
-      json: schemaJson,
-      key: 'schemas',
-    );
-    context = MapContext.fromParent(
-      parent: context,
-      json: schemaJson,
-      key: schemaName,
-    );
+  } else {
+    // Otherwise parse as though the schema was defined in the root
+    // (which isn't realistic, but makes for short pointers).
+    context = MapContext.initial(schemaJson).addSnakeName(schemaName);
   }
   final parsedSchema = parseSchema(context);
   final resolvedSchema = resolveSchemaRef(
