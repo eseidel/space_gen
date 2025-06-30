@@ -810,7 +810,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 
   String get validationsAsConstAsserts => validations
       .where((v) => v.canBeConst)
-      .map((v) => 'assert(${v.condition}, ${v.message})')
+      .map((v) => 'assert(${v.condition}, ${quoteString(v.message)})')
       .join(',\n');
 
   Iterable<String> get validationStatements => validations.map(

@@ -35,6 +35,7 @@ class ApiException implements Exception {
 ///
 /// This is a helper function that throws an exception if the condition is false.
 /// It is used to validate arguments in the generated code.
+// ignore: avoid_positional_boolean_parameters
 void validateArg(bool condition, String message) {
   if (!condition) {
     throw Exception(message);
