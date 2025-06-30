@@ -15,7 +15,7 @@ void main() {
         'type': 'object',
         'properties': {'foo': <String, dynamic>{}},
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -75,7 +75,7 @@ void main() {
           },
         },
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -136,7 +136,7 @@ void main() {
           },
         },
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -194,7 +194,7 @@ void main() {
         },
         'required': ['foo'],
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -262,7 +262,7 @@ void main() {
         ],
       };
       final logger = _MockLogger();
-      final result = runWithLogger(logger, () => renderSchema(schema));
+      final result = runWithLogger(logger, () => renderTestSchema(schema));
       expect(
         result,
         '@immutable\n'
@@ -326,7 +326,7 @@ void main() {
           {'type': 'number'},
         ],
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         'sealed class Test {\n'
@@ -368,7 +368,7 @@ void main() {
           },
         ],
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         'sealed class Test {\n'
@@ -400,7 +400,7 @@ void main() {
           {'type': 'number'},
         ],
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       // anyOf currently renders as a oneOf, which is wrong.
       expect(
         result,
@@ -436,7 +436,7 @@ void main() {
           },
         },
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -531,7 +531,7 @@ void main() {
           'm_unknown': {'type': 'object', 'additionalProperties': true},
         },
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -668,7 +668,7 @@ void main() {
           'a_unknown': {'type': 'array', 'items': <String, dynamic>{}},
         },
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -762,7 +762,7 @@ void main() {
 
     test('empty object', () {
       final schema = {'type': 'object', 'properties': <String, dynamic>{}};
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -794,7 +794,7 @@ void main() {
           'a': {'type': 'object', 'properties': <String, dynamic>{}},
         },
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -855,7 +855,7 @@ void main() {
           },
         },
       };
-      final result = renderSchema(schema);
+      final result = renderTestSchema(schema);
       expect(
         result,
         '@immutable\n'
@@ -910,7 +910,7 @@ void main() {
         'type': 'string',
         'enum': ['+1', '-1', "don't"],
       };
-      final result = renderSchema(json);
+      final result = renderTestSchema(json);
       expect(
         result,
         'enum Test {\n'
@@ -967,7 +967,7 @@ void main() {
           'default': {'type': 'string'},
         },
       };
-      final result = renderSchema(json);
+      final result = renderTestSchema(json);
       expect(
         result,
         '@immutable\n'
@@ -1065,7 +1065,7 @@ void main() {
           'exclusiveMaximum': 0,
         };
         // validation does not force a new type.  We tried it, it was ugly.
-        expect(() => renderSchema(json), throwsA(isA<StateError>()));
+        expect(() => renderTestSchema(json), throwsA(isA<StateError>()));
       });
 
       test('integer named', () {
@@ -1081,7 +1081,7 @@ void main() {
         };
         // named schemas get their own class and thus include validations.
         expect(
-          renderSchema(json, asComponent: true),
+          renderTestSchema(json, asComponent: true),
           'extension type const Test._(int value) {\n'
           '    const Test(this.value);\n'
           '\n'
@@ -1113,7 +1113,7 @@ void main() {
           'exclusiveMaximum': 0,
         };
         // validation does not force a new type.  We tried it, it was ugly.
-        expect(() => renderSchema(json), throwsA(isA<StateError>()));
+        expect(() => renderTestSchema(json), throwsA(isA<StateError>()));
       });
 
       test('number named', () {
@@ -1124,7 +1124,7 @@ void main() {
           'multipleOf': 2.2,
         };
         expect(
-          renderSchema(json, asComponent: true),
+          renderTestSchema(json, asComponent: true),
           'extension type const Test._(double value) {\n'
           '    const Test(this.value);\n'
           '\n'
@@ -1147,7 +1147,7 @@ void main() {
       test('named number with default values', () {
         final json = {'type': 'number', 'default': 1.2, 'maximum': 10.2};
         expect(
-          renderSchema(json, asComponent: true),
+          renderTestSchema(json, asComponent: true),
           'extension type const Test._(double value) {\n'
           '    const Test(this.value);\n'
           '\n'
@@ -1173,7 +1173,7 @@ void main() {
             'a': {'type': 'number', 'default': 1.2, 'maximum': 10.2},
           },
         };
-        final result = renderSchema(json);
+        final result = renderTestSchema(json);
         expect(
           result,
           '@immutable\n'
@@ -1226,7 +1226,7 @@ void main() {
       test('named integer with default values', () {
         final json = {'type': 'integer', 'default': 1, 'minimum': 0};
         expect(
-          renderSchema(json, asComponent: true),
+          renderTestSchema(json, asComponent: true),
           'extension type const Test._(int value) {\n'
           '    const Test(this.value);\n'
           '\n'
@@ -1253,7 +1253,7 @@ void main() {
             'a': {'type': 'integer', 'default': 1, 'minimum': 0},
           },
         };
-        final result = renderSchema(json);
+        final result = renderTestSchema(json);
         expect(
           result,
           '@immutable\n'
@@ -1314,7 +1314,7 @@ void main() {
         'minLength': 1,
       };
       expect(
-        renderSchema(json, asComponent: true),
+        renderTestSchema(json, asComponent: true),
         'extension type const Test._(String value) {\n'
         "    const Test(this.value): assert(value.length <= 10, '\$value must be less than or equal to 10'),\n"
         "assert(value.length >= 1, '\$value must be greater than or equal to 1');\n"
@@ -1337,7 +1337,7 @@ void main() {
 
     test('renderSchema throws for non-new-type schemas', () {
       final json = {'type': 'string'};
-      expect(() => renderSchema(json), throwsA(isA<StateError>()));
+      expect(() => renderTestSchema(json), throwsA(isA<StateError>()));
     });
 
     // We used to force a new type for string validations, but it was ugly.
@@ -1351,7 +1351,7 @@ void main() {
         'minLength': 1,
         'pattern': r'^[a-z]+$',
       };
-      expect(() => renderSchema(json), throwsA(isA<StateError>()));
+      expect(() => renderTestSchema(json), throwsA(isA<StateError>()));
     });
   });
 
@@ -1384,7 +1384,7 @@ void main() {
       final logger = _MockLogger();
       final result = runWithLogger(
         logger,
-        () => renderOperation(
+        () => renderTestOperation(
           path: '/pet/{petId}/uploadImage',
           operationJson: operation,
           serverUrl: Uri.parse('https://example.com'),
@@ -1444,7 +1444,7 @@ void main() {
           '200': {'description': 'successful operation'},
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/pet/{petId}/uploadFile',
         operationJson: operation,
         serverUrl: Uri.parse('https://example.com'),
@@ -1503,7 +1503,7 @@ void main() {
           },
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1559,7 +1559,7 @@ void main() {
           },
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1617,7 +1617,7 @@ void main() {
           },
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1673,7 +1673,7 @@ void main() {
           },
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1715,7 +1715,7 @@ void main() {
           '400': {'description': 'Bad Request'},
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1766,7 +1766,7 @@ void main() {
           '200': {'description': 'OK'},
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1826,7 +1826,7 @@ void main() {
       const quirks = Quirks();
       // If this expectation changes, set an explicit quirks for renderOperation
       expect(quirks.allListsDefaultToEmpty, isTrue);
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1888,7 +1888,7 @@ void main() {
           '200': {'description': 'Successfully fetched agents details.'},
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
@@ -1975,7 +1975,7 @@ void main() {
           '200': {'description': 'OK'},
         },
       };
-      final result = renderOperation(
+      final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),

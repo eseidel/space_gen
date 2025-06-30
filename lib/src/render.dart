@@ -102,9 +102,8 @@ Future<void> loadAndRenderSpec({
   ).render(renderSpec);
 }
 
-/// Convenient for testing, should eventually clean up more and expose as API.
 @visibleForTesting
-String renderSchema(
+String renderTestSchema(
   Map<String, dynamic> schemaJson, {
   String schemaName = 'test',
   Quirks quirks = const Quirks(),
@@ -140,7 +139,7 @@ String renderSchema(
 }
 
 @visibleForTesting
-String renderOperation({
+String renderTestOperation({
   required String path,
   required Map<String, dynamic> operationJson,
   required Uri serverUrl,
