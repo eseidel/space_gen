@@ -1266,13 +1266,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
 
   @override
   bool get createsNewType => hasExplicitName;
-  // Turns out generating new types just for validation was ugly.
-  // we will implement validation differently.
-  // maximum != null ||
-  // minimum != null ||
-  // exclusiveMaximum != null ||
-  // exclusiveMinimum != null ||
-  // multipleOf != null;
 
   @override
   bool get onlyJsonTypes => !createsNewType;
@@ -1290,8 +1283,8 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     return defaultValue?.toString();
   }
 
-  @visibleForTesting
-  Iterable<Validation> buildValidations(SchemaRenderer context) {
+  @override
+  List<Validation> get validations {
     return [
       if (maximum != null)
         Validation(
