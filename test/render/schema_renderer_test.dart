@@ -1906,7 +1906,7 @@ void main() {
         '    Future<void> getAgents(\n'
         '        { int? page = 1, }\n'
         '    ) async {\n'
-        "        validateArg(value >= 1, '\$value must be greater than or equal to \$minimum');\n"
+        "        validateArg(page >= 1, '\$page must be greater than or equal to 1');\n"
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
         "            path: '/users'\n"
@@ -1993,19 +1993,19 @@ void main() {
         '    Future<void> users(\n'
         '        { String? foo,int? bar,double? baz, }\n'
         '    ) async {\n'
-        "        validateArg(value.length <= 10, '\$value must be less than or equal to 10');\n"
-        "        validateArg(value.length >= 1, '\$value must be greater than or equal to 1');\n"
-        "        validateArg(value.matches(RegExp('^[a-z]+\$')), '\$value must match the pattern ^[a-z]+\$');\n"
-        "        validateArg(value <= 10, '\$value must be less than or equal to \$maximum');\n"
-        "        validateArg(value >= 1, '\$value must be greater than or equal to \$minimum');\n"
-        "        validateArg(value < 10, '\$value must be less than \$exclusiveMaximum');\n"
-        "        validateArg(value > 1, '\$value must be greater than \$exclusiveMinimum');\n"
-        "        validateArg(value % 2 == 0, '\$value must be a multiple of \$multipleOf');\n"
-        "        validateArg(value <= 10.0, '\$value must be less than or equal to \$maximum');\n"
-        "        validateArg(value >= 0.1, '\$value must be greater than or equal to \$minimum');\n"
-        "        validateArg(value < 10.2, '\$value must be less than \$exclusiveMaximum');\n"
-        "        validateArg(value > 0.1, '\$value must be greater than \$exclusiveMinimum');\n"
-        "        validateArg(value % 0.1 == 0, '\$value must be a multiple of \$multipleOf');\n"
+        "        validateArg(foo.length <= 10, '\$foo must be less than or equal to 10');\n"
+        "        validateArg(foo.length >= 1, '\$foo must be greater than or equal to 1');\n"
+        "        validateArg(foo.matches(RegExp('^[a-z]+\$')), '\$foo must match the pattern ^[a-z]+\$');\n"
+        "        validateArg(bar <= 10, '\$bar must be less than or equal to 10');\n"
+        "        validateArg(bar >= 1, '\$bar must be greater than or equal to 1');\n"
+        "        validateArg(bar < 10, '\$bar must be less than 10');\n"
+        "        validateArg(bar > 1, '\$bar must be greater than 1');\n"
+        "        validateArg(bar % 2 == 0, '\$bar must be a multiple of 2');\n"
+        "        validateArg(baz <= 10.0, '\$baz must be less than or equal to 10.0');\n"
+        "        validateArg(baz >= 0.1, '\$baz must be greater than or equal to 0.1');\n"
+        "        validateArg(baz < 10.2, '\$baz must be less than 10.2');\n"
+        "        validateArg(baz > 0.1, '\$baz must be greater than 0.1');\n"
+        "        validateArg(baz % 0.1 == 0, '\$baz must be a multiple of 0.1');\n"
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
         "            path: '/users'\n"

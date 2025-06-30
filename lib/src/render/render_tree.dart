@@ -120,7 +120,8 @@ abstract class ToTemplateContext {
 
 abstract class CanBeParameter implements ToTemplateContext {
   bool get isRequired;
-  Iterable<String> get validationStatements;
+  String get parameterName;
+  Iterable<String> validationStatements({required String name});
 }
 
 // Could make this comparable to have a nicer sort for our test results.
@@ -497,7 +498,7 @@ class Endpoint implements ToTemplateContext {
     final dartParameters = <CanBeParameter>[...parameters, ?requestBody];
 
     final responseSchema = operation.returnType;
-    final returnType = responseSchema.typeName(context);
+    final returnType = responseSchema.typeName;
     final responseFromJson = responseSchema.fromJsonExpression(
       'jsonDecode(response.body)',
       context,
@@ -526,7 +527,7 @@ class Endpoint implements ToTemplateContext {
     final hasHeaderParameters = headerParameters.isNotEmpty;
 
     final validationStatements = dartParameters.expand(
-      (p) => p.validationStatements,
+      (p) => p.validationStatements(name: p.parameterName),
     );
     final validationStatementsString = indentWithTrailingNewline(
       validationStatements.toList(),
@@ -661,13 +662,17 @@ abstract class RenderRequestBody implements CanBeParameter {
   final bool isRequired;
 
   @override
-  Iterable<String> get validationStatements => schema.validationStatements;
+  Iterable<String> validationStatements({required String name}) =>
+      schema.validationStatements(name: name);
 
-  String requestBodyClassName(SchemaRenderer context) {
+  String get requestBodyParameterName {
     // TODO(eseidel): Why don't we have a name for request bodies?
-    final typeName = schema.typeName(context);
+    final typeName = schema.typeName;
     return (typeName[0].toLowerCase() + typeName.substring(1)).split('<').first;
   }
+
+  @override
+  String get parameterName => requestBodyParameterName;
 }
 
 class RenderRequestBodyJson extends RenderRequestBody {
@@ -679,8 +684,8 @@ class RenderRequestBodyJson extends RenderRequestBody {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final typeName = schema.typeName(context);
-    final paramName = requestBodyClassName(context);
+    final typeName = schema.typeName;
+    final paramName = parameterName;
     // TODO(eseidel): Share code with Parameter.toTemplateContext.
     final isNullable = !isRequired;
     return {
@@ -714,7 +719,7 @@ class RenderRequestBodyOctetStream extends RenderRequestBody {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final paramName = requestBodyClassName(context);
+    final paramName = parameterName;
     return {
       'request_body_doc_comment': createDocComment(
         body: description,
@@ -726,7 +731,7 @@ class RenderRequestBodyOctetStream extends RenderRequestBody {
       'required': isRequired,
       'hasDefaultValue': schema.defaultValue != null,
       'defaultValue': schema.defaultValueString(context),
-      'type': schema.typeName(context),
+      'type': schema.typeName,
       'nullableType': schema.nullableTypeName(context),
       'encodedBody': paramName,
     };
@@ -742,7 +747,7 @@ class RenderRequestBodyTextPlain extends RenderRequestBody {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final paramName = requestBodyClassName(context);
+    final paramName = parameterName;
     return {
       'name': paramName,
       'dartName': paramName,
@@ -750,7 +755,7 @@ class RenderRequestBodyTextPlain extends RenderRequestBody {
       'required': isRequired,
       'hasDefaultValue': schema.defaultValue != null,
       'defaultValue': schema.defaultValueString(context),
-      'type': schema.typeName(context),
+      'type': schema.typeName,
       'nullableType': schema.nullableTypeName(context),
       'encodedBody': paramName,
     };
@@ -807,16 +812,18 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 
   Iterable<Import> get additionalImports => const [];
 
-  Iterable<Validation> get validations => const [];
+  Iterable<Validation> buildValidations(String name) => const [];
 
-  String get validationsAsConstAsserts => validations
-      .where((v) => v.canBeConst)
-      .map((v) => 'assert(${v.condition}, ${quoteString(v.message)})')
-      .join(',\n');
+  String validationsAsConstAsserts({required String name}) =>
+      buildValidations(name)
+          .where((v) => v.canBeConst)
+          .map((v) => 'assert(${v.condition}, ${quoteString(v.message)})')
+          .join(',\n');
 
-  Iterable<String> get validationStatements => validations.map(
-    (v) => 'validateArg(${v.condition}, ${quoteString(v.message)});',
-  );
+  Iterable<String> validationStatements({required String name}) =>
+      buildValidations(
+        name,
+      ).map((v) => 'validateArg(${v.condition}, ${quoteString(v.message)});');
 
   /// Whether this schema only contains json types.
   bool get onlyJsonTypes;
@@ -845,10 +852,9 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   }
 
   /// Is this the json storage type or the dart class type?
-  String typeName(SchemaRenderer context);
+  String get typeName;
 
   String nullableTypeName(SchemaRenderer context) {
-    final typeName = this.typeName(context);
     return typeName.endsWith('?') ? typeName : '$typeName?';
   }
 
@@ -949,7 +955,7 @@ class RenderPod extends RenderSchema {
   List<Object?> get props => [super.props, type, defaultValue];
 
   @override
-  String typeName(SchemaRenderer context) {
+  String get typeName {
     return switch (type) {
       PodType.boolean => 'bool',
       PodType.dateTime => 'DateTime',
@@ -1058,7 +1064,7 @@ abstract class RenderNewType extends RenderSchema {
   String get className => camelFromSnake(snakeName);
 
   @override
-  String typeName(SchemaRenderer context) => className;
+  String get typeName => className;
 
   @override
   String toJsonExpression(
@@ -1101,8 +1107,7 @@ class RenderString extends RenderSchema {
   List<Object?> get props => [super.props, defaultValue, maxLength, minLength];
 
   @override
-  String typeName(SchemaRenderer context) =>
-      createsNewType ? camelFromSnake(snakeName) : 'String';
+  String get typeName => createsNewType ? camelFromSnake(snakeName) : 'String';
 
   /// The default value of this schema as a string.
   @override
@@ -1118,39 +1123,39 @@ class RenderString extends RenderSchema {
   bool get onlyJsonTypes => !createsNewType;
 
   @override
-  Iterable<Validation> get validations {
+  Iterable<Validation> buildValidations(String name) {
     return [
       if (maxLength != null)
         Validation(
-          condition: 'value.length <= $maxLength',
-          message: '\$value must be less than or equal to $maxLength',
+          condition: '$name.length <= $maxLength',
+          message: '\$$name must be less than or equal to $maxLength',
           canBeConst: true,
         ),
       if (minLength != null)
         Validation(
-          condition: 'value.length >= $minLength',
-          message: '\$value must be greater than or equal to $minLength',
+          condition: '$name.length >= $minLength',
+          message: '\$$name must be greater than or equal to $minLength',
           canBeConst: true,
         ),
       if (pattern != null)
         Validation(
-          condition: 'value.matches(RegExp(${quoteString(pattern!)}))',
-          message: '\$value must match the pattern $pattern',
+          condition: '$name.matches(RegExp(${quoteString(pattern!)}))',
+          message: '\$$name must match the pattern $pattern',
         ),
     ];
   }
 
-  String buildInitializers(SchemaRenderer context) {
-    final asserts = validationsAsConstAsserts;
+  String buildInitializers({required String name}) {
+    final asserts = validationsAsConstAsserts(name: name);
     return asserts.isEmpty ? '' : ': $asserts';
   }
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
     'doc_comment': createDocComment(body: description, indent: 4),
-    'typeName': typeName(context),
+    'typeName': typeName,
     'nullableTypeName': nullableTypeName(context),
-    'initializers': buildInitializers(context),
+    'initializers': buildInitializers(name: 'value'),
   };
 
   @override
@@ -1284,38 +1289,38 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
   }
 
   @override
-  List<Validation> get validations {
+  List<Validation> buildValidations(String name) {
     return [
       if (maximum != null)
         Validation(
-          condition: 'value <= $maximum',
-          message: r'$value must be less than or equal to $maximum',
+          condition: '$name <= $maximum',
+          message: '\$$name must be less than or equal to $maximum',
         ),
       if (minimum != null)
         Validation(
-          condition: 'value >= $minimum',
-          message: r'$value must be greater than or equal to $minimum',
+          condition: '$name >= $minimum',
+          message: '\$$name must be greater than or equal to $minimum',
         ),
       if (exclusiveMaximum != null)
         Validation(
-          condition: 'value < $exclusiveMaximum',
-          message: r'$value must be less than $exclusiveMaximum',
+          condition: '$name < $exclusiveMaximum',
+          message: '\$$name must be less than $exclusiveMaximum',
         ),
       if (exclusiveMinimum != null)
         Validation(
-          condition: 'value > $exclusiveMinimum',
-          message: r'$value must be greater than $exclusiveMinimum',
+          condition: '$name > $exclusiveMinimum',
+          message: '\$$name must be greater than $exclusiveMinimum',
         ),
       if (multipleOf != null)
         Validation(
-          condition: 'value % $multipleOf == 0',
-          message: r'$value must be a multiple of $multipleOf',
+          condition: '$name % $multipleOf == 0',
+          message: '\$$name must be a multiple of $multipleOf',
         ),
     ];
   }
 
-  String buildInitializers(SchemaRenderer context) {
-    final asserts = validationsAsConstAsserts;
+  String buildInitializers({required String name}) {
+    final asserts = validationsAsConstAsserts(name: name);
     return asserts.isEmpty ? '' : ': $asserts';
   }
 
@@ -1328,11 +1333,11 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     }
     return {
       'doc_comment': createDocComment(body: description, indent: 4),
-      'typeName': typeName(context),
+      'typeName': typeName,
       'dartType': '$T',
       'jsonType': jsonStorageType(isNullable: false),
       'nullableTypeName': nullableTypeName(context),
-      'initializers': buildInitializers(context),
+      'initializers': buildInitializers(name: 'value'),
       'jsonToDartCall': jsonToDartCall(jsonIsNullable: false),
     };
   }
@@ -1420,8 +1425,7 @@ class RenderNumber extends RenderNumeric<double> {
   });
 
   @override
-  String typeName(SchemaRenderer context) =>
-      createsNewType ? camelFromSnake(snakeName) : 'double';
+  String get typeName => createsNewType ? camelFromSnake(snakeName) : 'double';
 
   @override
   String jsonStorageType({required bool isNullable}) =>
@@ -1446,8 +1450,7 @@ class RenderInteger extends RenderNumeric<int> {
   });
 
   @override
-  String typeName(SchemaRenderer context) =>
-      createsNewType ? camelFromSnake(snakeName) : 'int';
+  String get typeName => createsNewType ? camelFromSnake(snakeName) : 'int';
 
   @override
   String jsonStorageType({required bool isNullable}) =>
@@ -1586,7 +1589,7 @@ class RenderObject extends RenderNewType {
         isRequired: isRequired,
       ),
       'dartIsNullable': dartIsNullable,
-      'type': property.typeName(context),
+      'type': property.typeName,
       'nullableType': property.nullableTypeName(context),
       'equals': property.equalsExpression(dartName, context),
       'toJson': property.toJsonExpression(
@@ -1639,7 +1642,7 @@ class RenderObject extends RenderNewType {
     }
     return {
       'doc_comment': createDocComment(body: description, indent: 4),
-      'typeName': typeName(context),
+      'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
       'hasProperties': hasProperties,
       // Special case behavior hashCode with only one property.
@@ -1648,7 +1651,7 @@ class RenderObject extends RenderNewType {
       'hasAdditionalProperties': hasAdditionalProperties,
       'assignmentsLine': assignmentsLine,
       'additionalPropertiesName': 'entries', // Matching OpenAPI.
-      'valueSchema': valueSchema?.typeName(context),
+      'valueSchema': valueSchema?.typeName,
       'valueToJson': valueSchema?.toJsonExpression(
         'value',
         context,
@@ -1755,7 +1758,7 @@ class RenderArray extends RenderSchema {
 
   /// The type name of this schema.
   @override
-  String typeName(SchemaRenderer context) => 'List<${items.typeName(context)}>';
+  String get typeName => 'List<${items.typeName}>';
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -1772,7 +1775,7 @@ class RenderArray extends RenderSchema {
       return 'const []';
     }
     final maybeConst = items.defaultCanConstConstruct ? 'const ' : '';
-    final itemType = items.typeName(context);
+    final itemType = items.typeName;
     String toString(dynamic value) =>
         value is String ? quoteString(value) : value.toString();
     final values = listDefault.map(toString).join(', ');
@@ -1815,7 +1818,7 @@ class RenderArray extends RenderSchema {
       jsonIsNullable: jsonIsNullable,
       dartIsNullable: dartIsNullable,
     );
-    final itemTypeName = items.typeName(context);
+    final itemTypeName = items.typeName;
     // List has special handling for nullability since we want to cast
     // through List<dynamic> first before casting to the item type.
     final castAsList = jsonIsNullable
@@ -1884,8 +1887,7 @@ class RenderMap extends RenderSchema {
   }
 
   @override
-  String typeName(SchemaRenderer context) =>
-      'Map<String, ${valueSchema.typeName(context)}>';
+  String get typeName => 'Map<String, ${valueSchema.typeName}>';
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -2012,7 +2014,7 @@ class RenderEnum extends RenderNewType {
 
     return {
       'doc_comment': createDocComment(body: description, indent: 4),
-      'typeName': typeName(context),
+      'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
       'enumValues': values.map(enumValueToTemplateContext).toList(),
     };
@@ -2110,7 +2112,7 @@ class RenderOneOf extends RenderNewType {
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     return {
       'doc_comment': createDocComment(body: description, indent: 4),
-      'typeName': typeName(context),
+      'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
     };
   }
@@ -2143,6 +2145,9 @@ class RenderParameter implements CanBeParameter {
   /// The name of the parameter.
   final String name;
 
+  @override
+  String get parameterName => name;
+
   /// The description of the parameter.
   final String? description;
 
@@ -2157,7 +2162,8 @@ class RenderParameter implements CanBeParameter {
   final bool isRequired;
 
   @override
-  Iterable<String> get validationStatements => type.validationStatements;
+  Iterable<String> validationStatements({required String name}) =>
+      type.validationStatements(name: name);
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
@@ -2174,7 +2180,7 @@ class RenderParameter implements CanBeParameter {
       'hasDefaultValue': type.defaultValue != null,
       'defaultValue': type.defaultValueString(context),
       'isNullable': isNullable,
-      'type': type.typeName(context),
+      'type': type.typeName,
       'nullableType': type.nullableTypeName(context),
       'sendIn': sendIn.name,
       'toJson': type.toJsonExpression(
@@ -2203,7 +2209,7 @@ class RenderUnknown extends RenderSchema {
   dynamic get defaultValue => null;
 
   @override
-  String typeName(SchemaRenderer context) => 'dynamic';
+  String get typeName => 'dynamic';
 
   @override
   bool get createsNewType => false;
@@ -2252,7 +2258,7 @@ class RenderVoid extends RenderNoJson {
       throw UnimplementedError('RenderVoid.defaultValue');
 
   @override
-  String typeName(SchemaRenderer context) => 'void';
+  String get typeName => 'void';
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -2325,7 +2331,7 @@ class RenderBinary extends RenderNoJson {
   ];
 
   @override
-  String typeName(SchemaRenderer context) => 'Uint8List';
+  String get typeName => 'Uint8List';
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -2372,7 +2378,7 @@ class RenderEmptyObject extends RenderNewType {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
     'doc_comment': createDocComment(body: description, indent: 4),
-    'typeName': typeName(context),
+    'typeName': typeName,
     'nullableTypeName': nullableTypeName(context),
   };
 }
