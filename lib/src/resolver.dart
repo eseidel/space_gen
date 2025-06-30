@@ -139,6 +139,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       defaultValue: schema.defaultValue,
       maxLength: schema.maxLength,
       minLength: schema.minLength,
+      pattern: schema.pattern,
     );
   }
   if (schema is SchemaNumber) {
@@ -631,6 +632,7 @@ class ResolvedString extends ResolvedSchema {
     this.defaultValue,
     this.maxLength,
     this.minLength,
+    this.pattern,
   });
 
   /// The default value of the resolved schema.
@@ -642,8 +644,17 @@ class ResolvedString extends ResolvedSchema {
   /// The minimum length of the resolved schema.
   final int? minLength;
 
+  /// The pattern to match the string against.
+  final String? pattern;
+
   @override
-  List<Object?> get props => [super.props, defaultValue, maxLength, minLength];
+  List<Object?> get props => [
+    super.props,
+    defaultValue,
+    maxLength,
+    minLength,
+    pattern,
+  ];
 }
 
 abstract class ResolvedNumeric<T extends num> extends ResolvedSchema {
