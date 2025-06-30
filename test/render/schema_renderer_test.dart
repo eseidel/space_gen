@@ -1866,10 +1866,10 @@ void main() {
         '    Future<void> users(\n'
         '        { String? foo,int? bar,double? baz, }\n'
         '    ) async {\n'
-        '        validateArg(value.length &lt;= 10, \$value must be less than or equal to 10);\n'
-        'validateArg(value.length &gt;= 1, \$value must be greater than or equal to 1);\n'
-        'validateArg(value.matches(RegExp(&#x27;^[a-z]+\$&#x27;)), \$value must match the pattern ^[a-z]+\$);\n'
-        '    final response = await client.invokeApi(\n'
+        "        validateArg(value.length <= 10, '\$value must be less than or equal to 10');\n"
+        "        validateArg(value.length >= 1, '\$value must be greater than or equal to 1');\n"
+        "        validateArg(value.matches(RegExp('^[a-z]+\$')), '\$value must match the pattern ^[a-z]+\$');\n"
+        '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
         "            path: '/users'\n"
         ',\n'

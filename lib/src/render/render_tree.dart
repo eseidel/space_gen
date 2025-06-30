@@ -63,17 +63,17 @@ String variableSafeName(Quirks quirks, String jsonName) {
   return avoidReservedWord(escapedName);
 }
 
-String wrapAsDocComment(String value, {required int indent}) {
+Iterable<String> _commentedLines(String value) {
   final lines = value.split('\n');
-  final commentedLines = lines.map((line) => ' ' * indent + '/// $line');
-  return commentedLines.join('\n');
+  return lines.map((line) => '/// $line');
 }
 
-String? indentWithTrailingNewline(List<String> lines, {int indent = 0}) {
+String? indentWithTrailingNewline(List<String> lines, {required int indent}) {
   if (lines.isEmpty) {
     return null;
   }
-  return '${lines.join('\n').trimLeft()}\n${' ' * indent}';
+  final indentString = ' ' * indent;
+  return '${lines.join('\n$indentString').trimLeft()}\n$indentString';
 }
 
 /// Doc comments are meant to be inserted right before the type declaration
@@ -84,19 +84,16 @@ String? createDocComment({String? title, String? body, int indent = 0}) {
   if (title == null && body == null) {
     return null;
   }
-  final parts = <String>[];
-  if (title != null) {
-    parts.add(wrapAsDocComment(title, indent: indent));
-  }
-  if (body != null) {
-    parts.add(wrapAsDocComment(body, indent: indent));
-  }
-  if (parts.isEmpty) {
+  final lines = <String>[
+    if (title != null) ..._commentedLines(title),
+    if (body != null) ..._commentedLines(body),
+  ];
+  if (lines.isEmpty) {
     return null;
   }
   // Remove leading whitespace from just the first line.
   // This makes it easier to use from within a mustache template.
-  return indentWithTrailingNewline(parts, indent: indent);
+  return indentWithTrailingNewline(lines, indent: indent);
 }
 
 class Validation {
@@ -532,7 +529,7 @@ class Endpoint implements ToTemplateContext {
     );
     final validationStatementsString = indentWithTrailingNewline(
       validationStatements.toList(),
-      indent: 4,
+      indent: 8,
     );
 
     Iterable<Map<String, dynamic>> toTemplateContexts(
@@ -816,8 +813,9 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
       .map((v) => 'assert(${v.condition}, ${v.message})')
       .join(',\n');
 
-  Iterable<String> get validationStatements =>
-      validations.map((v) => 'validateArg(${v.condition}, ${v.message});');
+  Iterable<String> get validationStatements => validations.map(
+    (v) => 'validateArg(${v.condition}, ${quoteString(v.message)});',
+  );
 
   /// Whether this schema only contains json types.
   bool get onlyJsonTypes;
