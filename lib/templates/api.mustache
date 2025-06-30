@@ -12,7 +12,7 @@
         { {{#namedParameters}}{{#required}}required {{{ type }}}{{/required}}{{^required}}{{{ nullableType }}}{{/required}} {{{ dartName }}}{{#hasDefaultValue}} = {{{ defaultValue }}}{{/hasDefaultValue}},{{/namedParameters}} }
         {{/hasNamedParameters}}
     ) async {
-        final response = await client.invokeApi(
+        {{validationStatements}}final response = await client.invokeApi(
             method: Method.{{{httpMethod}}},
             path: '{{{path}}}'
             {{#pathParameters}}

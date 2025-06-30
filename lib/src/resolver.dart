@@ -139,6 +139,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       defaultValue: schema.defaultValue,
       maxLength: schema.maxLength,
       minLength: schema.minLength,
+      pattern: schema.pattern,
     );
   }
   if (schema is SchemaNumber) {

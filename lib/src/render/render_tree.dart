@@ -69,6 +69,13 @@ String wrapAsDocComment(String value, {required int indent}) {
   return commentedLines.join('\n');
 }
 
+String? indentWithTrailingNewline(List<String> lines, {int indent = 0}) {
+  if (lines.isEmpty) {
+    return null;
+  }
+  return '${lines.join('\n').trimLeft()}\n${' ' * indent}';
+}
+
 /// Doc comments are meant to be inserted right before the type declaration
 /// *not* on a separate line.  They will add their own new-line at the end if
 /// necessary and will match the passed in indent for any lines after the first
@@ -89,7 +96,7 @@ String? createDocComment({String? title, String? body, int indent = 0}) {
   }
   // Remove leading whitespace from just the first line.
   // This makes it easier to use from within a mustache template.
-  return '${parts.join('\n').trimLeft()}\n${' ' * indent}';
+  return indentWithTrailingNewline(parts, indent: indent);
 }
 
 class Validation {
@@ -104,6 +111,21 @@ class Validation {
   final bool canBeConst;
 }
 
+/// A class that can be converted to a template context.
+// This only exists because RenderSchema handles both the conversion to
+// templates as well as being the "type object", once we split out type
+// objects we can simplify the RenderTree and this method moves into some
+// sort of class that knows how to convert type objects into template contexts.
+// ignore: one_member_abstracts
+abstract class ToTemplateContext {
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context);
+}
+
+abstract class CanBeParameter implements ToTemplateContext {
+  bool get isRequired;
+  Iterable<String> get validationStatements;
+}
+
 // Could make this comparable to have a nicer sort for our test results.
 @immutable
 class Import extends Equatable {
@@ -112,9 +134,7 @@ class Import extends Equatable {
   final String path;
   final String? asName;
 
-  Map<String, dynamic> toTemplateContext() {
-    return {'path': path, 'asName': asName};
-  }
+  Map<String, dynamic> toTemplateContext() => {'path': path, 'asName': asName};
 
   @override
   List<Object?> get props => [path, asName];
@@ -440,7 +460,7 @@ class RenderSpec {
 
 /// A convenience class created for each operation within a path item
 /// for compatibility with our existing rendering code.
-class Endpoint {
+class Endpoint implements ToTemplateContext {
   const Endpoint({required this.operation, required this.serverUrl});
 
   /// The server url of the endpoint.
@@ -470,15 +490,13 @@ class Endpoint {
 
   Uri get uri => Uri.parse('$serverUrl$path');
 
+  @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final serverParameters = parameters.map((param) {
-      return param.toTemplateContext(context);
-    }).toList();
-
-    final requestBody = operation.requestBody?.toTemplateContext(context);
+    final requestBody = operation.requestBody;
+    final requestBodyContext = requestBody?.toTemplateContext(context);
     // Parameters as passed to the Dart function call, including the request
     // body if it exists.
-    final dartParameters = [...serverParameters, ?requestBody];
+    final dartParameters = <CanBeParameter>[...parameters, ?requestBody];
 
     final responseSchema = operation.returnType;
     final returnType = responseSchema.typeName(context);
@@ -489,30 +507,41 @@ class Endpoint {
       dartIsNullable: false,
     );
 
-    final namedParameters = dartParameters.where((p) => p['required'] == false);
+    final namedParameters = dartParameters.where((p) => p.isRequired == false);
     final positionalParameters = dartParameters.where(
-      (p) => p['required'] == true,
+      (p) => p.isRequired == true,
     );
 
-    // TODO(eseidel): This grouping should happen before converting to
-    // template context while we still have strong types.
-    final bySendIn = serverParameters.groupListsBy((p) => p['sendIn']);
-
-    final pathParameters = bySendIn['path'] ?? [];
-    final queryParameters = bySendIn['query'] ?? [];
+    // Only explicit parameters (not request body) need to be split by sendIn.
+    final bySendIn = parameters.groupListsBy((p) => p.sendIn);
+    final pathParameters = bySendIn[SendIn.path] ?? [];
+    final queryParameters = bySendIn[SendIn.query] ?? [];
     final hasQueryParameters = queryParameters.isNotEmpty;
-    final cookieParameters = bySendIn['cookie'] ?? [];
+    final cookieParameters = bySendIn[SendIn.cookie] ?? [];
     if (cookieParameters.isNotEmpty) {
       _unimplemented(
         'Cookie parameters are not yet supported.',
         operation.pointer,
       );
     }
-    final headerParameters = bySendIn['header'] ?? [];
+    final headerParameters = bySendIn[SendIn.header] ?? [];
     final hasHeaderParameters = headerParameters.isNotEmpty;
+
+    final validationStatements = dartParameters.expand(
+      (p) => p.validationStatements,
+    );
+    final validationStatementsString = indentWithTrailingNewline(
+      validationStatements.toList(),
+      indent: 4,
+    );
+
+    Iterable<Map<String, dynamic>> toTemplateContexts(
+      Iterable<CanBeParameter> parameters,
+    ) => parameters.map((p) => p.toTemplateContext(context));
 
     // Endpoints could get summary and description from
     // *both* Path and Operation objects.  Unclear how we should display both.
+    // Currently only displaying summary/description from the Operation.
     return {
       'endpoint_doc_comment': createDocComment(
         title: summary,
@@ -524,18 +553,19 @@ class Endpoint {
       'path': path,
       'url': uri,
       // Parameters grouped for dart parameter generation.
-      'positionalParameters': positionalParameters,
+      'positionalParameters': toTemplateContexts(positionalParameters),
       'hasNamedParameters': namedParameters.isNotEmpty,
-      'namedParameters': namedParameters,
+      'namedParameters': toTemplateContexts(namedParameters),
       // Parameters grouped for call to server.
-      'pathParameters': pathParameters,
+      'pathParameters': toTemplateContexts(pathParameters),
       'hasQueryParameters': hasQueryParameters,
-      'queryParameters': queryParameters,
+      'queryParameters': toTemplateContexts(queryParameters),
       'hasHeaderParameters': hasHeaderParameters,
-      'headerParameters': headerParameters,
-      'requestBody': requestBody,
+      'headerParameters': toTemplateContexts(headerParameters),
+      'requestBody': requestBodyContext,
       'returnType': returnType,
       'responseFromJson': responseFromJson,
+      'validationStatements': validationStatementsString,
     };
   }
 }
@@ -615,7 +645,7 @@ class RenderOperation {
   final String? description;
 }
 
-abstract class RenderRequestBody {
+abstract class RenderRequestBody implements CanBeParameter {
   const RenderRequestBody({
     required this.schema,
     required this.description,
@@ -629,15 +659,17 @@ abstract class RenderRequestBody {
   final String? description;
 
   /// Whether the request body is required.
+  @override
   final bool isRequired;
+
+  @override
+  Iterable<String> get validationStatements => schema.validationStatements;
 
   String requestBodyClassName(SchemaRenderer context) {
     // TODO(eseidel): Why don't we have a name for request bodies?
     final typeName = schema.typeName(context);
     return (typeName[0].toLowerCase() + typeName.substring(1)).split('<').first;
   }
-
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context);
 }
 
 class RenderRequestBodyJson extends RenderRequestBody {
@@ -745,7 +777,7 @@ class RenderResponse {
   final RenderSchema content;
 }
 
-abstract class RenderSchema extends Equatable {
+abstract class RenderSchema extends Equatable implements ToTemplateContext {
   const RenderSchema({
     required this.snakeName,
     required this.pointer,
@@ -851,8 +883,6 @@ abstract class RenderSchema extends Equatable {
   }
 
   bool hasDefaultValue(SchemaRenderer context) => defaultValue != null;
-
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context);
 
   static bool maybeEqualsIgnoringName(RenderSchema? a, RenderSchema? b) {
     if (a == null && b == null) {
@@ -2109,7 +2139,7 @@ class RenderOneOf extends RenderNewType {
   dynamic get defaultValue => null;
 }
 
-class RenderParameter {
+class RenderParameter implements CanBeParameter {
   const RenderParameter({
     required this.description,
     required this.name,
@@ -2131,8 +2161,13 @@ class RenderParameter {
   final SendIn sendIn;
 
   /// Whether the parameter is required.
+  @override
   final bool isRequired;
 
+  @override
+  Iterable<String> get validationStatements => type.validationStatements;
+
+  @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     final isNullable = !isRequired;
     final specName = name;
