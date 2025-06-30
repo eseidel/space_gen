@@ -457,6 +457,7 @@ class RenderSpec {
 
 /// A convenience class created for each operation within a path item
 /// for compatibility with our existing rendering code.
+// TODO(eseidel): Could remove this in favor of RenderOperation?
 class Endpoint implements ToTemplateContext {
   const Endpoint({required this.operation, required this.serverUrl});
 
@@ -483,14 +484,14 @@ class Endpoint implements ToTemplateContext {
 
   List<RenderParameter> get parameters => operation.parameters;
 
+  RenderRequestBody? get requestBody => operation.requestBody;
+
   String get methodName => lowercaseCamelFromSnake(snakeName);
 
   Uri get uri => Uri.parse('$serverUrl$path');
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final requestBody = operation.requestBody;
-    final requestBodyContext = requestBody?.toTemplateContext(context);
     // Parameters as passed to the Dart function call, including the request
     // body if it exists.
     final dartParameters = <CanBeParameter>[...parameters, ?requestBody];
@@ -559,7 +560,7 @@ class Endpoint implements ToTemplateContext {
       'queryParameters': toTemplateContexts(queryParameters),
       'hasHeaderParameters': hasHeaderParameters,
       'headerParameters': toTemplateContexts(headerParameters),
-      'requestBody': requestBodyContext,
+      'requestBody': requestBody?.toTemplateContext(context),
       'returnType': returnType,
       'responseFromJson': responseFromJson,
       'validationStatements': validationStatementsString,

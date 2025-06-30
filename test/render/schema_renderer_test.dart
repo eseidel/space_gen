@@ -1055,7 +1055,20 @@ void main() {
     });
 
     group('number validations', () {
-      test('integer', () {
+      test('integer non-named', () {
+        final json = {
+          'type': 'integer',
+          'minimum': 1,
+          'maximum': 10,
+          'multipleOf': 2,
+          'exclusiveMinimum': 9,
+          'exclusiveMaximum': 0,
+        };
+        // validation does not force a new type.  We tried it, it was ugly.
+        expect(() => renderSchema(json), throwsA(isA<StateError>()));
+      });
+
+      test('integer named', () {
         final json = {
           'type': 'integer',
           'minimum': 1,
@@ -1066,11 +1079,29 @@ void main() {
           'exclusiveMinimum': 9,
           'exclusiveMaximum': 0,
         };
-        // validation does not force a new type.  We tried it, it was ugly.
-        expect(() => renderSchema(json), throwsA(isA<StateError>()));
+        // named schemas get their own class and thus include validations.
+        expect(
+          renderSchema(json, asComponent: true),
+          'extension type const Test._(int value) {\n'
+          '    const Test(this.value);\n'
+          '\n'
+          '    factory Test.fromJson(int json) => Test(json);\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(int? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    int toJson() => value;\n'
+          '}\n',
+        );
       });
 
-      test('number', () {
+      test('number non-named', () {
         final json = {
           'type': 'number',
           'minimum': 1.2,
@@ -1084,10 +1115,56 @@ void main() {
         // validation does not force a new type.  We tried it, it was ugly.
         expect(() => renderSchema(json), throwsA(isA<StateError>()));
       });
-      test('number with default values', () {
+
+      test('number named', () {
+        final json = {
+          'type': 'number',
+          'minimum': 1.2,
+          'maximum': 10.2,
+          'multipleOf': 2.2,
+        };
+        expect(
+          renderSchema(json, asComponent: true),
+          'extension type const Test._(double value) {\n'
+          '    const Test(this.value);\n'
+          '\n'
+          '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(num? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    double toJson() => value;\n'
+          '}\n',
+        );
+      });
+
+      test('named number with default values', () {
         final json = {'type': 'number', 'default': 1.2, 'maximum': 10.2};
-        // validation does not force a new type.  We tried it, it was ugly.
-        expect(() => renderSchema(json), throwsA(isA<StateError>()));
+        expect(
+          renderSchema(json, asComponent: true),
+          'extension type const Test._(double value) {\n'
+          '    const Test(this.value);\n'
+          '\n'
+          '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(num? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    double toJson() => value;\n'
+          '}\n',
+        );
       });
       test('number property with default values', () {
         final json = {
@@ -1146,10 +1223,27 @@ void main() {
         );
       });
 
-      test('integer with default values', () {
+      test('named integer with default values', () {
         final json = {'type': 'integer', 'default': 1, 'minimum': 0};
-        // validation does not force a new type.  We tried it, it was ugly.
-        expect(() => renderSchema(json), throwsA(isA<StateError>()));
+        expect(
+          renderSchema(json, asComponent: true),
+          'extension type const Test._(int value) {\n'
+          '    const Test(this.value);\n'
+          '\n'
+          '    factory Test.fromJson(int json) => Test(json);\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(int? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    int toJson() => value;\n'
+          '}\n',
+        );
       });
 
       test('integer property with default values', () {
@@ -1212,19 +1306,51 @@ void main() {
   });
 
   group('string validations', () {
-    test('maxLength and minLength can be const', () {
+    test('maxLength and minLength can be const in named string', () {
       final json = {
         'type': 'string',
         'default': 'foo',
         'maxLength': 10,
         'minLength': 1,
       };
-      // validation does not force a new type.  We tried it, it was ugly.
-      expect(() => renderSchema(json), throwsA(isA<StateError>()));
+      expect(
+        renderSchema(json, asComponent: true),
+        'extension type const Test._(String value) {\n'
+        "    const Test(this.value): assert(value.length <= 10, '\$value must be less than or equal to 10'),\n"
+        "assert(value.length >= 1, '\$value must be greater than or equal to 1');\n"
+        '\n'
+        '    factory Test.fromJson(String json) => Test(json);\n'
+        '\n'
+        '    /// Convenience to create a nullable type from a nullable json object.\n'
+        '    /// Useful when parsing optional fields.\n'
+        '    static Test? maybeFromJson(String? json) {\n'
+        '        if (json == null) {\n'
+        '            return null;\n'
+        '        }\n'
+        '        return Test.fromJson(json);\n'
+        '    }\n'
+        '\n'
+        '    String toJson() => value;\n'
+        '}\n',
+      );
     });
 
     test('renderSchema throws for non-new-type schemas', () {
       final json = {'type': 'string'};
+      expect(() => renderSchema(json), throwsA(isA<StateError>()));
+    });
+
+    // We used to force a new type for string validations, but it was ugly.
+    // renderSchema throws for for non-new-type schemas.  If we ever remove
+    // that throw, we should test the underlying RenderSchema instead.
+    test('string validations do not force a new type', () {
+      final json = {
+        'type': 'string',
+        'default': 'foo',
+        'maxLength': 10,
+        'minLength': 1,
+        'pattern': r'^[a-z]+$',
+      };
       expect(() => renderSchema(json), throwsA(isA<StateError>()));
     });
   });
