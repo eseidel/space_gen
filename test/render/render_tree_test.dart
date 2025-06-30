@@ -170,6 +170,7 @@ void main() {
         defaultValue: 'foo',
         maxLength: 10,
         minLength: 1,
+        pattern: 'foo',
       );
       expect(a.equalsIgnoringName(a), isTrue);
 
@@ -180,6 +181,7 @@ void main() {
         defaultValue: 'foo',
         maxLength: null,
         minLength: 1,
+        pattern: 'foo',
       );
       expect(a.equalsIgnoringName(b), isFalse);
 
@@ -190,6 +192,7 @@ void main() {
         defaultValue: 'foo',
         maxLength: 10,
         minLength: null,
+        pattern: 'foo',
       );
       expect(a.equalsIgnoringName(c), isFalse);
     });

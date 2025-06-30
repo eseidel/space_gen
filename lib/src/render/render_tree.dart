@@ -92,6 +92,18 @@ String? createDocComment({String? title, String? body, int indent = 0}) {
   return '${parts.join('\n').trimLeft()}\n${' ' * indent}';
 }
 
+class Validation {
+  const Validation({
+    required this.condition,
+    required this.message,
+    this.canBeConst = false,
+  });
+
+  final String condition;
+  final String message;
+  final bool canBeConst;
+}
+
 // Could make this comparable to have a nicer sort for our test results.
 @immutable
 class Import extends Equatable {
@@ -167,6 +179,7 @@ class SpecResolver {
           defaultValue: schema.defaultValue,
           maxLength: schema.maxLength,
           minLength: schema.minLength,
+          pattern: schema.pattern,
         );
       case ResolvedNumber():
         return RenderNumber(
@@ -764,6 +777,16 @@ abstract class RenderSchema extends Equatable {
 
   Iterable<Import> get additionalImports => const [];
 
+  Iterable<Validation> get validations => const [];
+
+  String get validationsAsConstAsserts => validations
+      .where((v) => v.canBeConst)
+      .map((v) => 'assert(${v.condition}, ${v.message})')
+      .join(',\n');
+
+  Iterable<String> get validationStatements =>
+      validations.map((v) => 'validateArg(${v.condition}, ${v.message});');
+
   /// Whether this schema only contains json types.
   bool get onlyJsonTypes;
 
@@ -1027,6 +1050,7 @@ class RenderString extends RenderSchema {
     required this.defaultValue,
     required this.maxLength,
     required this.minLength,
+    required this.pattern,
   });
 
   @override
@@ -1037,6 +1061,9 @@ class RenderString extends RenderSchema {
 
   /// The minimum length of the string.
   final int? minLength;
+
+  /// The pattern to match the string against.
+  final String? pattern;
 
   @override
   bool get defaultCanConstConstruct => true;
@@ -1057,28 +1084,36 @@ class RenderString extends RenderSchema {
 
   @override
   bool get createsNewType => hasExplicitName;
-  // Turns out generating new types just for validation was ugly.
-  // we will implement validation differently.
-  // || maxLength != null || minLength != null;
 
   @override
   bool get onlyJsonTypes => !createsNewType;
 
-  @visibleForTesting
-  String buildValidations(SchemaRenderer context) {
-    final validations = <String>[];
-    void add(String condition) =>
-        validations.add('assert($condition, "Invalid value: \$value")');
-
-    if (maxLength != null) add('value.length <= $maxLength');
-    if (minLength != null) add('value.length >= $minLength');
-    // TODO(eseidel): Add pattern validation.
-    return validations.join(',\n');
+  @override
+  Iterable<Validation> get validations {
+    return [
+      if (maxLength != null)
+        Validation(
+          condition: 'value.length <= $maxLength',
+          message: '\$value must be less than or equal to $maxLength',
+          canBeConst: true,
+        ),
+      if (minLength != null)
+        Validation(
+          condition: 'value.length >= $minLength',
+          message: '\$value must be greater than or equal to $minLength',
+          canBeConst: true,
+        ),
+      if (pattern != null)
+        Validation(
+          condition: 'value.matches(RegExp(${quoteString(pattern!)}))',
+          message: '\$value must match the pattern $pattern',
+        ),
+    ];
   }
 
   String buildInitializers(SchemaRenderer context) {
-    final validations = buildValidations(context);
-    return validations.isEmpty ? '' : ': $validations';
+    final asserts = validationsAsConstAsserts;
+    return asserts.isEmpty ? '' : ': $asserts';
   }
 
   @override
@@ -1227,22 +1262,39 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
   }
 
   @visibleForTesting
-  String buildValidations(SchemaRenderer context) {
-    final validations = <String>[];
-    void add(String condition) =>
-        validations.add('assert($condition, "Invalid value: \$value")');
-
-    if (maximum != null) add('value <= $maximum');
-    if (minimum != null) add('value >= $minimum');
-    if (exclusiveMaximum != null) add('value < $exclusiveMaximum');
-    if (exclusiveMinimum != null) add('value > $exclusiveMinimum');
-    if (multipleOf != null) add('value % $multipleOf == 0');
-    return validations.join(',\n');
+  Iterable<Validation> buildValidations(SchemaRenderer context) {
+    return [
+      if (maximum != null)
+        Validation(
+          condition: 'value <= $maximum',
+          message: r'$value must be less than or equal to $maximum',
+        ),
+      if (minimum != null)
+        Validation(
+          condition: 'value >= $minimum',
+          message: r'$value must be greater than or equal to $minimum',
+        ),
+      if (exclusiveMaximum != null)
+        Validation(
+          condition: 'value < $exclusiveMaximum',
+          message: r'$value must be less than $exclusiveMaximum',
+        ),
+      if (exclusiveMinimum != null)
+        Validation(
+          condition: 'value > $exclusiveMinimum',
+          message: r'$value must be greater than $exclusiveMinimum',
+        ),
+      if (multipleOf != null)
+        Validation(
+          condition: 'value % $multipleOf == 0',
+          message: r'$value must be a multiple of $multipleOf',
+        ),
+    ];
   }
 
   String buildInitializers(SchemaRenderer context) {
-    final validations = buildValidations(context);
-    return validations.isEmpty ? '' : ': $validations';
+    final asserts = validationsAsConstAsserts;
+    return asserts.isEmpty ? '' : ': $asserts';
   }
 
   @override
