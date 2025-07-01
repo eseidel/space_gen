@@ -15,31 +15,32 @@ dart run space_gen -i spec_path_or_url -o output_package_path
 ## Values
 
 - Generates highest quality, modern Dart code.
-- Zero analyzer, formatter or linter errors. Nearly as good as by-hand.
+- Zero analyzer, formatter or linter errors. Aims to be as good as handwritten.
 - Gives readable errors on failure.
 - Aspires to handle all of OpenAPI 3.x.
 - Generates testable code.
 
 ## Advantages over Open API Generator 7.0.0
 
-- Dart 3.0+ only (sound null safety)
-- Model code round trips through JSON correctly (TBD)
-- Generates properly recursive toJson/fromJson which round-trip fully!
+- Dart 3.8+ only (sound null safety)
+- Generates properly recursive toJson/fromJson which round-trip fully.
 - Able to generate immutable models.
-- Uses real enum classes!
+- Uses real enum classes.
+- Handles oneOf, allOf, anyOf.
 - fromJson is non-nullable.
 - Generates maybeFromJson with explicit nullability.
 - Generates independent classes, which can be imported independently.
-- Better follows required vs. nullable semantics.
+- Correctly follows required vs. nullable semantics.
 
 ## Why not just contribute to OpenAPI?
 
-When this effort started in August 2023, there were two separate (soon to be
-combined?) OpenAPI generators for Dart. One for package:http and one for
+This started as a hobby project in August 2023, there were two separate (soon to
+be combined?) OpenAPI generators for Dart. One for package:http and one for
 package:dio. I only ever used the http one and it had lots of bugs. I looked at
 fixing them in OpenAPI, but failed to figure out how to hack on the OpenAPI
 generator (Java) or successfully interact with the community (several separate
-slacks).
+slacks) so ended up starting my own. Still in 2025 there doesn't seem to be
+a consensus towards a better Dart generator, so releasing this one.
 
 ## Design
 
@@ -52,9 +53,8 @@ slacks).
 
 ## Todo
 
-- Generate tests. https://github.com/eseidel/space_gen/issues/1
-- Handle min/max in newtype types.
 - Wire up Authentication and sending of bearer header.
+- Generate tests. https://github.com/eseidel/space_gen/issues/1
 - Fix toString hack for queryParameters.
 - Support Parameter.explode.
 - Finish oneOf support.
@@ -68,17 +68,11 @@ slacks).
 - Add (non-const) validation during construction of new-type objects, will
   require making generator aware that some objects can't be const constructed
   as well as adding a const-constructor for those objects for default values.
-- Add tag descriptions from 'tags' root key.
 - Handle 'example' fields
 - explicitly handle format=int64
-- Handle 'title' for schemas
 - Handle format=double and format=float
 - Handle deprecated=true
 - Map newtype via explicitly named schema?
-
-
-Is the body sometimes passed in as an object, and sometimes created by
-the endpoint? Or is it always created by the endpoint?
 
 ### OpenApi Quirks
 
@@ -92,4 +86,17 @@ OpenAPI makes all List values default to [], and stores all lists as
 non-nullable, even if they're nullable (not required) in the spec. This
 breaks round-tripping of values, since if your 'list' property is null
 (or missing) openapi_generator will parse it as [] and send back []. The
-openapi_generator can never send null for a list value.
+openapi_generator can never send null for a list value. space_gen has this
+quirk on by default for now, but it can be disabled.
+
+#### SCREAMING_CAPS enums
+
+OpenAPI uses SCREAMING_CAPS enums, this can be enabled in space_gen for easier
+transition from openapi_generator to space_gen. By default space_gen will
+use lowerCamelCase enums matching Dart style.
+
+#### Mutable Models
+
+OpenAPI generates mutable model types and your existing code may depend on
+this behavior. space_gen can generate either mutable or immutable model types
+and by default makes models immutable.
