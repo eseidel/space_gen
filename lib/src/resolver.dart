@@ -81,11 +81,12 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   if (schema is SchemaObject) {
     return ResolvedObject(
       pointer: schema.pointer,
+      snakeName: schema.snakeName,
+      title: schema.title,
       description: schema.description,
       properties: schema.properties.map((key, value) {
         return MapEntry(key, resolveSchemaRef(value, context));
       }),
-      snakeName: schema.snakeName,
       additionalProperties: _maybeResolveSchemaRef(
         schema.additionalProperties,
         context,
@@ -96,16 +97,18 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   if (schema is SchemaEnum) {
     return ResolvedEnum(
       pointer: schema.pointer,
+      snakeName: schema.snakeName,
+      title: schema.title,
       description: schema.description,
       defaultValue: schema.defaultValue,
       values: schema.enumValues,
-      snakeName: schema.snakeName,
     );
   }
   if (schema is SchemaBinary) {
     return ResolvedBinary(
       pointer: schema.pointer,
       snakeName: schema.snakeName,
+      title: schema.title,
       description: schema.description,
     );
   }
@@ -114,6 +117,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       type: schema.type,
       pointer: schema.pointer,
       snakeName: schema.snakeName,
+      title: schema.title,
       description: schema.description,
       defaultValue: schema.defaultValue,
     );
@@ -121,6 +125,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   if (schema is SchemaInteger) {
     return ResolvedInteger(
       pointer: schema.pointer,
+      title: schema.title,
       snakeName: schema.snakeName,
       description: schema.description,
       defaultValue: schema.defaultValue,
@@ -135,6 +140,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     return ResolvedString(
       pointer: schema.pointer,
       snakeName: schema.snakeName,
+      title: schema.title,
       description: schema.description,
       defaultValue: schema.defaultValue,
       maxLength: schema.maxLength,
@@ -146,6 +152,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     return ResolvedNumber(
       pointer: schema.pointer,
       snakeName: schema.snakeName,
+      title: schema.title,
       description: schema.description,
       defaultValue: schema.defaultValue,
       maximum: schema.maximum,
@@ -163,6 +170,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       items: items,
       snakeName: schema.snakeName,
       pointer: schema.pointer,
+      title: schema.title,
       description: schema.description,
       defaultValue: schema.defaultValue,
     );
@@ -170,10 +178,11 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   if (schema is SchemaOneOf) {
     final oneOf = schema;
     return ResolvedOneOf(
-      schemas: oneOf.schemas.map((e) => resolveSchemaRef(e, context)).toList(),
-      snakeName: schema.snakeName,
       pointer: schema.pointer,
+      snakeName: schema.snakeName,
+      title: schema.title,
       description: schema.description,
+      schemas: oneOf.schemas.map((e) => resolveSchemaRef(e, context)).toList(),
     );
   }
   if (schema is SchemaAllOf) {
@@ -193,10 +202,11 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       }
     }
     return ResolvedAllOf(
-      schemas: schemas,
-      snakeName: schema.snakeName,
       pointer: schema.pointer,
+      snakeName: schema.snakeName,
+      title: schema.title,
       description: schema.description,
+      schemas: schemas,
     );
   }
   if (schema is SchemaAnyOf) {
@@ -229,16 +239,18 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       }
     }
     return ResolvedAnyOf(
-      schemas: schemas,
-      snakeName: schema.snakeName,
       pointer: schema.pointer,
+      snakeName: schema.snakeName,
+      title: schema.title,
       description: schema.description,
+      schemas: schemas,
     );
   }
   if (schema is SchemaNull) {
     return ResolvedNull(
-      snakeName: schema.snakeName,
       pointer: schema.pointer,
+      snakeName: schema.snakeName,
+      title: schema.title,
       description: schema.description,
     );
   }
@@ -246,6 +258,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     return ResolvedUnknown(
       snakeName: schema.snakeName,
       pointer: schema.pointer,
+      title: schema.title,
       description: schema.description,
     );
   }
@@ -254,6 +267,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       valueSchema: resolveSchemaRef(schema.valueSchema, context),
       snakeName: schema.snakeName,
       pointer: schema.pointer,
+      title: schema.title,
       description: schema.description,
     );
   }
@@ -261,6 +275,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     return ResolvedEmptyObject(
       pointer: schema.pointer,
       snakeName: schema.snakeName,
+      title: schema.title,
       description: schema.description,
     );
   }
@@ -389,16 +404,18 @@ ResolvedSchema _resolveContent(Response response, ResolveContext context) {
   // Should this just be a void response?
   if (content == null) {
     return ResolvedVoid(
-      snakeName: 'void',
       pointer: response.pointer,
+      snakeName: 'void',
+      title: null,
       description: response.description,
     );
   }
   if (content.isEmpty) {
     _warn('Response has no content: $response', response.pointer);
     return ResolvedVoid(
-      snakeName: 'void',
       pointer: response.pointer,
+      snakeName: 'void',
+      title: null,
       description: response.description,
     );
   }
@@ -605,6 +622,7 @@ abstract class ResolvedSchema extends Equatable {
   const ResolvedSchema({
     required this.snakeName,
     required this.pointer,
+    required this.title,
     required this.description,
   });
 
@@ -614,11 +632,14 @@ abstract class ResolvedSchema extends Equatable {
   /// The snake name of the resolved schema.
   final String snakeName;
 
+  /// The title of the resolved schema.
+  final String? title;
+
   /// The description of the resolved schema.
   final String? description;
 
   @override
-  List<Object?> get props => [pointer, snakeName, description];
+  List<Object?> get props => [pointer, snakeName, title, description];
 
   @override
   String toString() => '$runtimeType(snakeName: $snakeName, pointer: $pointer)';
@@ -628,6 +649,7 @@ class ResolvedString extends ResolvedSchema {
   const ResolvedString({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
     this.defaultValue,
     this.maxLength,
@@ -661,6 +683,7 @@ abstract class ResolvedNumeric<T extends num> extends ResolvedSchema {
   const ResolvedNumeric({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
     this.defaultValue,
     this.maximum,
@@ -703,6 +726,7 @@ class ResolvedNumber extends ResolvedNumeric<double> {
   const ResolvedNumber({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
     super.maximum,
     super.minimum,
@@ -717,6 +741,7 @@ class ResolvedInteger extends ResolvedNumeric<int> {
   const ResolvedInteger({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
     super.maximum,
     super.minimum,
@@ -731,6 +756,7 @@ class ResolvedPod extends ResolvedSchema {
   const ResolvedPod({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
     required this.type,
     this.defaultValue,
@@ -750,6 +776,7 @@ class ResolvedArray extends ResolvedSchema {
   const ResolvedArray({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
     required this.items,
     this.defaultValue,
@@ -769,6 +796,7 @@ class ResolvedEnum extends ResolvedSchema {
   const ResolvedEnum({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
     required this.defaultValue,
     required this.values,
@@ -790,6 +818,7 @@ class ResolvedObject extends ResolvedSchema {
   const ResolvedObject({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
     required this.properties,
     required this.additionalProperties,
@@ -820,6 +849,7 @@ class ResolvedUnknown extends ResolvedSchema {
   const ResolvedUnknown({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
   });
 }
@@ -828,6 +858,7 @@ abstract class ResolvedSchemaCollection extends ResolvedSchema {
   const ResolvedSchemaCollection({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
     required this.schemas,
   });
@@ -844,6 +875,7 @@ class ResolvedOneOf extends ResolvedSchemaCollection {
     required super.schemas,
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
   });
 }
@@ -853,6 +885,7 @@ class ResolvedAnyOf extends ResolvedSchemaCollection {
     required super.schemas,
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
   });
 }
@@ -862,6 +895,7 @@ class ResolvedAllOf extends ResolvedSchemaCollection {
     required super.schemas,
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
   });
 }
@@ -870,6 +904,7 @@ class ResolvedVoid extends ResolvedSchema {
   const ResolvedVoid({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
   });
 }
@@ -878,6 +913,7 @@ class ResolvedBinary extends ResolvedSchema {
   const ResolvedBinary({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
   });
 }
@@ -886,6 +922,7 @@ class ResolvedNull extends ResolvedSchema {
   const ResolvedNull({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
   });
 }
@@ -894,6 +931,7 @@ class ResolvedMap extends ResolvedSchema {
   const ResolvedMap({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
     required this.valueSchema,
   });
@@ -905,6 +943,7 @@ class ResolvedEmptyObject extends ResolvedSchema {
   const ResolvedEmptyObject({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
   });
 }

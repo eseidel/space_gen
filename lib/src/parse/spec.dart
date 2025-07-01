@@ -107,6 +107,7 @@ sealed class Schema extends Equatable implements HasPointer {
   const Schema({
     required this.pointer,
     required this.snakeName,
+    required this.title,
     required this.description,
   });
 
@@ -116,6 +117,9 @@ sealed class Schema extends Equatable implements HasPointer {
 
   /// The snake name of this schema.
   final String snakeName;
+
+  /// The title of this schema.
+  final String? title;
 
   /// The description of this schema.
   final String? description;
@@ -129,6 +133,7 @@ class SchemaPod extends Schema {
   const SchemaPod({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
     required this.type,
     required this.defaultValue,
@@ -149,6 +154,7 @@ class SchemaString extends Schema {
   const SchemaString({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
     required this.defaultValue,
     required this.maxLength,
@@ -175,6 +181,7 @@ abstract class SchemaNumeric<T extends num> extends Schema {
   const SchemaNumeric({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
     required this.defaultValue,
     required this.minimum,
@@ -196,6 +203,7 @@ class SchemaInteger extends SchemaNumeric<int> {
   const SchemaInteger({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
     required super.defaultValue,
     required super.minimum,
@@ -210,6 +218,7 @@ class SchemaNumber extends SchemaNumeric<double> {
   const SchemaNumber({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
     required super.defaultValue,
     required super.minimum,
@@ -224,6 +233,7 @@ abstract class SchemaObjectBase extends Schema {
   const SchemaObjectBase({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
   });
 }
@@ -234,6 +244,7 @@ class SchemaMap extends Schema {
   const SchemaMap({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
     required this.valueSchema,
   });
@@ -248,6 +259,7 @@ class SchemaBinary extends Schema {
   const SchemaBinary({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
   });
 }
@@ -256,6 +268,7 @@ class SchemaEnum extends Schema {
   const SchemaEnum({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
     required this.defaultValue,
     required this.enumValues,
@@ -275,6 +288,7 @@ class SchemaNull extends Schema {
   const SchemaNull({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
   });
 }
@@ -283,6 +297,7 @@ class SchemaArray extends Schema {
   const SchemaArray({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
     required this.items,
     required this.defaultValue,
@@ -301,6 +316,7 @@ class SchemaUnknown extends Schema {
   const SchemaUnknown({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
   });
 
@@ -313,6 +329,7 @@ class SchemaEmptyObject extends Schema {
   const SchemaEmptyObject({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
   });
 }
@@ -321,8 +338,9 @@ abstract class SchemaCombiner extends SchemaObjectBase {
   const SchemaCombiner({
     required super.pointer,
     required super.snakeName,
-    required this.schemas,
+    required super.title,
     required super.description,
+    required this.schemas,
   });
 
   final List<SchemaRef> schemas;
@@ -335,8 +353,9 @@ class SchemaAnyOf extends SchemaCombiner {
   const SchemaAnyOf({
     required super.pointer,
     required super.snakeName,
-    required super.schemas,
+    required super.title,
     required super.description,
+    required super.schemas,
   });
 }
 
@@ -344,8 +363,9 @@ class SchemaAllOf extends SchemaCombiner {
   const SchemaAllOf({
     required super.pointer,
     required super.snakeName,
-    required super.schemas,
+    required super.title,
     required super.description,
+    required super.schemas,
   });
 }
 
@@ -353,8 +373,9 @@ class SchemaOneOf extends SchemaCombiner {
   const SchemaOneOf({
     required super.pointer,
     required super.snakeName,
-    required super.schemas,
+    required super.title,
     required super.description,
+    required super.schemas,
   });
 }
 
@@ -366,6 +387,7 @@ class SchemaObject extends SchemaObjectBase {
   SchemaObject({
     required super.pointer,
     required super.snakeName,
+    required super.title,
     required super.description,
     required this.properties,
     required this.requiredProperties,

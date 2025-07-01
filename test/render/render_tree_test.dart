@@ -89,6 +89,7 @@ void main() {
       const a = RenderObject(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         properties: <String, RenderSchema>{},
       );
@@ -97,6 +98,7 @@ void main() {
       const b = RenderObject(
         snakeName: 'b',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         properties: <String, RenderSchema>{},
       );
@@ -105,11 +107,13 @@ void main() {
       const c = RenderObject(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         properties: <String, RenderSchema>{
           'a': RenderUnknown(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
+            title: null,
             description: 'Foo',
           ),
         },
@@ -119,12 +123,14 @@ void main() {
       const d = RenderObject(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         properties: <String, RenderSchema>{
           'a': RenderPod(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
             type: PodType.boolean,
+            title: null,
             description: 'Foo',
           ),
         },
@@ -134,12 +140,14 @@ void main() {
       const e = RenderObject(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         properties: <String, RenderSchema>{},
         additionalProperties: RenderPod(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
           type: PodType.boolean,
+          title: null,
           description: 'Foo',
         ),
       );
@@ -151,18 +159,21 @@ void main() {
         description: 'Foo',
         properties: <String, RenderSchema>{},
         requiredProperties: ['a'],
+        title: null,
       );
       expect(a.equalsIgnoringName(f), isFalse);
 
       const g = RenderObject(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         properties: <String, RenderSchema>{},
         additionalProperties: RenderPod(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
           type: PodType.dateTime,
+          title: null,
           description: 'Foo',
         ),
       );
@@ -171,12 +182,14 @@ void main() {
       const h = RenderObject(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         properties: <String, RenderSchema>{
           'e': RenderPod(
             snakeName: 'e',
             pointer: JsonPointer.empty(),
             type: PodType.boolean,
+            title: null,
             description: 'Foo',
           ),
         },
@@ -188,6 +201,7 @@ void main() {
       const a = RenderString(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         defaultValue: 'foo',
         maxLength: 10,
@@ -199,6 +213,7 @@ void main() {
       const b = RenderString(
         snakeName: 'b',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         defaultValue: 'foo',
         maxLength: null,
@@ -210,6 +225,7 @@ void main() {
       const c = RenderString(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         defaultValue: 'foo',
         maxLength: 10,
@@ -223,6 +239,7 @@ void main() {
       const a = RenderInteger(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         defaultValue: 1,
         maximum: 10,
@@ -236,6 +253,7 @@ void main() {
       const b = RenderInteger(
         snakeName: 'b',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         defaultValue: 1,
         maximum: null,
@@ -249,6 +267,7 @@ void main() {
       const c = RenderInteger(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         defaultValue: 1,
         maximum: 10,
@@ -264,11 +283,13 @@ void main() {
       const a = RenderArray(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         items: RenderPod(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
           type: PodType.boolean,
+          title: null,
           description: 'Foo',
         ),
       );
@@ -277,11 +298,13 @@ void main() {
       const b = RenderArray(
         snakeName: 'b',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         items: RenderPod(
           snakeName: 'b',
           pointer: JsonPointer.empty(),
           type: PodType.boolean,
+          title: null,
           description: 'Foo',
         ),
       );
@@ -290,11 +313,13 @@ void main() {
       const c = RenderArray(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         items: RenderPod(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
           type: PodType.dateTime,
+          title: null,
           description: 'Foo',
         ),
       );
@@ -305,6 +330,7 @@ void main() {
       final a = RenderEnum(
         snakeName: 'a',
         pointer: const JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         names: const ['a', 'b', 'c'],
         values: const ['a', 'b', 'c'],
@@ -314,6 +340,7 @@ void main() {
       final b = RenderEnum(
         snakeName: 'b',
         pointer: const JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         names: const ['a', 'b', 'c'],
         values: const ['a', 'b', 'c'],
@@ -323,6 +350,7 @@ void main() {
       final c = RenderEnum(
         snakeName: 'a',
         pointer: const JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         names: const ['a', 'b'],
         values: const ['a', 'b'],
@@ -334,12 +362,14 @@ void main() {
       const a = RenderOneOf(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         schemas: [
           RenderPod(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
             type: PodType.boolean,
+            title: null,
             description: 'Foo',
           ),
         ],
@@ -349,12 +379,14 @@ void main() {
       const b = RenderOneOf(
         snakeName: 'b',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         schemas: [
           RenderPod(
             snakeName: 'b',
             pointer: JsonPointer.empty(),
             type: PodType.boolean,
+            title: null,
             description: 'Foo',
           ),
         ],
@@ -364,18 +396,21 @@ void main() {
       const c = RenderOneOf(
         snakeName: 'a',
         pointer: JsonPointer.empty(),
+        title: null,
         description: 'Foo',
         schemas: [
           RenderPod(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
             type: PodType.boolean,
+            title: null,
             description: 'Foo',
           ),
           RenderPod(
             snakeName: 'b',
             pointer: JsonPointer.empty(),
             type: PodType.boolean,
+            title: null,
             description: 'Foo',
           ),
         ],

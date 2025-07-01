@@ -68,6 +68,14 @@ slacks).
 - Add (non-const) validation during construction of new-type objects, will
   require making generator aware that some objects can't be const constructed
   as well as adding a const-constructor for those objects for default values.
+- Add tag descriptions from 'tags' root key.
+- Handle 'example' fields
+- explicitly handle format=int64
+- Handle 'title' for schemas
+- Handle format=double and format=float
+- Handle deprecated=true
+- Map newtype via explicitly named schema?
+
 
 Is the body sometimes passed in as an object, and sometimes created by
 the endpoint? Or is it always created by the endpoint?
