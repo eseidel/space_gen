@@ -813,6 +813,10 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 
   Iterable<Import> get additionalImports => const [];
 
+  // TODO(eseidel): This should be abstract and all classes should override.
+  // This should include validations for the entire subtree of schemas
+  // stopping at any branches that are new types since those can validate
+  // themselves during construction.
   Iterable<String> get validationCalls => const [];
 
   /// Whether this schema only contains json types.
