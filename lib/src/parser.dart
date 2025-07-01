@@ -257,7 +257,11 @@ PodType? determinePodType(MapContext json) {
   _error(json, 'Unknown pod type: $type');
 }
 
-Schema? _handleCollectionTypes(MapContext json, String? description) {
+Schema? _handleCollectionTypes(
+  MapContext json, {
+  required String? title,
+  required String? description,
+}) {
   if (json.containsKey('oneOf')) {
     final oneOf = json.childAsList('oneOf');
     final schemas = <SchemaRef>[];
@@ -270,6 +274,7 @@ Schema? _handleCollectionTypes(MapContext json, String? description) {
       pointer: json.pointer,
       snakeName: json.snakeName,
       schemas: schemas,
+      title: title,
       description: description,
     );
   }
@@ -286,6 +291,7 @@ Schema? _handleCollectionTypes(MapContext json, String? description) {
       pointer: json.pointer,
       snakeName: json.snakeName,
       schemas: schemas,
+      title: title,
       description: description,
     );
   }
@@ -302,6 +308,7 @@ Schema? _handleCollectionTypes(MapContext json, String? description) {
       pointer: json.pointer,
       snakeName: json.snakeName,
       schemas: schemas,
+      title: title,
       description: description,
     );
   }
@@ -319,7 +326,8 @@ SchemaRef? _handleAdditionalProperties(MapContext parent) {
         SchemaUnknown(
           pointer: parent.pointer.add('additionalProperties'),
           snakeName: 'additionalProperties',
-          description: parent['description'] as String?,
+          title: _optional<String>(parent, 'title'),
+          description: _optional<String>(parent, 'description'),
         ),
         parent.pointer,
       );
@@ -379,9 +387,10 @@ SchemaEnum? _handleEnum({
     }
   }
   return SchemaEnum(
-    description: description,
     pointer: json.pointer,
     snakeName: json.snakeName,
+    title: _optional<String>(json, 'title'),
+    description: description,
     defaultValue: typedDefaultValue,
     enumValues: typedEnumValues,
   );
@@ -390,12 +399,14 @@ SchemaEnum? _handleEnum({
 Schema? _handleNumberTypes(
   MapContext json, {
   required String? type,
+  required String? title,
   required String? description,
 }) {
   if (type == 'integer') {
     return SchemaInteger(
       pointer: json.pointer,
       snakeName: json.snakeName,
+      title: title,
       description: description,
       defaultValue: _optional<int>(json, 'default'),
       minimum: _optional<int>(json, 'minimum'),
@@ -409,6 +420,7 @@ Schema? _handleNumberTypes(
     return SchemaNumber(
       pointer: json.pointer,
       snakeName: json.snakeName,
+      title: title,
       description: description,
       defaultValue: _optionalDouble(json, 'default'),
       minimum: _optionalDouble(json, 'minimum'),
@@ -422,11 +434,14 @@ Schema? _handleNumberTypes(
 }
 
 Schema _createCorrectSchemaSubtype(MapContext json) {
-  // Unclear what to do with title. Is it like summary?
-  _ignored<String>(json, 'title');
+  final title = _optional<String>(json, 'title');
   final description = _optional<String>(json, 'description');
 
-  final collectionType = _handleCollectionTypes(json, description);
+  final collectionType = _handleCollectionTypes(
+    json,
+    title: title,
+    description: description,
+  );
   if (collectionType != null) {
     return collectionType;
   }
@@ -438,6 +453,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     return SchemaNull(
       pointer: json.pointer,
       snakeName: json.snakeName,
+      title: title,
       description: description,
     );
   }
@@ -448,6 +464,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
       return SchemaBinary(
         pointer: json.pointer,
         snakeName: json.snakeName,
+        title: title,
         description: description,
       );
     }
@@ -469,6 +486,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     return SchemaPod(
       pointer: json.pointer,
       snakeName: json.snakeName,
+      title: title,
       description: description,
       type: podType,
       defaultValue: defaultValue,
@@ -479,6 +497,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     return SchemaString(
       pointer: json.pointer,
       snakeName: json.snakeName,
+      title: title,
       description: description,
       defaultValue: _optional<String>(json, 'default'),
       maxLength: _optional<int>(json, 'maxLength'),
@@ -487,7 +506,12 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     );
   }
 
-  final schema = _handleNumberTypes(json, type: type, description: description);
+  final schema = _handleNumberTypes(
+    json,
+    type: type,
+    title: title,
+    description: description,
+  );
   if (schema != null) {
     return schema;
   }
@@ -503,9 +527,10 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     return SchemaArray(
       pointer: json.pointer,
       snakeName: json.snakeName,
-      items: itemSchema,
-      defaultValue: defaultValue,
+      title: title,
       description: description,
+      defaultValue: defaultValue,
+      items: itemSchema,
     );
   }
 
@@ -517,6 +542,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
       return SchemaUnknown(
         pointer: json.pointer,
         snakeName: json.snakeName,
+        title: title,
         description: description,
       );
     }
@@ -524,6 +550,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
       pointer: json.pointer,
       snakeName: json.snakeName,
       valueSchema: additionalPropertiesSchema,
+      title: title,
       description: description,
     );
   }
@@ -536,6 +563,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     return SchemaEmptyObject(
       pointer: json.pointer,
       snakeName: json.snakeName,
+      title: title,
       description: description,
     );
   }
@@ -569,6 +597,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     snakeName: json.snakeName,
     properties: properties,
     requiredProperties: requiredProperties.cast<String>(),
+    title: title,
     description: description,
     additionalProperties: additionalPropertiesSchema,
     defaultValue: defaultValue,

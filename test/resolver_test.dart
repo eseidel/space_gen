@@ -520,6 +520,7 @@ void main() {
         pointer: JsonPointer.parse(
           '#/paths//users/get/responses/200/content/application/json/schema',
         ),
+        title: null,
         description: 'Foo',
         properties: const {},
         additionalProperties: null,
@@ -530,6 +531,7 @@ void main() {
         pointer: JsonPointer.parse(
           '#/paths//users/get/responses/201/content/application/json/schema',
         ),
+        title: null,
         description: 'Foo',
         properties: const {},
         additionalProperties: null,
@@ -549,22 +551,26 @@ void main() {
       final schema1 = ResolvedArray(
         snakeName: 'Foo',
         pointer: pointer200,
+        title: null,
         description: 'Foo',
         items: ResolvedPod(
           type: PodType.boolean,
           pointer: pointer200,
           snakeName: 'Foo',
+          title: null,
           description: 'Foo',
         ),
       );
       final schema2 = ResolvedArray(
         snakeName: 'Foo',
         pointer: pointer201,
+        title: null,
         description: 'Foo',
         items: ResolvedPod(
           type: PodType.boolean,
           pointer: pointer200,
           snakeName: 'Foo',
+          title: null,
           description: 'Foo',
         ),
       );
@@ -579,10 +585,12 @@ void main() {
             ResolvedArray(
               snakeName: 'Foo',
               pointer: pointer200,
+              title: null,
               description: 'Foo',
               items: ResolvedInteger(
                 pointer: pointer200,
                 snakeName: 'Foo',
+                title: null,
                 description: 'Foo',
               ),
             ),
@@ -596,6 +604,7 @@ void main() {
         pointer: JsonPointer.parse(
           '#/paths//users/get/responses/200/content/application/json/schema',
         ),
+        title: null,
         description: 'Foo',
         defaultValue: 'foo',
         maxLength: 10,
@@ -606,6 +615,7 @@ void main() {
         pointer: JsonPointer.parse(
           '#/paths//users/get/responses/200/content/application/json/schema',
         ),
+        title: null,
         description: 'Foo',
         defaultValue: 'foo',
       );
@@ -620,6 +630,7 @@ void main() {
         pointer: JsonPointer.parse(
           '#/paths//users/get/responses/200/content/application/json/schema',
         ),
+        title: null,
         description: 'Foo',
         values: const ['bar', 'baz'],
         defaultValue: null,
@@ -629,6 +640,7 @@ void main() {
         pointer: JsonPointer.parse(
           '#/paths//users/get/responses/200/content/application/json/schema',
         ),
+        title: null,
         description: 'Foo',
         values: const ['bar', 'qux'],
         defaultValue: null,
@@ -644,12 +656,14 @@ void main() {
       final schema1 = ResolvedAnyOf(
         snakeName: 'Foo',
         pointer: pointer200,
+        title: null,
         description: 'Foo',
         schemas: [
           ResolvedPod(
             type: PodType.boolean,
             pointer: pointer200,
             snakeName: 'Foo',
+            title: null,
             description: 'Foo',
           ),
         ],
@@ -657,12 +671,14 @@ void main() {
       final schema2 = ResolvedAnyOf(
         snakeName: 'Foo',
         pointer: pointer200,
+        title: null,
         description: 'Foo',
         schemas: [
           ResolvedPod(
             type: PodType.boolean,
             pointer: pointer200,
             snakeName: 'Foo',
+            title: null,
             description: 'Foo',
           ),
         ],
@@ -677,6 +693,7 @@ void main() {
         pointer: JsonPointer.parse(
           '#/paths//users/get/responses/200/content/application/json/schema',
         ),
+        title: null,
         description: 'Foo',
       );
       // Same schema.
@@ -686,6 +703,7 @@ void main() {
         pointer: JsonPointer.parse(
           '#/paths//users/get/responses/200/content/application/json/schema',
         ),
+        title: null,
         description: 'Foo',
         maximum: 10,
       );
@@ -698,6 +716,7 @@ void main() {
         pointer: JsonPointer.parse(
           '#/paths//users/get/responses/200/content/application/json/schema',
         ),
+        title: null,
         description: 'Foo',
       );
       // Same schema.
@@ -707,6 +726,7 @@ void main() {
         pointer: JsonPointer.parse(
           '#/paths//users/get/responses/200/content/application/json/schema',
         ),
+        title: null,
         description: 'Foo',
         maximum: 10,
       );

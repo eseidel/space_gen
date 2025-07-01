@@ -1303,6 +1303,133 @@ void main() {
         );
       });
     });
+
+    group('doc comments', () {
+      test('string newtype', () {
+        final json = {
+          'type': 'string',
+          'title': 'Title',
+          'description': 'Description',
+        };
+        expect(
+          renderTestSchema(json, asComponent: true),
+          '/// Title\n'
+          '/// Description\n'
+          'extension type const Test._(String value) {\n'
+          '    const Test(this.value);\n'
+          '\n'
+          '    factory Test.fromJson(String json) => Test(json);\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(String? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    String toJson() => value;\n'
+          '}\n',
+        );
+      });
+      test('number newtype', () {
+        final json = {
+          'type': 'number',
+          'title': 'Title',
+          'description': 'Description',
+        };
+        expect(
+          renderTestSchema(json, asComponent: true),
+          '/// Title\n'
+          '/// Description\n'
+          'extension type const Test._(double value) {\n'
+          '    const Test(this.value);\n'
+          '\n'
+          '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(num? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    double toJson() => value;\n'
+          '}\n',
+        );
+      });
+      test('object', () {
+        final json = {
+          'type': 'object',
+          'title': 'Title',
+          'description': 'Description',
+          'properties': {
+            'a': {'type': 'string'},
+            'b': {'type': 'string'},
+          },
+        };
+        expect(
+          renderTestSchema(json, asComponent: true),
+          '/// Title\n'
+          '/// Description\n'
+          '@immutable\n'
+          'class Test {\n'
+          '    Test(\n'
+          '        { this.a, this.b, \n'
+          '         }\n'
+          '    );\n'
+          '\n'
+          '    factory Test.fromJson(Map<String, dynamic>\n'
+          '        json) {\n'
+          '        return Test(\n'
+          "            a: json['a'] as String?,\n"
+          "            b: json['b'] as String?,\n"
+          '        );\n'
+          '    }\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(Map<String, dynamic>? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    final  String? a;\n'
+          '    final  String? b;\n'
+          '\n'
+          '\n'
+          '    Map<String, dynamic> toJson() {\n'
+          '        return {\n'
+          "            'a': a,\n"
+          "            'b': b,\n"
+          '        };\n'
+          '    }\n'
+          '\n'
+          '    @override\n'
+          '    int get hashCode =>\n'
+          '        Object.hashAll([\n'
+          '          a,\n'
+          '          b,\n'
+          '        ]);\n'
+          '\n'
+          '    @override\n'
+          '    bool operator ==(Object other) {\n'
+          '        if (identical(this, other)) return true;\n'
+          '        return other is Test\n'
+          '            && this.a == other.a\n'
+          '            && this.b == other.b\n'
+          '        ;\n'
+          '    }\n'
+          '}\n'
+          '',
+        );
+      });
+    });
   });
 
   group('string validations', () {

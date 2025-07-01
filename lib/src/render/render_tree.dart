@@ -157,21 +157,23 @@ class SpecResolver {
     switch (schema) {
       case ResolvedEnum():
         return RenderEnum(
-          snakeName: schema.snakeName,
-          values: schema.values,
-          names: RenderEnum.variableNamesFor(quirks, schema.values),
           pointer: schema.pointer,
+          snakeName: schema.snakeName,
+          title: schema.title,
           description: schema.description,
           defaultValue: schema.defaultValue,
+          values: schema.values,
+          names: RenderEnum.variableNamesFor(quirks, schema.values),
         );
       case ResolvedObject():
         return RenderObject(
+          pointer: schema.pointer,
           snakeName: schema.snakeName,
+          title: schema.title,
           description: schema.description,
           properties: schema.properties.map(
             (name, value) => MapEntry(name, toRenderSchema(value)),
           ),
-          pointer: schema.pointer,
           additionalProperties: maybeRenderSchema(schema.additionalProperties),
           requiredProperties: schema.requiredProperties,
         );
@@ -179,6 +181,7 @@ class SpecResolver {
         return RenderPod(
           snakeName: schema.snakeName,
           type: schema.type,
+          title: schema.title,
           description: schema.description,
           pointer: schema.pointer,
           defaultValue: schema.defaultValue,
@@ -186,6 +189,7 @@ class SpecResolver {
       case ResolvedString():
         return RenderString(
           snakeName: schema.snakeName,
+          title: schema.title,
           description: schema.description,
           pointer: schema.pointer,
           defaultValue: schema.defaultValue,
@@ -196,6 +200,7 @@ class SpecResolver {
       case ResolvedNumber():
         return RenderNumber(
           snakeName: schema.snakeName,
+          title: schema.title,
           description: schema.description,
           pointer: schema.pointer,
           defaultValue: schema.defaultValue,
@@ -208,6 +213,7 @@ class SpecResolver {
       case ResolvedInteger():
         return RenderInteger(
           snakeName: schema.snakeName,
+          title: schema.title,
           description: schema.description,
           pointer: schema.pointer,
           defaultValue: schema.defaultValue,
@@ -227,6 +233,7 @@ class SpecResolver {
         return RenderArray(
           snakeName: schema.snakeName,
           items: toRenderSchema(schema.items),
+          title: schema.title,
           description: schema.description,
           pointer: schema.pointer,
           defaultValue: defaultValue,
@@ -235,26 +242,30 @@ class SpecResolver {
         return RenderVoid(
           snakeName: schema.snakeName,
           pointer: schema.pointer,
+          title: schema.title,
           description: schema.description,
         );
       case ResolvedUnknown():
         return RenderUnknown(
           snakeName: schema.snakeName,
           pointer: schema.pointer,
+          title: schema.title,
           description: schema.description,
         );
       case ResolvedBinary():
         return RenderBinary(
           snakeName: schema.snakeName,
           pointer: schema.pointer,
+          title: schema.title,
           description: schema.description,
         );
       case ResolvedOneOf():
         return RenderOneOf(
-          snakeName: schema.snakeName,
-          schemas: schema.schemas.map(toRenderSchema).toList(),
           pointer: schema.pointer,
+          snakeName: schema.snakeName,
+          title: schema.title,
           description: schema.description,
+          schemas: schema.schemas.map(toRenderSchema).toList(),
         );
       case ResolvedAllOf():
         // Generate a synthetic object type for allOf.
@@ -267,9 +278,10 @@ class SpecResolver {
         }
         return RenderObject(
           snakeName: schema.snakeName,
+          pointer: schema.pointer,
+          title: schema.title,
           description: schema.description,
           properties: properties,
-          pointer: schema.pointer,
         );
       case ResolvedAnyOf():
         // Resolver already makes anyOf with 1 schema to just be that schema.
@@ -281,19 +293,22 @@ class SpecResolver {
           snakeName: schema.snakeName,
           schemas: schema.schemas.map(toRenderSchema).toList(),
           pointer: schema.pointer,
+          title: schema.title,
           description: schema.description,
         );
       case ResolvedMap():
         return RenderMap(
+          pointer: schema.pointer,
           snakeName: schema.snakeName,
+          title: schema.title,
           description: schema.description,
           valueSchema: toRenderSchema(schema.valueSchema),
-          pointer: schema.pointer,
         );
       case ResolvedEmptyObject():
         return RenderEmptyObject(
           snakeName: schema.snakeName,
           pointer: schema.pointer,
+          title: schema.title,
           description: schema.description,
         );
       default:
@@ -353,9 +368,10 @@ class SpecResolver {
     );
     if (successful.isEmpty) {
       return RenderVoid(
-        description: operation.description,
         snakeName: '${operation.snakeName}_response',
         pointer: operation.pointer,
+        title: null,
+        description: operation.description,
       );
     }
     if (successful.length == 1) {
@@ -377,6 +393,7 @@ class SpecResolver {
         snakeName: '${operation.snakeName}_response',
         schemas: distinctSchemas.toList(),
         pointer: operation.pointer,
+        title: null,
         description: operation.description,
       );
     }
@@ -785,6 +802,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   const RenderSchema({
     required this.snakeName,
     required this.pointer,
+    required this.title,
     required this.description,
   });
 
@@ -794,7 +812,8 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// The pointer of the resolved schema.
   final JsonPointer pointer;
 
-  /// Schema objects do not have a summary to my knowledge.
+  /// The title of the resolved schema.
+  final String? title;
 
   /// The description of the resolved schema.
   final String? description;
@@ -903,7 +922,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     if (createsNewType != other.createsNewType) {
       return false;
     }
-    // Intentionally ignoring pointer, snakeName and defaultValue.
+    // Ignoring pointer, snakeName, title, description and defaultValue.
     return true;
   }
 
@@ -915,9 +934,10 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 class RenderPod extends RenderSchema {
   const RenderPod({
     required super.snakeName,
+    required super.pointer,
+    required super.title,
     required super.description,
     required this.type,
-    required super.pointer,
     this.defaultValue,
   });
 
@@ -1044,6 +1064,7 @@ abstract class RenderNewType extends RenderSchema {
   const RenderNewType({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
   });
 
@@ -1074,6 +1095,7 @@ abstract class RenderNewType extends RenderSchema {
 class RenderString extends RenderSchema {
   const RenderString({
     required super.snakeName,
+    required super.title,
     required super.description,
     required super.pointer,
     required this.defaultValue,
@@ -1127,7 +1149,7 @@ class RenderString extends RenderSchema {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
-    'doc_comment': createDocComment(body: description, indent: 4),
+    'doc_comment': createDocComment(title: title, body: description),
     'typeName': typeName,
     'nullableTypeName': nullableTypeName(context),
   };
@@ -1203,6 +1225,7 @@ class RenderString extends RenderSchema {
 abstract class RenderNumeric<T extends num> extends RenderSchema {
   const RenderNumeric({
     required super.snakeName,
+    required super.title,
     required super.description,
     required super.pointer,
     required this.defaultValue,
@@ -1283,7 +1306,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
       );
     }
     return {
-      'doc_comment': createDocComment(body: description, indent: 4),
+      'doc_comment': createDocComment(title: title, body: description),
       'typeName': typeName,
       'dartType': '$T',
       'jsonType': jsonStorageType(isNullable: false),
@@ -1364,6 +1387,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
 class RenderNumber extends RenderNumeric<double> {
   const RenderNumber({
     required super.snakeName,
+    required super.title,
     required super.description,
     required super.pointer,
     required super.defaultValue,
@@ -1389,6 +1413,7 @@ class RenderNumber extends RenderNumeric<double> {
 class RenderInteger extends RenderNumeric<int> {
   const RenderInteger({
     required super.snakeName,
+    required super.title,
     required super.description,
     required super.pointer,
     required super.defaultValue,
@@ -1414,6 +1439,7 @@ class RenderInteger extends RenderNumeric<int> {
 class RenderObject extends RenderNewType {
   const RenderObject({
     required super.snakeName,
+    required super.title,
     required super.description,
     required this.properties,
     required super.pointer,
@@ -1591,7 +1617,7 @@ class RenderObject extends RenderNewType {
       throw StateError('Object schema has no properties: $this');
     }
     return {
-      'doc_comment': createDocComment(body: description, indent: 4),
+      'doc_comment': createDocComment(title: title, body: description),
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
       'hasProperties': hasProperties,
@@ -1679,6 +1705,7 @@ class RenderArray extends RenderSchema {
     required super.snakeName,
     required this.items,
     required super.pointer,
+    required super.title,
     required super.description,
     this.defaultValue,
   });
@@ -1807,10 +1834,11 @@ class RenderArray extends RenderSchema {
 
 class RenderMap extends RenderSchema {
   const RenderMap({
-    required super.snakeName,
-    required this.valueSchema,
     required super.pointer,
+    required super.snakeName,
+    required super.title,
     required super.description,
+    required this.valueSchema,
     this.defaultValue,
   });
 
@@ -1905,11 +1933,12 @@ class RenderMap extends RenderSchema {
 
 class RenderEnum extends RenderNewType {
   const RenderEnum({
+    required super.pointer,
     required super.snakeName,
+    required super.title,
+    required super.description,
     required this.values,
     required this.names,
-    required super.pointer,
-    required super.description,
     this.defaultValue,
   }) : assert(
          names.length == values.length,
@@ -1963,7 +1992,7 @@ class RenderEnum extends RenderNewType {
     }
 
     return {
-      'doc_comment': createDocComment(body: description, indent: 4),
+      'doc_comment': createDocComment(title: title, body: description),
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
       'enumValues': values.map(enumValueToTemplateContext).toList(),
@@ -2017,10 +2046,11 @@ class RenderEnum extends RenderNewType {
 
 class RenderOneOf extends RenderNewType {
   const RenderOneOf({
-    required super.snakeName,
-    required this.schemas,
     required super.pointer,
+    required super.snakeName,
+    required super.title,
     required super.description,
+    required this.schemas,
   });
 
   /// The schemas of the resolved schema.
@@ -2061,7 +2091,7 @@ class RenderOneOf extends RenderNewType {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     return {
-      'doc_comment': createDocComment(body: description, indent: 4),
+      'doc_comment': createDocComment(title: title, body: description),
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
     };
@@ -2151,6 +2181,7 @@ class RenderUnknown extends RenderSchema {
   const RenderUnknown({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
   });
 
@@ -2199,6 +2230,7 @@ class RenderVoid extends RenderNoJson {
   const RenderVoid({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
   });
 
@@ -2233,6 +2265,7 @@ abstract class RenderNoJson extends RenderSchema {
   const RenderNoJson({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
   });
 
@@ -2267,6 +2300,7 @@ class RenderBinary extends RenderNoJson {
   const RenderBinary({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
   });
 
@@ -2297,6 +2331,7 @@ class RenderEmptyObject extends RenderNewType {
   const RenderEmptyObject({
     required super.snakeName,
     required super.pointer,
+    required super.title,
     required super.description,
   });
 
@@ -2326,7 +2361,7 @@ class RenderEmptyObject extends RenderNewType {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
-    'doc_comment': createDocComment(body: description, indent: 4),
+    'doc_comment': createDocComment(title: title, body: description),
     'typeName': typeName,
     'nullableTypeName': nullableTypeName(context),
   };

@@ -1030,11 +1030,13 @@ void main() {
       () => logNameCollisions([
         RenderUnknown(
           snakeName: 'foo',
+          title: null,
           pointer: JsonPointer.parse('#/foo'),
           description: 'Foo description',
         ),
         RenderUnknown(
           snakeName: 'foo',
+          title: null,
           pointer: JsonPointer.parse('#/bar'),
           description: 'Bar description',
         ),
@@ -1061,11 +1063,13 @@ void main() {
       );
       final schema = RenderObject(
         snakeName: 'foo',
+        title: null,
         pointer: JsonPointer.parse('#/foo'),
         description: 'Foo description',
         properties: {
           'bar': RenderBinary(
             snakeName: 'bar',
+            title: null,
             pointer: JsonPointer.parse('#/bar'),
             description: 'Bar description',
           ),
@@ -1108,6 +1112,7 @@ void main() {
               tags: ['foo'],
               returnType: RenderVoid(
                 snakeName: 'bar',
+                title: null,
                 pointer: JsonPointer.parse('#/bar'),
                 description: 'Bar description',
               ),
@@ -1119,6 +1124,7 @@ void main() {
                   description: 'Foo description',
                   type: RenderBinary(
                     snakeName: 'foo',
+                    title: null,
                     pointer: JsonPointer.parse('#/foo'),
                     description: 'Foo description',
                   ),
