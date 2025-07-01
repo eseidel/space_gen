@@ -83,20 +83,26 @@ MapContext? _optionalMap(MapContext parent, String key) {
   return parent.childAsMap(key);
 }
 
-Iterable<T> _mapOptionalList<T>(
+List<T> _mapOptionalList<T>(
   MapContext parent,
   String key,
   T Function(MapContext, int) parse,
-) sync* {
+) {
   final value = parent[key];
   if (value == null) {
-    return;
+    return [];
   }
 
   final list = parent.childAsList(key);
+  final parsed = <T>[];
   for (var i = 0; i < list.length; i++) {
-    yield parse(list.indexAsMap(i), i);
+    final child = list.indexAsMap(i);
+    parsed.add(parse(child, i));
+    // Complete the parse before yielding to ensure the child is not
+    // considered unused.
+    _warnUnused(child);
   }
+  return parsed;
 }
 
 Never _unimplemented(ParseContext json, String message) {
@@ -685,7 +691,7 @@ Operation parseOperation(MapContext operationJson, String path) {
     'parameters',
     (child, index) =>
         parseParameterOrRef(child.addSnakeName('parameter$index')),
-  ).toList();
+  );
   final requestBody = parseRequestBodyOrRef(
     _optionalMap(context, 'requestBody'),
   );
@@ -743,7 +749,7 @@ PathItem parsePathItem({
   //   'parameters',
   //   (child, index) => parseParameterOrRef(
   //  child.addSnakeName('parameter$index')),
-  // ).toList();
+  // );
 
   final description = _optional<String>(pathItemJson, 'description');
   final operations = _parseOperations(pathItemJson, path);
@@ -949,6 +955,12 @@ Paths parsePaths(MapContext pathsJson) {
   return Paths(paths: paths);
 }
 
+Tag parseTag(MapContext json) {
+  final name = _required<String>(json, 'name');
+  final description = _optional<String>(json, 'description');
+  return Tag(name: name, description: description);
+}
+
 OpenApi parseOpenApi(Map<String, dynamic> openapiJson) {
   final json = MapContext.initial(openapiJson);
   _refNotExpected(json);
@@ -970,6 +982,7 @@ OpenApi parseOpenApi(Map<String, dynamic> openapiJson) {
 
   final paths = parsePaths(_requiredMap(json, 'paths'));
   final components = parseComponents(_optionalMap(json, 'components'));
+  final tags = _mapOptionalList(json, 'tags', (child, _) => parseTag(child));
   _warnUnused(json);
   return OpenApi(
     serverUrl: Uri.parse(serverUrl),
@@ -977,6 +990,7 @@ OpenApi parseOpenApi(Map<String, dynamic> openapiJson) {
     info: info,
     paths: paths,
     components: components,
+    tags: tags,
   );
 }
 

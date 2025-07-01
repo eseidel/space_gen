@@ -51,6 +51,7 @@ Future<void> loadAndRenderSpec({
   Directory? templateDir,
   RunProcess? runProcess,
   Quirks quirks = const Quirks(),
+  bool logSchemas = true,
 }) async {
   final fs = outDir.fileSystem;
   validatePackageName(packageName);
@@ -170,4 +171,25 @@ String renderTestOperation({
     className: className,
     endpoints: [endpoint],
   );
+}
+
+/// Render the first api from a complete spec.
+/// This is mostly useful for testing tags which are not part of the operation
+/// and need to be looked up from the root spec tags list.
+@visibleForTesting
+String renderTestApiFromSpec({
+  required Map<String, dynamic> specJson,
+  required Uri serverUrl,
+  Quirks quirks = const Quirks(),
+}) {
+  final spec = parseOpenApi(specJson);
+  final resolvedSpec = resolveSpec(spec, logSchemas: false);
+  final renderSpec = SpecResolver(quirks).toRenderSpec(resolvedSpec);
+  final api = renderSpec.apis.first;
+  final templateProvider = TemplateProvider.defaultLocation();
+  final schemaRenderer = SchemaRenderer(
+    templates: templateProvider,
+    quirks: quirks,
+  );
+  return schemaRenderer.renderApi(api);
 }

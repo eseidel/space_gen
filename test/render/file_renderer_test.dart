@@ -89,6 +89,7 @@ void main() {
           outDir: out,
           templateDir: templateDir,
           runProcess: runProcess,
+          logSchemas: false,
         ),
       );
     }

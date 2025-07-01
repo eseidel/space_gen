@@ -2159,4 +2159,67 @@ void main() {
       );
     });
   });
+
+  group('renderTestApiFromSpec', () {
+    test('defined tag', () {
+      final spec = {
+        'openapi': '3.0.0',
+        'info': {'title': 'Test', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'tags': [
+          {'name': 'tag1', 'description': 'Tag 1 Description'},
+          {'name': 'tag2', 'description': 'Tag 2 Description'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'tags': ['tag1'],
+              'summary': 'Get user',
+              'description': 'Get user',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+      final result = renderTestApiFromSpec(
+        specJson: spec,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(
+        result,
+        '/// Tag 1 Description\n'
+        'class Tag1Api {\n'
+        '    Tag1Api(ApiClient? client) : client = client ?? ApiClient();\n'
+        '\n'
+        '    final ApiClient client;\n'
+        '\n'
+        '    /// Get user\n'
+        '    /// Get user\n'
+        '    Future<void> users(\n'
+        '    ) async {\n'
+        '        final response = await client.invokeApi(\n'
+        '            method: Method.get,\n'
+        "            path: '/users'\n"
+        ',\n'
+        '        );\n'
+        '\n'
+        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+        '            throw ApiException(response.statusCode, response.body.toString());\n'
+        '        }\n'
+        '\n'
+        '        if (response.body.isNotEmpty) {\n'
+        '            return ;\n'
+        '        }\n'
+        '\n'
+        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+        '    }\n'
+        '}\n'
+        '',
+      );
+    });
+  });
 }
