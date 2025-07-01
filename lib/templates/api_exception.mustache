@@ -31,13 +31,62 @@ class ApiException implements Exception {
   }
 }
 
-/// Validates an argument.
+/// Validates a number.
 ///
-/// This is a helper function that throws an exception if the condition is false.
-/// It is used to validate arguments in the generated code.
-// ignore: avoid_positional_boolean_parameters
-void validateArg(bool condition, String message) {
-  if (!condition) {
-    throw Exception(message);
+/// These are extensions on the num type that throw an exception if the value
+/// does not meet the validation criteria.
+extension ValidateNumber on num {
+  void validateMinimum(num minimum) {
+    if (this < minimum) {
+      throw Exception('Value must be greater than or equal to $minimum');
+    }
+  }
+
+  void validateMaximum(num maximum) {
+    if (this > maximum) {
+      throw Exception('Value must be less than or equal to $maximum');
+    }
+  }
+
+  void validateExclusiveMinimum(num minimum) {
+    if (this <= minimum) {
+      throw Exception('Value must be greater than $minimum');
+    }
+  }
+
+  void validateExclusiveMaximum(num maximum) {
+    if (this >= maximum) {
+      throw Exception('Value must be less than $maximum');
+    }
+  }
+
+  void validateMultipleOf(num multiple) {
+    if (this % multiple != 0) {
+      throw Exception('Value must be a multiple of $multiple');
+    }
+  }
+}
+
+/// Validates a string.
+///
+/// These are extensions on the String type that throw an exception if the value
+/// does not meet the validation criteria.
+extension ValidateString on String {
+  void validateMinimumLength(int minimum) {
+    if (length < minimum) {
+      throw Exception('Value must be at least $minimum characters long');
+    }
+  }
+
+  void validateMaximumLength(int maximum) {
+    if (length > maximum) {
+      throw Exception('Value must be at most $maximum characters long');
+    }
+  }
+
+  void validatePattern(String pattern) {
+    if (!RegExp(pattern).hasMatch(this)) {
+      throw Exception('Value must match the pattern $pattern');
+    }
   }
 }

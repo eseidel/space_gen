@@ -1,5 +1,5 @@
 {{{ doc_comment }}}extension type const {{{ typeName }}}._({{dartType}} value) {
-    const {{ typeName }}(this.value){{{initializers}}};
+    const {{ typeName }}(this.value);
 
     factory {{ typeName }}.fromJson({{jsonType}} json) => {{ typeName }}(json{{jsonToDartCall}});
 
