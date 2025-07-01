@@ -679,6 +679,17 @@ class Paths extends Equatable {
   List<Object?> get props => [paths];
 }
 
+@immutable
+class Tag extends Equatable {
+  const Tag({required this.name, required this.description});
+
+  final String name;
+  final String? description;
+
+  @override
+  List<Object?> get props => [name, description];
+}
+
 /// The OpenAPI object.  The root object of a spec.
 /// https://spec.openapis.org/oas/v3.1.0#openapi-object
 /// Objects in this library are not a one-to-one mapping with the spec,
@@ -691,6 +702,7 @@ class OpenApi extends Equatable {
     required this.info,
     required this.paths,
     required this.components,
+    required this.tags,
   });
 
   /// The server url of the spec.
@@ -707,6 +719,9 @@ class OpenApi extends Equatable {
 
   /// The components of the spec.
   final Components components;
+
+  /// The tags of the spec.
+  final List<Tag> tags;
 
   @override
   List<Object?> get props => [serverUrl, info, paths, components];

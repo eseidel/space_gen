@@ -469,14 +469,20 @@ class RegistryBuilder extends Visitor {
   void visitHeader(Header header) => add(header);
 }
 
-ResolvedSpec resolveSpec(OpenApi spec) {
+ResolvedTag _resolvedTag(Tag tag) {
+  return ResolvedTag(name: tag.name, description: tag.description);
+}
+
+ResolvedSpec resolveSpec(OpenApi spec, {bool logSchemas = true}) {
   final refRegistry = RefRegistry();
   final builder = RegistryBuilder(spec, refRegistry);
   SpecWalker(builder).walkRoot(spec);
 
-  logger.detail('Registered schemas:');
-  for (final uri in refRegistry.uris) {
-    logger.detail('  - $uri');
+  if (logSchemas) {
+    logger.detail('Registered schemas:');
+    for (final uri in refRegistry.uris) {
+      logger.detail('  - $uri');
+    }
   }
 
   final context = ResolveContext(
@@ -486,17 +492,35 @@ ResolvedSpec resolveSpec(OpenApi spec) {
   return ResolvedSpec(
     serverUrl: spec.serverUrl,
     paths: _resolvePaths(spec.paths, context),
+    tags: spec.tags.map(_resolvedTag).toList(),
   );
 }
 
+class ResolvedTag {
+  const ResolvedTag({required this.name, required this.description});
+
+  /// The name of the resolved tag.
+  final String name;
+
+  /// The description of the resolved tag.
+  final String? description;
+}
+
 class ResolvedSpec {
-  const ResolvedSpec({required this.serverUrl, required this.paths});
+  const ResolvedSpec({
+    required this.serverUrl,
+    required this.paths,
+    required this.tags,
+  });
 
   /// The server url of the spec.
   final Uri serverUrl;
 
   /// The paths of the spec.
   final List<ResolvedPath> paths;
+
+  /// The tags of the spec.
+  final List<ResolvedTag> tags;
 }
 
 class ResolvedPath {

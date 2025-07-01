@@ -424,24 +424,42 @@ class SpecResolver {
     );
   }
 
+  RenderTag toRenderTag(ResolvedTag tag) {
+    return RenderTag(name: tag.name, description: tag.description);
+  }
+
   RenderSpec toRenderSpec(ResolvedSpec spec) {
     return RenderSpec(
       serverUrl: spec.serverUrl,
       paths: spec.paths.map(toRenderPath).toList(),
+      tagDefinitions: spec.tags.map(toRenderTag).toList(),
     );
   }
+}
+
+class RenderTag {
+  const RenderTag({required this.name, required this.description});
+
+  final String name;
+  final String? description;
 }
 
 // Convert a resolved spec to a spec that can be rendered.
 // This is the root of the render spec tree.
 class RenderSpec {
-  const RenderSpec({required this.serverUrl, required this.paths});
+  const RenderSpec({
+    required this.serverUrl,
+    required this.paths,
+    required this.tagDefinitions,
+  });
 
   /// The server url of the spec.
   final Uri serverUrl;
 
   /// The paths of the spec.
   final List<RenderPath> paths;
+
+  final List<RenderTag> tagDefinitions;
 
   /// The endpoints of the spec.
   List<Endpoint> get endpoints => paths
@@ -455,16 +473,16 @@ class RenderSpec {
   /// Set of all endpoint tags in the spec.
   Set<String> get tags => endpoints.map((e) => e.tag).toSet();
 
-  List<Api> get apis => tags
-      .sorted()
-      .map(
-        (tag) => Api(
-          description: 'Endpoints with tag $tag',
-          snakeName: toSnakeCase(tag),
-          endpoints: endpoints.where((e) => e.tag == tag).toList(),
-        ),
-      )
-      .toList();
+  List<Api> get apis => tags.sorted().map((tag) {
+    final description =
+        tagDefinitions.firstWhereOrNull((e) => e.name == tag)?.description ??
+        'Endpoints with tag $tag';
+    return Api(
+      description: description,
+      snakeName: toSnakeCase(tag),
+      endpoints: endpoints.where((e) => e.tag == tag).toList(),
+    );
+  }).toList();
 }
 
 /// A convenience class created for each operation within a path item
