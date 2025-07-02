@@ -591,29 +591,12 @@ abstract class ResolvedSchema extends Equatable {
 
   final CommonProperties common;
 
-  /// Where this schema is located in the spec.
   JsonPointer get pointer => common.pointer;
 
-  /// The snake name of the resolved schema.
   String get snakeName => common.snakeName;
 
-  /// The title of the resolved schema.
-  String? get title => common.title;
-
-  /// The description of the resolved schema.
-  String? get description => common.description;
-
-  /// Whether the resolved schema is deprecated.
-  bool get isDeprecated => common.isDeprecated;
-
   @override
-  List<Object?> get props => [
-    pointer,
-    snakeName,
-    title,
-    description,
-    isDeprecated,
-  ];
+  List<Object?> get props => [common];
 
   @override
   String toString() => '$runtimeType(snakeName: $snakeName, pointer: $pointer)';

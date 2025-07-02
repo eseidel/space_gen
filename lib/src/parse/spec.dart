@@ -119,15 +119,6 @@ sealed class Schema extends Equatable implements HasPointer {
   /// The snake name of this schema.
   String get snakeName => common.snakeName;
 
-  /// The title of this schema.
-  String? get title => common.title;
-
-  /// The description of this schema.
-  String? get description => common.description;
-
-  /// Whether this schema is deprecated.
-  bool get isDeprecated => common.isDeprecated;
-
   @override
   List<Object?> get props => [common];
 }
@@ -276,9 +267,6 @@ class SchemaArray extends Schema {
 // Renders as dynamic.
 class SchemaUnknown extends Schema {
   const SchemaUnknown({required super.common});
-
-  @override
-  List<Object?> get props => [super.props, description];
 }
 
 // Parses as a single, constant object, renders to json as {}.
@@ -352,7 +340,6 @@ class SchemaObject extends SchemaObjectBase {
     properties,
     requiredProperties,
     example,
-    description,
     additionalProperties,
     defaultValue,
   ];
@@ -360,7 +347,7 @@ class SchemaObject extends SchemaObjectBase {
   @override
   String toString() {
     return 'Schema(name: $snakeName, pointer: $pointer, '
-        'description: $description)';
+        'description: ${common.description})';
   }
 }
 
