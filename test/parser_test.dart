@@ -893,12 +893,12 @@ void main() {
       runWithLogger(logger, () => parseOpenApi(json));
       verify(
         () => logger.detail(
-          'Ignoring key: links (Map<String, dynamic>) in #/components',
+          'Ignoring: links={} (Map<String, dynamic>) in #/components',
         ),
       ).called(1);
       verify(
         () => logger.detail(
-          'Ignoring key: callbacks (Map<String, dynamic>) in #/components',
+          'Ignoring: callbacks={} (Map<String, dynamic>) in #/components',
         ),
       ).called(1);
     });
@@ -1141,7 +1141,7 @@ void main() {
         );
         verify(
           () => logger.detail(
-            'Ignoring key: type (String) in '
+            'Ignoring: type=boolean (String) in '
             '#/paths//users/get/responses/200/content/application/json/schema',
           ),
         ).called(1);

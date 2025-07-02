@@ -1562,7 +1562,7 @@ void main() {
         ),
       );
       verify(
-        () => logger.detail('Unused keys: format in #/parameters/0/schema'),
+        () => logger.detail('Unused: format=int64 in #/parameters/0/schema'),
       ).called(1);
       expect(
         result,

@@ -113,7 +113,9 @@ void _ignored<T>(MapContext parent, String key, {bool warn = false}) {
   final value = parent[key];
   if (value != null) {
     _expectType<T>(parent, key, value);
-    final message = 'Ignoring key: $key ($T) in ${parent.pointer}';
+    final includeValue = value.toString().length < 10;
+    final maybeValue = includeValue ? '=$value' : '';
+    final message = 'Ignoring: $key$maybeValue ($T) in ${parent.pointer}';
     final method = warn ? logger.warn : logger.detail;
     method(message);
   }
@@ -130,9 +132,15 @@ Never _error(ParseContext context, String message) {
 void _warnUnused(MapContext context) {
   final unusedKeys = context.unusedKeys;
   if (unusedKeys.isNotEmpty) {
-    logger.detail(
-      'Unused keys: ${unusedKeys.join(', ')} in ${context.pointer}',
-    );
+    final keys = unusedKeys
+        .map((k) {
+          final value = context[k].toString();
+          final includeValue = value.length < 10;
+          final maybeValue = includeValue ? '=$value' : '';
+          return '$k$maybeValue';
+        })
+        .join(', ');
+    logger.detail('Unused: $keys in ${context.pointer}');
   }
 }
 

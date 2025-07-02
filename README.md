@@ -71,7 +71,7 @@ a consensus towards a better Dart generator, so releasing this one.
 - Handle 'example' fields
 - explicitly handle format=int64
 - Handle format=double and format=float
-- Handle deprecated=true
+- Handle deprecated=true in more places (e.g. enums)
 - Map newtype via explicitly named schema?
 
 ### OpenApi Quirks
