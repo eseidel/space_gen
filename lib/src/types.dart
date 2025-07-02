@@ -114,3 +114,39 @@ enum MimeType {
 }
 
 enum PodType { boolean, dateTime, uri }
+
+/// Properties that are common to all schemas and across
+/// parsing, resolution and rendering.  This just saves a lot of boilerplate.
+class CommonProperties extends Equatable {
+  const CommonProperties({
+    required this.pointer,
+    required this.snakeName,
+    required this.title,
+    required this.description,
+    required this.isDeprecated,
+  });
+
+  /// The title of the schema.
+  final JsonPointer pointer;
+
+  /// The snake name of the schema.
+  final String snakeName;
+
+  /// The description of the schema.
+  final String? title;
+
+  /// The description of the schema.
+  final String? description;
+
+  /// Whether the schema is deprecated.
+  final bool isDeprecated;
+
+  @override
+  List<Object?> get props => [
+    pointer,
+    snakeName,
+    title,
+    description,
+    isDeprecated,
+  ];
+}

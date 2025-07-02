@@ -156,7 +156,7 @@ Parameter parseParameter(MapContext json) {
   final description = _optional<String>(json, 'description');
   final isRequired = _optional<bool>(json, 'required') ?? false;
   final sendIn = SendIn.fromJson(_required<String>(json, 'in'));
-  _ignored<bool>(json, 'deprecated');
+  final deprecated = _optional<bool>(json, 'deprecated') ?? false;
   _ignored<bool>(json, 'allowEmptyValue');
 
   final SchemaRef type;
@@ -191,6 +191,7 @@ Parameter parseParameter(MapContext json) {
     name: name,
     description: description,
     isRequired: isRequired,
+    isDeprecated: deprecated,
     sendIn: sendIn,
     type: type,
   );
@@ -265,8 +266,7 @@ PodType? determinePodType(MapContext json) {
 
 Schema? _handleCollectionTypes(
   MapContext json, {
-  required String? title,
-  required String? description,
+  required CommonProperties common,
 }) {
   if (json.containsKey('oneOf')) {
     final oneOf = json.childAsList('oneOf');
@@ -276,13 +276,7 @@ Schema? _handleCollectionTypes(
         parseSchemaOrRef(oneOf.indexAsMap(i).addSnakeName('one_of_$i')),
       );
     }
-    return SchemaOneOf(
-      pointer: json.pointer,
-      snakeName: json.snakeName,
-      schemas: schemas,
-      title: title,
-      description: description,
-    );
+    return SchemaOneOf(common: common, schemas: schemas);
   }
 
   if (json.containsKey('allOf')) {
@@ -293,13 +287,7 @@ Schema? _handleCollectionTypes(
         parseSchemaOrRef(allOf.indexAsMap(i).addSnakeName('all_of_$i')),
       );
     }
-    return SchemaAllOf(
-      pointer: json.pointer,
-      snakeName: json.snakeName,
-      schemas: schemas,
-      title: title,
-      description: description,
-    );
+    return SchemaAllOf(common: common, schemas: schemas);
   }
 
   if (json.containsKey('anyOf')) {
@@ -310,13 +298,7 @@ Schema? _handleCollectionTypes(
         parseSchemaOrRef(anyOf.indexAsMap(i).addSnakeName('any_of_$i')),
       );
     }
-    return SchemaAnyOf(
-      pointer: json.pointer,
-      snakeName: json.snakeName,
-      schemas: schemas,
-      title: title,
-      description: description,
-    );
+    return SchemaAnyOf(common: common, schemas: schemas);
   }
   return null;
 }
@@ -330,10 +312,13 @@ SchemaRef? _handleAdditionalProperties(MapContext parent) {
     if (value) {
       return SchemaRef.schema(
         SchemaUnknown(
-          pointer: parent.pointer.add('additionalProperties'),
-          snakeName: 'additionalProperties',
-          title: _optional<String>(parent, 'title'),
-          description: _optional<String>(parent, 'description'),
+          common: CommonProperties(
+            pointer: parent.pointer.add('additionalProperties'),
+            snakeName: 'additionalProperties',
+            title: null,
+            description: null,
+            isDeprecated: false,
+          ),
         ),
         parent.pointer,
       );
@@ -351,7 +336,7 @@ SchemaEnum? _handleEnum({
   required PodType? podType,
   required String? type,
   required dynamic defaultValue,
-  required String? description,
+  required CommonProperties common,
 }) {
   final enumValues = _optional<List<dynamic>>(json, 'enum');
 
@@ -393,10 +378,7 @@ SchemaEnum? _handleEnum({
     }
   }
   return SchemaEnum(
-    pointer: json.pointer,
-    snakeName: json.snakeName,
-    title: _optional<String>(json, 'title'),
-    description: description,
+    common: common,
     defaultValue: typedDefaultValue,
     enumValues: typedEnumValues,
   );
@@ -405,15 +387,11 @@ SchemaEnum? _handleEnum({
 Schema? _handleNumberTypes(
   MapContext json, {
   required String? type,
-  required String? title,
-  required String? description,
+  required CommonProperties common,
 }) {
   if (type == 'integer') {
     return SchemaInteger(
-      pointer: json.pointer,
-      snakeName: json.snakeName,
-      title: title,
-      description: description,
+      common: common,
       defaultValue: _optional<int>(json, 'default'),
       minimum: _optional<int>(json, 'minimum'),
       maximum: _optional<int>(json, 'maximum'),
@@ -424,10 +402,7 @@ Schema? _handleNumberTypes(
   }
   if (type == 'number') {
     return SchemaNumber(
-      pointer: json.pointer,
-      snakeName: json.snakeName,
-      title: title,
-      description: description,
+      common: common,
       defaultValue: _optionalDouble(json, 'default'),
       minimum: _optionalDouble(json, 'minimum'),
       maximum: _optionalDouble(json, 'maximum'),
@@ -440,14 +415,15 @@ Schema? _handleNumberTypes(
 }
 
 Schema _createCorrectSchemaSubtype(MapContext json) {
-  final title = _optional<String>(json, 'title');
-  final description = _optional<String>(json, 'description');
-
-  final collectionType = _handleCollectionTypes(
-    json,
-    title: title,
-    description: description,
+  final common = CommonProperties(
+    pointer: json.pointer,
+    snakeName: json.snakeName,
+    title: _optional<String>(json, 'title'),
+    description: _optional<String>(json, 'description'),
+    isDeprecated: _optional<bool>(json, 'deprecated') ?? false,
   );
+
+  final collectionType = _handleCollectionTypes(json, common: common);
   if (collectionType != null) {
     return collectionType;
   }
@@ -456,23 +432,13 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   final podType = determinePodType(json);
   final type = _optional<String>(json, 'type');
   if (type == 'null') {
-    return SchemaNull(
-      pointer: json.pointer,
-      snakeName: json.snakeName,
-      title: title,
-      description: description,
-    );
+    return SchemaNull(common: common);
   }
 
   if (type == 'string') {
     final format = _optional<String>(json, 'format');
     if (format == 'binary') {
-      return SchemaBinary(
-        pointer: json.pointer,
-        snakeName: json.snakeName,
-        title: title,
-        description: description,
-      );
+      return SchemaBinary(common: common);
     }
   }
 
@@ -482,29 +448,19 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     podType: podType,
     type: type,
     defaultValue: defaultValue,
-    description: description,
+    common: common,
   );
   if (enumSchema != null) {
     return enumSchema;
   }
 
   if (podType != null) {
-    return SchemaPod(
-      pointer: json.pointer,
-      snakeName: json.snakeName,
-      title: title,
-      description: description,
-      type: podType,
-      defaultValue: defaultValue,
-    );
+    return SchemaPod(common: common, type: podType, defaultValue: defaultValue);
   }
 
   if (type == 'string') {
     return SchemaString(
-      pointer: json.pointer,
-      snakeName: json.snakeName,
-      title: title,
-      description: description,
+      common: common,
       defaultValue: _optional<String>(json, 'default'),
       maxLength: _optional<int>(json, 'maxLength'),
       minLength: _optional<int>(json, 'minLength'),
@@ -512,12 +468,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     );
   }
 
-  final schema = _handleNumberTypes(
-    json,
-    type: type,
-    title: title,
-    description: description,
-  );
+  final schema = _handleNumberTypes(json, type: type, common: common);
   if (schema != null) {
     return schema;
   }
@@ -531,10 +482,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     const innerName = 'inner'; // Matching OpenAPI.
     final itemSchema = parseSchemaOrRef(items.addSnakeName(innerName));
     return SchemaArray(
-      pointer: json.pointer,
-      snakeName: json.snakeName,
-      title: title,
-      description: description,
+      common: common,
       defaultValue: defaultValue,
       items: itemSchema,
     );
@@ -545,20 +493,9 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   final propertiesJson = _optionalMap(json, 'properties');
   if (propertiesJson == null) {
     if (additionalPropertiesSchema == null) {
-      return SchemaUnknown(
-        pointer: json.pointer,
-        snakeName: json.snakeName,
-        title: title,
-        description: description,
-      );
+      return SchemaUnknown(common: common);
     }
-    return SchemaMap(
-      pointer: json.pointer,
-      snakeName: json.snakeName,
-      valueSchema: additionalPropertiesSchema,
-      title: title,
-      description: description,
-    );
+    return SchemaMap(common: common, valueSchema: additionalPropertiesSchema);
   }
   // The difference between an empty object and an unknown object is subtle
   // and probably not correct.  GitHub has an explicitly empty object, which is
@@ -566,12 +503,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   // empty response.  Those aren't "dynamic" types, but unclear if they need
   // a separate class either.
   if (propertiesJson.keys.isEmpty) {
-    return SchemaEmptyObject(
-      pointer: json.pointer,
-      snakeName: json.snakeName,
-      title: title,
-      description: description,
-    );
+    return SchemaEmptyObject(common: common);
   }
 
   final properties = <String, SchemaRef>{};
@@ -599,12 +531,9 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   final requiredProperties = _optionalList<String>(json, 'required') ?? [];
 
   return SchemaObject(
-    pointer: json.pointer,
-    snakeName: json.snakeName,
+    common: common,
     properties: properties,
     requiredProperties: requiredProperties.cast<String>(),
-    title: title,
-    description: description,
     additionalProperties: additionalPropertiesSchema,
     defaultValue: defaultValue,
     example: example,

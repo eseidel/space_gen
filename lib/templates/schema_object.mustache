@@ -34,10 +34,8 @@ class {{ typeName }} {
         return {{ typeName }}.fromJson(json);
     }
 
-    {{#properties}}
-    {{^mutableModels}}final{{/mutableModels}} {{^dartIsNullable}}{{{ type }}}{{/dartIsNullable}} {{#dartIsNullable}}{{{ nullableType }}}{{/dartIsNullable}} {{ dartName }};
+    {{#properties}}{{{ storageTypeDeclaration }}}{{ dartName }};
     {{/properties}}
-
     {{#hasAdditionalProperties}}
     final Map<String, {{{ valueSchema }}}> {{additionalPropertiesName}};
 

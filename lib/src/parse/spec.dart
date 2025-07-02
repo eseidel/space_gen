@@ -24,6 +24,7 @@ class Parameter extends Equatable implements HasPointer {
     required this.type,
     required this.isRequired,
     required this.sendIn,
+    required this.isDeprecated,
     required this.pointer,
   });
 
@@ -35,6 +36,9 @@ class Parameter extends Equatable implements HasPointer {
 
   /// Whether the parameter is required.
   final bool isRequired;
+
+  /// Whether the parameter is deprecated.
+  final bool isDeprecated;
 
   /// The "in" of the parameter.
   /// e.g. query, header, path, cookie.
@@ -104,37 +108,34 @@ class SchemaRef extends RefOr<Schema> {
 }
 
 sealed class Schema extends Equatable implements HasPointer {
-  const Schema({
-    required this.pointer,
-    required this.snakeName,
-    required this.title,
-    required this.description,
-  });
+  const Schema({required this.common});
+
+  final CommonProperties common;
 
   /// Where this schema is located in the spec.
   @override
-  final JsonPointer pointer;
+  JsonPointer get pointer => common.pointer;
 
   /// The snake name of this schema.
-  final String snakeName;
+  String get snakeName => common.snakeName;
 
   /// The title of this schema.
-  final String? title;
+  String? get title => common.title;
 
   /// The description of this schema.
-  final String? description;
+  String? get description => common.description;
+
+  /// Whether this schema is deprecated.
+  bool get isDeprecated => common.isDeprecated;
 
   @override
-  List<Object?> get props => [pointer, snakeName, description];
+  List<Object?> get props => [common];
 }
 
 /// A schema which is a POD (plain old data) type.
 class SchemaPod extends Schema {
   const SchemaPod({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
+    required super.common,
     required this.type,
     required this.defaultValue,
   });
@@ -152,10 +153,7 @@ class SchemaPod extends Schema {
 
 class SchemaString extends Schema {
   const SchemaString({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
+    required super.common,
     required this.defaultValue,
     required this.maxLength,
     required this.minLength,
@@ -179,10 +177,7 @@ class SchemaString extends Schema {
 
 abstract class SchemaNumeric<T extends num> extends Schema {
   const SchemaNumeric({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
+    required super.common,
     required this.defaultValue,
     required this.minimum,
     required this.maximum,
@@ -201,10 +196,7 @@ abstract class SchemaNumeric<T extends num> extends Schema {
 
 class SchemaInteger extends SchemaNumeric<int> {
   const SchemaInteger({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
+    required super.common,
     required super.defaultValue,
     required super.minimum,
     required super.maximum,
@@ -216,10 +208,7 @@ class SchemaInteger extends SchemaNumeric<int> {
 
 class SchemaNumber extends SchemaNumeric<double> {
   const SchemaNumber({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
+    required super.common,
     required super.defaultValue,
     required super.minimum,
     required super.maximum,
@@ -230,24 +219,13 @@ class SchemaNumber extends SchemaNumeric<double> {
 }
 
 abstract class SchemaObjectBase extends Schema {
-  const SchemaObjectBase({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
-  });
+  const SchemaObjectBase({required super.common});
 }
 
 /// Map isn't a type in the spec, but rather inferred by having
 /// additionalProperties and no other properties.
 class SchemaMap extends Schema {
-  const SchemaMap({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
-    required this.valueSchema,
-  });
+  const SchemaMap({required super.common, required this.valueSchema});
 
   final SchemaRef valueSchema;
 
@@ -256,20 +234,12 @@ class SchemaMap extends Schema {
 }
 
 class SchemaBinary extends Schema {
-  const SchemaBinary({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
-  });
+  const SchemaBinary({required super.common});
 }
 
 class SchemaEnum extends Schema {
   const SchemaEnum({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
+    required super.common,
     required this.defaultValue,
     required this.enumValues,
   });
@@ -285,20 +255,12 @@ class SchemaEnum extends Schema {
 }
 
 class SchemaNull extends Schema {
-  const SchemaNull({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
-  });
+  const SchemaNull({required super.common});
 }
 
 class SchemaArray extends Schema {
   const SchemaArray({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
+    required super.common,
     required this.items,
     required this.defaultValue,
   });
@@ -313,12 +275,7 @@ class SchemaArray extends Schema {
 
 // Renders as dynamic.
 class SchemaUnknown extends Schema {
-  const SchemaUnknown({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
-  });
+  const SchemaUnknown({required super.common});
 
   @override
   List<Object?> get props => [super.props, description];
@@ -326,22 +283,11 @@ class SchemaUnknown extends Schema {
 
 // Parses as a single, constant object, renders to json as {}.
 class SchemaEmptyObject extends Schema {
-  const SchemaEmptyObject({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
-  });
+  const SchemaEmptyObject({required super.common});
 }
 
 abstract class SchemaCombiner extends SchemaObjectBase {
-  const SchemaCombiner({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
-    required this.schemas,
-  });
+  const SchemaCombiner({required super.common, required this.schemas});
 
   final List<SchemaRef> schemas;
 
@@ -350,33 +296,15 @@ abstract class SchemaCombiner extends SchemaObjectBase {
 }
 
 class SchemaAnyOf extends SchemaCombiner {
-  const SchemaAnyOf({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
-    required super.schemas,
-  });
+  const SchemaAnyOf({required super.common, required super.schemas});
 }
 
 class SchemaAllOf extends SchemaCombiner {
-  const SchemaAllOf({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
-    required super.schemas,
-  });
+  const SchemaAllOf({required super.common, required super.schemas});
 }
 
 class SchemaOneOf extends SchemaCombiner {
-  const SchemaOneOf({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
-    required super.schemas,
-  });
+  const SchemaOneOf({required super.common, required super.schemas});
 }
 
 /// A schema is a json object that describes the shape of a json object.
@@ -385,10 +313,7 @@ class SchemaOneOf extends SchemaCombiner {
 class SchemaObject extends SchemaObjectBase {
   /// Create a new schema.
   SchemaObject({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
+    required super.common,
     required this.properties,
     required this.requiredProperties,
     required this.additionalProperties,

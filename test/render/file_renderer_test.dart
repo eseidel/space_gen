@@ -1030,16 +1030,22 @@ void main() {
       logger,
       () => logNameCollisions([
         RenderUnknown(
-          snakeName: 'foo',
-          title: null,
-          pointer: JsonPointer.parse('#/foo'),
-          description: 'Foo description',
+          common: CommonProperties(
+            snakeName: 'foo',
+            title: null,
+            pointer: JsonPointer.parse('#/foo'),
+            description: 'Foo description',
+            isDeprecated: false,
+          ),
         ),
         RenderUnknown(
-          snakeName: 'foo',
-          title: null,
-          pointer: JsonPointer.parse('#/bar'),
-          description: 'Bar description',
+          common: CommonProperties(
+            snakeName: 'foo',
+            title: null,
+            pointer: JsonPointer.parse('#/bar'),
+            description: 'Bar description',
+            isDeprecated: false,
+          ),
         ),
       ]),
     );
@@ -1063,16 +1069,22 @@ void main() {
         ),
       );
       final schema = RenderObject(
-        snakeName: 'foo',
-        title: null,
-        pointer: JsonPointer.parse('#/foo'),
-        description: 'Foo description',
+        common: CommonProperties(
+          snakeName: 'foo',
+          title: null,
+          pointer: JsonPointer.parse('#/foo'),
+          description: 'Foo description',
+          isDeprecated: false,
+        ),
         properties: {
           'bar': RenderBinary(
-            snakeName: 'bar',
-            title: null,
-            pointer: JsonPointer.parse('#/bar'),
-            description: 'Bar description',
+            common: CommonProperties(
+              snakeName: 'bar',
+              title: null,
+              pointer: JsonPointer.parse('#/bar'),
+              description: 'Bar description',
+              isDeprecated: false,
+            ),
           ),
         },
       );
@@ -1112,10 +1124,13 @@ void main() {
               method: Method.get,
               tags: ['foo'],
               returnType: RenderVoid(
-                snakeName: 'bar',
-                title: null,
-                pointer: JsonPointer.parse('#/bar'),
-                description: 'Bar description',
+                common: CommonProperties(
+                  snakeName: 'bar',
+                  title: null,
+                  pointer: JsonPointer.parse('#/bar'),
+                  description: 'Bar description',
+                  isDeprecated: false,
+                ),
               ),
               summary: 'Bar',
               description: 'Bar description',
@@ -1124,12 +1139,16 @@ void main() {
                   name: 'foo',
                   description: 'Foo description',
                   type: RenderBinary(
-                    snakeName: 'foo',
-                    title: null,
-                    pointer: JsonPointer.parse('#/foo'),
-                    description: 'Foo description',
+                    common: CommonProperties(
+                      snakeName: 'foo',
+                      title: null,
+                      pointer: JsonPointer.parse('#/foo'),
+                      description: 'Foo description',
+                      isDeprecated: false,
+                    ),
                   ),
                   isRequired: true,
+                  isDeprecated: false,
                   sendIn: SendIn.query,
                 ),
               ],

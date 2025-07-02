@@ -157,20 +157,13 @@ class SpecResolver {
     switch (schema) {
       case ResolvedEnum():
         return RenderEnum(
-          pointer: schema.pointer,
-          snakeName: schema.snakeName,
-          title: schema.title,
-          description: schema.description,
-          defaultValue: schema.defaultValue,
+          common: schema.common,
           values: schema.values,
           names: RenderEnum.variableNamesFor(quirks, schema.values),
         );
       case ResolvedObject():
         return RenderObject(
-          pointer: schema.pointer,
-          snakeName: schema.snakeName,
-          title: schema.title,
-          description: schema.description,
+          common: schema.common,
           properties: schema.properties.map(
             (name, value) => MapEntry(name, toRenderSchema(value)),
           ),
@@ -179,19 +172,13 @@ class SpecResolver {
         );
       case ResolvedPod():
         return RenderPod(
-          snakeName: schema.snakeName,
+          common: schema.common,
           type: schema.type,
-          title: schema.title,
-          description: schema.description,
-          pointer: schema.pointer,
           defaultValue: schema.defaultValue,
         );
       case ResolvedString():
         return RenderString(
-          snakeName: schema.snakeName,
-          title: schema.title,
-          description: schema.description,
-          pointer: schema.pointer,
+          common: schema.common,
           defaultValue: schema.defaultValue,
           maxLength: schema.maxLength,
           minLength: schema.minLength,
@@ -199,10 +186,7 @@ class SpecResolver {
         );
       case ResolvedNumber():
         return RenderNumber(
-          snakeName: schema.snakeName,
-          title: schema.title,
-          description: schema.description,
-          pointer: schema.pointer,
+          common: schema.common,
           defaultValue: schema.defaultValue,
           maximum: schema.maximum,
           minimum: schema.minimum,
@@ -212,10 +196,7 @@ class SpecResolver {
         );
       case ResolvedInteger():
         return RenderInteger(
-          snakeName: schema.snakeName,
-          title: schema.title,
-          description: schema.description,
-          pointer: schema.pointer,
+          common: schema.common,
           defaultValue: schema.defaultValue,
           maximum: schema.maximum,
           minimum: schema.minimum,
@@ -231,40 +212,19 @@ class SpecResolver {
           defaultValue = List<dynamic>.empty();
         }
         return RenderArray(
-          snakeName: schema.snakeName,
+          common: schema.common,
           items: toRenderSchema(schema.items),
-          title: schema.title,
-          description: schema.description,
-          pointer: schema.pointer,
           defaultValue: defaultValue,
         );
       case ResolvedVoid():
-        return RenderVoid(
-          snakeName: schema.snakeName,
-          pointer: schema.pointer,
-          title: schema.title,
-          description: schema.description,
-        );
+        return RenderVoid(common: schema.common);
       case ResolvedUnknown():
-        return RenderUnknown(
-          snakeName: schema.snakeName,
-          pointer: schema.pointer,
-          title: schema.title,
-          description: schema.description,
-        );
+        return RenderUnknown(common: schema.common);
       case ResolvedBinary():
-        return RenderBinary(
-          snakeName: schema.snakeName,
-          pointer: schema.pointer,
-          title: schema.title,
-          description: schema.description,
-        );
+        return RenderBinary(common: schema.common);
       case ResolvedOneOf():
         return RenderOneOf(
-          pointer: schema.pointer,
-          snakeName: schema.snakeName,
-          title: schema.title,
-          description: schema.description,
+          common: schema.common,
           schemas: schema.schemas.map(toRenderSchema).toList(),
         );
       case ResolvedAllOf():
@@ -276,13 +236,7 @@ class SpecResolver {
             properties.addAll(renderSchema.properties);
           }
         }
-        return RenderObject(
-          snakeName: schema.snakeName,
-          pointer: schema.pointer,
-          title: schema.title,
-          description: schema.description,
-          properties: properties,
-        );
+        return RenderObject(common: schema.common, properties: properties);
       case ResolvedAnyOf():
         // Resolver already makes anyOf with 1 schema to just be that schema.
         // For multiple schemas, we just generate a oneOf, which is wrong.
@@ -290,27 +244,16 @@ class SpecResolver {
         // Which presumably translates into a single schema with all properties
         // nullable?  Unclear.
         return RenderOneOf(
-          snakeName: schema.snakeName,
+          common: schema.common,
           schemas: schema.schemas.map(toRenderSchema).toList(),
-          pointer: schema.pointer,
-          title: schema.title,
-          description: schema.description,
         );
       case ResolvedMap():
         return RenderMap(
-          pointer: schema.pointer,
-          snakeName: schema.snakeName,
-          title: schema.title,
-          description: schema.description,
+          common: schema.common,
           valueSchema: toRenderSchema(schema.valueSchema),
         );
       case ResolvedEmptyObject():
-        return RenderEmptyObject(
-          snakeName: schema.snakeName,
-          pointer: schema.pointer,
-          title: schema.title,
-          description: schema.description,
-        );
+        return RenderEmptyObject(common: schema.common);
       default:
         _unimplemented('Unknown schema: $schema', schema.pointer);
     }
@@ -322,6 +265,7 @@ class SpecResolver {
       name: parameter.name,
       sendIn: parameter.sendIn,
       isRequired: parameter.isRequired,
+      isDeprecated: parameter.isDeprecated,
       type: toRenderSchema(parameter.schema),
     );
   }
@@ -368,10 +312,13 @@ class SpecResolver {
     );
     if (successful.isEmpty) {
       return RenderVoid(
-        snakeName: '${operation.snakeName}_response',
-        pointer: operation.pointer,
-        title: null,
-        description: operation.description,
+        common: CommonProperties(
+          snakeName: '${operation.snakeName}_response',
+          pointer: operation.pointer,
+          title: null,
+          description: null,
+          isDeprecated: false,
+        ),
       );
     }
     if (successful.length == 1) {
@@ -390,11 +337,14 @@ class SpecResolver {
     // If there are multiple and they are different, generate a OneOf type.
     if (distinctSchemas.length > 1) {
       return RenderOneOf(
-        snakeName: '${operation.snakeName}_response',
+        common: CommonProperties(
+          snakeName: '${operation.snakeName}_response',
+          pointer: operation.pointer,
+          title: null,
+          description: operation.description,
+          isDeprecated: false,
+        ),
         schemas: distinctSchemas.toList(),
-        pointer: operation.pointer,
-        title: null,
-        description: operation.description,
       );
     }
     return distinctSchemas.first;
@@ -817,24 +767,24 @@ class RenderResponse {
 }
 
 abstract class RenderSchema extends Equatable implements ToTemplateContext {
-  const RenderSchema({
-    required this.snakeName,
-    required this.pointer,
-    required this.title,
-    required this.description,
-  });
+  const RenderSchema({required this.common});
+
+  final CommonProperties common;
 
   /// The snake name of the resolved schema.
-  final String snakeName;
+  String get snakeName => common.snakeName;
 
   /// The pointer of the resolved schema.
-  final JsonPointer pointer;
+  JsonPointer get pointer => common.pointer;
 
   /// The title of the resolved schema.
-  final String? title;
+  String? get title => common.title;
 
   /// The description of the resolved schema.
-  final String? description;
+  String? get description => common.description;
+
+  /// Whether this schema is deprecated.
+  bool get isDeprecated => common.isDeprecated;
 
   /// Whether this schema creates a new type and thus needs to be rendered.
   bool get createsNewType;
@@ -951,10 +901,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 // Plain old data types (string, number, boolean)
 class RenderPod extends RenderSchema {
   const RenderPod({
-    required super.snakeName,
-    required super.pointer,
-    required super.title,
-    required super.description,
+    required super.common,
     required this.type,
     this.defaultValue,
   });
@@ -1079,12 +1026,7 @@ class RenderPod extends RenderSchema {
 }
 
 abstract class RenderNewType extends RenderSchema {
-  const RenderNewType({
-    required super.snakeName,
-    required super.pointer,
-    required super.title,
-    required super.description,
-  });
+  const RenderNewType({required super.common});
 
   /// Whether this new type creates a new type and thus needs to be rendered.
   @override
@@ -1112,10 +1054,7 @@ abstract class RenderNewType extends RenderSchema {
 
 class RenderString extends RenderSchema {
   const RenderString({
-    required super.snakeName,
-    required super.title,
-    required super.description,
-    required super.pointer,
+    required super.common,
     required this.defaultValue,
     required this.maxLength,
     required this.minLength,
@@ -1242,10 +1181,7 @@ class RenderString extends RenderSchema {
 
 abstract class RenderNumeric<T extends num> extends RenderSchema {
   const RenderNumeric({
-    required super.snakeName,
-    required super.title,
-    required super.description,
-    required super.pointer,
+    required super.common,
     required this.defaultValue,
     required this.maximum,
     required this.minimum,
@@ -1404,10 +1340,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
 
 class RenderNumber extends RenderNumeric<double> {
   const RenderNumber({
-    required super.snakeName,
-    required super.title,
-    required super.description,
-    required super.pointer,
+    required super.common,
     required super.defaultValue,
     required super.maximum,
     required super.minimum,
@@ -1430,10 +1363,7 @@ class RenderNumber extends RenderNumeric<double> {
 
 class RenderInteger extends RenderNumeric<int> {
   const RenderInteger({
-    required super.snakeName,
-    required super.title,
-    required super.description,
-    required super.pointer,
+    required super.common,
     required super.defaultValue,
     required super.maximum,
     required super.minimum,
@@ -1456,11 +1386,8 @@ class RenderInteger extends RenderNumeric<int> {
 
 class RenderObject extends RenderNewType {
   const RenderObject({
-    required super.snakeName,
-    required super.title,
-    required super.description,
+    required super.common,
     required this.properties,
-    required super.pointer,
     this.additionalProperties,
     this.requiredProperties = const [],
   });
@@ -1547,6 +1474,30 @@ class RenderObject extends RenderNewType {
     return null;
   }
 
+  String propertyStorageTypeDeclaration({
+    required RenderSchema property,
+    required SchemaRenderer context,
+    required bool dartIsNullable,
+    required int indent,
+  }) {
+    final newlineWithIndent = '\n${' ' * indent}';
+    final buffer = StringBuffer();
+    if (property.isDeprecated) {
+      // OpenAPI has no deprecation string. Using description.
+      final deprecationString = property.description ?? property.title ?? '';
+      buffer.write("@deprecated('$deprecationString')$newlineWithIndent");
+    }
+    if (!context.quirks.mutableModels) {
+      buffer.write('final ');
+    }
+    if (dartIsNullable) {
+      buffer.write('${property.nullableTypeName(context)} ');
+    } else {
+      buffer.write('${property.typeName} ');
+    }
+    return buffer.toString();
+  }
+
   /// `this` is the schema of the object containing the property.
   /// [property] is the schema of the property itself.
   Map<String, dynamic> propertyTemplateContext({
@@ -1582,9 +1533,12 @@ class RenderObject extends RenderNewType {
         context,
         isRequired: isRequired,
       ),
-      'dartIsNullable': dartIsNullable,
-      'type': property.typeName,
-      'nullableType': property.nullableTypeName(context),
+      'storageTypeDeclaration': propertyStorageTypeDeclaration(
+        property: property,
+        context: context,
+        dartIsNullable: dartIsNullable,
+        indent: 4,
+      ),
       'equals': property.equalsExpression(dartName, context),
       'toJson': property.toJsonExpression(
         dartName,
@@ -1660,6 +1614,7 @@ class RenderObject extends RenderNewType {
       'fromJsonJsonType': context.fromJsonJsonType,
       'castFromJsonArg': context.quirks.dynamicJson,
       'mutableModels': context.quirks.mutableModels,
+      'isDeprecated': isDeprecated,
     };
   }
 
@@ -1720,11 +1675,8 @@ class RenderObject extends RenderNewType {
 
 class RenderArray extends RenderSchema {
   const RenderArray({
-    required super.snakeName,
+    required super.common,
     required this.items,
-    required super.pointer,
-    required super.title,
-    required super.description,
     this.defaultValue,
   });
 
@@ -1852,10 +1804,7 @@ class RenderArray extends RenderSchema {
 
 class RenderMap extends RenderSchema {
   const RenderMap({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
+    required super.common,
     required this.valueSchema,
     this.defaultValue,
   });
@@ -1951,10 +1900,7 @@ class RenderMap extends RenderSchema {
 
 class RenderEnum extends RenderNewType {
   const RenderEnum({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
+    required super.common,
     required this.values,
     required this.names,
     this.defaultValue,
@@ -2063,13 +2009,7 @@ class RenderEnum extends RenderNewType {
 }
 
 class RenderOneOf extends RenderNewType {
-  const RenderOneOf({
-    required super.pointer,
-    required super.snakeName,
-    required super.title,
-    required super.description,
-    required this.schemas,
-  });
+  const RenderOneOf({required super.common, required this.schemas});
 
   /// The schemas of the resolved schema.
   final List<RenderSchema> schemas;
@@ -2137,6 +2077,7 @@ class RenderParameter implements CanBeParameter {
     required this.name,
     required this.type,
     required this.isRequired,
+    required this.isDeprecated,
     required this.sendIn,
   });
 
@@ -2158,6 +2099,9 @@ class RenderParameter implements CanBeParameter {
   /// Whether the parameter is required.
   @override
   final bool isRequired;
+
+  /// Whether the parameter is deprecated.
+  final bool isDeprecated;
 
   @override
   Iterable<String> get validationCalls => type.validationCalls;
@@ -2196,12 +2140,7 @@ class RenderParameter implements CanBeParameter {
 }
 
 class RenderUnknown extends RenderSchema {
-  const RenderUnknown({
-    required super.snakeName,
-    required super.pointer,
-    required super.title,
-    required super.description,
-  });
+  const RenderUnknown({required super.common});
 
   @override
   dynamic get defaultValue => null;
@@ -2245,12 +2184,7 @@ class RenderUnknown extends RenderSchema {
 }
 
 class RenderVoid extends RenderNoJson {
-  const RenderVoid({
-    required super.snakeName,
-    required super.pointer,
-    required super.title,
-    required super.description,
-  });
+  const RenderVoid({required super.common});
 
   @override
   dynamic get defaultValue =>
@@ -2280,12 +2214,7 @@ class RenderVoid extends RenderNoJson {
 }
 
 abstract class RenderNoJson extends RenderSchema {
-  const RenderNoJson({
-    required super.snakeName,
-    required super.pointer,
-    required super.title,
-    required super.description,
-  });
+  const RenderNoJson({required super.common});
 
   @override
   bool get onlyJsonTypes => false;
@@ -2315,12 +2244,7 @@ abstract class RenderNoJson extends RenderSchema {
 }
 
 class RenderBinary extends RenderNoJson {
-  const RenderBinary({
-    required super.snakeName,
-    required super.pointer,
-    required super.title,
-    required super.description,
-  });
+  const RenderBinary({required super.common});
 
   @override
   dynamic get defaultValue => null;
@@ -2346,12 +2270,7 @@ class RenderBinary extends RenderNoJson {
 }
 
 class RenderEmptyObject extends RenderNewType {
-  const RenderEmptyObject({
-    required super.snakeName,
-    required super.pointer,
-    required super.title,
-    required super.description,
-  });
+  const RenderEmptyObject({required super.common});
 
   @override
   dynamic get defaultValue => null;
