@@ -2078,6 +2078,7 @@ class RenderParameter implements CanBeParameter {
     required this.type,
     required this.isRequired,
     required this.isDeprecated,
+    required this.explode,
     required this.sendIn,
   });
 
@@ -2102,6 +2103,9 @@ class RenderParameter implements CanBeParameter {
 
   /// Whether the parameter is deprecated.
   final bool isDeprecated;
+
+  /// Whether the parameter is exploded.
+  final bool explode;
 
   @override
   Iterable<String> get validationCalls => type.validationCalls;
