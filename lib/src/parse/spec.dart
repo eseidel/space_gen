@@ -19,14 +19,22 @@ abstract class HasPointer {
 class Parameter extends Equatable implements HasPointer {
   /// Create a new parameter.
   const Parameter({
+    required this.pointer,
+    required this.type,
     required this.name,
     required this.description,
-    required this.type,
     required this.isRequired,
     required this.sendIn,
+    required this.explode,
     required this.isDeprecated,
-    required this.pointer,
   });
+
+  /// Where this parameter is located in the spec.
+  @override
+  final JsonPointer pointer;
+
+  /// The type of the parameter.
+  final SchemaRef type;
 
   /// The name of the parameter.
   final String name;
@@ -40,16 +48,12 @@ class Parameter extends Equatable implements HasPointer {
   /// Whether the parameter is deprecated.
   final bool isDeprecated;
 
+  /// Whether the parameter is exploded.
+  final bool explode;
+
   /// The "in" of the parameter.
   /// e.g. query, header, path, cookie.
   final SendIn sendIn;
-
-  /// The type of the parameter.
-  final SchemaRef type;
-
-  /// Where this parameter is located in the spec.
-  @override
-  final JsonPointer pointer;
 
   @override
   List<Object?> get props => [
