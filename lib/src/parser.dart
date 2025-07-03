@@ -311,12 +311,13 @@ SchemaRef? _handleAdditionalProperties(MapContext parent) {
 
 SchemaEnum? _handleEnum({
   required MapContext json,
-  required PodType? podType,
-  required String? type,
+  required TypeAndFormat typeAndFormat,
   required dynamic defaultValue,
   required CommonProperties common,
 }) {
   final enumValues = _optional<List<dynamic>>(json, 'enum');
+  final type = typeAndFormat.type;
+  final podType = typeAndFormat.podType;
 
   if (enumValues == null) {
     return null;
@@ -400,7 +401,7 @@ class TypeAndFormat {
     required this.isNullable,
   });
 
-  final String type;
+  final String? type;
   final String? format;
   final PodType? podType;
   final bool isNullable;
@@ -426,12 +427,20 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
     }
     final expectedFormats = {
       'string': {'binary', 'date-time', 'uri'},
-      // We don't explicitly support any number formats yet.
-      // 'number': {'float', 'double', 'int32', 'int64'},
     };
     final expected = expectedFormats[type];
     if (expected == null || !expected.contains(format)) {
-      _warn(json, 'Unknown $type format: $format in ${json.pointer}');
+      final ignoredFormats = {
+        // We don't explicitly support any number formats yet.
+        'number': {'float', 'double'},
+        'integer': {'int32', 'int64'},
+      };
+      final ignored = ignoredFormats[type];
+      if (ignored != null && ignored.contains(format)) {
+        _ignored<String>(json, 'format');
+      } else {
+        _warn(json, 'Unknown $type format: $format');
+      }
     }
     return format;
   }
@@ -452,6 +461,10 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
   }
 
   TypeAndFormat toParsedType(String type, {bool isNullable = false}) {
+    if (!validTypes.contains(type)) {
+      _error(json, 'Unknown type: $type');
+    }
+
     final format = parseFormat(
       type: type,
       format: _optional<String>(json, 'format'),
@@ -467,7 +480,7 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
 
   if (typeValue == null) {
     return TypeAndFormat(
-      type: 'object',
+      type: null,
       format: null,
       podType: null,
       isNullable: false,
@@ -478,9 +491,6 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
     for (final t in typeValue) {
       if (t is! String) {
         _error(json, 'type array must contain only strings: $typeValue');
-      }
-      if (!validTypes.contains(t)) {
-        _error(json, 'type array contains invalid type: $t');
       }
     }
     final stringTypes = typeValue.cast<String>();
@@ -505,33 +515,36 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
 }
 
 Schema _createCorrectSchemaSubtype(MapContext json) {
-  // OpenAPI 3.0.0 has a nullable property.
-  // https://spec.openapis.org/oas/v3.0.0#schemaObject
-  // 3.1.0 does not and recommends type=['string', 'null'] instead
-  // https://spec.openapis.org/oas/v3.1.0#schemaObject
-  // We support both modes.
+  final typeAndFormat = parseTypeAndFormat(json);
+  final type = typeAndFormat.type;
+  final podType = typeAndFormat.podType;
+
   final nullable = _optional<bool>(json, 'nullable') ?? false;
   final common = CommonProperties(
     pointer: json.pointer,
     snakeName: json.snakeName,
-    nullable: nullable,
     title: _optional<String>(json, 'title'),
     description: _optional<String>(json, 'description'),
     isDeprecated: _optional<bool>(json, 'deprecated') ?? false,
+    // OpenAPI 3.0.0 has a nullable property.
+    // https://spec.openapis.org/oas/v3.0.0#schemaObject
+    // 3.1.0 does not and recommends type=['string', 'null'] instead
+    // https://spec.openapis.org/oas/v3.1.0#schemaObject
+    // We support both modes.
+    nullable: nullable || typeAndFormat.isNullable,
   );
 
   final collectionType = _handleCollectionTypes(json, common: common);
   if (collectionType != null) {
     return collectionType;
   }
-  final parsedType = parseTypeAndFormat(json);
 
-  if (parsedType.type == 'null') {
+  if (type == 'null') {
     return SchemaNull(common: common);
   }
 
-  if (parsedType.type == 'string') {
-    if (parsedType.format == 'binary') {
+  if (type == 'string') {
+    if (typeAndFormat.format == 'binary') {
       return SchemaBinary(common: common);
     }
   }
@@ -539,8 +552,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   final defaultValue = _optional<dynamic>(json, 'default');
   final enumSchema = _handleEnum(
     json: json,
-    podType: parsedType.podType,
-    type: parsedType.type,
+    typeAndFormat: typeAndFormat,
     defaultValue: defaultValue,
     common: common,
   );
@@ -548,12 +560,11 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     return enumSchema;
   }
 
-  final podType = parsedType.podType;
   if (podType != null) {
     return SchemaPod(common: common, type: podType, defaultValue: defaultValue);
   }
 
-  if (parsedType.type == 'string') {
+  if (type == 'string') {
     return SchemaString(
       common: common,
       defaultValue: _optional<String>(json, 'default'),
@@ -563,16 +574,12 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     );
   }
 
-  final schema = _handleNumberTypes(
-    json,
-    type: parsedType.type,
-    common: common,
-  );
+  final schema = _handleNumberTypes(json, type: type, common: common);
   if (schema != null) {
     return schema;
   }
 
-  if (parsedType.type == 'array') {
+  if (type == 'array') {
     final items = _optionalMap(json, 'items');
 
     if (items == null) {

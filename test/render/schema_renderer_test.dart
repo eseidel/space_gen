@@ -1562,7 +1562,9 @@ void main() {
         ),
       );
       verify(
-        () => logger.detail('Unused: format=int64 in #/parameters/0/schema'),
+        () => logger.detail(
+          'Ignoring: format=int64 (String) in #/parameters/0/schema',
+        ),
       ).called(1);
       expect(
         result,

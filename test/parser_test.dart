@@ -44,7 +44,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals('Unknown pod type: unknown in #/'),
+            equals('Unknown type: unknown in #/'),
           ),
         ),
       );
@@ -54,7 +54,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals('Unknown pod type: invalid in #/'),
+            equals('Unknown type: invalid in #/'),
           ),
         ),
       );
