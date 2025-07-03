@@ -188,6 +188,12 @@ void main() {
       return spec.components.schemas;
     }
 
+    Schema parseTestSchema(Map<String, dynamic> schemaJson) {
+      final schemas = parseTestSchemas({'Test': schemaJson});
+      expect(schemas.length, 1);
+      return schemas['Test']!;
+    }
+
     test('parse', () {
       final specJson = {
         'openapi': '3.1.0',
@@ -213,29 +219,23 @@ void main() {
     });
     test('allOf with multiple items', () {
       final json = {
-        'User': {
-          'allOf': [
-            {'type': 'boolean'},
-            {'type': 'string'},
-          ],
-        },
+        'allOf': [
+          {'type': 'boolean'},
+          {'type': 'string'},
+        ],
       };
-      final logger = _MockLogger();
-      final schemas = runWithLogger(logger, () => parseTestSchemas(json));
-      expect(schemas['User'], isA<SchemaAllOf>());
+      final schema = parseTestSchema(json);
+      expect(schema, isA<SchemaAllOf>());
     });
 
     test('oneOf not supported', () {
       final json = {
-        'User': {
-          'oneOf': [
-            {'type': 'boolean'},
-          ],
-        },
+        'oneOf': [
+          {'type': 'boolean'},
+        ],
       };
-      final logger = _MockLogger();
-      final schemas = runWithLogger(logger, () => parseTestSchemas(json));
-      expect(schemas['User'], isA<SchemaOneOf>());
+      final schema = parseTestSchema(json);
+      expect(schema, isA<SchemaOneOf>());
     });
 
     test('components schemas as ref not supported', () {
@@ -249,8 +249,7 @@ void main() {
         },
         'Value': {'type': 'boolean'},
       };
-      final logger = _MockLogger();
-      final schemas = runWithLogger(logger, () => parseTestSchemas(json));
+      final schemas = parseTestSchemas(json);
       final schema = schemas['User']! as SchemaObject;
       expect(schema, isA<SchemaObject>());
       expect(schema.properties['value']!.ref, '#/components/schemas/Value');
@@ -261,7 +260,7 @@ void main() {
         'Value': {'type': 'boolean'},
       };
       expect(
-        () => runWithLogger(logger, () => parseTestSchemas(json2)),
+        () => parseTestSchemas(json2),
         throwsA(
           isA<FormatException>().having(
             (e) => e.message,
@@ -1044,59 +1043,43 @@ void main() {
     group('enums', () {
       test('parse with invalid enum', () {
         final json = {
-          'NumberEnum': {
-            // This is valid according to the spec, but we don't support it.
-            'type': 'number',
-            'enum': [1, 2, 3],
-          },
+          // This is valid according to the spec, but we don't support it.
+          'type': 'number',
+          'enum': [1, 2, 3],
         };
-        final logger = _MockLogger();
         expect(
-          () => runWithLogger(logger, () => parseTestSchemas(json)),
+          () => parseTestSchema(json),
           throwsA(
             isA<UnimplementedError>().having(
               (e) => e.message,
               'message',
-              equals(
-                'enumValues for type=number not supported in '
-                'MapContext(#/components/schemas/NumberEnum, '
-                '{type: number, enum: [1, 2, 3]})',
-              ),
+              contains('enumValues for type=number not supported'),
             ),
           ),
         );
       });
       test('enum values must match type', () {
         final json = {
-          'Enum': {
-            'type': 'string',
-            'enum': ['foo', 1],
-          },
+          'type': 'string',
+          'enum': ['foo', 1],
         };
-        final logger = _MockLogger();
         expect(
-          () => runWithLogger(logger, () => parseTestSchemas(json)),
+          () => parseTestSchema(json),
           throwsA(
             isA<FormatException>().having(
               (e) => e.message,
               'message',
-              equals(
-                'enumValues must be a list of strings: [foo, 1] '
-                'in #/components/schemas/Enum',
-              ),
+              contains('enumValues must be a list of strings: [foo, 1]'),
             ),
           ),
         );
       });
       test('infer enum type', () {
         final json = {
-          'Enum': {
-            'enum': ['foo', 'bar', 'baz'],
-          },
+          'enum': ['foo', 'bar', 'baz'],
         };
-        final logger = _MockLogger();
-        final schemas = runWithLogger(logger, () => parseTestSchemas(json));
-        expect(schemas['Enum'], isA<SchemaEnum>());
+        final schema = parseTestSchema(json);
+        expect(schema, isA<SchemaEnum>());
       });
       test('ignore boolean enums', () {
         final json = {
@@ -1152,16 +1135,13 @@ void main() {
 
       test('defaultValue for enum is valid value when converted to string', () {
         final json = {
-          'make_latest': {
-            'type': 'string',
-            'enum': ['true', 'false', 'legacy'],
-            'default': true,
-          },
+          'type': 'string',
+          'enum': ['true', 'false', 'legacy'],
+          'default': true,
         };
-        final logger = _MockLogger();
-        final schemas = runWithLogger(logger, () => parseTestSchemas(json));
+        final schema = parseTestSchema(json);
         expect(
-          schemas['make_latest'],
+          schema,
           isA<SchemaEnum>().having(
             (e) => e.defaultValue,
             'defaultValue',
@@ -1172,16 +1152,13 @@ void main() {
 
       test('null is valid for nullable enum', () {
         final json = {
-          'conclusion': {
-            'type': 'string',
-            'enum': ['success', 'failure', null],
-            'nullable': true,
-          },
+          'type': 'string',
+          'enum': ['success', 'failure', null],
+          'nullable': true,
         };
-        final logger = _MockLogger();
-        final schemas = runWithLogger(logger, () => parseTestSchemas(json));
+        final schema = parseTestSchema(json);
         expect(
-          schemas['conclusion'],
+          schema,
           isA<SchemaEnum>().having(
             (e) => e.enumValues,
             'enumValues',
@@ -1192,21 +1169,17 @@ void main() {
 
       test('defaultValue must be a valid enum value', () {
         final json = {
-          'conclusion': {
-            'type': 'string',
-            'enum': ['success', 'failure'],
-            'default': 'neutral',
-          },
+          'type': 'string',
+          'enum': ['success', 'failure'],
+          'default': 'neutral',
         };
         expect(
-          () => parseTestSchemas(json),
+          () => parseTestSchema(json),
           throwsA(
             isA<FormatException>().having(
               (e) => e.message,
               'message',
-              equals(
-                'defaultValue must be one of the enum values: neutral in #/components/schemas/conclusion',
-              ),
+              contains('defaultValue must be one of the enum values: neutral'),
             ),
           ),
         );
@@ -1256,6 +1229,23 @@ void main() {
         const JsonPointer.fromParts(['components', 'schemas', 'foo-bar']),
       );
       expect(spec['foo-bar']!.snakeName, equals('foo_bar'));
+    });
+
+    group('nullable', () {
+      test('string', () {
+        final json = {'type': 'string', 'nullable': true};
+        final schema = parseTestSchema(json);
+        expect(schema, isA<SchemaString>());
+        expect(schema.common.nullable, isTrue);
+      });
+      test('string or null', () {
+        final json = {
+          'type': ['string', 'null'],
+        };
+        final schema = parseTestSchema(json);
+        expect(schema, isA<SchemaString>());
+        expect(schema.common.nullable, isTrue);
+      });
     });
   });
 

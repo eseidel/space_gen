@@ -1475,6 +1475,17 @@ void main() {
         );
       });
     });
+    // group('nullable', () {
+    //   // Need to test nullable=true and type=['string', 'null']
+    //   // Also need to test with required including the property.
+    //   // e.g. do we explicitly send null or not?
+    //   test('string', () {
+    //     final json = {
+    //       'type': 'string',
+    //       'nullable': true,
+    //     };
+    //   });
+    // });
   });
 
   group('string validations', () {
