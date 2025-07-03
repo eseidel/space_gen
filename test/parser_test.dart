@@ -83,6 +83,8 @@ void main() {
       }
 
       expect(parse(['string']).type, 'string');
+      final ignoresDuplicates = parse(['string', 'string']);
+      expect(ignoresDuplicates.type, 'string');
       final nullableString = parse(['string', 'null']);
       expect(nullableString.type, 'string');
       expect(nullableString.isNullable, true);
@@ -90,26 +92,15 @@ void main() {
       expect(nullableDateTime.type, 'string');
       expect(nullableDateTime.podType, PodType.dateTime);
       expect(nullableDateTime.isNullable, true);
-      expect(
-        () => parse(['string', 'number']),
-        throwsA(
-          isA<UnsupportedError>().having(
-            (e) => e.message,
-            'message',
-            contains('type array: [string, number] not supported'),
-          ),
-        ),
-      );
-      expect(
-        () => parse(['string', 'null', 'number']),
-        throwsA(
-          isA<UnsupportedError>().having(
-            (e) => e.message,
-            'message',
-            contains('type array: [string, null, number] not supported'),
-          ),
-        ),
-      );
+      final multipleTypes = parse(['string', 'number']);
+      expect(multipleTypes.type, isNull);
+      expect(multipleTypes.types, ['string', 'number']);
+      expect(multipleTypes.isNullable, false);
+      final multipleTypesWithNull = parse(['string', 'null', 'number']);
+      expect(multipleTypesWithNull.type, isNull);
+      expect(multipleTypesWithNull.types, ['string', 'number']);
+      expect(multipleTypesWithNull.isNullable, true);
+
       expect(
         () => parse([1, 'number']),
         throwsA(

@@ -542,7 +542,6 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     // root scheme object multiple times.
     final schemas = <SchemaRef>[];
     for (final type in typeAndFormat.types!) {
-      // TODO(eseidel): Support multiple types.
       // The 'null' type has already been removed by the time we get here.
       // These are necessarily not two objects, unlike typical oneOf schemas.
       // Most commonly these are one object and an array of objects.
