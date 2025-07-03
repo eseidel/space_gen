@@ -1518,12 +1518,15 @@ class RenderObject extends RenderNewType {
   }) {
     final dartName = variableSafeName(context.quirks, jsonName);
     final hasDefaultValue = property.hasDefaultValue(context);
-    final jsonIsNullable = !requiredProperties.contains(jsonName);
-    final dartIsNullable = propertyDartIsNullable(
-      jsonName: jsonName,
-      context: context,
-      propertyHasDefaultValue: hasDefaultValue,
-    );
+    final jsonIsNullable =
+        !requiredProperties.contains(jsonName) || property.common.nullable;
+    final dartIsNullable =
+        propertyDartIsNullable(
+          jsonName: jsonName,
+          context: context,
+          propertyHasDefaultValue: hasDefaultValue,
+        ) ||
+        property.common.nullable;
 
     // Means that the constructor parameter is required which is only true if
     // both the json property is required and it does not have a default.

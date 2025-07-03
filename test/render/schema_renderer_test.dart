@@ -1501,7 +1501,7 @@ void main() {
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           '        return Test(\n'
-          "            reqNull: json['req_null'] as String,\n"
+          "            reqNull: json['req_null'] as String?,\n"
           "            optNull: json['opt_null'] as String?,\n"
           "            req: json['req'] as String,\n"
           "            opt: json['opt'] as String?,\n"
@@ -1517,7 +1517,7 @@ void main() {
           '        return Test.fromJson(json);\n'
           '    }\n'
           '\n'
-          '    final String reqNull;\n'
+          '    final String? reqNull;\n'
           'final String? optNull;\n'
           'final String req;\n'
           'final String? opt;\n'
