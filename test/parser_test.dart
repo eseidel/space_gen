@@ -8,7 +8,7 @@ class _MockLogger extends Mock implements Logger {}
 
 void main() {
   group('parseTypeAndFormat', () {
-    test('fromJson', () {
+    test('single types', () {
       final logger = _MockLogger();
       PodType? parse(String type, {bool expectLogs = false, String? format}) {
         reset(logger);
@@ -55,6 +55,58 @@ void main() {
             (e) => e.message,
             'message',
             equals('Unknown type: invalid in #/'),
+          ),
+        ),
+      );
+    });
+    test('array types', () {
+      final logger = _MockLogger();
+      TypeAndFormat parse(
+        List<dynamic> types, {
+        bool expectLogs = false,
+        String? format,
+      }) {
+        reset(logger);
+        final json = {'type': types, 'format': ?format};
+        // Only wrap with logger if we expect logs, that way it will fail if
+        // we do log but don't expect it.
+        TypeAndFormat typeAndFormat;
+        if (expectLogs) {
+          typeAndFormat = runWithLogger(
+            logger,
+            () => parseTypeAndFormat(MapContext.initial(json)),
+          );
+        } else {
+          typeAndFormat = parseTypeAndFormat(MapContext.initial(json));
+        }
+        return typeAndFormat;
+      }
+
+      expect(parse(['string']).type, 'string');
+      final nullableString = parse(['string', 'null']);
+      expect(nullableString.type, 'string');
+      expect(nullableString.isNullable, true);
+      final nullableDateTime = parse(['null', 'string'], format: 'date-time');
+      expect(nullableDateTime.type, 'string');
+      expect(nullableDateTime.podType, PodType.dateTime);
+      expect(nullableDateTime.isNullable, true);
+      expect(
+        () => parse(['string', 'number']),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (e) => e.message,
+            'message',
+            contains('type array: [string, number] not supported'),
+          ),
+        ),
+      );
+      expect(
+        () => parse(['string', 'null', 'number']),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (e) => e.message,
+            'message',
+            contains('type array: [string, null, number] not supported'),
           ),
         ),
       );
