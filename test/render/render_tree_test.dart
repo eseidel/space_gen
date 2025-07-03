@@ -93,6 +93,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         properties: <String, RenderSchema>{},
       );
@@ -105,6 +106,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         properties: <String, RenderSchema>{},
       );
@@ -117,6 +119,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         properties: <String, RenderSchema>{
           'a': RenderUnknown(
@@ -126,6 +129,7 @@ void main() {
               title: null,
               description: 'Foo',
               isDeprecated: false,
+              nullable: false,
             ),
           ),
         },
@@ -139,6 +143,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         properties: <String, RenderSchema>{
           'a': RenderPod(
@@ -148,6 +153,7 @@ void main() {
               title: null,
               description: 'Foo',
               isDeprecated: false,
+              nullable: false,
             ),
             type: PodType.boolean,
           ),
@@ -162,6 +168,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         properties: <String, RenderSchema>{},
         additionalProperties: RenderPod(
@@ -171,6 +178,7 @@ void main() {
             title: null,
             description: 'Foo',
             isDeprecated: false,
+            nullable: false,
           ),
           type: PodType.boolean,
         ),
@@ -184,6 +192,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         properties: <String, RenderSchema>{},
         requiredProperties: ['a'],
@@ -197,6 +206,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         properties: <String, RenderSchema>{},
         additionalProperties: RenderPod(
@@ -206,6 +216,7 @@ void main() {
             title: null,
             description: 'Foo',
             isDeprecated: false,
+            nullable: false,
           ),
           type: PodType.dateTime,
         ),
@@ -219,6 +230,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         properties: <String, RenderSchema>{
           'e': RenderPod(
@@ -228,6 +240,7 @@ void main() {
               title: null,
               description: 'Foo',
               isDeprecated: false,
+              nullable: false,
             ),
             type: PodType.boolean,
           ),
@@ -244,6 +257,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         defaultValue: 'foo',
         maxLength: 10,
@@ -259,6 +273,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         defaultValue: 'foo',
         maxLength: null,
@@ -274,6 +289,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         defaultValue: 'foo',
         maxLength: 10,
@@ -291,6 +307,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         defaultValue: 1,
         maximum: 10,
@@ -308,6 +325,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         defaultValue: 1,
         maximum: null,
@@ -325,6 +343,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         defaultValue: 1,
         maximum: 10,
@@ -344,6 +363,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         items: RenderPod(
           common: CommonProperties(
@@ -352,6 +372,7 @@ void main() {
             title: null,
             description: 'Foo',
             isDeprecated: false,
+            nullable: false,
           ),
           type: PodType.boolean,
         ),
@@ -365,6 +386,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         items: RenderPod(
           common: CommonProperties(
@@ -373,6 +395,7 @@ void main() {
             title: null,
             description: 'Foo',
             isDeprecated: false,
+            nullable: false,
           ),
           type: PodType.boolean,
         ),
@@ -386,6 +409,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         items: RenderPod(
           common: CommonProperties(
@@ -394,6 +418,7 @@ void main() {
             title: null,
             description: 'Foo',
             isDeprecated: false,
+            nullable: false,
           ),
           type: PodType.dateTime,
         ),
@@ -409,6 +434,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         names: const ['a', 'b', 'c'],
         values: const ['a', 'b', 'c'],
@@ -422,6 +448,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         names: const ['a', 'b', 'c'],
         values: const ['a', 'b', 'c'],
@@ -435,6 +462,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         names: const ['a', 'b'],
         values: const ['a', 'b'],
@@ -450,6 +478,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         schemas: [
           RenderPod(
@@ -459,6 +488,7 @@ void main() {
               title: null,
               description: 'Foo',
               isDeprecated: false,
+              nullable: false,
             ),
             type: PodType.boolean,
           ),
@@ -473,6 +503,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         schemas: [
           RenderPod(
@@ -482,6 +513,7 @@ void main() {
               title: null,
               description: 'Foo',
               isDeprecated: false,
+              nullable: false,
             ),
             type: PodType.boolean,
           ),
@@ -496,6 +528,7 @@ void main() {
           title: null,
           description: 'Foo',
           isDeprecated: false,
+          nullable: false,
         ),
         schemas: [
           RenderPod(
@@ -505,6 +538,7 @@ void main() {
               title: null,
               description: 'Foo',
               isDeprecated: false,
+              nullable: false,
             ),
             type: PodType.boolean,
           ),
@@ -515,6 +549,7 @@ void main() {
               title: null,
               description: 'Foo',
               isDeprecated: false,
+              nullable: false,
             ),
             type: PodType.boolean,
           ),
@@ -534,6 +569,7 @@ void main() {
             title: null,
             description: 'Foo',
             isDeprecated: false,
+            nullable: false,
           ),
           properties: <String, RenderSchema>{},
         ).additionalImports,
@@ -550,6 +586,7 @@ void main() {
             title: null,
             description: 'Foo',
             isDeprecated: false,
+            nullable: false,
           ),
           properties: <String, RenderSchema>{
             'a': RenderString(
@@ -559,6 +596,7 @@ void main() {
                 title: null,
                 description: 'Foo',
                 isDeprecated: true,
+                nullable: false,
               ),
               defaultValue: 'foo',
               maxLength: null,

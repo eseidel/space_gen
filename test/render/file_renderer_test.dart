@@ -1036,6 +1036,7 @@ void main() {
             pointer: JsonPointer.parse('#/foo'),
             description: 'Foo description',
             isDeprecated: false,
+            nullable: false,
           ),
         ),
         RenderUnknown(
@@ -1045,6 +1046,7 @@ void main() {
             pointer: JsonPointer.parse('#/bar'),
             description: 'Bar description',
             isDeprecated: false,
+            nullable: false,
           ),
         ),
       ]),
@@ -1075,6 +1077,7 @@ void main() {
           pointer: JsonPointer.parse('#/foo'),
           description: 'Foo description',
           isDeprecated: false,
+          nullable: false,
         ),
         properties: {
           'bar': RenderBinary(
@@ -1084,6 +1087,7 @@ void main() {
               pointer: JsonPointer.parse('#/bar'),
               description: 'Bar description',
               isDeprecated: false,
+              nullable: false,
             ),
           ),
         },
@@ -1130,6 +1134,7 @@ void main() {
                   pointer: JsonPointer.parse('#/bar'),
                   description: 'Bar description',
                   isDeprecated: false,
+                  nullable: false,
                 ),
               ),
               summary: 'Bar',
@@ -1145,6 +1150,7 @@ void main() {
                       pointer: JsonPointer.parse('#/foo'),
                       description: 'Foo description',
                       isDeprecated: false,
+                      nullable: false,
                     ),
                   ),
                   isRequired: true,
