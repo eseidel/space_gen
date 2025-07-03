@@ -1422,6 +1422,13 @@ class RenderObject extends RenderNewType {
     return isNullable ? 'Map<String, dynamic>?' : 'Map<String, dynamic>';
   }
 
+  @override
+  Iterable<Import> get additionalImports => [
+    ...super.additionalImports,
+    if (properties.values.any((p) => p.isDeprecated))
+      const Import('package:meta/meta.dart'),
+  ];
+
   // isNullable means it's optional for the server, use nullable storage.
   bool propertyDartIsNullable({
     required String jsonName,
@@ -1443,6 +1450,9 @@ class RenderObject extends RenderNewType {
     required bool isRequired,
   }) {
     final line = StringBuffer();
+    if (property.isDeprecated) {
+      line.write('@deprecated ');
+    }
     if (isRequired) {
       line.write('required ');
     }
@@ -1483,9 +1493,8 @@ class RenderObject extends RenderNewType {
     final newlineWithIndent = '\n${' ' * indent}';
     final buffer = StringBuffer();
     if (property.isDeprecated) {
-      // OpenAPI has no deprecation string. Using description.
-      final deprecationString = property.description ?? property.title ?? '';
-      buffer.write("@deprecated('$deprecationString')$newlineWithIndent");
+      // OpenAPI has no deprecation string.
+      buffer.write('@deprecated$newlineWithIndent');
     }
     if (!context.quirks.mutableModels) {
       buffer.write('final ');

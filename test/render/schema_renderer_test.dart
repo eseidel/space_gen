@@ -1431,7 +1431,7 @@ void main() {
           '@immutable\n'
           'class Test {\n'
           '    Test(\n'
-          '        { this.a, \n'
+          '        { @deprecated this.a, \n'
           '         }\n'
           '    );\n'
           '\n'
@@ -1451,7 +1451,7 @@ void main() {
           '        return Test.fromJson(json);\n'
           '    }\n'
           '\n'
-          "    @deprecated('')\n"
+          '    @deprecated\n'
           '    final String? a;\n'
           '\n'
           '    Map<String, dynamic> toJson() {\n'
