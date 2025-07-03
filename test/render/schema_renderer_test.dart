@@ -1475,17 +1475,85 @@ void main() {
         );
       });
     });
-    // group('nullable', () {
-    //   // Need to test nullable=true and type=['string', 'null']
-    //   // Also need to test with required including the property.
-    //   // e.g. do we explicitly send null or not?
-    //   test('string', () {
-    //     final json = {
-    //       'type': 'string',
-    //       'nullable': true,
-    //     };
-    //   });
-    // });
+    group('nullable', () {
+      // Test nullable when required and not.
+      // type=['string', 'null'] vs. nullable=true are tested by the parser.
+      test('string', () {
+        final json = {
+          'type': 'object',
+          'properties': {
+            'req_null': {'type': 'string', 'nullable': true},
+            'opt_null': {'type': 'string', 'nullable': true},
+            'req': {'type': 'string'},
+            'opt': {'type': 'string'},
+          },
+          'required': ['req_null', 'req'],
+        };
+        expect(
+          renderTestSchema(json, asComponent: true),
+          '@immutable\n'
+          'class Test {\n'
+          '    Test(\n'
+          '        { required this.reqNull, this.optNull, required this.req, this.opt, \n'
+          '         }\n'
+          '    );\n'
+          '\n'
+          '    factory Test.fromJson(Map<String, dynamic>\n'
+          '        json) {\n'
+          '        return Test(\n'
+          "            reqNull: json['req_null'] as String,\n"
+          "            optNull: json['opt_null'] as String?,\n"
+          "            req: json['req'] as String,\n"
+          "            opt: json['opt'] as String?,\n"
+          '        );\n'
+          '    }\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(Map<String, dynamic>? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    final String reqNull;\n'
+          'final String? optNull;\n'
+          'final String req;\n'
+          'final String? opt;\n'
+          '\n'
+          '    Map<String, dynamic> toJson() {\n'
+          '        return {\n'
+          "            'req_null': reqNull,\n"
+          "            'opt_null': optNull,\n"
+          "            'req': req,\n"
+          "            'opt': opt,\n"
+          '        };\n'
+          '    }\n'
+          '\n'
+          '    @override\n'
+          '    int get hashCode =>\n'
+          '        Object.hashAll([\n'
+          '          reqNull,\n'
+          '          optNull,\n'
+          '          req,\n'
+          '          opt,\n'
+          '        ]);\n'
+          '\n'
+          '    @override\n'
+          '    bool operator ==(Object other) {\n'
+          '        if (identical(this, other)) return true;\n'
+          '        return other is Test\n'
+          '            && this.reqNull == other.reqNull\n'
+          '            && this.optNull == other.optNull\n'
+          '            && this.req == other.req\n'
+          '            && this.opt == other.opt\n'
+          '        ;\n'
+          '    }\n'
+          '}\n',
+        );
+      });
+    });
   });
 
   group('string validations', () {
