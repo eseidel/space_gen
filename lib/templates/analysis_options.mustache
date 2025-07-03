@@ -1,12 +1,15 @@
 include: package:very_good_analysis/analysis_options.yaml
+analyzer:
+  errors:
+    # This triggers even from the same class, which is too much.
+    # See also https://github.com/dart-lang/sdk/issues/61037
+    deprecated_member_use_from_same_package: ignore
 linter:
   rules:
     # We do not generate docs yet.
     public_member_api_docs: false
     # OpenAPI has no deprecation messages.
     provide_deprecation_message: false
-    # This triggers even from the same class, which is too much.
-    deprecated_member_use_from_same_package: false
     # Temporary, we should remove this and annotate long lines.
     lines_longer_than_80_chars: false
 {{#screamingCapsEnums}}
