@@ -306,7 +306,7 @@ void main() {
       expect(schema, isA<SchemaAllOf>());
     });
 
-    test('oneOf not supported', () {
+    test('oneOf with one item', () {
       final json = {
         'oneOf': [
           {'type': 'boolean'},
@@ -1323,6 +1323,33 @@ void main() {
         final schema = parseTestSchema(json);
         expect(schema, isA<SchemaString>());
         expect(schema.common.nullable, isTrue);
+      });
+    });
+
+    group('multiple types', () {
+      test('string or number', () {
+        final json = {
+          'type': ['string', 'number'],
+        };
+        final schema = parseTestSchema(json);
+        expect(schema, isA<SchemaOneOf>());
+        final oneOf = schema as SchemaOneOf;
+        expect(oneOf.schemas.length, 2);
+        expect(oneOf.schemas[0].object, isA<SchemaString>());
+        expect(oneOf.schemas[1].object, isA<SchemaNumber>());
+        expect(oneOf.common.nullable, isFalse);
+      });
+      test('string or number or null', () {
+        final json = {
+          'type': ['string', 'number', 'null'],
+        };
+        final schema = parseTestSchema(json);
+        expect(schema, isA<SchemaOneOf>());
+        final oneOf = schema as SchemaOneOf;
+        expect(oneOf.schemas.length, 2);
+        expect(oneOf.schemas[0].object, isA<SchemaString>());
+        expect(oneOf.schemas[1].object, isA<SchemaNumber>());
+        expect(oneOf.common.nullable, isTrue);
       });
     });
   });
