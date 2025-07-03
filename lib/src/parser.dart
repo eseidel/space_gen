@@ -547,10 +547,9 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
       // Most commonly these are one object and an array of objects.
       // or two different pod types.
       // This could be an explicitly named type
-      final fakeJson = MapContext.fromParent(
-        parent: json,
-        json: {'type': type},
-        key: type,
+      final fakeJson = json.fakeChildAsMap(
+        snakeName: type,
+        value: {'type': type},
       );
       final schema = _createCorrectSchemaSubtype(fakeJson);
       schemas.add(SchemaRef.schema(schema, json.pointer));
@@ -604,11 +603,11 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   }
 
   if (type == 'array') {
-    final items = _optionalMap(json, 'items');
-
-    if (items == null) {
-      _error(json, 'items is required for type=array');
-    }
+    // Omitting items is the same effect as an empty object.
+    // https://json-schema.org/draft/2020-12/json-schema-core#section-10.3.1.2-4
+    final items =
+        _optionalMap(json, 'items') ??
+        json.fakeChildAsMap(snakeName: 'items', value: {});
     const innerName = 'inner'; // Matching OpenAPI.
     final itemSchema = parseSchemaOrRef(items.addSnakeName(innerName));
     return SchemaArray(
@@ -1130,6 +1129,13 @@ class MapContext extends ParseContext {
     final child = _expectType<Map<String, dynamic>>(this, key, value);
     _markUsed(key);
     return MapContext.fromParent(parent: this, json: child, key: key);
+  }
+
+  MapContext fakeChildAsMap({
+    required String snakeName,
+    required Map<String, dynamic> value,
+  }) {
+    return MapContext.fromParent(parent: this, json: value, key: snakeName);
   }
 
   ListContext childAsList(String key) {

@@ -388,19 +388,19 @@ void main() {
         ),
       );
     });
-    test('items is required for type=array', () {
+    test('omitting items is the same as an empty object for type=array', () {
       final json = {'type': 'array'};
       final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
       expect(
-        () => runWithLogger(logger, () => parseAndResolveTestSchema(json)),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            equals(
-              'items is required for type=array in #/paths//users/get/responses/200/content/application/json/schema',
-            ),
-          ),
+        schema,
+        isA<ResolvedArray>().having(
+          (e) => e.items,
+          'items',
+          isA<ResolvedUnknown>(),
         ),
       );
     });
