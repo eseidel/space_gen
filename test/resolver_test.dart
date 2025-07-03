@@ -516,28 +516,24 @@ void main() {
   group('ResolvedSchema', () {
     test('RenderObject equality', () {
       final schema1 = ResolvedObject(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'Foo',
           pointer: JsonPointer.parse(
             '#/paths//users/get/responses/200/content/application/json/schema',
           ),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
         ),
         properties: const {},
         additionalProperties: null,
         requiredProperties: const [],
       );
       final schema2 = ResolvedObject(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'Foo',
           pointer: JsonPointer.parse(
             '#/paths//users/get/responses/201/content/application/json/schema',
           ),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
         ),
         properties: const {},
         additionalProperties: null,
@@ -555,39 +551,31 @@ void main() {
         '#/paths//users/get/responses/201/content/application/json/schema',
       );
       final schema1 = ResolvedArray(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'Foo',
           pointer: pointer200,
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
         ),
         items: ResolvedPod(
-          common: CommonProperties(
+          common: CommonProperties.test(
             snakeName: 'Foo',
             pointer: pointer200,
-            title: null,
             description: 'Foo',
-            isDeprecated: false,
           ),
           type: PodType.boolean,
         ),
       );
       final schema2 = ResolvedArray(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'Foo',
           pointer: pointer201,
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
         ),
         items: ResolvedPod(
-          common: CommonProperties(
+          common: CommonProperties.test(
             snakeName: 'Foo',
             pointer: pointer200,
-            title: null,
             description: 'Foo',
-            isDeprecated: false,
           ),
           type: PodType.boolean,
         ),
@@ -601,20 +589,16 @@ void main() {
         isNot(
           equals(
             ResolvedArray(
-              common: CommonProperties(
+              common: CommonProperties.test(
                 snakeName: 'Foo',
                 pointer: pointer200,
-                title: null,
                 description: 'Foo',
-                isDeprecated: false,
               ),
               items: ResolvedInteger(
-                common: CommonProperties(
+                common: CommonProperties.test(
                   snakeName: 'Foo',
                   pointer: pointer200,
-                  title: null,
                   description: 'Foo',
-                  isDeprecated: false,
                 ),
               ),
             ),
@@ -624,28 +608,24 @@ void main() {
     });
     test('RenderString equality', () {
       final schema1 = ResolvedString(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'Foo',
           pointer: JsonPointer.parse(
             '#/paths//users/get/responses/200/content/application/json/schema',
           ),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
         ),
         defaultValue: 'foo',
         maxLength: 10,
         minLength: 1,
       );
       final schema2 = ResolvedString(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'Foo',
           pointer: JsonPointer.parse(
             '#/paths//users/get/responses/200/content/application/json/schema',
           ),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
         ),
         defaultValue: 'foo',
       );
@@ -656,27 +636,23 @@ void main() {
 
     test('ResolvedEnum equality', () {
       final schema1 = ResolvedEnum(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'Foo',
           pointer: JsonPointer.parse(
             '#/paths//users/get/responses/200/content/application/json/schema',
           ),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
         ),
         values: const ['bar', 'baz'],
         defaultValue: null,
       );
       final schema2 = ResolvedEnum(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'Foo',
           pointer: JsonPointer.parse(
             '#/paths//users/get/responses/200/content/application/json/schema',
           ),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
         ),
         values: const ['bar', 'qux'],
         defaultValue: null,
@@ -690,42 +666,34 @@ void main() {
         '#/paths//users/get/responses/200/content/application/json/schema',
       );
       final schema1 = ResolvedAnyOf(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'Foo',
           pointer: pointer200,
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
         ),
         schemas: [
           ResolvedPod(
-            common: CommonProperties(
+            common: CommonProperties.test(
               snakeName: 'Foo',
               pointer: pointer200,
-              title: null,
               description: 'Foo',
-              isDeprecated: false,
             ),
             type: PodType.boolean,
           ),
         ],
       );
       final schema2 = ResolvedAnyOf(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'Foo',
           pointer: pointer200,
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
         ),
         schemas: [
           ResolvedPod(
-            common: CommonProperties(
+            common: CommonProperties.test(
               snakeName: 'Foo',
               pointer: pointer200,
-              title: null,
               description: 'Foo',
-              isDeprecated: false,
             ),
             type: PodType.boolean,
           ),
@@ -737,27 +705,23 @@ void main() {
     });
     test('ResolvedNumber equality', () {
       final schema1 = ResolvedNumber(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'Foo',
           pointer: JsonPointer.parse(
             '#/paths//users/get/responses/200/content/application/json/schema',
           ),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
         ),
       );
       // Same schema.
       expect(schema1, equals(schema1));
       final schema2 = ResolvedNumber(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'Foo',
           pointer: JsonPointer.parse(
             '#/paths//users/get/responses/200/content/application/json/schema',
           ),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
         ),
         maximum: 10,
       );
@@ -766,27 +730,23 @@ void main() {
     });
     test('ResolvedInteger equality', () {
       final schema1 = ResolvedInteger(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'Foo',
           pointer: JsonPointer.parse(
             '#/paths//users/get/responses/200/content/application/json/schema',
           ),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
         ),
       );
       // Same schema.
       expect(schema1, equals(schema1));
       final schema2 = ResolvedInteger(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'Foo',
           pointer: JsonPointer.parse(
             '#/paths//users/get/responses/200/content/application/json/schema',
           ),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
         ),
         maximum: 10,
       );

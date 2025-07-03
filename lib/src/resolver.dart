@@ -350,6 +350,7 @@ ResolvedSchema _resolveContent(Response response, ResolveContext context) {
       title: null,
       description: response.description,
       isDeprecated: false,
+      nullable: false,
     ),
   );
   if (content == null) {

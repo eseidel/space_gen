@@ -241,37 +241,6 @@ RefOr<Header> parseHeaderOrRef(MapContext json) {
   return RefOr<Header>.object(parseHeader(json), json.pointer);
 }
 
-PodType? determinePodType(MapContext json) {
-  final type = _optional<String>(json, 'type');
-  final validButIgnored = ['array', 'object', 'null', null];
-  if (validButIgnored.contains(type)) {
-    return null;
-  }
-  if (type == 'boolean') {
-    return PodType.boolean;
-  }
-  if (type == 'integer' || type == 'number') {
-    return null;
-  }
-  if (type == 'string') {
-    final format = _optional<String>(json, 'format');
-    if (format == 'binary') {
-      return null;
-    }
-    if (format == 'date-time') {
-      return PodType.dateTime;
-    }
-    if (format == 'uri') {
-      return PodType.uri;
-    }
-    if (format != null) {
-      _warn(json, 'Unknown string format: $format');
-    }
-    return null;
-  }
-  _error(json, 'Unknown pod type: $type');
-}
-
 Schema? _handleCollectionTypes(
   MapContext json, {
   required CommonProperties common,
@@ -326,6 +295,7 @@ SchemaRef? _handleAdditionalProperties(MapContext parent) {
             title: null,
             description: null,
             isDeprecated: false,
+            nullable: false,
           ),
         ),
         parent.pointer,
@@ -422,10 +392,129 @@ Schema? _handleNumberTypes(
   return null;
 }
 
+class TypeAndFormat {
+  TypeAndFormat({
+    required this.type,
+    required this.format,
+    required this.podType,
+    required this.isNullable,
+  });
+
+  final String type;
+  final String? format;
+  final PodType? podType;
+  final bool isNullable;
+}
+
+@visibleForTesting
+TypeAndFormat parseTypeAndFormat(MapContext json) {
+  final typeValue = _optional<dynamic>(json, 'type');
+
+  final validTypes = {
+    'null',
+    'boolean',
+    'integer',
+    'number',
+    'string',
+    'array',
+    'object',
+  };
+
+  String? parseFormat({required String type, required String? format}) {
+    if (format == null) {
+      return null;
+    }
+    final expectedFormats = {
+      'string': {'binary', 'date-time', 'uri'},
+      // We don't explicitly support any number formats yet.
+      // 'number': {'float', 'double', 'int32', 'int64'},
+    };
+    final expected = expectedFormats[type];
+    if (expected == null || !expected.contains(format)) {
+      _warn(json, 'Unknown $type format: $format in ${json.pointer}');
+    }
+    return format;
+  }
+
+  PodType? determinePodType({required String type, required String? format}) {
+    if (type == 'boolean') {
+      return PodType.boolean;
+    }
+    if (type == 'string') {
+      if (format == 'date-time') {
+        return PodType.dateTime;
+      }
+      if (format == 'uri') {
+        return PodType.uri;
+      }
+    }
+    return null;
+  }
+
+  TypeAndFormat toParsedType(String type, {bool isNullable = false}) {
+    final format = parseFormat(
+      type: type,
+      format: _optional<String>(json, 'format'),
+    );
+    final podType = determinePodType(type: type, format: format);
+    return TypeAndFormat(
+      type: type,
+      format: format,
+      podType: podType,
+      isNullable: isNullable,
+    );
+  }
+
+  if (typeValue == null) {
+    return TypeAndFormat(
+      type: 'object',
+      format: null,
+      podType: null,
+      isNullable: false,
+    );
+  }
+
+  if (typeValue is List) {
+    for (final t in typeValue) {
+      if (t is! String) {
+        _error(json, 'type array must contain only strings: $typeValue');
+      }
+      if (!validTypes.contains(t)) {
+        _error(json, 'type array contains invalid type: $t');
+      }
+    }
+    final stringTypes = typeValue.cast<String>();
+
+    if (stringTypes.length == 1) {
+      // Silly to have a single type in an array, but we support it.
+      return toParsedType(stringTypes.first);
+    } else if (stringTypes.length == 2) {
+      // GitHub spec uses type=['null', 'string'] for nullable strings.
+      if (stringTypes.first == 'null') {
+        return toParsedType(stringTypes.last, isNullable: true);
+      } else if (stringTypes.last == 'null') {
+        return toParsedType(stringTypes.first, isNullable: true);
+      }
+    }
+    _unimplemented(json, 'type array: $stringTypes');
+  }
+  if (typeValue is! String) {
+    _error(json, 'type must be a string or array: $typeValue');
+  }
+  return toParsedType(typeValue);
+}
+
 Schema _createCorrectSchemaSubtype(MapContext json) {
+  // OpenAPI 3.0.0 has a nullable property.
+  // https://spec.openapis.org/oas/v3.0.0#schemaObject
+  // in 3.1.0 it was removed and replaced with type=['string', 'null']
+  // https://spec.openapis.org/oas/v3.1.0#schemaObject
+  // We support both modes.
+  final nullable = _optional<bool>(json, 'nullable') ?? false;
   final common = CommonProperties(
     pointer: json.pointer,
     snakeName: json.snakeName,
+    nullable: nullable,
     title: _optional<String>(json, 'title'),
     description: _optional<String>(json, 'description'),
     isDeprecated: _optional<bool>(json, 'deprecated') ?? false,
@@ -435,17 +524,14 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   if (collectionType != null) {
     return collectionType;
   }
+  final parsedType = parseTypeAndFormat(json);
 
-  // TODO(eseidel): type can be an array, but we don't support that yet.
-  final podType = determinePodType(json);
-  final type = _optional<String>(json, 'type');
-  if (type == 'null') {
+  if (parsedType.type == 'null') {
     return SchemaNull(common: common);
   }
 
-  if (type == 'string') {
-    final format = _optional<String>(json, 'format');
-    if (format == 'binary') {
+  if (parsedType.type == 'string') {
+    if (parsedType.format == 'binary') {
       return SchemaBinary(common: common);
     }
   }
@@ -453,8 +539,8 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   final defaultValue = _optional<dynamic>(json, 'default');
   final enumSchema = _handleEnum(
     json: json,
-    podType: podType,
-    type: type,
+    podType: parsedType.podType,
+    type: parsedType.type,
     defaultValue: defaultValue,
     common: common,
   );
@@ -462,11 +548,12 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     return enumSchema;
   }
 
+  final podType = parsedType.podType;
   if (podType != null) {
     return SchemaPod(common: common, type: podType, defaultValue: defaultValue);
   }
 
-  if (type == 'string') {
+  if (parsedType.type == 'string') {
     return SchemaString(
       common: common,
       defaultValue: _optional<String>(json, 'default'),
@@ -476,12 +563,16 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     );
   }
 
-  final schema = _handleNumberTypes(json, type: type, common: common);
+  final schema = _handleNumberTypes(
+    json,
+    type: parsedType.type,
+    common: common,
+  );
   if (schema != null) {
     return schema;
   }
 
-  if (type == 'array') {
+  if (parsedType.type == 'array') {
     final items = _optionalMap(json, 'items');
 
     if (items == null) {

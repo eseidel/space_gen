@@ -318,6 +318,7 @@ class SpecResolver {
           title: null,
           description: null,
           isDeprecated: false,
+          nullable: false,
         ),
       );
     }
@@ -343,6 +344,7 @@ class SpecResolver {
           title: null,
           description: operation.description,
           isDeprecated: false,
+          nullable: false,
         ),
         schemas: distinctSchemas.toList(),
       );

@@ -124,6 +124,17 @@ class CommonProperties extends Equatable {
     required this.title,
     required this.description,
     required this.isDeprecated,
+    required this.nullable,
+  });
+
+  /// Tests don't need to specify all properties.
+  const CommonProperties.test({
+    required this.pointer,
+    required this.snakeName,
+    this.title,
+    this.description,
+    this.isDeprecated = false,
+    this.nullable = false,
   });
 
   /// The title of the schema.
@@ -141,6 +152,9 @@ class CommonProperties extends Equatable {
   /// Whether the schema is deprecated.
   final bool isDeprecated;
 
+  /// Whether the schema is nullable.
+  final bool nullable;
+
   @override
   List<Object?> get props => [
     pointer,
@@ -148,5 +162,6 @@ class CommonProperties extends Equatable {
     title,
     description,
     isDeprecated,
+    nullable,
   ];
 }

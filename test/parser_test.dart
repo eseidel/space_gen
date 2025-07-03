@@ -7,21 +7,24 @@ import 'package:test/test.dart';
 class _MockLogger extends Mock implements Logger {}
 
 void main() {
-  group('determinePodType', () {
+  group('parseTypeAndFormat', () {
     test('fromJson', () {
       final logger = _MockLogger();
       PodType? parse(String type, {bool expectLogs = false, String? format}) {
         reset(logger);
-        final json = {'type': type, 'format': format};
+        final json = {'type': type, 'format': ?format};
         // Only wrap with logger if we expect logs, that way it will fail if
         // we do log but don't expect it.
+        TypeAndFormat? typeAndFormat;
         if (expectLogs) {
-          return runWithLogger(
+          typeAndFormat = runWithLogger(
             logger,
-            () => determinePodType(MapContext.initial(json)),
+            () => parseTypeAndFormat(MapContext.initial(json)),
           );
+        } else {
+          typeAndFormat = parseTypeAndFormat(MapContext.initial(json));
         }
-        return determinePodType(MapContext.initial(json));
+        return typeAndFormat?.podType;
       }
 
       expect(parse('string'), isNull);
