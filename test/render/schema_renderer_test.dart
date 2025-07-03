@@ -1554,6 +1554,92 @@ void main() {
         );
       });
     });
+    group('multiple types', () {
+      test('string or number', () {
+        final json = {
+          'type': ['string', 'number'],
+        };
+        expect(
+          renderTestSchema(json, asComponent: true),
+          'sealed class Test {\n'
+          '    static Test fromJson(dynamic jsonArg) {\n'
+          '        // Determine which schema to use based on the json.\n'
+          '        // TODO(eseidel): Implement this.\n'
+          "        throw UnimplementedError('Test.fromJson');\n"
+          '    }\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(dynamic json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    /// Require all subclasses to implement toJson.\n'
+          '    dynamic toJson();\n'
+          '}\n',
+        );
+      });
+      test('string or number as property', () {
+        final json = {
+          'type': 'object',
+          'properties': {
+            'a': {
+              'type': ['string', 'number'],
+            },
+          },
+        };
+        // TODO(eseidel): Use dynamic instead of TestAProp.
+        expect(
+          renderTestSchema(json),
+          '@immutable\n'
+          'class Test {\n'
+          '    Test(\n'
+          '        { this.a, \n'
+          '         }\n'
+          '    );\n'
+          '\n'
+          '    factory Test.fromJson(Map<String, dynamic>\n'
+          '        json) {\n'
+          '        return Test(\n'
+          "            a: TestAProp.maybeFromJson(json['a'] as Map<String, dynamic>),\n"
+          '        );\n'
+          '    }\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(Map<String, dynamic>? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    final TestAProp? a;\n'
+          '\n'
+          '    Map<String, dynamic> toJson() {\n'
+          '        return {\n'
+          "            'a': a?.toJson(),\n"
+          '        };\n'
+          '    }\n'
+          '\n'
+          '    @override\n'
+          '    int get hashCode =>\n'
+          '          a.hashCode;\n'
+          '\n'
+          '    @override\n'
+          '    bool operator ==(Object other) {\n'
+          '        if (identical(this, other)) return true;\n'
+          '        return other is Test\n'
+          '            && this.a == other.a\n'
+          '        ;\n'
+          '    }\n'
+          '}\n',
+        );
+      });
+    });
   });
 
   group('string validations', () {
@@ -2283,6 +2369,66 @@ void main() {
         '    }\n'
         '}\n',
       );
+    });
+
+    group('multiple types', () {
+      test('string or number', () {
+        final json = {
+          'summary': 'Get user',
+          'parameters': [
+            {
+              'name': 'foo',
+              'in': 'query',
+              'description': 'Foo',
+              'schema': {
+                'type': ['string', 'number'],
+              },
+            },
+          ],
+          'responses': {
+            '200': {'description': 'OK'},
+          },
+        };
+        final result = renderTestOperation(
+          path: '/users',
+          operationJson: json,
+          serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+        );
+        // TODO(eseidel): Use dynamic instead of UsersParameter0.
+        expect(
+          result,
+          '/// Test API\n'
+          'class DefaultApi {\n'
+          '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
+          '\n'
+          '    final ApiClient client;\n'
+          '\n'
+          '    /// Get user\n'
+          '    Future<void> users(\n'
+          '        { UsersParameter0? foo, }\n'
+          '    ) async {\n'
+          '        final response = await client.invokeApi(\n'
+          '            method: Method.post,\n'
+          "            path: '/users'\n"
+          ',\n'
+          '            queryParameters: {\n'
+          "                'foo': ?foo?.toJson().toString(),\n"
+          '            },\n'
+          '        );\n'
+          '\n'
+          '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+          '            throw ApiException(response.statusCode, response.body.toString());\n'
+          '        }\n'
+          '\n'
+          '        if (response.body.isNotEmpty) {\n'
+          '            return ;\n'
+          '        }\n'
+          '\n'
+          "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+          '    }\n'
+          '}\n',
+        );
+      });
     });
   });
 

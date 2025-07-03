@@ -83,6 +83,8 @@ void main() {
       }
 
       expect(parse(['string']).type, 'string');
+      final ignoresDuplicates = parse(['string', 'string']);
+      expect(ignoresDuplicates.type, 'string');
       final nullableString = parse(['string', 'null']);
       expect(nullableString.type, 'string');
       expect(nullableString.isNullable, true);
@@ -90,26 +92,15 @@ void main() {
       expect(nullableDateTime.type, 'string');
       expect(nullableDateTime.podType, PodType.dateTime);
       expect(nullableDateTime.isNullable, true);
-      expect(
-        () => parse(['string', 'number']),
-        throwsA(
-          isA<UnsupportedError>().having(
-            (e) => e.message,
-            'message',
-            contains('type array: [string, number] not supported'),
-          ),
-        ),
-      );
-      expect(
-        () => parse(['string', 'null', 'number']),
-        throwsA(
-          isA<UnsupportedError>().having(
-            (e) => e.message,
-            'message',
-            contains('type array: [string, null, number] not supported'),
-          ),
-        ),
-      );
+      final multipleTypes = parse(['string', 'number']);
+      expect(multipleTypes.type, isNull);
+      expect(multipleTypes.types, ['string', 'number']);
+      expect(multipleTypes.isNullable, false);
+      final multipleTypesWithNull = parse(['string', 'null', 'number']);
+      expect(multipleTypesWithNull.type, isNull);
+      expect(multipleTypesWithNull.types, ['string', 'number']);
+      expect(multipleTypesWithNull.isNullable, true);
+
       expect(
         () => parse([1, 'number']),
         throwsA(
@@ -315,7 +306,7 @@ void main() {
       expect(schema, isA<SchemaAllOf>());
     });
 
-    test('oneOf not supported', () {
+    test('oneOf with one item', () {
       final json = {
         'oneOf': [
           {'type': 'boolean'},
@@ -1332,6 +1323,33 @@ void main() {
         final schema = parseTestSchema(json);
         expect(schema, isA<SchemaString>());
         expect(schema.common.nullable, isTrue);
+      });
+    });
+
+    group('multiple types', () {
+      test('string or number', () {
+        final json = {
+          'type': ['string', 'number'],
+        };
+        final schema = parseTestSchema(json);
+        expect(schema, isA<SchemaOneOf>());
+        final oneOf = schema as SchemaOneOf;
+        expect(oneOf.schemas.length, 2);
+        expect(oneOf.schemas[0].object, isA<SchemaString>());
+        expect(oneOf.schemas[1].object, isA<SchemaNumber>());
+        expect(oneOf.common.nullable, isFalse);
+      });
+      test('string or number or null', () {
+        final json = {
+          'type': ['string', 'number', 'null'],
+        };
+        final schema = parseTestSchema(json);
+        expect(schema, isA<SchemaOneOf>());
+        final oneOf = schema as SchemaOneOf;
+        expect(oneOf.schemas.length, 2);
+        expect(oneOf.schemas[0].object, isA<SchemaString>());
+        expect(oneOf.schemas[1].object, isA<SchemaNumber>());
+        expect(oneOf.common.nullable, isTrue);
       });
     });
   });

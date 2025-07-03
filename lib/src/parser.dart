@@ -395,13 +395,15 @@ Schema? _handleNumberTypes(
 
 class TypeAndFormat {
   TypeAndFormat({
-    required this.type,
     required this.format,
     required this.podType,
     required this.isNullable,
+    this.type,
+    this.types,
   });
 
   final String? type;
+  final List<String>? types;
   final String? format;
   final PodType? podType;
   final bool isNullable;
@@ -478,13 +480,20 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
     );
   }
 
-  if (typeValue == null) {
+  TypeAndFormat toParsedTypes(Set<String> types, {bool isNullable = false}) {
+    if (types.length == 1) {
+      return toParsedType(types.first, isNullable: isNullable);
+    }
     return TypeAndFormat(
-      type: null,
+      types: types.toList(),
       format: null,
       podType: null,
-      isNullable: false,
+      isNullable: isNullable,
     );
+  }
+
+  if (typeValue == null) {
+    return TypeAndFormat(format: null, podType: null, isNullable: false);
   }
 
   if (typeValue is List) {
@@ -493,20 +502,14 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
         _error(json, 'type array must contain only strings: $typeValue');
       }
     }
-    final stringTypes = typeValue.cast<String>();
+    // Ignore duplicates types.
+    final types = typeValue.cast<String>().toSet();
 
-    if (stringTypes.length == 1) {
-      // Silly to have a single type in an array, but we support it.
-      return toParsedType(stringTypes.first);
-    } else if (stringTypes.length == 2) {
-      // GitHub spec uses type=['null', 'string'] for nullable strings.
-      if (stringTypes.first == 'null') {
-        return toParsedType(stringTypes.last, isNullable: true);
-      } else if (stringTypes.last == 'null') {
-        return toParsedType(stringTypes.first, isNullable: true);
-      }
+    final isNullable = types.contains('null');
+    if (isNullable) {
+      types.remove('null');
     }
-    _unimplemented(json, 'type array: $stringTypes');
+    return toParsedTypes(types, isNullable: isNullable);
   }
   if (typeValue is! String) {
     _error(json, 'type must be a string or array: $typeValue');
@@ -533,6 +536,26 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     // We support both modes.
     nullable: nullable || typeAndFormat.isNullable,
   );
+
+  if (typeAndFormat.types != null) {
+    // Multiple types are treated as a oneOf schema, just parsing the same
+    // root scheme object multiple times.
+    final schemas = <SchemaRef>[];
+    for (final type in typeAndFormat.types!) {
+      // The 'null' type has already been removed by the time we get here.
+      // These are necessarily not two objects, unlike typical oneOf schemas.
+      // Most commonly these are one object and an array of objects.
+      // or two different pod types.
+      // This could be an explicitly named type
+      final fakeJson = json.fakeChildAsMap(
+        snakeName: type,
+        value: {'type': type},
+      );
+      final schema = _createCorrectSchemaSubtype(fakeJson);
+      schemas.add(SchemaRef.schema(schema, json.pointer));
+    }
+    return SchemaOneOf(common: common, schemas: schemas);
+  }
 
   final collectionType = _handleCollectionTypes(json, common: common);
   if (collectionType != null) {
@@ -580,11 +603,11 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   }
 
   if (type == 'array') {
-    final items = _optionalMap(json, 'items');
-
-    if (items == null) {
-      _error(json, 'items is required for type=array');
-    }
+    // Omitting items is the same effect as an empty object.
+    // https://json-schema.org/draft/2020-12/json-schema-core#section-10.3.1.2-4
+    final items =
+        _optionalMap(json, 'items') ??
+        json.fakeChildAsMap(snakeName: 'items', value: {});
     const innerName = 'inner'; // Matching OpenAPI.
     final itemSchema = parseSchemaOrRef(items.addSnakeName(innerName));
     return SchemaArray(
@@ -1106,6 +1129,13 @@ class MapContext extends ParseContext {
     final child = _expectType<Map<String, dynamic>>(this, key, value);
     _markUsed(key);
     return MapContext.fromParent(parent: this, json: child, key: key);
+  }
+
+  MapContext fakeChildAsMap({
+    required String snakeName,
+    required Map<String, dynamic> value,
+  }) {
+    return MapContext.fromParent(parent: this, json: value, key: snakeName);
   }
 
   ListContext childAsList(String key) {
