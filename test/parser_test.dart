@@ -110,6 +110,41 @@ void main() {
           ),
         ),
       );
+      expect(
+        () => parse([1, 'number']),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals('type array must contain only strings: [1, number] in #/'),
+          ),
+        ),
+      );
+      expect(
+        () => parse([null, 'number']),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              'type array must contain only strings: [null, number] in #/',
+            ),
+          ),
+        ),
+      );
+    });
+    test('invalid type', () {
+      final json = {'type': 1};
+      expect(
+        () => parseTypeAndFormat(MapContext.initial(json)),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals('type must be a string or array: 1 in #/'),
+          ),
+        ),
+      );
     });
   });
 
