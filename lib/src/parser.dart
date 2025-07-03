@@ -507,7 +507,7 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
 Schema _createCorrectSchemaSubtype(MapContext json) {
   // OpenAPI 3.0.0 has a nullable property.
   // https://spec.openapis.org/oas/v3.0.0#schemaObject
-  // in 3.1.0 it was removed and replaced with type=['string', 'null']
+  // 3.1.0 does not and recommends type=['string', 'null'] instead
   // https://spec.openapis.org/oas/v3.1.0#schemaObject
   // We support both modes.
   final nullable = _optional<bool>(json, 'nullable') ?? false;
