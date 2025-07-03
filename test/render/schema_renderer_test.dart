@@ -1591,6 +1591,7 @@ void main() {
             },
           },
         };
+        // TODO(eseidel): Use dynamic instead of TestAProp.
         expect(
           renderTestSchema(json),
           '@immutable\n'
@@ -2393,6 +2394,7 @@ void main() {
           operationJson: json,
           serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
         );
+        // TODO(eseidel): Use dynamic instead of UsersParameter0.
         expect(
           result,
           '/// Test API\n'
