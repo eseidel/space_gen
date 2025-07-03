@@ -523,4 +523,52 @@ void main() {
       expect(a.equalsIgnoringName(c), isFalse);
     });
   });
+
+  group('additionalImports', () {
+    test('basic', () {
+      expect(
+        const RenderObject(
+          common: CommonProperties(
+            snakeName: 'a',
+            pointer: JsonPointer.empty(),
+            title: null,
+            description: 'Foo',
+            isDeprecated: false,
+          ),
+          properties: <String, RenderSchema>{},
+        ).additionalImports,
+        isEmpty,
+      );
+    });
+
+    test('deprecated', () {
+      expect(
+        const RenderObject(
+          common: CommonProperties(
+            snakeName: 'a',
+            pointer: JsonPointer.empty(),
+            title: null,
+            description: 'Foo',
+            isDeprecated: false,
+          ),
+          properties: <String, RenderSchema>{
+            'a': RenderString(
+              common: CommonProperties(
+                snakeName: 'a',
+                pointer: JsonPointer.empty(),
+                title: null,
+                description: 'Foo',
+                isDeprecated: true,
+              ),
+              defaultValue: 'foo',
+              maxLength: null,
+              minLength: null,
+              pattern: null,
+            ),
+          },
+        ).additionalImports,
+        equals([const Import('package:meta/meta.dart')]),
+      );
+    });
+  });
 }
