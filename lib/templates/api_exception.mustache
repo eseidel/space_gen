@@ -91,7 +91,7 @@ extension ValidateString on String {
   }
 }
 
-extension ValidateArray on List {
+extension ValidateArray<T> on List<T> {
   void validateMaximumItems(int maximum) {
     if (length > maximum) {
       throw Exception('must be at most $maximum items long');
