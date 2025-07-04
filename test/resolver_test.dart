@@ -781,6 +781,8 @@ void main() {
         if (checkProperties != null) {
           checkProperties(schema, copy);
         }
+        final noChange = schema.copyWith();
+        expect(noChange, equals(schema));
       }
 
       test('ResolvedObject', () {
