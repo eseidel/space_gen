@@ -407,7 +407,20 @@ class FileRenderer {
   }
 
   /// Render the entire spec.
-  void render(RenderSpec spec) {
+  void render(RenderSpec spec, {bool clearDirectory = true}) {
+    if (clearDirectory) {
+      // Only delete the directories we make to handle the case of changing
+      // directory structure or adding/removing files.
+      // All other files we make can be overwritten.
+      final dirs = {p.join('lib', 'api'), p.join('lib', 'model')};
+      for (final dirName in dirs) {
+        final path = p.join(fileWriter.outDir.path, dirName);
+        final dir = fileWriter.fs.directory(path);
+        if (dir.existsSync()) {
+          dir.deleteSync(recursive: true);
+        }
+      }
+    }
     // Collect all the Apis and Model Schemas.
     // Do we walk through each endpoint and ask which class to put it on?
     // Do we then walk through each class and ask what file to put it in?

@@ -1939,7 +1939,8 @@ class RenderMap extends RenderSchema {
       context,
       dartIsNullable: false,
     );
-    return '$dartName?.map((key, value) => MapEntry(key, $valueToJson))';
+    final callMap = dartIsNullable ? '?.map' : '.map';
+    return '$dartName$callMap((key, value) => MapEntry(key, $valueToJson))';
   }
 
   @override
@@ -1960,7 +1961,8 @@ class RenderMap extends RenderSchema {
     );
     // TODO(eseidel): Support orDefault?
     // Should this have a leading ? to skip the key on null?
-    return '($jsonValue as $jsonType)?.map((key, value) => '
+    final callMap = jsonIsNullable ? '?.map' : '.map';
+    return '($jsonValue as $jsonType)$callMap((key, value) => '
         'MapEntry(key, $valueFromJson))';
   }
 

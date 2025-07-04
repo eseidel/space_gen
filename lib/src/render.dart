@@ -84,10 +84,6 @@ Future<void> loadAndRenderSpec({
   final schemaRenderer = SchemaRenderer(templates: templates, quirks: quirks);
 
   logger.info('Generating $specUri to ${outDir.path}');
-  // Could make clearing of the directory optional.
-  if (outDir.existsSync()) {
-    outDir.deleteSync(recursive: true);
-  }
 
   final formatter = Formatter(runProcess: runProcess);
   final spellChecker = SpellChecker(runProcess: runProcess);
@@ -102,7 +98,7 @@ Future<void> loadAndRenderSpec({
     formatter: formatter,
     fileWriter: fileWriter,
     spellChecker: spellChecker,
-  ).render(renderSpec);
+  ).render(renderSpec, clearDirectory: true);
 }
 
 @visibleForTesting
