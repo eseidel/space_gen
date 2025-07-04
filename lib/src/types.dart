@@ -155,6 +155,24 @@ class CommonProperties extends Equatable {
   /// Whether the schema is nullable.
   final bool nullable;
 
+  CommonProperties copyWith({
+    JsonPointer? pointer,
+    String? snakeName,
+    String? title,
+    String? description,
+    bool? isDeprecated,
+    bool? nullable,
+  }) {
+    return CommonProperties(
+      pointer: pointer ?? this.pointer,
+      snakeName: snakeName ?? this.snakeName,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      isDeprecated: isDeprecated ?? this.isDeprecated,
+      nullable: nullable ?? this.nullable,
+    );
+  }
+
   @override
   List<Object?> get props => [
     pointer,

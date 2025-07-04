@@ -139,6 +139,62 @@ String renderTestSchema(
   return schemaRenderer.renderSchema(renderSchema);
 }
 
+/// Render a set of schemas to separate strings.
+@visibleForTesting
+Map<String, String> renderTestSchemas(
+  Map<String, Map<String, dynamic>> schemas, {
+  Quirks quirks = const Quirks(),
+}) {
+  final schemasContext = MapContext(
+    pointerParts: ['components', 'schemas'],
+    snakeNameStack: [],
+    json: schemas,
+  );
+  final parsedSchemas = schemas.map<String, Schema>((key, value) {
+    final context = MapContext.fromParent(
+      parent: schemasContext,
+      json: value,
+      key: key,
+    ).addSnakeName(key);
+    return MapEntry(key, parseSchema(context));
+  });
+
+  final serverUrl = Uri.parse('https://example.com');
+  final refRegistry = RefRegistry();
+  void add(HasPointer object) {
+    final uri = serverUrl.replace(fragment: object.pointer.location);
+    refRegistry.register(uri, object);
+  }
+
+  for (final parsedSchema in parsedSchemas.values) {
+    add(parsedSchema);
+  }
+  final resolveContext = ResolveContext(
+    specUrl: serverUrl,
+    refRegistry: refRegistry,
+  );
+
+  final resolvedSchemas = parsedSchemas.map((key, value) {
+    return MapEntry(
+      key,
+      resolveSchemaRef(
+        SchemaRef.schema(value, const JsonPointer.empty()),
+        resolveContext,
+      ),
+    );
+  });
+  final resolver = SpecResolver(quirks);
+  final templates = TemplateProvider.defaultLocation();
+
+  final renderSchemas = resolvedSchemas.map((key, value) {
+    final renderSchema = resolver.toRenderSchema(value);
+    final schemaRenderer = SchemaRenderer(templates: templates, quirks: quirks);
+    return MapEntry(key, schemaRenderer.renderSchema(renderSchema));
+  });
+
+  return renderSchemas;
+}
+
 @visibleForTesting
 String renderTestOperation({
   required String path,
