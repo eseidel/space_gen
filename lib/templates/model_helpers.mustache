@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:uri/uri.dart';
 
 /// Parse a nullable string as a DateTime.
 DateTime? maybeParseDateTime(String? value) {
@@ -14,6 +15,14 @@ Uri? maybeParseUri(String? value) {
     return null;
   }
   return Uri.parse(value);
+}
+
+/// Parse a nullable string as a UriTemplate.
+UriTemplate? maybeParseUriTemplate(String? value) {
+  if (value == null) {
+    return null;
+  }
+  return UriTemplate(value);
 }
 
 /// Check if two nullable lists are deeply equal.

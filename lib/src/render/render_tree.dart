@@ -939,14 +939,14 @@ class RenderPod extends RenderSchema {
       // Bool is already a json type.
       PodType.boolean => true,
       // These require serialization to a string.
-      PodType.dateTime || PodType.uri => false,
+      PodType.dateTime || PodType.uri || PodType.uriTemplate => false,
     };
   }
 
   @override
   bool get defaultCanConstConstruct {
     return switch (type) {
-      PodType.dateTime || PodType.uri => false,
+      PodType.dateTime || PodType.uri || PodType.uriTemplate => false,
       PodType.boolean => true,
     };
   }
@@ -960,13 +960,16 @@ class RenderPod extends RenderSchema {
       PodType.boolean => 'bool',
       PodType.dateTime => 'DateTime',
       PodType.uri => 'Uri',
+      PodType.uriTemplate => 'UriTemplate',
     };
   }
 
   @override
   String jsonStorageType({required bool isNullable}) {
     return switch (type) {
-      PodType.dateTime || PodType.uri => isNullable ? 'String?' : 'String',
+      PodType.dateTime ||
+      PodType.uri ||
+      PodType.uriTemplate => isNullable ? 'String?' : 'String',
       PodType.boolean => isNullable ? 'bool?' : 'bool',
     };
   }
@@ -981,9 +984,17 @@ class RenderPod extends RenderSchema {
       PodType.dateTime =>
         'DateTime.parse(${quoteString(defaultValue as String)})',
       PodType.uri => 'Uri.parse(${quoteString(defaultValue as String)})',
+      PodType.uriTemplate =>
+        'UriTemplate(${quoteString(defaultValue as String)})',
       PodType.boolean => defaultValue.toString(),
     };
   }
+
+  @override
+  Iterable<Import> get additionalImports => [
+    ...super.additionalImports,
+    if (type == PodType.uriTemplate) const Import('package:uri/uri.dart'),
+  ];
 
   @override
   bool get createsNewType => false;
@@ -995,13 +1006,12 @@ class RenderPod extends RenderSchema {
     required bool dartIsNullable,
   }) {
     final nameCall = dartIsNullable ? '$dartName?' : dartName;
-    if (type == PodType.dateTime) {
-      return '$nameCall.toIso8601String()';
-    }
-    if (type == PodType.uri) {
-      return '$nameCall.toString()';
-    }
-    return dartName;
+    return switch (type) {
+      PodType.dateTime => '$nameCall.toIso8601String()',
+      PodType.uri => '$nameCall.toString()',
+      PodType.uriTemplate => '$nameCall.toString()',
+      PodType.boolean => dartName,
+    };
   }
 
   @override
@@ -1029,6 +1039,11 @@ class RenderPod extends RenderSchema {
           return 'maybeParseUri($castedValue)$orDefault';
         }
         return 'Uri.parse($castedValue)';
+      case PodType.uriTemplate:
+        if (jsonIsNullable) {
+          return 'maybeParseUriTemplate($castedValue)$orDefault';
+        }
+        return 'UriTemplate($castedValue)';
       case PodType.boolean:
         // 'as' has higher precedence than '??' so no parens are needed.
         return '$castedValue$orDefault';

@@ -498,5 +498,19 @@ void main() {
         equals([const Import('package:meta/meta.dart')]),
       );
     });
+
+    test('uriTemplate', () {
+      expect(
+        const RenderPod(
+          common: CommonProperties.test(
+            snakeName: 'a',
+            pointer: JsonPointer.empty(),
+            description: 'Foo',
+          ),
+          type: PodType.uriTemplate,
+        ).additionalImports,
+        equals([const Import('package:uri/uri.dart')]),
+      );
+    });
   });
 }
