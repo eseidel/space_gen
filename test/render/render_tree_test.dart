@@ -32,6 +32,24 @@ void main() {
         'allCaps',
       ]);
     });
+
+    test('parameter names', () {
+      const quirks = Quirks();
+      expect(quirks.screamingCapsEnums, isFalse);
+      const common = CommonProperties.test(
+        snakeName: 'a-b',
+        pointer: JsonPointer.empty(),
+      );
+      const parameter = RenderParameter(
+        description: 'Foo',
+        name: 'a-b',
+        type: RenderUnknown(common: common),
+        isRequired: true,
+        isDeprecated: false,
+        sendIn: SendIn.query,
+      );
+      expect(parameter.dartParameterName(quirks), 'aB');
+    });
   });
 
   group('createDocComment', () {
