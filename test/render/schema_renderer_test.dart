@@ -1382,6 +1382,9 @@ void main() {
           renderTestSchema(json, asComponent: true),
           '/// Title\n'
           '/// Description\n'
+          '/// example: example\n'
+          '/// example: example1\n'
+          '/// example: example2\n'
           'extension type const Test._(String value) {\n'
           '    const Test(this.value);\n'
           '\n'
@@ -1412,6 +1415,9 @@ void main() {
           renderTestSchema(json, asComponent: true),
           '/// Title\n'
           '/// Description\n'
+          '/// example: 1.2\n'
+          '/// example: 1.2\n'
+          '/// example: 1.3\n'
           'extension type const Test._(double value) {\n'
           '    const Test(this.value);\n'
           '\n'
@@ -1449,6 +1455,9 @@ void main() {
           renderTestSchema(json, asComponent: true),
           '/// Title\n'
           '/// Description\n'
+          '/// example: {a: example, b: example}\n'
+          '/// example: {a: example1, b: example1}\n'
+          '/// example: {a: example2, b: example2}\n'
           '@immutable\n'
           'class Test {\n'
           '    Test(\n'
@@ -1498,8 +1507,7 @@ void main() {
           '            && this.b == other.b\n'
           '        ;\n'
           '    }\n'
-          '}\n'
-          '',
+          '}\n',
         );
       });
     });
