@@ -771,6 +771,18 @@ void main() {
         ),
         description: 'Bar',
       );
+      void testCopyWith<T extends ResolvedSchema>(
+        T schema, [
+        void Function(T, T)? checkProperties,
+      ]) {
+        final copy = schema.copyWith(common: afterCommon) as T;
+        expect(copy, isNot(equals(schema)));
+        expect(copy.common, equals(afterCommon));
+        if (checkProperties != null) {
+          checkProperties(schema, copy);
+        }
+      }
+
       test('ResolvedObject', () {
         final schema = ResolvedObject(
           common: beforeCommon,
@@ -778,12 +790,14 @@ void main() {
           additionalProperties: null,
           requiredProperties: const [],
         );
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
-        expect(copy.properties, equals(schema.properties));
-        expect(copy.additionalProperties, equals(schema.additionalProperties));
-        expect(copy.requiredProperties, equals(schema.requiredProperties));
+        testCopyWith(schema, (schema, copy) {
+          expect(copy.properties, equals(schema.properties));
+          expect(
+            copy.additionalProperties,
+            equals(schema.additionalProperties),
+          );
+          expect(copy.requiredProperties, equals(schema.requiredProperties));
+        });
       });
       test('ResolvedEnum', () {
         final schema = ResolvedEnum(
@@ -791,119 +805,97 @@ void main() {
           values: const ['bar', 'baz'],
           defaultValue: null,
         );
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
-        expect(copy.values, equals(schema.values));
-        expect(copy.defaultValue, equals(schema.defaultValue));
+        testCopyWith(schema, (schema, copy) {
+          expect(copy.values, equals(schema.values));
+          expect(copy.defaultValue, equals(schema.defaultValue));
+        });
       });
       test('ResolvedAnyOf', () {
         final schema = ResolvedAnyOf(
           common: beforeCommon,
           schemas: [ResolvedPod(common: beforeCommon, type: PodType.boolean)],
         );
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
-        expect(copy.schemas, equals(schema.schemas));
+        testCopyWith(schema, (schema, copy) {
+          expect(copy.schemas, equals(schema.schemas));
+        });
       });
       test('ResolvedAllOf', () {
         final schema = ResolvedAllOf(
           common: beforeCommon,
           schemas: [ResolvedPod(common: beforeCommon, type: PodType.boolean)],
         );
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
-        expect(copy.schemas, equals(schema.schemas));
+        testCopyWith(schema, (schema, copy) {
+          expect(copy.schemas, equals(schema.schemas));
+        });
       });
       test('ResolvedOneOf', () {
         final schema = ResolvedOneOf(
           common: beforeCommon,
           schemas: [ResolvedPod(common: beforeCommon, type: PodType.boolean)],
         );
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
-        expect(copy.schemas, equals(schema.schemas));
+        testCopyWith(schema, (schema, copy) {
+          expect(copy.schemas, equals(schema.schemas));
+        });
       });
       test('ResolvedArray', () {
         final schema = ResolvedArray(
           common: beforeCommon,
           items: ResolvedPod(common: beforeCommon, type: PodType.boolean),
         );
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
-        expect(copy.items, equals(schema.items));
+        testCopyWith(schema, (schema, copy) {
+          expect(copy.items, equals(schema.items));
+        });
       });
       test('ResolvedNumber', () {
         final schema = ResolvedNumber(common: beforeCommon);
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
-        expect(copy.maximum, equals(schema.maximum));
-        expect(copy.minimum, equals(schema.minimum));
-        expect(copy.multipleOf, equals(schema.multipleOf));
+        testCopyWith(schema, (schema, copy) {
+          expect(copy.maximum, equals(schema.maximum));
+          expect(copy.minimum, equals(schema.minimum));
+          expect(copy.multipleOf, equals(schema.multipleOf));
+        });
       });
       test('ResolvedInteger', () {
         final schema = ResolvedInteger(common: beforeCommon);
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
-        expect(copy.maximum, equals(schema.maximum));
-        expect(copy.minimum, equals(schema.minimum));
-        expect(copy.multipleOf, equals(schema.multipleOf));
+        testCopyWith(schema, (schema, copy) {
+          expect(copy.maximum, equals(schema.maximum));
+          expect(copy.minimum, equals(schema.minimum));
+          expect(copy.multipleOf, equals(schema.multipleOf));
+        });
       });
       test('ResolvedString', () {
         final schema = ResolvedString(common: beforeCommon);
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
-        expect(copy.defaultValue, equals(schema.defaultValue));
-        expect(copy.maxLength, equals(schema.maxLength));
-        expect(copy.minLength, equals(schema.minLength));
+        testCopyWith(schema, (schema, copy) {
+          expect(copy.defaultValue, equals(schema.defaultValue));
+          expect(copy.maxLength, equals(schema.maxLength));
+          expect(copy.minLength, equals(schema.minLength));
+        });
       });
       test('ResolvedPod', () {
         final schema = ResolvedPod(common: beforeCommon, type: PodType.boolean);
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
-        expect(copy.type, equals(schema.type));
-      });
-      test('ResolvedUnknown', () {
-        final schema = ResolvedUnknown(common: beforeCommon);
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
-      });
-      test('ResolvedNull', () {
-        final schema = ResolvedNull(common: beforeCommon);
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
-      });
-      test('ResolvedVoid', () {
-        final schema = ResolvedVoid(common: beforeCommon);
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
+        testCopyWith(schema, (schema, copy) {
+          expect(copy.type, equals(schema.type));
+        });
       });
       test('ResolvedMap', () {
         final schema = ResolvedMap(
           common: beforeCommon,
           valueSchema: ResolvedPod(common: beforeCommon, type: PodType.boolean),
         );
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
-        expect(copy.valueSchema, equals(schema.valueSchema));
+        testCopyWith(schema, (schema, copy) {
+          expect(copy.valueSchema, equals(schema.valueSchema));
+        });
+      });
+      test('ResolvedUnknown', () {
+        testCopyWith(ResolvedUnknown(common: beforeCommon));
+      });
+      test('ResolvedNull', () {
+        testCopyWith(ResolvedNull(common: beforeCommon));
+      });
+      test('ResolvedVoid', () {
+        testCopyWith(ResolvedVoid(common: beforeCommon));
       });
       test('ResolvedEmptyObject', () {
-        final schema = ResolvedEmptyObject(common: beforeCommon);
-        final copy = schema.copyWith(common: afterCommon);
-        expect(copy, isNot(equals(schema)));
-        expect(copy.common, equals(afterCommon));
+        testCopyWith(ResolvedEmptyObject(common: beforeCommon));
       });
     });
   });
