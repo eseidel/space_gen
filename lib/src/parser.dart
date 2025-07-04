@@ -289,13 +289,9 @@ SchemaRef? _handleAdditionalProperties(MapContext parent) {
     if (value) {
       return SchemaRef.schema(
         SchemaUnknown(
-          common: CommonProperties(
+          common: CommonProperties.empty(
             pointer: parent.pointer.add('additionalProperties'),
             snakeName: 'additionalProperties',
-            title: null,
-            description: null,
-            isDeprecated: false,
-            nullable: false,
           ),
         ),
         parent.pointer,
@@ -535,6 +531,8 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     // https://spec.openapis.org/oas/v3.1.0#schemaObject
     // We support both modes.
     nullable: nullable || typeAndFormat.isNullable,
+    example: _optional<dynamic>(json, 'example'),
+    examples: _optional<List<dynamic>>(json, 'examples'),
   );
 
   if (typeAndFormat.types != null) {
@@ -656,8 +654,6 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   _ignored<bool>(json, 'writeOnly');
   _ignored<dynamic>(json, 'discriminator');
   _ignored<dynamic>(json, 'xml');
-  final example = _optional<dynamic>(json, 'example');
-  _ignored<dynamic>(json, 'examples');
   _ignored<dynamic>(json, 'externalDocs');
 
   final requiredProperties = _optionalList<String>(json, 'required') ?? [];
@@ -668,7 +664,6 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     requiredProperties: requiredProperties.cast<String>(),
     additionalProperties: additionalPropertiesSchema,
     defaultValue: defaultValue,
-    example: example,
   );
 }
 

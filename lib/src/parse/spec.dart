@@ -323,7 +323,6 @@ class SchemaObject extends SchemaObjectBase {
     required this.requiredProperties,
     required this.additionalProperties,
     required this.defaultValue,
-    required this.example,
   }) {
     if (snakeName.isEmpty) {
       throw ArgumentError.value(
@@ -340,10 +339,6 @@ class SchemaObject extends SchemaObjectBase {
   /// The required properties of this schema.
   final List<String> requiredProperties;
 
-  /// The example value for this schema.
-  // Not currently used by the generator.
-  final dynamic example;
-
   /// The additional properties of this schema.
   /// Used for specifying T for Map\<String, T\>.
   final SchemaRef? additionalProperties;
@@ -356,7 +351,6 @@ class SchemaObject extends SchemaObjectBase {
     super.props,
     properties,
     requiredProperties,
-    example,
     additionalProperties,
     defaultValue,
   ];

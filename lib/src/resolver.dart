@@ -352,13 +352,10 @@ List<ResolvedOperation> _resolveOperations(
 ResolvedSchema _resolveContent(Response response, ResolveContext context) {
   final content = response.content;
   final voidSchema = ResolvedVoid(
-    common: CommonProperties(
+    // TODO(eseidel): Should this pass along description?
+    common: CommonProperties.empty(
       pointer: response.pointer,
       snakeName: 'void',
-      title: null,
-      description: response.description,
-      isDeprecated: false,
-      nullable: false,
     ),
   );
   if (content == null) {

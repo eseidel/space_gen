@@ -125,7 +125,19 @@ class CommonProperties extends Equatable {
     required this.description,
     required this.isDeprecated,
     required this.nullable,
+    required this.example,
+    required this.examples,
   });
+
+  /// A common properties object with no additional properties.
+  /// Used for implicit schemas.
+  const CommonProperties.empty({required this.pointer, required this.snakeName})
+    : title = null,
+      description = null,
+      isDeprecated = false,
+      nullable = false,
+      example = null,
+      examples = null;
 
   /// Tests don't need to specify all properties.
   const CommonProperties.test({
@@ -135,6 +147,8 @@ class CommonProperties extends Equatable {
     this.description,
     this.isDeprecated = false,
     this.nullable = false,
+    this.example,
+    this.examples,
   });
 
   /// The title of the schema.
@@ -155,6 +169,13 @@ class CommonProperties extends Equatable {
   /// Whether the schema is nullable.
   final bool nullable;
 
+  // TODO(eseidel): Make these strongly typed.
+  /// An example of the schema.
+  final dynamic example;
+
+  /// Examples of the schema.
+  final List<dynamic>? examples;
+
   CommonProperties copyWith({
     JsonPointer? pointer,
     String? snakeName,
@@ -162,6 +183,8 @@ class CommonProperties extends Equatable {
     String? description,
     bool? isDeprecated,
     bool? nullable,
+    dynamic example,
+    List<dynamic>? examples,
   }) {
     return CommonProperties(
       pointer: pointer ?? this.pointer,
@@ -170,6 +193,8 @@ class CommonProperties extends Equatable {
       description: description ?? this.description,
       isDeprecated: isDeprecated ?? this.isDeprecated,
       nullable: nullable ?? this.nullable,
+      example: example ?? this.example,
+      examples: examples ?? this.examples,
     );
   }
 
