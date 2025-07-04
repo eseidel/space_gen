@@ -87,49 +87,37 @@ void main() {
   group('equalsIgnoringName', () {
     test('RenderObject', () {
       const a = RenderObject(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         properties: <String, RenderSchema>{},
       );
       expect(a.equalsIgnoringName(a), isTrue);
 
       const b = RenderObject(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'b',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         properties: <String, RenderSchema>{},
       );
       expect(a.equalsIgnoringName(b), isTrue);
 
       const c = RenderObject(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         properties: <String, RenderSchema>{
           'a': RenderUnknown(
-            common: CommonProperties(
+            common: CommonProperties.test(
               snakeName: 'a',
               pointer: JsonPointer.empty(),
-              title: null,
               description: 'Foo',
-              isDeprecated: false,
-              nullable: false,
             ),
           ),
         },
@@ -137,23 +125,17 @@ void main() {
       expect(a.equalsIgnoringName(c), isFalse);
 
       const d = RenderObject(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         properties: <String, RenderSchema>{
           'a': RenderPod(
-            common: CommonProperties(
+            common: CommonProperties.test(
               snakeName: 'a',
               pointer: JsonPointer.empty(),
-              title: null,
               description: 'Foo',
-              isDeprecated: false,
-              nullable: false,
             ),
             type: PodType.boolean,
           ),
@@ -162,23 +144,17 @@ void main() {
       expect(a.equalsIgnoringName(d), isFalse);
 
       const e = RenderObject(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         properties: <String, RenderSchema>{},
         additionalProperties: RenderPod(
-          common: CommonProperties(
+          common: CommonProperties.test(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
-            title: null,
             description: 'Foo',
-            isDeprecated: false,
-            nullable: false,
           ),
           type: PodType.boolean,
         ),
@@ -186,13 +162,10 @@ void main() {
       expect(a.equalsIgnoringName(e), isFalse);
 
       const f = RenderObject(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         properties: <String, RenderSchema>{},
         requiredProperties: ['a'],
@@ -200,23 +173,17 @@ void main() {
       expect(a.equalsIgnoringName(f), isFalse);
 
       const g = RenderObject(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         properties: <String, RenderSchema>{},
         additionalProperties: RenderPod(
-          common: CommonProperties(
+          common: CommonProperties.test(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
-            title: null,
             description: 'Foo',
-            isDeprecated: false,
-            nullable: false,
           ),
           type: PodType.dateTime,
         ),
@@ -224,23 +191,17 @@ void main() {
       expect(e.equalsIgnoringName(g), isFalse);
 
       const h = RenderObject(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         properties: <String, RenderSchema>{
           'e': RenderPod(
-            common: CommonProperties(
+            common: CommonProperties.test(
               snakeName: 'e',
               pointer: JsonPointer.empty(),
-              title: null,
               description: 'Foo',
-              isDeprecated: false,
-              nullable: false,
             ),
             type: PodType.boolean,
           ),
@@ -251,13 +212,10 @@ void main() {
 
     test('RenderString', () {
       const a = RenderString(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         defaultValue: 'foo',
         maxLength: 10,
@@ -267,13 +225,10 @@ void main() {
       expect(a.equalsIgnoringName(a), isTrue);
 
       const b = RenderString(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'b',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         defaultValue: 'foo',
         maxLength: null,
@@ -283,13 +238,10 @@ void main() {
       expect(a.equalsIgnoringName(b), isFalse);
 
       const c = RenderString(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         defaultValue: 'foo',
         maxLength: 10,
@@ -301,13 +253,10 @@ void main() {
 
     test('RenderInteger', () {
       const a = RenderInteger(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         defaultValue: 1,
         maximum: 10,
@@ -319,13 +268,10 @@ void main() {
       expect(a.equalsIgnoringName(a), isTrue);
 
       const b = RenderInteger(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'b',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         defaultValue: 1,
         maximum: null,
@@ -337,13 +283,10 @@ void main() {
       expect(a.equalsIgnoringName(b), isFalse);
 
       const c = RenderInteger(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         defaultValue: 1,
         maximum: 10,
@@ -357,22 +300,16 @@ void main() {
 
     test('RenderArray', () {
       const a = RenderArray(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         items: RenderPod(
-          common: CommonProperties(
+          common: CommonProperties.test(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
-            title: null,
             description: 'Foo',
-            isDeprecated: false,
-            nullable: false,
           ),
           type: PodType.boolean,
         ),
@@ -380,22 +317,16 @@ void main() {
       expect(a.equalsIgnoringName(a), isTrue);
 
       const b = RenderArray(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'b',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         items: RenderPod(
-          common: CommonProperties(
+          common: CommonProperties.test(
             snakeName: 'b',
             pointer: JsonPointer.empty(),
-            title: null,
             description: 'Foo',
-            isDeprecated: false,
-            nullable: false,
           ),
           type: PodType.boolean,
         ),
@@ -403,22 +334,16 @@ void main() {
       expect(a.equalsIgnoringName(b), isTrue);
 
       const c = RenderArray(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         items: RenderPod(
-          common: CommonProperties(
+          common: CommonProperties.test(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
-            title: null,
             description: 'Foo',
-            isDeprecated: false,
-            nullable: false,
           ),
           type: PodType.dateTime,
         ),
@@ -428,13 +353,10 @@ void main() {
 
     test('RenderEnum', () {
       final a = RenderEnum(
-        common: const CommonProperties(
+        common: const CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         names: const ['a', 'b', 'c'],
         values: const ['a', 'b', 'c'],
@@ -442,13 +364,10 @@ void main() {
       expect(a.equalsIgnoringName(a), isTrue);
 
       final b = RenderEnum(
-        common: const CommonProperties(
+        common: const CommonProperties.test(
           snakeName: 'b',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         names: const ['a', 'b', 'c'],
         values: const ['a', 'b', 'c'],
@@ -456,13 +375,10 @@ void main() {
       expect(a.equalsIgnoringName(b), isTrue);
 
       final c = RenderEnum(
-        common: const CommonProperties(
+        common: const CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         names: const ['a', 'b'],
         values: const ['a', 'b'],
@@ -472,23 +388,17 @@ void main() {
 
     test('RenderOneOf', () {
       const a = RenderOneOf(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         schemas: [
           RenderPod(
-            common: CommonProperties(
+            common: CommonProperties.test(
               snakeName: 'a',
               pointer: JsonPointer.empty(),
-              title: null,
               description: 'Foo',
-              isDeprecated: false,
-              nullable: false,
             ),
             type: PodType.boolean,
           ),
@@ -497,23 +407,17 @@ void main() {
       expect(a.equalsIgnoringName(a), isTrue);
 
       const b = RenderOneOf(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'b',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         schemas: [
           RenderPod(
-            common: CommonProperties(
+            common: CommonProperties.test(
               snakeName: 'b',
               pointer: JsonPointer.empty(),
-              title: null,
               description: 'Foo',
-              isDeprecated: false,
-              nullable: false,
             ),
             type: PodType.boolean,
           ),
@@ -522,34 +426,25 @@ void main() {
       expect(a.equalsIgnoringName(b), isTrue);
 
       const c = RenderOneOf(
-        common: CommonProperties(
+        common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
-          title: null,
           description: 'Foo',
-          isDeprecated: false,
-          nullable: false,
         ),
         schemas: [
           RenderPod(
-            common: CommonProperties(
+            common: CommonProperties.test(
               snakeName: 'a',
               pointer: JsonPointer.empty(),
-              title: null,
               description: 'Foo',
-              isDeprecated: false,
-              nullable: false,
             ),
             type: PodType.boolean,
           ),
           RenderPod(
-            common: CommonProperties(
+            common: CommonProperties.test(
               snakeName: 'b',
               pointer: JsonPointer.empty(),
-              title: null,
               description: 'Foo',
-              isDeprecated: false,
-              nullable: false,
             ),
             type: PodType.boolean,
           ),
@@ -563,13 +458,10 @@ void main() {
     test('basic', () {
       expect(
         const RenderObject(
-          common: CommonProperties(
+          common: CommonProperties.test(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
-            title: null,
             description: 'Foo',
-            isDeprecated: false,
-            nullable: false,
           ),
           properties: <String, RenderSchema>{},
         ).additionalImports,
@@ -580,23 +472,18 @@ void main() {
     test('deprecated', () {
       expect(
         const RenderObject(
-          common: CommonProperties(
+          common: CommonProperties.test(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
-            title: null,
             description: 'Foo',
-            isDeprecated: false,
-            nullable: false,
           ),
           properties: <String, RenderSchema>{
             'a': RenderString(
-              common: CommonProperties(
+              common: CommonProperties.test(
                 snakeName: 'a',
                 pointer: JsonPointer.empty(),
-                title: null,
                 description: 'Foo',
                 isDeprecated: true,
-                nullable: false,
               ),
               defaultValue: 'foo',
               maxLength: null,

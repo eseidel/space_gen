@@ -1375,6 +1375,8 @@ void main() {
           'type': 'string',
           'title': 'Title',
           'description': 'Description',
+          'example': 'example',
+          'examples': ['example1', 'example2'],
         };
         expect(
           renderTestSchema(json, asComponent: true),
@@ -1403,6 +1405,8 @@ void main() {
           'type': 'number',
           'title': 'Title',
           'description': 'Description',
+          'example': 1.2,
+          'examples': [1.2, 1.3],
         };
         expect(
           renderTestSchema(json, asComponent: true),
@@ -1435,6 +1439,11 @@ void main() {
             'a': {'type': 'string'},
             'b': {'type': 'string'},
           },
+          'example': {'a': 'example', 'b': 'example'},
+          'examples': [
+            {'a': 'example1', 'b': 'example1'},
+            {'a': 'example2', 'b': 'example2'},
+          ],
         };
         expect(
           renderTestSchema(json, asComponent: true),

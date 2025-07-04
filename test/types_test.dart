@@ -4,13 +4,11 @@ import 'package:test/test.dart';
 void main() {
   group('CommonProperties', () {
     test('copyWith', () {
-      const common = CommonProperties(
+      const common = CommonProperties.test(
         pointer: JsonPointer.fromParts(['foo']),
         snakeName: 'foo',
         title: 'Foo',
         description: 'Foo description',
-        isDeprecated: false,
-        nullable: false,
       );
       final copy = common.copyWith(
         pointer: const JsonPointer.fromParts(['bar']),

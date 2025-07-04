@@ -86,13 +86,22 @@ String? indentWithTrailingNewline(
 /// *not* on a separate line.  They will add their own new-line at the end if
 /// necessary and will match the passed in indent for any lines after the first
 /// including after the trailing new-line.
-String? createDocComment({String? title, String? body, int indent = 0}) {
+String? createDocComment({
+  String? title,
+  String? body,
+  dynamic example,
+  List<dynamic>? examples,
+  int indent = 0,
+}) {
   if (title == null && body == null) {
     return null;
   }
   final lines = <String>[
     if (title != null) ..._commentedLines(title),
     if (body != null) ..._commentedLines(body),
+    if (example != null) ..._commentedLines(example.toString()),
+    if (examples != null)
+      ...examples.expand((e) => _commentedLines(e.toString())),
   ];
   if (lines.isEmpty) {
     return null;
@@ -315,13 +324,9 @@ class SpecResolver {
     );
     if (successful.isEmpty) {
       return RenderVoid(
-        common: CommonProperties(
+        common: CommonProperties.empty(
           snakeName: '${operation.snakeName}_response',
           pointer: operation.pointer,
-          title: null,
-          description: null,
-          isDeprecated: false,
-          nullable: false,
         ),
       );
     }
@@ -341,13 +346,10 @@ class SpecResolver {
     // If there are multiple and they are different, generate a OneOf type.
     if (distinctSchemas.length > 1) {
       return RenderOneOf(
-        common: CommonProperties(
+        // TODO(eseidel): Should this pass along description?
+        common: CommonProperties.empty(
           snakeName: '${operation.snakeName}_response',
           pointer: operation.pointer,
-          title: null,
-          description: operation.description,
-          isDeprecated: false,
-          nullable: false,
         ),
         schemas: distinctSchemas.toList(),
       );
