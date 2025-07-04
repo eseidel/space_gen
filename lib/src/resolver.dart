@@ -774,10 +774,22 @@ class ResolvedArray extends ResolvedSchema {
     required super.common,
     required this.items,
     this.defaultValue,
+    this.maxItems,
+    this.minItems,
+    this.uniqueItems = false,
   });
 
   /// type of the items in the array
   final ResolvedSchema items;
+
+  /// The maximum number of items in the array.
+  final int? maxItems;
+
+  /// The minimum number of items in the array.
+  final int? minItems;
+
+  /// Whether the items in the array must be unique.
+  final bool uniqueItems;
 
   /// The default value of the array type.
   final dynamic defaultValue;
@@ -788,11 +800,21 @@ class ResolvedArray extends ResolvedSchema {
       common: common ?? this.common,
       items: items,
       defaultValue: defaultValue,
+      maxItems: maxItems,
+      minItems: minItems,
+      uniqueItems: uniqueItems,
     );
   }
 
   @override
-  List<Object?> get props => [super.props, items, defaultValue];
+  List<Object?> get props => [
+    super.props,
+    items,
+    defaultValue,
+    maxItems,
+    minItems,
+    uniqueItems,
+  ];
 }
 
 class ResolvedEnum extends ResolvedSchema {
