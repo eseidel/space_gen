@@ -147,6 +147,9 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       common: schema.common,
       items: items,
       defaultValue: schema.defaultValue,
+      maxItems: schema.maxItems,
+      minItems: schema.minItems,
+      uniqueItems: schema.uniqueItems,
     );
   }
   if (schema is SchemaOneOf) {

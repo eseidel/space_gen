@@ -1791,6 +1791,10 @@ void main() {
           '    Future<void> uploadPets(\n'
           '        List<int> ids,\n'
           '    ) async {\n'
+          '        ids.validateMaximumItems(10);\n'
+          '        ids.validateMinimumItems(1);\n'
+          '        ids.validateUniqueItems();\n'
+          '\n'
           '        final response = await client.invokeApi(\n'
           '            method: Method.post,\n'
           "            path: '/pet/{petId}/uploadImage'\n"
