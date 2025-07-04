@@ -114,12 +114,20 @@ void main() {
           },
         },
       };
-      final spuriousFile = out.childFile('foo.txt')
+      final extraApiFile = out.childFile('lib/api/spurious.dart')
         ..createSync(recursive: true);
-      expect(spuriousFile.existsSync(), isTrue);
+      expect(extraApiFile.existsSync(), isTrue);
+      final extraModelFile = out.childFile('lib/model/spurious.dart')
+        ..createSync(recursive: true);
+      expect(extraModelFile.existsSync(), isTrue);
+      final extraRootFile = out.childFile('foo.txt')
+        ..createSync(recursive: true);
+      expect(extraRootFile.existsSync(), isTrue);
       final logger = _MockLogger();
       await renderToDirectory(spec: spec, outDir: out, logger: logger);
-      expect(spuriousFile.existsSync(), isFalse);
+      expect(extraApiFile.existsSync(), isFalse);
+      expect(extraModelFile.existsSync(), isFalse);
+      expect(extraRootFile.existsSync(), isTrue); // Only delete dirs we make.
       expect(out.childFile('lib/api.dart'), exists);
       expect(out.childFile('lib/api_client.dart'), exists);
     });
