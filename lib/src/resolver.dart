@@ -179,10 +179,23 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     final schemas = anyOf.schemas
         .map((e) => resolveSchemaRef(e, context))
         .toList();
-    // Elide the anyOf if there is only one schema.
-    if (schemas.length == 1) {
-      return schemas.first;
+    final forceNullable = schemas.any((e) => e is ResolvedNull);
+    if (forceNullable) {
+      schemas.removeWhere((e) => e is ResolvedNull);
     }
+    ResolvedSchema copyIfNeeded(
+      ResolvedSchema schema, {
+      bool forceNullable = false,
+    }) {
+      final common = schema.common.copyWith(nullable: forceNullable);
+      return schema.copyWith(common: common);
+    }
+
+    // Elide the anyOf if there is only only one schema left.
+    if (schemas.length == 1) {
+      return copyIfNeeded(schemas.first, forceNullable: forceNullable);
+    }
+    // TODO(eseidel): Make this union(object, List<object>) hack optional.
     // Dart doesn't have union types, but commonly openapi specs come from
     // typescript where foo(bar) and foo([bar]) are the same, we elide the
     // anyOf and just use the array in that case.
@@ -192,14 +205,6 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       if (first is ResolvedArray && first.items == second) {
         return first;
       } else if (second is ResolvedArray && second.items == first) {
-        return second;
-      }
-      // If one of the schemas is null, we can just return the other schema.
-      // We may need to copy it to make it nullable?
-      if (first is ResolvedPod && second is ResolvedNull) {
-        return first;
-      }
-      if (first is ResolvedNull && second is ResolvedPod) {
         return second;
       }
     }
@@ -596,6 +601,8 @@ abstract class ResolvedSchema extends Equatable {
 
   String get snakeName => common.snakeName;
 
+  ResolvedSchema copyWith({CommonProperties? common});
+
   @override
   List<Object?> get props => [common];
 
@@ -623,6 +630,17 @@ class ResolvedString extends ResolvedSchema {
 
   /// The pattern to match the string against.
   final String? pattern;
+
+  @override
+  ResolvedString copyWith({CommonProperties? common}) {
+    return ResolvedString(
+      common: common ?? this.common,
+      defaultValue: defaultValue,
+      maxLength: maxLength,
+      minLength: minLength,
+      pattern: pattern,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -684,6 +702,19 @@ class ResolvedNumber extends ResolvedNumeric<double> {
     super.multipleOf,
     super.defaultValue,
   });
+
+  @override
+  ResolvedNumber copyWith({CommonProperties? common}) {
+    return ResolvedNumber(
+      common: common ?? this.common,
+      defaultValue: defaultValue,
+      maximum: maximum,
+      minimum: minimum,
+      exclusiveMaximum: exclusiveMaximum,
+      exclusiveMinimum: exclusiveMinimum,
+      multipleOf: multipleOf,
+    );
+  }
 }
 
 class ResolvedInteger extends ResolvedNumeric<int> {
@@ -696,8 +727,22 @@ class ResolvedInteger extends ResolvedNumeric<int> {
     super.multipleOf,
     super.defaultValue,
   });
+
+  @override
+  ResolvedInteger copyWith({CommonProperties? common}) {
+    return ResolvedInteger(
+      common: common ?? this.common,
+      defaultValue: defaultValue,
+      maximum: maximum,
+      minimum: minimum,
+      exclusiveMaximum: exclusiveMaximum,
+      exclusiveMinimum: exclusiveMinimum,
+      multipleOf: multipleOf,
+    );
+  }
 }
 
+// TODO(eseidel): defaultValue should be strongly typed.
 class ResolvedPod extends ResolvedSchema {
   const ResolvedPod({
     required super.common,
@@ -710,6 +755,15 @@ class ResolvedPod extends ResolvedSchema {
 
   /// The default value of the pop type.
   final dynamic defaultValue;
+
+  @override
+  ResolvedPod copyWith({CommonProperties? common}) {
+    return ResolvedPod(
+      common: common ?? this.common,
+      type: type,
+      defaultValue: defaultValue,
+    );
+  }
 
   @override
   List<Object?> get props => [super.props, type, defaultValue];
@@ -729,6 +783,15 @@ class ResolvedArray extends ResolvedSchema {
   final dynamic defaultValue;
 
   @override
+  ResolvedArray copyWith({CommonProperties? common}) {
+    return ResolvedArray(
+      common: common ?? this.common,
+      items: items,
+      defaultValue: defaultValue,
+    );
+  }
+
+  @override
   List<Object?> get props => [super.props, items, defaultValue];
 }
 
@@ -746,6 +809,15 @@ class ResolvedEnum extends ResolvedSchema {
 
   /// The default value of the enum type.
   final dynamic defaultValue;
+
+  @override
+  ResolvedEnum copyWith({CommonProperties? common}) {
+    return ResolvedEnum(
+      common: common ?? this.common,
+      defaultValue: defaultValue,
+      values: values,
+    );
+  }
 
   @override
   List<Object?> get props => [super.props, values, defaultValue];
@@ -770,6 +842,16 @@ class ResolvedObject extends ResolvedSchema {
   final List<String> requiredProperties;
 
   @override
+  ResolvedObject copyWith({CommonProperties? common}) {
+    return ResolvedObject(
+      common: common ?? this.common,
+      properties: properties,
+      additionalProperties: additionalProperties,
+      requiredProperties: requiredProperties,
+    );
+  }
+
+  @override
   List<Object?> get props => [
     super.props,
     properties,
@@ -781,6 +863,11 @@ class ResolvedObject extends ResolvedSchema {
 /// An unknown schema, typically means empty (e.g. schema: {})
 class ResolvedUnknown extends ResolvedSchema {
   const ResolvedUnknown({required super.common});
+
+  @override
+  ResolvedUnknown copyWith({CommonProperties? common}) {
+    return ResolvedUnknown(common: common ?? this.common);
+  }
 }
 
 abstract class ResolvedSchemaCollection extends ResolvedSchema {
@@ -798,34 +885,74 @@ abstract class ResolvedSchemaCollection extends ResolvedSchema {
 
 class ResolvedOneOf extends ResolvedSchemaCollection {
   const ResolvedOneOf({required super.schemas, required super.common});
+
+  @override
+  ResolvedOneOf copyWith({CommonProperties? common}) {
+    return ResolvedOneOf(common: common ?? this.common, schemas: schemas);
+  }
 }
 
 class ResolvedAnyOf extends ResolvedSchemaCollection {
   const ResolvedAnyOf({required super.schemas, required super.common});
+
+  @override
+  ResolvedAnyOf copyWith({CommonProperties? common}) {
+    return ResolvedAnyOf(common: common ?? this.common, schemas: schemas);
+  }
 }
 
 class ResolvedAllOf extends ResolvedSchemaCollection {
   const ResolvedAllOf({required super.schemas, required super.common});
+
+  @override
+  ResolvedAllOf copyWith({CommonProperties? common}) {
+    return ResolvedAllOf(common: common ?? this.common, schemas: schemas);
+  }
 }
 
 class ResolvedVoid extends ResolvedSchema {
   const ResolvedVoid({required super.common});
+
+  @override
+  ResolvedVoid copyWith({CommonProperties? common}) {
+    return ResolvedVoid(common: common ?? this.common);
+  }
 }
 
 class ResolvedBinary extends ResolvedSchema {
   const ResolvedBinary({required super.common});
+
+  @override
+  ResolvedBinary copyWith({CommonProperties? common}) {
+    return ResolvedBinary(common: common ?? this.common);
+  }
 }
 
 class ResolvedNull extends ResolvedSchema {
   const ResolvedNull({required super.common});
+
+  @override
+  ResolvedNull copyWith({CommonProperties? common}) {
+    return ResolvedNull(common: common ?? this.common);
+  }
 }
 
 class ResolvedMap extends ResolvedSchema {
   const ResolvedMap({required super.common, required this.valueSchema});
 
   final ResolvedSchema valueSchema;
+
+  @override
+  ResolvedMap copyWith({CommonProperties? common}) {
+    return ResolvedMap(common: common ?? this.common, valueSchema: valueSchema);
+  }
 }
 
 class ResolvedEmptyObject extends ResolvedSchema {
   const ResolvedEmptyObject({required super.common});
+
+  @override
+  ResolvedEmptyObject copyWith({CommonProperties? common}) {
+    return ResolvedEmptyObject(common: common ?? this.common);
+  }
 }

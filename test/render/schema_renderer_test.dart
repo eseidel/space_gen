@@ -388,37 +388,115 @@ void main() {
       );
     });
 
-    test('anyOf', () {
-      final schema = {
-        'anyOf': [
-          {'type': 'string'},
-          {'type': 'number'},
-        ],
-      };
-      final result = renderTestSchema(schema);
-      // anyOf currently renders as a oneOf, which is wrong.
-      expect(
-        result,
-        'sealed class Test {\n'
-        '    static Test fromJson(dynamic jsonArg) {\n'
-        '        // Determine which schema to use based on the json.\n'
-        '        // TODO(eseidel): Implement this.\n'
-        "        throw UnimplementedError('Test.fromJson');\n"
-        '    }\n'
-        '\n'
-        '    /// Convenience to create a nullable type from a nullable json object.\n'
-        '    /// Useful when parsing optional fields.\n'
-        '    static Test? maybeFromJson(dynamic json) {\n'
-        '        if (json == null) {\n'
-        '            return null;\n'
-        '        }\n'
-        '        return Test.fromJson(json);\n'
-        '    }\n'
-        '\n'
-        '    /// Require all subclasses to implement toJson.\n'
-        '    dynamic toJson();\n'
-        '}\n',
-      );
+    group('anyOf', () {
+      test('two pod types', () {
+        final schema = {
+          'anyOf': [
+            {'type': 'string'},
+            {'type': 'number'},
+          ],
+        };
+        final result = renderTestSchema(schema);
+        // anyOf currently renders as a oneOf, which is wrong.
+        expect(
+          result,
+          'sealed class Test {\n'
+          '    static Test fromJson(dynamic jsonArg) {\n'
+          '        // Determine which schema to use based on the json.\n'
+          '        // TODO(eseidel): Implement this.\n'
+          "        throw UnimplementedError('Test.fromJson');\n"
+          '    }\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(dynamic json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    /// Require all subclasses to implement toJson.\n'
+          '    dynamic toJson();\n'
+          '}\n',
+        );
+      });
+
+      test('two object types', () {
+        // This tests the case where one is type=null and the other is a ref.
+        // This is useful for when you have an existing object that you want to
+        // make nullable, but also need the property to be required.
+        // The GitHub spec uses this for installation.suspended_by to make
+        // simple_user nullable but suspended_by still required.
+        final schemas = {
+          'User': {
+            'type': 'object',
+            'properties': {
+              'foo': {
+                'anyOf': [
+                  {'type': 'null'},
+                  {r'$ref': '#/components/schemas/Value'},
+                ],
+              },
+            },
+            'required': ['foo'],
+          },
+          'Value': {
+            'type': 'object',
+            'properties': {
+              'bar': {'type': 'number'},
+            },
+          },
+        };
+        final results = renderTestSchemas(schemas);
+        final user = results['User'];
+        expect(
+          user,
+          '@immutable\n'
+          'class User {\n'
+          '    User(\n'
+          '        { required this.foo, \n'
+          '         }\n'
+          '    );\n'
+          '\n'
+          '    factory User.fromJson(Map<String, dynamic>\n'
+          '        json) {\n'
+          '        return User(\n'
+          "            foo: Value.maybeFromJson(json['foo'] as Map<String, dynamic>?),\n"
+          '        );\n'
+          '    }\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static User? maybeFromJson(Map<String, dynamic>? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return User.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    final Value? foo;\n'
+          '\n'
+          '    Map<String, dynamic> toJson() {\n'
+          '        return {\n'
+          "            'foo': foo?.toJson(),\n"
+          '        };\n'
+          '    }\n'
+          '\n'
+          '    @override\n'
+          '    int get hashCode =>\n'
+          '          foo.hashCode;\n'
+          '\n'
+          '    @override\n'
+          '    bool operator ==(Object other) {\n'
+          '        if (identical(this, other)) return true;\n'
+          '        return other is User\n'
+          '            && this.foo == other.foo\n'
+          '        ;\n'
+          '    }\n'
+          '}\n',
+        );
+      });
     });
 
     test('map type', () {
