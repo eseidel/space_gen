@@ -779,7 +779,7 @@ void main() {
           requiredProperties: const [],
         );
         final copy = schema.copyWith(common: afterCommon);
-        expect(copy, equals(schema));
+        expect(copy, isNot(equals(schema)));
         expect(copy.common, equals(afterCommon));
         expect(copy.properties, equals(schema.properties));
         expect(copy.additionalProperties, equals(schema.additionalProperties));
@@ -792,10 +792,70 @@ void main() {
           defaultValue: null,
         );
         final copy = schema.copyWith(common: afterCommon);
-        expect(copy, equals(schema));
+        expect(copy, isNot(equals(schema)));
         expect(copy.common, equals(afterCommon));
         expect(copy.values, equals(schema.values));
         expect(copy.defaultValue, equals(schema.defaultValue));
+      });
+      test('ResolvedAnyOf', () {
+        final schema = ResolvedAnyOf(
+          common: beforeCommon,
+          schemas: [ResolvedPod(common: beforeCommon, type: PodType.boolean)],
+        );
+        final copy = schema.copyWith(common: afterCommon);
+        expect(copy, isNot(equals(schema)));
+        expect(copy.common, equals(afterCommon));
+        expect(copy.schemas, equals(schema.schemas));
+      });
+      test('ResolvedArray', () {
+        final schema = ResolvedArray(
+          common: beforeCommon,
+          items: ResolvedPod(common: beforeCommon, type: PodType.boolean),
+        );
+        final copy = schema.copyWith(common: afterCommon);
+        expect(copy, isNot(equals(schema)));
+        expect(copy.common, equals(afterCommon));
+        expect(copy.items, equals(schema.items));
+      });
+      test('ResolvedNumber', () {
+        final schema = ResolvedNumber(common: beforeCommon);
+        final copy = schema.copyWith(common: afterCommon);
+        expect(copy, isNot(equals(schema)));
+        expect(copy.common, equals(afterCommon));
+        expect(copy.maximum, equals(schema.maximum));
+        expect(copy.minimum, equals(schema.minimum));
+        expect(copy.multipleOf, equals(schema.multipleOf));
+      });
+      test('ResolvedInteger', () {
+        final schema = ResolvedInteger(common: beforeCommon);
+        final copy = schema.copyWith(common: afterCommon);
+        expect(copy, isNot(equals(schema)));
+        expect(copy.common, equals(afterCommon));
+        expect(copy.maximum, equals(schema.maximum));
+        expect(copy.minimum, equals(schema.minimum));
+        expect(copy.multipleOf, equals(schema.multipleOf));
+      });
+      test('ResolvedString', () {
+        final schema = ResolvedString(common: beforeCommon);
+        final copy = schema.copyWith(common: afterCommon);
+        expect(copy, isNot(equals(schema)));
+        expect(copy.common, equals(afterCommon));
+        expect(copy.defaultValue, equals(schema.defaultValue));
+        expect(copy.maxLength, equals(schema.maxLength));
+        expect(copy.minLength, equals(schema.minLength));
+      });
+      test('ResolvedPod', () {
+        final schema = ResolvedPod(common: beforeCommon, type: PodType.boolean);
+        final copy = schema.copyWith(common: afterCommon);
+        expect(copy, isNot(equals(schema)));
+        expect(copy.common, equals(afterCommon));
+        expect(copy.type, equals(schema.type));
+      });
+      test('ResolvedUnknown', () {
+        final schema = ResolvedUnknown(common: beforeCommon);
+        final copy = schema.copyWith(common: afterCommon);
+        expect(copy, isNot(equals(schema)));
+        expect(copy.common, equals(afterCommon));
       });
     });
   });
