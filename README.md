@@ -74,6 +74,7 @@ a consensus towards a better Dart generator, so releasing this one.
 - Handle deprecated=true in more places (e.g. enums)
 - Map & Array newtype via explicitly named schema?
 - readOnly and writeOnly
+- Do not delete more directory contents than necessary.
 
 ### OpenApi Quirks
 
