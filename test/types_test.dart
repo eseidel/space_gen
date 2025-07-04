@@ -26,6 +26,8 @@ void main() {
       expect(copy.description, 'Bar description');
       expect(copy.isDeprecated, true);
       expect(copy.nullable, true);
+      final noChange = common.copyWith();
+      expect(noChange, equals(common));
     });
   });
 }
