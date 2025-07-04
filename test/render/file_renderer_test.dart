@@ -1054,6 +1054,7 @@ void main() {
       final templates = TemplateProvider.defaultLocation();
       final schemaRenderer = SchemaRenderer(templates: templates);
       final formatter = Formatter();
+      final spellChecker = SpellChecker();
       final fileRenderer = FileRenderer(
         packageName: 'spacetraders',
         schemaRenderer: schemaRenderer,
@@ -1062,6 +1063,7 @@ void main() {
         fileWriter: FileWriter(
           outDir: MemoryFileSystem.test().directory('spacetraders'),
         ),
+        spellChecker: spellChecker,
       );
       final schema = RenderObject(
         common: CommonProperties.test(
@@ -1094,6 +1096,7 @@ void main() {
       final templates = TemplateProvider.defaultLocation();
       final schemaRenderer = SchemaRenderer(templates: templates);
       final formatter = Formatter();
+      final spellChecker = SpellChecker();
       final fileRenderer = FileRenderer(
         packageName: 'spacetraders',
         schemaRenderer: schemaRenderer,
@@ -1102,6 +1105,7 @@ void main() {
         fileWriter: FileWriter(
           outDir: MemoryFileSystem.test().directory('spacetraders'),
         ),
+        spellChecker: spellChecker,
       );
       final api = Api(
         snakeName: 'foo',
