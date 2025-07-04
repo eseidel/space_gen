@@ -137,7 +137,7 @@ abstract class ToTemplateContext {
 
 abstract class CanBeParameter implements ToTemplateContext {
   bool get isRequired;
-  String get parameterName;
+  String dartParameterName(Quirks quirks);
   Iterable<String> get validationCalls;
 }
 
@@ -491,12 +491,12 @@ class Endpoint implements ToTemplateContext {
 
   Uri get uri => Uri.parse('$serverUrl$path');
 
-  List<String> get validationStatements {
+  List<String> validationStatements(Quirks quirks) {
     final statements = <String>[];
     for (final parameter in parameters) {
-      final name = parameter.parameterName;
+      final dartName = parameter.dartParameterName(quirks);
       final isNullable = !parameter.isRequired;
-      final nameCall = isNullable ? '$name?.' : '$name.';
+      final nameCall = isNullable ? '$dartName?.' : '$dartName.';
       for (final call in parameter.validationCalls) {
         statements.add('$nameCall$call;');
       }
@@ -540,7 +540,7 @@ class Endpoint implements ToTemplateContext {
     final hasHeaderParameters = headerParameters.isNotEmpty;
 
     final validationStatementsString = indentWithTrailingNewline(
-      validationStatements,
+      validationStatements(context.quirks),
       indent: 8,
       extraTrailingNewline: true,
     );
@@ -676,7 +676,7 @@ abstract class RenderRequestBody implements CanBeParameter {
   Iterable<String> get validationCalls => schema.validationCalls;
 
   @override
-  String get parameterName =>
+  String dartParameterName(Quirks quirks) =>
       // TODO(eseidel): Is there a name we can use instead of the typename?
       // Removing any template parameters from the type.
       schema.typeName.lowerFirst().split('<').first;
@@ -692,7 +692,7 @@ class RenderRequestBodyJson extends RenderRequestBody {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     final typeName = schema.typeName;
-    final paramName = parameterName;
+    final paramName = dartParameterName(context.quirks);
     // TODO(eseidel): Share code with Parameter.toTemplateContext.
     final isNullable = !isRequired;
     return {
@@ -726,7 +726,7 @@ class RenderRequestBodyOctetStream extends RenderRequestBody {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final paramName = parameterName;
+    final paramName = dartParameterName(context.quirks);
     return {
       'request_body_doc_comment': createDocCommentFromParts(
         body: description,
@@ -754,7 +754,7 @@ class RenderRequestBodyTextPlain extends RenderRequestBody {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final paramName = parameterName;
+    final paramName = dartParameterName(context.quirks);
     return {
       'name': paramName,
       'dartName': paramName,
@@ -853,9 +853,13 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     return '';
   }
 
-  /// Is this the json storage type or the dart class type?
+  /// This is the resolved Dart type name for the schema.
+  /// e.g. 'String', 'Uri', or the class name of a new type.
   String get typeName;
 
+  /// This is the resolved Dart type name for the schema, with a ? if it is
+  /// nullable.
+  /// e.g. 'String?', 'Uri?', or the ClassName? of a new type.
   String nullableTypeName(SchemaRenderer context) {
     return typeName.endsWith('?') ? typeName : '$typeName?';
   }
@@ -2161,7 +2165,7 @@ class RenderParameter implements CanBeParameter {
   final String name;
 
   @override
-  String get parameterName => name;
+  String dartParameterName(Quirks quirks) => variableSafeName(quirks, name);
 
   /// The description of the parameter.
   final String? description;
