@@ -61,6 +61,45 @@ void logNameCollisions(Iterable<RenderSchema> schemas) {
   }
 }
 
+class SpellChecker {
+  SpellChecker({RunProcess? runProcess})
+    : runProcess = runProcess ?? Process.runSync;
+
+  /// The function to run a process. Allows for mocking in tests.
+  final RunProcess runProcess;
+
+  List<String> filesToCheck(Directory dir) {
+    final extensions = {'.dart', '.md', '.yaml'};
+    return dir
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((f) => extensions.contains(p.extension(f.path)))
+        .map((f) => f.path)
+        .toList();
+  }
+
+  List<String> collectMisspellings(Directory dir) {
+    // cspell seems to add an F/A prefix to the misspellings if we don't
+    // pass explicit file paths, unclear why.
+    final result = runProcess('cspell', [
+      '--no-summary',
+      '--words-only',
+      '--unique',
+      '--quiet',
+      '--no-color',
+      '--no-progress',
+      ...filesToCheck(dir),
+    ]);
+    // Lowercase, unique and sort the misspellings.
+    return (result.stdout as String)
+        .trim()
+        .split('\n')
+        .map((w) => w.toLowerCase())
+        .toSet()
+        .sorted();
+  }
+}
+
 class Formatter {
   Formatter({RunProcess? runProcess})
     : runProcess = runProcess ?? Process.runSync;
@@ -149,6 +188,7 @@ class FileRenderer {
     required this.schemaRenderer,
     required this.formatter,
     required this.fileWriter,
+    required this.spellChecker,
   });
 
   /// The package name this spec is being rendered into.
@@ -163,6 +203,9 @@ class FileRenderer {
 
   /// The formatter to use for formatting the files.
   final Formatter formatter;
+
+  /// The spell checker to use for checking for misspellings.
+  final SpellChecker spellChecker;
 
   /// The renderer for schemas and APIs.
   final SchemaRenderer schemaRenderer;
@@ -262,6 +305,17 @@ class FileRenderer {
       template: 'public_api',
       outPath: 'lib/api.dart',
       context: {'imports': <String>[], 'exports': exports},
+    );
+  }
+
+  void _renderCspellConfig(List<String> misspellings) {
+    _renderTemplate(
+      template: 'cspell.config',
+      outPath: 'cspell.config.yaml',
+      context: {
+        'hasMisspellings': misspellings.isNotEmpty,
+        'misspellings': misspellings,
+      },
     );
   }
 
@@ -375,5 +429,8 @@ class FileRenderer {
     // Render the combined api.dart exporting all rendered schemas.
     _renderPublicApi(spec.apis, schemas);
     formatter.formatAndFix(pkgDir: fileWriter.outDir.path);
+
+    final misspellings = spellChecker.collectMisspellings(fileWriter.outDir);
+    _renderCspellConfig(misspellings);
   }
 }

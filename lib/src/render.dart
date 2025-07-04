@@ -90,6 +90,7 @@ Future<void> loadAndRenderSpec({
   }
 
   final formatter = Formatter(runProcess: runProcess);
+  final spellChecker = SpellChecker(runProcess: runProcess);
   final fileWriter = FileWriter(outDir: outDir);
 
   // FileRenderer is responsible for deciding the layout of the files
@@ -100,6 +101,7 @@ Future<void> loadAndRenderSpec({
     schemaRenderer: schemaRenderer,
     formatter: formatter,
     fileWriter: fileWriter,
+    spellChecker: spellChecker,
   ).render(renderSpec);
 }
 
