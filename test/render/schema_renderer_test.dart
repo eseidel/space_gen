@@ -2723,7 +2723,6 @@ void main() {
         'description': 'Lists all the emojis available to use on GitHub.',
         'operationId': 'emojis/get',
         'tags': ['emojis'],
-        'parameters': [],
         'responses': {
           '200': {
             'content': {
