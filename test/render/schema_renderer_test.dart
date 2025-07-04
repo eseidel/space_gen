@@ -2716,6 +2716,64 @@ void main() {
         );
       });
     });
+
+    test('return type matches json type', () {
+      final json = {
+        'summary': 'Get emojis',
+        'description': 'Lists all the emojis available to use on GitHub.',
+        'operationId': 'emojis/get',
+        'tags': ['emojis'],
+        'parameters': [],
+        'responses': {
+          '200': {
+            'content': {
+              'application/json': {
+                'schema': {
+                  'type': 'object',
+                  'additionalProperties': {'type': 'string'},
+                },
+              },
+            },
+            'description': 'Response',
+          },
+        },
+      };
+      final result = renderTestOperation(
+        path: '/emojis',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(
+        result,
+        '/// Test API\n'
+        'class EmojisApi {\n'
+        '    EmojisApi(ApiClient? client) : client = client ?? ApiClient();\n'
+        '\n'
+        '    final ApiClient client;\n'
+        '\n'
+        '    /// Get emojis\n'
+        '    /// Lists all the emojis available to use on GitHub.\n'
+        '    Future<Map<String, String>> emojisGet(\n'
+        '    ) async {\n'
+        '        final response = await client.invokeApi(\n'
+        '            method: Method.post,\n'
+        "            path: '/emojis'\n"
+        ',\n'
+        '        );\n'
+        '\n'
+        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+        '            throw ApiException(response.statusCode, response.body.toString());\n'
+        '        }\n'
+        '\n'
+        '        if (response.body.isNotEmpty) {\n'
+        '            return (jsonDecode(response.body) as Map<String, dynamic>)?.map((key, value) => MapEntry(key, value as String));\n'
+        '        }\n'
+        '\n'
+        "        throw ApiException(response.statusCode, 'Unhandled response from \$emojisGet');\n"
+        '    }\n'
+        '}\n',
+      );
+    });
   });
 
   group('renderTestApiFromSpec', () {
