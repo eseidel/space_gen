@@ -254,14 +254,31 @@ class SchemaArray extends Schema {
     required super.common,
     required this.items,
     required this.defaultValue,
+    required this.maxItems,
+    required this.minItems,
+    required this.uniqueItems,
   });
 
   final SchemaRef items;
 
+  final int? maxItems; // Non-negative.
+  final int? minItems; // Non-negative.
+  final bool uniqueItems;
+  // final SchemaRef? contains;
+  // final int? minContains; // Non-negative.
+  // final int? maxContains; // Non-negative.
+
   final dynamic defaultValue;
 
   @override
-  List<Object?> get props => [super.props, items, defaultValue];
+  List<Object?> get props => [
+    super.props,
+    items,
+    defaultValue,
+    maxItems,
+    minItems,
+    uniqueItems,
+  ];
 }
 
 // Renders as dynamic.

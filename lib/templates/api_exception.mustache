@@ -38,31 +38,31 @@ class ApiException implements Exception {
 extension ValidateNumber on num {
   void validateMinimum(num minimum) {
     if (this < minimum) {
-      throw Exception('Value must be greater than or equal to $minimum');
+      throw Exception('must be greater than or equal to $minimum');
     }
   }
 
   void validateMaximum(num maximum) {
     if (this > maximum) {
-      throw Exception('Value must be less than or equal to $maximum');
+      throw Exception('must be less than or equal to $maximum');
     }
   }
 
   void validateExclusiveMinimum(num minimum) {
     if (this <= minimum) {
-      throw Exception('Value must be greater than $minimum');
+      throw Exception('must be greater than $minimum');
     }
   }
 
   void validateExclusiveMaximum(num maximum) {
     if (this >= maximum) {
-      throw Exception('Value must be less than $maximum');
+      throw Exception('must be less than $maximum');
     }
   }
 
   void validateMultipleOf(num multiple) {
     if (this % multiple != 0) {
-      throw Exception('Value must be a multiple of $multiple');
+      throw Exception('must be a multiple of $multiple');
     }
   }
 }
@@ -74,19 +74,39 @@ extension ValidateNumber on num {
 extension ValidateString on String {
   void validateMinimumLength(int minimum) {
     if (length < minimum) {
-      throw Exception('Value must be at least $minimum characters long');
+      throw Exception('must be at least $minimum characters long');
     }
   }
 
   void validateMaximumLength(int maximum) {
     if (length > maximum) {
-      throw Exception('Value must be at most $maximum characters long');
+      throw Exception('must be at most $maximum characters long');
     }
   }
 
   void validatePattern(String pattern) {
     if (!RegExp(pattern).hasMatch(this)) {
-      throw Exception('Value must match the pattern $pattern');
+      throw Exception('must match the pattern $pattern');
+    }
+  }
+}
+
+extension ValidateArray on List {
+  void validateMaximumItems(int maximum) {
+    if (length > maximum) {
+      throw Exception('must be at most $maximum items long');
+    }
+  }
+
+  void validateMinimumItems(int minimum) {
+    if (length < minimum) {
+      throw Exception('must be at least $minimum items long');
+    }
+  }
+
+  void validateUniqueItems() {
+    if (toSet().length != length) {
+      throw Exception('must contain unique items');
     }
   }
 }

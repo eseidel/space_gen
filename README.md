@@ -4,9 +4,9 @@
 
 _Generates Dart code so beautiful, it must be from outer space!_
 
-A simple, hackable OpenAPI 3.x generator.
+A simple, hackable OpenAPI 3.0 and 3.1 generator.
 
-Implements most of OpenAPI. Patches welcome.
+Implements most of the OpenAPI spec.  Patches welcome.
 
 ## Usage
 
@@ -22,7 +22,7 @@ dart run space_gen -i spec_path_or_url -o output_package_path
 
 ## Advantages over Open API Generator 7.0.0
 
-- Dart 3.8+ only (sound null safety)
+- Modern null-safe Dart (currently 3.8+ only)
 - Generates properly recursive toJson/fromJson which round-trip fully.
 - Able to generate immutable models.
 - Uses real enum classes.
@@ -68,11 +68,12 @@ a consensus towards a better Dart generator, so releasing this one.
 - Add (non-const) validation during construction of new-type objects, will
   require making generator aware that some objects can't be const constructed
   as well as adding a const-constructor for those objects for default values.
-- Handle 'example' fields
+- Handle 'example' and 'examples' fields.
 - explicitly handle format=int64
 - Handle format=double and format=float
 - Handle deprecated=true in more places (e.g. enums)
-- Map newtype via explicitly named schema?
+- Map & Array newtype via explicitly named schema?
+- readOnly and writeOnly
 
 ### OpenApi Quirks
 

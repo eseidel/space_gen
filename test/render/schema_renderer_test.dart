@@ -1749,6 +1749,76 @@ void main() {
       );
     });
 
+    group('array validations', () {
+      test('operation', () {
+        final operation = {
+          'tags': ['pet'],
+          'summary': 'Uploads an image.',
+          'operationId': 'uploadPets',
+          'parameters': [
+            {
+              'name': 'ids',
+              'in': 'query',
+              'description': 'IDs of pets to update',
+              'required': true,
+              'schema': {
+                'type': 'array',
+                'items': {'type': 'integer'},
+                'maxItems': 10,
+                'minItems': 1,
+                'uniqueItems': true,
+              },
+            },
+          ],
+          'responses': {
+            '200': {'description': 'successful operation'},
+          },
+        };
+        final result = renderTestOperation(
+          path: '/pet/{petId}/uploadImage',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        );
+        expect(
+          result,
+          '/// Test API\n'
+          'class PetApi {\n'
+          '    PetApi(ApiClient? client) : client = client ?? ApiClient();\n'
+          '\n'
+          '    final ApiClient client;\n'
+          '\n'
+          '    /// Uploads an image.\n'
+          '    Future<void> uploadPets(\n'
+          '        List<int> ids,\n'
+          '    ) async {\n'
+          '        ids.validateMaximumItems(10);\n'
+          '        ids.validateMinimumItems(1);\n'
+          '        ids.validateUniqueItems();\n'
+          '\n'
+          '        final response = await client.invokeApi(\n'
+          '            method: Method.post,\n'
+          "            path: '/pet/{petId}/uploadImage'\n"
+          ',\n'
+          '            queryParameters: {\n'
+          "                'ids': ids.toString(),\n"
+          '            },\n'
+          '        );\n'
+          '\n'
+          '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+          '            throw ApiException(response.statusCode, response.body.toString());\n'
+          '        }\n'
+          '\n'
+          '        if (response.body.isNotEmpty) {\n'
+          '            return ;\n'
+          '        }\n'
+          '\n'
+          "        throw ApiException(response.statusCode, 'Unhandled response from \$uploadPets');\n"
+          '    }\n'
+          '}\n',
+        );
+      });
+    });
+
     test('renderSchema throws for non-new-type schemas', () {
       final json = {'type': 'string'};
       expect(() => renderTestSchema(json), throwsA(isA<StateError>()));

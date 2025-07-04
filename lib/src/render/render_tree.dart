@@ -215,6 +215,9 @@ class SpecResolver {
           common: schema.common,
           items: toRenderSchema(schema.items),
           defaultValue: defaultValue,
+          maxItems: schema.maxItems,
+          minItems: schema.minItems,
+          uniqueItems: schema.uniqueItems,
         );
       case ResolvedVoid():
         return RenderVoid(common: schema.common);
@@ -1692,6 +1695,9 @@ class RenderArray extends RenderSchema {
     required super.common,
     required this.items,
     this.defaultValue,
+    this.maxItems,
+    this.minItems,
+    this.uniqueItems = false,
   });
 
   /// The items of the resolved schema.
@@ -1699,6 +1705,24 @@ class RenderArray extends RenderSchema {
 
   @override
   final dynamic defaultValue;
+
+  /// The maximum number of items in the array.
+  final int? maxItems;
+
+  /// The minimum number of items in the array.
+  final int? minItems;
+
+  /// Whether the items in the array must be unique.
+  final bool uniqueItems;
+
+  @override
+  Iterable<String> get validationCalls {
+    return [
+      if (maxItems != null) 'validateMaximumItems($maxItems)',
+      if (minItems != null) 'validateMinimumItems($minItems)',
+      if (uniqueItems) 'validateUniqueItems()',
+    ];
+  }
 
   @override
   bool get defaultCanConstConstruct {
@@ -1712,7 +1736,14 @@ class RenderArray extends RenderSchema {
   }
 
   @override
-  List<Object?> get props => [super.props, items, defaultValue];
+  List<Object?> get props => [
+    super.props,
+    items,
+    defaultValue,
+    maxItems,
+    minItems,
+    uniqueItems,
+  ];
 
   @override
   bool get onlyJsonTypes => items.onlyJsonTypes;

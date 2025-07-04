@@ -614,6 +614,9 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
       common: common,
       defaultValue: defaultValue,
       items: itemSchema,
+      maxItems: _optional<int>(json, 'maxItems'),
+      minItems: _optional<int>(json, 'minItems'),
+      uniqueItems: _optional<bool>(json, 'uniqueItems') ?? false,
     );
   }
 
