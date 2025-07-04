@@ -514,244 +514,289 @@ void main() {
   });
 
   group('ResolvedSchema', () {
-    test('RenderObject equality', () {
-      final schema1 = ResolvedObject(
-        common: CommonProperties.test(
-          snakeName: 'Foo',
-          pointer: JsonPointer.parse(
-            '#/paths//users/get/responses/200/content/application/json/schema',
+    group('equality', () {
+      test('RenderObject', () {
+        final schema1 = ResolvedObject(
+          common: CommonProperties.test(
+            snakeName: 'Foo',
+            pointer: JsonPointer.parse(
+              '#/paths//users/get/responses/200/content/application/json/schema',
+            ),
+            description: 'Foo',
           ),
-          description: 'Foo',
-        ),
-        properties: const {},
-        additionalProperties: null,
-        requiredProperties: const [],
-      );
-      final schema2 = ResolvedObject(
-        common: CommonProperties.test(
-          snakeName: 'Foo',
-          pointer: JsonPointer.parse(
-            '#/paths//users/get/responses/201/content/application/json/schema',
+          properties: const {},
+          additionalProperties: null,
+          requiredProperties: const [],
+        );
+        final schema2 = ResolvedObject(
+          common: CommonProperties.test(
+            snakeName: 'Foo',
+            pointer: JsonPointer.parse(
+              '#/paths//users/get/responses/201/content/application/json/schema',
+            ),
+            description: 'Foo',
           ),
-          description: 'Foo',
-        ),
-        properties: const {},
-        additionalProperties: null,
-        requiredProperties: const [],
-      );
-      expect(schema1, equals(schema1));
-      // Different pointer.
-      expect(schema1, isNot(equals(schema2)));
-    });
-    test('RenderArray equality', () {
-      final pointer200 = JsonPointer.parse(
-        '#/paths//users/get/responses/200/content/application/json/schema',
-      );
-      final pointer201 = JsonPointer.parse(
-        '#/paths//users/get/responses/201/content/application/json/schema',
-      );
-      final schema1 = ResolvedArray(
-        common: CommonProperties.test(
-          snakeName: 'Foo',
-          pointer: pointer200,
-          description: 'Foo',
-        ),
-        items: ResolvedPod(
+          properties: const {},
+          additionalProperties: null,
+          requiredProperties: const [],
+        );
+        expect(schema1, equals(schema1));
+        // Different pointer.
+        expect(schema1, isNot(equals(schema2)));
+      });
+      test('RenderArray', () {
+        final pointer200 = JsonPointer.parse(
+          '#/paths//users/get/responses/200/content/application/json/schema',
+        );
+        final pointer201 = JsonPointer.parse(
+          '#/paths//users/get/responses/201/content/application/json/schema',
+        );
+        final schema1 = ResolvedArray(
           common: CommonProperties.test(
             snakeName: 'Foo',
             pointer: pointer200,
             description: 'Foo',
           ),
-          type: PodType.boolean,
-        ),
-      );
-      final schema2 = ResolvedArray(
-        common: CommonProperties.test(
-          snakeName: 'Foo',
-          pointer: pointer201,
-          description: 'Foo',
-        ),
-        items: ResolvedPod(
+          items: ResolvedPod(
+            common: CommonProperties.test(
+              snakeName: 'Foo',
+              pointer: pointer200,
+              description: 'Foo',
+            ),
+            type: PodType.boolean,
+          ),
+        );
+        final schema2 = ResolvedArray(
           common: CommonProperties.test(
             snakeName: 'Foo',
-            pointer: pointer200,
+            pointer: pointer201,
             description: 'Foo',
           ),
-          type: PodType.boolean,
-        ),
-      );
-      expect(schema1, equals(schema1));
-      // Different pointer.
-      expect(schema1, isNot(equals(schema2)));
-      // Different items.
-      expect(
-        schema1,
-        isNot(
-          equals(
-            ResolvedArray(
-              common: CommonProperties.test(
-                snakeName: 'Foo',
-                pointer: pointer200,
-                description: 'Foo',
-              ),
-              items: ResolvedInteger(
+          items: ResolvedPod(
+            common: CommonProperties.test(
+              snakeName: 'Foo',
+              pointer: pointer200,
+              description: 'Foo',
+            ),
+            type: PodType.boolean,
+          ),
+        );
+        expect(schema1, equals(schema1));
+        // Different pointer.
+        expect(schema1, isNot(equals(schema2)));
+        // Different items.
+        expect(
+          schema1,
+          isNot(
+            equals(
+              ResolvedArray(
                 common: CommonProperties.test(
                   snakeName: 'Foo',
                   pointer: pointer200,
                   description: 'Foo',
                 ),
+                items: ResolvedInteger(
+                  common: CommonProperties.test(
+                    snakeName: 'Foo',
+                    pointer: pointer200,
+                    description: 'Foo',
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      );
-    });
-    test('RenderString equality', () {
-      final schema1 = ResolvedString(
-        common: CommonProperties.test(
-          snakeName: 'Foo',
-          pointer: JsonPointer.parse(
-            '#/paths//users/get/responses/200/content/application/json/schema',
+        );
+      });
+      test('RenderString', () {
+        final schema1 = ResolvedString(
+          common: CommonProperties.test(
+            snakeName: 'Foo',
+            pointer: JsonPointer.parse(
+              '#/paths//users/get/responses/200/content/application/json/schema',
+            ),
+            description: 'Foo',
           ),
-          description: 'Foo',
-        ),
-        defaultValue: 'foo',
-        maxLength: 10,
-        minLength: 1,
-      );
-      final schema2 = ResolvedString(
-        common: CommonProperties.test(
-          snakeName: 'Foo',
-          pointer: JsonPointer.parse(
-            '#/paths//users/get/responses/200/content/application/json/schema',
+          defaultValue: 'foo',
+          maxLength: 10,
+          minLength: 1,
+        );
+        final schema2 = ResolvedString(
+          common: CommonProperties.test(
+            snakeName: 'Foo',
+            pointer: JsonPointer.parse(
+              '#/paths//users/get/responses/200/content/application/json/schema',
+            ),
+            description: 'Foo',
           ),
-          description: 'Foo',
-        ),
-        defaultValue: 'foo',
-      );
-      expect(schema1, equals(schema1));
-      // Different values.
-      expect(schema1, isNot(equals(schema2)));
+          defaultValue: 'foo',
+        );
+        expect(schema1, equals(schema1));
+        // Different values.
+        expect(schema1, isNot(equals(schema2)));
+      });
+
+      test('ResolvedEnum', () {
+        final schema1 = ResolvedEnum(
+          common: CommonProperties.test(
+            snakeName: 'Foo',
+            pointer: JsonPointer.parse(
+              '#/paths//users/get/responses/200/content/application/json/schema',
+            ),
+            description: 'Foo',
+          ),
+          values: const ['bar', 'baz'],
+          defaultValue: null,
+        );
+        final schema2 = ResolvedEnum(
+          common: CommonProperties.test(
+            snakeName: 'Foo',
+            pointer: JsonPointer.parse(
+              '#/paths//users/get/responses/200/content/application/json/schema',
+            ),
+            description: 'Foo',
+          ),
+          values: const ['bar', 'qux'],
+          defaultValue: null,
+        );
+        expect(schema1, equals(schema1));
+        // Different values.
+        expect(schema1, isNot(equals(schema2)));
+      });
+      test('ResolvedAnyOf', () {
+        final pointer200 = JsonPointer.parse(
+          '#/paths//users/get/responses/200/content/application/json/schema',
+        );
+        final schema1 = ResolvedAnyOf(
+          common: CommonProperties.test(
+            snakeName: 'Foo',
+            pointer: pointer200,
+            description: 'Foo',
+          ),
+          schemas: [
+            ResolvedPod(
+              common: CommonProperties.test(
+                snakeName: 'Foo',
+                pointer: pointer200,
+                description: 'Foo',
+              ),
+              type: PodType.boolean,
+            ),
+          ],
+        );
+        final schema2 = ResolvedAnyOf(
+          common: CommonProperties.test(
+            snakeName: 'Foo',
+            pointer: pointer200,
+            description: 'Foo',
+          ),
+          schemas: [
+            ResolvedPod(
+              common: CommonProperties.test(
+                snakeName: 'Foo',
+                pointer: pointer200,
+                description: 'Foo',
+              ),
+              type: PodType.boolean,
+            ),
+          ],
+        );
+        expect(schema1, equals(schema1));
+        // Same schemas.
+        expect(schema1, equals(schema2));
+      });
+      test('ResolvedNumber', () {
+        final schema1 = ResolvedNumber(
+          common: CommonProperties.test(
+            snakeName: 'Foo',
+            pointer: JsonPointer.parse(
+              '#/paths//users/get/responses/200/content/application/json/schema',
+            ),
+            description: 'Foo',
+          ),
+        );
+        // Same schema.
+        expect(schema1, equals(schema1));
+        final schema2 = ResolvedNumber(
+          common: CommonProperties.test(
+            snakeName: 'Foo',
+            pointer: JsonPointer.parse(
+              '#/paths//users/get/responses/200/content/application/json/schema',
+            ),
+            description: 'Foo',
+          ),
+          maximum: 10,
+        );
+        // Different schema.
+        expect(schema1, isNot(equals(schema2)));
+      });
+      test('ResolvedInteger', () {
+        final schema1 = ResolvedInteger(
+          common: CommonProperties.test(
+            snakeName: 'Foo',
+            pointer: JsonPointer.parse(
+              '#/paths//users/get/responses/200/content/application/json/schema',
+            ),
+            description: 'Foo',
+          ),
+        );
+        // Same schema.
+        expect(schema1, equals(schema1));
+        final schema2 = ResolvedInteger(
+          common: CommonProperties.test(
+            snakeName: 'Foo',
+            pointer: JsonPointer.parse(
+              '#/paths//users/get/responses/200/content/application/json/schema',
+            ),
+            description: 'Foo',
+          ),
+          maximum: 10,
+        );
+        // Different schema.
+        expect(schema1, isNot(equals(schema2)));
+      });
     });
 
-    test('ResolvedEnum equality', () {
-      final schema1 = ResolvedEnum(
-        common: CommonProperties.test(
-          snakeName: 'Foo',
-          pointer: JsonPointer.parse(
-            '#/paths//users/get/responses/200/content/application/json/schema',
-          ),
-          description: 'Foo',
+    group('copyWith', () {
+      final beforeCommon = CommonProperties.test(
+        snakeName: 'Foo',
+        pointer: JsonPointer.parse(
+          '#/paths//users/get/responses/200/content/application/json/schema',
         ),
-        values: const ['bar', 'baz'],
-        defaultValue: null,
+        description: 'Foo',
       );
-      final schema2 = ResolvedEnum(
-        common: CommonProperties.test(
-          snakeName: 'Foo',
-          pointer: JsonPointer.parse(
-            '#/paths//users/get/responses/200/content/application/json/schema',
-          ),
-          description: 'Foo',
+      final afterCommon = CommonProperties.test(
+        snakeName: 'Bar',
+        pointer: JsonPointer.parse(
+          '#/paths//users/get/responses/200/content/application/json/schema',
         ),
-        values: const ['bar', 'qux'],
-        defaultValue: null,
+        description: 'Bar',
       );
-      expect(schema1, equals(schema1));
-      // Different values.
-      expect(schema1, isNot(equals(schema2)));
-    });
-    test('ResolvedAnyOf equality', () {
-      final pointer200 = JsonPointer.parse(
-        '#/paths//users/get/responses/200/content/application/json/schema',
-      );
-      final schema1 = ResolvedAnyOf(
-        common: CommonProperties.test(
-          snakeName: 'Foo',
-          pointer: pointer200,
-          description: 'Foo',
-        ),
-        schemas: [
-          ResolvedPod(
-            common: CommonProperties.test(
-              snakeName: 'Foo',
-              pointer: pointer200,
-              description: 'Foo',
-            ),
-            type: PodType.boolean,
-          ),
-        ],
-      );
-      final schema2 = ResolvedAnyOf(
-        common: CommonProperties.test(
-          snakeName: 'Foo',
-          pointer: pointer200,
-          description: 'Foo',
-        ),
-        schemas: [
-          ResolvedPod(
-            common: CommonProperties.test(
-              snakeName: 'Foo',
-              pointer: pointer200,
-              description: 'Foo',
-            ),
-            type: PodType.boolean,
-          ),
-        ],
-      );
-      expect(schema1, equals(schema1));
-      // Same schemas.
-      expect(schema1, equals(schema2));
-    });
-    test('ResolvedNumber equality', () {
-      final schema1 = ResolvedNumber(
-        common: CommonProperties.test(
-          snakeName: 'Foo',
-          pointer: JsonPointer.parse(
-            '#/paths//users/get/responses/200/content/application/json/schema',
-          ),
-          description: 'Foo',
-        ),
-      );
-      // Same schema.
-      expect(schema1, equals(schema1));
-      final schema2 = ResolvedNumber(
-        common: CommonProperties.test(
-          snakeName: 'Foo',
-          pointer: JsonPointer.parse(
-            '#/paths//users/get/responses/200/content/application/json/schema',
-          ),
-          description: 'Foo',
-        ),
-        maximum: 10,
-      );
-      // Different schema.
-      expect(schema1, isNot(equals(schema2)));
-    });
-    test('ResolvedInteger equality', () {
-      final schema1 = ResolvedInteger(
-        common: CommonProperties.test(
-          snakeName: 'Foo',
-          pointer: JsonPointer.parse(
-            '#/paths//users/get/responses/200/content/application/json/schema',
-          ),
-          description: 'Foo',
-        ),
-      );
-      // Same schema.
-      expect(schema1, equals(schema1));
-      final schema2 = ResolvedInteger(
-        common: CommonProperties.test(
-          snakeName: 'Foo',
-          pointer: JsonPointer.parse(
-            '#/paths//users/get/responses/200/content/application/json/schema',
-          ),
-          description: 'Foo',
-        ),
-        maximum: 10,
-      );
-      // Different schema.
-      expect(schema1, isNot(equals(schema2)));
+      test('ResolvedObject', () {
+        final schema = ResolvedObject(
+          common: beforeCommon,
+          properties: const {},
+          additionalProperties: null,
+          requiredProperties: const [],
+        );
+        final copy = schema.copyWith(common: afterCommon);
+        expect(copy, equals(schema));
+        expect(copy.common, equals(afterCommon));
+        expect(copy.properties, equals(schema.properties));
+        expect(copy.additionalProperties, equals(schema.additionalProperties));
+        expect(copy.requiredProperties, equals(schema.requiredProperties));
+      });
+      test('ResolvedEnum', () {
+        final schema = ResolvedEnum(
+          common: beforeCommon,
+          values: const ['bar', 'baz'],
+          defaultValue: null,
+        );
+        final copy = schema.copyWith(common: afterCommon);
+        expect(copy, equals(schema));
+        expect(copy.common, equals(afterCommon));
+        expect(copy.values, equals(schema.values));
+        expect(copy.defaultValue, equals(schema.defaultValue));
+      });
     });
   });
 }
