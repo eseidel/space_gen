@@ -887,6 +887,10 @@ void main() {
           expect(copy.valueSchema, equals(schema.valueSchema));
         });
       });
+      test('ResolvedBinary', () {
+        final schema = ResolvedBinary(common: beforeCommon);
+        testCopyWith(schema);
+      });
       test('ResolvedUnknown', () {
         testCopyWith(ResolvedUnknown(common: beforeCommon));
       });
