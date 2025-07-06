@@ -436,6 +436,7 @@ ResolvedSpec resolveSpec(OpenApi spec, {bool logSchemas = true}) {
     refRegistry: refRegistry,
   );
   return ResolvedSpec(
+    title: spec.info.title,
     serverUrl: spec.serverUrl,
     paths: _resolvePaths(spec.paths, context),
     tags: spec.tags.map(_resolvedTag).toList(),
@@ -455,12 +456,16 @@ class ResolvedTag {
 class ResolvedSpec {
   const ResolvedSpec({
     required this.serverUrl,
+    required this.title,
     required this.paths,
     required this.tags,
   });
 
   /// The server url of the spec.
   final Uri serverUrl;
+
+  /// The title of the spec.
+  final String title;
 
   /// The paths of the spec.
   final List<ResolvedPath> paths;

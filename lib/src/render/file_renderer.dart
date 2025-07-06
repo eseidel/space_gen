@@ -10,6 +10,7 @@ import 'package:space_gen/src/render/render_tree.dart';
 import 'package:space_gen/src/render/schema_renderer.dart';
 import 'package:space_gen/src/render/templates.dart';
 import 'package:space_gen/src/render/tree_visitor.dart';
+import 'package:space_gen/src/string.dart';
 
 typedef RunProcess =
     ProcessResult Function(
@@ -346,7 +347,8 @@ class FileRenderer {
     return imports;
   }
 
-  void _renderApis(List<Api> apis) {
+  List<Api> _renderApis(List<Api> apis) {
+    final rendered = <Api>[];
     for (final api in apis) {
       final content = schemaRenderer.renderApi(api);
       final imports = importsForApi(api);
@@ -360,7 +362,24 @@ class FileRenderer {
         outPath: outPath,
         context: {'imports': importsContext, 'content': content},
       );
+      rendered.add(api);
     }
+    return rendered;
+  }
+
+  void _renderClient(List<Api> apis, {required String specName}) {
+    final apiContexts = apis.map((a) {
+      return {'apiClassName': a.className, 'apiName': a.clientVariableName};
+    }).toList();
+    _renderTemplate(
+      template: 'client',
+      outPath: 'lib/client.dart',
+      context: {
+        'apis': apiContexts,
+        'packageName': packageName,
+        'clientClassName': '${toUpperCamelCase(specName)}Client',
+      },
+    );
   }
 
   @visibleForTesting
@@ -430,7 +449,7 @@ class FileRenderer {
     // Set up the package directory.
     _renderDirectory();
     // Render the apis (endpoint groups).
-    _renderApis(spec.apis);
+    final renderedApis = _renderApis(spec.apis);
 
     final schemas = collectAllSchemas(spec).where(rendersToSeparateFile);
     logNameCollisions(schemas);
@@ -439,6 +458,10 @@ class FileRenderer {
     renderModels(schemas);
     // Render the api client.
     _renderApiClient(spec);
+    // This is a bit of hack, but seems to work with the specs I've tested.
+    // Probably ClientName should be a parameter to the render function.
+    final specName = spec.title.split(' ').firstOrNull ?? '';
+    _renderClient(renderedApis, specName: specName);
     // Render the combined api.dart exporting all rendered schemas.
     _renderPublicApi(spec.apis, schemas);
     formatter.formatAndFix(pkgDir: fileWriter.outDir.path);
