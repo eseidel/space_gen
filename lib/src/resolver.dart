@@ -491,6 +491,7 @@ class ResolvedParameter {
     required this.description,
     required this.isRequired,
     required this.isDeprecated,
+    required this.explode,
     required this.schema,
   });
 
@@ -508,6 +509,9 @@ class ResolvedParameter {
 
   /// Whether the parameter is deprecated.
   final bool isDeprecated;
+
+  /// Whether the parameter is exploded.
+  final bool explode;
 
   /// The schema of the resolved parameter.
   final ResolvedSchema schema;
