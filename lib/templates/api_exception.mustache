@@ -10,6 +10,11 @@ class ApiException implements Exception {
       : innerException = null,
       stackTrace = null;
 
+  const ApiException.unhandled(this.code)
+      : message = 'Unhandled response',
+      innerException = null,
+      stackTrace = null;
+
   const ApiException.withInner(
       this.code, this.message, this.innerException, this.stackTrace);
 

@@ -98,7 +98,7 @@ Future<void> loadAndRenderSpec({
     formatter: formatter,
     fileWriter: fileWriter,
     spellChecker: spellChecker,
-  ).render(renderSpec, clearDirectory: true);
+  ).render(renderSpec);
 }
 
 @visibleForTesting
@@ -199,6 +199,7 @@ String renderTestOperation({
   required Map<String, dynamic> operationJson,
   required Uri serverUrl,
   Quirks quirks = const Quirks(),
+  String? removePrefix,
 }) {
   final parsedOperation = parseOperation(
     MapContext.initial(operationJson),
@@ -224,6 +225,7 @@ String renderTestOperation({
     description: 'Test API',
     className: className,
     endpoints: [endpoint],
+    removePrefix: removePrefix,
   );
 }
 

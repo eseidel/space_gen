@@ -45,7 +45,7 @@
             return {{{ responseFromJson }}};
         }
 
-        throw ApiException(response.statusCode, 'Unhandled response from ${{{methodName}}}');
+        throw ApiException.unhandled(response.statusCode);
     }
     {{/endpoints}}
 }

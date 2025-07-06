@@ -40,11 +40,15 @@ class SchemaRenderer {
     required String? description,
     required String className,
     required List<Endpoint> endpoints,
+    String? removePrefix,
   }) {
+    final endpointsContext = endpoints
+        .map((e) => e.toTemplateContext(this, removePrefix: removePrefix))
+        .toList();
     return templates.load('api').renderString({
       'api_doc_comment': createDocCommentFromParts(body: description),
       'className': className,
-      'endpoints': endpoints.map((e) => e.toTemplateContext(this)).toList(),
+      'endpoints': endpointsContext,
     });
   }
 
@@ -53,5 +57,6 @@ class SchemaRenderer {
     description: api.description,
     className: api.className,
     endpoints: api.endpoints,
+    removePrefix: api.removePrefix,
   );
 }

@@ -97,3 +97,15 @@ extension CapitalizeString on String {
     return '${this[0].toLowerCase()}${substring(1)}';
   }
 }
+
+/// This is a special case which just tries to use the first segment of a
+/// snake_case name as the prefix.
+String sharedPrefixFromSnakeNames(List<String> values) {
+  final prefix = '${values.first.split('_').first}_';
+  for (final value in values) {
+    if (!value.startsWith(prefix)) {
+      return '';
+    }
+  }
+  return prefix;
+}
