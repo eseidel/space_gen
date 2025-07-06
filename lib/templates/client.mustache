@@ -1,0 +1,11 @@
+import 'package:{{packageName}}/api.dart';
+
+class {{clientClassName}} {
+  {{clientClassName}}({ApiClient? client}) : client = client ?? ApiClient();
+
+  final ApiClient client;
+
+  {{#apis}}
+  {{apiClassName}} get {{apiName}} => {{apiClassName}}(client);
+  {{/apis}}
+}
