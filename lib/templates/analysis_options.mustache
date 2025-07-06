@@ -10,8 +10,11 @@ linter:
     public_member_api_docs: false
     # OpenAPI has no deprecation messages.
     provide_deprecation_message: false
-    # Temporary, we should remove this and annotate long lines.
+    # Temporary, we should remove this and wrap or annotate long lines.
     lines_longer_than_80_chars: false
+    # Some specs contain code blocks which are not properly annotated.
+    # There isn't a great solution for us to fix them, so we ignore the lint.
+    missing_code_block_language_in_doc_comment: false
 {{#screamingCapsEnums}}
     # When using SCREAMING_CAPS for enum values, we need to disable this rule.
     constant_identifier_names: false
