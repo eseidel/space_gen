@@ -1120,6 +1120,7 @@ void main() {
       final api = Api(
         snakeName: 'foo',
         description: 'Foo description',
+        removePrefix: null,
         endpoints: [
           Endpoint(
             operation: RenderOperation(

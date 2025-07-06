@@ -1950,7 +1950,7 @@ void main() {
           '            return ;\n'
           '        }\n'
           '\n'
-          "        throw ApiException(response.statusCode, 'Unhandled response from \$uploadPets');\n"
+          '        throw ApiException.unhandled(response.statusCode);\n'
           '    }\n'
           '}\n',
         );
@@ -2046,7 +2046,7 @@ void main() {
         '            return ;\n'
         '        }\n'
         '\n'
-        "        throw ApiException(response.statusCode, 'Unhandled response from \$uploadFile');\n"
+        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -2100,7 +2100,7 @@ void main() {
         '            return ;\n'
         '        }\n'
         '\n'
-        "        throw ApiException(response.statusCode, 'Unhandled response from \$uploadFile');\n"
+        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -2156,7 +2156,7 @@ void main() {
         '            return UsersResponse.fromJson(jsonDecode(response.body) as dynamic);\n'
         '        }\n'
         '\n'
-        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -2212,7 +2212,7 @@ void main() {
         '            return jsonDecode(response.body) as bool;\n'
         '        }\n'
         '\n'
-        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -2270,7 +2270,7 @@ void main() {
         '            return UsersResponse.fromJson(jsonDecode(response.body) as dynamic);\n'
         '        }\n'
         '\n'
-        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -2326,7 +2326,7 @@ void main() {
         '            return jsonDecode(response.body) as bool;\n'
         '        }\n'
         '\n'
-        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -2369,7 +2369,7 @@ void main() {
         '            return ;\n'
         '        }\n'
         '\n'
-        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -2424,7 +2424,7 @@ void main() {
         '            return ;\n'
         '        }\n'
         '\n'
-        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -2488,7 +2488,7 @@ void main() {
         '            return ;\n'
         '        }\n'
         '\n'
-        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -2549,7 +2549,7 @@ void main() {
         '            return ;\n'
         '        }\n'
         '\n'
-        "        throw ApiException(response.statusCode, 'Unhandled response from \$getAgents');\n"
+        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -2651,7 +2651,7 @@ void main() {
         '            return ;\n'
         '        }\n'
         '\n'
-        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -2710,7 +2710,7 @@ void main() {
           '            return ;\n'
           '        }\n'
           '\n'
-          "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+          '        throw ApiException.unhandled(response.statusCode);\n'
           '    }\n'
           '}\n',
         );
@@ -2768,7 +2768,7 @@ void main() {
         '            return (jsonDecode(response.body) as Map<String, dynamic>).map((key, value) => MapEntry(key, value as String));\n'
         '        }\n'
         '\n'
-        "        throw ApiException(response.statusCode, 'Unhandled response from \$emojisGet');\n"
+        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -2830,10 +2830,9 @@ void main() {
         '            return ;\n'
         '        }\n'
         '\n'
-        "        throw ApiException(response.statusCode, 'Unhandled response from \$users');\n"
+        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
-        '}\n'
-        '',
+        '}\n',
       );
     });
   });

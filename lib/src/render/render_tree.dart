@@ -20,16 +20,6 @@ Never _unimplemented(String message, JsonPointer pointer) {
   throw UnimplementedError('$message at $pointer');
 }
 
-String _sharedPrefix(List<String> values) {
-  final prefix = '${values.first.split('_').first}_';
-  for (final value in values) {
-    if (!value.startsWith(prefix)) {
-      return '';
-    }
-  }
-  return prefix;
-}
-
 /// Convert an enum value to a variable name.
 String variableSafeName(Quirks quirks, String jsonName) {
   var escapedName = jsonName.replaceAll(' ', '_');
@@ -453,10 +443,17 @@ class RenderSpec {
     final description =
         tagDefinitions.firstWhereOrNull((e) => e.name == tag)?.description ??
         'Endpoints with tag $tag';
+    final endpoints = this.endpoints.where((e) => e.tag == tag).toList();
+    // The GitHub spec prefixes all endpoint names with their tag name.
+    // e.g. `checksCreate` could just be `create` on the `ChecksApi`.
+    // If all endpoints have the tag as a prefix, we can remove it.
+    final methodNames = endpoints.map((e) => e.methodName).toList();
+    final prefix = methodNames.every((m) => m.startsWith(tag)) ? tag : null;
     return Api(
       description: description,
       snakeName: toSnakeCase(tag),
       endpoints: endpoints.where((e) => e.tag == tag).toList(),
+      removePrefix: prefix,
     );
   }).toList();
 }
@@ -510,7 +507,10 @@ class Endpoint implements ToTemplateContext {
   }
 
   @override
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
+  Map<String, dynamic> toTemplateContext(
+    SchemaRenderer context, {
+    String? removePrefix,
+  }) {
     // Parameters as passed to the Dart function call, including the request
     // body if it exists.
     final dartParameters = <CanBeParameter>[...parameters, ?requestBody];
@@ -557,6 +557,9 @@ class Endpoint implements ToTemplateContext {
     // Endpoints could get summary and description from
     // *both* Path and Operation objects.  Unclear how we should display both.
     // Currently only displaying summary/description from the Operation.
+    final methodName = this.methodName
+        .replaceAll(removePrefix ?? '', '')
+        .lowerFirst();
     return {
       'endpoint_doc_comment': createDocCommentFromParts(
         title: summary,
@@ -592,11 +595,13 @@ class Api {
     required this.snakeName,
     required this.endpoints,
     required this.description,
+    required this.removePrefix,
   });
 
   final String snakeName;
   final String description;
   final List<Endpoint> endpoints;
+  final String? removePrefix;
 
   String get clientVariableName => toLowerCamelCase(snakeName);
   String get className => '${toUpperCamelCase(snakeName)}Api';
@@ -1999,11 +2004,11 @@ class RenderEnum extends RenderNewType {
 
   @visibleForTesting
   static List<String> variableNamesFor(Quirks quirks, List<String> values) {
-    final sharedPrefix = _sharedPrefix(values);
+    final commonPrefix = sharedPrefixFromSnakeNames(values);
     String toShortVariableName(String value) {
       var dartName = variableSafeName(quirks, value);
       // OpenAPI also removes shared prefixes from enum values.
-      dartName = dartName.replaceAll(sharedPrefix, '');
+      dartName = dartName.replaceAll(commonPrefix, '');
       // Avoid reserved words again in case removing the prefix caused
       // a reserved word collision.
       dartName = avoidReservedWord(dartName);
