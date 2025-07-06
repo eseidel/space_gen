@@ -74,6 +74,7 @@ a consensus towards a better Dart generator, so releasing this one.
 - Handle deprecated=true in more places (e.g. enums)
 - Map & Array newtype via explicitly named schema?
 - readOnly and writeOnly
+- GitHub: Don't generate workflow_usage_billable_prop_m_a_c_o_s_prop.dart
 
 ### OpenApi Quirks
 

@@ -995,6 +995,85 @@ void main() {
       await renderToDirectory(spec: spec, outDir: out);
       expect(out.childFile('lib/api/foo_bar_api.dart'), exists);
     });
+
+    test('only render top level objects to unique files', () async {
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        r'$ref': '#/components/schemas/workflow-usage',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'workflow-usage': {
+              'title': 'Workflow Usage',
+              'description': 'Workflow Usage',
+              'type': 'object',
+              'properties': {
+                'billable': {
+                  'type': 'object',
+                  'properties': {
+                    'UBUNTU': {
+                      'type': 'object',
+                      'properties': {
+                        'total_ms': {'type': 'integer'},
+                      },
+                    },
+                    'MACOS': {
+                      'type': 'object',
+                      'properties': {
+                        'total_ms': {'type': 'integer'},
+                      },
+                    },
+                    'WINDOWS': {
+                      'type': 'object',
+                      'properties': {
+                        'total_ms': {'type': 'integer'},
+                      },
+                    },
+                  },
+                },
+              },
+              'required': ['billable'],
+            },
+          },
+        },
+      };
+      final fs = MemoryFileSystem.test();
+      final out = fs.directory('spacetraders');
+
+      await renderToDirectory(spec: spec, outDir: out);
+      final modelDir = out.childDirectory('lib/model');
+      // TODO(eseidel): This is wrong. We shouldn't render the nested objects.
+      expect(
+        modelDir,
+        hasFiles([
+          'workflow_usage.dart',
+          'workflow_usage_billable_prop.dart',
+          'workflow_usage_billable_prop_u_b_u_n_t_u_prop.dart',
+          'workflow_usage_billable_prop_m_a_c_o_s_prop.dart',
+          'workflow_usage_billable_prop_w_i_n_d_o_w_s_prop.dart',
+        ]),
+      );
+    });
   });
 
   group('Formatter', () {
