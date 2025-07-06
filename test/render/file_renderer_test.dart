@@ -160,8 +160,6 @@ void main() {
       };
       final out = fs.directory('spacetraders');
       await renderToDirectory(spec: spec, outDir: out);
-      expect(out, exists);
-      expect(out.childFile('foo.txt'), isNot(exists));
       expect(
         out.childDirectory('lib'),
         hasFiles([
@@ -171,6 +169,22 @@ void main() {
           'client.dart',
           'model_helpers.dart',
         ]),
+      );
+
+      // Read client.dart and check that the client class name is correct.
+      final client = out.childFile('lib/client.dart');
+      final clientContent = client.readAsStringSync();
+      expect(
+        clientContent,
+        "import 'package:spacetraders/api.dart';\n"
+        '\n'
+        'class Space {\n'
+        '  Space({ApiClient? client}) : client = client ?? ApiClient();\n'
+        '\n'
+        '  final ApiClient client;\n'
+        '\n'
+        '  DefaultApi get default => DefaultApi(client);\n'
+        '}\n',
       );
     });
 

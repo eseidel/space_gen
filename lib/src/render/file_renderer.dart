@@ -377,7 +377,7 @@ class FileRenderer {
       context: {
         'apis': apiContexts,
         'packageName': packageName,
-        'clientClassName': '${toUpperCamelCase(specName)}Client',
+        'clientClassName': toUpperCamelCase(specName),
       },
     );
   }
