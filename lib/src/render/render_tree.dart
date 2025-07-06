@@ -401,6 +401,7 @@ class SpecResolver {
 
   RenderSpec toRenderSpec(ResolvedSpec spec) {
     return RenderSpec(
+      title: spec.title,
       serverUrl: spec.serverUrl,
       paths: spec.paths.map(toRenderPath).toList(),
       tagDefinitions: spec.tags.map(toRenderTag).toList(),
@@ -419,6 +420,7 @@ class RenderTag {
 // This is the root of the render spec tree.
 class RenderSpec {
   const RenderSpec({
+    required this.title,
     required this.serverUrl,
     required this.paths,
     required this.tagDefinitions,
@@ -426,6 +428,9 @@ class RenderSpec {
 
   /// The server url of the spec.
   final Uri serverUrl;
+
+  /// The title of the spec.
+  final String title;
 
   /// The paths of the spec.
   final List<RenderPath> paths;
@@ -593,6 +598,7 @@ class Api {
   final String description;
   final List<Endpoint> endpoints;
 
+  String get clientVariableName => toLowerCamelCase(snakeName);
   String get className => '${toUpperCamelCase(snakeName)}Api';
   String get fileName => '${snakeName.toLowerCase()}_api';
 }

@@ -168,6 +168,7 @@ void main() {
           'api.dart',
           'api_exception.dart',
           'api_client.dart',
+          'client.dart',
           'model_helpers.dart',
         ]),
       );
@@ -243,6 +244,7 @@ void main() {
           'api.dart',
           'api_exception.dart',
           'api_client.dart',
+          'client.dart',
           'model_helpers.dart',
         ]),
       );
