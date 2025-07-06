@@ -100,12 +100,22 @@ String? createDocCommentFromParts({
   if (title == null && body == null && example == null && examples == null) {
     return null;
   }
+  String quoteIfNeeded(dynamic value) {
+    if (value is String) {
+      return quoteString(value);
+    }
+    return value.toString();
+  }
+
   final lines = <String>[
     if (title != null) ..._commentedLines(title),
     if (body != null) ..._commentedLines(body),
-    if (example != null) ..._commentedLines('example: $example'),
+    if (example != null)
+      ..._commentedLines('example: `${quoteIfNeeded(example)}`'),
     if (examples != null)
-      ...examples.expand((e) => _commentedLines('example: $e')),
+      ...examples.expand(
+        (e) => _commentedLines('example: `${quoteIfNeeded(e)}`'),
+      ),
   ];
   if (lines.isEmpty) {
     return null;
