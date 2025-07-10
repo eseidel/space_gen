@@ -563,13 +563,13 @@ class Components extends Equatable {
     this.headers = const {},
   });
 
-  final Map<String, Schema> schemas;
-  final Map<String, Parameter> parameters;
+  final Map<String, RefOr<Schema>> schemas;
+  final Map<String, RefOr<Parameter>> parameters;
 
   // final Map<String, SecurityScheme> securitySchemes;
-  final Map<String, RequestBody> requestBodies;
-  final Map<String, Response> responses;
-  final Map<String, Header> headers;
+  final Map<String, RefOr<RequestBody>> requestBodies;
+  final Map<String, RefOr<Response>> responses;
+  final Map<String, RefOr<Header>> headers;
   // final Map<String, Example> examples;
   // final Map<String, Link> links;
   // final Map<String, Callback> callbacks;

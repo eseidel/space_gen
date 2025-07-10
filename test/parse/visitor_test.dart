@@ -123,7 +123,7 @@ void main() {
       'root': 1,
       'pathItem': 1,
       'operation': 1,
-      'reference': 10,
+      'reference': 15,
       'response': 2,
       'schema': 10,
       'parameter': 1,
