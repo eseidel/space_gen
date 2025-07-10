@@ -36,7 +36,7 @@ class _CountingVisitor extends Visitor {
   void visitOperation(Operation operation) => count('operation');
 
   @override
-  void visitReference<T>(RefOr<T> ref) => count('reference');
+  void visitReference<T extends Parseable>(RefOr<T> ref) => count('reference');
 }
 
 void main() {

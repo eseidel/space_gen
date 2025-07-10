@@ -167,7 +167,7 @@ Parameter parseParameter(MapContext json) {
   final deprecated = _optional<bool>(json, 'deprecated') ?? false;
   _ignored<bool>(json, 'allowEmptyValue');
 
-  final SchemaRef type;
+  final RefOr<Schema> type;
   if (hasSchema && !hasContent) {
     // Schema fields.
     type = parseSchemaOrRef(schema);
@@ -247,7 +247,7 @@ Schema? _handleCollectionTypes(
 }) {
   if (json.containsKey('oneOf')) {
     final oneOf = json.childAsList('oneOf');
-    final schemas = <SchemaRef>[];
+    final schemas = <RefOr<Schema>>[];
     for (var i = 0; i < oneOf.length; i++) {
       schemas.add(
         parseSchemaOrRef(oneOf.indexAsMap(i).addSnakeName('one_of_$i')),
@@ -258,7 +258,7 @@ Schema? _handleCollectionTypes(
 
   if (json.containsKey('allOf')) {
     final allOf = json.childAsList('allOf');
-    final schemas = <SchemaRef>[];
+    final schemas = <RefOr<Schema>>[];
     for (var i = 0; i < allOf.length; i++) {
       schemas.add(
         parseSchemaOrRef(allOf.indexAsMap(i).addSnakeName('all_of_$i')),
@@ -269,7 +269,7 @@ Schema? _handleCollectionTypes(
 
   if (json.containsKey('anyOf')) {
     final anyOf = json.childAsList('anyOf');
-    final schemas = <SchemaRef>[];
+    final schemas = <RefOr<Schema>>[];
     for (var i = 0; i < anyOf.length; i++) {
       schemas.add(
         parseSchemaOrRef(anyOf.indexAsMap(i).addSnakeName('any_of_$i')),
@@ -280,14 +280,14 @@ Schema? _handleCollectionTypes(
   return null;
 }
 
-SchemaRef? _handleAdditionalProperties(MapContext parent) {
+RefOr<Schema>? _handleAdditionalProperties(MapContext parent) {
   final value = parent['additionalProperties'];
   if (value == null) {
     return null;
   }
   if (value is bool) {
     if (value) {
-      return SchemaRef.schema(
+      return RefOr<Schema>.object(
         SchemaUnknown(
           common: CommonProperties.empty(
             pointer: parent.pointer.add('additionalProperties'),
@@ -553,7 +553,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
         value: {'type': type},
       );
       final schema = _createCorrectSchemaSubtype(fakeJson);
-      schemas.add(SchemaRef.schema(schema, json.pointer));
+      schemas.add(RefOr<Schema>.object(schema, json.pointer));
     }
     return SchemaOneOf(common: common, schemas: schemas);
   }
@@ -694,7 +694,7 @@ SchemaRef parseSchemaOrRef(MapContext json) {
     _warnUnused(json);
     return SchemaRef.ref(ref, json.pointer);
   }
-  return SchemaRef.schema(parseSchema(json), json.pointer);
+  return RefOr<Schema>.object(parseSchema(json), json.pointer);
 }
 
 RefOr<RequestBody>? maybeRequestBodyOrRef(MapContext? json) {
@@ -907,7 +907,7 @@ Responses parseResponses(MapContext responsesJson) {
   return Responses(responses: responses);
 }
 
-Map<String, RefOr<T>> _parseComponent<T>(
+Map<String, RefOr<T>> _parseComponent<T extends Parseable>(
   MapContext json,
   String key,
   RefOr<T> Function(MapContext) parse, {

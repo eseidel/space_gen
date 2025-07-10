@@ -21,7 +21,7 @@ class _RefCollector extends Visitor {
   final Set<String> _refs;
 
   @override
-  void visitReference<T>(RefOr<T> ref) {
+  void visitReference<T extends Parseable>(RefOr<T> ref) {
     if (ref.ref != null) {
       _refs.add(ref.ref!);
     }
@@ -65,10 +65,12 @@ Future<void> loadAndRenderSpec({
   final specJson = await cache.load(specUri);
   final spec = parseOpenApi(specJson);
 
-  // TODO(eseidel): The cache is not used for anything yet.
-  // We need a multi-file example spec to test this.
   // Pre-warm the cache. Rendering assumes all refs are present in the cache.
   for (final ref in collectRefs(spec)) {
+    // We need to walk all the refs and get type and location.
+    // We load the locations, and then parse them as the types.
+    // And then stick them in the resolver cache.
+
     // If any of the refs are network urls, we need to fetch them.
     // The cache does not handle fragments, so we need to remove them.
     final resolved = specUri.resolve(ref).removeFragment();
@@ -76,7 +78,7 @@ Future<void> loadAndRenderSpec({
   }
 
   // Resolve all references in the spec.
-  final resolved = resolveSpec(spec);
+  final resolved = resolveSpec(spec, specUrl: specUri);
   final resolver = SpecResolver(quirks);
   // Convert the resolved spec into render objects.
   final renderSpec = resolver.toRenderSpec(resolved);
@@ -126,7 +128,7 @@ String renderTestSchema(
   }
   final parsedSchema = parseSchema(context);
   final resolvedSchema = resolveSchemaRef(
-    SchemaRef.schema(parsedSchema, const JsonPointer.empty()),
+    RefOr<Schema>.object(parsedSchema, const JsonPointer.empty()),
     ResolveContext.test(),
   );
   final resolver = SpecResolver(quirks);
@@ -168,7 +170,7 @@ Map<String, String> renderTestSchemas(
     add(parsedSchema);
   }
   final resolveContext = ResolveContext(
-    specUrl: serverUrl,
+    specUrl: serverUrl, // This should be spec url, not server url.
     refRegistry: refRegistry,
   );
 
@@ -176,7 +178,7 @@ Map<String, String> renderTestSchemas(
     return MapEntry(
       key,
       resolveSchemaRef(
-        SchemaRef.schema(value, const JsonPointer.empty()),
+        RefOr<Schema>.object(value, const JsonPointer.empty()),
         resolveContext,
       ),
     );
@@ -236,10 +238,11 @@ String renderTestOperation({
 String renderTestApiFromSpec({
   required Map<String, dynamic> specJson,
   required Uri serverUrl,
+  required Uri specUrl,
   Quirks quirks = const Quirks(),
 }) {
   final spec = parseOpenApi(specJson);
-  final resolvedSpec = resolveSpec(spec, logSchemas: false);
+  final resolvedSpec = resolveSpec(spec, specUrl: specUrl, logSchemas: false);
   final renderSpec = SpecResolver(quirks).toRenderSpec(resolvedSpec);
   final api = renderSpec.apis.first;
   final templateProvider = TemplateProvider.defaultLocation();

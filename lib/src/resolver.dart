@@ -34,7 +34,7 @@ class ResolveContext {
 
   /// The registry of all the objects we've parsed so far.
   /// Resolve a nullable [SchemaRef] into a nullable [SchemaObject].
-  T? _maybeResolve<T>(RefOr<T>? ref) {
+  T? _maybeResolve<T extends Parseable>(RefOr<T>? ref) {
     if (ref == null) {
       return null;
     }
@@ -42,11 +42,12 @@ class ResolveContext {
   }
 
   /// Resolve a [SchemaRef] into a [SchemaObject].
-  T _resolve<T>(RefOr<T> ref) {
+  T _resolve<T extends Parseable>(RefOr<T> ref) {
     if (ref.object != null) {
       return ref.object!;
     }
-    final uri = specUrl.resolve(ref.ref!);
+    final refUri = Uri.parse(ref.ref!);
+    final uri = specUrl.resolveUri(refUri);
     return _resolveUri(uri);
   }
 
@@ -65,14 +66,17 @@ List<ResolvedPath> _resolvePaths(Paths paths, ResolveContext context) {
   }).toList();
 }
 
-ResolvedSchema? _maybeResolveSchemaRef(SchemaRef? ref, ResolveContext context) {
+ResolvedSchema? _maybeResolveSchemaRef(
+  RefOr<Schema>? ref,
+  ResolveContext context,
+) {
   if (ref == null) {
     return null;
   }
   return resolveSchemaRef(ref, context);
 }
 
-ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
+ResolvedSchema resolveSchemaRef(RefOr<Schema> ref, ResolveContext context) {
   final schema = context._maybeResolve(ref);
   if (schema == null) {
     throw Exception('Schema not found: $ref');
@@ -390,12 +394,13 @@ List<ResolvedResponse> _resolveResponses(
 }
 
 class RegistryBuilder extends Visitor {
-  RegistryBuilder(this.spec, this.refRegistry);
-  final OpenApi spec;
+  RegistryBuilder(this.specUri, this.refRegistry);
+  final Uri specUri;
   final RefRegistry refRegistry;
 
   void add(HasPointer object) {
-    final uri = spec.serverUrl.replace(fragment: object.pointer.location);
+    // object.pointer.location is always a fragment.
+    final uri = specUri.replace(fragment: object.pointer.location);
     refRegistry.register(uri, object);
   }
 
@@ -419,9 +424,13 @@ ResolvedTag _resolvedTag(Tag tag) {
   return ResolvedTag(name: tag.name, description: tag.description);
 }
 
-ResolvedSpec resolveSpec(OpenApi spec, {bool logSchemas = true}) {
+ResolvedSpec resolveSpec(
+  OpenApi spec, {
+  required Uri specUrl,
+  bool logSchemas = true,
+}) {
   final refRegistry = RefRegistry();
-  final builder = RegistryBuilder(spec, refRegistry);
+  final builder = RegistryBuilder(specUrl, refRegistry);
   SpecWalker(builder).walkRoot(spec);
 
   if (logSchemas) {
@@ -431,10 +440,7 @@ ResolvedSpec resolveSpec(OpenApi spec, {bool logSchemas = true}) {
     }
   }
 
-  final context = ResolveContext(
-    specUrl: spec.serverUrl,
-    refRegistry: refRegistry,
-  );
+  final context = ResolveContext(specUrl: specUrl, refRegistry: refRegistry);
   return ResolvedSpec(
     title: spec.info.title,
     serverUrl: spec.serverUrl,

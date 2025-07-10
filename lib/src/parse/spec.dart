@@ -16,7 +16,7 @@ abstract class HasPointer {
 /// A parameter is a parameter to an endpoint.
 /// https://spec.openapis.org/oas/v3.0.0#parameter-object
 @immutable
-class Parameter extends Equatable implements HasPointer {
+class Parameter extends Equatable implements HasPointer, Parseable {
   /// Create a new parameter.
   const Parameter({
     required this.name,
@@ -45,7 +45,7 @@ class Parameter extends Equatable implements HasPointer {
   final SendIn sendIn;
 
   /// The type of the parameter.
-  final SchemaRef type;
+  final RefOr<Schema> type;
 
   /// Where this parameter is located in the spec.
   @override
@@ -63,7 +63,7 @@ class Parameter extends Equatable implements HasPointer {
 }
 
 @immutable
-class Header extends Equatable implements HasPointer {
+class Header extends Equatable implements HasPointer, Parseable {
   const Header({
     required this.description,
     required this.schema,
@@ -74,7 +74,7 @@ class Header extends Equatable implements HasPointer {
   final String? description;
 
   /// The type of the header.
-  final SchemaRef? schema;
+  final RefOr<Schema>? schema;
 
   /// Where this header is located in the spec.
   @override
@@ -84,10 +84,12 @@ class Header extends Equatable implements HasPointer {
   List<Object?> get props => [description, schema, pointer];
 }
 
+abstract class Parseable {}
+
 /// An object which either holds a schema or a reference to a schema.
 /// https://spec.openapis.org/oas/v3.0.0#schemaObject
 @immutable
-class RefOr<T> extends Equatable {
+class RefOr<T extends Parseable> extends Equatable {
   const RefOr.ref(this.ref, this.pointer) : object = null;
   const RefOr.object(this.object, this.pointer) : ref = null;
 
@@ -100,14 +102,9 @@ class RefOr<T> extends Equatable {
   List<Object?> get props => [ref, object];
 }
 
-class SchemaRef extends RefOr<Schema> {
-  const SchemaRef.ref(String super.ref, super.pointer) : super.ref();
-  const SchemaRef.schema(Schema super.schema, super.pointer) : super.object();
+typedef SchemaRef = RefOr<Schema>;
 
-  Schema? get schema => object;
-}
-
-sealed class Schema extends Equatable implements HasPointer {
+sealed class Schema extends Equatable implements HasPointer, Parseable {
   const Schema({required this.common});
 
   final CommonProperties common;
@@ -218,7 +215,7 @@ abstract class SchemaObjectBase extends Schema {
 class SchemaMap extends Schema {
   const SchemaMap({required super.common, required this.valueSchema});
 
-  final SchemaRef valueSchema;
+  final RefOr<Schema> valueSchema;
 
   @override
   List<Object?> get props => [super.props, valueSchema];
@@ -259,7 +256,7 @@ class SchemaArray extends Schema {
     required this.uniqueItems,
   });
 
-  final SchemaRef items;
+  final RefOr<Schema> items;
 
   final int? maxItems; // Non-negative.
   final int? minItems; // Non-negative.
@@ -294,7 +291,7 @@ class SchemaEmptyObject extends Schema {
 abstract class SchemaCombiner extends SchemaObjectBase {
   const SchemaCombiner({required super.common, required this.schemas});
 
-  final List<SchemaRef> schemas;
+  final List<RefOr<Schema>> schemas;
 
   @override
   List<Object?> get props => [super.props, schemas];
@@ -334,14 +331,14 @@ class SchemaObject extends SchemaObjectBase {
   }
 
   /// The properties of this schema.
-  final Map<String, SchemaRef> properties;
+  final Map<String, RefOr<Schema>> properties;
 
   /// The required properties of this schema.
   final List<String> requiredProperties;
 
   /// The additional properties of this schema.
   /// Used for specifying T for Map\<String, T\>.
-  final SchemaRef? additionalProperties;
+  final RefOr<Schema>? additionalProperties;
 
   /// The default value of this schema.
   final dynamic defaultValue;
@@ -370,7 +367,7 @@ class MediaType extends Equatable {
   const MediaType({required this.schema});
 
   /// 3.0.1 seems to allow a ref in MediaType, but 3.1.0 does not.
-  final SchemaRef schema;
+  final RefOr<Schema> schema;
 
   @override
   List<Object?> get props => [schema];
@@ -380,7 +377,7 @@ class MediaType extends Equatable {
 /// https://spec.openapis.org/oas/v3.0.0#requestBodyObject
 /// Notably "required" is a boolean, not a list of strings.
 @immutable
-class RequestBody extends Equatable implements HasPointer {
+class RequestBody extends Equatable implements HasPointer, Parseable {
   const RequestBody({
     required this.pointer,
     required this.description,
@@ -506,7 +503,7 @@ class PathItem extends Equatable implements HasPointer {
 /// A map of response codes to responses.
 /// https://spec.openapis.org/oas/v3.1.0#responses-object
 @immutable
-class Responses extends Equatable {
+class Responses extends Equatable implements Parseable {
   /// Create a new responses object.
   const Responses({required this.responses});
 
@@ -527,7 +524,7 @@ class Responses extends Equatable {
 /// A response from an endpoint.
 /// https://spec.openapis.org/oas/v3.1.0#response-object
 @immutable
-class Response extends Equatable implements HasPointer {
+class Response extends Equatable implements HasPointer, Parseable {
   /// Create a new response.
   const Response({
     required this.pointer,

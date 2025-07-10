@@ -2858,9 +2858,11 @@ void main() {
           },
         },
       };
+      final specUrl = Uri.parse('file://spec.yaml');
       final result = renderTestApiFromSpec(
         specJson: spec,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+        specUrl: specUrl,
       );
       expect(
         result,

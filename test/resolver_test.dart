@@ -11,7 +11,8 @@ void main() {
   group('resolver', () {
     ResolvedSpec parseAndResolveTestSpec(Map<String, dynamic> json) {
       final spec = parseOpenApi(json);
-      return resolveSpec(spec);
+      final specUrl = Uri.parse('file://spec.yaml');
+      return resolveSpec(spec, specUrl: specUrl);
     }
 
     ResolvedSchema parseAndResolveTestSchema(Map<String, dynamic> schemaJson) {
