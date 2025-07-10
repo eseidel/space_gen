@@ -243,7 +243,9 @@ void main() {
   });
 
   group('parser', () {
-    Map<String, Schema> parseTestSchemas(Map<String, dynamic> schemasJson) {
+    Map<String, RefOr<Schema>> parseTestSchemas(
+      Map<String, dynamic> schemasJson,
+    ) {
       final specJson = {
         'openapi': '3.1.0',
         'info': {'title': 'Space Traders API', 'version': '1.0.0'},
@@ -269,7 +271,7 @@ void main() {
     Schema parseTestSchema(Map<String, dynamic> schemaJson) {
       final schemas = parseTestSchemas({'Test': schemaJson});
       expect(schemas.length, 1);
-      return schemas['Test']!;
+      return schemas['Test']!.object!;
     }
 
     test('parse', () {
@@ -328,25 +330,22 @@ void main() {
         'Value': {'type': 'boolean'},
       };
       final schemas = parseTestSchemas(json);
-      final schema = schemas['User']! as SchemaObject;
+      final schema = schemas['User']!.object! as SchemaObject;
       expect(schema, isA<SchemaObject>());
       expect(schema.properties['value']!.ref, '#/components/schemas/Value');
 
-      // Just not as a direct alias/redirect
+      // Even at the top level of a component (often used for referencing
+      // external schemas)
       final json2 = {
         'User': {r'$ref': '#/components/schemas/Value'},
         'Value': {'type': 'boolean'},
       };
-      expect(
-        () => parseTestSchemas(json2),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            equals(r'$ref not expected in #/components/schemas/User'),
-          ),
-        ),
-      );
+      final schemas2 = parseTestSchemas(json2);
+      expect(schemas2['User']!.ref, '#/components/schemas/Value');
+      expect(schemas2['Value']!.object, isA<SchemaPod>());
+      final pod = schemas2['Value']!.object! as SchemaPod;
+      expect(pod.type, PodType.boolean);
+      expect(pod.defaultValue, isNull);
     });
 
     test('components not supported keys', () {
@@ -381,7 +380,10 @@ void main() {
         },
       };
       final spec = parseOpenApi(json);
-      expect(spec.components.headers['X-Foo']!.schema, isA<SchemaRef>());
+      expect(
+        spec.components.headers['X-Foo']!.object!.schema,
+        isA<SchemaRef>(),
+      );
       final response =
           spec.paths['/users'].operations[Method.get]!.responses[200]!.object!;
       expect(response.headers, isNotNull);
@@ -1301,12 +1303,12 @@ void main() {
         'foo-bar': {'type': 'string'},
       };
       final spec = parseTestSchemas(json);
-      expect(spec['foo-bar'], isA<SchemaString>());
+      expect(spec['foo-bar']!.object, isA<SchemaString>());
       expect(
         spec['foo-bar']!.pointer,
         const JsonPointer.fromParts(['components', 'schemas', 'foo-bar']),
       );
-      expect(spec['foo-bar']!.snakeName, equals('foo_bar'));
+      expect(spec['foo-bar']!.object!.snakeName, equals('foo_bar'));
     });
 
     group('nullable', () {

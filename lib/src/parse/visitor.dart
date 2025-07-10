@@ -21,20 +21,16 @@ class SpecWalker {
   final Visitor visitor;
 
   void _walkComponents(Components components) {
-    for (final schema in components.schemas.values) {
-      walkSchema(schema);
-    }
-    for (final parameter in components.parameters.values) {
-      _parameter(parameter);
-    }
-    for (final requestBody in components.requestBodies.values) {
-      _requestBody(requestBody);
-    }
-    for (final response in components.responses.values) {
-      _response(response);
-    }
-    for (final header in components.headers.values) {
-      _header(header);
+    _walkRefs(components.schemas.values);
+    _walkRefs(components.parameters.values);
+    _walkRefs(components.requestBodies.values);
+    _walkRefs(components.responses.values);
+    _walkRefs(components.headers.values);
+  }
+
+  void _walkRefs<T>(Iterable<RefOr<T>> refs) {
+    for (final ref in refs) {
+      _ref(ref);
     }
   }
 
@@ -107,6 +103,8 @@ class SpecWalker {
       _parameter(object);
     } else if (object is Response) {
       _response(object);
+    } else if (object is Header) {
+      _header(object);
     } else {
       throw UnimplementedError('Unknown ref type: ${object.runtimeType}');
     }

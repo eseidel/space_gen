@@ -697,19 +697,23 @@ SchemaRef parseSchemaOrRef(MapContext json) {
   return SchemaRef.schema(parseSchema(json), json.pointer);
 }
 
-/// Parse a schema or a reference to a schema.
-/// https://spec.openapis.org/oas/v3.0.0#schemaObject
-/// https://spec.openapis.org/oas/v3.0.0#relative-references-in-urls
-RefOr<RequestBody>? parseRequestBodyOrRef(MapContext? json) {
+RefOr<RequestBody>? maybeRequestBodyOrRef(MapContext? json) {
   if (json == null) {
     return null;
   }
+  return parseRequestBodyOrRef(json);
+}
+
+/// Parse a schema or a reference to a schema.
+/// https://spec.openapis.org/oas/v3.0.0#schemaObject
+/// https://spec.openapis.org/oas/v3.0.0#relative-references-in-urls
+RefOr<RequestBody> parseRequestBodyOrRef(MapContext json) {
   if (json.containsKey(r'$ref')) {
     final ref = json[r'$ref'] as String;
     _warnUnused(json);
     return RefOr<RequestBody>.ref(ref, json.pointer);
   }
-  final body = parseRequestBody(json.addSnakeName('request'));
+  final body = parseRequestBody(json);
   return RefOr<RequestBody>.object(body, json.pointer);
 }
 
@@ -751,8 +755,8 @@ Operation parseOperation(MapContext operationJson, String path) {
     (child, index) =>
         parseParameterOrRef(child.addSnakeName('parameter$index')),
   );
-  final requestBody = parseRequestBodyOrRef(
-    _optionalMap(context, 'requestBody'),
+  final requestBody = maybeRequestBodyOrRef(
+    _optionalMap(context, 'requestBody')?.addSnakeName('request'),
   );
   final deprecated = _optional<bool>(context, 'deprecated') ?? false;
   final responses = parseResponses(_requiredMap(context, 'responses'));
@@ -903,15 +907,15 @@ Responses parseResponses(MapContext responsesJson) {
   return Responses(responses: responses);
 }
 
-Map<String, T> _parseComponent<T>(
+Map<String, RefOr<T>> _parseComponent<T>(
   MapContext json,
   String key,
-  T Function(MapContext) parse, {
+  RefOr<T> Function(MapContext) parse, {
   String? extraSnakeName,
 }) {
   _refNotExpected(json);
   final valuesJson = _optionalMap(json, key);
-  final values = <String, T>{};
+  final values = <String, RefOr<T>>{};
   if (valuesJson != null) {
     for (final name in valuesJson.keys) {
       final snakeName = toSnakeCase(name);
@@ -938,28 +942,28 @@ Components parseComponents(MapContext? componentsJson) {
   final schemas = _parseComponent<Schema>(
     componentsJson,
     'schemas',
-    parseSchema,
+    parseSchemaOrRef,
   );
   final responses = _parseComponent<Response>(
     componentsJson,
     'responses',
-    _parseResponse,
+    parseResponseOrRef,
   );
   final parameters = _parseComponent<Parameter>(
     componentsJson,
     'parameters',
-    parseParameter,
+    parseParameterOrRef,
     extraSnakeName: 'param',
   );
   final requestBodies = _parseComponent<RequestBody>(
     componentsJson,
     'requestBodies',
-    parseRequestBody,
+    parseRequestBodyOrRef,
   );
   final headers = _parseComponent<Header>(
     componentsJson,
     'headers',
-    parseHeader,
+    parseHeaderOrRef,
   );
   final securitySchemesJson = _optionalMap(componentsJson, 'securitySchemes');
   if (securitySchemesJson != null) {
