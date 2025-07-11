@@ -18,6 +18,7 @@ import 'package:space_gen/src/string.dart';
 export 'package:space_gen/src/quirks.dart';
 
 extension RefExtension<T extends Parseable> on Ref<T> {
+  // TODO(eseidel): There must be a better way to do this.
   T parse(Map<String, dynamic> json) {
     final context = MapContext.initial(json);
     if (type == Schema) {
