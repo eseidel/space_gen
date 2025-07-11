@@ -16,7 +16,7 @@ abstract class HasPointer {
 /// A parameter is a parameter to an endpoint.
 /// https://spec.openapis.org/oas/v3.0.0#parameter-object
 @immutable
-class Parameter extends Equatable implements HasPointer {
+class Parameter extends Equatable implements HasPointer, Parseable {
   /// Create a new parameter.
   const Parameter({
     required this.name,
@@ -63,7 +63,7 @@ class Parameter extends Equatable implements HasPointer {
 }
 
 @immutable
-class Header extends Equatable implements HasPointer {
+class Header extends Equatable implements HasPointer, Parseable {
   const Header({
     required this.description,
     required this.schema,
@@ -84,10 +84,12 @@ class Header extends Equatable implements HasPointer {
   List<Object?> get props => [description, schema, pointer];
 }
 
+abstract class Parseable {}
+
 /// An object which either holds a schema or a reference to a schema.
 /// https://spec.openapis.org/oas/v3.0.0#schemaObject
 @immutable
-class RefOr<T> extends Equatable {
+class RefOr<T extends Parseable> extends Equatable {
   const RefOr.ref(this.ref, this.pointer) : object = null;
   const RefOr.object(this.object, this.pointer) : ref = null;
 
@@ -100,14 +102,9 @@ class RefOr<T> extends Equatable {
   List<Object?> get props => [ref, object];
 }
 
-class SchemaRef extends RefOr<Schema> {
-  const SchemaRef.ref(String super.ref, super.pointer) : super.ref();
-  const SchemaRef.schema(Schema super.schema, super.pointer) : super.object();
+typedef SchemaRef = RefOr<Schema>;
 
-  Schema? get schema => object;
-}
-
-sealed class Schema extends Equatable implements HasPointer {
+sealed class Schema extends Equatable implements HasPointer, Parseable {
   const Schema({required this.common});
 
   final CommonProperties common;
@@ -380,7 +377,7 @@ class MediaType extends Equatable {
 /// https://spec.openapis.org/oas/v3.0.0#requestBodyObject
 /// Notably "required" is a boolean, not a list of strings.
 @immutable
-class RequestBody extends Equatable implements HasPointer {
+class RequestBody extends Equatable implements HasPointer, Parseable {
   const RequestBody({
     required this.pointer,
     required this.description,
@@ -506,7 +503,7 @@ class PathItem extends Equatable implements HasPointer {
 /// A map of response codes to responses.
 /// https://spec.openapis.org/oas/v3.1.0#responses-object
 @immutable
-class Responses extends Equatable {
+class Responses extends Equatable implements Parseable {
   /// Create a new responses object.
   const Responses({required this.responses});
 
@@ -527,7 +524,7 @@ class Responses extends Equatable {
 /// A response from an endpoint.
 /// https://spec.openapis.org/oas/v3.1.0#response-object
 @immutable
-class Response extends Equatable implements HasPointer {
+class Response extends Equatable implements HasPointer, Parseable {
   /// Create a new response.
   const Response({
     required this.pointer,
@@ -563,7 +560,7 @@ class Components extends Equatable {
     this.headers = const {},
   });
 
-  final Map<String, RefOr<Schema>> schemas;
+  final Map<String, SchemaRef> schemas;
   final Map<String, RefOr<Parameter>> parameters;
 
   // final Map<String, SecurityScheme> securitySchemes;

@@ -287,7 +287,7 @@ SchemaRef? _handleAdditionalProperties(MapContext parent) {
   }
   if (value is bool) {
     if (value) {
-      return SchemaRef.schema(
+      return SchemaRef.object(
         SchemaUnknown(
           common: CommonProperties.empty(
             pointer: parent.pointer.add('additionalProperties'),
@@ -553,7 +553,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
         value: {'type': type},
       );
       final schema = _createCorrectSchemaSubtype(fakeJson);
-      schemas.add(SchemaRef.schema(schema, json.pointer));
+      schemas.add(SchemaRef.object(schema, json.pointer));
     }
     return SchemaOneOf(common: common, schemas: schemas);
   }
@@ -694,7 +694,7 @@ SchemaRef parseSchemaOrRef(MapContext json) {
     _warnUnused(json);
     return SchemaRef.ref(ref, json.pointer);
   }
-  return SchemaRef.schema(parseSchema(json), json.pointer);
+  return SchemaRef.object(parseSchema(json), json.pointer);
 }
 
 RefOr<RequestBody>? maybeRequestBodyOrRef(MapContext? json) {
@@ -907,7 +907,7 @@ Responses parseResponses(MapContext responsesJson) {
   return Responses(responses: responses);
 }
 
-Map<String, RefOr<T>> _parseComponent<T>(
+Map<String, RefOr<T>> _parseComponent<T extends Parseable>(
   MapContext json,
   String key,
   RefOr<T> Function(MapContext) parse, {

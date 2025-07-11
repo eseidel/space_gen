@@ -6,7 +6,7 @@ abstract class Visitor {
   void visitOperation(Operation operation) {}
   void visitParameter(Parameter parameter) {}
   void visitPathItem(PathItem pathItem) {}
-  void visitReference<T>(RefOr<T> ref) {}
+  void visitReference<T extends Parseable>(RefOr<T> ref) {}
   void visitRequestBody(RequestBody requestBody) {}
   void visitResponse(Response response) {}
   void visitRoot(OpenApi root) {}
@@ -28,7 +28,7 @@ class SpecWalker {
     _walkRefs(components.headers.values);
   }
 
-  void _walkRefs<T>(Iterable<RefOr<T>> refs) {
+  void _walkRefs<T extends Parseable>(Iterable<RefOr<T>> refs) {
     for (final ref in refs) {
       _ref(ref);
     }
@@ -83,13 +83,13 @@ class SpecWalker {
     _maybeRef(header.schema);
   }
 
-  void _maybeRef<T>(RefOr<T>? ref) {
+  void _maybeRef<T extends Parseable>(RefOr<T>? ref) {
     if (ref != null) {
       _ref(ref);
     }
   }
 
-  void _ref<T>(RefOr<T> ref) {
+  void _ref<T extends Parseable>(RefOr<T> ref) {
     visitor.visitReference(ref);
     final object = ref.object;
     if (object == null) {

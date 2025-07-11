@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:file/file.dart';
 import 'package:http/http.dart' as http;
+import 'package:space_gen/src/logger.dart';
 import 'package:yaml/yaml.dart' as yaml;
 
 typedef Json = Map<String, dynamic>;
@@ -18,6 +19,8 @@ class Cache {
 
   // Does not check the cache, does handle both file and network urls.
   Future<Json> _fetchWithoutCache(Uri uri) async {
+    logger.detail('Loading $uri');
+
     final isYaml = uri.path.endsWith('.yaml') || uri.path.endsWith('.yml');
 
     Json decode(String content) {

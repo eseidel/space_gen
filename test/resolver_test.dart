@@ -11,7 +11,8 @@ void main() {
   group('resolver', () {
     ResolvedSpec parseAndResolveTestSpec(Map<String, dynamic> json) {
       final spec = parseOpenApi(json);
-      return resolveSpec(spec);
+      final specUrl = Uri.parse('file:///spec.yaml');
+      return resolveSpec(spec, specUrl: specUrl);
     }
 
     ResolvedSchema parseAndResolveTestSchema(Map<String, dynamic> schemaJson) {
@@ -75,7 +76,7 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              'Path parameters must be strings or integers in #/paths//users/get/parameters/0',
+              'Path parameters must be strings or integers in #/paths/~1users/get/parameters/0',
             ),
           ),
         ),
@@ -183,8 +184,8 @@ void main() {
             equals(
               'allOf only supports objects: '
               'ResolvedString(snakeName: users200_response_all_of_0, pointer: '
-              '#/paths//users/get/responses/200/content/application/json/schema/allOf/0) '
-              'in #/paths//users/get/responses/200/content/application/json/schema',
+              '#/paths/~1users/get/responses/200/content/application~1json/schema/allOf/0) '
+              'in #/paths/~1users/get/responses/200/content/application~1json/schema',
             ),
           ),
         ),
@@ -414,7 +415,8 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              "'items' is not of type Map<String, dynamic>: true in #/paths//users/get/responses/200/content/application/json/schema",
+              "'items' is not of type Map<String, dynamic>: true in "
+              '#/paths/~1users/get/responses/200/content/application~1json/schema',
             ),
           ),
         ),
@@ -453,8 +455,7 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              'Schema? not found: '
-              'https://api.spacetraders.io/v2#/components/schemas/Missing',
+              'Schema not found: file:///spec.yaml#/components/schemas/Missing',
             ),
           ),
         ),
@@ -506,7 +507,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            contains('Expected Schema?, got RequestBody'),
+            contains('Expected Schema, got RequestBody'),
           ),
         ),
       );

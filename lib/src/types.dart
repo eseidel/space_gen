@@ -88,15 +88,18 @@ class JsonPointer extends Equatable {
   /// The parts of the json pointer.
   final List<String> parts;
 
-  /// This pointer encoded as a url-ready string.
-  String get location => '/${parts.map(urlEncode).join('/')}';
+  String get urlEncodedFragment {
+    /// This pointer encoded as a url-ready string.
+    /// e.g. #/components/schemas/User
+    return '#/${parts.map(urlEncode).join('/')}';
+  }
 
   /// Encode a part of the json pointer as a url-ready string.
   static String urlEncode(String part) =>
       part.replaceAll('~', '~0').replaceAll('/', '~1');
 
   @override
-  String toString() => '#/${parts.join('/')}';
+  String toString() => urlEncodedFragment;
 
   @override
   List<Object?> get props => [parts];

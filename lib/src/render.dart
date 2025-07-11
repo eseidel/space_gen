@@ -21,7 +21,7 @@ class _RefCollector extends Visitor {
   final Set<String> _refs;
 
   @override
-  void visitReference<T>(RefOr<T> ref) {
+  void visitReference<T extends Parseable>(RefOr<T> ref) {
     if (ref.ref != null) {
       _refs.add(ref.ref!);
     }
@@ -45,7 +45,7 @@ void validatePackageName(String packageName) {
 }
 
 Future<void> loadAndRenderSpec({
-  required Uri specUri,
+  required Uri specUrl,
   required String packageName,
   required Directory outDir,
   Directory? templateDir,
@@ -62,28 +62,30 @@ Future<void> loadAndRenderSpec({
 
   // Load the spec and warm the cache before rendering.
   final cache = Cache(fs);
-  final specJson = await cache.load(specUri);
+  final specJson = await cache.load(specUrl);
   final spec = parseOpenApi(specJson);
 
-  // TODO(eseidel): The cache is not used for anything yet.
-  // We need a multi-file example spec to test this.
   // Pre-warm the cache. Rendering assumes all refs are present in the cache.
   for (final ref in collectRefs(spec)) {
+    // We need to walk all the refs and get type and location.
+    // We load the locations, and then parse them as the types.
+    // And then stick them in the resolver cache.
+
     // If any of the refs are network urls, we need to fetch them.
     // The cache does not handle fragments, so we need to remove them.
-    final resolved = specUri.resolve(ref).removeFragment();
+    final resolved = specUrl.resolve(ref).removeFragment();
     await cache.load(resolved);
   }
 
   // Resolve all references in the spec.
-  final resolved = resolveSpec(spec);
+  final resolved = resolveSpec(spec, specUrl: specUrl);
   final resolver = SpecResolver(quirks);
   // Convert the resolved spec into render objects.
   final renderSpec = resolver.toRenderSpec(resolved);
   // SchemaRenderer is responsible for rendering schemas and APIs into strings.
   final schemaRenderer = SchemaRenderer(templates: templates, quirks: quirks);
 
-  logger.info('Generating $specUri to ${outDir.path}');
+  logger.info('Generating $specUrl to ${outDir.path}');
 
   final formatter = Formatter(runProcess: runProcess);
   final spellChecker = SpellChecker(runProcess: runProcess);
@@ -126,7 +128,7 @@ String renderTestSchema(
   }
   final parsedSchema = parseSchema(context);
   final resolvedSchema = resolveSchemaRef(
-    SchemaRef.schema(parsedSchema, const JsonPointer.empty()),
+    SchemaRef.object(parsedSchema, const JsonPointer.empty()),
     ResolveContext.test(),
   );
   final resolver = SpecResolver(quirks);
@@ -141,6 +143,7 @@ String renderTestSchema(
 @visibleForTesting
 Map<String, String> renderTestSchemas(
   Map<String, Map<String, dynamic>> schemas, {
+  required Uri specUrl,
   Quirks quirks = const Quirks(),
 }) {
   final schemasContext = MapContext(
@@ -157,10 +160,10 @@ Map<String, String> renderTestSchemas(
     return MapEntry(key, parseSchema(context));
   });
 
-  final serverUrl = Uri.parse('https://example.com');
   final refRegistry = RefRegistry();
   void add(HasPointer object) {
-    final uri = serverUrl.replace(fragment: object.pointer.location);
+    final fragment = object.pointer.urlEncodedFragment;
+    final uri = specUrl.resolve(fragment);
     refRegistry.register(uri, object);
   }
 
@@ -168,7 +171,7 @@ Map<String, String> renderTestSchemas(
     add(parsedSchema);
   }
   final resolveContext = ResolveContext(
-    specUrl: serverUrl,
+    specUrl: specUrl,
     refRegistry: refRegistry,
   );
 
@@ -176,7 +179,7 @@ Map<String, String> renderTestSchemas(
     return MapEntry(
       key,
       resolveSchemaRef(
-        SchemaRef.schema(value, const JsonPointer.empty()),
+        SchemaRef.object(value, const JsonPointer.empty()),
         resolveContext,
       ),
     );
@@ -236,10 +239,11 @@ String renderTestOperation({
 String renderTestApiFromSpec({
   required Map<String, dynamic> specJson,
   required Uri serverUrl,
+  required Uri specUrl,
   Quirks quirks = const Quirks(),
 }) {
   final spec = parseOpenApi(specJson);
-  final resolvedSpec = resolveSpec(spec, logSchemas: false);
+  final resolvedSpec = resolveSpec(spec, specUrl: specUrl, logSchemas: false);
   final renderSpec = SpecResolver(quirks).toRenderSpec(resolvedSpec);
   final api = renderSpec.apis.first;
   final templateProvider = TemplateProvider.defaultLocation();

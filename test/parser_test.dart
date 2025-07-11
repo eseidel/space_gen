@@ -243,9 +243,7 @@ void main() {
   });
 
   group('parser', () {
-    Map<String, RefOr<Schema>> parseTestSchemas(
-      Map<String, dynamic> schemasJson,
-    ) {
+    Map<String, SchemaRef> parseTestSchemas(Map<String, dynamic> schemasJson) {
       final specJson = {
         'openapi': '3.1.0',
         'info': {'title': 'Space Traders API', 'version': '1.0.0'},
@@ -503,7 +501,7 @@ void main() {
             'message',
             equals(
               "'content' not supported in "
-              'MapContext(#/paths//users/get/parameters/0, {name: foo, '
+              'MapContext(#/paths/~1users/get/parameters/0, {name: foo, '
               'in: query, content: {application/json: '
               '{schema: {type: boolean}}}})',
             ),
@@ -634,7 +632,7 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              'Path parameters must be required in #/paths//users/get/parameters/0',
+              'Path parameters must be required in #/paths/~1users/get/parameters/0',
             ),
           ),
         ),
@@ -664,7 +662,7 @@ void main() {
               (e) => e.message,
               'message',
               equals(
-                "'responses' is not of type Map<String, dynamic>: true in #/paths//users/get",
+                "'responses' is not of type Map<String, dynamic>: true in #/paths/~1users/get",
               ),
             ),
           ),
@@ -695,7 +693,7 @@ void main() {
               (e) => e.message,
               'message',
               equals(
-                'Invalid response code: barf in #/paths//users/get/responses',
+                'Invalid response code: barf in #/paths/~1users/get/responses',
               ),
             ),
           ),
@@ -746,7 +744,7 @@ void main() {
             isA<FormatException>().having(
               (e) => e.message,
               'message',
-              equals('Responses are required in #/paths//users/get'),
+              equals('Responses are required in #/paths/~1users/get'),
             ),
           ),
         );
@@ -778,7 +776,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            equals('Empty content in #/paths//users/post/requestBody/content'),
+            equals('Empty content in #/paths/~1users/post/requestBody/content'),
           ),
         ),
       );
@@ -1060,7 +1058,8 @@ void main() {
               (e) => e.message,
               'message',
               equals(
-                'additionalProperties must be a boolean or a map in #/paths//users/get/responses/200/content/application/json/schema',
+                'additionalProperties must be a boolean or a map in '
+                '#/paths/~1users/get/responses/200/content/application~1json/schema',
               ),
             ),
           ),
@@ -1208,7 +1207,7 @@ void main() {
         verify(
           () => logger.detail(
             'Ignoring: type=boolean (String) in '
-            '#/paths//users/get/responses/200/content/application/json/schema',
+            '#/paths/~1users/get/responses/200/content/application~1json/schema',
           ),
         ).called(1);
       });
@@ -1291,7 +1290,7 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              "'tags' is not a list of String: [1, 2] in #/paths//users/get",
+              "'tags' is not a list of String: [1, 2] in #/paths/~1users/get",
             ),
           ),
         ),

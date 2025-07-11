@@ -29,7 +29,7 @@ Future<int> run(List<String> arguments) async {
     setVerboseLogging();
   }
 
-  final specUri = Uri.parse(results['in'] as String);
+  final specUrl = Uri.parse(results['in'] as String);
   final outDir = fs.directory(results['out'] as String);
   final packageName = p.basename(outDir.path);
   final quirks = results['openapi'] as bool
@@ -37,7 +37,7 @@ Future<int> run(List<String> arguments) async {
       : const Quirks();
 
   await loadAndRenderSpec(
-    specUri: specUri,
+    specUrl: specUrl,
     packageName: packageName,
     outDir: outDir,
     quirks: quirks,
