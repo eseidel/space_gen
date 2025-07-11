@@ -399,7 +399,8 @@ class RegistryBuilder extends Visitor {
   final RefRegistry refRegistry;
 
   void add(HasPointer object) {
-    final uri = specUrl.resolve(object.pointer.toFragment);
+    final fragment = object.pointer.urlEncodedFragment;
+    final uri = specUrl.resolve(fragment);
     refRegistry.register(uri, object);
   }
 

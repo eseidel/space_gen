@@ -11,7 +11,7 @@ void main() {
   group('resolver', () {
     ResolvedSpec parseAndResolveTestSpec(Map<String, dynamic> json) {
       final spec = parseOpenApi(json);
-      final specUrl = Uri.parse('file://spec.yaml');
+      final specUrl = Uri.parse('file:///spec.yaml');
       return resolveSpec(spec, specUrl: specUrl);
     }
 
@@ -455,8 +455,7 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              'Schema? not found: '
-              'https://api.spacetraders.io/v2#/components/schemas/Missing',
+              'Schema not found: file:///spec.yaml#/components/schemas/Missing',
             ),
           ),
         ),
@@ -508,7 +507,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            contains('Expected Schema?, got RequestBody'),
+            contains('Expected Schema, got RequestBody'),
           ),
         ),
       );
