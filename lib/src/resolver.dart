@@ -9,6 +9,13 @@ import 'package:space_gen/src/parse/spec.dart';
 import 'package:space_gen/src/parse/visitor.dart';
 import 'package:space_gen/src/parser.dart';
 
+extension SchemaRefExtension on SchemaRef {
+  Schema parse(Map<String, dynamic> json) {
+    final context = MapContext.initial(json);
+    return parseSchema(context);
+  }
+}
+
 void _warn(String message, JsonPointer pointer) {
   logger.warn('$message in $pointer');
 }

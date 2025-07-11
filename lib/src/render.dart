@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:file/file.dart';
 import 'package:meta/meta.dart';
 import 'package:space_gen/src/loader.dart';
@@ -15,6 +17,28 @@ import 'package:space_gen/src/string.dart';
 
 export 'package:space_gen/src/quirks.dart';
 
+extension RefExtension<T extends Parseable> on Ref<T> {
+  T parse(Map<String, dynamic> json) {
+    final context = MapContext.initial(json);
+    if (type == Schema) {
+      return parseSchema(context) as T;
+    }
+    if (type == Header) {
+      return parseHeader(context) as T;
+    }
+    if (type == Parameter) {
+      return parseParameter(context) as T;
+    }
+    if (type == Paths) {
+      return parsePaths(context) as T;
+    }
+    if (type == RequestBody) {
+      return parseRequestBody(context) as T;
+    }
+    throw UnimplementedError('Parsing $T is not implemented');
+  }
+}
+
 class _RefCollector extends Visitor {
   _RefCollector(this._refs);
 
@@ -28,10 +52,17 @@ class _RefCollector extends Visitor {
   }
 }
 
-Iterable<Ref<Parseable>> collectRefs(OpenApi root) {
+Iterable<Ref<Parseable>> collectRefsFromSpec(OpenApi root) {
   final refs = <Ref<Parseable>>{};
   final collector = _RefCollector(refs);
   SpecWalker(collector).walkRoot(root);
+  return refs;
+}
+
+Iterable<Ref<Parseable>> collectRefsFromParseable(Parseable parseable) {
+  final refs = <Ref<Parseable>>{};
+  final collector = _RefCollector(refs);
+  SpecWalker(collector).walk(parseable);
   return refs;
 }
 
@@ -66,15 +97,14 @@ Future<void> loadAndRenderSpec({
   final spec = parseOpenApi(specJson);
 
   // Pre-warm the cache. Rendering assumes all refs are present in the cache.
-  for (final ref in collectRefs(spec)) {
-    // We need to walk all the refs and get type and location.
-    // We load the locations, and then parse them as the types.
-    // And then stick them in the resolver cache.
-
-    // If any of the refs are network urls, we need to fetch them.
-    // The cache does not handle fragments, so we need to remove them.
+  final refsToLoad = Queue<Ref<Parseable>>.from(collectRefsFromSpec(spec));
+  while (refsToLoad.isNotEmpty) {
+    final ref = refsToLoad.removeFirst();
     final resolved = specUrl.resolveUri(ref.uri).removeFragment();
-    await cache.load(resolved);
+    final loaded = await cache.load(resolved);
+    final parsed = ref.parse(loaded);
+    final loadedRefs = collectRefsFromParseable(parsed);
+    refsToLoad.addAll(loadedRefs);
   }
 
   // Resolve all references in the spec.
