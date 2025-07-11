@@ -45,7 +45,7 @@ class Parameter extends Equatable implements HasPointer, Parseable {
   final SendIn sendIn;
 
   /// The type of the parameter.
-  final RefOr<Schema> type;
+  final SchemaRef type;
 
   /// Where this parameter is located in the spec.
   @override
@@ -74,7 +74,7 @@ class Header extends Equatable implements HasPointer, Parseable {
   final String? description;
 
   /// The type of the header.
-  final RefOr<Schema>? schema;
+  final SchemaRef? schema;
 
   /// Where this header is located in the spec.
   @override
@@ -215,7 +215,7 @@ abstract class SchemaObjectBase extends Schema {
 class SchemaMap extends Schema {
   const SchemaMap({required super.common, required this.valueSchema});
 
-  final RefOr<Schema> valueSchema;
+  final SchemaRef valueSchema;
 
   @override
   List<Object?> get props => [super.props, valueSchema];
@@ -256,7 +256,7 @@ class SchemaArray extends Schema {
     required this.uniqueItems,
   });
 
-  final RefOr<Schema> items;
+  final SchemaRef items;
 
   final int? maxItems; // Non-negative.
   final int? minItems; // Non-negative.
@@ -338,7 +338,7 @@ class SchemaObject extends SchemaObjectBase {
 
   /// The additional properties of this schema.
   /// Used for specifying T for Map\<String, T\>.
-  final RefOr<Schema>? additionalProperties;
+  final SchemaRef? additionalProperties;
 
   /// The default value of this schema.
   final dynamic defaultValue;
@@ -367,7 +367,7 @@ class MediaType extends Equatable {
   const MediaType({required this.schema});
 
   /// 3.0.1 seems to allow a ref in MediaType, but 3.1.0 does not.
-  final RefOr<Schema> schema;
+  final SchemaRef schema;
 
   @override
   List<Object?> get props => [schema];

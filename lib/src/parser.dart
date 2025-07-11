@@ -167,7 +167,7 @@ Parameter parseParameter(MapContext json) {
   final deprecated = _optional<bool>(json, 'deprecated') ?? false;
   _ignored<bool>(json, 'allowEmptyValue');
 
-  final RefOr<Schema> type;
+  final SchemaRef type;
   if (hasSchema && !hasContent) {
     // Schema fields.
     type = parseSchemaOrRef(schema);
