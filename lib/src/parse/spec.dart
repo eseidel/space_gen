@@ -86,14 +86,26 @@ class Header extends Equatable implements HasPointer, Parseable {
 
 abstract class Parseable {}
 
+@immutable
+class Ref<T extends Parseable> extends Equatable {
+  const Ref(this.uri);
+  final Uri uri;
+  Type get type => T;
+
+  @override
+  List<Object?> get props => [uri];
+}
+
 /// An object which either holds a schema or a reference to a schema.
 /// https://spec.openapis.org/oas/v3.0.0#schemaObject
 @immutable
 class RefOr<T extends Parseable> extends Equatable {
-  const RefOr.ref(this.ref, this.pointer) : object = null;
+  RefOr.ref(String stringRef, this.pointer)
+    : object = null,
+      ref = Ref(Uri.parse(stringRef));
   const RefOr.object(this.object, this.pointer) : ref = null;
 
-  final String? ref;
+  final Ref<T>? ref;
   final T? object;
 
   final JsonPointer pointer;

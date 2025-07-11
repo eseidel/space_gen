@@ -330,7 +330,10 @@ void main() {
       final schemas = parseTestSchemas(json);
       final schema = schemas['User']!.object! as SchemaObject;
       expect(schema, isA<SchemaObject>());
-      expect(schema.properties['value']!.ref, '#/components/schemas/Value');
+      expect(
+        schema.properties['value']!.ref!.uri,
+        Uri.parse('#/components/schemas/Value'),
+      );
 
       // Even at the top level of a component (often used for referencing
       // external schemas)
@@ -339,7 +342,10 @@ void main() {
         'Value': {'type': 'boolean'},
       };
       final schemas2 = parseTestSchemas(json2);
-      expect(schemas2['User']!.ref, '#/components/schemas/Value');
+      expect(
+        schemas2['User']!.ref!.uri,
+        Uri.parse('#/components/schemas/Value'),
+      );
       expect(schemas2['Value']!.object, isA<SchemaPod>());
       final pod = schemas2['Value']!.object! as SchemaPod;
       expect(pod.type, PodType.boolean);
@@ -386,7 +392,10 @@ void main() {
           spec.paths['/users'].operations[Method.get]!.responses[200]!.object!;
       expect(response.headers, isNotNull);
       expect(response.headers?['X-Foo'], isA<RefOr<Header>>());
-      expect(response.headers?['X-Foo']!.ref, '#/components/headers/X-Foo');
+      expect(
+        response.headers?['X-Foo']!.ref!.uri,
+        Uri.parse('#/components/headers/X-Foo'),
+      );
     });
 
     test('parameter with schema and content', () {
@@ -912,9 +921,9 @@ void main() {
         final spec = runWithLogger(logger, () => parseOpenApi(json));
         expect(spec.paths['/users'].operations[Method.get]!.parameters, [
           isA<RefOr<Parameter>>().having(
-            (p) => p.ref,
+            (p) => p.ref!.uri,
             'ref',
-            equals('#/components/parameters/foo'),
+            equals(Uri.parse('#/components/parameters/foo')),
           ),
         ]);
       });
@@ -942,8 +951,8 @@ void main() {
         };
         final spec = parseOpenApi(json);
         expect(
-          spec.paths['/users'].operations[Method.get]!.responses[200]!.ref,
-          equals('#/components/responses/User'),
+          spec.paths['/users'].operations[Method.get]!.responses[200]!.ref!.uri,
+          equals(Uri.parse('#/components/responses/User')),
         );
       });
     });

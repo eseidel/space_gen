@@ -42,12 +42,11 @@ class ResolveContext {
   }
 
   /// Resolve a [SchemaRef] into a [SchemaObject].
-  T _resolve<T extends Parseable>(RefOr<T> ref) {
-    if (ref.object != null) {
-      return ref.object!;
+  T _resolve<T extends Parseable>(RefOr<T> refOr) {
+    if (refOr.object != null) {
+      return refOr.object!;
     }
-    final refUri = Uri.parse(ref.ref!);
-    final uri = specUrl.resolveUri(refUri);
+    final uri = specUrl.resolveUri(refOr.ref!.uri);
     return _resolveUri(uri);
   }
 
