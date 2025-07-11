@@ -243,9 +243,7 @@ void main() {
   });
 
   group('parser', () {
-    Map<String, RefOr<Schema>> parseTestSchemas(
-      Map<String, dynamic> schemasJson,
-    ) {
+    Map<String, SchemaRef> parseTestSchemas(Map<String, dynamic> schemasJson) {
       final specJson = {
         'openapi': '3.1.0',
         'info': {'title': 'Space Traders API', 'version': '1.0.0'},

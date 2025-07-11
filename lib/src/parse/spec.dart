@@ -291,7 +291,7 @@ class SchemaEmptyObject extends Schema {
 abstract class SchemaCombiner extends SchemaObjectBase {
   const SchemaCombiner({required super.common, required this.schemas});
 
-  final List<RefOr<Schema>> schemas;
+  final List<SchemaRef> schemas;
 
   @override
   List<Object?> get props => [super.props, schemas];
@@ -331,7 +331,7 @@ class SchemaObject extends SchemaObjectBase {
   }
 
   /// The properties of this schema.
-  final Map<String, RefOr<Schema>> properties;
+  final Map<String, SchemaRef> properties;
 
   /// The required properties of this schema.
   final List<String> requiredProperties;
@@ -560,7 +560,7 @@ class Components extends Equatable {
     this.headers = const {},
   });
 
-  final Map<String, RefOr<Schema>> schemas;
+  final Map<String, SchemaRef> schemas;
   final Map<String, RefOr<Parameter>> parameters;
 
   // final Map<String, SecurityScheme> securitySchemes;

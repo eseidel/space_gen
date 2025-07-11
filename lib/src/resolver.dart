@@ -66,17 +66,14 @@ List<ResolvedPath> _resolvePaths(Paths paths, ResolveContext context) {
   }).toList();
 }
 
-ResolvedSchema? _maybeResolveSchemaRef(
-  RefOr<Schema>? ref,
-  ResolveContext context,
-) {
+ResolvedSchema? _maybeResolveSchemaRef(SchemaRef? ref, ResolveContext context) {
   if (ref == null) {
     return null;
   }
   return resolveSchemaRef(ref, context);
 }
 
-ResolvedSchema resolveSchemaRef(RefOr<Schema> ref, ResolveContext context) {
+ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   final schema = context._maybeResolve(ref);
   if (schema == null) {
     throw Exception('Schema not found: $ref');

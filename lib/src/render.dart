@@ -128,7 +128,7 @@ String renderTestSchema(
   }
   final parsedSchema = parseSchema(context);
   final resolvedSchema = resolveSchemaRef(
-    RefOr<Schema>.object(parsedSchema, const JsonPointer.empty()),
+    SchemaRef.object(parsedSchema, const JsonPointer.empty()),
     ResolveContext.test(),
   );
   final resolver = SpecResolver(quirks);
@@ -179,7 +179,7 @@ Map<String, String> renderTestSchemas(
     return MapEntry(
       key,
       resolveSchemaRef(
-        RefOr<Schema>.object(value, const JsonPointer.empty()),
+        SchemaRef.object(value, const JsonPointer.empty()),
         resolveContext,
       ),
     );
