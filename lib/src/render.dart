@@ -21,7 +21,7 @@ class _RefCollector extends Visitor {
   final Set<Ref<Parseable>> _refs;
 
   @override
-  void visitReference<T extends Parseable>(RefOr<T> refOr) {
+  void visitRefOr<T extends Parseable>(RefOr<T> refOr) {
     if (refOr.ref != null) {
       _refs.add(refOr.ref!);
     }
