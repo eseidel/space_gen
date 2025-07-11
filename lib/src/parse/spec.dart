@@ -84,7 +84,7 @@ class Header extends Equatable implements HasPointer, Parseable {
   List<Object?> get props => [description, schema, pointer];
 }
 
-abstract class Parseable {}
+sealed class Parseable {}
 
 @immutable
 class Ref<T extends Parseable> extends Equatable {
