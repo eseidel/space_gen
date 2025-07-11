@@ -394,13 +394,12 @@ List<ResolvedResponse> _resolveResponses(
 }
 
 class RegistryBuilder extends Visitor {
-  RegistryBuilder(this.specUri, this.refRegistry);
-  final Uri specUri;
+  RegistryBuilder(this.specUrl, this.refRegistry);
+  final Uri specUrl;
   final RefRegistry refRegistry;
 
   void add(HasPointer object) {
-    // object.pointer.location is always a fragment.
-    final uri = specUri.replace(fragment: object.pointer.location);
+    final uri = specUrl.resolve(object.pointer.toFragment);
     refRegistry.register(uri, object);
   }
 

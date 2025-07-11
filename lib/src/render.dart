@@ -45,7 +45,7 @@ void validatePackageName(String packageName) {
 }
 
 Future<void> loadAndRenderSpec({
-  required Uri specUri,
+  required Uri specUrl,
   required String packageName,
   required Directory outDir,
   Directory? templateDir,
@@ -62,7 +62,7 @@ Future<void> loadAndRenderSpec({
 
   // Load the spec and warm the cache before rendering.
   final cache = Cache(fs);
-  final specJson = await cache.load(specUri);
+  final specJson = await cache.load(specUrl);
   final spec = parseOpenApi(specJson);
 
   // Pre-warm the cache. Rendering assumes all refs are present in the cache.
@@ -73,19 +73,19 @@ Future<void> loadAndRenderSpec({
 
     // If any of the refs are network urls, we need to fetch them.
     // The cache does not handle fragments, so we need to remove them.
-    final resolved = specUri.resolve(ref).removeFragment();
+    final resolved = specUrl.resolve(ref).removeFragment();
     await cache.load(resolved);
   }
 
   // Resolve all references in the spec.
-  final resolved = resolveSpec(spec, specUrl: specUri);
+  final resolved = resolveSpec(spec, specUrl: specUrl);
   final resolver = SpecResolver(quirks);
   // Convert the resolved spec into render objects.
   final renderSpec = resolver.toRenderSpec(resolved);
   // SchemaRenderer is responsible for rendering schemas and APIs into strings.
   final schemaRenderer = SchemaRenderer(templates: templates, quirks: quirks);
 
-  logger.info('Generating $specUri to ${outDir.path}');
+  logger.info('Generating $specUrl to ${outDir.path}');
 
   final formatter = Formatter(runProcess: runProcess);
   final spellChecker = SpellChecker(runProcess: runProcess);
@@ -143,6 +143,7 @@ String renderTestSchema(
 @visibleForTesting
 Map<String, String> renderTestSchemas(
   Map<String, Map<String, dynamic>> schemas, {
+  required Uri specUrl,
   Quirks quirks = const Quirks(),
 }) {
   final schemasContext = MapContext(
@@ -159,10 +160,9 @@ Map<String, String> renderTestSchemas(
     return MapEntry(key, parseSchema(context));
   });
 
-  final serverUrl = Uri.parse('https://example.com');
   final refRegistry = RefRegistry();
   void add(HasPointer object) {
-    final uri = serverUrl.replace(fragment: object.pointer.location);
+    final uri = specUrl.resolve(object.pointer.toFragment);
     refRegistry.register(uri, object);
   }
 
@@ -170,7 +170,7 @@ Map<String, String> renderTestSchemas(
     add(parsedSchema);
   }
   final resolveContext = ResolveContext(
-    specUrl: serverUrl, // This should be spec url, not server url.
+    specUrl: specUrl,
     refRegistry: refRegistry,
   );
 

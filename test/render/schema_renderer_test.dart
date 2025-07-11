@@ -569,7 +569,10 @@ void main() {
             },
           },
         };
-        final results = renderTestSchemas(schemas);
+        final results = renderTestSchemas(
+          schemas,
+          specUrl: Uri.parse('file://spec.yaml'),
+        );
         final user = results['User'];
         expect(
           user,

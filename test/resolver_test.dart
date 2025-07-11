@@ -76,7 +76,7 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              'Path parameters must be strings or integers in #/paths//users/get/parameters/0',
+              'Path parameters must be strings or integers in #/paths/~1users/get/parameters/0',
             ),
           ),
         ),
@@ -184,8 +184,8 @@ void main() {
             equals(
               'allOf only supports objects: '
               'ResolvedString(snakeName: users200_response_all_of_0, pointer: '
-              '#/paths//users/get/responses/200/content/application/json/schema/allOf/0) '
-              'in #/paths//users/get/responses/200/content/application/json/schema',
+              '#/paths/~1users/get/responses/200/content/application~1json/schema/allOf/0) '
+              'in #/paths/~1users/get/responses/200/content/application~1json/schema',
             ),
           ),
         ),
@@ -415,7 +415,8 @@ void main() {
             (e) => e.message,
             'message',
             equals(
-              "'items' is not of type Map<String, dynamic>: true in #/paths//users/get/responses/200/content/application/json/schema",
+              "'items' is not of type Map<String, dynamic>: true in "
+              '#/paths/~1users/get/responses/200/content/application~1json/schema',
             ),
           ),
         ),

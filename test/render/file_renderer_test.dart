@@ -84,7 +84,7 @@ void main() {
       await runWithLogger(
         logger ?? _MockLogger(),
         () => loadAndRenderSpec(
-          specUri: Uri.file(specFile.path),
+          specUrl: Uri.file(specFile.path),
           packageName: out.path.split('/').last,
           outDir: out,
           templateDir: templateDir,
