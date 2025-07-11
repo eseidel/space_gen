@@ -7,11 +7,11 @@ void main() {
       final bodyOne = RequestBody(
         pointer: JsonPointer.parse('#/components/requestBodies/Foo'),
         description: 'Foo',
-        content: const {
+        content: {
           'application/json': MediaType(
             schema: SchemaRef.ref(
               '#/components/schemas/Foo',
-              JsonPointer.empty(),
+              const JsonPointer.empty(),
             ),
           ),
         },
@@ -20,11 +20,11 @@ void main() {
       final bodyTwo = RequestBody(
         pointer: JsonPointer.parse('#/components/requestBodies/Foo'),
         description: 'Foo',
-        content: const {
+        content: {
           'application/json': MediaType(
             schema: SchemaRef.ref(
               '#/components/schemas/Foo',
-              JsonPointer.empty(),
+              const JsonPointer.empty(),
             ),
           ),
         },
@@ -36,11 +36,11 @@ void main() {
         RequestBody(
           pointer: JsonPointer.parse('#/components/requestBodies/Bar'),
           description: 'Bar',
-          content: const {
+          content: {
             'application/json': MediaType(
               schema: SchemaRef.ref(
                 '#/components/schemas/Bar',
-                JsonPointer.empty(),
+                const JsonPointer.empty(),
               ),
             ),
           },

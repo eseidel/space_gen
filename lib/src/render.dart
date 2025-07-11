@@ -18,18 +18,18 @@ export 'package:space_gen/src/quirks.dart';
 class _RefCollector extends Visitor {
   _RefCollector(this._refs);
 
-  final Set<String> _refs;
+  final Set<Ref<Parseable>> _refs;
 
   @override
-  void visitReference<T extends Parseable>(RefOr<T> ref) {
-    if (ref.ref != null) {
-      _refs.add(ref.ref!);
+  void visitRefOr<T extends Parseable>(RefOr<T> refOr) {
+    if (refOr.ref != null) {
+      _refs.add(refOr.ref!);
     }
   }
 }
 
-Iterable<String> collectRefs(OpenApi root) {
-  final refs = <String>{};
+Iterable<Ref<Parseable>> collectRefs(OpenApi root) {
+  final refs = <Ref<Parseable>>{};
   final collector = _RefCollector(refs);
   SpecWalker(collector).walkRoot(root);
   return refs;
@@ -73,7 +73,7 @@ Future<void> loadAndRenderSpec({
 
     // If any of the refs are network urls, we need to fetch them.
     // The cache does not handle fragments, so we need to remove them.
-    final resolved = specUrl.resolve(ref).removeFragment();
+    final resolved = specUrl.resolveUri(ref.uri).removeFragment();
     await cache.load(resolved);
   }
 

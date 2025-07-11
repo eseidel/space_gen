@@ -6,7 +6,7 @@ abstract class Visitor {
   void visitOperation(Operation operation) {}
   void visitParameter(Parameter parameter) {}
   void visitPathItem(PathItem pathItem) {}
-  void visitReference<T extends Parseable>(RefOr<T> ref) {}
+  void visitRefOr<T extends Parseable>(RefOr<T> refOr) {}
   void visitRequestBody(RequestBody requestBody) {}
   void visitResponse(Response response) {}
   void visitRoot(OpenApi root) {}
@@ -30,7 +30,7 @@ class SpecWalker {
 
   void _walkRefs<T extends Parseable>(Iterable<RefOr<T>> refs) {
     for (final ref in refs) {
-      _ref(ref);
+      _refOr(ref);
     }
   }
 
@@ -55,17 +55,17 @@ class SpecWalker {
   void _operation(Operation operation) {
     visitor.visitOperation(operation);
     for (final response in operation.responses.responses.values) {
-      _ref(response);
+      _refOr(response);
     }
     for (final parameter in operation.parameters) {
-      _ref(parameter);
+      _refOr(parameter);
     }
-    _maybeRef(operation.requestBody);
+    _maybeRefOr(operation.requestBody);
   }
 
   void _parameter(Parameter parameter) {
     visitor.visitParameter(parameter);
-    _maybeRef(parameter.type);
+    _maybeRefOr(parameter.type);
   }
 
   void _response(Response response) {
@@ -80,18 +80,18 @@ class SpecWalker {
 
   void _header(Header header) {
     visitor.visitHeader(header);
-    _maybeRef(header.schema);
+    _maybeRefOr(header.schema);
   }
 
-  void _maybeRef<T extends Parseable>(RefOr<T>? ref) {
+  void _maybeRefOr<T extends Parseable>(RefOr<T>? ref) {
     if (ref != null) {
-      _ref(ref);
+      _refOr(ref);
     }
   }
 
-  void _ref<T extends Parseable>(RefOr<T> ref) {
-    visitor.visitReference(ref);
-    final object = ref.object;
+  void _refOr<T extends Parseable>(RefOr<T> refOr) {
+    visitor.visitRefOr(refOr);
+    final object = refOr.object;
     if (object == null) {
       return;
     }
@@ -112,7 +112,7 @@ class SpecWalker {
 
   void _mediaType(MediaType mediaType) {
     // visitor.visitMediaType(mediaType);
-    _ref(mediaType.schema);
+    _refOr(mediaType.schema);
   }
 
   void _requestBody(RequestBody requestBody) {
@@ -127,11 +127,11 @@ class SpecWalker {
     switch (schema) {
       case SchemaObject():
         for (final property in schema.properties.values) {
-          _maybeRef(property);
+          _maybeRefOr(property);
         }
-        _maybeRef(schema.additionalProperties);
+        _maybeRefOr(schema.additionalProperties);
       case SchemaArray():
-        _maybeRef(schema.items);
+        _maybeRefOr(schema.items);
       case SchemaEnum():
       case SchemaMap():
       case SchemaUnknown():
@@ -145,7 +145,7 @@ class SpecWalker {
         break;
       case SchemaCombiner():
         for (final schema in schema.schemas) {
-          _maybeRef(schema);
+          _maybeRefOr(schema);
         }
       default:
         throw UnimplementedError('Unknown schema type: ${schema.runtimeType}');
