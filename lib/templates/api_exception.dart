@@ -7,16 +7,20 @@ import 'package:meta/meta.dart';
 @immutable
 class ApiException implements Exception {
   const ApiException(this.code, this.message)
-      : innerException = null,
+    : innerException = null,
       stackTrace = null;
 
   const ApiException.unhandled(this.code)
-      : message = 'Unhandled response',
+    : message = 'Unhandled response',
       innerException = null,
       stackTrace = null;
 
   const ApiException.withInner(
-      this.code, this.message, this.innerException, this.stackTrace);
+    this.code,
+    this.message,
+    this.innerException,
+    this.stackTrace,
+  );
 
   final int code;
   final String? message;

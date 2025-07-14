@@ -249,7 +249,7 @@ class FileRenderer {
     required String outPath,
     Map<String, dynamic> context = const {},
   }) {
-    final output = templates.load(template).renderString(context);
+    final output = templates.loadTemplate(template).renderString(context);
     fileWriter.writeFile(path: outPath, content: output);
   }
 
@@ -273,16 +273,34 @@ class FileRenderer {
     _renderTemplate(template: 'gitignore', outPath: '.gitignore');
   }
 
+  void _renderDartFile({
+    required String name,
+    required String outPath,
+    Map<String, String> replacements = const {},
+  }) {
+    var output = templates.loadDartTemplate(name);
+    for (final replacement in replacements.entries) {
+      final before = output;
+      output = output.replaceAll(replacement.key, replacement.value);
+      // Each replacement must be used, at least one or we fail.
+      if (output == before) {
+        throw Exception('Replacement ${replacement.key} not found in $name');
+      }
+    }
+    fileWriter.writeFile(path: outPath, content: output);
+  }
+
   /// Render the api client.
   void _renderApiClient(RenderSpec spec) {
-    _renderTemplate(
-      template: 'api_exception',
-      outPath: 'lib/api_exception.dart',
-    );
-    _renderTemplate(
-      template: 'api_client',
+    _renderDartFile(name: 'api_exception', outPath: 'lib/api_exception.dart');
+    _renderDartFile(
+      name: 'api_client',
       outPath: 'lib/api_client.dart',
-      context: {'baseUri': spec.serverUrl, 'packageName': packageName},
+      replacements: {
+        'package:space_gen/templates/api_exception.dart':
+            'package:$packageName/api_exception.dart',
+        'TEMPLATE_BASE_URI': spec.serverUrl.toString(),
+      },
     );
     _renderTemplate(
       template: 'model_helpers',
