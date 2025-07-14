@@ -62,6 +62,23 @@ void logNameCollisions(Iterable<RenderSchema> schemas) {
   }
 }
 
+@visibleForTesting
+String applyMandatoryReplacements(
+  String template,
+  Map<String, String> replacements,
+) {
+  var output = template;
+  for (final replacement in replacements.entries) {
+    final before = output;
+    output = output.replaceAll(replacement.key, replacement.value);
+    // Each replacement must be used, at least one or we fail.
+    if (output == before) {
+      throw Exception('Replacement ${replacement.key} not found');
+    }
+  }
+  return output;
+}
+
 class SpellChecker {
   SpellChecker({RunProcess? runProcess})
     : runProcess = runProcess ?? Process.runSync;
@@ -278,16 +295,9 @@ class FileRenderer {
     required String outPath,
     Map<String, String> replacements = const {},
   }) {
-    var output = templates.loadDartTemplate(name);
-    for (final replacement in replacements.entries) {
-      final before = output;
-      output = output.replaceAll(replacement.key, replacement.value);
-      // Each replacement must be used, at least one or we fail.
-      if (output == before) {
-        throw Exception('Replacement ${replacement.key} not found in $name');
-      }
-    }
-    fileWriter.writeFile(path: outPath, content: output);
+    final output = templates.loadDartTemplate(name);
+    final content = applyMandatoryReplacements(output, replacements);
+    fileWriter.writeFile(path: outPath, content: content);
   }
 
   /// Render the api client.
