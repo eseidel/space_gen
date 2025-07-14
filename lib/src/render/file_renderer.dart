@@ -71,7 +71,7 @@ String applyMandatoryReplacements(
   for (final replacement in replacements.entries) {
     final before = output;
     output = output.replaceAll(replacement.key, replacement.value);
-    // Each replacement must be used, at least one or we fail.
+    // Each replacement must be used, at least once or we fail.
     if (output == before) {
       throw Exception('Replacement ${replacement.key} not found');
     }
