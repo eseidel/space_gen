@@ -17,14 +17,18 @@ class TemplateProvider {
   // Saves about 4s on rendering the GitHub spec.
   final Map<String, Template> _cache = {};
 
-  Template load(String name) {
+  Template loadTemplate(String name) {
     return _cache.putIfAbsent(
       name,
       () => Template(
         templateDir.childFile('$name.mustache').readAsStringSync(),
-        partialResolver: load,
+        partialResolver: loadTemplate,
         name: name,
       ),
     );
+  }
+
+  String loadDartTemplate(String name) {
+    return templateDir.childFile('$name.dart').readAsStringSync();
   }
 }

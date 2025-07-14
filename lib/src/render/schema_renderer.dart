@@ -32,7 +32,7 @@ class SchemaRenderer {
       RenderSchema() => throw StateError('No code to render $schema'),
     };
     return templates
-        .load(template)
+        .loadTemplate(template)
         .renderString(schema.toTemplateContext(this));
   }
 
@@ -45,7 +45,7 @@ class SchemaRenderer {
     final endpointsContext = endpoints
         .map((e) => e.toTemplateContext(this, removePrefix: removePrefix))
         .toList();
-    return templates.load('api').renderString({
+    return templates.loadTemplate('api').renderString({
       'api_doc_comment': createDocCommentFromParts(body: description),
       'className': className,
       'endpoints': endpointsContext,

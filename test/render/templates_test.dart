@@ -7,7 +7,7 @@ void main() {
     test('throws an exception if the template does not exist', () {
       final templateProvider = TemplateProvider.defaultLocation();
       expect(
-        () => templateProvider.load('does_not_exist'),
+        () => templateProvider.loadTemplate('does_not_exist'),
         throwsA(isA<Exception>()),
       );
     });

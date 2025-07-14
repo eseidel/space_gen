@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart';
-import 'package:{{{packageName}}}/api_exception.dart';
+import 'package:space_gen/templates/api_exception.dart';
 
 /// The HTTP methods supported by the API.
 enum Method {
@@ -20,7 +20,7 @@ enum Method {
 /// Subclasses can override [invokeApi] to add custom behavior.
 class ApiClient {
   ApiClient({Uri? baseUri, Client? client, this.defaultHeaders = const {}})
-      : baseUri = baseUri ?? Uri.parse('{{{baseUri}}}'),
+    : baseUri = baseUri ?? Uri.parse('TEMPLATE_BASE_URI'),
       client = client ?? Client();
 
   final Uri baseUri;
@@ -50,8 +50,7 @@ class ApiClient {
     final encodedBody = body != null ? jsonEncode(body) : null;
     final maybeContentType = <String, String>{
       ...defaultHeaders,
-      if (encodedBody != null)
-        'Content-Type': 'application/json',
+      if (encodedBody != null) 'Content-Type': 'application/json',
       ...headerParameters,
     };
     // Just pass null to http if we have no headers to set.

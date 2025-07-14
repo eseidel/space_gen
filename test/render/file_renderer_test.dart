@@ -1152,6 +1152,17 @@ void main() {
     verify(() => logger.info('#/bar')).called(1);
   });
 
+  test('applyMandatoryReplacements', () {
+    final replacements = {'FOO_BAR': 'FOO_BAZ'};
+    const template = 'FOO_BAR';
+    final output = applyMandatoryReplacements(template, replacements);
+    expect(output, 'FOO_BAZ');
+    expect(
+      () => applyMandatoryReplacements(template, {'MISSING': 'OOPS'}),
+      throwsA(isA<Exception>()),
+    );
+  });
+
   group('FileRenderer', () {
     test('imports for model', () {
       final templates = TemplateProvider.defaultLocation();
