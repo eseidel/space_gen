@@ -16,20 +16,37 @@ enum Method {
   bool get supportsBody => this != get && this != delete;
 }
 
+/// A function that provides a secret for the given key name.
+/// e.g. 'ACCESS_TOKEN', 'api-key', etc. as specified in the spec provided.
+/// Generated code will call this function to get the secret for the given key
+/// name to then place in the header, query, etc.
+typedef SecretProvider = String? Function(String?);
+
 /// The client interface for the API.
 /// Subclasses can override [invokeApi] to add custom behavior.
+///
+/// [getSecret] is used to provide a secret for the given key name.
+/// e.g. 'ACCESS_TOKEN', 'api-key', etc. as specified in the spec provided.
+///
+/// The default implementation will return null, which means no secret will be
+/// added to the request.  Requests which require a secret will throw an
+/// exception as a result.
 class ApiClient {
-  ApiClient({Uri? baseUri, Client? client, this.defaultHeaders = const {}})
-    : baseUri = baseUri ?? Uri.parse('TEMPLATE_BASE_URI'),
-      client = client ?? Client();
+  ApiClient({
+    Uri? baseUri,
+    Client? client,
+    this.defaultHeaders = const {},
+    this.getSecret,
+  }) : baseUri = baseUri ?? Uri.parse('TEMPLATE_BASE_URI'),
+       client = client ?? Client();
 
   final Uri baseUri;
   final Client client;
   final Map<String, String> defaultHeaders;
+  final SecretProvider? getSecret;
 
-  // baseUri can contain a path, so we need to resolve the passed path relative
-  // to it.  The passed path will always be absolute (leading slash) but should
-  // be interpreted as relative to the baseUri.
+  // The passed [path] will always be absolute (leading slash) but should be
+  // interpreted as relative to the [baseUri] which may itself contain a path.
   Uri resolvePath(String path) => Uri.parse('$baseUri$path');
 
   Future<Response> invokeApi({
