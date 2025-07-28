@@ -2,7 +2,7 @@ name: coverage
 
 on:
   check_run:
-    types: [created]
+    types: [completed]
 
 permissions:
   id-token: write
@@ -10,6 +10,6 @@ permissions:
 jobs:
   upload:
     runs-on: ubuntu-latest
-
+    if: ${{ github.event.check_run.name == 'Detect Changes' }}
     steps:
       - run: echo ${{ github.event.check_run.name }}
