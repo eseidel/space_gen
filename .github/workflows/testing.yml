@@ -1,0 +1,15 @@
+name: coverage
+
+on:
+  check_run:
+    types: [created]
+
+permissions:
+  id-token: write
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: echo ${{ github.event.check_run.name }}
