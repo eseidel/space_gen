@@ -32,6 +32,7 @@ dart run space_gen -i spec_path_or_url -o output_package_path
 - Generates independent classes, which can be imported independently.
 - Correctly follows required vs. nullable semantics.
 
+
 ## Why not just contribute to OpenAPI?
 
 This started as a hobby project in August 2023, there were two separate (soon to
