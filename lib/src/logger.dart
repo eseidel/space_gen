@@ -20,8 +20,3 @@ R runWithLogger<R>(Logger logger, R Function() fn) {
 void setVerboseLogging() {
   logger.level = Level.verbose;
 }
-
-/// Log an error message.
-void error(String message) {
-  logger.err(message);
-}
