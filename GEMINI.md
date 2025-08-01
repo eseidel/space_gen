@@ -1,10 +1,14 @@
 # Gemini Project Context
 
-This file provides context for the Gemini AI assistant to help it understand and work with this project more effectively.
+This file provides context for the Gemini AI assistant to help it understand
+and work with this project more effectively.
 
 ## Project Overview
 
-`space_gen` is a code generation tool written in Dart. It takes an OpenAPI 3.0 or 3.1 specification and generates a Dart client library. The goal is to produce high-quality, modern, and idiomatic Dart code that is as good as handwritten code.
+`space_gen` is a code generation tool written in Dart. It takes an OpenAPI 3.0
+or 3.1 specification and generates a Dart client library. The goal is to
+produce high-quality, modern, and idiomatic Dart code that is as good as
+handwritten code.
 
 ## Key Technologies
 
@@ -33,7 +37,8 @@ dart test
 
 ### Formatting and Analysis
 
-To format the code and check for static analysis issues, use the standard Dart commands:
+To format the code and check for static analysis issues, use the standard Dart
+commands:
 
 ```bash
 # Format code
@@ -45,4 +50,5 @@ dart analyze
 
 ## Coding Conventions
 
-- **Commits:** Prefer adding new, atomic commits rather than amending existing ones when updating a pull request.
+- **Commits:** Prefer adding new, atomic commits rather than amending existing
+  ones when updating a pull request.
