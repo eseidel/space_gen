@@ -81,6 +81,15 @@ void main() {
         '/// Bar\n    /// Baz\n    ',
       );
     });
+
+    test('long line wrapping', () {
+      final longLine =
+          'This is a very long line that should be wrapped to eighty characters by the doc comment generator.';
+      expect(
+        createDocCommentFromParts(body: longLine, indent: 4),
+        '/// This is a very long line that should be wrapped to eighty characters by the doc\n    /// comment generator.\n    ',
+      );
+    });
   });
 
   group('indentWithTrailingNewline', () {

@@ -55,7 +55,28 @@ String variableSafeName(Quirks quirks, String jsonName) {
 
 Iterable<String> _commentedLines(String value) {
   final lines = value.split('\n');
-  return lines.map((line) => '/// $line');
+  // Wrap lines to 80 characters.
+  final wrappedLines = lines.expand((line) {
+    if (line.length < 80) {
+      return [line];
+    }
+    final words = line.split(' ');
+    final result = <String>[];
+    var currentLine = '';
+    for (final word in words) {
+      if (currentLine.isEmpty) {
+        currentLine = word;
+      } else if (currentLine.length + word.length + 1 <= 80) {
+        currentLine += ' ' + word;
+      } else {
+        result.add(currentLine);
+        currentLine = word;
+      }
+    }
+    result.add(currentLine);
+    return result;
+  });
+  return wrappedLines.map((line) => '/// ' + line);
 }
 
 String? indentWithTrailingNewline(
