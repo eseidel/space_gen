@@ -52,3 +52,4 @@ dart analyze
 
 - **Commits:** Prefer adding new, atomic commits rather than amending existing
   ones when updating a pull request.
+- **Line Length:** All files should be wrapped to 80 columns.
