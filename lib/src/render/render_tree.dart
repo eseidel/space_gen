@@ -53,11 +53,12 @@ String variableSafeName(Quirks quirks, String jsonName) {
   return avoidReservedWord(escapedName);
 }
 
-Iterable<String> _commentedLines(String value) {
-  final lines = value.split('\n');
-  // Wrap lines to 80 characters.
-  final wrappedLines = lines.expand((line) {
-    if (line.length < 80) {
+Iterable<String> wrapLines({
+  required List<String> lines,
+  required int maxWidth,
+}) {
+  return lines.expand((line) {
+    if (line.length < maxWidth) {
       return [line];
     }
     final words = line.split(' ');
@@ -66,8 +67,8 @@ Iterable<String> _commentedLines(String value) {
     for (final word in words) {
       if (currentLine.isEmpty) {
         currentLine = word;
-      } else if (currentLine.length + word.length + 1 <= 80) {
-        currentLine += ' ' + word;
+      } else if (currentLine.length + word.length + 1 <= maxWidth) {
+        currentLine += ' $word';
       } else {
         result.add(currentLine);
         currentLine = word;
@@ -76,7 +77,16 @@ Iterable<String> _commentedLines(String value) {
     result.add(currentLine);
     return result;
   });
-  return wrappedLines.map((line) => '/// ' + line);
+}
+
+Iterable<String> wrapDocComment(String value, {int indent = 0}) {
+  final prefix = '${' ' * indent}/// ';
+  final wrapWidth = 80 - prefix.length;
+  final lines = value.split('\n');
+  return wrapLines(
+    lines: lines,
+    maxWidth: wrapWidth,
+  ).map((line) => '$prefix$line');
 }
 
 String? indentWithTrailingNewline(
@@ -129,13 +139,13 @@ String? createDocCommentFromParts({
   }
 
   final lines = <String>[
-    if (title != null) ..._commentedLines(title),
-    if (body != null) ..._commentedLines(body),
+    if (title != null) ...wrapDocComment(title, indent: indent),
+    if (body != null) ...wrapDocComment(body, indent: indent),
     if (example != null)
-      ..._commentedLines('example: `${quoteIfNeeded(example)}`'),
+      ...wrapDocComment('example: `${quoteIfNeeded(example)}`', indent: indent),
     if (examples != null)
       ...examples.expand(
-        (e) => _commentedLines('example: `${quoteIfNeeded(e)}`'),
+        (e) => wrapDocComment('example: `${quoteIfNeeded(e)}`', indent: indent),
       ),
   ];
   if (lines.isEmpty) {
@@ -143,7 +153,9 @@ String? createDocCommentFromParts({
   }
   // Remove leading whitespace from just the first line.
   // This makes it easier to use from within a mustache template.
-  return indentWithTrailingNewline(lines, indent: indent);
+  lines[0] = lines[0].trimLeft();
+  // Re-indent the next line after the comment.
+  return '${lines.join('\n')}\n${' ' * indent}';
 }
 
 /// A class that can be converted to a template context.
