@@ -9,13 +9,19 @@ class _MockLogger extends Mock implements Logger {}
 
 void main() {
   group('resolver', () {
-    ResolvedSpec parseAndResolveTestSpec(Map<String, dynamic> json) {
+    ResolvedSpec parseAndResolveTestSpec(
+      Map<String, dynamic> json, {
+      bool logSchemas = false,
+    }) {
       final spec = parseOpenApi(json);
       final specUrl = Uri.parse('file:///spec.yaml');
-      return resolveSpec(spec, specUrl: specUrl);
+      return resolveSpec(spec, specUrl: specUrl, logSchemas: logSchemas);
     }
 
-    ResolvedSchema parseAndResolveTestSchema(Map<String, dynamic> schemaJson) {
+    ResolvedSchema parseAndResolveTestSchema(
+      Map<String, dynamic> schemaJson, {
+      bool logSchemas = false,
+    }) {
       final specJson = {
         'openapi': '3.1.0',
         'info': {'title': 'Space Traders API', 'version': '1.0.0'},
@@ -38,7 +44,7 @@ void main() {
           },
         },
       };
-      final spec = parseAndResolveTestSpec(specJson);
+      final spec = parseAndResolveTestSpec(specJson, logSchemas: logSchemas);
       return spec.paths.first.operations.first.responses.first.content;
     }
 
@@ -68,9 +74,8 @@ void main() {
           },
         },
       };
-      final logger = _MockLogger();
       expect(
-        () => runWithLogger(logger, () => parseAndResolveTestSpec(json)),
+        () => parseAndResolveTestSpec(json),
         throwsA(
           isA<FormatException>().having(
             (e) => e.message,
@@ -114,8 +119,7 @@ void main() {
           },
         },
       };
-      final logger = _MockLogger();
-      final spec = runWithLogger(logger, () => parseAndResolveTestSpec(json));
+      final spec = parseAndResolveTestSpec(json);
       expect(
         spec.paths.first.operations.first.parameters.first.schema,
         isA<ResolvedOneOf>().having(
@@ -155,8 +159,7 @@ void main() {
           },
         },
       };
-      final logger = _MockLogger();
-      final spec = runWithLogger(logger, () => parseAndResolveTestSpec(json));
+      final spec = parseAndResolveTestSpec(json);
       expect(
         spec.paths.first.operations.first.parameters.first.schema,
         isA<ResolvedEnum>().having(
@@ -308,8 +311,7 @@ void main() {
         },
       };
 
-      final logger = _MockLogger();
-      final spec = runWithLogger(logger, () => parseAndResolveTestSpec(json));
+      final spec = parseAndResolveTestSpec(json);
       expect(
         spec.paths.first.operations.first.responses.first.content,
         isA<ResolvedArray>().having(
@@ -447,9 +449,8 @@ void main() {
           },
         },
       };
-      final logger = _MockLogger();
       expect(
-        () => runWithLogger(logger, () => parseAndResolveTestSpec(json)),
+        () => parseAndResolveTestSpec(json),
         throwsA(
           isA<FormatException>().having(
             (e) => e.message,
@@ -508,6 +509,45 @@ void main() {
             (e) => e.message,
             'message',
             contains('Expected Schema, got RequestBody'),
+          ),
+        ),
+      );
+      verify(
+        () => logger.detail(
+          'Unused: type=object in #/components/requestBodies/RequestBody',
+        ),
+      ).called(1);
+    });
+
+    test('security scheme not found', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+        'security': [
+          {
+            'apiKey': ['scope1', 'scope2'],
+          },
+        ],
+      };
+      expect(
+        () => parseAndResolveTestSpec(json),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('Security scheme not found with name "apiKey"'),
           ),
         ),
       );

@@ -4,7 +4,7 @@ import 'package:meta/meta.dart';
 /// The "in" of a parameter.  "in" is a keyword in Dart, so we use SendIn.
 /// e.g. query, header, path, cookie.
 /// https://spec.openapis.org/oas/v3.0.0#parameter-object
-enum SendIn {
+enum ParameterLocation {
   /// The query parameter is a parameter that is sent in the query string.
   query,
 
@@ -15,23 +15,7 @@ enum SendIn {
   path,
 
   /// The cookie parameter is a parameter that is sent in the cookie.
-  cookie;
-
-  /// Parse a SendIn from a json string.
-  static SendIn fromJson(String json) {
-    switch (json) {
-      case 'query':
-        return query;
-      case 'header':
-        return header;
-      case 'path':
-        return path;
-      case 'cookie':
-        return cookie;
-      default:
-        throw ArgumentError.value(json, 'json', 'Unknown SendIn');
-    }
-  }
+  cookie,
 }
 
 /// A method is a http method.
@@ -154,7 +138,7 @@ class CommonProperties extends Equatable {
     this.examples,
   });
 
-  /// The title of the schema.
+  /// The location of the schema in the spec.
   final JsonPointer pointer;
 
   /// The snake name of the schema.
@@ -210,4 +194,70 @@ class CommonProperties extends Equatable {
     isDeprecated,
     nullable,
   ];
+}
+
+// Security schemes do not need a Resolved or Render variant, so sharing
+// them via this file.
+@immutable
+sealed class SecurityScheme extends Equatable {
+  const SecurityScheme({
+    required this.description,
+    required this.name,
+    required this.pointer,
+  });
+
+  /// The location of the scheme in the spec.
+  final JsonPointer pointer;
+
+  // Name as it appears in the component map of the spec.
+  final String name;
+
+  /// Description of the security scheme, mostly for documentation.
+  final String? description;
+
+  @override
+  List<Object?> get props => [description, name];
+}
+
+enum ApiKeyLocation { header, query, cookie }
+
+/// A api key security scheme.
+@immutable
+class ApiKeySecurityScheme extends SecurityScheme {
+  const ApiKeySecurityScheme({
+    required super.pointer,
+    required super.name,
+    required super.description,
+    required this.keyName,
+    required this.inLocation,
+  });
+
+  /// Name of the api key, used as a query param or header.
+  final String keyName;
+
+  /// Where to send the api key in the request.
+  final ApiKeyLocation inLocation;
+  @override
+  List<Object?> get props => [super.props, name, inLocation];
+}
+
+/// A http security scheme.
+@immutable
+class HttpSecurityScheme extends SecurityScheme {
+  const HttpSecurityScheme({
+    required super.pointer,
+    required super.name,
+    required super.description,
+    required this.scheme,
+    required this.bearerFormat,
+  });
+
+  /// The scheme of the http security scheme.
+  final String scheme;
+
+  /// The bearer format of the http security scheme.
+  final String? bearerFormat;
+
+  @override
+  List<Object?> get props => [super.props, scheme, bearerFormat];
 }

@@ -23,7 +23,7 @@ class Parameter extends Equatable implements HasPointer, Parseable {
     required this.description,
     required this.type,
     required this.isRequired,
-    required this.sendIn,
+    required this.inLocation,
     required this.isDeprecated,
     required this.pointer,
   });
@@ -42,7 +42,7 @@ class Parameter extends Equatable implements HasPointer, Parseable {
 
   /// The "in" of the parameter.
   /// e.g. query, header, path, cookie.
-  final SendIn sendIn;
+  final ParameterLocation inLocation;
 
   /// The type of the parameter.
   final SchemaRef type;
@@ -56,7 +56,7 @@ class Parameter extends Equatable implements HasPointer, Parseable {
     name,
     description,
     isRequired,
-    sendIn,
+    inLocation,
     type,
     pointer,
   ];
@@ -425,6 +425,7 @@ class Operation extends Equatable implements HasPointer {
     required this.parameters,
     required this.requestBody,
     required this.deprecated,
+    required this.securityRequirements,
   });
 
   /// Where this operation is located in the spec.
@@ -455,6 +456,9 @@ class Operation extends Equatable implements HasPointer {
 
   /// Whether this operation is deprecated.
   final bool deprecated;
+
+  /// The security requirements of this operation.
+  final List<SecurityRequirement> securityRequirements;
 
   @override
   List<Object?> get props => [
@@ -570,12 +574,13 @@ class Components extends Equatable {
     this.parameters = const {},
     this.responses = const {},
     this.headers = const {},
+    this.securitySchemes = const [],
   });
 
   final Map<String, SchemaRef> schemas;
   final Map<String, RefOr<Parameter>> parameters;
 
-  // final Map<String, SecurityScheme> securitySchemes;
+  final List<SecurityScheme> securitySchemes;
   final Map<String, RefOr<RequestBody>> requestBodies;
   final Map<String, RefOr<Response>> responses;
   final Map<String, RefOr<Header>> headers;
@@ -622,6 +627,24 @@ class Tag extends Equatable {
   List<Object?> get props => [name, description];
 }
 
+/// Each requirement is a map of security scheme names to values.
+/// Values are lists of scope or roles, depending on the referenced scheme.
+/// At the parsing stage we just collect the requirements, at the resolve
+/// stage we'll validate that they reference valid security schemes, etc.
+class SecurityRequirement extends Equatable {
+  const SecurityRequirement({required this.conditions, required this.pointer});
+
+  /// The conditions of the security requirement.
+  /// Keys are security scheme names, and values are lists of scopes or roles.
+  final Map<String, List<String>> conditions;
+
+  /// The pointer to the security requirement.
+  final JsonPointer pointer;
+
+  @override
+  List<Object?> get props => [conditions, pointer];
+}
+
 /// The OpenAPI object.  The root object of a spec.
 /// https://spec.openapis.org/oas/v3.1.0#openapi-object
 /// Objects in this library are not a one-to-one mapping with the spec,
@@ -635,6 +658,7 @@ class OpenApi extends Equatable {
     required this.paths,
     required this.components,
     required this.tags,
+    required this.securityRequirements,
   });
 
   /// The server url of the spec.
@@ -652,9 +676,19 @@ class OpenApi extends Equatable {
   /// The components of the spec.
   final Components components;
 
+  /// The security requirements applied to all operations within the spec.
+  final List<SecurityRequirement> securityRequirements;
+
   /// The tags of the spec.
   final List<Tag> tags;
 
   @override
-  List<Object?> get props => [serverUrl, info, paths, components];
+  List<Object?> get props => [
+    serverUrl,
+    info,
+    paths,
+    components,
+    securityRequirements,
+    tags,
+  ];
 }

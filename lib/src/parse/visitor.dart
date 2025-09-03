@@ -20,7 +20,7 @@ class SpecWalker {
 
   final Visitor visitor;
 
-  void _walkComponents(Components components) {
+  void walkComponents(Components components) {
     _walkRefs(components.schemas.values);
     _walkRefs(components.parameters.values);
     _walkRefs(components.requestBodies.values);
@@ -39,7 +39,7 @@ class SpecWalker {
     for (final path in root.paths.paths.values) {
       walkPathItem(path);
     }
-    _walkComponents(root.components);
+    walkComponents(root.components);
   }
 
   void walkPathItem(PathItem pathItem) {

@@ -322,7 +322,7 @@ class SpecResolver {
     return RenderParameter(
       description: parameter.description,
       name: parameter.name,
-      sendIn: parameter.sendIn,
+      inLocation: parameter.inLocation,
       isRequired: parameter.isRequired,
       isDeprecated: parameter.isDeprecated,
       type: toRenderSchema(parameter.schema),
@@ -418,6 +418,7 @@ class SpecResolver {
       responses: operation.responses.map(toRenderResponse).toList(),
       requestBody: toRenderRequestBody(operation.requestBody),
       returnType: returnType,
+      securityRequirements: operation.securityRequirements,
     );
   }
 
@@ -468,6 +469,7 @@ class RenderSpec {
   /// The paths of the spec.
   final List<RenderPath> paths;
 
+  /// The tag definitions of the spec.
   final List<RenderTag> tagDefinitions;
 
   /// The endpoints of the spec.
@@ -501,6 +503,49 @@ class RenderSpec {
   }).toList();
 }
 
+extension on ResolvedSecurityRequirement {
+  /// Turn the SecurityRequirements into AuthRequest subclasses to be
+  /// resolved at runtime by the ApiClient.  If this requirement has
+  /// multiple conditions, wrap them in an AllOfAuth.
+  String toArgumentString({int indent = 0}) {
+    final indentString = ' ' * indent;
+    if (conditions.isEmpty) {
+      return '${indentString}NoAuth()';
+    }
+    // TODO(eseidel): Support scopes/roles in conditions.values.
+    final buffer = StringBuffer();
+    if (conditions.length > 1) {
+      buffer.write('${indentString}AllOfAuth([\n');
+      for (final scheme in conditions.keys) {
+        buffer.write('${scheme.toArgumentString(indent: indent + 2)},\n');
+      }
+      buffer.write('$indentString])');
+    } else {
+      final scheme = conditions.keys.first;
+      buffer.write(scheme.toArgumentString(indent: indent));
+    }
+    return buffer.toString();
+  }
+}
+
+extension on SecurityScheme {
+  /// Turn the SecurityScheme into an AuthRequest subclass to be
+  /// resolved at runtime by the ApiClient.
+  String toArgumentString({int indent = 0}) {
+    final expression = switch (this) {
+      ApiKeySecurityScheme(
+        keyName: final keyName,
+        inLocation: final inLocation,
+      ) =>
+        'ApiKeyAuth(name: "$keyName", secretName: "$name", '
+            'sendIn: $inLocation)',
+      HttpSecurityScheme(scheme: final scheme) =>
+        'HttpAuth(scheme: "$scheme", secretName: "$name")',
+    };
+    return '${' ' * indent}$expression';
+  }
+}
+
 /// A convenience class created for each operation within a path item
 /// for compatibility with our existing rendering code.
 // TODO(eseidel): Could remove this in favor of RenderOperation?
@@ -530,6 +575,11 @@ class Endpoint implements ToTemplateContext {
 
   List<RenderParameter> get parameters => operation.parameters;
 
+  // These are resolved, and may simply be duplicates of the global
+  // security requirements.
+  List<ResolvedSecurityRequirement> get securityRequirements =>
+      operation.securityRequirements;
+
   RenderRequestBody? get requestBody => operation.requestBody;
 
   String get methodName => lowercaseCamelFromSnake(snakeName);
@@ -547,6 +597,35 @@ class Endpoint implements ToTemplateContext {
       }
     }
     return statements;
+  }
+
+  /// Turn the SecurityRequirements into AuthRequest subclasses to be
+  /// resolved at runtime by the ApiClient, example:
+  /// auth: OneOf([
+  ///     MultiAuth([
+  ///         HttpAuth(scheme: "Bearer", secretName: "AgentToken"),
+  ///         ApiKeyAuth(name: "apiKey", secretName: "ApiKey", sendIn: SendIn.header),
+  ///     ]),
+  ///     ApiKeyAuth(name: "apiKey", secretName: "ApiKey", sendIn: SendIn.header),
+  ///     NoAuth(),
+  /// ]),
+  String? authArgument({int indent = 0}) {
+    if (securityRequirements.isEmpty) {
+      return null;
+    }
+
+    final indentString = ' ' * indent;
+    final buffer = StringBuffer();
+    if (securityRequirements.length == 1) {
+      buffer.write(securityRequirements.first.toArgumentString(indent: indent));
+    } else {
+      buffer.write('${indentString}OneOfAuth([\n');
+      for (final requirement in securityRequirements) {
+        buffer.write('${requirement.toArgumentString(indent: indent + 2)},\n');
+      }
+      buffer.write('$indentString])');
+    }
+    return buffer.toString();
   }
 
   @override
@@ -573,18 +652,18 @@ class Endpoint implements ToTemplateContext {
     );
 
     // Only explicit parameters (not request body) need to be split by sendIn.
-    final bySendIn = parameters.groupListsBy((p) => p.sendIn);
-    final pathParameters = bySendIn[SendIn.path] ?? [];
-    final queryParameters = bySendIn[SendIn.query] ?? [];
+    final byLocation = parameters.groupListsBy((p) => p.inLocation);
+    final pathParameters = byLocation[ParameterLocation.path] ?? [];
+    final queryParameters = byLocation[ParameterLocation.query] ?? [];
     final hasQueryParameters = queryParameters.isNotEmpty;
-    final cookieParameters = bySendIn[SendIn.cookie] ?? [];
+    final cookieParameters = byLocation[ParameterLocation.cookie] ?? [];
     if (cookieParameters.isNotEmpty) {
       _unimplemented(
         'Cookie parameters are not yet supported.',
         operation.pointer,
       );
     }
-    final headerParameters = bySendIn[SendIn.header] ?? [];
+    final headerParameters = byLocation[ParameterLocation.header] ?? [];
     final hasHeaderParameters = headerParameters.isNotEmpty;
 
     final validationStatementsString = indentWithTrailingNewline(
@@ -592,6 +671,9 @@ class Endpoint implements ToTemplateContext {
       indent: 8,
       extraTrailingNewline: true,
     );
+
+    // Remove the leading whitespace from the first line.
+    final authArgumentString = authArgument(indent: 12)?.trimLeft();
 
     Iterable<Map<String, dynamic>> toTemplateContexts(
       Iterable<CanBeParameter> parameters,
@@ -627,6 +709,7 @@ class Endpoint implements ToTemplateContext {
       'returnType': returnType,
       'responseFromJson': responseFromJson,
       'validationStatements': validationStatementsString,
+      'authArgument': authArgumentString,
     };
   }
 }
@@ -674,6 +757,7 @@ class RenderOperation {
     required this.tags,
     required this.summary,
     required this.description,
+    required this.securityRequirements,
   });
 
   /// The method of the resolved operation.
@@ -707,6 +791,9 @@ class RenderOperation {
 
   /// The description of the resolved operation.
   final String? description;
+
+  /// The security requirements of the resolved operation.
+  final List<ResolvedSecurityRequirement> securityRequirements;
 }
 
 abstract class RenderRequestBody implements CanBeParameter {
@@ -2214,7 +2301,7 @@ class RenderParameter implements CanBeParameter {
     required this.type,
     required this.isRequired,
     required this.isDeprecated,
-    required this.sendIn,
+    required this.inLocation,
   });
 
   /// The name of the parameter.
@@ -2229,8 +2316,8 @@ class RenderParameter implements CanBeParameter {
   /// The type of the parameter.
   final RenderSchema type;
 
-  /// The send in of the parameter.
-  final SendIn sendIn;
+  /// The in location of the parameter.
+  final ParameterLocation inLocation;
 
   /// Whether the parameter is required.
   @override
@@ -2262,7 +2349,7 @@ class RenderParameter implements CanBeParameter {
       'isNullable': isNullable,
       'type': type.typeName,
       'nullableType': type.nullableTypeName(context),
-      'sendIn': sendIn.name,
+      'sendIn': inLocation.name,
       'toJson': type.toJsonExpression(
         dartName,
         context,

@@ -12,6 +12,7 @@ import 'package:space_gen/src/render/file_renderer.dart';
 import 'package:space_gen/src/render/render_tree.dart';
 import 'package:space_gen/src/render/schema_renderer.dart';
 import 'package:space_gen/src/render/templates.dart';
+import 'package:space_gen/src/resolver.dart'; // for ResolvedSecurityRequirement
 import 'package:space_gen/src/types.dart';
 import 'package:test/test.dart';
 
@@ -166,6 +167,7 @@ void main() {
           'api.dart',
           'api_exception.dart',
           'api_client.dart',
+          'auth.dart',
           'client.dart',
           'model_helpers.dart',
         ]),
@@ -258,6 +260,7 @@ void main() {
           'api.dart',
           'api_exception.dart',
           'api_client.dart',
+          'auth.dart',
           'client.dart',
           'model_helpers.dart',
         ]),
@@ -1255,11 +1258,12 @@ void main() {
                   ),
                   isRequired: true,
                   isDeprecated: false,
-                  sendIn: SendIn.query,
+                  inLocation: ParameterLocation.query,
                 ),
               ],
               requestBody: null,
               responses: <RenderResponse>[],
+              securityRequirements: <ResolvedSecurityRequirement>[],
             ),
             serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
           ),

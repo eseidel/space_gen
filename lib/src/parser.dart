@@ -27,7 +27,7 @@ MapContext _requiredMap(MapContext json, String key) {
   return json.childAsMap(key);
 }
 
-ListContext _requiredList(MapContext json, String key) {
+ListContext _requiredListOfMaps(MapContext json, String key) {
   final value = json[key];
   if (value == null) {
     _error(json, 'Key $key is required');
@@ -63,15 +63,27 @@ double? _optionalDouble(MapContext parent, String key) {
   return _expectType<num?>(parent, key, value)?.toDouble();
 }
 
+List<T> _expectList<T>(MapContext parent, String key, dynamic value) {
+  if (value is! List || !value.every((e) => e is T)) {
+    _error(parent, "'$key' is not a list of $T: $value");
+  }
+  return value.cast<T>();
+}
+
+List<T> _requiredList<T>(MapContext parent, String key) {
+  final value = parent[key];
+  if (value == null) {
+    _error(parent, 'Key $key is required');
+  }
+  return _expectList<T>(parent, key, value);
+}
+
 List<T>? _optionalList<T>(MapContext parent, String key) {
   final value = parent[key];
   if (value == null) {
     return null;
   }
-  if (value is! List || !value.every((e) => e is T)) {
-    _error(parent, "'$key' is not a list of $T: $value");
-  }
-  return value.cast<T>();
+  return _expectList<T>(parent, key, value);
 }
 
 MapContext? _optionalMap(MapContext parent, String key) {
@@ -152,6 +164,21 @@ RefOr<Parameter> parseParameterOrRef(MapContext json) {
   return RefOr<Parameter>.object(parseParameter(json), json.pointer);
 }
 
+ParameterLocation _parseParameterLocation(MapContext context, String location) {
+  switch (location) {
+    case 'query':
+      return ParameterLocation.query;
+    case 'header':
+      return ParameterLocation.header;
+    case 'path':
+      return ParameterLocation.path;
+    case 'cookie':
+      return ParameterLocation.cookie;
+    default:
+      _error(context, 'Unknown parameter location: $location');
+  }
+}
+
 /// Parse a parameter from a json object.
 Parameter parseParameter(MapContext json) {
   _refNotExpected(json);
@@ -163,7 +190,10 @@ Parameter parseParameter(MapContext json) {
   final name = _required<String>(json, 'name');
   final description = _optional<String>(json, 'description');
   final isRequired = _optional<bool>(json, 'required') ?? false;
-  final sendIn = SendIn.fromJson(_required<String>(json, 'in'));
+  final inLocation = _parseParameterLocation(
+    json,
+    _required<String>(json, 'in'),
+  );
   final deprecated = _optional<bool>(json, 'deprecated') ?? false;
   _ignored<bool>(json, 'allowEmptyValue');
 
@@ -185,7 +215,7 @@ Parameter parseParameter(MapContext json) {
     _error(json, 'Parameter must have either schema or content.');
   }
 
-  if (sendIn == SendIn.path) {
+  if (inLocation == ParameterLocation.path) {
     // Path parameter type validation is done during resolution since
     // type could be a ref until then.
     if (isRequired != true) {
@@ -200,7 +230,7 @@ Parameter parseParameter(MapContext json) {
     description: description,
     isRequired: isRequired,
     isDeprecated: deprecated,
-    sendIn: sendIn,
+    inLocation: inLocation,
     type: type,
   );
 }
@@ -765,6 +795,11 @@ Operation parseOperation(MapContext operationJson, String path) {
   if (responses.isEmpty) {
     _error(context, 'Responses are required');
   }
+  final securityRequirements = _mapOptionalList<SecurityRequirement>(
+    context,
+    'security',
+    (child, _) => parseSecurityRequirement(child),
+  );
   return Operation(
     pointer: operationJson.pointer,
     tags: tags,
@@ -775,6 +810,7 @@ Operation parseOperation(MapContext operationJson, String path) {
     requestBody: requestBody,
     responses: responses,
     deprecated: deprecated,
+    securityRequirements: securityRequirements,
   );
 }
 
@@ -931,6 +967,74 @@ Map<String, RefOr<T>> _parseComponent<T extends Parseable>(
   return values;
 }
 
+ApiKeyLocation _parseApiKeyLocation(MapContext context, String location) {
+  switch (location) {
+    case 'header':
+      return ApiKeyLocation.header;
+    case 'query':
+      return ApiKeyLocation.query;
+    case 'cookie':
+      _unimplemented(
+        context,
+        'cookie parameters are not yet supported for API key authentication',
+      );
+    default:
+      _error(context, 'Unknown API key location: $location');
+  }
+}
+
+SecurityScheme parseSecurityScheme(String name, MapContext json) {
+  final type = _required<String>(json, 'type');
+  final description = _optional<String>(json, 'description');
+  final pointer = json.pointer;
+  switch (type) {
+    case 'apiKey':
+      final inLocation = _parseApiKeyLocation(
+        json,
+        _required<String>(json, 'in'),
+      );
+      return ApiKeySecurityScheme(
+        pointer: pointer,
+        name: name,
+        description: description,
+        keyName: _required<String>(json, 'name'),
+        inLocation: inLocation,
+      );
+    case 'http':
+      return HttpSecurityScheme(
+        pointer: pointer,
+        name: name,
+        description: description,
+        scheme: _required<String>(json, 'scheme'),
+        bearerFormat: _optional<String>(json, 'bearerFormat'),
+      );
+    case 'mutualTLS':
+      _unimplemented(json, 'Mutual TLS security scheme is not yet supported');
+    case 'oauth2':
+      _unimplemented(json, 'OAuth2 security scheme is not yet supported');
+    case 'openIDConnect':
+      _unimplemented(
+        json,
+        'OpenID Connect security scheme is not yet supported',
+      );
+    default:
+      _error(json, 'Unsupported security scheme type: $type');
+  }
+}
+
+List<SecurityScheme> _parseSecuritySchemes(MapContext? securitySchemesJson) {
+  if (securitySchemesJson == null) {
+    return [];
+  }
+  final schemes = <SecurityScheme>[];
+  for (final name in securitySchemesJson.keys) {
+    final securitySchemeJson = securitySchemesJson.childAsMap(name);
+    final securityScheme = parseSecurityScheme(name, securitySchemeJson);
+    schemes.add(securityScheme);
+  }
+  return schemes;
+}
+
 /// Parse the components section of a spec.
 /// https://spec.openapis.org/oas/v3.1.0#componentsObject
 Components parseComponents(MapContext? componentsJson) {
@@ -965,10 +1069,9 @@ Components parseComponents(MapContext? componentsJson) {
     'headers',
     parseHeaderOrRef,
   );
-  final securitySchemesJson = _optionalMap(componentsJson, 'securitySchemes');
-  if (securitySchemesJson != null) {
-    _warn(componentsJson, 'Ignoring securitySchemes');
-  }
+  final securitySchemes = _parseSecuritySchemes(
+    _optionalMap(componentsJson, 'securitySchemes'),
+  );
   _ignored<Map<String, dynamic>>(componentsJson, 'links');
   _ignored<Map<String, dynamic>>(componentsJson, 'callbacks');
 
@@ -979,6 +1082,7 @@ Components parseComponents(MapContext? componentsJson) {
     parameters: parameters,
     responses: responses,
     headers: headers,
+    securitySchemes: securitySchemes,
   );
 }
 
@@ -1024,6 +1128,20 @@ Tag parseTag(MapContext json) {
   return Tag(name: name, description: description);
 }
 
+SecurityRequirement parseSecurityRequirement(MapContext json) {
+  // Each security requirement references possibly multiple security schemes.
+  // https://spec.openapis.org/oas/v3.1.0#security-requirement-object
+  // The keys are the security scheme names, and the values are
+  // scheme-dependant (typically scopes or roles).
+  final conditions = <String, List<String>>{};
+  // Explicitly copy the value to prevent unused fields warning.
+  for (final name in json.keys) {
+    final value = _requiredList<String>(json, name);
+    conditions[name] = value;
+  }
+  return SecurityRequirement(conditions: conditions, pointer: json.pointer);
+}
+
 OpenApi parseOpenApi(Map<String, dynamic> openapiJson) {
   final json = MapContext.initial(openapiJson);
   _refNotExpected(json);
@@ -1039,13 +1157,18 @@ OpenApi parseOpenApi(Map<String, dynamic> openapiJson) {
 
   final info = parseInfo(_requiredMap(json, 'info'));
 
-  final servers = _requiredList(json, 'servers');
+  final servers = _requiredListOfMaps(json, 'servers');
   final firstServer = servers.indexAsMap(0);
   final serverUrl = _required<String>(firstServer, 'url');
 
   final paths = parsePaths(_requiredMap(json, 'paths'));
   final components = parseComponents(_optionalMap(json, 'components'));
   final tags = _mapOptionalList(json, 'tags', (child, _) => parseTag(child));
+  final securityRequirements = _mapOptionalList(
+    json,
+    'security',
+    (child, _) => parseSecurityRequirement(child),
+  );
   _warnUnused(json);
   return OpenApi(
     serverUrl: Uri.parse(serverUrl),
@@ -1054,6 +1177,7 @@ OpenApi parseOpenApi(Map<String, dynamic> openapiJson) {
     paths: paths,
     components: components,
     tags: tags,
+    securityRequirements: securityRequirements,
   );
 }
 

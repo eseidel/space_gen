@@ -472,6 +472,29 @@ void main() {
       );
     });
 
+    test('parameter with unknown location', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'parameters': [
+                {'name': 'foo', 'in': 'unknown'},
+              ],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+      expect(() => parseOpenApi(json), throwsA(isA<FormatException>()));
+    });
+
     test('content is not supported', () {
       final json = {
         'openapi': '3.1.0',
@@ -841,7 +864,7 @@ void main() {
       );
     });
 
-    test('ignores securitySchemes', () {
+    test('errors on missing bearer scheme', () {
       final json = {
         'openapi': '3.1.0',
         'info': {'title': 'Space Traders API', 'version': '1.0.0'},
@@ -864,10 +887,18 @@ void main() {
         },
       };
       final logger = _MockLogger();
-      runWithLogger(logger, () => parseOpenApi(json));
-      verify(
-        () => logger.warn('Ignoring securitySchemes in #/components'),
-      ).called(1);
+      expect(
+        () => runWithLogger(logger, () => parseOpenApi(json)),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              'Key scheme is required in #/components/securitySchemes/foo',
+            ),
+          ),
+        ),
+      );
     });
 
     group('refs', () {
@@ -1360,6 +1391,132 @@ void main() {
         expect(oneOf.schemas[0].object, isA<SchemaString>());
         expect(oneOf.schemas[1].object, isA<SchemaNumber>());
         expect(oneOf.common.nullable, isTrue);
+      });
+    });
+
+    group('security requirements', () {
+      test('parse', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'security': [
+            {
+              'apiKey': ['scope1', 'scope2'],
+            },
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+          'components': {
+            'securitySchemes': {
+              'apiKey': {'type': 'apiKey', 'name': 'apiKey', 'in': 'header'},
+            },
+          },
+        };
+        final spec = parseOpenApi(json);
+        expect(spec.securityRequirements.length, 1);
+        expect(
+          spec.securityRequirements[0],
+          equals(
+            SecurityRequirement(
+              conditions: const {
+                'apiKey': ['scope1', 'scope2'],
+              },
+              pointer: JsonPointer.parse('#/security/0'),
+            ),
+          ),
+        );
+        expect(spec.components.securitySchemes.length, 1);
+        expect(
+          spec.components.securitySchemes[0],
+          equals(
+            ApiKeySecurityScheme(
+              pointer: JsonPointer.parse('#/components/securitySchemes/apiKey'),
+              name: 'apiKey',
+              description: null,
+              keyName: 'apiKey',
+              inLocation: ApiKeyLocation.header,
+            ),
+          ),
+        );
+      });
+      test('scopes/roles must be list', () {
+        final json = {'foo': 'bar'};
+        expect(
+          () => parseSecurityRequirement(MapContext.initial(json)),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              equals("'foo' is not a list of String: bar in #/"),
+            ),
+          ),
+        );
+      });
+
+      test('scopes/roles cannot be null', () {
+        final json = {'foo': null};
+        expect(
+          () => parseSecurityRequirement(MapContext.initial(json)),
+          throwsA(isA<FormatException>()),
+        );
+      });
+    });
+    group('security scheme', () {
+      test('cookie not supported', () {
+        final json = {'type': 'apiKey', 'name': 'apiKey', 'in': 'cookie'};
+        expect(
+          () => parseSecurityScheme('name', MapContext.initial(json)),
+          throwsA(isA<UnimplementedError>()),
+        );
+      });
+      test('unknown location', () {
+        final json = {'type': 'apiKey', 'name': 'apiKey', 'in': 'unknown'};
+        expect(
+          () => parseSecurityScheme('name', MapContext.initial(json)),
+          throwsA(isA<FormatException>()),
+        );
+      });
+      test('oauth not yet supported', () {
+        final json = {'type': 'oauth2', 'name': 'apiKey', 'in': 'unknown'};
+        expect(
+          () => parseSecurityScheme('name', MapContext.initial(json)),
+          throwsA(isA<UnimplementedError>()),
+        );
+      });
+      test('mutual TLS not yet supported', () {
+        final json = {'type': 'mutualTLS', 'name': 'apiKey', 'in': 'unknown'};
+        expect(
+          () => parseSecurityScheme('name', MapContext.initial(json)),
+          throwsA(isA<UnimplementedError>()),
+        );
+      });
+      test('openID Connect not yet supported', () {
+        final json = {
+          'type': 'openIDConnect',
+          'name': 'apiKey',
+          'in': 'unknown',
+        };
+        expect(
+          () => parseSecurityScheme('name', MapContext.initial(json)),
+          throwsA(isA<UnimplementedError>()),
+        );
+      });
+      test('unknown type', () {
+        final json = {'type': 'unknown'};
+        expect(
+          () => parseSecurityScheme('name', MapContext.initial(json)),
+          throwsA(isA<FormatException>()),
+        );
       });
     });
   });
