@@ -938,5 +938,81 @@ void main() {
         '}\n',
       );
     });
+    test('multiple conditions', () {
+      final json = {
+        'description': 'Get a user',
+        'operationId': 'users-get',
+        'tags': ['users'],
+        'security': <Map<String, List<String>>>[
+          {'apiKey': <String>[], 'http': <String>[]},
+          {'apiKey': <String>[]},
+          {},
+        ],
+        'responses': {
+          '200': {
+            'content': {
+              'application/json': {
+                'schema': {
+                  'type': 'object',
+                  'properties': {
+                    'name': {'type': 'string'},
+                  },
+                },
+              },
+            },
+            'description': 'User',
+          },
+        },
+      };
+      final componentsJson = {
+        'securitySchemes': {
+          'apiKey': {'type': 'apiKey', 'name': 'apiKey', 'in': 'header'},
+          'http': {'type': 'http', 'scheme': 'Bearer'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users',
+        operationJson: json,
+        componentsJson: componentsJson,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(
+        result,
+        '/// Test API\n'
+        'class UsersApi {\n'
+        '    UsersApi(ApiClient? client) : client = client ?? ApiClient();\n'
+        '\n'
+        '    final ApiClient client;\n'
+        '\n'
+        '    /// Get a user\n'
+        '    Future<UsersGet200Response> usersGet(\n'
+        '    ) async {\n'
+        '        final response = await client.invokeApi(\n'
+        '            method: Method.post,\n'
+        "            path: '/users'\n"
+        ',\n'
+        '            authRequest: OneOfAuth([\n'
+        '              AllOfAuth([\n'
+        '                ApiKeyAuth(name: "apiKey", secretName: "apiKey", sendIn: SendIn.header),\n'
+        '                HttpAuth(scheme: "Bearer", secretName: "http"),\n'
+        '              ]),\n'
+        '              ApiKeyAuth(name: "apiKey", secretName: "apiKey", sendIn: SendIn.header),\n'
+        '              NoAuth(),\n'
+        '            ]),\n'
+        '        );\n'
+        '\n'
+        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+        '            throw ApiException(response.statusCode, response.body.toString());\n'
+        '        }\n'
+        '\n'
+        '        if (response.body.isNotEmpty) {\n'
+        '            return UsersGet200Response.fromJson(jsonDecode(response.body) as Map<String, dynamic>);\n'
+        '        }\n'
+        '\n'
+        '        throw ApiException.unhandled(response.statusCode);\n'
+        '    }\n'
+        '}\n',
+      );
+    });
   });
 }

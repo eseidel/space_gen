@@ -340,7 +340,10 @@ ResolvedSecurityRequirement _resolveSecurityRequirement({
       (scheme) => scheme.name == name,
     );
     if (securityScheme == null) {
-      _error('Security scheme not found: $name', requirement.pointer);
+      _error(
+        'Security scheme not found with name "$name"',
+        requirement.pointer,
+      );
     }
     return MapEntry(securityScheme, value);
   });

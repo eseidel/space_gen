@@ -507,21 +507,22 @@ extension on ResolvedSecurityRequirement {
   /// Turn the SecurityRequirements into AuthRequest subclasses to be
   /// resolved at runtime by the ApiClient.  If this requirement has
   /// multiple conditions, wrap them in an AllOfAuth.
-  String toArgumentString() {
+  String toArgumentString({int indent = 0}) {
+    final indentString = ' ' * indent;
     if (conditions.isEmpty) {
-      return 'NoAuth()';
+      return '${indentString}NoAuth()';
     }
     // TODO(eseidel): Support scopes/roles in conditions.values.
     final buffer = StringBuffer();
     if (conditions.length > 1) {
-      buffer.write('AllOfAuth([\n');
+      buffer.write('${indentString}AllOfAuth([\n');
       for (final scheme in conditions.keys) {
-        buffer.write('  ${scheme.toArgumentString()},\n');
+        buffer.write('${scheme.toArgumentString(indent: indent + 2)},\n');
       }
-      buffer.write('])\n');
+      buffer.write('$indentString])');
     } else {
       final scheme = conditions.keys.first;
-      buffer.write(scheme.toArgumentString());
+      buffer.write(scheme.toArgumentString(indent: indent));
     }
     return buffer.toString();
   }
@@ -530,19 +531,19 @@ extension on ResolvedSecurityRequirement {
 extension on SecurityScheme {
   /// Turn the SecurityScheme into an AuthRequest subclass to be
   /// resolved at runtime by the ApiClient.
-  String toArgumentString() {
-    switch (this) {
-      case ApiKeySecurityScheme(
+  String toArgumentString({int indent = 0}) {
+    final expression = switch (this) {
+      ApiKeySecurityScheme(
         keyName: final keyName,
         inLocation: final inLocation,
-      ):
-        return 'ApiKeyAuth(name: "$keyName", secretName: "$name", '
-            'sendIn: $inLocation)';
-      case HttpSecurityScheme(scheme: final scheme):
-        return 'HttpAuth(scheme: "$scheme", secretName: "$name")';
-      default:
-        _unimplemented('Unsupported security scheme: $this', pointer);
-    }
+      ) =>
+        'ApiKeyAuth(name: "$keyName", secretName: "$name", '
+            'sendIn: $inLocation)',
+      HttpSecurityScheme(scheme: final scheme) =>
+        'HttpAuth(scheme: "$scheme", secretName: "$name")',
+      _ => _unimplemented('Unsupported security scheme: $this', pointer),
+    };
+    return '${' ' * indent}$expression';
   }
 }
 
@@ -609,20 +610,21 @@ class Endpoint implements ToTemplateContext {
   ///     ApiKeyAuth(name: "apiKey", secretName: "ApiKey", sendIn: SendIn.header),
   ///     NoAuth(),
   /// ]),
-  String? authArgument(Quirks quirks) {
+  String? authArgument({int indent = 0}) {
     if (securityRequirements.isEmpty) {
       return null;
     }
 
+    final indentString = ' ' * indent;
     final buffer = StringBuffer();
     if (securityRequirements.length == 1) {
-      buffer.write(securityRequirements.first.toArgumentString());
+      buffer.write(securityRequirements.first.toArgumentString(indent: indent));
     } else {
-      buffer.write('OneOfAuth([\n');
+      buffer.write('${indentString}OneOfAuth([\n');
       for (final requirement in securityRequirements) {
-        buffer.write('  ${requirement.toArgumentString()},\n');
+        buffer.write('${requirement.toArgumentString(indent: indent + 2)},\n');
       }
-      buffer.write('])\n');
+      buffer.write('$indentString])');
     }
     return buffer.toString();
   }
@@ -671,7 +673,8 @@ class Endpoint implements ToTemplateContext {
       extraTrailingNewline: true,
     );
 
-    final authArgumentString = authArgument(context.quirks);
+    // Remove the leading whitespace from the first line.
+    final authArgumentString = authArgument(indent: 12)?.trimLeft();
 
     Iterable<Map<String, dynamic>> toTemplateContexts(
       Iterable<CanBeParameter> parameters,
