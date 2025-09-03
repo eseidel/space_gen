@@ -46,7 +46,7 @@ void main() {
         type: RenderUnknown(common: common),
         isRequired: true,
         isDeprecated: false,
-        sendIn: SendIn.query,
+        inLocation: ParameterLocation.query,
       );
       expect(parameter.dartParameterName(quirks), 'aB');
     });

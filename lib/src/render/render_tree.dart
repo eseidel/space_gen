@@ -322,7 +322,7 @@ class SpecResolver {
     return RenderParameter(
       description: parameter.description,
       name: parameter.name,
-      sendIn: parameter.sendIn,
+      inLocation: parameter.inLocation,
       isRequired: parameter.isRequired,
       isDeprecated: parameter.isDeprecated,
       type: toRenderSchema(parameter.schema),
@@ -652,18 +652,18 @@ class Endpoint implements ToTemplateContext {
     );
 
     // Only explicit parameters (not request body) need to be split by sendIn.
-    final bySendIn = parameters.groupListsBy((p) => p.sendIn);
-    final pathParameters = bySendIn[SendIn.path] ?? [];
-    final queryParameters = bySendIn[SendIn.query] ?? [];
+    final byLocation = parameters.groupListsBy((p) => p.inLocation);
+    final pathParameters = byLocation[ParameterLocation.path] ?? [];
+    final queryParameters = byLocation[ParameterLocation.query] ?? [];
     final hasQueryParameters = queryParameters.isNotEmpty;
-    final cookieParameters = bySendIn[SendIn.cookie] ?? [];
+    final cookieParameters = byLocation[ParameterLocation.cookie] ?? [];
     if (cookieParameters.isNotEmpty) {
       _unimplemented(
         'Cookie parameters are not yet supported.',
         operation.pointer,
       );
     }
-    final headerParameters = bySendIn[SendIn.header] ?? [];
+    final headerParameters = byLocation[ParameterLocation.header] ?? [];
     final hasHeaderParameters = headerParameters.isNotEmpty;
 
     final validationStatementsString = indentWithTrailingNewline(
@@ -2301,7 +2301,7 @@ class RenderParameter implements CanBeParameter {
     required this.type,
     required this.isRequired,
     required this.isDeprecated,
-    required this.sendIn,
+    required this.inLocation,
   });
 
   /// The name of the parameter.
@@ -2316,8 +2316,8 @@ class RenderParameter implements CanBeParameter {
   /// The type of the parameter.
   final RenderSchema type;
 
-  /// The send in of the parameter.
-  final SendIn sendIn;
+  /// The in location of the parameter.
+  final ParameterLocation inLocation;
 
   /// Whether the parameter is required.
   @override
@@ -2349,7 +2349,7 @@ class RenderParameter implements CanBeParameter {
       'isNullable': isNullable,
       'type': type.typeName,
       'nullableType': type.nullableTypeName(context),
-      'sendIn': sendIn.name,
+      'sendIn': inLocation.name,
       'toJson': type.toJsonExpression(
         dartName,
         context,

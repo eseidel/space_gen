@@ -1421,7 +1421,7 @@ void main() {
               name: 'apiKey',
               description: null,
               keyName: 'apiKey',
-              inLocation: SendIn.header,
+              inLocation: ApiKeyLocation.header,
             ),
           ),
         );

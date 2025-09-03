@@ -4,7 +4,7 @@ import 'package:meta/meta.dart';
 /// The "in" of a parameter.  "in" is a keyword in Dart, so we use SendIn.
 /// e.g. query, header, path, cookie.
 /// https://spec.openapis.org/oas/v3.0.0#parameter-object
-enum SendIn {
+enum ParameterLocation {
   /// The query parameter is a parameter that is sent in the query string.
   query,
 
@@ -15,23 +15,7 @@ enum SendIn {
   path,
 
   /// The cookie parameter is a parameter that is sent in the cookie.
-  cookie;
-
-  /// Parse a SendIn from a json string.
-  static SendIn fromJson(String json) {
-    switch (json) {
-      case 'query':
-        return query;
-      case 'header':
-        return header;
-      case 'path':
-        return path;
-      case 'cookie':
-        return cookie;
-      default:
-        throw ArgumentError.value(json, 'json', 'Unknown SendIn');
-    }
-  }
+  cookie,
 }
 
 /// A method is a http method.
@@ -235,6 +219,8 @@ sealed class SecurityScheme extends Equatable {
   List<Object?> get props => [description, name];
 }
 
+enum ApiKeyLocation { header, query, cookie }
+
 /// A api key security scheme.
 @immutable
 class ApiKeySecurityScheme extends SecurityScheme {
@@ -250,7 +236,7 @@ class ApiKeySecurityScheme extends SecurityScheme {
   final String keyName;
 
   /// Where to send the api key in the request.
-  final SendIn inLocation;
+  final ApiKeyLocation inLocation;
   @override
   List<Object?> get props => [super.props, name, inLocation];
 }

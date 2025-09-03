@@ -172,7 +172,7 @@ class HttpAuth extends SecretAuth {
 }
 
 // Cookie is not yet supported.
-enum SendIn { query, header }
+enum ApiKeyLocation { query, header }
 
 /// An API key authentication scheme.
 @immutable
@@ -187,7 +187,7 @@ class ApiKeyAuth extends SecretAuth {
   final String name;
 
   /// Where to send the API key.
-  final SendIn sendIn;
+  final ApiKeyLocation sendIn;
 
   @override
   ResolvedAuth resolve(String? Function(String name) getSecret) {
@@ -196,8 +196,14 @@ class ApiKeyAuth extends SecretAuth {
       throw MissingSecretsException(this);
     }
     return switch (sendIn) {
-      SendIn.header => ResolvedAuth(headers: {name: secret}, params: const {}),
-      SendIn.query => ResolvedAuth(headers: const {}, params: {name: secret}),
+      ApiKeyLocation.header => ResolvedAuth(
+        headers: {name: secret},
+        params: const {},
+      ),
+      ApiKeyLocation.query => ResolvedAuth(
+        headers: const {},
+        params: {name: secret},
+      ),
     };
   }
 }

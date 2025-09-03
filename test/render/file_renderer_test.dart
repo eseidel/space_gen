@@ -1258,7 +1258,7 @@ void main() {
                   ),
                   isRequired: true,
                   isDeprecated: false,
-                  sendIn: SendIn.query,
+                  inLocation: ParameterLocation.query,
                 ),
               ],
               requestBody: null,

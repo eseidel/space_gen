@@ -23,7 +23,7 @@ class Parameter extends Equatable implements HasPointer, Parseable {
     required this.description,
     required this.type,
     required this.isRequired,
-    required this.sendIn,
+    required this.inLocation,
     required this.isDeprecated,
     required this.pointer,
   });
@@ -42,7 +42,7 @@ class Parameter extends Equatable implements HasPointer, Parseable {
 
   /// The "in" of the parameter.
   /// e.g. query, header, path, cookie.
-  final SendIn sendIn;
+  final ParameterLocation inLocation;
 
   /// The type of the parameter.
   final SchemaRef type;
@@ -56,7 +56,7 @@ class Parameter extends Equatable implements HasPointer, Parseable {
     name,
     description,
     isRequired,
-    sendIn,
+    inLocation,
     type,
     pointer,
   ];

@@ -164,6 +164,21 @@ RefOr<Parameter> parseParameterOrRef(MapContext json) {
   return RefOr<Parameter>.object(parseParameter(json), json.pointer);
 }
 
+ParameterLocation _parseParameterLocation(MapContext context, String location) {
+  switch (location) {
+    case 'query':
+      return ParameterLocation.query;
+    case 'header':
+      return ParameterLocation.header;
+    case 'path':
+      return ParameterLocation.path;
+    case 'cookie':
+      return ParameterLocation.cookie;
+    default:
+      _error(context, 'Unknown parameter location: $location');
+  }
+}
+
 /// Parse a parameter from a json object.
 Parameter parseParameter(MapContext json) {
   _refNotExpected(json);
@@ -175,7 +190,10 @@ Parameter parseParameter(MapContext json) {
   final name = _required<String>(json, 'name');
   final description = _optional<String>(json, 'description');
   final isRequired = _optional<bool>(json, 'required') ?? false;
-  final sendIn = SendIn.fromJson(_required<String>(json, 'in'));
+  final inLocation = _parseParameterLocation(
+    json,
+    _required<String>(json, 'in'),
+  );
   final deprecated = _optional<bool>(json, 'deprecated') ?? false;
   _ignored<bool>(json, 'allowEmptyValue');
 
@@ -197,7 +215,7 @@ Parameter parseParameter(MapContext json) {
     _error(json, 'Parameter must have either schema or content.');
   }
 
-  if (sendIn == SendIn.path) {
+  if (inLocation == ParameterLocation.path) {
     // Path parameter type validation is done during resolution since
     // type could be a ref until then.
     if (isRequired != true) {
@@ -212,7 +230,7 @@ Parameter parseParameter(MapContext json) {
     description: description,
     isRequired: isRequired,
     isDeprecated: deprecated,
-    sendIn: sendIn,
+    inLocation: inLocation,
     type: type,
   );
 }
@@ -949,26 +967,32 @@ Map<String, RefOr<T>> _parseComponent<T extends Parseable>(
   return values;
 }
 
+ApiKeyLocation _parseApiKeyLocation(MapContext context, String location) {
+  switch (location) {
+    case 'header':
+      return ApiKeyLocation.header;
+    case 'query':
+      return ApiKeyLocation.query;
+    case 'cookie':
+      _unimplemented(
+        context,
+        'cookie parameters are not yet supported for API key authentication',
+      );
+    default:
+      _error(context, 'Unknown API key location: $location');
+  }
+}
+
 SecurityScheme parseSecurityScheme(String name, MapContext json) {
   final type = _required<String>(json, 'type');
   final description = _optional<String>(json, 'description');
   final pointer = json.pointer;
   switch (type) {
     case 'apiKey':
-      final inLocation = SendIn.fromJson(_required<String>(json, 'in'));
-      // TODO(eseidel): Use a different enum than SendIn?
-      if (inLocation == SendIn.path) {
-        _error(
-          json,
-          'only query, header and cookie are valid for API key authentication',
-        );
-      }
-      if (inLocation == SendIn.cookie) {
-        _unimplemented(
-          json,
-          'cookie parameters are not yet supported for API key authentication',
-        );
-      }
+      final inLocation = _parseApiKeyLocation(
+        json,
+        _required<String>(json, 'in'),
+      );
       return ApiKeySecurityScheme(
         pointer: pointer,
         name: name,

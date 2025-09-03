@@ -316,12 +316,13 @@ List<ResolvedParameter> _resolveParameters(
   return parameters.map((parameter) {
     final resolved = context._resolve(parameter);
     final type = resolveSchemaRef(resolved.type, context);
-    if (resolved.sendIn == SendIn.path && !_canBePathParameter(type)) {
+    if (resolved.inLocation == ParameterLocation.path &&
+        !_canBePathParameter(type)) {
       _error('Path parameters must be strings or integers', resolved.pointer);
     }
     return ResolvedParameter(
       name: resolved.name,
-      sendIn: resolved.sendIn,
+      inLocation: resolved.inLocation,
       description: resolved.description,
       isRequired: resolved.isRequired,
       isDeprecated: resolved.isDeprecated,
@@ -568,7 +569,7 @@ class ResolvedPath {
 class ResolvedParameter {
   const ResolvedParameter({
     required this.name,
-    required this.sendIn,
+    required this.inLocation,
     required this.description,
     required this.isRequired,
     required this.isDeprecated,
@@ -579,7 +580,7 @@ class ResolvedParameter {
   final String name;
 
   /// The in of the resolved parameter.
-  final SendIn sendIn;
+  final ParameterLocation inLocation;
 
   /// The description of the resolved parameter.
   final String? description;
