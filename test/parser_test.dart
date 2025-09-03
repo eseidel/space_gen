@@ -1426,6 +1426,29 @@ void main() {
           ),
         );
       });
+      test('scopes/roles must be list', () {
+        final json = {'foo': 'bar'};
+        expect(
+          () => parseSecurityRequirement(MapContext.initial(json)),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              equals("'foo' is not a list of String: bar in #/"),
+            ),
+          ),
+        );
+      });
+
+      test('scopes/roles cannot be null', () {
+        final json = {'foo': null};
+        expect(
+          () => parseSecurityRequirement(MapContext.initial(json)),
+          throwsA(isA<FormatException>()),
+        );
+      });
+    });
+    group('security scheme', () {
       test('cookie not supported', () {
         final json = {'type': 'apiKey', 'name': 'apiKey', 'in': 'cookie'};
         expect(
