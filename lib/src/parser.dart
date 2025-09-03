@@ -63,15 +63,19 @@ double? _optionalDouble(MapContext parent, String key) {
   return _expectType<num?>(parent, key, value)?.toDouble();
 }
 
+List<T> _expectList<T>(MapContext parent, String key, dynamic value) {
+  if (value is! List || !value.every((e) => e is T)) {
+    _error(parent, "'$key' is not a list of $T: $value");
+  }
+  return value.cast<T>();
+}
+
 List<T> _requiredList<T>(MapContext parent, String key) {
   final value = parent[key];
   if (value == null) {
     _error(parent, 'Key $key is required');
   }
-  if (value is! List || !value.every((e) => e is T)) {
-    _error(parent, "'$key' is not a list of $T: $value");
-  }
-  return value.cast<T>();
+  return _expectList<T>(parent, key, value);
 }
 
 List<T>? _optionalList<T>(MapContext parent, String key) {
@@ -79,10 +83,7 @@ List<T>? _optionalList<T>(MapContext parent, String key) {
   if (value == null) {
     return null;
   }
-  if (value is! List || !value.every((e) => e is T)) {
-    _error(parent, "'$key' is not a list of $T: $value");
-  }
-  return value.cast<T>();
+  return _expectList<T>(parent, key, value);
 }
 
 MapContext? _optionalMap(MapContext parent, String key) {
