@@ -143,6 +143,10 @@ abstract class SecretAuth extends AuthRequest {
 
   /// The name of the secret.
   final String secretName;
+
+  @override
+  bool haveSecrets(String? Function(String name) getSecret) =>
+      getSecret(secretName) != null;
 }
 
 /// An HTTP authentication scheme.
@@ -153,10 +157,6 @@ class HttpAuth extends SecretAuth {
 
   /// The scheme to use when sending the HTTP token.
   final String scheme;
-
-  @override
-  bool haveSecrets(String? Function(String name) getSecret) =>
-      getSecret(secretName) != null;
 
   @override
   ResolvedAuth resolve(String? Function(String name) getSecret) {
@@ -188,10 +188,6 @@ class ApiKeyAuth extends SecretAuth {
 
   /// Where to send the API key.
   final SendIn sendIn;
-
-  @override
-  bool haveSecrets(String? Function(String name) getSecret) =>
-      getSecret(secretName) != null;
 
   @override
   ResolvedAuth resolve(String? Function(String name) getSecret) {
