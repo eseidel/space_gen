@@ -1426,6 +1426,64 @@ void main() {
           ),
         );
       });
+      test('cookie not supported', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'security': [
+            {
+              'apiKey': ['scope1', 'scope2'],
+            },
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+          'components': {
+            'securitySchemes': {
+              'apiKey': {'type': 'apiKey', 'name': 'apiKey', 'in': 'cookie'},
+            },
+          },
+        };
+        expect(() => parseOpenApi(json), throwsA(isA<UnimplementedError>()));
+      });
+      test('unknown location', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'security': [
+            {
+              'apiKey': ['scope1', 'scope2'],
+            },
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+          'components': {
+            'securitySchemes': {
+              'apiKey': {'type': 'apiKey', 'name': 'apiKey', 'in': 'unknown'},
+            },
+          },
+        };
+        expect(() => parseOpenApi(json), throwsA(isA<FormatException>()));
+      });
     });
   });
 
