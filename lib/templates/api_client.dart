@@ -35,10 +35,6 @@ class ApiClient {
   final Map<String, String> defaultHeaders;
   final String? Function(String name)? readSecret;
 
-  /// Read a secret from the provided [readSecret] function.
-  /// If the function is not provided, returns null.
-  String? getSecret(String name) => readSecret?.call(name);
-
   Uri _resolveUri({
     required String path,
     required Map<String, String> queryParameters,
@@ -80,6 +76,7 @@ class ApiClient {
     if (authRequest == null) {
       return const ResolvedAuth.noAuth();
     }
+    String? getSecret(String name) => readSecret?.call(name);
     return authRequest.resolve(getSecret);
   }
 
