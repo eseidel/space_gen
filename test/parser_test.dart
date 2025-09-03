@@ -841,7 +841,7 @@ void main() {
       );
     });
 
-    test('ignores securitySchemes', () {
+    test('errors on missing bearer scheme', () {
       final json = {
         'openapi': '3.1.0',
         'info': {'title': 'Space Traders API', 'version': '1.0.0'},
@@ -864,10 +864,18 @@ void main() {
         },
       };
       final logger = _MockLogger();
-      runWithLogger(logger, () => parseOpenApi(json));
-      verify(
-        () => logger.warn('Ignoring securitySchemes in #/components'),
-      ).called(1);
+      expect(
+        () => runWithLogger(logger, () => parseOpenApi(json)),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            equals(
+              'Key scheme is required in #/components/securitySchemes/foo',
+            ),
+          ),
+        ),
+      );
     });
 
     group('refs', () {
@@ -1360,6 +1368,63 @@ void main() {
         expect(oneOf.schemas[0].object, isA<SchemaString>());
         expect(oneOf.schemas[1].object, isA<SchemaNumber>());
         expect(oneOf.common.nullable, isTrue);
+      });
+    });
+
+    group('security requirements', () {
+      test('parse', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'security': [
+            {
+              'apiKey': ['scope1', 'scope2'],
+            },
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+          'components': {
+            'securitySchemes': {
+              'apiKey': {'type': 'apiKey', 'name': 'apiKey', 'in': 'header'},
+            },
+          },
+        };
+        final spec = parseOpenApi(json);
+        expect(spec.securityRequirements.length, 1);
+        expect(
+          spec.securityRequirements[0],
+          equals(
+            SecurityRequirement(
+              conditions: const {
+                'apiKey': ['scope1', 'scope2'],
+              },
+              pointer: JsonPointer.parse('#/security/0'),
+            ),
+          ),
+        );
+        expect(spec.components.securitySchemes.length, 1);
+        expect(
+          spec.components.securitySchemes[0],
+          equals(
+            ApiKeySecurityScheme(
+              pointer: JsonPointer.parse('#/components/securitySchemes/apiKey'),
+              name: 'apiKey',
+              description: null,
+              keyName: 'apiKey',
+              inLocation: SendIn.header,
+            ),
+          ),
+        );
       });
     });
   });

@@ -35,6 +35,9 @@
                 {{/headerParameters}}
             },
             {{/hasHeaderParameters}}
+            {{#authArgument}}
+            authRequest: {{{ authArgument }}},
+            {{/authArgument}}
         );
 
         if (response.statusCode >= HttpStatus.badRequest) {

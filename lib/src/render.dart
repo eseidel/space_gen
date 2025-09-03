@@ -173,6 +173,8 @@ Map<String, String> renderTestSchemas(
   final resolveContext = ResolveContext(
     specUrl: specUrl,
     refRegistry: refRegistry,
+    globalSecurityRequirements: const [],
+    securitySchemes: const [],
   );
 
   final resolvedSchemas = parsedSchemas.map((key, value) {
@@ -201,9 +203,25 @@ String renderTestOperation({
   required String path,
   required Map<String, dynamic> operationJson,
   required Uri serverUrl,
+  Map<String, dynamic>? componentsJson,
   Quirks quirks = const Quirks(),
   String? removePrefix,
 }) {
+  final specUrl = Uri.parse('https://example.com/spec');
+  final refRegistry = RefRegistry();
+  List<SecurityScheme>? securitySchemes;
+  if (componentsJson != null) {
+    final parsedComponents = parseComponents(
+      MapContext.initial(componentsJson),
+    );
+    final builder = RegistryBuilder(specUrl, refRegistry);
+    SpecWalker(builder).walkComponents(parsedComponents);
+    securitySchemes = parsedComponents.securitySchemes;
+  }
+  final resolveContext = ResolveContext.test(
+    refRegistry: refRegistry,
+    securitySchemes: securitySchemes,
+  );
   final parsedOperation = parseOperation(
     MapContext.initial(operationJson),
     path,
@@ -212,7 +230,7 @@ String renderTestOperation({
     path: path,
     method: Method.post,
     operation: parsedOperation,
-    context: ResolveContext.test(),
+    context: resolveContext,
   );
   final resolver = SpecResolver(quirks);
   final renderOperation = resolver.toRenderOperation(resolvedOperation);

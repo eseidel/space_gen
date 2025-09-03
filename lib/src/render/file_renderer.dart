@@ -303,12 +303,12 @@ class FileRenderer {
   /// Render the api client.
   void _renderApiClient(RenderSpec spec) {
     _renderDartFile(name: 'api_exception', outPath: 'lib/api_exception.dart');
+    _renderDartFile(name: 'auth', outPath: 'lib/auth.dart');
     _renderDartFile(
       name: 'api_client',
       outPath: 'lib/api_client.dart',
       replacements: {
-        'package:space_gen/templates/api_exception.dart':
-            'package:$packageName/api_exception.dart',
+        'package:space_gen/templates': 'package:$packageName',
         'TEMPLATE_BASE_URI': spec.serverUrl.toString(),
       },
     );

@@ -870,4 +870,73 @@ void main() {
       );
     });
   });
+
+  group('security requirements', () {
+    test('apiKey', () {
+      final json = {
+        'description': 'Get a user',
+        'operationId': 'users-get',
+        'tags': ['users'],
+        'security': [
+          {'apiKey': <String>[]},
+        ],
+        'responses': {
+          '200': {
+            'content': {
+              'application/json': {
+                'schema': {
+                  'type': 'object',
+                  'properties': {
+                    'name': {'type': 'string'},
+                  },
+                },
+              },
+            },
+            'description': 'User',
+          },
+        },
+      };
+      final componentsJson = {
+        'securitySchemes': {
+          'apiKey': {'type': 'apiKey', 'name': 'apiKey', 'in': 'header'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users',
+        operationJson: json,
+        componentsJson: componentsJson,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(
+        result,
+        '/// Test API\n'
+        'class UsersApi {\n'
+        '    UsersApi(ApiClient? client) : client = client ?? ApiClient();\n'
+        '\n'
+        '    final ApiClient client;\n'
+        '\n'
+        '    /// Get a user\n'
+        '    Future<UsersGet200Response> usersGet(\n'
+        '    ) async {\n'
+        '        final response = await client.invokeApi(\n'
+        '            method: Method.post,\n'
+        "            path: '/users'\n"
+        ',\n'
+        '            authRequest: ApiKeyAuth(name: "apiKey", secretName: "apiKey", sendIn: SendIn.header),\n'
+        '        );\n'
+        '\n'
+        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+        '            throw ApiException(response.statusCode, response.body.toString());\n'
+        '        }\n'
+        '\n'
+        '        if (response.body.isNotEmpty) {\n'
+        '            return UsersGet200Response.fromJson(jsonDecode(response.body) as Map<String, dynamic>);\n'
+        '        }\n'
+        '\n'
+        '        throw ApiException.unhandled(response.statusCode);\n'
+        '    }\n'
+        '}\n',
+      );
+    });
+  });
 }

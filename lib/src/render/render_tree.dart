@@ -418,6 +418,7 @@ class SpecResolver {
       responses: operation.responses.map(toRenderResponse).toList(),
       requestBody: toRenderRequestBody(operation.requestBody),
       returnType: returnType,
+      securityRequirements: operation.securityRequirements,
     );
   }
 
@@ -468,6 +469,7 @@ class RenderSpec {
   /// The paths of the spec.
   final List<RenderPath> paths;
 
+  /// The tag definitions of the spec.
   final List<RenderTag> tagDefinitions;
 
   /// The endpoints of the spec.
@@ -501,6 +503,49 @@ class RenderSpec {
   }).toList();
 }
 
+extension on ResolvedSecurityRequirement {
+  /// Turn the SecurityRequirements into AuthRequest subclasses to be
+  /// resolved at runtime by the ApiClient.  If this requirement has
+  /// multiple conditions, wrap them in an AllOfAuth.
+  String toArgumentString() {
+    if (conditions.isEmpty) {
+      return 'NoAuth()';
+    }
+    // TODO(eseidel): Ignoring scopes/roles in conditions.values.
+    final buffer = StringBuffer();
+    if (conditions.length > 1) {
+      buffer.write('AllOfAuth([\n');
+      for (final scheme in conditions.keys) {
+        buffer.write('  ${scheme.toArgumentString()},\n');
+      }
+      buffer.write('])\n');
+    } else {
+      final scheme = conditions.keys.first;
+      buffer.write(scheme.toArgumentString());
+    }
+    return buffer.toString();
+  }
+}
+
+extension on SecurityScheme {
+  /// Turn the SecurityScheme into an AuthRequest subclass to be
+  /// resolved at runtime by the ApiClient.
+  String toArgumentString() {
+    switch (this) {
+      case ApiKeySecurityScheme(
+        keyName: final keyName,
+        inLocation: final inLocation,
+      ):
+        return 'ApiKeyAuth(name: "$keyName", secretName: "$name", '
+            'sendIn: $inLocation)';
+      case HttpSecurityScheme(scheme: final scheme):
+        return 'HttpAuth(scheme: "$scheme", secretName: "$name")';
+      default:
+        _unimplemented('Unsupported security scheme: $this', pointer);
+    }
+  }
+}
+
 /// A convenience class created for each operation within a path item
 /// for compatibility with our existing rendering code.
 // TODO(eseidel): Could remove this in favor of RenderOperation?
@@ -530,6 +575,11 @@ class Endpoint implements ToTemplateContext {
 
   List<RenderParameter> get parameters => operation.parameters;
 
+  // These are resolved, and may simply be duplicates of the global
+  // security requirements.
+  List<ResolvedSecurityRequirement> get securityRequirements =>
+      operation.securityRequirements;
+
   RenderRequestBody? get requestBody => operation.requestBody;
 
   String get methodName => lowercaseCamelFromSnake(snakeName);
@@ -547,6 +597,34 @@ class Endpoint implements ToTemplateContext {
       }
     }
     return statements;
+  }
+
+  /// Turn the SecurityRequirements into AuthRequest subclasses to be
+  /// resolved at runtime by the ApiClient, example:
+  /// auth: OneOf([
+  ///     MultiAuth([
+  ///         HttpAuth(scheme: "Bearer", secretName: "AgentToken"),
+  ///         ApiKeyAuth(name: "apiKey", secretName: "ApiKey", sendIn: SendIn.header),
+  ///     ]),
+  ///     ApiKeyAuth(name: "apiKey", secretName: "ApiKey", sendIn: SendIn.header),
+  ///     NoAuth(),
+  /// ]),
+  String? authArgument(Quirks quirks) {
+    if (securityRequirements.isEmpty) {
+      return null;
+    }
+
+    final buffer = StringBuffer();
+    if (securityRequirements.length == 1) {
+      buffer.write(securityRequirements.first.toArgumentString());
+    } else {
+      buffer.write('OneOfAuth([\n');
+      for (final requirement in securityRequirements) {
+        buffer.write('  ${requirement.toArgumentString()},\n');
+      }
+      buffer.write('])\n');
+    }
+    return buffer.toString();
   }
 
   @override
@@ -593,6 +671,8 @@ class Endpoint implements ToTemplateContext {
       extraTrailingNewline: true,
     );
 
+    final authArgumentString = authArgument(context.quirks);
+
     Iterable<Map<String, dynamic>> toTemplateContexts(
       Iterable<CanBeParameter> parameters,
     ) => parameters.map((p) => p.toTemplateContext(context));
@@ -627,6 +707,7 @@ class Endpoint implements ToTemplateContext {
       'returnType': returnType,
       'responseFromJson': responseFromJson,
       'validationStatements': validationStatementsString,
+      'authArgument': authArgumentString,
     };
   }
 }
@@ -674,6 +755,7 @@ class RenderOperation {
     required this.tags,
     required this.summary,
     required this.description,
+    required this.securityRequirements,
   });
 
   /// The method of the resolved operation.
@@ -707,6 +789,9 @@ class RenderOperation {
 
   /// The description of the resolved operation.
   final String? description;
+
+  /// The security requirements of the resolved operation.
+  final List<ResolvedSecurityRequirement> securityRequirements;
 }
 
 abstract class RenderRequestBody implements CanBeParameter {

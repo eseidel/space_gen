@@ -154,7 +154,7 @@ class CommonProperties extends Equatable {
     this.examples,
   });
 
-  /// The title of the schema.
+  /// The location of the schema in the spec.
   final JsonPointer pointer;
 
   /// The snake name of the schema.
@@ -210,4 +210,68 @@ class CommonProperties extends Equatable {
     isDeprecated,
     nullable,
   ];
+}
+
+// Security schemes do not need a Resolved or Render variant, so sharing
+// them via this file.
+@immutable
+abstract class SecurityScheme extends Equatable {
+  const SecurityScheme({
+    required this.description,
+    required this.name,
+    required this.pointer,
+  });
+
+  /// The location of the scheme in the spec.
+  final JsonPointer pointer;
+
+  // Name as it appears in the component map of the spec.
+  final String name;
+
+  /// Description of the security scheme, mostly for documentation.
+  final String? description;
+
+  @override
+  List<Object?> get props => [description, name];
+}
+
+/// A api key security scheme.
+@immutable
+class ApiKeySecurityScheme extends SecurityScheme {
+  const ApiKeySecurityScheme({
+    required super.pointer,
+    required super.name,
+    required super.description,
+    required this.keyName,
+    required this.inLocation,
+  });
+
+  /// Name of the api key, used as a query param or header.
+  final String keyName;
+
+  /// Where to send the api key in the request.
+  final SendIn inLocation;
+  @override
+  List<Object?> get props => [super.props, name, inLocation];
+}
+
+/// A http security scheme.
+@immutable
+class HttpSecurityScheme extends SecurityScheme {
+  const HttpSecurityScheme({
+    required super.pointer,
+    required super.name,
+    required super.description,
+    required this.scheme,
+    required this.bearerFormat,
+  });
+
+  /// The scheme of the http security scheme.
+  final String scheme;
+
+  /// The bearer format of the http security scheme.
+  final String? bearerFormat;
+
+  @override
+  List<Object?> get props => [super.props, scheme, bearerFormat];
 }

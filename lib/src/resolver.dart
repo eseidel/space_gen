@@ -3,6 +3,7 @@
 // than serialization/deserialization with the openapi spec.
 // This also discards all non-json values.
 
+import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/parse/spec.dart';
@@ -18,19 +19,35 @@ Never _error(String message, JsonPointer pointer) {
 }
 
 class ResolveContext {
-  ResolveContext({required this.specUrl, required this.refRegistry});
+  ResolveContext({
+    required this.specUrl,
+    required this.refRegistry,
+    required this.globalSecurityRequirements,
+    required this.securitySchemes,
+  });
 
   /// Used for cases where we need a ResolveContext, but don't actually
   /// plan to look up any objects in the registry.
-  ResolveContext.test()
-    : specUrl = Uri.parse('https://example.com'),
-      refRegistry = RefRegistry();
+  ResolveContext.test({
+    Uri? specUrl,
+    RefRegistry? refRegistry,
+    this.globalSecurityRequirements = const [],
+    List<SecurityScheme>? securitySchemes,
+  }) : specUrl = specUrl ?? Uri.parse('https://example.com'),
+       refRegistry = refRegistry ?? RefRegistry(),
+       securitySchemes = securitySchemes ?? [];
 
   /// The spec url of the spec.
   final Uri specUrl;
 
   /// The registry of all the objects we've parsed so far.
   final RefRegistry refRegistry;
+
+  /// The global security requirements of the spec.
+  final List<ResolvedSecurityRequirement> globalSecurityRequirements;
+
+  /// The security schemes of the spec.
+  final List<SecurityScheme> securitySchemes;
 
   /// The registry of all the objects we've parsed so far.
   /// Resolve a nullable [SchemaRef] into a nullable [SchemaObject].
@@ -313,6 +330,42 @@ List<ResolvedParameter> _resolveParameters(
   }).toList();
 }
 
+ResolvedSecurityRequirement _resolveSecurityRequirement({
+  required SecurityRequirement requirement,
+  required List<SecurityScheme> securitySchemes,
+}) {
+  // Walk the conditions of the requirement and resolve each security scheme.
+  final conditions = requirement.conditions.map((name, value) {
+    final securityScheme = securitySchemes.firstWhereOrNull(
+      (scheme) => scheme.name == name,
+    );
+    if (securityScheme == null) {
+      _error('Security scheme not found: $name', requirement.pointer);
+    }
+    return MapEntry(securityScheme, value);
+  });
+  return ResolvedSecurityRequirement(conditions: conditions);
+}
+
+List<ResolvedSecurityRequirement> _resolveSecurityRequirements({
+  required List<SecurityRequirement> securityRequirements,
+  required List<SecurityScheme> securitySchemes,
+  required List<ResolvedSecurityRequirement> globalSecurityRequirements,
+}) {
+  if (securityRequirements.isEmpty) {
+    return globalSecurityRequirements;
+  }
+
+  // Security requirements are looked up by name, not reference.
+  final resolved = securityRequirements.map((requirement) {
+    return _resolveSecurityRequirement(
+      requirement: requirement,
+      securitySchemes: securitySchemes,
+    );
+  }).toList();
+  return resolved;
+}
+
 ResolvedOperation resolveOperation({
   required String path,
   required Method method,
@@ -321,6 +374,15 @@ ResolvedOperation resolveOperation({
 }) {
   final requestBody = _resolveRequestBody(operation.requestBody, context);
   final responses = _resolveResponses(operation.responses, context);
+
+  // Need to resolve any local security requirements, or otherwise fall back to
+  // the global security requirements.
+  final securityRequirements = _resolveSecurityRequirements(
+    securityRequirements: operation.securityRequirements,
+    securitySchemes: context.securitySchemes,
+    globalSecurityRequirements: context.globalSecurityRequirements,
+  );
+
   return ResolvedOperation(
     pointer: operation.pointer,
     snakeName: operation.snakeName,
@@ -332,6 +394,7 @@ ResolvedOperation resolveOperation({
     requestBody: requestBody,
     responses: responses,
     parameters: _resolveParameters(operation.parameters, context),
+    securityRequirements: securityRequirements,
   );
 }
 
@@ -435,8 +498,21 @@ ResolvedSpec resolveSpec(
       logger.detail('  - $uri');
     }
   }
-
-  final context = ResolveContext(specUrl: specUrl, refRegistry: refRegistry);
+  // Need to have resolved security schemes before resolving paths.
+  final securitySchemes = spec.components.securitySchemes;
+  final globalSecurityRequirements = _resolveSecurityRequirements(
+    securityRequirements: spec.securityRequirements,
+    securitySchemes: securitySchemes,
+    // Don't pass any global security requirements, to disable the fallback
+    // behavior while resolving the actual global security requirements.
+    globalSecurityRequirements: [],
+  );
+  final context = ResolveContext(
+    specUrl: specUrl,
+    refRegistry: refRegistry,
+    globalSecurityRequirements: globalSecurityRequirements,
+    securitySchemes: securitySchemes,
+  );
   return ResolvedSpec(
     title: spec.info.title,
     serverUrl: spec.serverUrl,
@@ -536,6 +612,18 @@ class ResolvedRequestBody {
   final bool isRequired;
 }
 
+class ResolvedSecurityRequirement {
+  const ResolvedSecurityRequirement({required this.conditions});
+
+  /// Whether this represents an optional security requirement.
+  bool get isOptional => conditions.isEmpty;
+
+  /// The conditions imposed by this security requirement.
+  /// Keys are security schemes, and values are the scopes (or roles)
+  /// associated with the security scheme.
+  final Map<SecurityScheme, List<String>> conditions;
+}
+
 class ResolvedOperation {
   const ResolvedOperation({
     required this.method,
@@ -548,6 +636,7 @@ class ResolvedOperation {
     required this.summary,
     required this.description,
     required this.parameters,
+    required this.securityRequirements,
   });
 
   /// The method of the resolved operation.
@@ -579,6 +668,9 @@ class ResolvedOperation {
 
   /// The description of the resolved operation.
   final String? description;
+
+  /// The security requirements of the resolved operation.
+  final List<ResolvedSecurityRequirement> securityRequirements;
 }
 
 class ResolvedResponse {
