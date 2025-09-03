@@ -541,7 +541,6 @@ extension on SecurityScheme {
             'sendIn: $inLocation)',
       HttpSecurityScheme(scheme: final scheme) =>
         'HttpAuth(scheme: "$scheme", secretName: "$name")',
-      _ => _unimplemented('Unsupported security scheme: $this', pointer),
     };
     return '${' ' * indent}$expression';
   }

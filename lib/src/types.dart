@@ -215,7 +215,7 @@ class CommonProperties extends Equatable {
 // Security schemes do not need a Resolved or Render variant, so sharing
 // them via this file.
 @immutable
-abstract class SecurityScheme extends Equatable {
+sealed class SecurityScheme extends Equatable {
   const SecurityScheme({
     required this.description,
     required this.name,
