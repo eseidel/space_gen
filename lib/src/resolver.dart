@@ -619,9 +619,6 @@ class ResolvedRequestBody {
 class ResolvedSecurityRequirement {
   const ResolvedSecurityRequirement({required this.conditions});
 
-  /// Whether this represents an optional security requirement.
-  bool get isOptional => conditions.isEmpty;
-
   /// The conditions imposed by this security requirement.
   /// Keys are security schemes, and values are the scopes (or roles)
   /// associated with the security scheme.
