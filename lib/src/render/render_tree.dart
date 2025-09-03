@@ -511,7 +511,7 @@ extension on ResolvedSecurityRequirement {
     if (conditions.isEmpty) {
       return 'NoAuth()';
     }
-    // TODO(eseidel): Ignoring scopes/roles in conditions.values.
+    // TODO(eseidel): Support scopes/roles in conditions.values.
     final buffer = StringBuffer();
     if (conditions.length > 1) {
       buffer.write('AllOfAuth([\n');
