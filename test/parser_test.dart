@@ -1427,62 +1427,50 @@ void main() {
         );
       });
       test('cookie not supported', () {
-        final json = {
-          'openapi': '3.1.0',
-          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-          'servers': [
-            {'url': 'https://api.spacetraders.io/v2'},
-          ],
-          'security': [
-            {
-              'apiKey': ['scope1', 'scope2'],
-            },
-          ],
-          'paths': {
-            '/users': {
-              'get': {
-                'responses': {
-                  '200': {'description': 'OK'},
-                },
-              },
-            },
-          },
-          'components': {
-            'securitySchemes': {
-              'apiKey': {'type': 'apiKey', 'name': 'apiKey', 'in': 'cookie'},
-            },
-          },
-        };
-        expect(() => parseOpenApi(json), throwsA(isA<UnimplementedError>()));
+        final json = {'type': 'apiKey', 'name': 'apiKey', 'in': 'cookie'};
+        expect(
+          () => parseSecurityScheme('name', MapContext.initial(json)),
+          throwsA(isA<UnimplementedError>()),
+        );
       });
       test('unknown location', () {
+        final json = {'type': 'apiKey', 'name': 'apiKey', 'in': 'unknown'};
+        expect(
+          () => parseSecurityScheme('name', MapContext.initial(json)),
+          throwsA(isA<FormatException>()),
+        );
+      });
+      test('oauth not yet supported', () {
+        final json = {'type': 'oauth2', 'name': 'apiKey', 'in': 'unknown'};
+        expect(
+          () => parseSecurityScheme('name', MapContext.initial(json)),
+          throwsA(isA<UnimplementedError>()),
+        );
+      });
+      test('mutual TLS not yet supported', () {
+        final json = {'type': 'mutualTLS', 'name': 'apiKey', 'in': 'unknown'};
+        expect(
+          () => parseSecurityScheme('name', MapContext.initial(json)),
+          throwsA(isA<UnimplementedError>()),
+        );
+      });
+      test('openID Connect not yet supported', () {
         final json = {
-          'openapi': '3.1.0',
-          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-          'servers': [
-            {'url': 'https://api.spacetraders.io/v2'},
-          ],
-          'security': [
-            {
-              'apiKey': ['scope1', 'scope2'],
-            },
-          ],
-          'paths': {
-            '/users': {
-              'get': {
-                'responses': {
-                  '200': {'description': 'OK'},
-                },
-              },
-            },
-          },
-          'components': {
-            'securitySchemes': {
-              'apiKey': {'type': 'apiKey', 'name': 'apiKey', 'in': 'unknown'},
-            },
-          },
+          'type': 'openIDConnect',
+          'name': 'apiKey',
+          'in': 'unknown',
         };
-        expect(() => parseOpenApi(json), throwsA(isA<FormatException>()));
+        expect(
+          () => parseSecurityScheme('name', MapContext.initial(json)),
+          throwsA(isA<UnimplementedError>()),
+        );
+      });
+      test('unknown type', () {
+        final json = {'type': 'unknown'};
+        expect(
+          () => parseSecurityScheme('name', MapContext.initial(json)),
+          throwsA(isA<FormatException>()),
+        );
       });
     });
   });

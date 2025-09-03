@@ -1008,6 +1008,15 @@ SecurityScheme parseSecurityScheme(String name, MapContext json) {
         scheme: _required<String>(json, 'scheme'),
         bearerFormat: _optional<String>(json, 'bearerFormat'),
       );
+    case 'mutualTLS':
+      _unimplemented(json, 'Mutual TLS security scheme is not yet supported');
+    case 'oauth2':
+      _unimplemented(json, 'OAuth2 security scheme is not yet supported');
+    case 'openIDConnect':
+      _unimplemented(
+        json,
+        'OpenID Connect security scheme is not yet supported',
+      );
     default:
       _error(json, 'Unsupported security scheme type: $type');
   }
