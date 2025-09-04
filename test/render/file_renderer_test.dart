@@ -62,7 +62,7 @@ void main() {
     // https://github.com/dart-lang/test/issues/110
     final templatesUri = (reflectClass(_EmptyClass).owner! as LibraryMirror).uri
         .resolve('../../lib/templates');
-    final templateDir = localFs.directory(templatesUri.path);
+    final templatesDir = localFs.directory(templatesUri.path);
 
     io.ProcessResult runProcess(
       String executable,
@@ -88,7 +88,7 @@ void main() {
           specUrl: Uri.file(specFile.path),
           packageName: out.path.split('/').last,
           outDir: out,
-          templateDir: templateDir,
+          templatesDir: templatesDir,
           runProcess: runProcess,
           logSchemas: false,
         ),

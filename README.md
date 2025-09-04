@@ -27,7 +27,7 @@ dart pub global activate space_gen <version>
 
 If you haven't already, you might need to [set up your path][path_setup_link].
 
-### Option 3: Per-project install
+### Option 2: Per-project install
 Useful if you need per-project versions or want everything self-contained.
 
 ```sh
