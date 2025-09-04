@@ -34,6 +34,23 @@ class SpecWalker {
     }
   }
 
+  void walk(Parseable parseable) {
+    switch (parseable) {
+      case Header():
+        _header(parseable);
+      case Parameter():
+        _parameter(parseable);
+      case RequestBody():
+        _requestBody(parseable);
+      case Response():
+        _response(parseable);
+      case Schema():
+        walkSchema(parseable);
+      case _:
+        throw UnimplementedError('Walking $parseable is not implemented');
+    }
+  }
+
   void walkRoot(OpenApi root) {
     visitor.visitRoot(root);
     for (final path in root.paths.paths.values) {
