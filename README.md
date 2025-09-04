@@ -8,11 +8,37 @@ A simple, hackable OpenAPI 3.0 and 3.1 generator.
 
 Implements most of the OpenAPI spec.  Patches welcome.
 
-## Usage
+## Installing 🧑‍💻
 
-dart run space_gen -i spec_path_or_url -o output_package_path
+`space_gen` is typically installed via pub, so you have two options for install:
 
-## Values
+### Option 1: Global install
+Short command line (just `space_gen`) for use across all projects:
+
+```sh
+dart pub global activate space_gen
+```
+
+Or install a [specific version](https://pub.dev/packages/space_gen/versions) using:
+
+```sh
+dart pub global activate space_gen <version>
+```
+
+If you haven't already, you might need to [set up your path][path_setup_link].
+
+### Option 3: Per-project install
+Useful if you need per-project versions or want everything self-contained.
+
+```sh
+dart pub add --dev space_gen
+```
+
+```sh
+dart run space_gen <args>
+```
+
+## Project Values
 
 - Generates highest quality, modern Dart code.
 - Zero analyzer, formatter or linter errors. Aims to be as good as handwritten.
@@ -104,3 +130,5 @@ use lowerCamelCase enums matching Dart style.
 OpenAPI generates mutable model types and your existing code may depend on
 this behavior. space_gen can generate either mutable or immutable model types
 and by default makes models immutable.
+
+[path_setup_link]: https://dart.dev/tools/pub/cmd/pub-global#running-a-script-from-your-path
