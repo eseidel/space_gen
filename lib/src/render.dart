@@ -48,7 +48,7 @@ Future<void> loadAndRenderSpec({
   required Uri specUrl,
   required String packageName,
   required Directory outDir,
-  Directory? templateDir,
+  required Directory templatesDir,
   RunProcess? runProcess,
   Quirks quirks = const Quirks(),
   bool logSchemas = true,
@@ -56,9 +56,7 @@ Future<void> loadAndRenderSpec({
   final fs = outDir.fileSystem;
   validatePackageName(packageName);
 
-  final templates = templateDir == null
-      ? TemplateProvider.defaultLocation()
-      : TemplateProvider.fromDirectory(templateDir);
+  final templates = TemplateProvider.fromDirectory(templatesDir);
 
   // Load the spec and warm the cache before rendering.
   final cache = Cache(fs);

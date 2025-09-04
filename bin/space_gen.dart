@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:args/args.dart';
 import 'package:file/local.dart';
 import 'package:path/path.dart' as p;
@@ -36,11 +38,20 @@ Future<int> run(List<String> arguments) async {
       ? const Quirks.openapi()
       : const Quirks();
 
+  final templatesUri = await Isolate.resolvePackageUri(
+    Uri.parse('package:space_gen/templates'),
+  );
+  final templatesDir = templatesUri != null
+      ? fs.directory(templatesUri.toFilePath())
+      // TODO(eseidel): This fallback is likely wrong.
+      : fs.directory('lib/templates');
+
   await loadAndRenderSpec(
     specUrl: specUrl,
     packageName: packageName,
     outDir: outDir,
     quirks: quirks,
+    templatesDir: templatesDir,
   );
   return 0;
 }

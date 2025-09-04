@@ -1,6 +1,6 @@
 name: space_gen
 description: An OpenAPI generator, focused on generating high quality code.
-version: 1.0.0
+version: 1.0.1
 repository: https://github.com/eseidel/space_gen
 
 environment:

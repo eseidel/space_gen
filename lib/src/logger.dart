@@ -4,7 +4,7 @@ import 'package:scoped_deps/scoped_deps.dart';
 export 'package:mason_logger/mason_logger.dart';
 
 /// A reference to the global logger using package:scoped to create.
-final loggerRef = create(Logger.new);
+final ScopedRef<Logger> loggerRef = create(Logger.new);
 
 /// A getter for the global logger using package:scoped to read.
 /// This is a getter so that it cannot be replaced directly, if you wish
