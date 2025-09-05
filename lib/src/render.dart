@@ -128,6 +128,8 @@ String renderTestSchema(
   final resolvedSchema = resolveSchemaRef(
     SchemaRef.object(parsedSchema, const JsonPointer.empty()),
     ResolveContext.test(),
+    resolving: <Uri>{},
+    resolvedCache: <Uri, ResolvedSchema>{},
   );
   final resolver = SpecResolver(quirks);
   final templates = TemplateProvider.defaultLocation();
@@ -181,6 +183,8 @@ Map<String, String> renderTestSchemas(
       resolveSchemaRef(
         SchemaRef.object(value, const JsonPointer.empty()),
         resolveContext,
+        resolving: <Uri>{},
+        resolvedCache: <Uri, ResolvedSchema>{},
       ),
     );
   });
