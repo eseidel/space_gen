@@ -25,7 +25,9 @@ String toSnakeCase(String unknown) {
   // First try to convert any UpperCase to snake_case.
   final lowered = snakeFromCamel(unknown);
   // Then convert any kebab-case to snake_case.
-  return snakeFromKebab(lowered);
+  final kebabConverted = snakeFromKebab(lowered);
+  // Finally convert any spaces to underscores.
+  return kebabConverted.replaceAll(' ', '_');
 }
 
 /// Convert kebab-case to snake_case.
@@ -62,6 +64,7 @@ bool isReservedWord(String word) {
   // https://dart.dev/language/keywords
   const reservedWords = {
     'bool',
+    'case',
     'default',
     'double',
     'dynamic',
@@ -72,7 +75,9 @@ bool isReservedWord(String word) {
     'num',
     'required',
     'true',
+    'try',
     'void',
+    'with',
     'yield',
   };
   return reservedWords.contains(word);

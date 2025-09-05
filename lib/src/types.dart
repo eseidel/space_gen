@@ -100,7 +100,7 @@ enum MimeType {
   final String value;
 }
 
-enum PodType { boolean, dateTime, uri, uriTemplate }
+enum PodType { boolean, dateTime, uri, uriTemplate, email, uuid, date }
 
 /// Properties that are common to all schemas and across
 /// parsing, resolution and rendering.  This just saves a lot of boilerplate.

@@ -454,7 +454,16 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
       return null;
     }
     final expectedFormats = {
-      'string': {'binary', 'date-time', 'uri', 'uri-template'},
+      'string': {
+        'binary',
+        'date-time',
+        'uri',
+        'uri-template',
+        'email',
+        'uuid',
+        'date',
+        'time',
+      },
     };
     final expected = expectedFormats[type];
     if (expected == null || !expected.contains(format)) {
@@ -479,6 +488,12 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
     }
     if (type == 'string') {
       if (format == 'date-time') {
+        return PodType.dateTime;
+      }
+      if (format == 'date') {
+        return PodType.dateTime;
+      }
+      if (format == 'time') {
         return PodType.dateTime;
       }
       if (format == 'uri') {

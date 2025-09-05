@@ -82,51 +82,136 @@ List<ResolvedPath> _resolvePaths(Paths paths, ResolveContext context) {
   }).toList();
 }
 
-ResolvedSchema? _maybeResolveSchemaRef(SchemaRef? ref, ResolveContext context) {
+ResolvedSchema? _maybeResolveSchemaRef(
+  SchemaRef? ref,
+  ResolveContext context, {
+  int depth = 0,
+  Set<Uri>? resolving,
+  Map<Uri, ResolvedSchema>? resolvedCache,
+}) {
   if (ref == null) {
     return null;
   }
-  return resolveSchemaRef(ref, context);
+  return resolveSchemaRef(
+    ref,
+    context,
+    depth: depth,
+    resolving: resolving,
+    resolvedCache: resolvedCache,
+  );
 }
 
-ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
+ResolvedSchema resolveSchemaRef(
+  SchemaRef ref,
+  ResolveContext context, {
+  int depth = 0,
+  Set<Uri>? resolving,
+  Map<Uri, ResolvedSchema>? resolvedCache,
+}) {
+  // Track circular references for both actual references and inline objects
+  resolving ??= <Uri>{};
+  resolvedCache ??= <Uri, ResolvedSchema>{};
+
+  if (ref.ref != null) {
+    // For actual references, use the URI
+    final uri = context.specUrl.resolveUri(ref.ref!.uri);
+
+    // Check if we already have this resolved in cache
+    if (resolvedCache.containsKey(uri)) {
+      return resolvedCache[uri]!;
+    }
+
+    if (resolving.contains(uri)) {
+      // We're in a circular reference. Return a placeholder that will be resolved later
+      // This prevents infinite recursion while allowing the object to be fully resolved
+      return ResolvedCircularPlaceholder(
+        common: CommonProperties.empty(
+          pointer: ref.pointer,
+          snakeName: 'circular_placeholder',
+        ),
+        uri: uri,
+      );
+    }
+
+    resolving.add(uri);
+  } else {
+    // For inline objects, use the pointer as a unique identifier
+    final pointerUri = Uri.parse('inline:${ref.pointer}');
+
+    // Check if we already have this resolved in cache
+    if (resolvedCache.containsKey(pointerUri)) {
+      return resolvedCache[pointerUri]!;
+    }
+
+    if (resolving.contains(pointerUri)) {
+      // We're in a circular reference. Return a placeholder that will be resolved later
+      // This prevents infinite recursion while allowing the object to be fully resolved
+      return ResolvedCircularPlaceholder(
+        common: CommonProperties.empty(
+          pointer: ref.pointer,
+          snakeName: 'circular_placeholder',
+        ),
+        uri: pointerUri,
+      );
+    }
+
+    resolving.add(pointerUri);
+  }
+
+  const maxDepth = 50;
+  if (depth > maxDepth) {
+    throw FormatException(
+      'Maximum resolution depth ($maxDepth) exceeded. Circular reference detected in $ref',
+    );
+  }
+
   final schema = context._maybeResolve(ref);
   if (schema == null) {
     throw Exception('Schema not found: $ref');
   }
 
+  ResolvedSchema resolvedSchema;
+
   if (schema is SchemaObject) {
-    return ResolvedObject(
+    resolvedSchema = ResolvedObject(
       common: schema.common,
       properties: schema.properties.map((key, value) {
-        return MapEntry(key, resolveSchemaRef(value, context));
+        return MapEntry(
+          key,
+          resolveSchemaRef(
+            value,
+            context,
+            depth: depth + 1,
+            resolving: resolving,
+            resolvedCache: resolvedCache,
+          ),
+        );
       }),
       additionalProperties: _maybeResolveSchemaRef(
         schema.additionalProperties,
         context,
+        depth: depth + 1,
+        resolving: resolving,
+        resolvedCache: resolvedCache,
       ),
       requiredProperties: schema.requiredProperties,
     );
-  }
-  if (schema is SchemaEnum) {
-    return ResolvedEnum(
+  } else if (schema is SchemaEnum) {
+    resolvedSchema = ResolvedEnum(
       common: schema.common,
       defaultValue: schema.defaultValue,
       values: schema.enumValues,
     );
-  }
-  if (schema is SchemaBinary) {
-    return ResolvedBinary(common: schema.common);
-  }
-  if (schema is SchemaPod) {
-    return ResolvedPod(
+  } else if (schema is SchemaBinary) {
+    resolvedSchema = ResolvedBinary(common: schema.common);
+  } else if (schema is SchemaPod) {
+    resolvedSchema = ResolvedPod(
       common: schema.common,
       type: schema.type,
       defaultValue: schema.defaultValue,
     );
-  }
-  if (schema is SchemaInteger) {
-    return ResolvedInteger(
+  } else if (schema is SchemaInteger) {
+    resolvedSchema = ResolvedInteger(
       common: schema.common,
       defaultValue: schema.defaultValue,
       maximum: schema.maximum,
@@ -135,18 +220,16 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       exclusiveMinimum: schema.exclusiveMinimum,
       multipleOf: schema.multipleOf,
     );
-  }
-  if (schema is SchemaString) {
-    return ResolvedString(
+  } else if (schema is SchemaString) {
+    resolvedSchema = ResolvedString(
       common: schema.common,
       defaultValue: schema.defaultValue,
       maxLength: schema.maxLength,
       minLength: schema.minLength,
       pattern: schema.pattern,
     );
-  }
-  if (schema is SchemaNumber) {
-    return ResolvedNumber(
+  } else if (schema is SchemaNumber) {
+    resolvedSchema = ResolvedNumber(
       common: schema.common,
       defaultValue: schema.defaultValue,
       maximum: schema.maximum,
@@ -156,11 +239,17 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       multipleOf: schema.multipleOf,
     );
   } else if (schema is SchemaArray) {
-    final items = _maybeResolveSchemaRef(schema.items, context);
+    final items = _maybeResolveSchemaRef(
+      schema.items,
+      context,
+      depth: depth + 1,
+      resolving: resolving,
+      resolvedCache: resolvedCache,
+    );
     if (items == null) {
       _error('items must be a schema for type=array', schema.pointer);
     }
-    return ResolvedArray(
+    resolvedSchema = ResolvedArray(
       common: schema.common,
       items: items,
       defaultValue: schema.defaultValue,
@@ -168,36 +257,60 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       minItems: schema.minItems,
       uniqueItems: schema.uniqueItems,
     );
-  }
-  if (schema is SchemaOneOf) {
+  } else if (schema is SchemaOneOf) {
     final oneOf = schema;
-    return ResolvedOneOf(
+    resolvedSchema = ResolvedOneOf(
       common: schema.common,
-      schemas: oneOf.schemas.map((e) => resolveSchemaRef(e, context)).toList(),
+      schemas: oneOf.schemas
+          .map(
+            (e) => resolveSchemaRef(
+              e,
+              context,
+              depth: depth + 1,
+              resolving: resolving,
+              resolvedCache: resolvedCache,
+            ),
+          )
+          .toList(),
     );
-  }
-  if (schema is SchemaAllOf) {
+  } else if (schema is SchemaAllOf) {
     final allOf = schema;
     final schemas = allOf.schemas
-        .map((e) => resolveSchemaRef(e, context))
+        .map(
+          (e) => resolveSchemaRef(
+            e,
+            context,
+            depth: depth + 1,
+            resolving: resolving,
+            resolvedCache: resolvedCache,
+          ),
+        )
         .toList();
     // Elide the allOf if there is only one schema.
     // Probably should only do this for the pod case?  Since in the object
     // case allOf should probably create a new object?
     if (schemas.length == 1) {
-      return schemas.first;
-    }
-    for (final schema in schemas) {
-      if (schema is! ResolvedObject) {
-        _error('allOf only supports objects: $schema', allOf.pointer);
+      resolvedSchema = schemas.first;
+    } else {
+      for (final schema in schemas) {
+        if (schema is! ResolvedObject) {
+          _error('allOf only supports objects: $schema', allOf.pointer);
+        }
       }
+      resolvedSchema = ResolvedAllOf(common: schema.common, schemas: schemas);
     }
-    return ResolvedAllOf(common: schema.common, schemas: schemas);
-  }
-  if (schema is SchemaAnyOf) {
+  } else if (schema is SchemaAnyOf) {
     final anyOf = schema;
     final schemas = anyOf.schemas
-        .map((e) => resolveSchemaRef(e, context))
+        .map(
+          (e) => resolveSchemaRef(
+            e,
+            context,
+            depth: depth + 1,
+            resolving: resolving,
+            resolvedCache: resolvedCache,
+          ),
+        )
         .toList();
     final forceNullable = schemas.any((e) => e is ResolvedNull);
     if (forceNullable) {
@@ -213,39 +326,65 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
 
     // Elide the anyOf if there is only only one schema left.
     if (schemas.length == 1) {
-      return copyIfNeeded(schemas.first, forceNullable: forceNullable);
-    }
-    // TODO(eseidel): Make this union(object, List<object>) hack optional.
-    // Dart doesn't have union types, but commonly openapi specs come from
-    // typescript where foo(bar) and foo([bar]) are the same, we elide the
-    // anyOf and just use the array in that case.
-    if (schemas.length == 2) {
-      final first = schemas.first;
-      final second = schemas.last;
-      if (first is ResolvedArray && first.items == second) {
-        return first;
-      } else if (second is ResolvedArray && second.items == first) {
-        return second;
+      resolvedSchema = copyIfNeeded(
+        schemas.first,
+        forceNullable: forceNullable,
+      );
+    } else {
+      // TODO(eseidel): Make this union(object, List<object>) hack optional.
+      // Dart doesn't have union types, but commonly openapi specs come from
+      // typescript where foo(bar) and foo([bar]) are the same, we elide the
+      // anyOf and just use the array in that case.
+      if (schemas.length == 2) {
+        final first = schemas.first;
+        final second = schemas.last;
+        if (first is ResolvedArray && first.items == second) {
+          resolvedSchema = first;
+        } else if (second is ResolvedArray && second.items == first) {
+          resolvedSchema = second;
+        } else {
+          resolvedSchema = ResolvedAnyOf(
+            common: schema.common,
+            schemas: schemas,
+          );
+        }
+      } else {
+        resolvedSchema = ResolvedAnyOf(common: schema.common, schemas: schemas);
       }
     }
-    return ResolvedAnyOf(common: schema.common, schemas: schemas);
-  }
-  if (schema is SchemaNull) {
-    return ResolvedNull(common: schema.common);
-  }
-  if (schema is SchemaUnknown) {
-    return ResolvedUnknown(common: schema.common);
-  }
-  if (schema is SchemaMap) {
-    return ResolvedMap(
+  } else if (schema is SchemaNull) {
+    resolvedSchema = ResolvedNull(common: schema.common);
+  } else if (schema is SchemaUnknown) {
+    resolvedSchema = ResolvedUnknown(common: schema.common);
+  } else if (schema is SchemaMap) {
+    resolvedSchema = ResolvedMap(
       common: schema.common,
-      valueSchema: resolveSchemaRef(schema.valueSchema, context),
+      valueSchema: resolveSchemaRef(
+        schema.valueSchema,
+        context,
+        depth: depth + 1,
+        resolving: resolving,
+        resolvedCache: resolvedCache,
+      ),
     );
+  } else if (schema is SchemaEmptyObject) {
+    resolvedSchema = ResolvedEmptyObject(common: schema.common);
+  } else {
+    _error('Missing code to resolve schema: $schema', schema.pointer);
   }
-  if (schema is SchemaEmptyObject) {
-    return ResolvedEmptyObject(common: schema.common);
+
+  // Cache the resolved schema
+  if (ref.ref != null) {
+    final uri = context.specUrl.resolveUri(ref.ref!.uri);
+    resolvedCache[uri] = resolvedSchema;
+    resolving.remove(uri);
+  } else {
+    final pointerUri = Uri.parse('inline:${ref.pointer.toString()}');
+    resolvedCache[pointerUri] = resolvedSchema;
+    resolving.remove(pointerUri);
   }
-  _error('Missing code to resolve schema: $schema', schema.pointer);
+
+  return resolvedSchema;
 }
 
 ResolvedRequestBody? _resolveRequestBody(
@@ -264,7 +403,12 @@ ResolvedRequestBody? _resolveRequestBody(
   if (jsonSchema != null) {
     return ResolvedRequestBody(
       mimeType: MimeType.applicationJson,
-      schema: resolveSchemaRef(jsonSchema, context),
+      schema: resolveSchemaRef(
+        jsonSchema,
+        context,
+        resolving: <Uri>{},
+        resolvedCache: <Uri, ResolvedSchema>{},
+      ),
       description: requestBody.description,
       isRequired: requestBody.isRequired,
     );
@@ -273,7 +417,12 @@ ResolvedRequestBody? _resolveRequestBody(
   if (octetStreamSchema != null) {
     return ResolvedRequestBody(
       mimeType: MimeType.applicationOctetStream,
-      schema: resolveSchemaRef(octetStreamSchema, context),
+      schema: resolveSchemaRef(
+        octetStreamSchema,
+        context,
+        resolving: <Uri>{},
+        resolvedCache: <Uri, ResolvedSchema>{},
+      ),
       description: requestBody.description,
       isRequired: requestBody.isRequired,
     );
@@ -282,7 +431,12 @@ ResolvedRequestBody? _resolveRequestBody(
   if (textPlainSchema != null) {
     return ResolvedRequestBody(
       mimeType: MimeType.textPlain,
-      schema: resolveSchemaRef(textPlainSchema, context),
+      schema: resolveSchemaRef(
+        textPlainSchema,
+        context,
+        resolving: <Uri>{},
+        resolvedCache: <Uri, ResolvedSchema>{},
+      ),
       description: requestBody.description,
       isRequired: requestBody.isRequired,
     );
@@ -315,7 +469,12 @@ List<ResolvedParameter> _resolveParameters(
 ) {
   return parameters.map((parameter) {
     final resolved = context._resolve(parameter);
-    final type = resolveSchemaRef(resolved.type, context);
+    final type = resolveSchemaRef(
+      resolved.type,
+      context,
+      resolving: <Uri>{},
+      resolvedCache: <Uri, ResolvedSchema>{},
+    );
     if (resolved.inLocation == ParameterLocation.path &&
         !_canBePathParameter(type)) {
       _error('Path parameters must be strings or integers', resolved.pointer);
@@ -434,10 +593,20 @@ ResolvedSchema _resolveContent(Response response, ResolveContext context) {
   }
   final jsonSchema = content['application/json']?.schema;
   if (jsonSchema != null) {
-    return resolveSchemaRef(jsonSchema, context);
+    return resolveSchemaRef(
+      jsonSchema,
+      context,
+      resolving: <Uri>{},
+      resolvedCache: <Uri, ResolvedSchema>{},
+    );
   }
   _warn('Response has no application/json schema: $response', response.pointer);
-  return resolveSchemaRef(content.values.first.schema, context);
+  return resolveSchemaRef(
+    content.values.first.schema,
+    context,
+    resolving: <Uri>{},
+    resolvedCache: <Uri, ResolvedSchema>{},
+  );
 }
 
 List<ResolvedResponse> _resolveResponses(
@@ -1077,4 +1246,24 @@ class ResolvedEmptyObject extends ResolvedSchema {
   ResolvedEmptyObject copyWith({CommonProperties? common}) {
     return ResolvedEmptyObject(common: common ?? this.common);
   }
+}
+
+class ResolvedCircularPlaceholder extends ResolvedSchema {
+  const ResolvedCircularPlaceholder({
+    required super.common,
+    required this.uri,
+  });
+
+  final Uri uri;
+
+  @override
+  ResolvedCircularPlaceholder copyWith({CommonProperties? common}) {
+    return ResolvedCircularPlaceholder(
+      common: common ?? this.common,
+      uri: uri,
+    );
+  }
+
+  @override
+  List<Object?> get props => [super.props, uri];
 }

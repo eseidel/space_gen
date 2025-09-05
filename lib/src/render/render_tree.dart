@@ -313,6 +313,11 @@ class SpecResolver {
         );
       case ResolvedEmptyObject():
         return RenderEmptyObject(common: schema.common);
+      case ResolvedCircularPlaceholder():
+        // For circular references, we need to handle this gracefully
+        // We'll create a placeholder that can be resolved later
+        // For now, we'll treat it as an unknown type to avoid crashes
+        return RenderUnknown(common: schema.common);
       default:
         _unimplemented('Unknown schema: $schema', schema.pointer);
     }
@@ -1084,14 +1089,24 @@ class RenderPod extends RenderSchema {
       // Bool is already a json type.
       PodType.boolean => true,
       // These require serialization to a string.
-      PodType.dateTime || PodType.uri || PodType.uriTemplate => false,
+      PodType.dateTime ||
+      PodType.uri ||
+      PodType.email ||
+      PodType.uuid ||
+      PodType.date ||
+      PodType.uriTemplate => false,
     };
   }
 
   @override
   bool get defaultCanConstConstruct {
     return switch (type) {
-      PodType.dateTime || PodType.uri || PodType.uriTemplate => false,
+      PodType.dateTime ||
+      PodType.uri ||
+      PodType.email ||
+      PodType.uuid ||
+      PodType.date ||
+      PodType.uriTemplate => false,
       PodType.boolean => true,
     };
   }
@@ -1105,6 +1120,9 @@ class RenderPod extends RenderSchema {
       PodType.boolean => 'bool',
       PodType.dateTime => 'DateTime',
       PodType.uri => 'Uri',
+      PodType.email => 'String',
+      PodType.uuid => 'String',
+      PodType.date => 'DateTime',
       PodType.uriTemplate => 'UriTemplate',
     };
   }
@@ -1114,7 +1132,10 @@ class RenderPod extends RenderSchema {
     return switch (type) {
       PodType.dateTime ||
       PodType.uri ||
-      PodType.uriTemplate => isNullable ? 'String?' : 'String',
+      PodType.uriTemplate ||
+      PodType.email ||
+      PodType.uuid ||
+      PodType.date => isNullable ? 'String?' : 'String',
       PodType.boolean => isNullable ? 'bool?' : 'bool',
     };
   }
@@ -1131,6 +1152,9 @@ class RenderPod extends RenderSchema {
       PodType.uri => 'Uri.parse(${quoteString(defaultValue as String)})',
       PodType.uriTemplate =>
         'UriTemplate(${quoteString(defaultValue as String)})',
+      PodType.email => defaultValue as String,
+      PodType.uuid => defaultValue as String,
+      PodType.date => 'DateTime.parse(${quoteString(defaultValue as String)})',
       PodType.boolean => defaultValue.toString(),
     };
   }
@@ -1153,6 +1177,9 @@ class RenderPod extends RenderSchema {
     final nameCall = dartIsNullable ? '$dartName?' : dartName;
     return switch (type) {
       PodType.dateTime => '$nameCall.toIso8601String()',
+      PodType.email => 'nameCall',
+      PodType.uuid => 'nameCall',
+      PodType.date => 'nameCall.toIso8601String()',
       PodType.uri => '$nameCall.toString()',
       PodType.uriTemplate => '$nameCall.toString()',
       PodType.boolean => dartName,
@@ -1177,6 +1204,21 @@ class RenderPod extends RenderSchema {
       case PodType.dateTime:
         if (jsonIsNullable) {
           return 'maybeParseDateTime($castedValue)$orDefault';
+        }
+        return 'DateTime.parse($castedValue)';
+      case PodType.email:
+        if (jsonIsNullable) {
+          return 'maybeParseEmail($castedValue)$orDefault';
+        }
+        return '${quoteString(castedValue)}';
+      case PodType.uuid:
+        if (jsonIsNullable) {
+          return 'maybeParseUuid($castedValue)$orDefault';
+        }
+        return '${quoteString(castedValue)}';
+      case PodType.date:
+        if (jsonIsNullable) {
+          return 'maybeParseDate($castedValue)$orDefault';
         }
         return 'DateTime.parse($castedValue)';
       case PodType.uri:
@@ -2333,7 +2375,7 @@ class RenderParameter implements CanBeParameter {
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     final isNullable = !isRequired;
     final specName = name;
-    final dartName = lowercaseCamelFromSnake(name);
+    final dartName = avoidReservedWord(lowercaseCamelFromSnake(name));
     final jsonName = name;
     return {
       'parameter_description': createDocCommentFromParts(
