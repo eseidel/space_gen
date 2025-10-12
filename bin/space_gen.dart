@@ -3,8 +3,7 @@ import 'dart:isolate';
 import 'package:args/args.dart';
 import 'package:file/local.dart';
 import 'package:path/path.dart' as p;
-import 'package:space_gen/src/logger.dart';
-import 'package:space_gen/src/render.dart';
+import 'package:space_gen/space_gen.dart';
 
 Future<int> run(List<String> arguments) async {
   const fs = LocalFileSystem();
