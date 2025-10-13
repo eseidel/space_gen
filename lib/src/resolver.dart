@@ -398,32 +398,34 @@ ResolvedOperation resolveOperation({
   required Operation operation,
   required ResolveContext context,
 }) {
-  final op = operation;
-  final requestBody = _resolveRequestBody(op.requestBody, context);
-  final responses = _resolveResponses(op.responses, context);
+  final requestBody = _resolveRequestBody(operation.requestBody, context);
+  final responses = _resolveResponses(operation.responses, context);
 
   // Need to resolve any local security requirements, or otherwise fall back to
   // the global security requirements.
   final securityRequirements = _resolveSecurityRequirements(
-    securityRequirements: op.securityRequirements,
+    securityRequirements: operation.securityRequirements,
     securitySchemes: context.securitySchemes,
     globalSecurityRequirements: context.globalSecurityRequirements,
   );
 
   // Operation snake_name might change due to collisions, get resolved name.
-  final resolvedName = context.getResolvedName(op.pointer, op.snakeName);
+  final resolvedName = context.getResolvedName(
+    operation.pointer,
+    operation.snakeName,
+  );
 
   return ResolvedOperation(
-    pointer: op.pointer,
+    pointer: operation.pointer,
     snakeName: resolvedName,
-    tags: op.tags,
-    summary: op.summary,
-    description: op.description,
+    tags: operation.tags,
+    summary: operation.summary,
+    description: operation.description,
     method: method,
     path: path,
     requestBody: requestBody,
     responses: responses,
-    parameters: _resolveParameters(op.parameters, context),
+    parameters: _resolveParameters(operation.parameters, context),
     securityRequirements: securityRequirements,
   );
 }
