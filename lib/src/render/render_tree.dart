@@ -289,10 +289,7 @@ class SpecResolver {
             properties.addAll(renderSchema.properties);
           }
         }
-        return RenderObject(
-          common: schema.common,
-          properties: properties,
-        );
+        return RenderObject(common: schema.common, properties: properties);
       case ResolvedAnyOf():
         // Resolver already makes anyOf with 1 schema to just be that schema.
         // For multiple schemas, we just generate a oneOf, which is wrong.
