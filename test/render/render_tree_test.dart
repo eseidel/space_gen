@@ -550,4 +550,19 @@ void main() {
       );
     });
   });
+
+  group('valid states', () {
+    test('RenderPod', () {
+      const a = RenderPod(
+        common: CommonProperties.test(
+          snakeName: 'a',
+          pointer: JsonPointer.empty(),
+          description: 'Foo',
+        ),
+        type: PodType.boolean,
+      );
+      // Not valid to call className on a non-new type.
+      expect(() => a.className, throwsA(isA<StateError>()));
+    });
+  });
 }
