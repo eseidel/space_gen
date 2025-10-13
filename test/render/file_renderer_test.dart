@@ -1091,6 +1091,73 @@ void main() {
         ]),
       );
     });
+
+    test('colliding names are renamed', () async {
+      // This sort of collision happens in the GitHub spec.
+      // e.g. #/components/schemas/code-scanning-variant-analysis/properties/status
+      // and #/components/schemas/code-scanning-variant-analysis-status
+      // Both result in CodeScanningVariantAnalysisStatus.
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'properties': {
+                          'user': {r'$ref': '#/components/schemas/user'},
+                          'role': {r'$ref': '#/components/schemas/user-role'},
+                        },
+                        'required': ['user'],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'user-role': {
+              'type': 'string',
+              'enum': ['admin', 'user'],
+            },
+            'user': {
+              'type': 'object',
+              'properties': {
+                'role': {
+                  'type': 'string',
+                  'enum': ['role1', 'role2'],
+                },
+              },
+            },
+          },
+        },
+      };
+      final fs = MemoryFileSystem.test();
+      final out = fs.directory('spacetraders');
+
+      await renderToDirectory(spec: spec, outDir: out);
+      expect(
+        out.childDirectory('lib/model'),
+        hasFiles([
+          'users200_response.dart',
+          'user.dart',
+          'user_role.dart',
+          'user_role_1.dart',
+        ]),
+      );
+    });
   });
 
   group('Formatter', () {
@@ -1130,6 +1197,8 @@ void main() {
     });
   });
 
+  // While we still support logging, this should no longer happen since
+  // we detect collisions and fix them during resolution.
   test('logNameCollisions', () {
     final logger = _MockLogger();
     runWithLogger(
