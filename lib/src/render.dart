@@ -28,73 +28,6 @@ class _RefCollector extends Visitor {
   }
 }
 
-/// Collects all snake names from the parse tree to detect collisions
-class _NameCollector extends Visitor {
-  _NameCollector(this._nameToPointers);
-
-  final Map<String, List<JsonPointer>> _nameToPointers;
-
-  @override
-  void visitSchema(Schema schema) {
-    if (schema.snakeName.isNotEmpty) {
-      _nameToPointers
-          .putIfAbsent(schema.snakeName, () => [])
-          .add(schema.pointer);
-    }
-  }
-
-  @override
-  void visitOperation(Operation operation) {
-    if (operation.snakeName.isNotEmpty) {
-      _nameToPointers
-          .putIfAbsent(operation.snakeName, () => [])
-          .add(operation.pointer);
-    }
-  }
-}
-
-/// Resolves naming collisions by creating a mapping from JsonPointer to
-/// resolved names
-/// Only stores names that actually changed due to collisions
-class NameCollisionResolver {
-  final Map<String, List<JsonPointer>> _nameToPointers = {};
-  final Map<JsonPointer, String> _changedNames = {};
-
-  /// Collect all names from the spec
-  void collectNames(OpenApi spec) {
-    final collector = _NameCollector(_nameToPointers);
-    SpecWalker(collector).walkRoot(spec);
-  }
-
-  static List<String> renameCollisions(
-    String name,
-    List<JsonPointer> pointers,
-  ) {
-    final newNames = <String>[];
-    for (var index = 0; index < pointers.length; index++) {
-      final suffix = index == 0 ? '' : '_$index';
-      newNames.add('$name$suffix');
-    }
-    return newNames;
-  }
-
-  /// Resolve collisions and return the mapping of only changed names
-  Map<JsonPointer, String> resolveCollisions() {
-    for (final entry in _nameToPointers.entries) {
-      final name = entry.key;
-      final pointers = entry.value;
-      if (pointers.length < 2) {
-        continue;
-      }
-      final newNames = renameCollisions(name, pointers);
-      for (final (index, pointer) in pointers.indexed) {
-        _changedNames[pointer] = newNames[index];
-      }
-    }
-    return _changedNames;
-  }
-}
-
 Iterable<Ref<Parseable>> collectRefs(OpenApi root) {
   final refs = <Ref<Parseable>>{};
   final collector = _RefCollector(refs);
@@ -129,15 +62,6 @@ Future<void> loadAndRenderSpec({
   final cache = Cache(fs);
   final specJson = await cache.load(specUrl);
   final spec = parseOpenApi(specJson);
-
-  // Walk and look for snake_name collisions.
-  final nameResolver = NameCollisionResolver()..collectNames(spec);
-  final nameOverrides = nameResolver.resolveCollisions();
-
-  if (nameOverrides.isNotEmpty) {
-    logger.info('Resolved ${nameOverrides.length} naming collisions');
-  }
-
   // Pre-warm the cache. Rendering assumes all refs are present in the cache.
   for (final ref in collectRefs(spec)) {
     // We need to walk all the refs and get type and location.
@@ -154,7 +78,6 @@ Future<void> loadAndRenderSpec({
   final resolved = resolveSpec(
     spec,
     specUrl: specUrl,
-    nameOverrides: nameOverrides,
   );
   final resolver = SpecResolver(quirks);
   // Convert the resolved spec into render objects.

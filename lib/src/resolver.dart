@@ -511,12 +511,80 @@ ResolvedTag _resolvedTag(Tag tag) {
   return ResolvedTag(name: tag.name, description: tag.description);
 }
 
+/// Collects all snake names from the parse tree to detect collisions
+class _NameCollector extends Visitor {
+  _NameCollector(this._nameToPointers);
+
+  final Map<String, List<JsonPointer>> _nameToPointers;
+
+  @override
+  void visitSchema(Schema schema) {
+    _nameToPointers.putIfAbsent(schema.snakeName, () => []).add(schema.pointer);
+  }
+
+  @override
+  void visitOperation(Operation op) {
+    _nameToPointers.putIfAbsent(op.snakeName, () => []).add(op.pointer);
+  }
+}
+
+Map<String, List<JsonPointer>> _collectNames(OpenApi spec) {
+  final nameToPointers = <String, List<JsonPointer>>{};
+  final collector = _NameCollector(nameToPointers);
+  SpecWalker(collector).walkRoot(spec);
+  return nameToPointers;
+}
+
+List<String> defaultRenameCollisions(
+  String name,
+  List<JsonPointer> pointers,
+) {
+  final newNames = <String>[];
+  for (var index = 0; index < pointers.length; index++) {
+    final suffix = index == 0 ? '' : '_$index';
+    newNames.add('$name$suffix');
+  }
+  return newNames;
+}
+
+Map<JsonPointer, String> _resolveCollisions(
+  Map<String, List<JsonPointer>> nameToPointers, {
+  List<String> Function(String name, List<JsonPointer> pointers)
+      renameCollisions =
+      defaultRenameCollisions,
+}) {
+  final changedNames = <JsonPointer, String>{};
+  for (final entry in nameToPointers.entries) {
+    final name = entry.key;
+    final pointers = entry.value;
+    if (pointers.length < 2) {
+      continue;
+    }
+    final newNames = renameCollisions(name, pointers);
+    for (final (index, pointer) in pointers.indexed) {
+      changedNames[pointer] = newNames[index];
+    }
+  }
+  return changedNames;
+}
+
+Map<JsonPointer, String> resolveNameCollisions(OpenApi spec) {
+  final nameToPointers = _collectNames(spec);
+  return _resolveCollisions(nameToPointers);
+}
+
 ResolvedSpec resolveSpec(
   OpenApi spec, {
   required Uri specUrl,
   bool logSchemas = true,
   Map<JsonPointer, String> nameOverrides = const {},
 }) {
+  // Walk and look for snake_name collisions.
+  final nameOverrides = resolveNameCollisions(spec);
+  if (nameOverrides.isNotEmpty) {
+    logger.detail('Resolved ${nameOverrides.length} naming collisions');
+  }
+
   final refRegistry = RefRegistry();
   final builder = RegistryBuilder(specUrl, refRegistry);
   SpecWalker(builder).walkRoot(spec);
