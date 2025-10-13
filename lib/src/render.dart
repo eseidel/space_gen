@@ -62,6 +62,7 @@ Future<void> loadAndRenderSpec({
   final cache = Cache(fs);
   final specJson = await cache.load(specUrl);
   final spec = parseOpenApi(specJson);
+
   // Pre-warm the cache. Rendering assumes all refs are present in the cache.
   for (final ref in collectRefs(spec)) {
     // We need to walk all the refs and get type and location.
@@ -74,11 +75,8 @@ Future<void> loadAndRenderSpec({
     await cache.load(resolved);
   }
 
-  // Resolve all references in the spec with name resolution.
-  final resolved = resolveSpec(
-    spec,
-    specUrl: specUrl,
-  );
+  // Resolve all references in the spec.
+  final resolved = resolveSpec(spec, specUrl: specUrl);
   final resolver = SpecResolver(quirks);
   // Convert the resolved spec into render objects.
   final renderSpec = resolver.toRenderSpec(resolved);
