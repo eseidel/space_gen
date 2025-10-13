@@ -988,25 +988,9 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     return '';
   }
 
-  /// The class name of the new type, if this schema creates a new type.
-  String get className {
-    if (!createsNewType) {
-      throw StateError('className called for non-new type: $this');
-    }
-    return camelFromSnake(snakeName);
-  }
-
   /// This is the resolved Dart type name for the schema.
   /// e.g. 'String', 'Uri', or the class name of a new type.
-  String get typeName {
-    if (createsNewType) {
-      return className;
-    }
-    throw UnimplementedError(
-      'typeName called for non-new type: $this, '
-      'subclasses should have overridden this',
-    );
-  }
+  String get typeName;
 
   /// This is the resolved Dart type name for the schema, with a ? if it is
   /// nullable.
@@ -1024,13 +1008,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     String dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
-  }) {
-    if (createsNewType) {
-      final nameCall = dartIsNullable ? '$dartName?' : dartName;
-      return '$nameCall.toJson()';
-    }
-    throw UnimplementedError('$runtimeType.toJsonExpression');
-  }
+  });
 
   String fromJsonExpression(
     String jsonValue,
@@ -1220,6 +1198,29 @@ class RenderPod extends RenderSchema {
       (other is RenderPod) &&
       type == other.type &&
       super.equalsIgnoringName(other);
+}
+
+abstract class RenderNewType extends RenderSchema {
+  const RenderNewType({required super.common}) : super(createsNewType: true);
+
+  @override
+  bool get shouldCallToJson => true;
+
+  /// The class name of the new type. Used by subclasses.
+  String get className => camelFromSnake(snakeName);
+
+  @override
+  String get typeName => className;
+
+  @override
+  String toJsonExpression(
+    String dartName,
+    SchemaRenderer context, {
+    required bool dartIsNullable,
+  }) {
+    final nameCall = dartIsNullable ? '$dartName?' : dartName;
+    return '$nameCall.toJson()';
+  }
 }
 
 class RenderString extends RenderSchema {
@@ -1545,13 +1546,13 @@ class RenderInteger extends RenderNumeric<int> {
   String jsonToDartCall({required bool jsonIsNullable}) => '';
 }
 
-class RenderObject extends RenderSchema {
+class RenderObject extends RenderNewType {
   const RenderObject({
     required super.common,
     required this.properties,
     this.additionalProperties,
     this.requiredProperties = const [],
-  }) : super(createsNewType: true);
+  });
 
   /// The properties of the resolved schema.
   final Map<String, RenderSchema> properties;
@@ -2095,7 +2096,7 @@ class RenderMap extends RenderSchema {
   }
 }
 
-class RenderEnum extends RenderSchema {
+class RenderEnum extends RenderNewType {
   const RenderEnum({
     required super.common,
     required this.values,
@@ -2104,8 +2105,7 @@ class RenderEnum extends RenderSchema {
   }) : assert(
          names.length == values.length,
          'names and values must have the same length',
-       ),
-       super(createsNewType: true);
+       );
 
   @visibleForTesting
   static List<String> variableNamesFor(Quirks quirks, List<String> values) {
@@ -2206,9 +2206,8 @@ class RenderEnum extends RenderSchema {
   }
 }
 
-class RenderOneOf extends RenderSchema {
-  const RenderOneOf({required super.common, required this.schemas})
-    : super(createsNewType: true);
+class RenderOneOf extends RenderNewType {
+  const RenderOneOf({required super.common, required this.schemas});
 
   /// The schemas of the resolved schema.
   final List<RenderSchema> schemas;
@@ -2463,9 +2462,8 @@ class RenderBinary extends RenderNoJson {
   bool get defaultCanConstConstruct => false;
 }
 
-class RenderEmptyObject extends RenderSchema {
-  const RenderEmptyObject({required super.common})
-    : super(createsNewType: true);
+class RenderEmptyObject extends RenderNewType {
+  const RenderEmptyObject({required super.common});
 
   @override
   dynamic get defaultValue => null;
