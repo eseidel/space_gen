@@ -623,6 +623,7 @@ Map<JsonPointer, String> _resolveCollisions(
     }
     final newNames = generateUniqueNames(name, pointers);
     for (final (index, pointer) in pointers.indexed) {
+      logger.detail('Collision: $name -> ${newNames[index]} @ $pointer');
       changedNames[pointer] = newNames[index];
     }
   }
