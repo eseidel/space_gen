@@ -227,7 +227,7 @@ String renderTestOperation({
   final resolvedOperation = resolveOperation(
     path: path,
     method: Method.post,
-    operation: parsedOperation,
+    op: parsedOperation,
     context: resolveContext,
   );
   final resolver = SpecResolver(quirks);

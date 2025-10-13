@@ -55,6 +55,14 @@ class ResolveContext {
   /// Only contains names that actually changed due to collisions
   final Map<JsonPointer, String> nameOverrides;
 
+  CommonProperties resolveCommonProperties(CommonProperties common) {
+    final resolvedName = getResolvedName(common.pointer, common.snakeName);
+    if (resolvedName != common.snakeName) {
+      return common.copyWith(snakeName: resolvedName);
+    }
+    return common;
+  }
+
   /// Get the resolved name for a pointer, falling back to the original name
   String getResolvedName(JsonPointer pointer, String originalName) {
     return nameOverrides[pointer] ?? originalName;
@@ -106,12 +114,8 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     throw Exception('Schema not found: $ref');
   }
 
-  // Get the resolved name for this schema
-  final resolvedName = context.getResolvedName(
-    schema.pointer,
-    schema.snakeName,
-  );
-  final resolvedCommon = schema.common.copyWith(snakeName: resolvedName);
+  // Schema snake_name might change due to collisions, get resolved name.
+  final resolvedCommon = context.resolveCommonProperties(schema.common);
 
   if (schema is SchemaObject) {
     return ResolvedObject(
@@ -391,37 +395,34 @@ List<ResolvedSecurityRequirement> _resolveSecurityRequirements({
 ResolvedOperation resolveOperation({
   required String path,
   required Method method,
-  required Operation operation,
+  required Operation op,
   required ResolveContext context,
 }) {
-  final requestBody = _resolveRequestBody(operation.requestBody, context);
-  final responses = _resolveResponses(operation.responses, context);
+  final requestBody = _resolveRequestBody(op.requestBody, context);
+  final responses = _resolveResponses(op.responses, context);
 
   // Need to resolve any local security requirements, or otherwise fall back to
   // the global security requirements.
   final securityRequirements = _resolveSecurityRequirements(
-    securityRequirements: operation.securityRequirements,
+    securityRequirements: op.securityRequirements,
     securitySchemes: context.securitySchemes,
     globalSecurityRequirements: context.globalSecurityRequirements,
   );
 
-  // Get the resolved name for this operation
-  final resolvedName = context.getResolvedName(
-    operation.pointer,
-    operation.snakeName,
-  );
+  // Operation snake_name might change due to collisions, get resolved name.
+  final resolvedName = context.getResolvedName(op.pointer, op.snakeName);
 
   return ResolvedOperation(
-    pointer: operation.pointer,
+    pointer: op.pointer,
     snakeName: resolvedName,
-    tags: operation.tags,
-    summary: operation.summary,
-    description: operation.description,
+    tags: op.tags,
+    summary: op.summary,
+    description: op.description,
     method: method,
     path: path,
     requestBody: requestBody,
     responses: responses,
-    parameters: _resolveParameters(operation.parameters, context),
+    parameters: _resolveParameters(op.parameters, context),
     securityRequirements: securityRequirements,
   );
 }
@@ -434,7 +435,7 @@ List<ResolvedOperation> _resolveOperations(
     return resolveOperation(
       path: pathItem.path,
       method: entry.key,
-      operation: entry.value,
+      op: entry.value,
       context: context,
     );
   }).toList();
