@@ -395,9 +395,10 @@ List<ResolvedSecurityRequirement> _resolveSecurityRequirements({
 ResolvedOperation resolveOperation({
   required String path,
   required Method method,
-  required Operation op,
+  required Operation operation,
   required ResolveContext context,
 }) {
+  final op = operation;
   final requestBody = _resolveRequestBody(op.requestBody, context);
   final responses = _resolveResponses(op.responses, context);
 
@@ -435,7 +436,7 @@ List<ResolvedOperation> _resolveOperations(
     return resolveOperation(
       path: pathItem.path,
       method: entry.key,
-      op: entry.value,
+      operation: entry.value,
       context: context,
     );
   }).toList();
