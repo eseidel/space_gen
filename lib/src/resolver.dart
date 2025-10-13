@@ -575,9 +575,9 @@ class _NameCollector extends Visitor {
   @override
   void visitSchema(Schema schema) {
     // We only need to worry about collisions schemas that create new types.
-    // if (!shouldCreateNewType(schema)) {
-    //   return;
-    // }
+    if (!shouldCreateNewType(schema)) {
+      return;
+    }
     _nameToPointers.putIfAbsent(schema.snakeName, () => []).add(schema.pointer);
   }
 
