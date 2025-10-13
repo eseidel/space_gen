@@ -271,7 +271,7 @@ void main() {
         hasFiles([
           'get_user200_response.dart',
           'account.dart',
-          'account_role_prop.dart',
+          'account_role.dart',
         ]),
       );
     });
@@ -376,8 +376,8 @@ void main() {
         hasFiles([
           'purchase_cargo_request.dart',
           'purchase_cargo201_response.dart',
-          'purchase_cargo201_response_data_prop.dart',
-          'purchase_cargo201_response_data_prop_cargo_prop.dart',
+          'purchase_cargo201_response_data.dart',
+          'purchase_cargo201_response_data_cargo.dart',
         ]),
       );
     });
@@ -594,7 +594,7 @@ void main() {
         out.childDirectory('lib/model'),
         hasFiles([
           'get_my_factions200_response.dart',
-          'get_my_factions200_response_data_prop_inner.dart',
+          'get_my_factions200_response_data_inner.dart',
         ]),
       );
     });
@@ -1084,10 +1084,77 @@ void main() {
         modelDir,
         hasFiles([
           'workflow_usage.dart',
-          'workflow_usage_billable_prop.dart',
-          'workflow_usage_billable_prop_u_b_u_n_t_u_prop.dart',
-          'workflow_usage_billable_prop_m_a_c_o_s_prop.dart',
-          'workflow_usage_billable_prop_w_i_n_d_o_w_s_prop.dart',
+          'workflow_usage_billable.dart',
+          'workflow_usage_billable_u_b_u_n_t_u.dart',
+          'workflow_usage_billable_m_a_c_o_s.dart',
+          'workflow_usage_billable_w_i_n_d_o_w_s.dart',
+        ]),
+      );
+    });
+
+    test('colliding names are renamed', () async {
+      // This sort of collision happens in the GitHub spec.
+      // e.g. #/components/schemas/code-scanning-variant-analysis/properties/status
+      // and #/components/schemas/code-scanning-variant-analysis-status
+      // Both result in CodeScanningVariantAnalysisStatus.
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'properties': {
+                          'user': {r'$ref': '#/components/schemas/user'},
+                          'role': {r'$ref': '#/components/schemas/user-role'},
+                        },
+                        'required': ['user'],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'user-role': {
+              'type': 'string',
+              'enum': ['admin', 'user'],
+            },
+            'user': {
+              'type': 'object',
+              'properties': {
+                'role': {
+                  'type': 'string',
+                  'enum': ['role1', 'role2'],
+                },
+              },
+            },
+          },
+        },
+      };
+      final fs = MemoryFileSystem.test();
+      final out = fs.directory('spacetraders');
+
+      await renderToDirectory(spec: spec, outDir: out);
+      expect(
+        out.childDirectory('lib/model'),
+        hasFiles([
+          'users200_response.dart',
+          'user.dart',
+          'user_role.dart',
+          'user_role_1.dart',
         ]),
       );
     });
@@ -1130,6 +1197,8 @@ void main() {
     });
   });
 
+  // While we still support logging, this should no longer happen since
+  // we detect collisions and fix them during resolution.
   test('logNameCollisions', () {
     final logger = _MockLogger();
     runWithLogger(

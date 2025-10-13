@@ -747,7 +747,7 @@ void main() {
         "            mDateTime: (json['m_date_time'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, DateTime.parse(value as String))),\n"
         "            mUri: (json['m_uri'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, Uri.parse(value as String))),\n"
         "            mMapOfString: (json['m_map_of_string'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, (value as Map<String, dynamic>).map((key, value) => MapEntry(key, value as String)))),\n"
-        "            mEnum: (json['m_enum'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, TestMEnumProp.fromJson(value as String))),\n"
+        "            mEnum: (json['m_enum'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, TestMEnum.fromJson(value as String))),\n"
         "            mUnknown: (json['m_unknown'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, value)),\n"
         '        );\n'
         '    }\n'
@@ -768,7 +768,7 @@ void main() {
         'final Map<String, DateTime>? mDateTime;\n'
         'final Map<String, Uri>? mUri;\n'
         'final Map<String, Map<String, String>>? mMapOfString;\n'
-        'final Map<String, TestMEnumProp>? mEnum;\n'
+        'final Map<String, TestMEnum>? mEnum;\n'
         'final Map<String, dynamic>? mUnknown;\n'
         '\n'
         '    Map<String, dynamic> toJson() {\n'
@@ -883,7 +883,7 @@ void main() {
         "            aDateTime: (json['a_date_time'] as List?)?.cast<DateTime>(),\n"
         "            aUri: (json['a_uri'] as List?)?.cast<Uri>(),\n"
         "            aArrayOfString: (json['a_array_of_string'] as List?)?.cast<List<String>>(),\n"
-        "            aEnum: (json['a_enum'] as List?)?.map<TestAEnumPropInner>((e) => TestAEnumPropInner.fromJson(e as String)).toList(),\n"
+        "            aEnum: (json['a_enum'] as List?)?.map<TestAEnumInner>((e) => TestAEnumInner.fromJson(e as String)).toList(),\n"
         "            aUnknown: (json['a_unknown'] as List?)?.cast<dynamic>(),\n"
         '        );\n'
         '    }\n'
@@ -904,7 +904,7 @@ void main() {
         'final List<DateTime>? aDateTime;\n'
         'final List<Uri>? aUri;\n'
         'final List<List<String>>? aArrayOfString;\n'
-        'final List<TestAEnumPropInner>? aEnum;\n'
+        'final List<TestAEnumInner>? aEnum;\n'
         'final List<dynamic>? aUnknown;\n'
         '\n'
         '    Map<String, dynamic> toJson() {\n'
@@ -1001,7 +1001,7 @@ void main() {
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
         '        return Test(\n'
-        '            a: const TestAProp(),\n'
+        '            a: const TestA(),\n'
         '        );\n'
         '    }\n'
         '\n'
@@ -1014,7 +1014,7 @@ void main() {
         '        return Test.fromJson(json);\n'
         '    }\n'
         '\n'
-        '    final TestAProp? a;\n'
+        '    final TestA? a;\n'
         '\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
@@ -1823,7 +1823,7 @@ void main() {
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           '        return Test(\n'
-          "            a: TestAProp.maybeFromJson(json['a'] as Map<String, dynamic>),\n"
+          "            a: TestA.maybeFromJson(json['a'] as Map<String, dynamic>),\n"
           '        );\n'
           '    }\n'
           '\n'
@@ -1836,7 +1836,7 @@ void main() {
           '        return Test.fromJson(json);\n'
           '    }\n'
           '\n'
-          '    final TestAProp? a;\n'
+          '    final TestA? a;\n'
           '\n'
           '    Map<String, dynamic> toJson() {\n'
           '        return {\n'

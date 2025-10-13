@@ -24,6 +24,7 @@ class ResolveContext {
     required this.refRegistry,
     required this.globalSecurityRequirements,
     required this.securitySchemes,
+    this.nameOverrides = const {},
   });
 
   /// Used for cases where we need a ResolveContext, but don't actually
@@ -33,6 +34,7 @@ class ResolveContext {
     RefRegistry? refRegistry,
     this.globalSecurityRequirements = const [],
     List<SecurityScheme>? securitySchemes,
+    this.nameOverrides = const {},
   }) : specUrl = specUrl ?? Uri.parse('https://example.com'),
        refRegistry = refRegistry ?? RefRegistry(),
        securitySchemes = securitySchemes ?? [];
@@ -48,6 +50,23 @@ class ResolveContext {
 
   /// The security schemes of the spec.
   final List<SecurityScheme> securitySchemes;
+
+  /// Optional name overrides for handling naming collisions
+  /// Only contains names that actually changed due to collisions
+  final Map<JsonPointer, String> nameOverrides;
+
+  CommonProperties resolveCommonProperties(CommonProperties common) {
+    final resolvedName = getResolvedName(common.pointer, common.snakeName);
+    if (resolvedName != common.snakeName) {
+      return common.copyWith(snakeName: resolvedName);
+    }
+    return common;
+  }
+
+  /// Get the resolved name for a pointer, falling back to the original name
+  String getResolvedName(JsonPointer pointer, String originalName) {
+    return nameOverrides[pointer] ?? originalName;
+  }
 
   /// The registry of all the objects we've parsed so far.
   /// Resolve a nullable [SchemaRef] into a nullable [SchemaObject].
@@ -95,9 +114,12 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     throw Exception('Schema not found: $ref');
   }
 
+  // Schema snake_name might change due to collisions, get resolved name.
+  final resolvedCommon = context.resolveCommonProperties(schema.common);
+
   if (schema is SchemaObject) {
     return ResolvedObject(
-      common: schema.common,
+      common: resolvedCommon,
       properties: schema.properties.map((key, value) {
         return MapEntry(key, resolveSchemaRef(value, context));
       }),
@@ -110,24 +132,24 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   }
   if (schema is SchemaEnum) {
     return ResolvedEnum(
-      common: schema.common,
+      common: resolvedCommon,
       defaultValue: schema.defaultValue,
       values: schema.enumValues,
     );
   }
   if (schema is SchemaBinary) {
-    return ResolvedBinary(common: schema.common);
+    return ResolvedBinary(common: resolvedCommon);
   }
   if (schema is SchemaPod) {
     return ResolvedPod(
-      common: schema.common,
+      common: resolvedCommon,
       type: schema.type,
       defaultValue: schema.defaultValue,
     );
   }
   if (schema is SchemaInteger) {
     return ResolvedInteger(
-      common: schema.common,
+      common: resolvedCommon,
       defaultValue: schema.defaultValue,
       maximum: schema.maximum,
       minimum: schema.minimum,
@@ -138,7 +160,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   }
   if (schema is SchemaString) {
     return ResolvedString(
-      common: schema.common,
+      common: resolvedCommon,
       defaultValue: schema.defaultValue,
       maxLength: schema.maxLength,
       minLength: schema.minLength,
@@ -147,7 +169,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   }
   if (schema is SchemaNumber) {
     return ResolvedNumber(
-      common: schema.common,
+      common: resolvedCommon,
       defaultValue: schema.defaultValue,
       maximum: schema.maximum,
       minimum: schema.minimum,
@@ -161,7 +183,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       _error('items must be a schema for type=array', schema.pointer);
     }
     return ResolvedArray(
-      common: schema.common,
+      common: resolvedCommon,
       items: items,
       defaultValue: schema.defaultValue,
       maxItems: schema.maxItems,
@@ -172,7 +194,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   if (schema is SchemaOneOf) {
     final oneOf = schema;
     return ResolvedOneOf(
-      common: schema.common,
+      common: resolvedCommon,
       schemas: oneOf.schemas.map((e) => resolveSchemaRef(e, context)).toList(),
     );
   }
@@ -192,7 +214,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
         _error('allOf only supports objects: $schema', allOf.pointer);
       }
     }
-    return ResolvedAllOf(common: schema.common, schemas: schemas);
+    return ResolvedAllOf(common: resolvedCommon, schemas: schemas);
   }
   if (schema is SchemaAnyOf) {
     final anyOf = schema;
@@ -228,22 +250,22 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
         return second;
       }
     }
-    return ResolvedAnyOf(common: schema.common, schemas: schemas);
+    return ResolvedAnyOf(common: resolvedCommon, schemas: schemas);
   }
   if (schema is SchemaNull) {
-    return ResolvedNull(common: schema.common);
+    return ResolvedNull(common: resolvedCommon);
   }
   if (schema is SchemaUnknown) {
-    return ResolvedUnknown(common: schema.common);
+    return ResolvedUnknown(common: resolvedCommon);
   }
   if (schema is SchemaMap) {
     return ResolvedMap(
-      common: schema.common,
+      common: resolvedCommon,
       valueSchema: resolveSchemaRef(schema.valueSchema, context),
     );
   }
   if (schema is SchemaEmptyObject) {
-    return ResolvedEmptyObject(common: schema.common);
+    return ResolvedEmptyObject(common: resolvedCommon);
   }
   _error('Missing code to resolve schema: $schema', schema.pointer);
 }
@@ -387,9 +409,15 @@ ResolvedOperation resolveOperation({
     globalSecurityRequirements: context.globalSecurityRequirements,
   );
 
+  // Operation snake_name might change due to collisions, get resolved name.
+  final resolvedName = context.getResolvedName(
+    operation.pointer,
+    operation.snakeName,
+  );
+
   return ResolvedOperation(
     pointer: operation.pointer,
-    snakeName: operation.snakeName,
+    snakeName: resolvedName,
     tags: operation.tags,
     summary: operation.summary,
     description: operation.description,
@@ -487,11 +515,82 @@ ResolvedTag _resolvedTag(Tag tag) {
   return ResolvedTag(name: tag.name, description: tag.description);
 }
 
+/// Collects all snake names from the parse tree to detect collisions
+class _NameCollector extends Visitor {
+  _NameCollector(this._nameToPointers);
+
+  final Map<String, List<JsonPointer>> _nameToPointers;
+
+  @override
+  void visitSchema(Schema schema) {
+    _nameToPointers.putIfAbsent(schema.snakeName, () => []).add(schema.pointer);
+  }
+
+  @override
+  void visitOperation(Operation op) {
+    _nameToPointers.putIfAbsent(op.snakeName, () => []).add(op.pointer);
+  }
+}
+
+Map<String, List<JsonPointer>> _collectNames(OpenApi spec) {
+  final nameToPointers = <String, List<JsonPointer>>{};
+  final collector = _NameCollector(nameToPointers);
+  SpecWalker(collector).walkRoot(spec);
+  return nameToPointers;
+}
+
+// TODO(eseidel): Provide a set of all used names so it can avoid colliding
+// with existing names.
+List<String> defaultGenerateUniqueNames(
+  String name,
+  List<JsonPointer> pointers,
+) {
+  final newNames = <String>[];
+  for (var index = 0; index < pointers.length; index++) {
+    final suffix = index == 0 ? '' : '_$index';
+    newNames.add('$name$suffix');
+  }
+  return newNames;
+}
+
+Map<JsonPointer, String> _resolveCollisions(
+  Map<String, List<JsonPointer>> nameToPointers, {
+  List<String> Function(String name, List<JsonPointer> pointers)
+      generateUniqueNames =
+      defaultGenerateUniqueNames,
+}) {
+  final changedNames = <JsonPointer, String>{};
+  for (final entry in nameToPointers.entries) {
+    final name = entry.key;
+    final pointers = entry.value;
+    if (pointers.length < 2) {
+      continue;
+    }
+    final newNames = generateUniqueNames(name, pointers);
+    for (final (index, pointer) in pointers.indexed) {
+      changedNames[pointer] = newNames[index];
+    }
+  }
+  return changedNames;
+}
+
+Map<JsonPointer, String> resolveNameCollisions(OpenApi spec) {
+  final nameToPointers = _collectNames(spec);
+  return _resolveCollisions(nameToPointers);
+}
+
 ResolvedSpec resolveSpec(
   OpenApi spec, {
   required Uri specUrl,
   bool logSchemas = true,
+  Map<JsonPointer, String> nameOverrides = const {},
 }) {
+  // Walk and look for snake_name collisions.
+  final nameOverrides = resolveNameCollisions(spec);
+  if (nameOverrides.isNotEmpty) {
+    logger.detail('Resolved ${nameOverrides.length} naming collisions');
+  }
+
   final refRegistry = RefRegistry();
   final builder = RegistryBuilder(specUrl, refRegistry);
   SpecWalker(builder).walkRoot(spec);
@@ -516,6 +615,7 @@ ResolvedSpec resolveSpec(
     refRegistry: refRegistry,
     globalSecurityRequirements: globalSecurityRequirements,
     securitySchemes: securitySchemes,
+    nameOverrides: nameOverrides,
   );
   return ResolvedSpec(
     title: spec.info.title,
