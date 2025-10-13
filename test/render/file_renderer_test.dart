@@ -1216,19 +1216,9 @@ void main() {
         hasFiles([
           'users200_response.dart',
           'user.dart',
-          'user_role_1.dart',
+          'user_role.dart',
         ]),
       );
-      verify(
-        () => logger.detail(
-          'Collision: user_role -> user_role @ #/components/schemas/user/properties/role',
-        ),
-      ).called(1);
-      verify(
-        () => logger.detail(
-          'Collision: user_role -> user_role_1 @ #/components/schemas/user-role',
-        ),
-      ).called(1);
     });
   });
 

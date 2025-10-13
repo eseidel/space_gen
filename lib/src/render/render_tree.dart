@@ -188,15 +188,6 @@ class Import extends Equatable {
   List<Object?> get props => [path, asName];
 }
 
-bool isTopLevelComponent(JsonPointer pointer) {
-  if (pointer.parts.length != 3) {
-    return false;
-  }
-  final first = pointer.parts[0];
-  final second = pointer.parts[1];
-  return first == 'components' && second == 'schemas';
-}
-
 class SpecResolver {
   const SpecResolver(this.quirks);
 
@@ -235,6 +226,7 @@ class SpecResolver {
       case ResolvedString():
         return RenderString(
           common: schema.common,
+          createsNewType: schema.createsNewType,
           defaultValue: schema.defaultValue,
           maxLength: schema.maxLength,
           minLength: schema.minLength,
@@ -243,6 +235,7 @@ class SpecResolver {
       case ResolvedNumber():
         return RenderNumber(
           common: schema.common,
+          createsNewType: schema.createsNewType,
           defaultValue: schema.defaultValue,
           maximum: schema.maximum,
           minimum: schema.minimum,
@@ -253,6 +246,7 @@ class SpecResolver {
       case ResolvedInteger():
         return RenderInteger(
           common: schema.common,
+          createsNewType: schema.createsNewType,
           defaultValue: schema.defaultValue,
           maximum: schema.maximum,
           minimum: schema.minimum,
@@ -929,7 +923,7 @@ class RenderResponse {
 }
 
 abstract class RenderSchema extends Equatable implements ToTemplateContext {
-  const RenderSchema({required this.common});
+  const RenderSchema({required this.common, required this.createsNewType});
 
   final CommonProperties common;
 
@@ -949,7 +943,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   bool get isDeprecated => common.isDeprecated;
 
   /// Whether this schema creates a new type and thus needs to be rendered.
-  bool get createsNewType;
+  final bool createsNewType;
 
   /// The default value of this schema.
   dynamic get defaultValue;
@@ -968,16 +962,13 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   // themselves during construction.
   Iterable<String> get validationCalls => const [];
 
-  /// Whether this schema only contains json types.
-  bool get onlyJsonTypes;
+  /// Whether this schema should call toJson to convert to json.
+  /// Subclasses should override this to return true if the schema should call
+  /// toJson to convert to json.
+  bool get shouldCallToJson => createsNewType;
 
   @override
   List<Object?> get props => [snakeName, pointer];
-
-  // Unclear if this is an OpenApi generator quirk or desired behavior,
-  // but openapi creates a new file for each top level component, even
-  // if it's a simple type.  Matching this behavior for now.
-  bool get hasExplicitName => isTopLevelComponent(pointer);
 
   String orDefaultExpression({
     required SchemaRenderer context,
@@ -1070,7 +1061,7 @@ class RenderPod extends RenderSchema {
     required super.common,
     required this.type,
     this.defaultValue,
-  });
+  }) : super(createsNewType: false);
 
   /// The type of the resolved schema.
   final PodType type;
@@ -1079,12 +1070,15 @@ class RenderPod extends RenderSchema {
   final dynamic defaultValue;
 
   @override
-  bool get onlyJsonTypes {
+  bool get shouldCallToJson {
+    if (createsNewType) {
+      return true;
+    }
     return switch (type) {
       // Bool is already a json type.
-      PodType.boolean => true,
+      PodType.boolean => false,
       // These require serialization to a string.
-      PodType.dateTime || PodType.uri || PodType.uriTemplate => false,
+      PodType.dateTime || PodType.uri || PodType.uriTemplate => true,
     };
   }
 
@@ -1140,9 +1134,6 @@ class RenderPod extends RenderSchema {
     ...super.additionalImports,
     if (type == PodType.uriTemplate) const Import('package:uri/uri.dart'),
   ];
-
-  @override
-  bool get createsNewType => false;
 
   @override
   String toJsonExpression(
@@ -1207,16 +1198,12 @@ class RenderPod extends RenderSchema {
 }
 
 abstract class RenderNewType extends RenderSchema {
-  const RenderNewType({required super.common});
-
-  /// Whether this new type creates a new type and thus needs to be rendered.
-  @override
-  bool get createsNewType => true;
+  const RenderNewType({required super.common}) : super(createsNewType: true);
 
   @override
-  bool get onlyJsonTypes => false;
+  bool get shouldCallToJson => true;
 
-  /// The class name of the new type.
+  /// The class name of the new type. Used by subclasses.
   String get className => camelFromSnake(snakeName);
 
   @override
@@ -1240,6 +1227,7 @@ class RenderString extends RenderSchema {
     required this.maxLength,
     required this.minLength,
     required this.pattern,
+    required super.createsNewType,
   });
 
   @override
@@ -1269,12 +1257,6 @@ class RenderString extends RenderSchema {
     final value = defaultValue;
     return value == null ? null : quoteString(value);
   }
-
-  @override
-  bool get createsNewType => hasExplicitName;
-
-  @override
-  bool get onlyJsonTypes => !createsNewType;
 
   @override
   Iterable<String> get validationCalls {
@@ -1369,6 +1351,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     required this.exclusiveMaximum,
     required this.exclusiveMinimum,
     required this.multipleOf,
+    required super.createsNewType,
   });
 
   @override
@@ -1398,14 +1381,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     exclusiveMaximum,
     exclusiveMinimum,
     multipleOf,
-    hasExplicitName,
   ];
-
-  @override
-  bool get createsNewType => hasExplicitName;
-
-  @override
-  bool get onlyJsonTypes => !createsNewType;
 
   // Careful, this might not be true depending on validations.
   @override
@@ -1528,6 +1504,7 @@ class RenderNumber extends RenderNumeric<double> {
     required super.exclusiveMaximum,
     required super.exclusiveMinimum,
     required super.multipleOf,
+    required super.createsNewType,
   });
 
   @override
@@ -1551,6 +1528,7 @@ class RenderInteger extends RenderNumeric<int> {
     required super.exclusiveMaximum,
     required super.exclusiveMinimum,
     required super.multipleOf,
+    required super.createsNewType,
   });
 
   @override
@@ -1874,7 +1852,7 @@ class RenderArray extends RenderSchema {
     this.maxItems,
     this.minItems,
     this.uniqueItems = false,
-  });
+  }) : super(createsNewType: false);
 
   /// The items of the resolved schema.
   final RenderSchema items;
@@ -1922,7 +1900,7 @@ class RenderArray extends RenderSchema {
   ];
 
   @override
-  bool get onlyJsonTypes => items.onlyJsonTypes;
+  bool get shouldCallToJson => items.shouldCallToJson;
 
   /// The type name of this schema.
   @override
@@ -1931,9 +1909,6 @@ class RenderArray extends RenderSchema {
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
       'listsEqual(this.$name, other.$name)';
-
-  @override
-  bool get createsNewType => false;
 
   @override
   String? defaultValueString(SchemaRenderer context) {
@@ -1962,7 +1937,7 @@ class RenderArray extends RenderSchema {
     required bool dartIsNullable,
   }) {
     // Pod types don't need toJson.
-    if (items.onlyJsonTypes) {
+    if (!items.shouldCallToJson) {
       return dartName;
     }
     final nameCall = dartIsNullable ? '$dartName?' : dartName;
@@ -2028,7 +2003,7 @@ class RenderMap extends RenderSchema {
     required super.common,
     required this.valueSchema,
     this.defaultValue,
-  });
+  }) : super(createsNewType: false);
 
   final RenderSchema valueSchema;
 
@@ -2039,7 +2014,7 @@ class RenderMap extends RenderSchema {
   List<Object?> get props => [super.props, valueSchema, defaultValue];
 
   @override
-  bool get onlyJsonTypes => valueSchema.onlyJsonTypes;
+  bool get shouldCallToJson => valueSchema.shouldCallToJson;
 
   @override
   bool get defaultCanConstConstruct {
@@ -2060,9 +2035,6 @@ class RenderMap extends RenderSchema {
       'mapsEqual(this.$name, other.$name)';
 
   @override
-  bool get createsNewType => false;
-
-  @override
   String jsonStorageType({required bool isNullable}) => 'Map<String, dynamic>';
 
   @override
@@ -2072,7 +2044,7 @@ class RenderMap extends RenderSchema {
     required bool dartIsNullable,
   }) {
     // Nothing to do if the value schema is only json types.
-    if (valueSchema.onlyJsonTypes) {
+    if (!valueSchema.shouldCallToJson) {
       return dartName;
     }
     final valueToJson = valueSchema.toJsonExpression(
@@ -2366,7 +2338,7 @@ class RenderParameter implements CanBeParameter {
 }
 
 class RenderUnknown extends RenderSchema {
-  const RenderUnknown({required super.common});
+  const RenderUnknown({required super.common}) : super(createsNewType: false);
 
   @override
   dynamic get defaultValue => null;
@@ -2375,14 +2347,11 @@ class RenderUnknown extends RenderSchema {
   String get typeName => 'dynamic';
 
   @override
-  bool get createsNewType => false;
-
-  @override
   bool get defaultCanConstConstruct => false;
 
   // We never deserialize or serialize unknown types.
   @override
-  bool get onlyJsonTypes => true;
+  bool get shouldCallToJson => false;
 
   @override
   String jsonStorageType({required bool isNullable}) => 'dynamic';
@@ -2424,9 +2393,6 @@ class RenderVoid extends RenderNoJson {
       'throw UnimplementedError("RenderVoid.equalsExpression")';
 
   @override
-  bool get createsNewType => false;
-
-  @override
   bool get defaultCanConstConstruct => false;
 
   @override
@@ -2439,11 +2405,12 @@ class RenderVoid extends RenderNoJson {
   // a void type, maybe we need a "return expression" value instead?
 }
 
+/// A schema that represents a type which cannot be converted to json.
 abstract class RenderNoJson extends RenderSchema {
-  const RenderNoJson({required super.common});
+  const RenderNoJson({required super.common}) : super(createsNewType: false);
 
   @override
-  bool get onlyJsonTypes => false;
+  bool get shouldCallToJson => false;
 
   @override
   String jsonStorageType({required bool isNullable}) =>
@@ -2487,9 +2454,6 @@ class RenderBinary extends RenderNoJson {
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
       'listsEqual(this.$name, other.$name)';
-
-  @override
-  bool get createsNewType => false;
 
   @override
   bool get defaultCanConstConstruct => false;

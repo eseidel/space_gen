@@ -114,10 +114,13 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     throw Exception('Schema not found: $ref');
   }
 
+  final createsNewType = shouldCreateNewType(schema);
+
   // Schema snake_name might change due to collisions, get resolved name.
   final resolvedCommon = context.resolveCommonProperties(schema.common);
 
   if (schema is SchemaObject) {
+    assert(createsNewType, 'SchemaObject should create a new type');
     return ResolvedObject(
       common: resolvedCommon,
       properties: schema.properties.map((key, value) {
@@ -131,6 +134,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     );
   }
   if (schema is SchemaEnum) {
+    assert(createsNewType, 'SchemaEnum should create a new type');
     return ResolvedEnum(
       common: resolvedCommon,
       defaultValue: schema.defaultValue,
@@ -138,18 +142,23 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     );
   }
   if (schema is SchemaBinary) {
-    return ResolvedBinary(common: resolvedCommon);
+    return ResolvedBinary(
+      common: resolvedCommon,
+      createsNewType: createsNewType,
+    );
   }
   if (schema is SchemaPod) {
     return ResolvedPod(
       common: resolvedCommon,
       type: schema.type,
+      createsNewType: createsNewType,
       defaultValue: schema.defaultValue,
     );
   }
   if (schema is SchemaInteger) {
     return ResolvedInteger(
       common: resolvedCommon,
+      createsNewType: createsNewType,
       defaultValue: schema.defaultValue,
       maximum: schema.maximum,
       minimum: schema.minimum,
@@ -161,6 +170,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   if (schema is SchemaString) {
     return ResolvedString(
       common: resolvedCommon,
+      createsNewType: createsNewType,
       defaultValue: schema.defaultValue,
       maxLength: schema.maxLength,
       minLength: schema.minLength,
@@ -170,6 +180,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   if (schema is SchemaNumber) {
     return ResolvedNumber(
       common: resolvedCommon,
+      createsNewType: createsNewType,
       defaultValue: schema.defaultValue,
       maximum: schema.maximum,
       minimum: schema.minimum,
@@ -185,6 +196,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     return ResolvedArray(
       common: resolvedCommon,
       items: items,
+      createsNewType: createsNewType,
       defaultValue: schema.defaultValue,
       maxItems: schema.maxItems,
       minItems: schema.minItems,
@@ -192,6 +204,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     );
   }
   if (schema is SchemaOneOf) {
+    assert(createsNewType, 'SchemaOneOf should create a new type');
     final oneOf = schema;
     return ResolvedOneOf(
       common: resolvedCommon,
@@ -199,6 +212,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     );
   }
   if (schema is SchemaAllOf) {
+    assert(createsNewType, 'SchemaAllOf should create a new type');
     final allOf = schema;
     final schemas = allOf.schemas
         .map((e) => resolveSchemaRef(e, context))
@@ -217,6 +231,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     return ResolvedAllOf(common: resolvedCommon, schemas: schemas);
   }
   if (schema is SchemaAnyOf) {
+    assert(createsNewType, 'SchemaAnyOf should create a new type');
     final anyOf = schema;
     final schemas = anyOf.schemas
         .map((e) => resolveSchemaRef(e, context))
@@ -253,18 +268,24 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     return ResolvedAnyOf(common: resolvedCommon, schemas: schemas);
   }
   if (schema is SchemaNull) {
+    assert(!createsNewType, 'SchemaNull should not create a new type');
     return ResolvedNull(common: resolvedCommon);
   }
   if (schema is SchemaUnknown) {
-    return ResolvedUnknown(common: resolvedCommon);
+    return ResolvedUnknown(
+      common: resolvedCommon,
+      createsNewType: createsNewType,
+    );
   }
   if (schema is SchemaMap) {
     return ResolvedMap(
       common: resolvedCommon,
       valueSchema: resolveSchemaRef(schema.valueSchema, context),
+      createsNewType: createsNewType,
     );
   }
   if (schema is SchemaEmptyObject) {
+    assert(createsNewType, 'SchemaEmptyObject should create a new type');
     return ResolvedEmptyObject(common: resolvedCommon);
   }
   _error('Missing code to resolve schema: $schema', schema.pointer);
@@ -515,6 +536,36 @@ ResolvedTag _resolvedTag(Tag tag) {
   return ResolvedTag(name: tag.name, description: tag.description);
 }
 
+bool isTopLevelComponent(JsonPointer pointer) {
+  if (pointer.parts.length != 3) {
+    return false;
+  }
+  final first = pointer.parts[0];
+  final second = pointer.parts[1];
+  return first == 'components' && second == 'schemas';
+}
+
+bool shouldCreateNewType(Schema schema) {
+  switch (schema) {
+    case SchemaString():
+    case SchemaNumber():
+    case SchemaArray():
+    case SchemaMap():
+    case SchemaNull():
+    case SchemaUnknown():
+    case SchemaPod():
+    case SchemaBinary():
+    case SchemaNumeric():
+      // OpenApi creates a new file for each top level component, even
+      // if it's a simple type.  Matching this behavior for now.
+      return isTopLevelComponent(schema.pointer);
+    case SchemaObjectBase():
+    case SchemaEmptyObject():
+    case SchemaEnum():
+      return true;
+  }
+}
+
 /// Collects all snake names from the parse tree to detect collisions
 class _NameCollector extends Visitor {
   _NameCollector(this._nameToPointers);
@@ -523,6 +574,10 @@ class _NameCollector extends Visitor {
 
   @override
   void visitSchema(Schema schema) {
+    // We only need to worry about collisions schemas that create new types.
+    if (!shouldCreateNewType(schema)) {
+      return;
+    }
     _nameToPointers.putIfAbsent(schema.snakeName, () => []).add(schema.pointer);
   }
 
@@ -794,9 +849,12 @@ class ResolvedResponse {
 }
 
 abstract class ResolvedSchema extends Equatable {
-  const ResolvedSchema({required this.common});
+  const ResolvedSchema({required this.common, required this.createsNewType});
 
   final CommonProperties common;
+
+  /// Whether this schema creates a new type and thus needs to be rendered.
+  final bool createsNewType;
 
   JsonPointer get pointer => common.pointer;
 
@@ -814,6 +872,7 @@ abstract class ResolvedSchema extends Equatable {
 class ResolvedString extends ResolvedSchema {
   const ResolvedString({
     required super.common,
+    required super.createsNewType,
     this.defaultValue,
     this.maxLength,
     this.minLength,
@@ -836,6 +895,7 @@ class ResolvedString extends ResolvedSchema {
   ResolvedString copyWith({CommonProperties? common}) {
     return ResolvedString(
       common: common ?? this.common,
+      createsNewType: createsNewType,
       defaultValue: defaultValue,
       maxLength: maxLength,
       minLength: minLength,
@@ -856,6 +916,7 @@ class ResolvedString extends ResolvedSchema {
 abstract class ResolvedNumeric<T extends num> extends ResolvedSchema {
   const ResolvedNumeric({
     required super.common,
+    required super.createsNewType,
     this.defaultValue,
     this.maximum,
     this.minimum,
@@ -896,6 +957,7 @@ abstract class ResolvedNumeric<T extends num> extends ResolvedSchema {
 class ResolvedNumber extends ResolvedNumeric<double> {
   const ResolvedNumber({
     required super.common,
+    required super.createsNewType,
     super.maximum,
     super.minimum,
     super.exclusiveMaximum,
@@ -908,6 +970,7 @@ class ResolvedNumber extends ResolvedNumeric<double> {
   ResolvedNumber copyWith({CommonProperties? common}) {
     return ResolvedNumber(
       common: common ?? this.common,
+      createsNewType: createsNewType,
       defaultValue: defaultValue,
       maximum: maximum,
       minimum: minimum,
@@ -921,6 +984,7 @@ class ResolvedNumber extends ResolvedNumeric<double> {
 class ResolvedInteger extends ResolvedNumeric<int> {
   const ResolvedInteger({
     required super.common,
+    required super.createsNewType,
     super.maximum,
     super.minimum,
     super.exclusiveMaximum,
@@ -933,6 +997,7 @@ class ResolvedInteger extends ResolvedNumeric<int> {
   ResolvedInteger copyWith({CommonProperties? common}) {
     return ResolvedInteger(
       common: common ?? this.common,
+      createsNewType: createsNewType,
       defaultValue: defaultValue,
       maximum: maximum,
       minimum: minimum,
@@ -948,6 +1013,7 @@ class ResolvedPod extends ResolvedSchema {
   const ResolvedPod({
     required super.common,
     required this.type,
+    required super.createsNewType,
     this.defaultValue,
   });
 
@@ -962,6 +1028,7 @@ class ResolvedPod extends ResolvedSchema {
     return ResolvedPod(
       common: common ?? this.common,
       type: type,
+      createsNewType: createsNewType,
       defaultValue: defaultValue,
     );
   }
@@ -974,6 +1041,7 @@ class ResolvedArray extends ResolvedSchema {
   const ResolvedArray({
     required super.common,
     required this.items,
+    required super.createsNewType,
     this.defaultValue,
     this.maxItems,
     this.minItems,
@@ -1000,6 +1068,7 @@ class ResolvedArray extends ResolvedSchema {
     return ResolvedArray(
       common: common ?? this.common,
       items: items,
+      createsNewType: createsNewType,
       defaultValue: defaultValue,
       maxItems: maxItems,
       minItems: minItems,
@@ -1023,7 +1092,7 @@ class ResolvedEnum extends ResolvedSchema {
     required super.common,
     required this.defaultValue,
     required this.values,
-  });
+  }) : super(createsNewType: true);
 
   /// The values of the resolved schema.
   // If we support non-string, non-integer enums, we will need to fix path
@@ -1052,7 +1121,7 @@ class ResolvedObject extends ResolvedSchema {
     required this.properties,
     required this.additionalProperties,
     required this.requiredProperties,
-  });
+  }) : super(createsNewType: true);
 
   /// The properties of the resolved schema.
   final Map<String, ResolvedSchema> properties;
@@ -1085,17 +1154,21 @@ class ResolvedObject extends ResolvedSchema {
 
 /// An unknown schema, typically means empty (e.g. schema: {})
 class ResolvedUnknown extends ResolvedSchema {
-  const ResolvedUnknown({required super.common});
+  const ResolvedUnknown({required super.common, required super.createsNewType});
 
   @override
   ResolvedUnknown copyWith({CommonProperties? common}) {
-    return ResolvedUnknown(common: common ?? this.common);
+    return ResolvedUnknown(
+      common: common ?? this.common,
+      createsNewType: createsNewType,
+    );
   }
 }
 
 abstract class ResolvedSchemaCollection extends ResolvedSchema {
   const ResolvedSchemaCollection({
     required super.common,
+    required super.createsNewType,
     required this.schemas,
   });
 
@@ -1107,7 +1180,8 @@ abstract class ResolvedSchemaCollection extends ResolvedSchema {
 }
 
 class ResolvedOneOf extends ResolvedSchemaCollection {
-  const ResolvedOneOf({required super.schemas, required super.common});
+  const ResolvedOneOf({required super.schemas, required super.common})
+    : super(createsNewType: true);
 
   @override
   ResolvedOneOf copyWith({CommonProperties? common}) {
@@ -1116,7 +1190,8 @@ class ResolvedOneOf extends ResolvedSchemaCollection {
 }
 
 class ResolvedAnyOf extends ResolvedSchemaCollection {
-  const ResolvedAnyOf({required super.schemas, required super.common});
+  const ResolvedAnyOf({required super.schemas, required super.common})
+    : super(createsNewType: true);
 
   @override
   ResolvedAnyOf copyWith({CommonProperties? common}) {
@@ -1125,7 +1200,8 @@ class ResolvedAnyOf extends ResolvedSchemaCollection {
 }
 
 class ResolvedAllOf extends ResolvedSchemaCollection {
-  const ResolvedAllOf({required super.schemas, required super.common});
+  const ResolvedAllOf({required super.schemas, required super.common})
+    : super(createsNewType: true);
 
   @override
   ResolvedAllOf copyWith({CommonProperties? common}) {
@@ -1134,7 +1210,7 @@ class ResolvedAllOf extends ResolvedSchemaCollection {
 }
 
 class ResolvedVoid extends ResolvedSchema {
-  const ResolvedVoid({required super.common});
+  const ResolvedVoid({required super.common}) : super(createsNewType: false);
 
   @override
   ResolvedVoid copyWith({CommonProperties? common}) {
@@ -1143,16 +1219,19 @@ class ResolvedVoid extends ResolvedSchema {
 }
 
 class ResolvedBinary extends ResolvedSchema {
-  const ResolvedBinary({required super.common});
+  const ResolvedBinary({required super.common, required super.createsNewType});
 
   @override
   ResolvedBinary copyWith({CommonProperties? common}) {
-    return ResolvedBinary(common: common ?? this.common);
+    return ResolvedBinary(
+      common: common ?? this.common,
+      createsNewType: createsNewType,
+    );
   }
 }
 
 class ResolvedNull extends ResolvedSchema {
-  const ResolvedNull({required super.common});
+  const ResolvedNull({required super.common}) : super(createsNewType: false);
 
   @override
   ResolvedNull copyWith({CommonProperties? common}) {
@@ -1161,18 +1240,27 @@ class ResolvedNull extends ResolvedSchema {
 }
 
 class ResolvedMap extends ResolvedSchema {
-  const ResolvedMap({required super.common, required this.valueSchema});
+  const ResolvedMap({
+    required super.common,
+    required this.valueSchema,
+    required super.createsNewType,
+  });
 
   final ResolvedSchema valueSchema;
 
   @override
   ResolvedMap copyWith({CommonProperties? common}) {
-    return ResolvedMap(common: common ?? this.common, valueSchema: valueSchema);
+    return ResolvedMap(
+      common: common ?? this.common,
+      valueSchema: valueSchema,
+      createsNewType: createsNewType,
+    );
   }
 }
 
 class ResolvedEmptyObject extends ResolvedSchema {
-  const ResolvedEmptyObject({required super.common});
+  const ResolvedEmptyObject({required super.common})
+    : super(createsNewType: true);
 
   @override
   ResolvedEmptyObject copyWith({CommonProperties? common}) {

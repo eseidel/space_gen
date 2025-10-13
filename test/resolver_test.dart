@@ -593,12 +593,14 @@ void main() {
           '#/paths//users/get/responses/201/content/application/json/schema',
         );
         final schema1 = ResolvedArray(
+          createsNewType: false,
           common: CommonProperties.test(
             snakeName: 'Foo',
             pointer: pointer200,
             description: 'Foo',
           ),
           items: ResolvedPod(
+            createsNewType: false,
             common: CommonProperties.test(
               snakeName: 'Foo',
               pointer: pointer200,
@@ -608,12 +610,14 @@ void main() {
           ),
         );
         final schema2 = ResolvedArray(
+          createsNewType: false,
           common: CommonProperties.test(
             snakeName: 'Foo',
             pointer: pointer201,
             description: 'Foo',
           ),
           items: ResolvedPod(
+            createsNewType: false,
             common: CommonProperties.test(
               snakeName: 'Foo',
               pointer: pointer200,
@@ -631,12 +635,14 @@ void main() {
           isNot(
             equals(
               ResolvedArray(
+                createsNewType: false,
                 common: CommonProperties.test(
                   snakeName: 'Foo',
                   pointer: pointer200,
                   description: 'Foo',
                 ),
                 items: ResolvedInteger(
+                  createsNewType: false,
                   common: CommonProperties.test(
                     snakeName: 'Foo',
                     pointer: pointer200,
@@ -650,6 +656,7 @@ void main() {
       });
       test('RenderString', () {
         final schema1 = ResolvedString(
+          createsNewType: false,
           common: CommonProperties.test(
             snakeName: 'Foo',
             pointer: JsonPointer.parse(
@@ -662,6 +669,7 @@ void main() {
           minLength: 1,
         );
         final schema2 = ResolvedString(
+          createsNewType: false,
           common: CommonProperties.test(
             snakeName: 'Foo',
             pointer: JsonPointer.parse(
@@ -715,6 +723,7 @@ void main() {
           ),
           schemas: [
             ResolvedPod(
+              createsNewType: false,
               common: CommonProperties.test(
                 snakeName: 'Foo',
                 pointer: pointer200,
@@ -732,6 +741,7 @@ void main() {
           ),
           schemas: [
             ResolvedPod(
+              createsNewType: false,
               common: CommonProperties.test(
                 snakeName: 'Foo',
                 pointer: pointer200,
@@ -747,6 +757,7 @@ void main() {
       });
       test('ResolvedNumber', () {
         final schema1 = ResolvedNumber(
+          createsNewType: false,
           common: CommonProperties.test(
             snakeName: 'Foo',
             pointer: JsonPointer.parse(
@@ -758,6 +769,7 @@ void main() {
         // Same schema.
         expect(schema1, equals(schema1));
         final schema2 = ResolvedNumber(
+          createsNewType: false,
           common: CommonProperties.test(
             snakeName: 'Foo',
             pointer: JsonPointer.parse(
@@ -772,6 +784,7 @@ void main() {
       });
       test('ResolvedInteger', () {
         final schema1 = ResolvedInteger(
+          createsNewType: false,
           common: CommonProperties.test(
             snakeName: 'Foo',
             pointer: JsonPointer.parse(
@@ -783,6 +796,7 @@ void main() {
         // Same schema.
         expect(schema1, equals(schema1));
         final schema2 = ResolvedInteger(
+          createsNewType: false,
           common: CommonProperties.test(
             snakeName: 'Foo',
             pointer: JsonPointer.parse(
@@ -856,7 +870,13 @@ void main() {
       test('ResolvedAnyOf', () {
         final schema = ResolvedAnyOf(
           common: beforeCommon,
-          schemas: [ResolvedPod(common: beforeCommon, type: PodType.boolean)],
+          schemas: [
+            ResolvedPod(
+              createsNewType: false,
+              common: beforeCommon,
+              type: PodType.boolean,
+            ),
+          ],
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.schemas, equals(schema.schemas));
@@ -865,7 +885,13 @@ void main() {
       test('ResolvedAllOf', () {
         final schema = ResolvedAllOf(
           common: beforeCommon,
-          schemas: [ResolvedPod(common: beforeCommon, type: PodType.boolean)],
+          schemas: [
+            ResolvedPod(
+              createsNewType: false,
+              common: beforeCommon,
+              type: PodType.boolean,
+            ),
+          ],
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.schemas, equals(schema.schemas));
@@ -874,7 +900,13 @@ void main() {
       test('ResolvedOneOf', () {
         final schema = ResolvedOneOf(
           common: beforeCommon,
-          schemas: [ResolvedPod(common: beforeCommon, type: PodType.boolean)],
+          schemas: [
+            ResolvedPod(
+              createsNewType: false,
+              common: beforeCommon,
+              type: PodType.boolean,
+            ),
+          ],
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.schemas, equals(schema.schemas));
@@ -882,15 +914,23 @@ void main() {
       });
       test('ResolvedArray', () {
         final schema = ResolvedArray(
+          createsNewType: false,
           common: beforeCommon,
-          items: ResolvedPod(common: beforeCommon, type: PodType.boolean),
+          items: ResolvedPod(
+            createsNewType: false,
+            common: beforeCommon,
+            type: PodType.boolean,
+          ),
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.items, equals(schema.items));
         });
       });
       test('ResolvedNumber', () {
-        final schema = ResolvedNumber(common: beforeCommon);
+        final schema = ResolvedNumber(
+          createsNewType: false,
+          common: beforeCommon,
+        );
         testCopyWith(schema, (schema, copy) {
           expect(copy.maximum, equals(schema.maximum));
           expect(copy.minimum, equals(schema.minimum));
@@ -898,7 +938,10 @@ void main() {
         });
       });
       test('ResolvedInteger', () {
-        final schema = ResolvedInteger(common: beforeCommon);
+        final schema = ResolvedInteger(
+          createsNewType: false,
+          common: beforeCommon,
+        );
         testCopyWith(schema, (schema, copy) {
           expect(copy.maximum, equals(schema.maximum));
           expect(copy.minimum, equals(schema.minimum));
@@ -906,7 +949,10 @@ void main() {
         });
       });
       test('ResolvedString', () {
-        final schema = ResolvedString(common: beforeCommon);
+        final schema = ResolvedString(
+          createsNewType: false,
+          common: beforeCommon,
+        );
         testCopyWith(schema, (schema, copy) {
           expect(copy.defaultValue, equals(schema.defaultValue));
           expect(copy.maxLength, equals(schema.maxLength));
@@ -914,26 +960,40 @@ void main() {
         });
       });
       test('ResolvedPod', () {
-        final schema = ResolvedPod(common: beforeCommon, type: PodType.boolean);
+        final schema = ResolvedPod(
+          createsNewType: false,
+          common: beforeCommon,
+          type: PodType.boolean,
+        );
         testCopyWith(schema, (schema, copy) {
           expect(copy.type, equals(schema.type));
         });
       });
       test('ResolvedMap', () {
         final schema = ResolvedMap(
+          createsNewType: false,
           common: beforeCommon,
-          valueSchema: ResolvedPod(common: beforeCommon, type: PodType.boolean),
+          valueSchema: ResolvedPod(
+            createsNewType: false,
+            common: beforeCommon,
+            type: PodType.boolean,
+          ),
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.valueSchema, equals(schema.valueSchema));
         });
       });
       test('ResolvedBinary', () {
-        final schema = ResolvedBinary(common: beforeCommon);
+        final schema = ResolvedBinary(
+          createsNewType: false,
+          common: beforeCommon,
+        );
         testCopyWith(schema);
       });
       test('ResolvedUnknown', () {
-        testCopyWith(ResolvedUnknown(common: beforeCommon));
+        testCopyWith(
+          ResolvedUnknown(createsNewType: false, common: beforeCommon),
+        );
       });
       test('ResolvedNull', () {
         testCopyWith(ResolvedNull(common: beforeCommon));

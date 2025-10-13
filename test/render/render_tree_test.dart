@@ -245,6 +245,7 @@ void main() {
 
     test('RenderString', () {
       const a = RenderString(
+        createsNewType: false,
         common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
@@ -258,6 +259,7 @@ void main() {
       expect(a.equalsIgnoringName(a), isTrue);
 
       const b = RenderString(
+        createsNewType: false,
         common: CommonProperties.test(
           snakeName: 'b',
           pointer: JsonPointer.empty(),
@@ -271,6 +273,7 @@ void main() {
       expect(a.equalsIgnoringName(b), isFalse);
 
       const c = RenderString(
+        createsNewType: false,
         common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
@@ -286,6 +289,7 @@ void main() {
 
     test('RenderInteger', () {
       const a = RenderInteger(
+        createsNewType: false,
         common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
@@ -301,6 +305,7 @@ void main() {
       expect(a.equalsIgnoringName(a), isTrue);
 
       const b = RenderInteger(
+        createsNewType: false,
         common: CommonProperties.test(
           snakeName: 'b',
           pointer: JsonPointer.empty(),
@@ -316,6 +321,7 @@ void main() {
       expect(a.equalsIgnoringName(b), isFalse);
 
       const c = RenderInteger(
+        createsNewType: false,
         common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
@@ -512,6 +518,7 @@ void main() {
           ),
           properties: <String, RenderSchema>{
             'a': RenderString(
+              createsNewType: false,
               common: CommonProperties.test(
                 snakeName: 'a',
                 pointer: JsonPointer.empty(),
