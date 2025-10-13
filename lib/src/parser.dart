@@ -674,10 +674,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     final snakeName = snakeFromCamel(name);
     final childContext = propertiesJson
         .childAsMap(name)
-        .addSnakeName(snakeName)
-        // TODO(eseidel): Remove this once we have a better way to detect
-        // and avoid name collisions.
-        .addSnakeName('prop');
+        .addSnakeName(snakeName);
     properties[name] = parseSchemaOrRef(childContext);
   }
 

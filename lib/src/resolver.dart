@@ -539,7 +539,9 @@ Map<String, List<JsonPointer>> _collectNames(OpenApi spec) {
   return nameToPointers;
 }
 
-List<String> defaultRenameCollisions(
+// TODO(eseidel): Provide a set of all used names so it can avoid colliding
+// with existing names.
+List<String> defaultGenerateUniqueNames(
   String name,
   List<JsonPointer> pointers,
 ) {
@@ -554,8 +556,8 @@ List<String> defaultRenameCollisions(
 Map<JsonPointer, String> _resolveCollisions(
   Map<String, List<JsonPointer>> nameToPointers, {
   List<String> Function(String name, List<JsonPointer> pointers)
-      renameCollisions =
-      defaultRenameCollisions,
+      generateUniqueNames =
+      defaultGenerateUniqueNames,
 }) {
   final changedNames = <JsonPointer, String>{};
   for (final entry in nameToPointers.entries) {
@@ -564,7 +566,7 @@ Map<JsonPointer, String> _resolveCollisions(
     if (pointers.length < 2) {
       continue;
     }
-    final newNames = renameCollisions(name, pointers);
+    final newNames = generateUniqueNames(name, pointers);
     for (final (index, pointer) in pointers.indexed) {
       changedNames[pointer] = newNames[index];
     }
