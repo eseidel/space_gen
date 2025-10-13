@@ -24,6 +24,7 @@ class ResolveContext {
     required this.refRegistry,
     required this.globalSecurityRequirements,
     required this.securitySchemes,
+    this.nameOverrides = const {},
   });
 
   /// Used for cases where we need a ResolveContext, but don't actually
@@ -33,6 +34,7 @@ class ResolveContext {
     RefRegistry? refRegistry,
     this.globalSecurityRequirements = const [],
     List<SecurityScheme>? securitySchemes,
+    this.nameOverrides = const {},
   }) : specUrl = specUrl ?? Uri.parse('https://example.com'),
        refRegistry = refRegistry ?? RefRegistry(),
        securitySchemes = securitySchemes ?? [];
@@ -48,6 +50,15 @@ class ResolveContext {
 
   /// The security schemes of the spec.
   final List<SecurityScheme> securitySchemes;
+
+  /// Optional name overrides for handling naming collisions
+  /// Only contains names that actually changed due to collisions
+  final Map<JsonPointer, String> nameOverrides;
+
+  /// Get the resolved name for a pointer, falling back to the original name
+  String getResolvedName(JsonPointer pointer, String originalName) {
+    return nameOverrides[pointer] ?? originalName;
+  }
 
   /// The registry of all the objects we've parsed so far.
   /// Resolve a nullable [SchemaRef] into a nullable [SchemaObject].
@@ -95,9 +106,16 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
     throw Exception('Schema not found: $ref');
   }
 
+  // Get the resolved name for this schema
+  final resolvedName = context.getResolvedName(
+    schema.pointer,
+    schema.snakeName,
+  );
+  final resolvedCommon = schema.common.copyWith(snakeName: resolvedName);
+
   if (schema is SchemaObject) {
     return ResolvedObject(
-      common: schema.common,
+      common: resolvedCommon,
       properties: schema.properties.map((key, value) {
         return MapEntry(key, resolveSchemaRef(value, context));
       }),
@@ -110,24 +128,24 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   }
   if (schema is SchemaEnum) {
     return ResolvedEnum(
-      common: schema.common,
+      common: resolvedCommon,
       defaultValue: schema.defaultValue,
       values: schema.enumValues,
     );
   }
   if (schema is SchemaBinary) {
-    return ResolvedBinary(common: schema.common);
+    return ResolvedBinary(common: resolvedCommon);
   }
   if (schema is SchemaPod) {
     return ResolvedPod(
-      common: schema.common,
+      common: resolvedCommon,
       type: schema.type,
       defaultValue: schema.defaultValue,
     );
   }
   if (schema is SchemaInteger) {
     return ResolvedInteger(
-      common: schema.common,
+      common: resolvedCommon,
       defaultValue: schema.defaultValue,
       maximum: schema.maximum,
       minimum: schema.minimum,
@@ -138,7 +156,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   }
   if (schema is SchemaString) {
     return ResolvedString(
-      common: schema.common,
+      common: resolvedCommon,
       defaultValue: schema.defaultValue,
       maxLength: schema.maxLength,
       minLength: schema.minLength,
@@ -147,7 +165,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   }
   if (schema is SchemaNumber) {
     return ResolvedNumber(
-      common: schema.common,
+      common: resolvedCommon,
       defaultValue: schema.defaultValue,
       maximum: schema.maximum,
       minimum: schema.minimum,
@@ -161,7 +179,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
       _error('items must be a schema for type=array', schema.pointer);
     }
     return ResolvedArray(
-      common: schema.common,
+      common: resolvedCommon,
       items: items,
       defaultValue: schema.defaultValue,
       maxItems: schema.maxItems,
@@ -172,7 +190,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   if (schema is SchemaOneOf) {
     final oneOf = schema;
     return ResolvedOneOf(
-      common: schema.common,
+      common: resolvedCommon,
       schemas: oneOf.schemas.map((e) => resolveSchemaRef(e, context)).toList(),
     );
   }
@@ -192,7 +210,7 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
         _error('allOf only supports objects: $schema', allOf.pointer);
       }
     }
-    return ResolvedAllOf(common: schema.common, schemas: schemas);
+    return ResolvedAllOf(common: resolvedCommon, schemas: schemas);
   }
   if (schema is SchemaAnyOf) {
     final anyOf = schema;
@@ -228,22 +246,22 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
         return second;
       }
     }
-    return ResolvedAnyOf(common: schema.common, schemas: schemas);
+    return ResolvedAnyOf(common: resolvedCommon, schemas: schemas);
   }
   if (schema is SchemaNull) {
-    return ResolvedNull(common: schema.common);
+    return ResolvedNull(common: resolvedCommon);
   }
   if (schema is SchemaUnknown) {
-    return ResolvedUnknown(common: schema.common);
+    return ResolvedUnknown(common: resolvedCommon);
   }
   if (schema is SchemaMap) {
     return ResolvedMap(
-      common: schema.common,
+      common: resolvedCommon,
       valueSchema: resolveSchemaRef(schema.valueSchema, context),
     );
   }
   if (schema is SchemaEmptyObject) {
-    return ResolvedEmptyObject(common: schema.common);
+    return ResolvedEmptyObject(common: resolvedCommon);
   }
   _error('Missing code to resolve schema: $schema', schema.pointer);
 }
@@ -387,9 +405,15 @@ ResolvedOperation resolveOperation({
     globalSecurityRequirements: context.globalSecurityRequirements,
   );
 
+  // Get the resolved name for this operation
+  final resolvedName = context.getResolvedName(
+    operation.pointer,
+    operation.snakeName,
+  );
+
   return ResolvedOperation(
     pointer: operation.pointer,
-    snakeName: operation.snakeName,
+    snakeName: resolvedName,
     tags: operation.tags,
     summary: operation.summary,
     description: operation.description,
@@ -491,6 +515,7 @@ ResolvedSpec resolveSpec(
   OpenApi spec, {
   required Uri specUrl,
   bool logSchemas = true,
+  Map<JsonPointer, String> nameOverrides = const {},
 }) {
   final refRegistry = RefRegistry();
   final builder = RegistryBuilder(specUrl, refRegistry);
@@ -516,6 +541,7 @@ ResolvedSpec resolveSpec(
     refRegistry: refRegistry,
     globalSecurityRequirements: globalSecurityRequirements,
     securitySchemes: securitySchemes,
+    nameOverrides: nameOverrides,
   );
   return ResolvedSpec(
     title: spec.info.title,
