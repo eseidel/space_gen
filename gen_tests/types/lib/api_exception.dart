@@ -1,0 +1,121 @@
+import 'package:meta/meta.dart';
+
+/// An exception thrown by the API client.
+///
+/// This is a wrapper around the underlying network exceptions.
+/// This is used to provide a standard exception type for clients to handle.
+@immutable
+class ApiException implements Exception {
+  const ApiException(this.code, this.message)
+    : innerException = null,
+      stackTrace = null;
+
+  const ApiException.unhandled(this.code)
+    : message = 'Unhandled response',
+      innerException = null,
+      stackTrace = null;
+
+  const ApiException.withInner(
+    this.code,
+    this.message,
+    this.innerException,
+    this.stackTrace,
+  );
+
+  final int code;
+  final String? message;
+  final Exception? innerException;
+  final StackTrace? stackTrace;
+
+  @override
+  String toString() {
+    if (message == null) {
+      return 'ApiException';
+    }
+    if (innerException == null) {
+      return 'ApiException $code: $message';
+    }
+    return 'ApiException $code: $message '
+        '(Inner exception: $innerException)\n\n$stackTrace';
+  }
+}
+
+/// Validates a number.
+///
+/// These are extensions on the num type that throw an exception if the value
+/// does not meet the validation criteria.
+extension ValidateNumber on num {
+  void validateMinimum(num minimum) {
+    if (this < minimum) {
+      throw Exception('must be greater than or equal to $minimum');
+    }
+  }
+
+  void validateMaximum(num maximum) {
+    if (this > maximum) {
+      throw Exception('must be less than or equal to $maximum');
+    }
+  }
+
+  void validateExclusiveMinimum(num minimum) {
+    if (this <= minimum) {
+      throw Exception('must be greater than $minimum');
+    }
+  }
+
+  void validateExclusiveMaximum(num maximum) {
+    if (this >= maximum) {
+      throw Exception('must be less than $maximum');
+    }
+  }
+
+  void validateMultipleOf(num multiple) {
+    if (this % multiple != 0) {
+      throw Exception('must be a multiple of $multiple');
+    }
+  }
+}
+
+/// Validates a string.
+///
+/// These are extensions on the String type that throw an exception if the value
+/// does not meet the validation criteria.
+extension ValidateString on String {
+  void validateMinimumLength(int minimum) {
+    if (length < minimum) {
+      throw Exception('must be at least $minimum characters long');
+    }
+  }
+
+  void validateMaximumLength(int maximum) {
+    if (length > maximum) {
+      throw Exception('must be at most $maximum characters long');
+    }
+  }
+
+  void validatePattern(String pattern) {
+    if (!RegExp(pattern).hasMatch(this)) {
+      throw Exception('must match the pattern $pattern');
+    }
+  }
+}
+
+extension ValidateArray<T> on List<T> {
+  void validateMaximumItems(int maximum) {
+    if (length > maximum) {
+      throw Exception('must be at most $maximum items long');
+    }
+  }
+
+  void validateMinimumItems(int minimum) {
+    if (length < minimum) {
+      throw Exception('must be at least $minimum items long');
+    }
+  }
+
+  void validateUniqueItems() {
+    if (toSet().length != length) {
+      throw Exception('must contain unique items');
+    }
+  }
+}

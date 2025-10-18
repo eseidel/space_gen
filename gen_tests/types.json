@@ -1,0 +1,52 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Types",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://example.com/types"
+        }
+    ],
+    "paths": {
+        "/types": {
+            "get": {
+                "summary": "Get types",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "date": {
+                                            "r$ref": "#/components/schemas/DateType"
+                                        },
+                                        "email": {
+                                            "r$ref": "#/components/schemas/EmailType"
+                                        }
+                                    },
+                                    "required": ["date", "email"]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "DateType": {
+                "type": "string",
+                "format": "date"
+            },
+            "EmailType": {
+                "type": "string",
+                "format": "email"
+            }
+        }
+    }
+}
