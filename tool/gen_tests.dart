@@ -107,7 +107,6 @@ Future<void> run({
   }
 
   // Run the unit tests.
-  logger.info('Running unit tests');
   final result = await io.Process.run(
     'dart',
     ['test', '.'],
@@ -122,7 +121,6 @@ Future<void> run({
   if (result.exitCode != 0) {
     throw Exception('Unit tests failed');
   }
-  logger.info('Unit tests passed');
 }
 
 void main(List<String> args) async {
