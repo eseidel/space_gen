@@ -1,5 +1,6 @@
 import 'package:file/file.dart';
 import 'package:meta/meta.dart';
+import 'package:path/path.dart' as p;
 import 'package:space_gen/src/loader.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/parse/spec.dart';
@@ -83,7 +84,11 @@ Future<void> loadAndRenderSpec({
   // SchemaRenderer is responsible for rendering schemas and APIs into strings.
   final schemaRenderer = SchemaRenderer(templates: templates, quirks: quirks);
 
-  logger.info('Generating $specUrl to ${outDir.path}');
+  final specPathString = specUrl.isScheme('file')
+      ? p.relative(specUrl.toFilePath())
+      : specUrl.toString();
+  final outDirPathString = p.relative(outDir.path);
+  logger.info('Generating $specPathString to $outDirPathString');
 
   final formatter = Formatter(runProcess: runProcess);
   final spellChecker = SpellChecker(runProcess: runProcess);

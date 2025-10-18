@@ -723,7 +723,14 @@ class Api {
   final List<Endpoint> endpoints;
   final String? removePrefix;
 
-  String get clientVariableName => toLowerCamelCase(snakeName);
+  String get clientVariableName {
+    final name = toLowerCamelCase(snakeName);
+    if (isReservedWord(name)) {
+      return '${name}Api';
+    }
+    return name;
+  }
+
   String get className => '${toUpperCamelCase(snakeName)}Api';
   String get fileName => '${snakeName.toLowerCase()}_api';
 }
@@ -1078,14 +1085,22 @@ class RenderPod extends RenderSchema {
       // Bool is already a json type.
       PodType.boolean => false,
       // These require serialization to a string.
-      PodType.dateTime || PodType.uri || PodType.uriTemplate => true,
+      PodType.dateTime ||
+      PodType.uri ||
+      PodType.uriTemplate ||
+      PodType.email ||
+      PodType.date => true,
     };
   }
 
   @override
   bool get defaultCanConstConstruct {
     return switch (type) {
-      PodType.dateTime || PodType.uri || PodType.uriTemplate => false,
+      PodType.dateTime ||
+      PodType.uri ||
+      PodType.uriTemplate ||
+      PodType.email ||
+      PodType.date => false,
       PodType.boolean => true,
     };
   }
@@ -1100,6 +1115,8 @@ class RenderPod extends RenderSchema {
       PodType.dateTime => 'DateTime',
       PodType.uri => 'Uri',
       PodType.uriTemplate => 'UriTemplate',
+      PodType.email => 'String', // Could create a new type for this.
+      PodType.date => 'DateTime',
     };
   }
 
@@ -1108,7 +1125,9 @@ class RenderPod extends RenderSchema {
     return switch (type) {
       PodType.dateTime ||
       PodType.uri ||
-      PodType.uriTemplate => isNullable ? 'String?' : 'String',
+      PodType.uriTemplate ||
+      PodType.email ||
+      PodType.date => isNullable ? 'String?' : 'String',
       PodType.boolean => isNullable ? 'bool?' : 'bool',
     };
   }
@@ -1120,11 +1139,12 @@ class RenderPod extends RenderSchema {
       return null;
     }
     return switch (type) {
-      PodType.dateTime =>
-        'DateTime.parse(${quoteString(defaultValue as String)})',
+      PodType.dateTime ||
+      PodType.date => 'DateTime.parse(${quoteString(defaultValue as String)})',
       PodType.uri => 'Uri.parse(${quoteString(defaultValue as String)})',
       PodType.uriTemplate =>
         'UriTemplate(${quoteString(defaultValue as String)})',
+      PodType.email => quoteString(defaultValue as String),
       PodType.boolean => defaultValue.toString(),
     };
   }
@@ -1146,6 +1166,8 @@ class RenderPod extends RenderSchema {
       PodType.dateTime => '$nameCall.toIso8601String()',
       PodType.uri => '$nameCall.toString()',
       PodType.uriTemplate => '$nameCall.toString()',
+      PodType.email => nameCall,
+      PodType.date => '$nameCall.toRfc3339FullDate()',
       PodType.boolean => dartName,
     };
   }
@@ -1165,6 +1187,13 @@ class RenderPod extends RenderSchema {
     );
     final castedValue = '$jsonValue as $jsonType';
     switch (type) {
+      case PodType.email:
+        return '$castedValue$orDefault';
+      case PodType.date:
+        if (jsonIsNullable) {
+          return 'maybeParseDate($castedValue)$orDefault';
+        }
+        return 'DateTime.parse($castedValue)';
       case PodType.dateTime:
         if (jsonIsNullable) {
           return 'maybeParseDateTime($castedValue)$orDefault';
