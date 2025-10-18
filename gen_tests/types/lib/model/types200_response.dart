@@ -1,9 +1,15 @@
+import 'package:types/model/date_type.dart';
+import 'package:types/model/email_type.dart';
+
 class Types200Response {
   Types200Response({required this.date, required this.email});
 
   factory Types200Response.fromJson(dynamic jsonArg) {
     final json = jsonArg as Map<String, dynamic>;
-    return Types200Response(date: json['date'], email: json['email']);
+    return Types200Response(
+      date: DateType.fromJson(json['date'] as String),
+      email: EmailType.fromJson(json['email'] as String),
+    );
   }
 
   /// Convenience to create a nullable type from a nullable json object.
@@ -15,11 +21,11 @@ class Types200Response {
     return Types200Response.fromJson(json);
   }
 
-  dynamic date;
-  dynamic email;
+  DateType date;
+  EmailType email;
 
   Map<String, dynamic> toJson() {
-    return {'date': date, 'email': email};
+    return {'date': date.toJson(), 'email': email.toJson()};
   }
 
   @override

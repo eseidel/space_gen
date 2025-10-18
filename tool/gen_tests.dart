@@ -1,3 +1,5 @@
+import 'dart:io' as io;
+
 import 'package:args/args.dart';
 import 'package:file/file.dart';
 import 'package:file/local.dart';
@@ -74,9 +76,13 @@ Future<void> runTest({
 }
 
 Future<void> run({
+  bool verbose = false,
   List<String> skipList = const [],
   List<String> globList = const [],
 }) async {
+  if (verbose) {
+    setVerboseLogging();
+  }
   const fs = LocalFileSystem();
   final packageRoot = fs.currentDirectory;
   final potentialTestDirs = [
@@ -99,23 +105,45 @@ Future<void> run({
       quirks: quirks,
     );
   }
+
+  // Run the unit tests.
+  logger.info('Running unit tests');
+  final result = await io.Process.run(
+    'dart',
+    ['test', '.'],
+    workingDirectory: packageRoot
+        .childDirectory('gen_tests')
+        .childDirectory('tests')
+        .path,
+  );
+  logger
+    ..info(result.stdout as String)
+    ..info(result.stderr as String);
+  if (result.exitCode != 0) {
+    throw Exception('Unit tests failed');
+  }
+  logger.info('Unit tests passed');
 }
 
 void main(List<String> args) async {
-  final defaultIgnoreList = ['petstore'];
   final parser = ArgParser()
+    ..addFlag('verbose', abbr: 'v', help: 'Verbose output')
     ..addMultiOption(
       'ignore',
       abbr: 'i',
       help: 'Comma separated list of specs to skip',
+      // TODO(eseidel): remove petstore once it doesn't crash.
+      defaultsTo: ['petstore'],
     );
   final results = parser.parse(args);
+  final verbose = results['verbose'] as bool;
   final ignoreList = results['ignore'] as List<String>? ?? <String>[];
   final globList = results.rest;
   await runWithLogger(
     Logger(),
     () => run(
-      skipList: <String>[...defaultIgnoreList, ...ignoreList],
+      verbose: verbose,
+      skipList: ignoreList,
       globList: globList,
     ),
   );

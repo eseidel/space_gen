@@ -22,10 +22,10 @@
                                     "type": "object",
                                     "properties": {
                                         "date": {
-                                            "r$ref": "#/components/schemas/DateType"
+                                            "$ref": "#/components/schemas/DateType"
                                         },
                                         "email": {
-                                            "r$ref": "#/components/schemas/EmailType"
+                                            "$ref": "#/components/schemas/EmailType"
                                         }
                                     },
                                     "required": ["date", "email"]

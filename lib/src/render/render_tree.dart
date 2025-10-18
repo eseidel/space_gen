@@ -1187,8 +1187,6 @@ class RenderPod extends RenderSchema {
     );
     final castedValue = '$jsonValue as $jsonType';
     switch (type) {
-      case PodType.email:
-        return '$castedValue$orDefault';
       case PodType.date:
         if (jsonIsNullable) {
           return 'maybeParseDate($castedValue)$orDefault';
@@ -1209,7 +1207,7 @@ class RenderPod extends RenderSchema {
           return 'maybeParseUriTemplate($castedValue)$orDefault';
         }
         return 'UriTemplate($castedValue)';
-      case PodType.boolean:
+      case PodType.boolean || PodType.email:
         // 'as' has higher precedence than '??' so no parens are needed.
         return '$castedValue$orDefault';
     }
