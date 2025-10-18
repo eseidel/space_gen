@@ -1,61 +1,148 @@
+import 'dart:io' as io;
+
+import 'package:args/args.dart';
 import 'package:file/file.dart';
 import 'package:file/local.dart';
 import 'package:path/path.dart' as p;
 import 'package:space_gen/space_gen.dart';
 
-Future<void> genTests(
-  Directory testDir, {
-  List<String> skipList = const [],
-}) async {
-  const quirks = Quirks.openapi();
-  final templatesDir = const LocalFileSystem().directory('lib/templates');
-  // Collect all the spec.json files in the directory.
-  final specFiles = testDir
-      .listSync()
-      .where((file) => file.path.endsWith('.json'))
-      .toList();
-  for (final specFile in specFiles) {
-    // Grab the name of the spec from the file name.
-    final specName = p.basenameWithoutExtension(specFile.path);
-    if (skipList.contains(specName)) {
-      logger.info('Skipping $specName');
-      continue;
-    }
-    logger.info('Generating from $specFile to ${testDir.path}');
-    final packageName = specName.replaceAll('.', '_').replaceAll('-', '_');
-    final outDir = testDir.childDirectory(packageName);
-    await loadAndRenderSpec(
-      specUrl: specFile.uri,
-      outDir: outDir,
-      packageName: packageName,
-      quirks: quirks,
-      templatesDir: templatesDir,
-    );
-  }
+class TestCase {
+  TestCase({
+    required this.spec,
+    required this.outDir,
+  });
+  final File spec;
+  final Directory outDir;
+
+  String get packageName => outDir.basename;
 }
 
-Future<void> run() async {
+List<TestCase> collectTests({
+  required List<Directory> testDirs,
+  List<String> globList = const [],
+  List<String> skipList = const [],
+}) {
+  bool shouldInclude({required File specFile, required String packageName}) {
+    if (skipList.contains(packageName)) {
+      logger.info('Skipping $packageName');
+      return false;
+    }
+    // Could use a fancier glob matcher, right now using contains.
+    if (globList.isNotEmpty) {
+      if (!globList.any((glob) => specFile.path.contains(glob))) {
+        logger.info(
+          'Skipping $packageName because it does not match $globList',
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
+  final tests = <TestCase>[];
+  for (final testDir in testDirs) {
+    final specFiles = testDir
+        .listSync()
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.json'))
+        .toList();
+    for (final specFile in specFiles) {
+      final specName = p.basenameWithoutExtension(specFile.path);
+      final packageName = specName.replaceAll('.', '_').replaceAll('-', '_');
+      if (!shouldInclude(specFile: specFile, packageName: packageName)) {
+        continue;
+      }
+      final outDir = testDir.childDirectory(packageName);
+      tests.add(TestCase(spec: specFile, outDir: outDir));
+    }
+  }
+  return tests;
+}
+
+Future<void> runTest({
+  required TestCase testCase,
+  required Directory templatesDir,
+  required Quirks quirks,
+}) async {
+  final specFile = testCase.spec;
+  final outDir = testCase.outDir;
+  await loadAndRenderSpec(
+    specUrl: specFile.uri,
+    outDir: outDir,
+    packageName: testCase.packageName,
+    quirks: quirks,
+    templatesDir: templatesDir,
+  );
+}
+
+Future<void> run({
+  bool verbose = false,
+  List<String> skipList = const [],
+  List<String> globList = const [],
+}) async {
+  if (verbose) {
+    setVerboseLogging();
+  }
   const fs = LocalFileSystem();
   final packageRoot = fs.currentDirectory;
-  final publicDir = packageRoot.childDirectory('../gen_tests');
-  // final privateDir = packageRoot.childDirectory('../private_gen_tests');
-  final skipList = ['petstore'];
-
-  if (publicDir.existsSync()) {
-    await genTests(publicDir, skipList: skipList);
-  } else {
-    logger.err('gen_tests directory does not exist: ${publicDir.path}');
-    return;
+  final potentialTestDirs = [
+    packageRoot.childDirectory('gen_tests'),
+    packageRoot.childDirectory('../gen_tests'),
+    // packageRoot.childDirectory('../private_gen_tests'),
+  ];
+  final testDirs = potentialTestDirs.where((dir) => dir.existsSync()).toList();
+  final tests = collectTests(
+    testDirs: testDirs,
+    globList: globList,
+    skipList: skipList,
+  );
+  final templatesDir = fs.directory('lib/templates');
+  const quirks = Quirks.openapi();
+  for (final test in tests) {
+    await runTest(
+      testCase: test,
+      templatesDir: templatesDir,
+      quirks: quirks,
+    );
   }
-  // if (privateDir.existsSync()) {
-  //   await genTests(privateDir);
-  // } else {
-  //   logger.info(
-  //     'private_gen_tests directory does not exist: ${privateDir.path}',
-  //   );
-  // }
+
+  // Run the unit tests.
+  final result = await io.Process.run(
+    'dart',
+    ['test', '.'],
+    workingDirectory: packageRoot
+        .childDirectory('gen_tests')
+        .childDirectory('tests')
+        .path,
+  );
+  logger
+    ..info(result.stdout as String)
+    ..info(result.stderr as String);
+  if (result.exitCode != 0) {
+    throw Exception('Unit tests failed');
+  }
 }
 
-void main() async {
-  await runWithLogger(Logger(), run);
+void main(List<String> args) async {
+  final parser = ArgParser()
+    ..addFlag('verbose', abbr: 'v', help: 'Verbose output')
+    ..addMultiOption(
+      'ignore',
+      abbr: 'i',
+      help: 'Comma separated list of specs to skip',
+      // TODO(eseidel): remove petstore once it doesn't crash.
+      defaultsTo: ['petstore'],
+    );
+  final results = parser.parse(args);
+  final verbose = results['verbose'] as bool;
+  final ignoreList = results['ignore'] as List<String>? ?? <String>[];
+  final globList = results.rest;
+  await runWithLogger(
+    Logger(),
+    () => run(
+      verbose: verbose,
+      skipList: ignoreList,
+      globList: globList,
+    ),
+  );
 }

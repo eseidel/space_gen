@@ -454,7 +454,7 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
       return null;
     }
     final expectedFormats = {
-      'string': {'binary', 'date-time', 'uri', 'uri-template'},
+      'string': {'binary', 'date-time', 'uri', 'uri-template', 'email', 'date'},
     };
     final expected = expectedFormats[type];
     if (expected == null || !expected.contains(format)) {

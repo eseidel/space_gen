@@ -185,7 +185,7 @@ void main() {
         '\n'
         '  final ApiClient client;\n'
         '\n'
-        '  DefaultApi get default => DefaultApi(client);\n'
+        '  DefaultApi get defaultApi => DefaultApi(client);\n'
         '}\n',
       );
     });
