@@ -66,6 +66,7 @@ bool isReservedWord(String word) {
     'double',
     'dynamic',
     'false',
+    'in',
     'int',
     'new',
     'null',

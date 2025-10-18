@@ -44,5 +44,6 @@ void main() {
     expect(isReservedWord('string'), false);
     expect(isReservedWord('String'), false);
     expect(isReservedWord('string'), false);
+    expect(isReservedWord('in'), true);
   });
 }
