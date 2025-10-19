@@ -1110,6 +1110,10 @@ class RenderPod extends RenderSchema {
 
   @override
   String get typeName {
+    // TODO(eseidel): Make RenderPod extensible.
+    // Right now we have this hard-coded list, but we should make it possible
+    // to register generators for various format types, e.g.
+    // https://spec.openapis.org/registry/format/ has many we don't implement.
     return switch (type) {
       PodType.boolean => 'bool',
       PodType.dateTime => 'DateTime',

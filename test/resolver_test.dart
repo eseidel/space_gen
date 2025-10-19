@@ -552,6 +552,61 @@ void main() {
         ),
       );
     });
+
+    test('recursion', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Node'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Node': {
+              'type': 'object',
+              'properties': {
+                'left': {r'$ref': '#/components/schemas/Node'},
+                'right': {r'$ref': '#/components/schemas/Node'},
+              },
+            },
+          },
+        },
+      };
+      // Recursive type references are valid and should be allowed.
+      final spec = parseAndResolveTestSpec(json);
+      expect(
+        spec.paths.first.operations.first.responses.first.content,
+        isA<ResolvedObject>().having(
+          (e) => e.properties,
+          'properties',
+          isA<Map<String, ResolvedSchema>>().having(
+            (e) => e,
+            'properties',
+            isA<Map<String, ResolvedSchema>>().having(
+              (e) => e.length,
+              'length',
+              equals(2),
+            ),
+          ),
+        ),
+      );
+    });
   });
 
   group('ResolvedSchema', () {

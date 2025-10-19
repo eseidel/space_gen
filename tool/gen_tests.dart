@@ -88,7 +88,7 @@ Future<void> run({
   final potentialTestDirs = [
     packageRoot.childDirectory('gen_tests'),
     packageRoot.childDirectory('../gen_tests'),
-    // packageRoot.childDirectory('../private_gen_tests'),
+    packageRoot.childDirectory('../private_gen_tests'),
   ];
   final testDirs = potentialTestDirs.where((dir) => dir.existsSync()).toList();
   final tests = collectTests(
