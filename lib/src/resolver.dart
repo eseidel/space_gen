@@ -25,7 +25,10 @@ class ResolveContext {
     required this.globalSecurityRequirements,
     required this.securitySchemes,
     this.nameOverrides = const {},
-  });
+    Map<JsonPointer, ResolvedSchema>? resolvedSchemas,
+    Set<JsonPointer>? resolvingStack,
+  }) : resolvedSchemas = resolvedSchemas ?? {},
+       resolvingStack = resolvingStack ?? {};
 
   /// Used for cases where we need a ResolveContext, but don't actually
   /// plan to look up any objects in the registry.
@@ -35,9 +38,13 @@ class ResolveContext {
     this.globalSecurityRequirements = const [],
     List<SecurityScheme>? securitySchemes,
     this.nameOverrides = const {},
+    Map<JsonPointer, ResolvedSchema>? resolvedSchemas,
+    Set<JsonPointer>? resolvingStack,
   }) : specUrl = specUrl ?? Uri.parse('https://example.com'),
        refRegistry = refRegistry ?? RefRegistry(),
-       securitySchemes = securitySchemes ?? [];
+       securitySchemes = securitySchemes ?? [],
+       resolvedSchemas = resolvedSchemas ?? {},
+       resolvingStack = resolvingStack ?? {};
 
   /// The spec url of the spec.
   final Uri specUrl;
@@ -54,6 +61,12 @@ class ResolveContext {
   /// Optional name overrides for handling naming collisions
   /// Only contains names that actually changed due to collisions
   final Map<JsonPointer, String> nameOverrides;
+
+  /// Registry of fully resolved schemas that create new types
+  final Map<JsonPointer, ResolvedSchema> resolvedSchemas;
+
+  /// Stack of schemas currently being resolved (for cycle detection)
+  final Set<JsonPointer> resolvingStack;
 
   CommonProperties resolveCommonProperties(CommonProperties common) {
     final resolvedName = getResolvedName(common.pointer, common.snakeName);
@@ -118,6 +131,48 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
 
   // Schema snake_name might change due to collisions, get resolved name.
   final resolvedCommon = context.resolveCommonProperties(schema.common);
+
+  // If this schema creates a new type, use a reference
+  if (createsNewType && ref.ref != null) {
+    final targetPointer = schema.pointer;
+
+    // Check for circular reference
+    if (context.resolvingStack.contains(targetPointer)) {
+      return ResolvedRef(
+        common: resolvedCommon,
+        targetPointer: targetPointer,
+      );
+    }
+
+    // Check if already resolved
+    if (!context.resolvedSchemas.containsKey(targetPointer)) {
+      // Mark as being resolved
+      context.resolvingStack.add(targetPointer);
+
+      // Resolve the full schema (recursive calls will now detect cycles)
+      final fullSchema = _resolveSchemaFully(schema, resolvedCommon, context);
+      context.resolvedSchemas[targetPointer] = fullSchema;
+
+      // Unmark
+      context.resolvingStack.remove(targetPointer);
+    }
+
+    return ResolvedRef(
+      common: resolvedCommon,
+      targetPointer: targetPointer,
+    );
+  }
+
+  // Otherwise inline resolve
+  return _resolveSchemaFully(schema, resolvedCommon, context);
+}
+
+ResolvedSchema _resolveSchemaFully(
+  Schema schema,
+  CommonProperties resolvedCommon,
+  ResolveContext context,
+) {
+  final createsNewType = shouldCreateNewType(schema);
 
   if (schema is SchemaObject) {
     assert(createsNewType, 'SchemaObject should create a new type');
@@ -1266,4 +1321,25 @@ class ResolvedEmptyObject extends ResolvedSchema {
   ResolvedEmptyObject copyWith({CommonProperties? common}) {
     return ResolvedEmptyObject(common: common ?? this.common);
   }
+}
+
+class ResolvedRef extends ResolvedSchema {
+  const ResolvedRef({
+    required super.common,
+    required this.targetPointer,
+  }) : super(createsNewType: false);
+
+  /// The pointer to the referenced schema in the registry
+  final JsonPointer targetPointer;
+
+  @override
+  ResolvedRef copyWith({CommonProperties? common}) {
+    return ResolvedRef(
+      common: common ?? this.common,
+      targetPointer: targetPointer,
+    );
+  }
+
+  @override
+  List<Object?> get props => [super.props, targetPointer];
 }

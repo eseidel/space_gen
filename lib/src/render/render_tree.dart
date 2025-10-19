@@ -202,6 +202,11 @@ class SpecResolver {
 
   RenderSchema toRenderSchema(ResolvedSchema schema) {
     switch (schema) {
+      case ResolvedRef():
+        return RenderRef(
+          common: schema.common,
+          targetPointer: schema.targetPointer,
+        );
       case ResolvedEnum():
         return RenderEnum(
           common: schema.common,
@@ -2523,4 +2528,68 @@ class RenderEmptyObject extends RenderNewType {
     'typeName': typeName,
     'nullableTypeName': nullableTypeName(context),
   };
+}
+
+/// A reference to a schema that creates a new type.
+/// This exists solely for import resolution - it appears in the render tree
+/// so the walker can collect it for imports, but should never be rendered itself.
+class RenderRef extends RenderSchema {
+  const RenderRef({
+    required super.common,
+    required this.targetPointer,
+  }) : super(createsNewType: true);
+
+  final JsonPointer targetPointer;
+
+  @override
+  dynamic get defaultValue =>
+      throw UnimplementedError('RenderRef should not be rendered');
+
+  @override
+  bool get defaultCanConstConstruct =>
+      throw UnimplementedError('RenderRef should not be rendered');
+
+  @override
+  bool get shouldCallToJson => true;
+
+  @override
+  String get typeName => camelFromSnake(snakeName);
+
+  @override
+  String jsonStorageType({required bool isNullable}) =>
+      isNullable ? 'Map<String, dynamic>?' : 'Map<String, dynamic>';
+
+  @override
+  String toJsonExpression(
+    String dartName,
+    SchemaRenderer context, {
+    required bool dartIsNullable,
+  }) {
+    final nameCall = dartIsNullable ? '$dartName?' : dartName;
+    return '$nameCall.toJson()';
+  }
+
+  @override
+  String fromJsonExpression(
+    String jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) {
+    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
+    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
+    final orDefault = orDefaultExpression(
+      context: context,
+      jsonIsNullable: jsonIsNullable,
+      dartIsNullable: dartIsNullable,
+    );
+    return '$typeName.$jsonMethod($jsonValue as $jsonType)$orDefault';
+  }
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
+      throw UnimplementedError('RenderRef should not be rendered directly');
+
+  @override
+  List<Object?> get props => [super.props, targetPointer];
 }

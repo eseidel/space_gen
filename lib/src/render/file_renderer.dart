@@ -348,7 +348,8 @@ class FileRenderer {
     );
   }
 
-  bool rendersToSeparateFile(RenderSchema schema) => schema.createsNewType;
+  bool rendersToSeparateFile(RenderSchema schema) =>
+      schema.createsNewType && schema is! RenderRef;
 
   @visibleForTesting
   Iterable<Import> importsForApi(Api api) {

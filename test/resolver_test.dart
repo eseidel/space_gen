@@ -592,18 +592,10 @@ void main() {
       final spec = parseAndResolveTestSpec(json);
       expect(
         spec.paths.first.operations.first.responses.first.content,
-        isA<ResolvedObject>().having(
-          (e) => e.properties,
-          'properties',
-          isA<Map<String, ResolvedSchema>>().having(
-            (e) => e,
-            'properties',
-            isA<Map<String, ResolvedSchema>>().having(
-              (e) => e.length,
-              'length',
-              equals(2),
-            ),
-          ),
+        isA<ResolvedRef>().having(
+          (e) => e.snakeName,
+          'snakeName',
+          equals('node'),
         ),
       );
     });
@@ -1058,6 +1050,14 @@ void main() {
       });
       test('ResolvedEmptyObject', () {
         testCopyWith(ResolvedEmptyObject(common: beforeCommon));
+      });
+      test('ResolvedRef', () {
+        testCopyWith(
+          ResolvedRef(
+            common: beforeCommon,
+            targetPointer: JsonPointer.parse('#/components/schemas/Node'),
+          ),
+        );
       });
     });
   });
