@@ -610,6 +610,62 @@ void main() {
         equals('#/components/schemas/Node'),
       );
     });
+
+    test('mutual recursion: A -> b: B -> a: A', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Mutual', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/root': {
+            'get': {
+              'operationId': 'getRoot',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Foo'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Foo': {
+              'type': 'object',
+              'properties': {
+                'bar': {r'$ref': '#/components/schemas/Bar'},
+              },
+            },
+            'Bar': {
+              'type': 'object',
+              'properties': {
+                'foo': {r'$ref': '#/components/schemas/Foo'},
+              },
+            },
+          },
+        },
+      };
+      // Foo inlines; its `bar` is Bar inlined; Bar's `foo` is a ResolvedRef
+      // back to Foo (cycle break). Resolution terminates finitely.
+      final spec = parseAndResolveTestSpec(json);
+      final foo = spec.paths.first.operations.first.responses.first.content;
+      expect(foo, isA<ResolvedObject>());
+      final bar = (foo as ResolvedObject).properties['bar'];
+      expect(bar, isA<ResolvedObject>());
+      final fooRef = (bar! as ResolvedObject).properties['foo'];
+      expect(fooRef, isA<ResolvedRef>());
+      expect(
+        (fooRef! as ResolvedRef).targetPointer.toString(),
+        equals('#/components/schemas/Foo'),
+      );
+    });
   });
 
   group('ResolvedSchema', () {

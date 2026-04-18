@@ -1,7 +1,17 @@
 import 'package:space_gen/src/quirks.dart';
 import 'package:space_gen/src/render/render_tree.dart';
+import 'package:space_gen/src/render/schema_renderer.dart';
+import 'package:space_gen/src/render/templates.dart';
+import 'package:space_gen/src/render/tree_visitor.dart';
 import 'package:space_gen/src/types.dart';
 import 'package:test/test.dart';
+
+class _Collector extends RenderTreeVisitor {
+  final List<RenderSchema> visited = [];
+
+  @override
+  void visitSchema(RenderSchema schema) => visited.add(schema);
+}
 
 void main() {
   group('variableSafeName', () {
@@ -548,6 +558,129 @@ void main() {
         ).additionalImports,
         equals([const Import('package:uri/uri.dart')]),
       );
+    });
+  });
+
+  group('RenderRef', () {
+    const ref = RenderRef(
+      common: CommonProperties.test(
+        snakeName: 'node',
+        pointer: JsonPointer.empty(),
+      ),
+      targetPointer: JsonPointer.empty(),
+    );
+
+    test('is a newtype but does not render its own file', () {
+      // createsNewType=true so the walker/import logic treats it like any
+      // other newtype at a use site; rendersToSeparateFile is handled by
+      // FileRenderer and excludes RenderRef specifically.
+      expect(ref.createsNewType, isTrue);
+      expect(ref.shouldCallToJson, isTrue);
+    });
+
+    test('typeName is derived from snakeName', () {
+      expect(ref.typeName, 'Node');
+    });
+
+    test('jsonStorageType is always Map<String, dynamic>', () {
+      expect(ref.jsonStorageType(isNullable: false), 'Map<String, dynamic>');
+      expect(ref.jsonStorageType(isNullable: true), 'Map<String, dynamic>?');
+    });
+
+    test('toJsonExpression', () {
+      final templates = TemplateProvider.defaultLocation();
+      final context = SchemaRenderer(templates: templates);
+      expect(
+        ref.toJsonExpression('foo', context, dartIsNullable: false),
+        'foo.toJson()',
+      );
+      expect(
+        ref.toJsonExpression('foo', context, dartIsNullable: true),
+        'foo?.toJson()',
+      );
+    });
+
+    test('fromJsonExpression', () {
+      final templates = TemplateProvider.defaultLocation();
+      final context = SchemaRenderer(templates: templates);
+      expect(
+        ref.fromJsonExpression(
+          'json',
+          context,
+          jsonIsNullable: false,
+          dartIsNullable: false,
+        ),
+        'Node.fromJson(json as Map<String, dynamic>)',
+      );
+      expect(
+        ref.fromJsonExpression(
+          'json',
+          context,
+          jsonIsNullable: true,
+          dartIsNullable: true,
+        ),
+        'Node.maybeFromJson(json as Map<String, dynamic>?)',
+      );
+    });
+
+    test('toTemplateContext throws — RenderRef is never rendered directly', () {
+      final templates = TemplateProvider.defaultLocation();
+      final context = SchemaRenderer(templates: templates);
+      expect(
+        () => ref.toTemplateContext(context),
+        throwsA(isA<UnimplementedError>()),
+      );
+    });
+
+    test('walker visits RenderRef as a leaf (collected, not recursed)', () {
+      // RenderObject holds a RenderRef among its properties. The walker
+      // should visit both; collectionSchemasUnderSchema returns them both so
+      // the file renderer can emit the import for the ref target.
+      const nodeObject = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'node',
+          pointer: JsonPointer.empty(),
+        ),
+        properties: {
+          'left': RenderRef(
+            common: CommonProperties.test(
+              snakeName: 'node',
+              pointer: JsonPointer.empty(),
+            ),
+            targetPointer: JsonPointer.empty(),
+          ),
+        },
+      );
+      final collector = _Collector();
+      RenderTreeWalker(visitor: collector).walkSchema(nodeObject);
+      expect(collector.visited.whereType<RenderObject>().length, 1);
+      expect(collector.visited.whereType<RenderRef>().length, 1);
+    });
+
+    test('equality is based on pointer + snakeName + targetPointer', () {
+      const a = RenderRef(
+        common: CommonProperties.test(
+          snakeName: 'node',
+          pointer: JsonPointer.empty(),
+        ),
+        targetPointer: JsonPointer.empty(),
+      );
+      const b = RenderRef(
+        common: CommonProperties.test(
+          snakeName: 'node',
+          pointer: JsonPointer.empty(),
+        ),
+        targetPointer: JsonPointer.empty(),
+      );
+      final differentTarget = RenderRef(
+        common: const CommonProperties.test(
+          snakeName: 'node',
+          pointer: JsonPointer.empty(),
+        ),
+        targetPointer: JsonPointer.parse('#/components/schemas/Node'),
+      );
+      expect(a, equals(b));
+      expect(a, isNot(equals(differentTarget)));
     });
   });
 }
