@@ -2537,9 +2537,10 @@ class RenderEmptyObject extends RenderNewType {
 /// file of its own (the target is inlined elsewhere in the tree and renders
 /// there).
 ///
-/// Cycles can only go through object-shaped newtypes (pods and arrays can't
-/// `$ref` themselves), so we can safely assume a `Map<String, dynamic>` json
-/// storage type and a `toJson()`/`fromJson(Map)` convention on the target.
+/// Cycles can only go through an object-shaped newtype (pods and arrays
+/// can't `$ref` themselves), so we can safely assume a `Map<String, dynamic>`
+/// json storage type and a `toJson()`/`fromJson(Map)` convention on the
+/// target class.
 class RenderRef extends RenderSchema {
   const RenderRef({
     required super.common,
@@ -2593,7 +2594,7 @@ class RenderRef extends RenderSchema {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
-      throw UnimplementedError('RenderRef is a reference, not renderable');
+      throw UnimplementedError('RenderRef does not render a template');
 
   @override
   List<Object?> get props => [super.props, targetPointer];
