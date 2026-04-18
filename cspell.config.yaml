@@ -6,6 +6,7 @@ ignorePaths:
 words:
   - spacetraders
   - newtype
+  - newtypes
   - eseidel
   - cooldown
   - petstore
