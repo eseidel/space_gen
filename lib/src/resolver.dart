@@ -25,7 +25,8 @@ class ResolveContext {
     required this.globalSecurityRequirements,
     required this.securitySchemes,
     this.nameOverrides = const {},
-  });
+    Set<JsonPointer>? resolvingStack,
+  }) : resolvingStack = resolvingStack ?? {};
 
   /// Used for cases where we need a ResolveContext, but don't actually
   /// plan to look up any objects in the registry.
@@ -35,9 +36,11 @@ class ResolveContext {
     this.globalSecurityRequirements = const [],
     List<SecurityScheme>? securitySchemes,
     this.nameOverrides = const {},
+    Set<JsonPointer>? resolvingStack,
   }) : specUrl = specUrl ?? Uri.parse('https://example.com'),
        refRegistry = refRegistry ?? RefRegistry(),
-       securitySchemes = securitySchemes ?? [];
+       securitySchemes = securitySchemes ?? [],
+       resolvingStack = resolvingStack ?? {};
 
   /// The spec url of the spec.
   final Uri specUrl;
@@ -54,6 +57,11 @@ class ResolveContext {
   /// Optional name overrides for handling naming collisions
   /// Only contains names that actually changed due to collisions
   final Map<JsonPointer, String> nameOverrides;
+
+  /// Stack of schemas currently being resolved, used to break $ref cycles
+  /// (e.g. `Node -> left/right -> Node`). When a cycle is detected the
+  /// resolver emits a [ResolvedRecursiveRef] instead of recursing.
+  final Set<JsonPointer> resolvingStack;
 
   CommonProperties resolveCommonProperties(CommonProperties common) {
     final resolvedName = getResolvedName(common.pointer, common.snakeName);
@@ -118,6 +126,36 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
 
   // Schema snake_name might change due to collisions, get resolved name.
   final resolvedCommon = context.resolveCommonProperties(schema.common);
+
+  // Only ref-through-a-newtype can cycle (pod/array/map leaves can't $ref
+  // back up to themselves). For non-cyclic refs we keep inlining the
+  // resolved target as before — preserving existing tests and keeping
+  // ResolvedRecursiveRef strictly a cycle-break marker.
+  if (createsNewType && ref.ref != null) {
+    final targetPointer = schema.pointer;
+    if (context.resolvingStack.contains(targetPointer)) {
+      return ResolvedRecursiveRef(
+        common: resolvedCommon,
+        targetPointer: targetPointer,
+      );
+    }
+    context.resolvingStack.add(targetPointer);
+    try {
+      return _resolveSchemaFully(schema, resolvedCommon, context);
+    } finally {
+      context.resolvingStack.remove(targetPointer);
+    }
+  }
+
+  return _resolveSchemaFully(schema, resolvedCommon, context);
+}
+
+ResolvedSchema _resolveSchemaFully(
+  Schema schema,
+  CommonProperties resolvedCommon,
+  ResolveContext context,
+) {
+  final createsNewType = shouldCreateNewType(schema);
 
   if (schema is SchemaObject) {
     assert(createsNewType, 'SchemaObject should create a new type');
@@ -1266,4 +1304,25 @@ class ResolvedEmptyObject extends ResolvedSchema {
   ResolvedEmptyObject copyWith({CommonProperties? common}) {
     return ResolvedEmptyObject(common: common ?? this.common);
   }
+}
+
+class ResolvedRecursiveRef extends ResolvedSchema {
+  const ResolvedRecursiveRef({
+    required super.common,
+    required this.targetPointer,
+  }) : super(createsNewType: false);
+
+  /// The pointer to the referenced schema in the registry
+  final JsonPointer targetPointer;
+
+  @override
+  ResolvedRecursiveRef copyWith({CommonProperties? common}) {
+    return ResolvedRecursiveRef(
+      common: common ?? this.common,
+      targetPointer: targetPointer,
+    );
+  }
+
+  @override
+  List<Object?> get props => [super.props, targetPointer];
 }

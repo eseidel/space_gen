@@ -552,6 +552,121 @@ void main() {
         ),
       );
     });
+
+    test('recursion', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Node'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Node': {
+              'type': 'object',
+              'properties': {
+                'left': {r'$ref': '#/components/schemas/Node'},
+                'right': {r'$ref': '#/components/schemas/Node'},
+              },
+            },
+          },
+        },
+      };
+      // Recursive type references are valid and should be allowed.
+      // Node resolves inline as a ResolvedObject; its `left`/`right` are
+      // ResolvedRecursiveRef cycle-break markers pointing back to Node.
+      final spec = parseAndResolveTestSpec(json);
+      final content = spec.paths.first.operations.first.responses.first.content;
+      expect(
+        content,
+        isA<ResolvedObject>().having(
+          (e) => e.snakeName,
+          'snakeName',
+          equals('node'),
+        ),
+      );
+      final node = content as ResolvedObject;
+      expect(node.properties.keys, equals(['left', 'right']));
+      expect(node.properties['left'], isA<ResolvedRecursiveRef>());
+      expect(node.properties['right'], isA<ResolvedRecursiveRef>());
+      final left = node.properties['left']! as ResolvedRecursiveRef;
+      expect(
+        left.targetPointer.toString(),
+        equals('#/components/schemas/Node'),
+      );
+    });
+
+    test('mutual recursion: A -> b: B -> a: A', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Mutual', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/root': {
+            'get': {
+              'operationId': 'getRoot',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Foo'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Foo': {
+              'type': 'object',
+              'properties': {
+                'bar': {r'$ref': '#/components/schemas/Bar'},
+              },
+            },
+            'Bar': {
+              'type': 'object',
+              'properties': {
+                'foo': {r'$ref': '#/components/schemas/Foo'},
+              },
+            },
+          },
+        },
+      };
+      // Foo resolves inline; its `bar` is Bar inline; Bar's `foo` is a
+      // ResolvedRecursiveRef back to Foo (cycle break). Resolution terminates.
+      final spec = parseAndResolveTestSpec(json);
+      final foo = spec.paths.first.operations.first.responses.first.content;
+      expect(foo, isA<ResolvedObject>());
+      final bar = (foo as ResolvedObject).properties['bar'];
+      expect(bar, isA<ResolvedObject>());
+      final fooRef = (bar! as ResolvedObject).properties['foo'];
+      expect(fooRef, isA<ResolvedRecursiveRef>());
+      expect(
+        (fooRef! as ResolvedRecursiveRef).targetPointer.toString(),
+        equals('#/components/schemas/Foo'),
+      );
+    });
   });
 
   group('ResolvedSchema', () {
@@ -1003,6 +1118,14 @@ void main() {
       });
       test('ResolvedEmptyObject', () {
         testCopyWith(ResolvedEmptyObject(common: beforeCommon));
+      });
+      test('ResolvedRecursiveRef', () {
+        testCopyWith(
+          ResolvedRecursiveRef(
+            common: beforeCommon,
+            targetPointer: JsonPointer.parse('#/components/schemas/Node'),
+          ),
+        );
       });
     });
   });

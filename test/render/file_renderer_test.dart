@@ -1220,6 +1220,121 @@ void main() {
         ]),
       );
     });
+
+    test('self-referential schema generates a recursive class', () async {
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Tree', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/root': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Node'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Node': {
+              'type': 'object',
+              'properties': {
+                'value': {'type': 'string'},
+                'left': {r'$ref': '#/components/schemas/Node'},
+                'right': {r'$ref': '#/components/schemas/Node'},
+              },
+            },
+          },
+        },
+      };
+      final fs = MemoryFileSystem.test();
+      final out = fs.directory('tree');
+
+      await renderToDirectory(spec: spec, outDir: out);
+
+      // Only one file for Node — the cycle-break refs don't emit their own.
+      expect(out.childDirectory('lib/model'), hasFiles(['node.dart']));
+
+      final node = out.childFile('lib/model/node.dart').readAsStringSync();
+      // Recursive fields typed as Node?.
+      expect(node, contains('final Node? left;'));
+      expect(node, contains('final Node? right;'));
+      // toJson recurses via the standard newtype convention.
+      expect(node, contains('left?.toJson()'));
+      expect(node, contains('right?.toJson()'));
+      // fromJson recurses via Node.maybeFromJson (nullable ref).
+      expect(node, contains('Node.maybeFromJson'));
+    });
+
+    test('mutually-recursive schemas both generate', () async {
+      // Foo -> bar: Bar -> foo: Foo forms a cycle going through two types.
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Mutual', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/root': {
+            'get': {
+              'operationId': 'getRoot',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Foo'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Foo': {
+              'type': 'object',
+              'properties': {
+                'bar': {r'$ref': '#/components/schemas/Bar'},
+              },
+            },
+            'Bar': {
+              'type': 'object',
+              'properties': {
+                'foo': {r'$ref': '#/components/schemas/Foo'},
+              },
+            },
+          },
+        },
+      };
+      final fs = MemoryFileSystem.test();
+      final out = fs.directory('mutual');
+
+      await renderToDirectory(spec: spec, outDir: out);
+
+      expect(
+        out.childDirectory('lib/model'),
+        hasFiles(['foo.dart', 'bar.dart']),
+      );
+      final foo = out.childFile('lib/model/foo.dart').readAsStringSync();
+      final bar = out.childFile('lib/model/bar.dart').readAsStringSync();
+      // Each file references the other's class and imports its model file.
+      expect(foo, contains('final Bar? bar;'));
+      expect(foo, contains("import 'package:mutual/model/bar.dart'"));
+      expect(bar, contains('final Foo? foo;'));
+      expect(bar, contains("import 'package:mutual/model/foo.dart'"));
+    });
   });
 
   group('Formatter', () {

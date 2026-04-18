@@ -202,6 +202,11 @@ class SpecResolver {
 
   RenderSchema toRenderSchema(ResolvedSchema schema) {
     switch (schema) {
+      case ResolvedRecursiveRef():
+        return RenderRecursiveRef(
+          common: schema.common,
+          targetPointer: schema.targetPointer,
+        );
       case ResolvedEnum():
         return RenderEnum(
           common: schema.common,
@@ -1110,6 +1115,10 @@ class RenderPod extends RenderSchema {
 
   @override
   String get typeName {
+    // TODO(eseidel): Make RenderPod extensible.
+    // Right now we have this hard-coded list, but we should make it possible
+    // to register generators for various format types, e.g.
+    // https://spec.openapis.org/registry/format/ has many we don't implement.
     return switch (type) {
       PodType.boolean => 'bool',
       PodType.dateTime => 'DateTime',
@@ -2519,4 +2528,81 @@ class RenderEmptyObject extends RenderNewType {
     'typeName': typeName,
     'nullableTypeName': nullableTypeName(context),
   };
+}
+
+/// A cycle-break marker: appears where a $ref would otherwise recurse back
+/// into a schema already being resolved (e.g. Node -> left/right -> Node).
+/// At render time it behaves as a type reference — emits the target's class
+/// name and the standard newtype toJson/fromJson calls — but never renders a
+/// file of its own (the target is inlined elsewhere in the tree and renders
+/// there).
+///
+/// The target is always an object-shaped newtype today: Object, OneOf,
+/// AllOf, AnyOf, or EmptyObject. In theory a cycle could also go through a
+/// top-level Array or Map newtype (their child schema can `$ref` back), but
+/// space_gen doesn't render those as standalone classes yet — see the "Map
+/// & Array newtype via explicitly named schema?" TODO in README.md. All the
+/// currently-supported targets serialize as `Map<String, dynamic>` with a
+/// `toJson()` / `fromJson(Map)` contract, so those assumptions are
+/// hard-coded here. If top-level Array/Map newtypes ever ship, this class
+/// needs to delegate `jsonStorageType`/expressions to the target instead of
+/// hard-coding — probably via a pointer -> RenderSchema lookup on the
+/// renderer.
+class RenderRecursiveRef extends RenderSchema {
+  const RenderRecursiveRef({
+    required super.common,
+    required this.targetPointer,
+  }) : super(createsNewType: true);
+
+  final JsonPointer targetPointer;
+
+  @override
+  dynamic get defaultValue => null;
+
+  @override
+  bool get defaultCanConstConstruct => false;
+
+  @override
+  bool get shouldCallToJson => true;
+
+  @override
+  String get typeName => camelFromSnake(snakeName);
+
+  @override
+  String jsonStorageType({required bool isNullable}) =>
+      isNullable ? 'Map<String, dynamic>?' : 'Map<String, dynamic>';
+
+  @override
+  String toJsonExpression(
+    String dartName,
+    SchemaRenderer context, {
+    required bool dartIsNullable,
+  }) {
+    final nameCall = dartIsNullable ? '$dartName?' : dartName;
+    return '$nameCall.toJson()';
+  }
+
+  @override
+  String fromJsonExpression(
+    String jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) {
+    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
+    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
+    final orDefault = orDefaultExpression(
+      context: context,
+      jsonIsNullable: jsonIsNullable,
+      dartIsNullable: dartIsNullable,
+    );
+    return '$typeName.$jsonMethod($jsonValue as $jsonType)$orDefault';
+  }
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
+      throw UnimplementedError('RenderRecursiveRef does not render a template');
+
+  @override
+  List<Object?> get props => [super.props, targetPointer];
 }

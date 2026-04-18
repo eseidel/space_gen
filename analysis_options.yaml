@@ -1,4 +1,10 @@
 include: package:very_good_analysis/analysis_options.yaml
+analyzer:
+  exclude:
+    # gen_tests/* are standalone packages with their own pubspec, used as
+    # fixtures by tool/gen_tests.dart. Their deps aren't installed at the
+    # repo root, so analyzing them from here would produce false errors.
+    - gen_tests/**
 linter:
   rules:
     # Disabled while I'm still finding the shape of the api.
