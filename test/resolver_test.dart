@@ -652,8 +652,8 @@ void main() {
           },
         },
       };
-      // Foo inlines; its `bar` is Bar inlined; Bar's `foo` is a ResolvedRef
-      // back to Foo (cycle break). Resolution terminates finitely.
+      // Foo resolves inline; its `bar` is Bar inline; Bar's `foo` is a
+      // ResolvedRef back to Foo (cycle break). Resolution terminates.
       final spec = parseAndResolveTestSpec(json);
       final foo = spec.paths.first.operations.first.responses.first.content;
       expect(foo, isA<ResolvedObject>());
