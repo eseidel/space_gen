@@ -2530,9 +2530,16 @@ class RenderEmptyObject extends RenderNewType {
   };
 }
 
-/// A reference to a schema that creates a new type.
-/// This exists solely for import resolution - it appears in the render tree
-/// so the walker can collect it for imports, but should never be rendered itself.
+/// A cycle-break marker: appears where a $ref would otherwise recurse back
+/// into a schema already being resolved (e.g. Node -> left/right -> Node).
+/// At render time it behaves as a type reference — emits the target's class
+/// name and the standard newtype toJson/fromJson calls — but never renders a
+/// file of its own (the target is inlined elsewhere in the tree and renders
+/// there).
+///
+/// Cycles can only go through object-shaped newtypes (pods and arrays can't
+/// `$ref` themselves), so we can safely assume a `Map<String, dynamic>` json
+/// storage type and a `toJson()`/`fromJson(Map)` convention on the target.
 class RenderRef extends RenderSchema {
   const RenderRef({
     required super.common,
@@ -2542,12 +2549,10 @@ class RenderRef extends RenderSchema {
   final JsonPointer targetPointer;
 
   @override
-  dynamic get defaultValue =>
-      throw UnimplementedError('RenderRef should not be rendered');
+  dynamic get defaultValue => null;
 
   @override
-  bool get defaultCanConstConstruct =>
-      throw UnimplementedError('RenderRef should not be rendered');
+  bool get defaultCanConstConstruct => false;
 
   @override
   bool get shouldCallToJson => true;
@@ -2588,7 +2593,7 @@ class RenderRef extends RenderSchema {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
-      throw UnimplementedError('RenderRef should not be rendered directly');
+      throw UnimplementedError('RenderRef is a reference, not renderable');
 
   @override
   List<Object?> get props => [super.props, targetPointer];

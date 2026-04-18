@@ -25,10 +25,8 @@ class ResolveContext {
     required this.globalSecurityRequirements,
     required this.securitySchemes,
     this.nameOverrides = const {},
-    Map<JsonPointer, ResolvedSchema>? resolvedSchemas,
     Set<JsonPointer>? resolvingStack,
-  }) : resolvedSchemas = resolvedSchemas ?? {},
-       resolvingStack = resolvingStack ?? {};
+  }) : resolvingStack = resolvingStack ?? {};
 
   /// Used for cases where we need a ResolveContext, but don't actually
   /// plan to look up any objects in the registry.
@@ -38,12 +36,10 @@ class ResolveContext {
     this.globalSecurityRequirements = const [],
     List<SecurityScheme>? securitySchemes,
     this.nameOverrides = const {},
-    Map<JsonPointer, ResolvedSchema>? resolvedSchemas,
     Set<JsonPointer>? resolvingStack,
   }) : specUrl = specUrl ?? Uri.parse('https://example.com'),
        refRegistry = refRegistry ?? RefRegistry(),
        securitySchemes = securitySchemes ?? [],
-       resolvedSchemas = resolvedSchemas ?? {},
        resolvingStack = resolvingStack ?? {};
 
   /// The spec url of the spec.
@@ -62,10 +58,9 @@ class ResolveContext {
   /// Only contains names that actually changed due to collisions
   final Map<JsonPointer, String> nameOverrides;
 
-  /// Registry of fully resolved schemas that create new types
-  final Map<JsonPointer, ResolvedSchema> resolvedSchemas;
-
-  /// Stack of schemas currently being resolved (for cycle detection)
+  /// Stack of schemas currently being resolved, used to break $ref cycles
+  /// (e.g. `Node -> left/right -> Node`). When a cycle is detected the
+  /// resolver emits a [ResolvedRef] instead of recursing.
   final Set<JsonPointer> resolvingStack;
 
   CommonProperties resolveCommonProperties(CommonProperties common) {
@@ -132,38 +127,26 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   // Schema snake_name might change due to collisions, get resolved name.
   final resolvedCommon = context.resolveCommonProperties(schema.common);
 
-  // If this schema creates a new type, use a reference
+  // Only ref-through-a-newtype can cycle (pod/array/map leaves can't $ref
+  // back up to themselves). For non-cyclic refs we keep inlining the
+  // resolved target as before — preserving existing tests and keeping
+  // ResolvedRef strictly a cycle-break marker.
   if (createsNewType && ref.ref != null) {
     final targetPointer = schema.pointer;
-
-    // Check for circular reference
     if (context.resolvingStack.contains(targetPointer)) {
       return ResolvedRef(
         common: resolvedCommon,
         targetPointer: targetPointer,
       );
     }
-
-    // Check if already resolved
-    if (!context.resolvedSchemas.containsKey(targetPointer)) {
-      // Mark as being resolved
-      context.resolvingStack.add(targetPointer);
-
-      // Resolve the full schema (recursive calls will now detect cycles)
-      final fullSchema = _resolveSchemaFully(schema, resolvedCommon, context);
-      context.resolvedSchemas[targetPointer] = fullSchema;
-
-      // Unmark
+    context.resolvingStack.add(targetPointer);
+    try {
+      return _resolveSchemaFully(schema, resolvedCommon, context);
+    } finally {
       context.resolvingStack.remove(targetPointer);
     }
-
-    return ResolvedRef(
-      common: resolvedCommon,
-      targetPointer: targetPointer,
-    );
   }
 
-  // Otherwise inline resolve
   return _resolveSchemaFully(schema, resolvedCommon, context);
 }
 

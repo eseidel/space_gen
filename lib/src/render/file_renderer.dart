@@ -364,8 +364,10 @@ class FileRenderer {
     };
 
     final apiSchemas = collectSchemasUnderApi(api);
-    final inlineSchemas = apiSchemas.where((s) => !rendersToSeparateFile(s));
-    final importedSchemas = apiSchemas.where(rendersToSeparateFile);
+    final inlineSchemas = apiSchemas.where((s) => !s.createsNewType);
+    // Every newtype (including RenderRef, which points at one) lives in its
+    // own file and needs an import at the use site.
+    final importedSchemas = apiSchemas.where((s) => s.createsNewType);
     final apiImports = importedSchemas
         .map((s) => Import(modelPackageImport(this, s)))
         .toList();
@@ -415,10 +417,11 @@ class FileRenderer {
   Iterable<Import> importsForModel(RenderSchema schema) {
     final referencedSchemas = collectSchemasUnderSchema(schema);
     final localSchemas = referencedSchemas.where(
-      (s) => !rendersToSeparateFile(s),
+      (s) => !s.createsNewType,
     );
+    // Every newtype (including RenderRef) imports the target's file.
     final importedSchemas = referencedSchemas
-        .where(rendersToSeparateFile)
+        .where((s) => s.createsNewType)
         .toSet();
     final referencedImports = importedSchemas
         .map((s) => Import(modelPackageImport(this, s)))

@@ -589,14 +589,25 @@ void main() {
         },
       };
       // Recursive type references are valid and should be allowed.
+      // The top-level Node is inlined as a ResolvedObject; its `left` and
+      // `right` properties are ResolvedRef cycle-break markers back to Node.
       final spec = parseAndResolveTestSpec(json);
+      final content = spec.paths.first.operations.first.responses.first.content;
       expect(
-        spec.paths.first.operations.first.responses.first.content,
-        isA<ResolvedRef>().having(
+        content,
+        isA<ResolvedObject>().having(
           (e) => e.snakeName,
           'snakeName',
           equals('node'),
         ),
+      );
+      final node = content as ResolvedObject;
+      expect(node.properties.keys, equals(['left', 'right']));
+      expect(node.properties['left'], isA<ResolvedRef>());
+      expect(node.properties['right'], isA<ResolvedRef>());
+      expect(
+        (node.properties['left']! as ResolvedRef).targetPointer.toString(),
+        equals('#/components/schemas/Node'),
       );
     });
   });
