@@ -2537,10 +2537,17 @@ class RenderEmptyObject extends RenderNewType {
 /// file of its own (the target is inlined elsewhere in the tree and renders
 /// there).
 ///
-/// Cycles can only go through an object-shaped newtype (pods and arrays
-/// can't `$ref` themselves), so we can safely assume a `Map<String, dynamic>`
-/// json storage type and a `toJson()`/`fromJson(Map)` convention on the
-/// target class.
+/// The target is always an object-shaped newtype today: Object, OneOf,
+/// AllOf, AnyOf, or EmptyObject. In theory a cycle could also go through a
+/// top-level Array or Map newtype (their child schema can `$ref` back), but
+/// space_gen doesn't render those as standalone classes yet — see the "Map
+/// & Array newtype via explicitly named schema?" TODO in README.md. All the
+/// currently-supported targets serialize as `Map<String, dynamic>` with a
+/// `toJson()` / `fromJson(Map)` contract, so those assumptions are
+/// hard-coded here. If top-level Array/Map newtypes ever ship, this class
+/// needs to delegate `jsonStorageType`/expressions to the target instead of
+/// hard-coding — probably via a pointer -> RenderSchema lookup on the
+/// renderer.
 class RenderRecursiveRef extends RenderSchema {
   const RenderRecursiveRef({
     required super.common,
