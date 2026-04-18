@@ -349,7 +349,7 @@ class FileRenderer {
   }
 
   bool rendersToSeparateFile(RenderSchema schema) =>
-      schema.createsNewType && schema is! RenderRef;
+      schema.createsNewType && schema is! RenderRecursiveRef;
 
   @visibleForTesting
   Iterable<Import> importsForApi(Api api) {
@@ -365,8 +365,8 @@ class FileRenderer {
 
     final apiSchemas = collectSchemasUnderApi(api);
     final inlineSchemas = apiSchemas.where((s) => !s.createsNewType);
-    // Every newtype (including RenderRef, which points at one) lives in its
-    // own file and needs an import at the use site.
+    // Every newtype (including RenderRecursiveRef, which points at one)
+    // lives in its own file and needs an import at the use site.
     final importedSchemas = apiSchemas.where((s) => s.createsNewType);
     final apiImports = importedSchemas
         .map((s) => Import(modelPackageImport(this, s)))
@@ -419,7 +419,7 @@ class FileRenderer {
     final localSchemas = referencedSchemas.where(
       (s) => !s.createsNewType,
     );
-    // Every newtype (including RenderRef) imports the target's file.
+    // Every newtype (including RenderRecursiveRef) imports the target's file.
     final importedSchemas = referencedSchemas
         .where((s) => s.createsNewType)
         .toSet();

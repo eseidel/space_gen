@@ -202,8 +202,8 @@ class SpecResolver {
 
   RenderSchema toRenderSchema(ResolvedSchema schema) {
     switch (schema) {
-      case ResolvedRef():
-        return RenderRef(
+      case ResolvedRecursiveRef():
+        return RenderRecursiveRef(
           common: schema.common,
           targetPointer: schema.targetPointer,
         );
@@ -2541,8 +2541,8 @@ class RenderEmptyObject extends RenderNewType {
 /// can't `$ref` themselves), so we can safely assume a `Map<String, dynamic>`
 /// json storage type and a `toJson()`/`fromJson(Map)` convention on the
 /// target class.
-class RenderRef extends RenderSchema {
-  const RenderRef({
+class RenderRecursiveRef extends RenderSchema {
+  const RenderRecursiveRef({
     required super.common,
     required this.targetPointer,
   }) : super(createsNewType: true);
@@ -2594,7 +2594,7 @@ class RenderRef extends RenderSchema {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
-      throw UnimplementedError('RenderRef does not render a template');
+      throw UnimplementedError('RenderRecursiveRef does not render a template');
 
   @override
   List<Object?> get props => [super.props, targetPointer];

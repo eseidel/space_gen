@@ -589,8 +589,8 @@ void main() {
         },
       };
       // Recursive type references are valid and should be allowed.
-      // The top-level Node is inlined as a ResolvedObject; its `left` and
-      // `right` properties are ResolvedRef cycle-break markers back to Node.
+      // Node inlines as a ResolvedObject; its `left`/`right` properties are
+      // ResolvedRecursiveRef cycle-break markers pointing back to Node.
       final spec = parseAndResolveTestSpec(json);
       final content = spec.paths.first.operations.first.responses.first.content;
       expect(
@@ -603,10 +603,11 @@ void main() {
       );
       final node = content as ResolvedObject;
       expect(node.properties.keys, equals(['left', 'right']));
-      expect(node.properties['left'], isA<ResolvedRef>());
-      expect(node.properties['right'], isA<ResolvedRef>());
+      expect(node.properties['left'], isA<ResolvedRecursiveRef>());
+      expect(node.properties['right'], isA<ResolvedRecursiveRef>());
+      final left = node.properties['left']! as ResolvedRecursiveRef;
       expect(
-        (node.properties['left']! as ResolvedRef).targetPointer.toString(),
+        left.targetPointer.toString(),
         equals('#/components/schemas/Node'),
       );
     });
@@ -653,16 +654,16 @@ void main() {
         },
       };
       // Foo resolves inline; its `bar` is Bar inline; Bar's `foo` is a
-      // ResolvedRef back to Foo (cycle break). Resolution terminates.
+      // ResolvedRecursiveRef back to Foo (cycle break). Resolution terminates.
       final spec = parseAndResolveTestSpec(json);
       final foo = spec.paths.first.operations.first.responses.first.content;
       expect(foo, isA<ResolvedObject>());
       final bar = (foo as ResolvedObject).properties['bar'];
       expect(bar, isA<ResolvedObject>());
       final fooRef = (bar! as ResolvedObject).properties['foo'];
-      expect(fooRef, isA<ResolvedRef>());
+      expect(fooRef, isA<ResolvedRecursiveRef>());
       expect(
-        (fooRef! as ResolvedRef).targetPointer.toString(),
+        (fooRef! as ResolvedRecursiveRef).targetPointer.toString(),
         equals('#/components/schemas/Foo'),
       );
     });
@@ -1118,9 +1119,9 @@ void main() {
       test('ResolvedEmptyObject', () {
         testCopyWith(ResolvedEmptyObject(common: beforeCommon));
       });
-      test('ResolvedRef', () {
+      test('ResolvedRecursiveRef', () {
         testCopyWith(
-          ResolvedRef(
+          ResolvedRecursiveRef(
             common: beforeCommon,
             targetPointer: JsonPointer.parse('#/components/schemas/Node'),
           ),

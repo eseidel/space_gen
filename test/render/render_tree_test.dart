@@ -561,8 +561,8 @@ void main() {
     });
   });
 
-  group('RenderRef', () {
-    const ref = RenderRef(
+  group('RenderRecursiveRef', () {
+    const ref = RenderRecursiveRef(
       common: CommonProperties.test(
         snakeName: 'node',
         pointer: JsonPointer.empty(),
@@ -573,7 +573,7 @@ void main() {
     test('is a newtype but does not render its own file', () {
       // createsNewType=true so the walker/import logic treats it like any
       // other newtype at a use site; rendersToSeparateFile is handled by
-      // FileRenderer and excludes RenderRef specifically.
+      // FileRenderer and excludes RenderRecursiveRef specifically.
       expect(ref.createsNewType, isTrue);
       expect(ref.shouldCallToJson, isTrue);
       expect(ref.defaultValue, isNull);
@@ -625,7 +625,7 @@ void main() {
       );
     });
 
-    test('toTemplateContext throws — RenderRef is never rendered directly', () {
+    test('toTemplateContext throws — never rendered directly', () {
       final templates = TemplateProvider.defaultLocation();
       final context = SchemaRenderer(templates: templates);
       expect(
@@ -634,17 +634,17 @@ void main() {
       );
     });
 
-    test('walker visits RenderRef as a leaf (collected, not recursed)', () {
-      // RenderObject holds a RenderRef among its properties. The walker
-      // should visit both; collectionSchemasUnderSchema returns them both so
-      // the file renderer can emit the import for the ref target.
+    test('walker visits it as a leaf (collected, not recursed)', () {
+      // RenderObject holds a RenderRecursiveRef among its properties.
+      // collectSchemasUnderSchema returns them both so the file renderer
+      // can emit the import for the ref target.
       const nodeObject = RenderObject(
         common: CommonProperties.test(
           snakeName: 'node',
           pointer: JsonPointer.empty(),
         ),
         properties: {
-          'left': RenderRef(
+          'left': RenderRecursiveRef(
             common: CommonProperties.test(
               snakeName: 'node',
               pointer: JsonPointer.empty(),
@@ -656,25 +656,25 @@ void main() {
       final collector = _Collector();
       RenderTreeWalker(visitor: collector).walkSchema(nodeObject);
       expect(collector.visited.whereType<RenderObject>().length, 1);
-      expect(collector.visited.whereType<RenderRef>().length, 1);
+      expect(collector.visited.whereType<RenderRecursiveRef>().length, 1);
     });
 
     test('equality is based on pointer + snakeName + targetPointer', () {
-      const a = RenderRef(
+      const a = RenderRecursiveRef(
         common: CommonProperties.test(
           snakeName: 'node',
           pointer: JsonPointer.empty(),
         ),
         targetPointer: JsonPointer.empty(),
       );
-      const b = RenderRef(
+      const b = RenderRecursiveRef(
         common: CommonProperties.test(
           snakeName: 'node',
           pointer: JsonPointer.empty(),
         ),
         targetPointer: JsonPointer.empty(),
       );
-      final differentTarget = RenderRef(
+      final differentTarget = RenderRecursiveRef(
         common: const CommonProperties.test(
           snakeName: 'node',
           pointer: JsonPointer.empty(),

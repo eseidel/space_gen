@@ -60,7 +60,7 @@ class ResolveContext {
 
   /// Stack of schemas currently being resolved, used to break $ref cycles
   /// (e.g. `Node -> left/right -> Node`). When a cycle is detected the
-  /// resolver emits a [ResolvedRef] instead of recursing.
+  /// resolver emits a [ResolvedRecursiveRef] instead of recursing.
   final Set<JsonPointer> resolvingStack;
 
   CommonProperties resolveCommonProperties(CommonProperties common) {
@@ -130,11 +130,11 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   // Only ref-through-a-newtype can cycle (pod/array/map leaves can't $ref
   // back up to themselves). For non-cyclic refs we keep inlining the
   // resolved target as before — preserving existing tests and keeping
-  // ResolvedRef strictly a cycle-break marker.
+  // ResolvedRecursiveRef strictly a cycle-break marker.
   if (createsNewType && ref.ref != null) {
     final targetPointer = schema.pointer;
     if (context.resolvingStack.contains(targetPointer)) {
-      return ResolvedRef(
+      return ResolvedRecursiveRef(
         common: resolvedCommon,
         targetPointer: targetPointer,
       );
@@ -1306,8 +1306,8 @@ class ResolvedEmptyObject extends ResolvedSchema {
   }
 }
 
-class ResolvedRef extends ResolvedSchema {
-  const ResolvedRef({
+class ResolvedRecursiveRef extends ResolvedSchema {
+  const ResolvedRecursiveRef({
     required super.common,
     required this.targetPointer,
   }) : super(createsNewType: false);
@@ -1316,8 +1316,8 @@ class ResolvedRef extends ResolvedSchema {
   final JsonPointer targetPointer;
 
   @override
-  ResolvedRef copyWith({CommonProperties? common}) {
-    return ResolvedRef(
+  ResolvedRecursiveRef copyWith({CommonProperties? common}) {
+    return ResolvedRecursiveRef(
       common: common ?? this.common,
       targetPointer: targetPointer,
     );

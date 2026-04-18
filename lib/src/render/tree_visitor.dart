@@ -42,7 +42,7 @@ class RenderTreeWalker {
         }
       case RenderMap():
         walkSchema(schema.valueSchema);
-      case RenderRef():
+      case RenderRecursiveRef():
       case RenderEnum():
       case RenderString():
       case RenderInteger():
