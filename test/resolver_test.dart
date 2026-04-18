@@ -589,7 +589,7 @@ void main() {
         },
       };
       // Recursive type references are valid and should be allowed.
-      // Node inlines as a ResolvedObject; its `left`/`right` properties are
+      // Node resolves inline as a ResolvedObject; its `left`/`right` are
       // ResolvedRecursiveRef cycle-break markers pointing back to Node.
       final spec = parseAndResolveTestSpec(json);
       final content = spec.paths.first.operations.first.responses.first.content;
