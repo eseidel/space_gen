@@ -132,8 +132,10 @@ class SpecWalker {
         _maybeRefOr(schema.additionalProperties);
       case SchemaArray():
         _maybeRefOr(schema.items);
-      case SchemaEnum():
       case SchemaMap():
+        _maybeRefOr(schema.valueSchema);
+        _maybeRefOr(schema.keySchema);
+      case SchemaEnum():
       case SchemaUnknown():
       case SchemaPod():
       case SchemaInteger():

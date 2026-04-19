@@ -109,6 +109,66 @@ void main() {
       }
     });
 
+    test('propertyNames with ref to a string enum gives a typed map key', () {
+      final schemas = <String, Map<String, dynamic>>{
+        'Platform': {
+          'type': 'string',
+          'enum': ['android', 'ios'],
+        },
+        'Status': {
+          'type': 'string',
+          'enum': ['draft', 'active'],
+        },
+        'R': {
+          'type': 'object',
+          'required': ['statuses'],
+          'properties': {
+            'statuses': {
+              'type': 'object',
+              'additionalProperties': {
+                r'$ref': '#/components/schemas/Status',
+              },
+              'propertyNames': {
+                r'$ref': '#/components/schemas/Platform',
+              },
+            },
+          },
+        },
+      };
+      final rendered = renderTestSchemas(
+        schemas,
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final r = rendered['R']!;
+      expect(r, contains('final Map<Platform, Status> statuses;'));
+      expect(r, contains('MapEntry(Platform.fromJson(key), Status.fromJson'));
+      expect(r, contains('MapEntry(key.toJson(), value.toJson())'));
+    });
+
+    test('propertyNames without an enum ref is a spec error', () {
+      final schema = {
+        'type': 'object',
+        'required': ['statuses'],
+        'properties': {
+          'statuses': {
+            'type': 'object',
+            'additionalProperties': {'type': 'string'},
+            'propertyNames': {'type': 'string'},
+          },
+        },
+      };
+      expect(
+        () => renderTestSchema(schema, asComponent: true),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('must resolve to a string enum'),
+          ),
+        ),
+      );
+    });
+
     test('x-enum-descriptions emits dartdoc per enum case', () {
       final schema = {
         'type': 'string',

@@ -504,6 +504,50 @@ void main() {
       );
       expect(a.equalsIgnoringName(c), isFalse);
     });
+
+    test('RenderMap keySchema participates in equality', () {
+      const boolValue = RenderPod(
+        common: CommonProperties.test(
+          snakeName: 'v',
+          pointer: JsonPointer.empty(),
+          description: 'v',
+        ),
+        type: PodType.boolean,
+      );
+      final enumKey = RenderEnum(
+        common: const CommonProperties.test(
+          snakeName: 'platform',
+          pointer: JsonPointer.empty(),
+          description: 'Platform',
+        ),
+        values: const ['android', 'ios'],
+        names: const ['android', 'ios'],
+        descriptions: null,
+      );
+      const noKey = RenderMap(
+        common: CommonProperties.test(
+          snakeName: 'a',
+          pointer: JsonPointer.empty(),
+          description: 'm',
+        ),
+        valueSchema: boolValue,
+        keySchema: null,
+      );
+      final withKey = RenderMap(
+        common: const CommonProperties.test(
+          snakeName: 'a',
+          pointer: JsonPointer.empty(),
+          description: 'm',
+        ),
+        valueSchema: boolValue,
+        keySchema: enumKey,
+      );
+      expect(noKey.equalsIgnoringName(noKey), isTrue);
+      expect(withKey.equalsIgnoringName(withKey), isTrue);
+      // Different keySchema (null vs enum) => not equal.
+      expect(noKey.equalsIgnoringName(withKey), isFalse);
+      expect(withKey.equalsIgnoringName(noKey), isFalse);
+    });
   });
 
   group('additionalImports', () {

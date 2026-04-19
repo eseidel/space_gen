@@ -225,12 +225,24 @@ abstract class SchemaObjectBase extends Schema {
 /// Map isn't a type in the spec, but rather inferred by having
 /// additionalProperties and no other properties.
 class SchemaMap extends Schema {
-  const SchemaMap({required super.common, required this.valueSchema});
+  const SchemaMap({
+    required super.common,
+    required this.valueSchema,
+    required this.keySchema,
+  });
 
   final SchemaRef valueSchema;
 
+  /// Optional typed key schema, from the OpenAPI 3.1 / JSON Schema
+  /// 2020-12 `propertyNames` keyword. Non-null when the spec declared
+  /// `propertyNames` on a map-shaped object. OpenAPI JSON objects
+  /// always have string keys on the wire; this lets the generated
+  /// Dart use a richer key type (currently only string enums) with
+  /// automatic encode/decode at the boundary.
+  final SchemaRef? keySchema;
+
   @override
-  List<Object?> get props => [super.props, valueSchema];
+  List<Object?> get props => [super.props, valueSchema, keySchema];
 }
 
 class SchemaBinary extends Schema {

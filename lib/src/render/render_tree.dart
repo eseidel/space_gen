@@ -329,9 +329,13 @@ class SpecResolver {
           schemas: schema.schemas.map(toRenderSchema).toList(),
         );
       case ResolvedMap():
+        final keyEnum = schema.keySchema;
         return RenderMap(
           common: schema.common,
           valueSchema: toRenderSchema(schema.valueSchema),
+          keySchema: keyEnum == null
+              ? null
+              : toRenderSchema(keyEnum) as RenderEnum,
         );
       case ResolvedEmptyObject():
         return RenderEmptyObject(common: schema.common);
@@ -2071,19 +2075,31 @@ class RenderMap extends RenderSchema {
   const RenderMap({
     required super.common,
     required this.valueSchema,
+    required this.keySchema,
     this.defaultValue,
   }) : super(createsNewType: false);
 
   final RenderSchema valueSchema;
 
+  /// Optional typed key schema. JSON always uses string keys on the wire;
+  /// when non-null the generated Dart uses this enum as the map key and
+  /// the enum's `fromJson`/`toJson` round-trips each key at the boundary.
+  final RenderEnum? keySchema;
+
   @override
   final dynamic defaultValue;
 
   @override
-  List<Object?> get props => [super.props, valueSchema, defaultValue];
+  List<Object?> get props => [
+    super.props,
+    valueSchema,
+    keySchema,
+    defaultValue,
+  ];
 
   @override
-  bool get shouldCallToJson => valueSchema.shouldCallToJson;
+  bool get shouldCallToJson =>
+      keySchema != null || valueSchema.shouldCallToJson;
 
   @override
   bool get defaultCanConstConstruct {
@@ -2097,7 +2113,10 @@ class RenderMap extends RenderSchema {
   }
 
   @override
-  String get typeName => 'Map<String, ${valueSchema.typeName}>';
+  String get typeName {
+    final keyType = keySchema?.typeName ?? 'String';
+    return 'Map<$keyType, ${valueSchema.typeName}>';
+  }
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -2113,17 +2132,19 @@ class RenderMap extends RenderSchema {
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) {
-    // Nothing to do if the value schema is only json types.
-    if (!valueSchema.shouldCallToJson) {
+    // Nothing to do if both key and value are json types.
+    if (keySchema == null && !valueSchema.shouldCallToJson) {
       return dartName;
     }
+    final keyToJson = keySchema == null ? 'key' : 'key.toJson()';
     final valueToJson = valueSchema.toJsonExpression(
       'value',
       context,
       dartIsNullable: false,
     );
     final callMap = dartIsNullable ? '?.map' : '.map';
-    return '$dartName$callMap((key, value) => MapEntry(key, $valueToJson))';
+    return '$dartName$callMap((key, value) => '
+        'MapEntry($keyToJson, $valueToJson))';
   }
 
   @override
@@ -2136,6 +2157,9 @@ class RenderMap extends RenderSchema {
     // We could probably do a smaller cast if the value schema is only json
     // types.
     final jsonType = jsonStorageType(isNullable: jsonIsNullable);
+    final keyFromJson = keySchema == null
+        ? 'key'
+        : '${keySchema!.typeName}.fromJson(key)';
     final valueFromJson = valueSchema.fromJsonExpression(
       'value',
       context,
@@ -2146,7 +2170,7 @@ class RenderMap extends RenderSchema {
     // Should this have a leading ? to skip the key on null?
     final callMap = jsonIsNullable ? '?.map' : '.map';
     return '($jsonValue as $jsonType)$callMap((key, value) => '
-        'MapEntry(key, $valueFromJson))';
+        'MapEntry($keyFromJson, $valueFromJson))';
   }
 
   @override
@@ -2159,6 +2183,7 @@ class RenderMap extends RenderSchema {
       return false;
     }
     return valueSchema.equalsIgnoringName(other.valueSchema) &&
+        RenderSchema.maybeEqualsIgnoringName(keySchema, other.keySchema) &&
         super.equalsIgnoringName(other);
   }
 }

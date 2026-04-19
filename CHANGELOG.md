@@ -45,6 +45,12 @@
 - Fix `RenderArray.defaultValueString` to return `null` when the
   schema has no default (previously crashed casting `null as List`
   once `allListsDefaultToEmpty` was off).
+- Honour the JSON Schema 2020-12 / OpenAPI 3.1 `propertyNames`
+  keyword on map-shaped schemas. When `propertyNames` resolves to a
+  named string enum, the generated field becomes `Map<EnumKey, V>`
+  with the enum's `fromJson`/`toJson` round-tripping each key at the
+  boundary. Handwritten `Map<ReleasePlatform, ReleaseStatus>` can now
+  be expressed spec-compliantly without a vendor extension.
 - Fix nullable primitive query parameters to be null-safe. Generated
   code previously emitted `?foo.toString()`, which always produced a
   map entry (with the literal string `"null"` as its value) because

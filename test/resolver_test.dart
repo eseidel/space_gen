@@ -1184,6 +1184,7 @@ void main() {
             common: beforeCommon,
             type: PodType.boolean,
           ),
+          keySchema: null,
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.valueSchema, equals(schema.valueSchema));
