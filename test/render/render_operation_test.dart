@@ -73,12 +73,6 @@ void main() {
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
         '            throw ApiException(response.statusCode, response.body.toString());\n'
         '        }\n'
-        '\n'
-        '        if (response.body.isNotEmpty) {\n'
-        '            return ;\n'
-        '        }\n'
-        '\n'
-        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -127,12 +121,6 @@ void main() {
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
         '            throw ApiException(response.statusCode, response.body.toString());\n'
         '        }\n'
-        '\n'
-        '        if (response.body.isNotEmpty) {\n'
-        '            return ;\n'
-        '        }\n'
-        '\n'
-        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -398,12 +386,6 @@ void main() {
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
         '            throw ApiException(response.statusCode, response.body.toString());\n'
         '        }\n'
-        '\n'
-        '        if (response.body.isNotEmpty) {\n'
-        '            return ;\n'
-        '        }\n'
-        '\n'
-        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -455,12 +437,6 @@ void main() {
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
         '            throw ApiException(response.statusCode, response.body.toString());\n'
         '        }\n'
-        '\n'
-        '        if (response.body.isNotEmpty) {\n'
-        '            return ;\n'
-        '        }\n'
-        '\n'
-        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -519,12 +495,6 @@ void main() {
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
         '            throw ApiException(response.statusCode, response.body.toString());\n'
         '        }\n'
-        '\n'
-        '        if (response.body.isNotEmpty) {\n'
-        '            return ;\n'
-        '        }\n'
-        '\n'
-        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -580,12 +550,6 @@ void main() {
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
         '            throw ApiException(response.statusCode, response.body.toString());\n'
         '        }\n'
-        '\n'
-        '        if (response.body.isNotEmpty) {\n'
-        '            return ;\n'
-        '        }\n'
-        '\n'
-        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -682,12 +646,6 @@ void main() {
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
         '            throw ApiException(response.statusCode, response.body.toString());\n'
         '        }\n'
-        '\n'
-        '        if (response.body.isNotEmpty) {\n'
-        '            return ;\n'
-        '        }\n'
-        '\n'
-        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
@@ -741,12 +699,6 @@ void main() {
           '        if (response.statusCode >= HttpStatus.badRequest) {\n'
           '            throw ApiException(response.statusCode, response.body.toString());\n'
           '        }\n'
-          '\n'
-          '        if (response.body.isNotEmpty) {\n'
-          '            return ;\n'
-          '        }\n'
-          '\n'
-          '        throw ApiException.unhandled(response.statusCode);\n'
           '    }\n'
           '}\n',
         );
@@ -810,6 +762,28 @@ void main() {
         '    }\n'
         '}\n',
       );
+    });
+
+    test('void return omits body/unhandled branch (allows 204)', () {
+      final json = {
+        'summary': 'Delete user',
+        'operationId': 'deleteUser',
+        'tags': ['users'],
+        'responses': {
+          '204': {'description': 'No content'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users/{id}',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      // Generated `Future<void>` methods should not contain the
+      // `response.body.isNotEmpty` guard or the `ApiException.unhandled`
+      // fallback — otherwise every successful 204 would throw.
+      expect(result, contains('Future<void> deleteUser'));
+      expect(result, isNot(contains('response.body.isNotEmpty')));
+      expect(result, isNot(contains('ApiException.unhandled')));
     });
 
     test('remove prefix', () {

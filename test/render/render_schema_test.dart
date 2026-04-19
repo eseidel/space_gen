@@ -1948,12 +1948,6 @@ void main() {
           '        if (response.statusCode >= HttpStatus.badRequest) {\n'
           '            throw ApiException(response.statusCode, response.body.toString());\n'
           '        }\n'
-          '\n'
-          '        if (response.body.isNotEmpty) {\n'
-          '            return ;\n'
-          '        }\n'
-          '\n'
-          '        throw ApiException.unhandled(response.statusCode);\n'
           '    }\n'
           '}\n',
         );
@@ -2032,12 +2026,6 @@ void main() {
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
         '            throw ApiException(response.statusCode, response.body.toString());\n'
         '        }\n'
-        '\n'
-        '        if (response.body.isNotEmpty) {\n'
-        '            return ;\n'
-        '        }\n'
-        '\n'
-        '        throw ApiException.unhandled(response.statusCode);\n'
         '    }\n'
         '}\n',
       );
