@@ -34,7 +34,7 @@ class {{ typeName }} {
         return {{ typeName }}.fromJson(json);
     }
 
-    {{#properties}}{{{ storageTypeDeclaration }}}{{ dartName }};
+    {{#properties}}{{{ property_doc_comment }}}{{{ storageTypeDeclaration }}}{{ dartName }};
     {{/properties}}
     {{#hasAdditionalProperties}}
     final Map<String, {{{ valueSchema }}}> {{additionalPropertiesName}};

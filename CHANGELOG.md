@@ -14,6 +14,12 @@
   item now apply to every operation on that path; operation-level
   parameters still override by (name, in). Previously path-item-level
   parameters were silently dropped.
+- Emit per-field dartdoc from schema property `description`. Previously
+  the class-level description was rendered but property-level
+  descriptions were dropped.
+- Trim trailing whitespace off doc-comment text so YAML block-scalar
+  descriptions (`description: |`) no longer render a dangling `///`
+  line before the class or field they document.
 - Fix nullable primitive query parameters to be null-safe. Generated
   code previously emitted `?foo.toString()`, which always produced a
   map entry (with the literal string `"null"` as its value) because

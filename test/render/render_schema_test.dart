@@ -1,6 +1,8 @@
 // We don't have a good way to shorten the literal strings from the
 // expected generated code, so ignoring 80c for now.
 // ignore_for_file: lines_longer_than_80_chars
+import 'dart:convert';
+
 import 'package:mocktail/mocktail.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/render.dart';
@@ -63,6 +65,94 @@ void main() {
         '}\n',
       );
     });
+    test('property description emits dartdoc on the field', () {
+      final schema = {
+        'type': 'object',
+        'required': ['id'],
+        'properties': {
+          'id': {
+            'type': 'string',
+            'description': 'The ID of the thing.',
+          },
+        },
+      };
+      final result = renderTestSchema(schema);
+      // The property's description should appear as dartdoc immediately
+      // before the field declaration.
+      expect(
+        result,
+        contains('/// The ID of the thing.\n    final String id;'),
+      );
+    });
+
+    test('long property description wraps to 80 cols at 4-space indent', () {
+      final schema = {
+        'type': 'object',
+        'required': ['id'],
+        'properties': {
+          'id': {
+            'type': 'string',
+            'description':
+                'A quite long property description that must be wrapped '
+                'across multiple lines so that it does not exceed the '
+                'eighty-column limit applied to the generated code.',
+          },
+        },
+      };
+      final result = renderTestSchema(schema);
+      for (final line in const LineSplitter().convert(result)) {
+        if (line.trimLeft().startsWith('///')) {
+          expect(line.length, lessThanOrEqualTo(80), reason: 'line: "$line"');
+          // Field-level dartdoc should be indented with 4 spaces.
+          expect(line, startsWith('    /// '), reason: 'line: "$line"');
+        }
+      }
+    });
+
+    test('trailing newline in description does not produce blank ///', () {
+      // Spec yaml block scalars (`description: |`) add a trailing '\n'
+      // to the string; make sure that does not render as a dangling
+      // `///` line before the field declaration.
+      final schema = {
+        'type': 'object',
+        'required': ['id'],
+        'properties': {
+          'id': {
+            'type': 'string',
+            'description': 'Trailing newline.\n',
+          },
+        },
+      };
+      final result = renderTestSchema(schema);
+      expect(
+        result,
+        contains('/// Trailing newline.\n    final String id;'),
+      );
+      expect(result, isNot(contains('///\n    final String id;')));
+    });
+
+    test('multi-line property description preserves paragraph breaks', () {
+      final schema = {
+        'type': 'object',
+        'required': ['id'],
+        'properties': {
+          'id': {
+            'type': 'string',
+            'description': 'First line.\nSecond line.',
+          },
+        },
+      };
+      final result = renderTestSchema(schema);
+      expect(
+        result,
+        contains(
+          '    /// First line.\n'
+          '    /// Second line.\n'
+          '    final String id;',
+        ),
+      );
+    });
+
     test('datetime', () {
       final schema = {
         'type': 'object',
