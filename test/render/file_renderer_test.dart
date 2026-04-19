@@ -56,6 +56,45 @@ class _HasFiles extends CustomMatcher {
 
 Matcher hasFiles(List<String> files) => _HasFiles(files);
 
+/// Matches the union of files emitted under `lib/models/` and
+/// `lib/messages/`, applied to the package root directory. Use this
+/// when a test just cares "these schema files were generated" and
+/// doesn't need to pin which of the two subdirectories each landed in.
+class _HasGeneratedSchemaFiles extends CustomMatcher {
+  _HasGeneratedSchemaFiles(List<String> files)
+    : super(
+        'has generated schema files (models + messages)',
+        'files',
+        unorderedEquals(files),
+      );
+
+  @override
+  Object? featureValueOf(dynamic actual) {
+    final out = actual as Directory;
+    final names = <String>[];
+    for (final subdir in const ['lib/models', 'lib/messages']) {
+      final dir = out.childDirectory(subdir);
+      if (!dir.existsSync()) continue;
+      names.addAll(
+        dir.listSync().whereType<File>().map((e) => e.path.split('/').last),
+      );
+    }
+    return names;
+  }
+}
+
+Matcher hasGeneratedSchemaFiles(List<String> files) =>
+    _HasGeneratedSchemaFiles(files);
+
+/// True when any generated model or message file has been emitted under
+/// the package root.
+bool hasGeneratedSchemaDirs(Directory out) {
+  for (final subdir in const ['lib/models', 'lib/messages']) {
+    if (out.childDirectory(subdir).existsSync()) return true;
+  }
+  return false;
+}
+
 void main() {
   group('loadAndRenderSpec', () {
     const localFs = LocalFileSystem();
@@ -267,8 +306,8 @@ void main() {
       );
       expect(out.childDirectory('lib/api'), hasFiles(['default_api.dart']));
       expect(
-        out.childDirectory('lib/model'),
-        hasFiles([
+        out,
+        hasGeneratedSchemaFiles([
           'get_user200_response.dart',
           'account.dart',
           'account_role.dart',
@@ -372,8 +411,8 @@ void main() {
       expect(outFile('lib/api_client.dart'), exists);
       expect(apiFile('fleet_api.dart'), exists);
       expect(
-        out.childDirectory('lib/model'),
-        hasFiles([
+        out,
+        hasGeneratedSchemaFiles([
           'purchase_cargo_request.dart',
           'purchase_cargo201_response.dart',
           'purchase_cargo201_response_data.dart',
@@ -438,8 +477,12 @@ void main() {
 
       await renderToDirectory(spec: spec, outDir: out);
       expect(
-        out.childDirectory('lib/model'),
-        hasFiles(['get_user200_response.dart', 'user.dart', 'multiplier.dart']),
+        out,
+        hasGeneratedSchemaFiles([
+          'get_user200_response.dart',
+          'user.dart',
+          'multiplier.dart',
+        ]),
       );
     });
 
@@ -499,8 +542,11 @@ void main() {
       final out = fs.directory('spacetraders');
 
       await renderToDirectory(spec: spec, outDir: out);
-      expect(out.childFile('lib/model/get_user200_response.dart'), exists);
-      expect(out.childFile('lib/model/user.dart'), exists);
+      expect(
+        out.childFile('lib/messages/get_user200_response.dart'),
+        exists,
+      );
+      expect(out.childFile('lib/models/user.dart'), exists);
     });
 
     test('with additionalProperties', () async {
@@ -538,8 +584,8 @@ void main() {
       final out = fs.directory('spacetraders');
 
       await renderToDirectory(spec: spec, outDir: out);
-      // No model files are needed for the Map.
-      expect(out.childDirectory('lib/model').existsSync(), isFalse);
+      // No schema files are needed for the Map.
+      expect(hasGeneratedSchemaDirs(out), isFalse);
     });
 
     test('with inner types', () async {
@@ -591,8 +637,8 @@ void main() {
 
       await renderToDirectory(spec: spec, outDir: out);
       expect(
-        out.childDirectory('lib/model'),
-        hasFiles([
+        out,
+        hasGeneratedSchemaFiles([
           'get_my_factions200_response.dart',
           'get_my_factions200_response_data_inner.dart',
         ]),
@@ -644,8 +690,8 @@ void main() {
 
       await renderToDirectory(spec: spec, outDir: out);
       expect(
-        out.childDirectory('lib/model'),
-        hasFiles(['purchase_cargo_request.dart']),
+        out,
+        hasGeneratedSchemaFiles(['purchase_cargo_request.dart']),
       );
       expect(out.childFile('lib/api/default_api.dart'), exists);
     });
@@ -732,8 +778,8 @@ void main() {
 
       await renderToDirectory(spec: spec, outDir: out);
       expect(
-        out.childDirectory('lib/model'),
-        hasFiles(['get_user200_response.dart']),
+        out,
+        hasGeneratedSchemaFiles(['get_user200_response.dart']),
       );
     });
 
@@ -788,8 +834,8 @@ void main() {
       await renderToDirectory(spec: spec, outDir: out);
       expect(out.childFile('lib/api/default_api.dart'), exists);
       expect(
-        out.childDirectory('lib/model'),
-        hasFiles(['get_my_ships200_response.dart']),
+        out,
+        hasGeneratedSchemaFiles(['get_my_ships200_response.dart']),
       );
     });
 
@@ -857,7 +903,7 @@ void main() {
 
       await renderToDirectory(spec: spec, outDir: out);
       expect(out.childFile('lib/api/default_api.dart'), exists);
-      expect(out.childDirectory('lib/model'), isNot(exists));
+      expect(hasGeneratedSchemaDirs(out), isFalse);
     });
 
     test(
@@ -899,8 +945,8 @@ void main() {
         await renderToDirectory(spec: spec, outDir: out);
         expect(out.childFile('lib/api/default_api.dart'), exists);
         expect(
-          out.childDirectory('lib/model'),
-          hasFiles(['users200_response.dart']),
+          out,
+          hasGeneratedSchemaFiles(['users200_response.dart']),
         );
       },
     );
@@ -942,8 +988,8 @@ void main() {
       await renderToDirectory(spec: spec, outDir: out);
       expect(out.childFile('lib/api/default_api.dart'), exists);
       expect(
-        out.childDirectory('lib/model'),
-        hasFiles(['users_response.dart']),
+        out,
+        hasGeneratedSchemaFiles(['users_response.dart']),
       );
     });
     test('empty object creates new file', () async {
@@ -985,7 +1031,7 @@ void main() {
       final out = fs.directory('spacetraders');
 
       await renderToDirectory(spec: spec, outDir: out);
-      expect(out.childFile('lib/model/empty_object.dart'), exists);
+      expect(out.childFile('lib/models/empty_object.dart'), exists);
     });
 
     test('tag with kebab case', () async {
@@ -1078,11 +1124,10 @@ void main() {
       final out = fs.directory('spacetraders');
 
       await renderToDirectory(spec: spec, outDir: out);
-      final modelDir = out.childDirectory('lib/model');
       // TODO(eseidel): This is wrong. We shouldn't render the nested objects.
       expect(
-        modelDir,
-        hasFiles([
+        out,
+        hasGeneratedSchemaFiles([
           'workflow_usage.dart',
           'workflow_usage_billable.dart',
           'workflow_usage_billable_u_b_u_n_t_u.dart',
@@ -1149,8 +1194,8 @@ void main() {
 
       await renderToDirectory(spec: spec, outDir: out);
       expect(
-        out.childDirectory('lib/model'),
-        hasFiles([
+        out,
+        hasGeneratedSchemaFiles([
           'users200_response.dart',
           'user.dart',
           'user_role.dart',
@@ -1212,8 +1257,8 @@ void main() {
       final logger = _MockLogger();
       await renderToDirectory(spec: spec, outDir: out, logger: logger);
       expect(
-        out.childDirectory('lib/model'),
-        hasFiles([
+        out,
+        hasGeneratedSchemaFiles([
           'users200_response.dart',
           'user.dart',
           'user_role.dart',
@@ -1263,9 +1308,9 @@ void main() {
       await renderToDirectory(spec: spec, outDir: out);
 
       // Only one file for Node — the cycle-break refs don't emit their own.
-      expect(out.childDirectory('lib/model'), hasFiles(['node.dart']));
+      expect(out, hasGeneratedSchemaFiles(['node.dart']));
 
-      final node = out.childFile('lib/model/node.dart').readAsStringSync();
+      final node = out.childFile('lib/models/node.dart').readAsStringSync();
       // Recursive fields typed as Node?.
       expect(node, contains('final Node? left;'));
       expect(node, contains('final Node? right;'));
@@ -1324,16 +1369,16 @@ void main() {
       await renderToDirectory(spec: spec, outDir: out);
 
       expect(
-        out.childDirectory('lib/model'),
-        hasFiles(['foo.dart', 'bar.dart']),
+        out,
+        hasGeneratedSchemaFiles(['foo.dart', 'bar.dart']),
       );
-      final foo = out.childFile('lib/model/foo.dart').readAsStringSync();
-      final bar = out.childFile('lib/model/bar.dart').readAsStringSync();
+      final foo = out.childFile('lib/models/foo.dart').readAsStringSync();
+      final bar = out.childFile('lib/models/bar.dart').readAsStringSync();
       // Each file references the other's class and imports its model file.
       expect(foo, contains('final Bar? bar;'));
-      expect(foo, contains("import 'package:mutual/model/bar.dart'"));
+      expect(foo, contains("import 'package:mutual/models/bar.dart'"));
       expect(bar, contains('final Foo? foo;'));
-      expect(bar, contains("import 'package:mutual/model/foo.dart'"));
+      expect(bar, contains("import 'package:mutual/models/foo.dart'"));
     });
   });
 
