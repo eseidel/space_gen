@@ -317,9 +317,20 @@ ResolvedSchema _resolveSchemaFully(
     );
   }
   if (schema is SchemaMap) {
+    final keyRef = schema.keySchema;
+    final keySchema = keyRef == null ? null : resolveSchemaRef(keyRef, context);
+    if (keySchema != null && keySchema is! ResolvedEnum) {
+      _error(
+        'propertyNames must resolve to a string enum for a map-typed '
+        r'schema. Either use a $ref to a named string enum or an inline '
+        'string enum. Got: ${keySchema.runtimeType}',
+        schema.pointer,
+      );
+    }
     return ResolvedMap(
       common: resolvedCommon,
       valueSchema: resolveSchemaRef(schema.valueSchema, context),
+      keySchema: keySchema as ResolvedEnum?,
       createsNewType: createsNewType,
     );
   }
@@ -1315,16 +1326,21 @@ class ResolvedMap extends ResolvedSchema {
   const ResolvedMap({
     required super.common,
     required this.valueSchema,
+    required this.keySchema,
     required super.createsNewType,
   });
 
   final ResolvedSchema valueSchema;
+
+  /// Optional typed key schema. Must resolve to a string enum.
+  final ResolvedEnum? keySchema;
 
   @override
   ResolvedMap copyWith({CommonProperties? common}) {
     return ResolvedMap(
       common: common ?? this.common,
       valueSchema: valueSchema,
+      keySchema: keySchema,
       createsNewType: createsNewType,
     );
   }

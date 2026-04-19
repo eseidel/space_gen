@@ -42,6 +42,8 @@ class RenderTreeWalker {
         }
       case RenderMap():
         walkSchema(schema.valueSchema);
+        final keySchema = schema.keySchema;
+        if (keySchema != null) walkSchema(keySchema);
       case RenderRecursiveRef():
       case RenderEnum():
       case RenderString():
