@@ -8,6 +8,7 @@ class RenderTreeVisitor {
   void visitParameter(RenderParameter parameter) {}
   void visitRequestBody(RenderRequestBody requestBody) {}
   void visitResponse(RenderResponse response) {}
+  void visitDefaultResponse(RenderDefaultResponse response) {}
 }
 
 class RenderTreeWalker {
@@ -83,7 +84,7 @@ class RenderTreeWalker {
     }
     final defaultResponse = operation.defaultResponse;
     if (defaultResponse != null) {
-      walkResponse(defaultResponse);
+      walkDefaultResponse(defaultResponse);
     }
     for (final parameter in operation.parameters) {
       walkParameter(parameter);
@@ -98,6 +99,11 @@ class RenderTreeWalker {
 
   void walkResponse(RenderResponse response) {
     visitor.visitResponse(response);
+    walkSchema(response.content);
+  }
+
+  void walkDefaultResponse(RenderDefaultResponse response) {
+    visitor.visitDefaultResponse(response);
     walkSchema(response.content);
   }
 }

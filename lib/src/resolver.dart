@@ -588,14 +588,13 @@ List<ResolvedResponse> _resolveResponses(
   }).toList();
 }
 
-ResolvedResponse? _resolveDefaultResponse(
+ResolvedDefaultResponse? _resolveDefaultResponse(
   RefOr<Response>? ref,
   ResolveContext context,
 ) {
   if (ref == null) return null;
   final response = context._resolve(ref);
-  return ResolvedResponse(
-    statusCode: null,
+  return ResolvedDefaultResponse(
     description: response.description,
     content: _resolveContent(response, context),
   );
@@ -917,7 +916,7 @@ class ResolvedOperation {
   final List<ResolvedResponse> responses;
 
   /// The `default:` (catch-all) response, if the operation declares one.
-  final ResolvedResponse? defaultResponse;
+  final ResolvedDefaultResponse? defaultResponse;
 
   /// The tags of the resolved operation.
   final List<String> tags;
@@ -939,14 +938,30 @@ class ResolvedResponse {
     required this.content,
   });
 
-  /// The status code of the resolved response, or null if this is
-  /// the `default:` (catch-all) response.
-  final int? statusCode;
+  /// The status code of the resolved response.
+  final int statusCode;
 
   /// The description of the resolved response.
   final String description;
 
   /// The resolved content of the resolved response.
+  /// We only support json, so we only need a single content.
+  final ResolvedSchema content;
+}
+
+/// The `default:` (catch-all) response on an operation. Shares the
+/// description + content shape with [ResolvedResponse] but carries no
+/// status code.
+class ResolvedDefaultResponse {
+  const ResolvedDefaultResponse({
+    required this.description,
+    required this.content,
+  });
+
+  /// The description of the resolved default response.
+  final String description;
+
+  /// The resolved content of the resolved default response.
   /// We only support json, so we only need a single content.
   final ResolvedSchema content;
 }

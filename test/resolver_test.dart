@@ -751,10 +751,10 @@ void main() {
       };
       final spec = parseAndResolveTestSpec(json);
       final op = spec.paths.first.operations.first;
-      expect(op.defaultResponse, isNotNull);
-      expect(op.defaultResponse!.statusCode, isNull);
-      expect(op.defaultResponse!.description, 'Error');
-      expect(op.defaultResponse!.content, isA<ResolvedObject>());
+      final defaultResponse = op.defaultResponse;
+      expect(defaultResponse, isNotNull);
+      expect(defaultResponse!.description, 'Error');
+      expect(defaultResponse.content, isA<ResolvedObject>());
     });
 
     test('mutual recursion: A -> b: B -> a: A', () {

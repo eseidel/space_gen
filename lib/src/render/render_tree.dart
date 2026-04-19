@@ -423,10 +423,9 @@ class SpecResolver {
   RenderSchema _determineReturnType(ResolvedOperation operation) {
     final responses = operation.responses;
     // Figure out how many different successful responses there are.
-    final successful = responses.where((e) {
-      final code = e.statusCode;
-      return code != null && code >= 200 && code < 300;
-    });
+    final successful = responses.where(
+      (e) => e.statusCode >= 200 && e.statusCode < 300,
+    );
     if (successful.isEmpty) {
       return RenderVoid(
         common: CommonProperties.empty(
@@ -467,7 +466,10 @@ class SpecResolver {
     final resolvedDefault = operation.defaultResponse;
     final defaultResponse = resolvedDefault == null
         ? null
-        : toRenderResponse(resolvedDefault);
+        : RenderDefaultResponse(
+            description: resolvedDefault.description,
+            content: toRenderSchema(resolvedDefault.content),
+          );
     return RenderOperation(
       pointer: operation.pointer,
       snakeName: operation.snakeName,
@@ -859,7 +861,7 @@ class RenderOperation {
   /// Its schema is walked for import/emission like any other response,
   /// so the referenced type is always generated even when no specific
   /// 4xx/5xx status code also references it.
-  final RenderResponse? defaultResponse;
+  final RenderDefaultResponse? defaultResponse;
 
   /// The return type of the resolved operation.
   final RenderSchema returnType;
@@ -998,14 +1000,30 @@ class RenderResponse {
     required this.content,
   });
 
-  /// The status code of the resolved response, or null if this is
-  /// the `default:` (catch-all) response.
-  final int? statusCode;
+  /// The status code of the resolved response.
+  final int statusCode;
 
   /// The description of the resolved response.
   final String description;
 
   /// The resolved content of the resolved response.
+  /// We only support json, so we only need a single content.
+  final RenderSchema content;
+}
+
+/// The `default:` (catch-all) response on an operation. Shares the
+/// description + content shape with [RenderResponse] but carries no
+/// status code.
+class RenderDefaultResponse {
+  const RenderDefaultResponse({
+    required this.description,
+    required this.content,
+  });
+
+  /// The description of the resolved default response.
+  final String description;
+
+  /// The resolved content of the resolved default response.
   /// We only support json, so we only need a single content.
   final RenderSchema content;
 }
