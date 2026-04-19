@@ -3,8 +3,7 @@ class Quirks {
   const Quirks({
     this.dynamicJson = false,
     this.mutableModels = false,
-    // Avoiding ever having List? seems reasonable so we default to true.
-    this.allListsDefaultToEmpty = true,
+    this.allListsDefaultToEmpty = false,
     this.nonNullableDefaultValues = false,
     this.screamingCapsEnums = false,
   });

@@ -1018,7 +1018,10 @@ void main() {
           'a_unknown': {'type': 'array', 'items': <String, dynamic>{}},
         },
       };
-      final result = renderTestSchema(schema);
+      final result = renderTestSchema(
+        schema,
+        quirks: const Quirks(allListsDefaultToEmpty: true),
+      );
       expect(
         result,
         '@immutable\n'

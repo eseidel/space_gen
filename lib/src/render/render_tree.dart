@@ -1978,6 +1978,9 @@ class RenderArray extends RenderSchema {
 
   @override
   String? defaultValueString(SchemaRenderer context) {
+    if (defaultValue == null) {
+      return null;
+    }
     final listDefault = defaultValue as List;
     if (listDefault.isEmpty) {
       // Type annotation is not needed for empty lists.

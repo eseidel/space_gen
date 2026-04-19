@@ -459,14 +459,16 @@ void main() {
           '200': {'description': 'OK'},
         },
       };
-      const quirks = Quirks();
-      // If this expectation changes, set an explicit quirks for renderOperation
-      expect(quirks.allListsDefaultToEmpty, isTrue);
+      // allListsDefaultToEmpty is an openapi-only quirk; the plain
+      // Quirks() default no longer turns it on.
+      const quirks = Quirks(allListsDefaultToEmpty: true);
+      expect(const Quirks().allListsDefaultToEmpty, isFalse);
+      expect(const Quirks.openapi().allListsDefaultToEmpty, isTrue);
       final result = renderTestOperation(
         path: '/users',
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
-        // Using default quirks.
+        quirks: quirks,
       );
       expect(
         result,
