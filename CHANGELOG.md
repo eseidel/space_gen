@@ -1,5 +1,13 @@
 ## 1.0.2
 
+- Accept OpenAPI range status code keys (`1XX`/`2XX`/`3XX`/`4XX`/`5XX`)
+  in response maps. Previously the parser rejected them with "Invalid
+  response code". Range responses are stored separately from
+  specific-code responses at each pipeline layer. `2XX` ranges feed the
+  return-type determination — an operation declaring `2XX: { schema: X }`
+  with no explicit 200 now generates `Future<X>` instead of
+  `Future<void>`. Range schemas are walked for emission so the referenced
+  types are generated like any other response.
 - Generate a typed error body on generated API methods whose operation
   declares a `default:` response. `ApiException` is now generic
   (`ApiException<T>`): when the operation has a default response schema,

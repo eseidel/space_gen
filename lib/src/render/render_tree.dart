@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
+import 'package:space_gen/src/parse/spec.dart' show StatusCodeRange;
 import 'package:space_gen/src/quirks.dart';
 // Any code that depends on SchemaRenderer probably should be moved out
 // of this file and into the schema_renderer.dart file.
@@ -421,12 +422,17 @@ class SpecResolver {
   }
 
   RenderSchema _determineReturnType(ResolvedOperation operation) {
-    final responses = operation.responses;
     // Figure out how many different successful responses there are.
-    final successful = responses.where(
-      (e) => e.statusCode >= 200 && e.statusCode < 300,
-    );
-    if (successful.isEmpty) {
+    // Successful = explicit 2xx codes plus the `2XX` range if declared.
+    final successfulContent = [
+      ...operation.responses
+          .where((e) => e.statusCode >= 200 && e.statusCode < 300)
+          .map((e) => e.content),
+      ...operation.rangeResponses
+          .where((e) => e.range == StatusCodeRange.success)
+          .map((e) => e.content),
+    ];
+    if (successfulContent.isEmpty) {
       return RenderVoid(
         common: CommonProperties.empty(
           snakeName: '${operation.snakeName}_response',
@@ -434,12 +440,10 @@ class SpecResolver {
         ),
       );
     }
-    if (successful.length == 1) {
-      return toRenderSchema(successful.first.content);
+    if (successfulContent.length == 1) {
+      return toRenderSchema(successfulContent.first);
     }
-    final renderSchemas = successful
-        .expand((e) => [toRenderSchema(e.content)])
-        .toList();
+    final renderSchemas = successfulContent.map(toRenderSchema).toList();
     // We don't implement hashCode/equals but rather equalsIgnoringName
     final distinctSchemas = <RenderSchema>{};
     for (final schema in renderSchemas) {
@@ -461,6 +465,14 @@ class SpecResolver {
     return distinctSchemas.first;
   }
 
+  RenderRangeResponse toRenderRangeResponse(ResolvedRangeResponse response) {
+    return RenderRangeResponse(
+      range: response.range,
+      description: response.description,
+      content: toRenderSchema(response.content),
+    );
+  }
+
   RenderOperation toRenderOperation(ResolvedOperation operation) {
     final returnType = _determineReturnType(operation);
     final resolvedDefault = operation.defaultResponse;
@@ -480,6 +492,9 @@ class SpecResolver {
       tags: operation.tags,
       parameters: operation.parameters.map(toRenderParameter).toList(),
       responses: operation.responses.map(toRenderResponse).toList(),
+      rangeResponses: operation.rangeResponses
+          .map(toRenderRangeResponse)
+          .toList(),
       defaultResponse: defaultResponse,
       requestBody: toRenderRequestBody(operation.requestBody),
       returnType: returnType,
@@ -840,6 +855,7 @@ class RenderOperation {
     required this.parameters,
     required this.requestBody,
     required this.responses,
+    required this.rangeResponses,
     required this.defaultResponse,
     required this.returnType,
     required this.tags,
@@ -866,9 +882,16 @@ class RenderOperation {
   final RenderRequestBody? requestBody;
 
   /// The responses of the resolved operation. Only contains responses
-  /// keyed by a specific status code — the `default:` response (if any)
-  /// is on [defaultResponse].
+  /// keyed by a specific status code — range (`NXX`) responses are on
+  /// [rangeResponses] and the `default:` response (if any) is on
+  /// [defaultResponse].
   final List<RenderResponse> responses;
+
+  /// The range (`NXX`) responses of the resolved operation, if any.
+  /// `2XX` ranges feed the return-type determination on the operation
+  /// method; all range schemas are walked for import/emission like any
+  /// other response.
+  final List<RenderRangeResponse> rangeResponses;
 
   /// The `default:` (catch-all) response, if the operation declares one.
   /// Its schema is walked for import/emission like any other response,
@@ -1020,6 +1043,27 @@ class RenderResponse {
   final String description;
 
   /// The resolved content of the resolved response.
+  /// We only support json, so we only need a single content.
+  final RenderSchema content;
+}
+
+/// A range (`NXX`) response on an operation. Shares the description +
+/// content shape with [RenderResponse] but is keyed by a
+/// [StatusCodeRange] rather than an exact code.
+class RenderRangeResponse {
+  const RenderRangeResponse({
+    required this.range,
+    required this.description,
+    required this.content,
+  });
+
+  /// Which `NXX` range this response covers.
+  final StatusCodeRange range;
+
+  /// The description of the resolved range response.
+  final String description;
+
+  /// The resolved content of the resolved range response.
   /// We only support json, so we only need a single content.
   final RenderSchema content;
 }

@@ -255,6 +255,68 @@ void main() {
       },
     );
 
+    test(
+      'NXX range response schema is emitted even when no specific status '
+      'code references it',
+      () async {
+        final fs = MemoryFileSystem.test();
+        final spec = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Range', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/widgets': {
+              'get': {
+                'operationId': 'getWidget',
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {r'$ref': '#/components/schemas/Widget'},
+                      },
+                    },
+                  },
+                  '5XX': {
+                    'description': 'Server error',
+                    'content': {
+                      'application/json': {
+                        'schema': {r'$ref': '#/components/schemas/Error'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'components': {
+            'schemas': {
+              'Widget': {
+                'type': 'object',
+                'properties': {
+                  'name': {'type': 'string'},
+                },
+              },
+              'Error': {
+                'type': 'object',
+                'properties': {
+                  'message': {'type': 'string'},
+                },
+              },
+            },
+          },
+        };
+        final out = fs.directory('out');
+        await renderToDirectory(spec: spec, outDir: out);
+        // `Error` is only referenced by `5XX:` — if the renderer didn't
+        // walk range responses it would be tree-shaken.
+        expect(out.childFile('lib/models/widget.dart').existsSync(), isTrue);
+        expect(out.childFile('lib/models/error.dart').existsSync(), isTrue);
+      },
+    );
+
     test('smoke test with simple spec', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
@@ -1715,6 +1777,7 @@ void main() {
               ],
               requestBody: null,
               responses: <RenderResponse>[],
+              rangeResponses: <RenderRangeResponse>[],
               defaultResponse: null,
               securityRequirements: <ResolvedSecurityRequirement>[],
             ),

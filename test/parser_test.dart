@@ -735,7 +735,7 @@ void main() {
           ),
         );
       });
-      test('only integers and default are supported as response codes', () {
+      test('integers, NXX ranges, and default are supported response keys', () {
         final json = {
           'openapi': '3.1.0',
           'info': {'title': 'Space Traders API', 'version': '1.0.0'},
@@ -766,6 +766,53 @@ void main() {
           ),
         );
       });
+      test('NXX range responses are parsed', () {
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  '200': {'description': 'OK'},
+                  '2XX': {'description': 'Success'},
+                  '4XX': {'description': 'Client error'},
+                  '5XX': {'description': 'Server error'},
+                },
+              },
+            },
+          },
+        };
+        final spec = parseOpenApi(json);
+        final responses =
+            spec.paths['/users'].operations[Method.get]!.responses;
+        expect(responses[200], isNotNull);
+        expect(
+          responses.rangeResponses.keys,
+          containsAll([
+            StatusCodeRange.success,
+            StatusCodeRange.clientError,
+            StatusCodeRange.serverError,
+          ]),
+        );
+        final byRange = responses.rangeResponses;
+        expect(
+          byRange[StatusCodeRange.success]!.object!.description,
+          'Success',
+        );
+        expect(
+          byRange[StatusCodeRange.clientError]!.object!.description,
+          'Client error',
+        );
+        expect(
+          byRange[StatusCodeRange.serverError]!.object!.description,
+          'Server error',
+        );
+      });
+
       test('default response is parsed', () {
         final json = {
           'openapi': '3.1.0',

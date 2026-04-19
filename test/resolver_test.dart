@@ -1,5 +1,6 @@
 import 'package:mocktail/mocktail.dart';
 import 'package:space_gen/src/logger.dart';
+import 'package:space_gen/src/parse/spec.dart' show StatusCodeRange;
 import 'package:space_gen/src/parser.dart';
 import 'package:space_gen/src/resolver.dart';
 import 'package:space_gen/src/types.dart';
@@ -697,6 +698,67 @@ void main() {
       expect(
         left.targetPointer.toString(),
         equals('#/components/schemas/Node'),
+      );
+    });
+
+    test('NXX range responses are resolved', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Range', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/widgets': {
+            'get': {
+              'operationId': 'getWidget',
+              'responses': {
+                '2XX': {
+                  'description': 'Success',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Widget'},
+                    },
+                  },
+                },
+                '5XX': {
+                  'description': 'Server error',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Error'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Widget': {'type': 'object'},
+            'Error': {'type': 'object'},
+          },
+        },
+      };
+      final spec = parseAndResolveTestSpec(json);
+      final op = spec.paths.first.operations.first;
+      expect(op.rangeResponses, hasLength(2));
+      final byRange = {for (final r in op.rangeResponses) r.range: r};
+      expect(
+        byRange[StatusCodeRange.success],
+        isA<ResolvedRangeResponse>().having(
+          (r) => r.description,
+          'description',
+          'Success',
+        ),
+      );
+      expect(
+        byRange[StatusCodeRange.serverError],
+        isA<ResolvedRangeResponse>().having(
+          (r) => r.description,
+          'description',
+          'Server error',
+        ),
       );
     });
 
