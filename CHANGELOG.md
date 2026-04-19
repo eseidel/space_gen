@@ -26,6 +26,9 @@
   uncompilable `try._('TRY')` / `class._('CLASS')`. Now all Dart
   reserved words, built-in identifiers, and contextual keywords are
   escaped with a trailing underscore.
+- Support the `x-enum-descriptions` vendor extension. A parallel array
+  of strings alongside `enum:` now renders as per-case dartdoc on the
+  generated enum.
 - Fix nullable primitive query parameters to be null-safe. Generated
   code previously emitted `?foo.toString()`, which always produced a
   map entry (with the literal string `"null"` as its value) because

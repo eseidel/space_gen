@@ -898,6 +898,7 @@ void main() {
           ),
           values: const ['bar', 'baz'],
           defaultValue: null,
+          descriptions: null,
         );
         final schema2 = ResolvedEnum(
           common: CommonProperties.test(
@@ -909,6 +910,7 @@ void main() {
           ),
           values: const ['bar', 'qux'],
           defaultValue: null,
+          descriptions: null,
         );
         expect(schema1, equals(schema1));
         // Different values.
@@ -1064,6 +1066,7 @@ void main() {
           common: beforeCommon,
           values: const ['bar', 'baz'],
           defaultValue: null,
+          descriptions: null,
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.values, equals(schema.values));

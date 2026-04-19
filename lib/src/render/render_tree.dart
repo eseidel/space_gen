@@ -234,6 +234,7 @@ class SpecResolver {
           common: schema.common,
           values: schema.values,
           names: RenderEnum.variableNamesFor(quirks, schema.values),
+          descriptions: schema.descriptions,
         );
       case ResolvedObject():
         return RenderObject(
@@ -2163,11 +2164,15 @@ class RenderEnum extends RenderNewType {
     required super.common,
     required this.values,
     required this.names,
+    required this.descriptions,
     this.defaultValue,
   }) : assert(
          names.length == values.length,
          'names and values must have the same length',
        );
+  // Invariant: if descriptions is non-null, descriptions.length ==
+  // values.length. Enforced at parse time (see parser.dart), so we
+  // don't re-check here.
 
   @visibleForTesting
   static List<String> variableNamesFor(Quirks quirks, List<String> values) {
@@ -2197,8 +2202,17 @@ class RenderEnum extends RenderNewType {
   /// The names of the resolved schema.
   final List<String> names;
 
+  /// Optional per-value dartdoc descriptions, parallel to [values].
+  final List<String>? descriptions;
+
   @override
-  List<Object?> get props => [super.props, values, names, defaultValue];
+  List<Object?> get props => [
+    super.props,
+    values,
+    names,
+    defaultValue,
+    descriptions,
+  ];
 
   @override
   String jsonStorageType({required bool isNullable}) {
@@ -2208,10 +2222,16 @@ class RenderEnum extends RenderNewType {
   /// Template context for an enum schema.
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    Map<String, dynamic> enumValueToTemplateContext(String value) {
+    Map<String, dynamic> enumValueToTemplateContext(int index) {
+      final value = values[index];
+      final description = descriptions?[index];
       return {
         'enumValueName': variableNameFor(value),
         'enumValue': quoteString(value),
+        'enum_value_doc_comment': createDocCommentFromParts(
+          body: description,
+          indent: 4,
+        ),
       };
     }
 
@@ -2219,7 +2239,9 @@ class RenderEnum extends RenderNewType {
       'doc_comment': createDocComment(common: common),
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
-      'enumValues': values.map(enumValueToTemplateContext).toList(),
+      'enumValues': [
+        for (var i = 0; i < values.length; i++) enumValueToTemplateContext(i),
+      ],
     };
   }
 

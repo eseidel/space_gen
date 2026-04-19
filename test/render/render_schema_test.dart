@@ -109,6 +109,71 @@ void main() {
       }
     });
 
+    test('x-enum-descriptions emits dartdoc per enum case', () {
+      final schema = {
+        'type': 'string',
+        'enum': ['owner', 'admin', 'viewer'],
+        'x-enum-descriptions': [
+          'User that created the organization.',
+          'Users who have permissions to manage the organization.',
+          'Users with read-only access.',
+        ],
+      };
+      final result = renderTestSchema(schema, asComponent: true);
+      expect(
+        result,
+        contains(
+          '    /// User that created the organization.\n'
+          "    owner._('owner'),\n",
+        ),
+      );
+      expect(
+        result,
+        contains(
+          '    /// Users who have permissions to manage the organization.\n'
+          "    admin._('admin'),\n",
+        ),
+      );
+      expect(
+        result,
+        contains(
+          '    /// Users with read-only access.\n'
+          "    viewer._('viewer'),\n",
+        ),
+      );
+    });
+
+    test('x-enum-descriptions length mismatch is a spec error', () {
+      final schema = {
+        'type': 'string',
+        'enum': ['a', 'b'],
+        'x-enum-descriptions': ['only one'],
+      };
+      expect(
+        () => renderTestSchema(schema, asComponent: true),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('x-enum-descriptions with non-string entries is a spec error', () {
+      final schema = {
+        'type': 'string',
+        'enum': ['a', 'b'],
+        // Length matches, but the second entry is not a string.
+        'x-enum-descriptions': ['ok', 42],
+      };
+      expect(
+        () => renderTestSchema(schema, asComponent: true),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('must be a list of strings'),
+          ),
+        ),
+      );
+    });
+
     test('trailing newline in description does not produce blank ///', () {
       // Spec yaml block scalars (`description: |`) add a trailing '\n'
       // to the string; make sure that does not render as a dangling

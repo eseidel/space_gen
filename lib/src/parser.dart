@@ -382,10 +382,29 @@ SchemaEnum? _handleEnum({
       typedDefaultValue = defaultValue as String?;
     }
   }
+  final xEnumDescriptions = _optionalList<dynamic>(json, 'x-enum-descriptions');
+  List<String>? enumDescriptions;
+  if (xEnumDescriptions != null) {
+    if (xEnumDescriptions.length != typedEnumValues.length) {
+      _error(
+        json,
+        'x-enum-descriptions length (${xEnumDescriptions.length}) must '
+        'match enum length (${typedEnumValues.length})',
+      );
+    }
+    if (xEnumDescriptions.any((e) => e is! String)) {
+      _error(
+        json,
+        'x-enum-descriptions must be a list of strings: $xEnumDescriptions',
+      );
+    }
+    enumDescriptions = xEnumDescriptions.cast<String>();
+  }
   return SchemaEnum(
     common: common,
     defaultValue: typedDefaultValue,
     enumValues: typedEnumValues,
+    enumDescriptions: enumDescriptions,
   );
 }
 

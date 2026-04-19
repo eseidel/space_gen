@@ -409,6 +409,7 @@ void main() {
         ),
         names: const ['a', 'b', 'c'],
         values: const ['a', 'b', 'c'],
+        descriptions: null,
       );
       expect(a.equalsIgnoringName(a), isTrue);
 
@@ -420,6 +421,7 @@ void main() {
         ),
         names: const ['a', 'b', 'c'],
         values: const ['a', 'b', 'c'],
+        descriptions: null,
       );
       expect(a.equalsIgnoringName(b), isTrue);
 
@@ -431,6 +433,7 @@ void main() {
         ),
         names: const ['a', 'b'],
         values: const ['a', 'b'],
+        descriptions: null,
       );
       expect(a.equalsIgnoringName(c), isFalse);
     });

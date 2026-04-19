@@ -242,6 +242,7 @@ class SchemaEnum extends Schema {
     required super.common,
     required this.defaultValue,
     required this.enumValues,
+    required this.enumDescriptions,
   });
 
   /// The default value of the enum.
@@ -250,8 +251,18 @@ class SchemaEnum extends Schema {
   // Only string enums are supported for now.
   final List<String> enumValues;
 
+  /// Optional per-value dartdoc descriptions, parallel to [enumValues].
+  /// Populated from the OpenAPI vendor extension `x-enum-descriptions`
+  /// when present.
+  final List<String>? enumDescriptions;
+
   @override
-  List<Object?> get props => [super.props, defaultValue, enumValues];
+  List<Object?> get props => [
+    super.props,
+    defaultValue,
+    enumValues,
+    enumDescriptions,
+  ];
 }
 
 class SchemaNull extends Schema {

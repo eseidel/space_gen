@@ -67,9 +67,21 @@ approach. See the class-level doc comment on `RenderRecursiveRef` in
 - 80-col wrap (enforced for code, not strict for doc comments).
 - `very_good_analysis` lint.
 - Prefer new atomic commits over `git amend`.
-- `CHANGELOG.md` entries per feature.
+- `CHANGELOG.md` entries per feature. Don't bump the heading; stack
+  new bullets under the top-most `## x.y.z` until the pubspec version
+  actually bumps.
 - Keep custom words in `cspell.config.yaml` — CI blocks on unknown words.
   `newtype` / `newtypes` / `renderable` are common false positives.
+- **`required` on internal pipeline types**: `Schema*` (parse),
+  `Resolved*` (resolve), and `Render*` (render) classes mark **every**
+  constructor parameter `required`, including fields that default to
+  `null` or an empty list. These aren't user-facing APIs like Flutter
+  widgets — they're plumbing. A field that should thread all three
+  layers can silently be dropped if intermediate constructors have
+  defaults; `required` turns the "I forgot to pass it" case into a
+  compile error at every call site instead of a quietly-dropped value
+  in the generator. Any exception here should be justified in code
+  comments, not with a convenient default.
 
 ## Gotchas
 
