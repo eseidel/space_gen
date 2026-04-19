@@ -456,6 +456,7 @@ ResolvedOperation resolveOperation({
   required Method method,
   required Operation operation,
   required ResolveContext context,
+  List<ResolvedParameter> pathItemParameters = const [],
 }) {
   final requestBody = _resolveRequestBody(operation.requestBody, context);
   final responses = _resolveResponses(operation.responses, context);
@@ -484,21 +485,48 @@ ResolvedOperation resolveOperation({
     path: path,
     requestBody: requestBody,
     responses: responses,
-    parameters: _resolveParameters(operation.parameters, context),
+    parameters: _mergeParameters(
+      pathItemParameters,
+      _resolveParameters(operation.parameters, context),
+    ),
     securityRequirements: securityRequirements,
   );
+}
+
+/// Merges path-item-level parameters with operation-level parameters.
+///
+/// OpenAPI 3.x uniqueness for a parameter is (name, in). Operation-level
+/// parameters override path-item-level parameters with the same key; any
+/// remaining path-item-level parameters are kept in their original order
+/// ahead of operation-only parameters.
+List<ResolvedParameter> _mergeParameters(
+  List<ResolvedParameter> pathItemParameters,
+  List<ResolvedParameter> operationParameters,
+) {
+  if (pathItemParameters.isEmpty) return operationParameters;
+  String key(ResolvedParameter p) => '${p.inLocation.name}:${p.name}';
+  final operationKeys = operationParameters.map(key).toSet();
+  return [
+    ...pathItemParameters.where((p) => !operationKeys.contains(key(p))),
+    ...operationParameters,
+  ];
 }
 
 List<ResolvedOperation> _resolveOperations(
   PathItem pathItem,
   ResolveContext context,
 ) {
+  final pathItemParameters = _resolveParameters(
+    pathItem.parameters,
+    context,
+  );
   return pathItem.operations.entries.map((entry) {
     return resolveOperation(
       path: pathItem.path,
       method: entry.key,
       operation: entry.value,
       context: context,
+      pathItemParameters: pathItemParameters,
     );
   }).toList();
 }

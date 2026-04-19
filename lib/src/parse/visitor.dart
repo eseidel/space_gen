@@ -44,9 +44,9 @@ class SpecWalker {
 
   void walkPathItem(PathItem pathItem) {
     visitor.visitPathItem(pathItem);
-    // for (final parameter in pathItem.parameters) {
-    //   _parameter(parameter);
-    // }
+    for (final parameter in pathItem.parameters) {
+      _refOr(parameter);
+    }
     for (final operation in pathItem.operations.values) {
       _operation(operation);
     }

@@ -630,6 +630,41 @@ void main() {
       );
     });
 
+    test('path-item-level parameters are parsed', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users/{id}': {
+            'parameters': [
+              {
+                'name': 'id',
+                'in': 'path',
+                'schema': {'type': 'string'},
+                'required': true,
+              },
+            ],
+            'get': {
+              'summary': 'Get user',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+      final spec = parseOpenApi(json);
+      final pathItem = spec.paths['/users/{id}'];
+      expect(pathItem.parameters, hasLength(1));
+      final parameter = pathItem.parameters.first.object!;
+      expect(parameter.name, 'id');
+      expect(parameter.inLocation, ParameterLocation.path);
+      expect(parameter.isRequired, isTrue);
+    });
+
     test('path parameters must be required', () {
       final json = {
         'openapi': '3.1.0',

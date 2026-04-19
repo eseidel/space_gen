@@ -484,7 +484,7 @@ class PathItem extends Equatable implements HasPointer {
     required this.operations,
     required this.summary,
     required this.description,
-    // required this.parameters,
+    this.parameters = const [],
   });
 
   /// Where this path item is located in the spec.
@@ -503,8 +503,10 @@ class PathItem extends Equatable implements HasPointer {
   /// The default description for all operations in this path.
   final String? description;
 
-  /// Parameters available to all operations in this path.
-  // final List<Parameter> parameters;
+  /// Parameters applicable to all operations in this path.
+  /// Operation-level parameters with the same name + location override
+  /// these at the operation level.
+  final List<RefOr<Parameter>> parameters;
 
   @override
   List<Object?> get props => [
@@ -512,7 +514,7 @@ class PathItem extends Equatable implements HasPointer {
     operations,
     summary,
     description,
-    // parameters,
+    parameters,
   ];
 }
 

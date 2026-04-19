@@ -839,13 +839,12 @@ PathItem parsePathItem({
   //   return RefOr<PathItem>.ref(ref);
   // }
   final summary = _optional<String>(pathItemJson, 'summary');
-  _ignored<List<dynamic>>(pathItemJson, 'parameters');
-  // final parameters = _mapOptionalList(
-  //   pathItemJson,
-  //   'parameters',
-  //   (child, index) => parseParameterOrRef(
-  //  child.addSnakeName('parameter$index')),
-  // );
+  final parameters = _mapOptionalList(
+    pathItemJson,
+    'parameters',
+    (child, index) =>
+        parseParameterOrRef(child.addSnakeName('parameter$index')),
+  );
 
   final description = _optional<String>(pathItemJson, 'description');
   final operations = _parseOperations(pathItemJson, path);
@@ -856,7 +855,7 @@ PathItem parsePathItem({
     path: path,
     summary: summary,
     description: description,
-    // parameters: parameters,
+    parameters: parameters,
     operations: operations,
   );
 }
