@@ -193,14 +193,13 @@ class FileWriter {
   }
 }
 
-/// Responsible for determining the layout of the files and rendering the
-/// for the directory structure of the rendered spec.
-///
-/// This FileRenderer uses a directory structure that is similar to the
-/// OpenAPI generator.  Eventually we should make this an interface to allow
-/// rendering to other directory structures.
-class FileRenderer {
-  FileRenderer({
+/// Bundles the collaborators a [FileRenderer] needs. Held as a single
+/// value so subclasses can forward it via `super(config)` without
+/// tracking constructor-parameter drift as the renderer grows. All
+/// fields are considered implementation detail — public to make the
+/// config shape legible, not to invite direct construction.
+class FileRendererConfig {
+  FileRendererConfig({
     required this.packageName,
     required this.templates,
     required this.schemaRenderer,
@@ -209,27 +208,65 @@ class FileRenderer {
     required this.spellChecker,
   });
 
-  /// The package name this spec is being rendered into.
   final String packageName;
-
-  /// The file writer to use for writing the files.
-  final FileWriter fileWriter;
-
-  /// The provider of templates.  Could be different from the one used by
-  /// the schema renderer, so we hold our own.
   final TemplateProvider templates;
-
-  /// The formatter to use for formatting the files.
-  final Formatter formatter;
-
-  /// The spell checker to use for checking for misspellings.
-  final SpellChecker spellChecker;
-
-  /// The renderer for schemas and APIs.
   final SchemaRenderer schemaRenderer;
+  final Formatter formatter;
+  final FileWriter fileWriter;
+  final SpellChecker spellChecker;
+}
+
+/// The information a layout hook (e.g. [FileRenderer.modelPath]) is
+/// given when deciding where a particular schema's file lands.
+///
+/// The [schema] is the one currently being placed;
+/// [operationSnakeNames] is the set of operation names snake-cased
+/// to match `RenderSchema.snakeName`, so a subclass can compare the
+/// two without doing its own casing dance (e.g. to detect whether a
+/// message DTO is owned by a single endpoint).
+class LayoutContext {
+  const LayoutContext({
+    required this.schema,
+    required this.operationSnakeNames,
+  });
+
+  /// The schema whose output path is being decided.
+  final RenderSchema schema;
+
+  /// Snake-cased operation names, in the same casing as
+  /// `RenderSchema.snakeName` so direct comparisons work.
+  final Set<String> operationSnakeNames;
+}
+
+/// Responsible for determining the layout of the files and rendering the
+/// directory structure of the rendered spec.
+///
+/// Subclass and override the `@protected` hooks (e.g. [modelPath]) to
+/// plug custom layouts into `loadAndRenderSpec` without forking the
+/// generator.
+class FileRenderer {
+  FileRenderer(this.config);
+
+  /// The collaborators this renderer was constructed with. Subclasses
+  /// rarely need to touch this directly — prefer the narrower getters
+  /// below and the `@protected` hook methods.
+  @protected
+  final FileRendererConfig config;
+
+  String get packageName => config.packageName;
+  FileWriter get fileWriter => config.fileWriter;
+  TemplateProvider get templates => config.templates;
+  Formatter get formatter => config.formatter;
+  SpellChecker get spellChecker => config.spellChecker;
+  SchemaRenderer get schemaRenderer => config.schemaRenderer;
 
   /// The quirks to use for rendering.
   Quirks get quirks => schemaRenderer.quirks;
+
+  /// Snake-cased operation names, captured from the spec at the top
+  /// of [render]. Threaded into every [LayoutContext] handed to
+  /// [modelPath].
+  Set<String> _operationSnakeNames = const {};
 
   /// The path to the api file.
   static String apiFilePath(Api api) {
@@ -241,35 +278,49 @@ class FileRenderer {
     return 'api/${api.fileName}.dart';
   }
 
-  /// Subdirectory under `lib/` a schema renders into.
+  /// The path a schema renders to, relative to the package's `lib/`
+  /// directory, e.g. `models/widget.dart`. Dart packages only expose
+  /// files under `lib/`, so the `lib/` prefix is added by the caller
+  /// and doesn't appear in the hook contract.
   ///
   /// Default: classes whose Dart name ends in `Request` or `Response`
-  /// are treated as message DTOs and land under `messages/`; everything
-  /// else is a domain model and lands under `models/`.
-  ///
+  /// are treated as message DTOs and land under `messages/`;
+  /// everything else is a domain model and lands under `models/`.
   /// With [Quirks.flatModelDir] on (implied by `Quirks.openapi()`),
-  /// everything lands in a single flat `model/` directory for
-  /// compatibility with OpenAPI Generator's output layout.
-  String _modelSubdir(RenderSchema schema) {
-    if (quirks.flatModelDir) return 'model';
-    final className = schema.typeName;
+  /// everything lands in a single flat `model/` directory to match
+  /// the layout OpenAPI Generator produces.
+  ///
+  /// Override point for custom layouts — see `tool/gen_shorebird.dart`
+  /// in this repo for an example that nests operation-owned messages
+  /// under a per-operation directory.
+  @protected
+  @visibleForOverriding
+  String modelPath(LayoutContext context) {
+    final snakeName = context.schema.snakeName;
+    if (quirks.flatModelDir) return 'model/$snakeName.dart';
+    final className = context.schema.typeName;
     final isMessage =
         className.endsWith('Request') || className.endsWith('Response');
-    return isMessage ? 'messages' : 'models';
+    final subdir = isMessage ? 'messages' : 'models';
+    return '$subdir/$snakeName.dart';
   }
 
-  String modelFilePath(RenderSchema schema) {
-    return 'lib/${_modelSubdir(schema)}/${schema.snakeName}.dart';
-  }
+  LayoutContext _contextFor(RenderSchema schema) => LayoutContext(
+    schema: schema,
+    operationSnakeNames: _operationSnakeNames,
+  );
 
-  String modelPackagePath(RenderSchema schema) {
-    return '${_modelSubdir(schema)}/${schema.snakeName}.dart';
-  }
+  /// The schema's path on disk, relative to the package root.
+  String modelFilePath(RenderSchema schema) =>
+      'lib/${modelPath(_contextFor(schema))}';
 
-  String modelPackageImport(FileRenderer context, RenderSchema schema) {
-    return 'package:${context.packageName}/'
-        '${context._modelSubdir(schema)}/${schema.snakeName}.dart';
-  }
+  /// The schema's path relative to the package's `lib/` directory.
+  String modelPackagePath(RenderSchema schema) =>
+      modelPath(_contextFor(schema));
+
+  /// The `package:…` import that resolves to this schema's file.
+  String modelPackageImport(FileRenderer context, RenderSchema schema) =>
+      'package:${context.packageName}/${context.modelPackagePath(schema)}';
 
   /// Render a template.
   void _renderTemplate({
@@ -500,6 +551,12 @@ class FileRenderer {
     // file path for each referenced schema?
     // Set up the package directory.
     _renderDirectory();
+    // Capture the spec's operation names up front so every
+    // [LayoutContext] handed to [modelPath] sees the same set.
+    _operationSnakeNames = {
+      for (final api in spec.apis)
+        for (final endpoint in api.endpoints) endpoint.snakeName,
+    };
     // Render the apis (endpoint groups).
     final renderedApis = _renderApis(spec.apis);
 

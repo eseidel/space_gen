@@ -86,6 +86,17 @@ class _HasGeneratedSchemaFiles extends CustomMatcher {
 Matcher hasGeneratedSchemaFiles(List<String> files) =>
     _HasGeneratedSchemaFiles(files);
 
+/// Test-only [FileRenderer] subclass that exercises the
+/// `fileRendererBuilder` + `modelPath` extension surface by
+/// redirecting every schema to `lib/custom/` regardless of type.
+class _CustomLayoutRenderer extends FileRenderer {
+  _CustomLayoutRenderer(super.config);
+
+  @override
+  String modelPath(LayoutContext context) =>
+      'custom/${context.schema.snakeName}.dart';
+}
+
 /// True when any generated model or message file has been emitted under
 /// the package root.
 bool hasGeneratedSchemaDirs(Directory out) {
@@ -124,12 +135,14 @@ void main() {
       await runWithLogger(
         logger ?? _MockLogger(),
         () => loadAndRenderSpec(
-          specUrl: Uri.file(specFile.path),
-          packageName: out.path.split('/').last,
-          outDir: out,
-          templatesDir: templatesDir,
-          runProcess: runProcess,
-          logSchemas: false,
+          GeneratorConfig(
+            specUrl: Uri.file(specFile.path),
+            packageName: out.path.split('/').last,
+            outDir: out,
+            templatesDir: templatesDir,
+            runProcess: runProcess,
+            logSchemas: false,
+          ),
         ),
       );
     }
@@ -1380,6 +1393,84 @@ void main() {
       expect(bar, contains('final Foo? foo;'));
       expect(bar, contains("import 'package:mutual/models/foo.dart'"));
     });
+
+    test('fileRendererBuilder routes files through a subclass', () async {
+      // A subclass overriding modelSubdir should see every schema's
+      // file land in the directory it returns — and the default
+      // `lib/models`/`lib/messages` layout should be bypassed.
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Custom Layout', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/widgets': {
+            'post': {
+              'operationId': 'createWidget',
+              'requestBody': {
+                'required': true,
+                'content': {
+                  'application/json': {
+                    'schema': {
+                      r'$ref': '#/components/schemas/CreateWidgetRequest',
+                    },
+                  },
+                },
+              },
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Widget'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Widget': {
+              'type': 'object',
+              'properties': {
+                'id': {'type': 'string'},
+              },
+            },
+            'CreateWidgetRequest': {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+              },
+            },
+          },
+        },
+      };
+      final fs = MemoryFileSystem.test();
+      final out = fs.directory('custom');
+      final specFile = fs.file('spec.json')
+        ..createSync(recursive: true)
+        ..writeAsStringSync(jsonEncode(spec));
+      await runWithLogger(
+        _MockLogger(),
+        () => loadAndRenderSpec(
+          GeneratorConfig(
+            specUrl: Uri.file(specFile.path),
+            packageName: 'custom',
+            outDir: out,
+            templatesDir: templatesDir,
+            runProcess: runProcess,
+            logSchemas: false,
+            fileRendererBuilder: _CustomLayoutRenderer.new,
+          ),
+        ),
+      );
+      expect(out.childFile('lib/custom/widget.dart'), exists);
+      expect(out.childFile('lib/custom/create_widget_request.dart'), exists);
+      expect(hasGeneratedSchemaDirs(out), isFalse);
+    });
   });
 
   group('Formatter', () {
@@ -1464,14 +1555,16 @@ void main() {
       final formatter = Formatter();
       final spellChecker = SpellChecker();
       final fileRenderer = FileRenderer(
-        packageName: 'spacetraders',
-        schemaRenderer: schemaRenderer,
-        templates: templates,
-        formatter: formatter,
-        fileWriter: FileWriter(
-          outDir: MemoryFileSystem.test().directory('spacetraders'),
+        FileRendererConfig(
+          packageName: 'spacetraders',
+          schemaRenderer: schemaRenderer,
+          templates: templates,
+          formatter: formatter,
+          fileWriter: FileWriter(
+            outDir: MemoryFileSystem.test().directory('spacetraders'),
+          ),
+          spellChecker: spellChecker,
         ),
-        spellChecker: spellChecker,
       );
       final schema = RenderObject(
         common: CommonProperties.test(
@@ -1509,14 +1602,16 @@ void main() {
       final formatter = Formatter();
       final spellChecker = SpellChecker();
       final fileRenderer = FileRenderer(
-        packageName: 'spacetraders',
-        schemaRenderer: schemaRenderer,
-        templates: templates,
-        formatter: formatter,
-        fileWriter: FileWriter(
-          outDir: MemoryFileSystem.test().directory('spacetraders'),
+        FileRendererConfig(
+          packageName: 'spacetraders',
+          schemaRenderer: schemaRenderer,
+          templates: templates,
+          formatter: formatter,
+          fileWriter: FileWriter(
+            outDir: MemoryFileSystem.test().directory('spacetraders'),
+          ),
+          spellChecker: spellChecker,
         ),
-        spellChecker: spellChecker,
       );
       final api = Api(
         snakeName: 'foo',

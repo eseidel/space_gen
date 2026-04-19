@@ -67,11 +67,13 @@ Future<void> runTest({
   final specFile = testCase.spec;
   final outDir = testCase.outDir;
   await loadAndRenderSpec(
-    specUrl: specFile.uri,
-    outDir: outDir,
-    packageName: testCase.packageName,
-    quirks: quirks,
-    templatesDir: templatesDir,
+    GeneratorConfig(
+      specUrl: specFile.uri,
+      outDir: outDir,
+      packageName: testCase.packageName,
+      quirks: quirks,
+      templatesDir: templatesDir,
+    ),
   );
 }
 
