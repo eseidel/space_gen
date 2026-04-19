@@ -423,11 +423,10 @@ class SpecResolver {
   RenderSchema _determineReturnType(ResolvedOperation operation) {
     final responses = operation.responses;
     // Figure out how many different successful responses there are.
-    // `responses` here never contains the default (catch-all), so
-    // statusCode is always non-null.
-    final successful = responses.where(
-      (e) => e.statusCode! >= 200 && e.statusCode! < 300,
-    );
+    final successful = responses.where((e) {
+      final code = e.statusCode;
+      return code != null && code >= 200 && code < 300;
+    });
     if (successful.isEmpty) {
       return RenderVoid(
         common: CommonProperties.empty(
@@ -465,9 +464,10 @@ class SpecResolver {
 
   RenderOperation toRenderOperation(ResolvedOperation operation) {
     final returnType = _determineReturnType(operation);
-    final defaultResponse = operation.defaultResponse == null
+    final resolvedDefault = operation.defaultResponse;
+    final defaultResponse = resolvedDefault == null
         ? null
-        : toRenderResponse(operation.defaultResponse!);
+        : toRenderResponse(resolvedDefault);
     return RenderOperation(
       pointer: operation.pointer,
       snakeName: operation.snakeName,
