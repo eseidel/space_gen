@@ -21,7 +21,7 @@ import 'package:space_gen/src/render/file_renderer.dart';
 ///     runCli(args, fileRendererBuilder: ShorebirdFileRenderer.new);
 /// ```
 ///
-/// Consumers that need to customise anything else — new flags,
+/// Consumers that need to customize anything else — new flags,
 /// non-CLI argument sources, programmatic invocation — should build
 /// their own `GeneratorConfig` and call [loadAndRenderSpec] directly.
 Future<int> runCli(
