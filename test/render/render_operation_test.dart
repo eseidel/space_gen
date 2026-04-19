@@ -1020,4 +1020,61 @@ void main() {
       );
     });
   });
+
+  group('default response (typed error body)', () {
+    test('emits ApiException<ErrorType> with parsed body', () {
+      final json = {
+        'summary': 'Get widgets',
+        'operationId': 'getWidgets',
+        'responses': {
+          '200': {'description': 'OK'},
+          'default': {
+            'description': 'Error',
+            'content': {
+              'application/json': {
+                'schema': {
+                  'type': 'object',
+                  'properties': {
+                    'message': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+      final result = renderTestOperation(
+        path: '/widgets',
+        operationJson: json,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      expect(
+        result,
+        '/// Test API\n'
+        'class DefaultApi {\n'
+        '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
+        '\n'
+        '    final ApiClient client;\n'
+        '\n'
+        '    /// Get widgets\n'
+        '    Future<void> getWidgets(\n'
+        '    ) async {\n'
+        '        final response = await client.invokeApi(\n'
+        '            method: Method.post,\n'
+        "            path: '/widgets'\n"
+        ',\n'
+        '        );\n'
+        '\n'
+        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+        '            throw ApiException<GetWidgetsDefaultResponse>(\n'
+        '                response.statusCode,\n'
+        '                response.body.toString(),\n'
+        '                body: GetWidgetsDefaultResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>),\n'
+        '            );\n'
+        '        }\n'
+        '    }\n'
+        '}\n',
+      );
+    });
+  });
 }

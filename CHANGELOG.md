@@ -1,14 +1,22 @@
 ## 1.0.2
 
+- Generate a typed error body on generated API methods whose operation
+  declares a `default:` response. `ApiException` is now generic
+  (`ApiException<T>`): when the operation has a default response schema,
+  the non-2xx branch throws `ApiException<ErrorType>(code, raw, body:
+  ErrorType.fromJson(...))`; when it doesn't, the throw is unchanged
+  (`ApiException(code, raw)`, type parameter inferred as `dynamic`).
+  Callers can `catch (e) { if (e is ApiException<ErrorType>) { ... } }`
+  or pattern-match on `e.body` for the parsed server error. The
+  existing untyped catch-alls on `ApiException` (no type argument)
+  still match.
 - Parse OpenAPI `default:` responses instead of silently ignoring them.
   A default response is stored on `Responses.defaultResponse` at the
   parse layer, threads through the resolver and render tree as a
   separate field (the numeric-status-keyed responses are unchanged),
   and is walked by the render-tree walker so its referenced schema is
   always emitted — no more tree-shaking a type whose only reference is
-  through `default:`. The generated API method still throws an untyped
-  `ApiException` on non-2xx; using the default response's schema as a
-  typed error body is a separate follow-up.
+  through `default:`.
 - **Experimental:** expose a small customization surface for callers
   with their own layout conventions. `loadAndRenderSpec` now takes a
   single `GeneratorConfig` value (replacing 8 individual named

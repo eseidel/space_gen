@@ -4,14 +4,20 @@ import 'package:meta/meta.dart';
 ///
 /// This is a wrapper around the underlying network exceptions.
 /// This is used to provide a standard exception type for clients to handle.
+///
+/// The generic `T` is the parsed body of the error response, as declared by
+/// the operation's `default:` (or error) response in the OpenAPI spec. For
+/// operations that do not declare a typed error body, `T` is `dynamic` and
+/// [body] is always null.
 @immutable
-class ApiException implements Exception {
-  const ApiException(this.code, this.message)
+class ApiException<T> implements Exception {
+  const ApiException(this.code, this.message, {this.body})
     : innerException = null,
       stackTrace = null;
 
   const ApiException.unhandled(this.code)
     : message = 'Unhandled response',
+      body = null,
       innerException = null,
       stackTrace = null;
 
@@ -20,10 +26,14 @@ class ApiException implements Exception {
     this.message,
     this.innerException,
     this.stackTrace,
-  );
+  ) : body = null;
 
   final int code;
   final String? message;
+
+  /// The parsed error body, if the operation's `default:` response declared
+  /// a schema. Null otherwise.
+  final T? body;
   final Exception? innerException;
   final StackTrace? stackTrace;
 

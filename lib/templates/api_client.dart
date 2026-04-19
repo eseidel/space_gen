@@ -122,35 +122,35 @@ class ApiClient {
           return client.put(uri, headers: headers, body: encodedBody);
       }
     } on SocketException catch (error, trace) {
-      throw ApiException.withInner(
+      throw ApiException<Object?>.withInner(
         HttpStatus.badRequest,
         'Socket operation failed: $method $path',
         error,
         trace,
       );
     } on TlsException catch (error, trace) {
-      throw ApiException.withInner(
+      throw ApiException<Object?>.withInner(
         HttpStatus.badRequest,
         'TLS/SSL communication failed: $method $path',
         error,
         trace,
       );
     } on IOException catch (error, trace) {
-      throw ApiException.withInner(
+      throw ApiException<Object?>.withInner(
         HttpStatus.badRequest,
         'I/O operation failed: $method $path',
         error,
         trace,
       );
     } on ClientException catch (error, trace) {
-      throw ApiException.withInner(
+      throw ApiException<Object?>.withInner(
         HttpStatus.badRequest,
         'HTTP connection failed: $method $path',
         error,
         trace,
       );
     } on Exception catch (error, trace) {
-      throw ApiException.withInner(
+      throw ApiException<Object?>.withInner(
         HttpStatus.badRequest,
         'Exception occurred: $method $path',
         error,
