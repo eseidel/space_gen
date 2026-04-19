@@ -82,7 +82,9 @@ Iterable<String> wrapLines({
 Iterable<String> wrapDocComment(String value, {int indent = 0}) {
   final prefix = '${' ' * indent}/// ';
   final wrapWidth = 80 - prefix.length;
-  final lines = value.split('\n');
+  // Trim trailing whitespace so a YAML block-scalar description (which
+  // carries a trailing newline) does not render as a dangling `///` line.
+  final lines = value.trimRight().split('\n');
   return wrapLines(
     lines: lines,
     maxWidth: wrapWidth,
@@ -1751,6 +1753,10 @@ class RenderObject extends RenderNewType {
     return {
       'dartName': dartName,
       'jsonName': quoteString(jsonName),
+      'property_doc_comment': createDocComment(
+        common: property.common,
+        indent: 4,
+      ),
       'argumentLine': argumentLine(
         jsonName,
         property,
