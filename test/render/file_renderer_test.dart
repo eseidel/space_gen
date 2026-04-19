@@ -192,6 +192,69 @@ void main() {
       );
     });
 
+    test(
+      'default response schema is emitted even when no explicit status '
+      'code references it',
+      () async {
+        final fs = MemoryFileSystem.test();
+        final spec = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Default', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/widgets': {
+              'get': {
+                'operationId': 'getWidget',
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {r'$ref': '#/components/schemas/Widget'},
+                      },
+                    },
+                  },
+                  'default': {
+                    'description': 'Error',
+                    'content': {
+                      'application/json': {
+                        'schema': {r'$ref': '#/components/schemas/Error'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'components': {
+            'schemas': {
+              'Widget': {
+                'type': 'object',
+                'properties': {
+                  'name': {'type': 'string'},
+                },
+              },
+              'Error': {
+                'type': 'object',
+                'properties': {
+                  'message': {'type': 'string'},
+                },
+              },
+            },
+          },
+        };
+        final out = fs.directory('out');
+        await renderToDirectory(spec: spec, outDir: out);
+        // The `Error` schema is only referenced by `default:` — if the
+        // renderer didn't walk default responses, it would be tree-shaken
+        // and no file would be written for it.
+        expect(out.childFile('lib/models/widget.dart').existsSync(), isTrue);
+        expect(out.childFile('lib/models/error.dart').existsSync(), isTrue);
+      },
+    );
+
     test('smoke test with simple spec', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
@@ -1652,6 +1715,7 @@ void main() {
               ],
               requestBody: null,
               responses: <RenderResponse>[],
+              defaultResponse: null,
               securityRequirements: <ResolvedSecurityRequirement>[],
             ),
             serverUrl: Uri.parse('https://api.spacetraders.io/v2'),

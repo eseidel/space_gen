@@ -700,6 +700,63 @@ void main() {
       );
     });
 
+    test('default response is resolved and referenced schema is emitted', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Default', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/widgets': {
+            'get': {
+              'operationId': 'getWidget',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Widget'},
+                    },
+                  },
+                },
+                'default': {
+                  'description': 'Error',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Error'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Widget': {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+              },
+            },
+            'Error': {
+              'type': 'object',
+              'properties': {
+                'message': {'type': 'string'},
+              },
+            },
+          },
+        },
+      };
+      final spec = parseAndResolveTestSpec(json);
+      final op = spec.paths.first.operations.first;
+      final defaultResponse = op.defaultResponse;
+      expect(defaultResponse, isNotNull);
+      expect(defaultResponse!.description, 'Error');
+      expect(defaultResponse.content, isA<ResolvedObject>());
+    });
+
     test('mutual recursion: A -> b: B -> a: A', () {
       final json = {
         'openapi': '3.1.0',

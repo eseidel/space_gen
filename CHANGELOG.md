@@ -1,5 +1,14 @@
 ## 1.0.2
 
+- Parse OpenAPI `default:` responses instead of silently ignoring them.
+  A default response is stored on `Responses.defaultResponse` at the
+  parse layer, threads through the resolver and render tree as a
+  separate field (the numeric-status-keyed responses are unchanged),
+  and is walked by the render-tree walker so its referenced schema is
+  always emitted — no more tree-shaking a type whose only reference is
+  through `default:`. The generated API method still throws an untyped
+  `ApiException` on non-2xx; using the default response's schema as a
+  typed error body is a separate follow-up.
 - **Experimental:** expose a small customization surface for callers
   with their own layout conventions. `loadAndRenderSpec` now takes a
   single `GeneratorConfig` value (replacing 8 individual named

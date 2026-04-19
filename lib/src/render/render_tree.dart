@@ -463,6 +463,13 @@ class SpecResolver {
 
   RenderOperation toRenderOperation(ResolvedOperation operation) {
     final returnType = _determineReturnType(operation);
+    final resolvedDefault = operation.defaultResponse;
+    final defaultResponse = resolvedDefault == null
+        ? null
+        : RenderDefaultResponse(
+            description: resolvedDefault.description,
+            content: toRenderSchema(resolvedDefault.content),
+          );
     return RenderOperation(
       pointer: operation.pointer,
       snakeName: operation.snakeName,
@@ -473,6 +480,7 @@ class SpecResolver {
       tags: operation.tags,
       parameters: operation.parameters.map(toRenderParameter).toList(),
       responses: operation.responses.map(toRenderResponse).toList(),
+      defaultResponse: defaultResponse,
       requestBody: toRenderRequestBody(operation.requestBody),
       returnType: returnType,
       securityRequirements: operation.securityRequirements,
@@ -819,6 +827,7 @@ class RenderOperation {
     required this.parameters,
     required this.requestBody,
     required this.responses,
+    required this.defaultResponse,
     required this.returnType,
     required this.tags,
     required this.summary,
@@ -843,8 +852,16 @@ class RenderOperation {
   /// The request body of the resolved operation.
   final RenderRequestBody? requestBody;
 
-  /// The responses of the resolved operation.
+  /// The responses of the resolved operation. Only contains responses
+  /// keyed by a specific status code — the `default:` response (if any)
+  /// is on [defaultResponse].
   final List<RenderResponse> responses;
+
+  /// The `default:` (catch-all) response, if the operation declares one.
+  /// Its schema is walked for import/emission like any other response,
+  /// so the referenced type is always generated even when no specific
+  /// 4xx/5xx status code also references it.
+  final RenderDefaultResponse? defaultResponse;
 
   /// The return type of the resolved operation.
   final RenderSchema returnType;
@@ -990,6 +1007,23 @@ class RenderResponse {
   final String description;
 
   /// The resolved content of the resolved response.
+  /// We only support json, so we only need a single content.
+  final RenderSchema content;
+}
+
+/// The `default:` (catch-all) response on an operation. Shares the
+/// description + content shape with [RenderResponse] but carries no
+/// status code.
+class RenderDefaultResponse {
+  const RenderDefaultResponse({
+    required this.description,
+    required this.content,
+  });
+
+  /// The description of the resolved default response.
+  final String description;
+
+  /// The resolved content of the resolved default response.
   /// We only support json, so we only need a single content.
   final RenderSchema content;
 }
