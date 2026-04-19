@@ -1,0 +1,12 @@
+// GENERATED — do not hand-edit.
+import 'package:{{{ packageName }}}/{{{ modelImportPath }}}';
+import 'package:test/test.dart';
+
+void main() {
+  group('{{{ typeName }}}', () {
+    test('round-trips via fromJson/toJson', () {
+      final instance = {{{ exampleValue }}};
+      expect({{{ typeName }}}.fromJson(instance.toJson()), instance);
+    });
+  });
+}

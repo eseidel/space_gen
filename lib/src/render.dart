@@ -73,6 +73,7 @@ class GeneratorConfig {
     this.runProcess,
     this.quirks = const Quirks(),
     this.logSchemas = true,
+    this.generateTests = true,
     this.fileRendererBuilder = FileRenderer.new,
   });
 
@@ -102,6 +103,13 @@ class GeneratorConfig {
   /// Whether to log each schema seen during resolution. Useful for
   /// debugging large specs; off by default for CLI usage.
   final bool logSchemas;
+
+  /// Whether to emit round-trip tests next to each generated model.
+  /// Default `true`. Individual schemas can still opt out by
+  /// overriding [FileRenderer.testPath] to return `null`, or are
+  /// skipped automatically when no safe example value can be
+  /// constructed (recursive types, no-JSON types).
+  final bool generateTests;
 
   /// Hook for plugging in a custom [FileRenderer] subclass. Defaults
   /// to `FileRenderer.new`.
@@ -162,6 +170,7 @@ Future<void> loadAndRenderSpec(GeneratorConfig config) async {
           formatter: formatter,
           fileWriter: fileWriter,
           spellChecker: spellChecker,
+          generateTests: config.generateTests,
         ),
       )
       .render(renderSpec);
