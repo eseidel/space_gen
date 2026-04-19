@@ -109,7 +109,16 @@ String? indentWithTrailingNewline(
 /// *not* on a separate line.  They will add their own new-line at the end if
 /// necessary and will match the passed in indent for any lines after the first
 /// including after the trailing new-line.
-String? createDocComment({required CommonProperties common, int indent = 0}) {
+///
+/// [templateName], if non-null, wraps the title + body in a dartdoc
+/// `{@template <templateName>}` / `{@endtemplate}` block so the prose can
+/// be reused elsewhere via `{@macro <templateName>}`. Example/examples
+/// render outside the template block.
+String? createDocComment({
+  required CommonProperties common,
+  int indent = 0,
+  String? templateName,
+}) {
   final title = common.title;
   final body = common.description;
   final example = common.example;
@@ -120,6 +129,7 @@ String? createDocComment({required CommonProperties common, int indent = 0}) {
     example: example,
     examples: examples,
     indent: indent,
+    templateName: templateName,
   );
 }
 
@@ -129,6 +139,7 @@ String? createDocCommentFromParts({
   dynamic example,
   List<dynamic>? examples,
   int indent = 0,
+  String? templateName,
 }) {
   if (title == null && body == null && example == null && examples == null) {
     return null;
@@ -140,9 +151,14 @@ String? createDocCommentFromParts({
     return value.toString();
   }
 
+  final indentStr = ' ' * indent;
+  final hasTemplateContent = title != null || body != null;
+  final wrapWithTemplate = templateName != null && hasTemplateContent;
   final lines = <String>[
+    if (wrapWithTemplate) '$indentStr/// {@template $templateName}',
     if (title != null) ...wrapDocComment(title, indent: indent),
     if (body != null) ...wrapDocComment(body, indent: indent),
+    if (wrapWithTemplate) '$indentStr/// {@endtemplate}',
     if (example != null)
       ...wrapDocComment('example: `${quoteIfNeeded(example)}`', indent: indent),
     if (examples != null)
@@ -158,6 +174,21 @@ String? createDocCommentFromParts({
   lines[0] = lines[0].trimLeft();
   // Re-indent the next line after the comment.
   return '${lines.join('\n')}\n${' ' * indent}';
+}
+
+/// Returns a dartdoc `/// {@macro <templateName>}` line, matching the
+/// shape produced by [createDocComment] when given a `templateName`.
+/// Use on members of a class to reuse the class-level description
+/// without duplicating prose.
+String? createMacroDocComment({
+  required String? templateName,
+  int indent = 0,
+}) {
+  if (templateName == null) return null;
+  // Match the indent-after-first-line convention of createDocComment:
+  // first line starts with `///`, subsequent text (and the trailing
+  // newline) is indented by [indent] spaces.
+  return '/// {@macro $templateName}\n${' ' * indent}';
 }
 
 /// A class that can be converted to a template context.
@@ -1829,8 +1860,26 @@ class RenderObject extends RenderNewType {
     if (propertiesCount == 0) {
       throw StateError('Object schema has no properties: $this');
     }
+    // Wrap the class-level description in a `{@template <snakeName>}`
+    // block so the same prose can be reused as the constructor's
+    // dartdoc via a `{@macro}` reference. Matches the handwritten
+    // Dart convention.
+    final hasClassDescription =
+        common.title != null || common.description != null;
+    final templateName = hasClassDescription ? common.snakeName : null;
     return {
-      'doc_comment': createDocComment(common: common),
+      'doc_comment': createDocComment(
+        common: common,
+        templateName: templateName,
+      ),
+      'constructor_doc_comment': createMacroDocComment(
+        templateName: templateName,
+        indent: 4,
+      ),
+      'from_json_doc_comment':
+          '/// Converts a `Map<String, dynamic>` to a [$typeName].\n    ',
+      'to_json_doc_comment':
+          '/// Converts a [$typeName] to a `Map<String, dynamic>`.\n    ',
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
       'hasProperties': hasProperties,

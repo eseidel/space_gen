@@ -1,13 +1,13 @@
 {{{ doc_comment }}}{{^mutableModels}}@immutable{{/mutableModels}}
 class {{ typeName }} {
-    {{ typeName }}(
+    {{{ constructor_doc_comment }}}{{ typeName }}(
         {{#hasProperties}}
         { {{#properties}}{{{ argumentLine }}}, {{/properties}}
         {{#hasAdditionalProperties}}required this.{{additionalPropertiesName}},{{/hasAdditionalProperties}} }
         {{/hasProperties}}
     ){{{assignmentsLine}}};
 
-    factory {{ typeName }}.fromJson({{{fromJsonJsonType}}}
+    {{{ from_json_doc_comment }}}factory {{ typeName }}.fromJson({{{fromJsonJsonType}}}
     {{#castFromJsonArg}}
         jsonArg) {
     final json = jsonArg as Map<String, dynamic>;
@@ -42,7 +42,7 @@ class {{ typeName }} {
     {{{ valueSchema }}}? operator [](String key) => {{additionalPropertiesName}}[key];
     {{/hasAdditionalProperties}}
 
-    Map<String, dynamic> toJson() {
+    {{{ to_json_doc_comment }}}Map<String, dynamic> toJson() {
         return {
             {{#properties}}
             {{{ jsonName }}}: {{{ toJson }}},

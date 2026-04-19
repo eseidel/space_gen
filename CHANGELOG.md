@@ -1,5 +1,18 @@
 ## 1.0.2
 
+- Wrap a schema's class-level description in a dartdoc
+  `{@template <snake_name>}` / `{@endtemplate}` block and emit
+  `/// {@macro <snake_name>}` on the generated constructor, so the
+  same prose documents both the class and its constructor without
+  duplication. Matches the handwritten Dart convention. Off when the
+  schema has no title/description.
+- Emit `/// Converts a Map<String, dynamic> to a [Type].` dartdoc on
+  generated `fromJson` factories and `/// Converts a [Type] to a
+  Map<String, dynamic>.` on `toJson` methods. Object and empty-object
+  schemas only; newtype/enum templates keep their existing one-line
+  bodies uncommented (their input/output types are `String`/`num`,
+  not `Map<String, dynamic>`, so a generic doc comment would be
+  misleading).
 - **Breaking:** Schemas are now emitted to `lib/models/<name>.dart` or
   `lib/messages/<name>.dart` (split by name suffix: classes whose name
   ends in `Request` or `Response` go to `messages/`) instead of a flat
