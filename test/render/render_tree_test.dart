@@ -14,6 +14,26 @@ class _Collector extends RenderTreeVisitor {
 }
 
 void main() {
+  group('aOrAn', () {
+    test('common class names', () {
+      expect(aOrAn('Apple'), 'an');
+      expect(aOrAn('Egg'), 'an');
+      expect(aOrAn('Item'), 'an');
+      expect(aOrAn('Order'), 'an');
+      expect(aOrAn('User'), 'a');
+      expect(aOrAn('Upload'), 'a');
+      expect(aOrAn('Map'), 'a');
+      expect(aOrAn('Customer'), 'a');
+    });
+    test('empty word defaults to a', () {
+      expect(aOrAn(''), 'a');
+    });
+    test('lowercase first letter', () {
+      expect(aOrAn('apple'), 'an');
+      expect(aOrAn('user'), 'a');
+    });
+  });
+
   group('variableSafeName', () {
     test('basic', () {
       const quirks = Quirks();

@@ -80,6 +80,21 @@ Iterable<String> wrapLines({
   });
 }
 
+/// Letters a/e/i/o treated as "an"-taking; `u` is excluded because the
+/// dominant class-name U-words (`User`, `Uniform`, `Unique`) start with
+/// a consonant "yoo" sound.
+const _anTakingInitials = {'a', 'e', 'i', 'o', 'A', 'E', 'I', 'O'};
+
+/// Picks "a" or "an" for [word], biased for programming class names.
+/// Returns "an" when [word] starts with A/E/I/O, "a" otherwise. Misses
+/// edge cases like `Upload` (vowel sound, should be "an") and `FBI`
+/// (acronym, should be "an"), but those are rare in class names.
+@visibleForTesting
+String aOrAn(String word) {
+  if (word.isEmpty) return 'a';
+  return _anTakingInitials.contains(word[0]) ? 'an' : 'a';
+}
+
 Iterable<String> wrapDocComment(String value, {int indent = 0}) {
   final prefix = '${' ' * indent}/// ';
   final wrapWidth = 80 - prefix.length;
@@ -1992,9 +2007,11 @@ class RenderObject extends RenderNewType {
         indent: 4,
       ),
       'from_json_doc_comment':
-          '/// Converts a `Map<String, dynamic>` to a [$typeName].\n    ',
+          '/// Converts a `Map<String, dynamic>` to ${aOrAn(typeName)} '
+          '[$typeName].\n    ',
       'to_json_doc_comment':
-          '/// Converts a [$typeName] to a `Map<String, dynamic>`.\n    ',
+          '/// Converts ${aOrAn(typeName)} [$typeName] to a '
+          '`Map<String, dynamic>`.\n    ',
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
       'hasProperties': hasProperties,
@@ -2770,6 +2787,7 @@ class RenderEmptyObject extends RenderNewType {
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
     'doc_comment': createDocComment(common: common),
     'typeName': typeName,
+    'typeArticle': aOrAn(typeName),
     'nullableTypeName': nullableTypeName(context),
   };
 }
