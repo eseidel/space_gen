@@ -752,4 +752,45 @@ void main() {
       expect(a, isNot(equals(differentTarget)));
     });
   });
+
+  group('exampleValue', () {
+    final context = SchemaRenderer(
+      templates: TemplateProvider.defaultLocation(),
+      quirks: const Quirks(),
+    );
+    const common = CommonProperties.test(
+      snakeName: 'foo',
+      pointer: JsonPointer.empty(),
+    );
+
+    test('date format produces a DateTime literal', () {
+      const schema = RenderPod(common: common, type: PodType.date);
+      expect(schema.exampleValue(context), 'DateTime.utc(2024, 1, 1)');
+    });
+
+    test('map with keySchema uses its exampleValue', () {
+      const inner = RenderString(
+        createsNewType: false,
+        common: common,
+        defaultValue: null,
+        maxLength: null,
+        minLength: null,
+        pattern: null,
+      );
+      final keySchema = RenderEnum(
+        common: common,
+        values: const ['a', 'b'],
+        names: const ['a', 'b'],
+        descriptions: null,
+        defaultValue: null,
+      );
+      final map = RenderMap(
+        common: common,
+        valueSchema: inner,
+        keySchema: keySchema,
+      );
+      // Key example is the enum's first value; value is the string example.
+      expect(map.exampleValue(context), "{Foo.values.first: 'example'}");
+    });
+  });
 }
