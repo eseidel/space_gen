@@ -2101,7 +2101,8 @@ class RenderMap extends RenderSchema {
       '${ModelHelpers.mapsEqual}(this.$name, other.$name)';
 
   @override
-  String jsonStorageType({required bool isNullable}) => 'Map<String, dynamic>';
+  String jsonStorageType({required bool isNullable}) =>
+      isNullable ? 'Map<String, dynamic>?' : 'Map<String, dynamic>';
 
   @override
   String toJsonExpression(
