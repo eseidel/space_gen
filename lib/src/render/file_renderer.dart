@@ -236,7 +236,8 @@ class FileRenderer {
   /// want to key layout decisions off the set of operations (e.g.
   /// nesting message schemas under an operation-specific directory).
   @protected
-  Set<String> operationSnakeNames = const {};
+  Set<String> get operationSnakeNames => _operationSnakeNames;
+  Set<String> _operationSnakeNames = const {};
 
   /// The path to the api file.
   static String apiFilePath(Api api) {
@@ -248,17 +249,16 @@ class FileRenderer {
     return 'api/${api.fileName}.dart';
   }
 
-  /// Subdirectory under `lib/` a schema renders into.
+  /// The `lib/`-relative subdirectory [schema] renders into.
   ///
   /// Default: classes whose Dart name ends in `Request` or `Response`
   /// are treated as message DTOs and land under `messages/`; everything
-  /// else is a domain model and lands under `models/`.
+  /// else is a domain model and lands under `models/`. With
+  /// [Quirks.flatModelDir] on (implied by `Quirks.openapi()`),
+  /// everything lands in a single flat `model/` directory to match
+  /// the layout OpenAPI Generator produces.
   ///
-  /// With [Quirks.flatModelDir] on (implied by `Quirks.openapi()`),
-  /// everything lands in a single flat `model/` directory for
-  /// compatibility with OpenAPI Generator's output layout.
-  /// Override point for custom layouts: return the `lib/`-relative
-  /// subdirectory a schema renders into. See `tool/gen_shorebird.dart`
+  /// Override point for custom layouts — see `tool/gen_shorebird.dart`
   /// in this repo for an example that nests operation-owned messages
   /// under a per-operation directory.
   @protected
@@ -515,7 +515,7 @@ class FileRenderer {
     _renderDirectory();
     // Collect operation snake names up front so [modelSubdir]
     // overrides can key layout decisions off the set of operations.
-    operationSnakeNames = {
+    _operationSnakeNames = {
       for (final api in spec.apis)
         for (final endpoint in api.endpoints) endpoint.snakeName,
     };
