@@ -2208,7 +2208,7 @@ void main() {
           '        );\n'
           '\n'
           '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-          '            throw ApiException(response.statusCode, response.body.toString());\n'
+          '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
           '        }\n'
           '    }\n'
           '}\n',
@@ -2286,7 +2286,7 @@ void main() {
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
         '        }\n'
         '    }\n'
         '}\n',

@@ -4,6 +4,7 @@ import 'package:types/model/email_type.dart';
 class Types200Response {
   Types200Response({required this.date, required this.email});
 
+  /// Converts a `Map<String, dynamic>` to a [Types200Response].
   factory Types200Response.fromJson(dynamic jsonArg) {
     final json = jsonArg as Map<String, dynamic>;
     return Types200Response(
@@ -24,6 +25,7 @@ class Types200Response {
   DateType date;
   EmailType email;
 
+  /// Converts a [Types200Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {'date': date.toJson(), 'email': email.toJson()};
   }

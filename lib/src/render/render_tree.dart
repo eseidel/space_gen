@@ -712,6 +712,16 @@ class Endpoint implements ToTemplateContext {
       dartIsNullable: false,
     );
 
+    final defaultResponse = operation.defaultResponse;
+    final hasErrorType = defaultResponse != null;
+    final errorType = defaultResponse?.content.typeName;
+    final errorFromJson = defaultResponse?.content.fromJsonExpression(
+      'jsonDecode(response.body)',
+      context,
+      jsonIsNullable: false,
+      dartIsNullable: false,
+    );
+
     final namedParameters = dartParameters.where((p) => p.isRequired == false);
     final positionalParameters = dartParameters.where(
       (p) => p.isRequired == true,
@@ -775,6 +785,9 @@ class Endpoint implements ToTemplateContext {
       'returnType': returnType,
       'isVoidReturn': isVoidReturn,
       'responseFromJson': responseFromJson,
+      'hasErrorType': hasErrorType,
+      'errorType': errorType,
+      'errorFromJson': errorFromJson,
       'validationStatements': validationStatementsString,
       'authArgument': authArgumentString,
     };

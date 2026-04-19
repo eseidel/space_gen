@@ -41,7 +41,16 @@
         );
 
         if (response.statusCode >= HttpStatus.badRequest) {
-            throw ApiException(response.statusCode, response.body.toString());
+            {{#hasErrorType}}
+            throw ApiException<{{{ errorType }}}>(
+                response.statusCode,
+                response.body.toString(),
+                body: {{{ errorFromJson }}},
+            );
+            {{/hasErrorType}}
+            {{^hasErrorType}}
+            throw ApiException<Object?>(response.statusCode, response.body.toString());
+            {{/hasErrorType}}
         }
 {{^isVoidReturn}}
 
@@ -49,7 +58,7 @@
             return {{{ responseFromJson }}};
         }
 
-        throw ApiException.unhandled(response.statusCode);
+        throw ApiException<Object?>.unhandled(response.statusCode);
 {{/isVoidReturn}}
     }
     {{/endpoints}}
