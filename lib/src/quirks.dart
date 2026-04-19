@@ -6,6 +6,7 @@ class Quirks {
     this.allListsDefaultToEmpty = false,
     this.nonNullableDefaultValues = false,
     this.screamingCapsEnums = false,
+    this.flatModelDir = false,
   });
 
   const Quirks.openapi()
@@ -15,6 +16,7 @@ class Quirks {
         nonNullableDefaultValues: true,
         allListsDefaultToEmpty: true,
         screamingCapsEnums: true,
+        flatModelDir: true,
       );
 
   /// Use "dynamic" instead of "Map\<String, dynamic\>" for passing to fromJson
@@ -36,8 +38,10 @@ class Quirks {
   /// OpenAPI uses SCREAMING_CAPS for enum values, but that's not Dart style.
   final bool screamingCapsEnums;
 
-  // Potential future quirks:
-
-  /// OpenAPI flattens everything into the top level `lib` folder.
-  // final bool doNotUseSrcPaths;
+  /// Emit all schemas into a single flat `lib/model/` directory, matching
+  /// the layout OpenAPI Generator produces. Off by default: schemas are
+  /// split into `lib/models/` (domain models) and `lib/messages/`
+  /// (classes whose name ends in `Request`/`Response`), which better
+  /// matches hand-written Dart packaging.
+  final bool flatModelDir;
 }

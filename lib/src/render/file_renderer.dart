@@ -241,24 +241,35 @@ class FileRenderer {
     return 'api/${api.fileName}.dart';
   }
 
-  static String modelFilePath(RenderSchema schema) {
-    // openapi generator does not use /src/ in the path.
-    return 'lib/model/${schema.snakeName}.dart';
+  /// Subdirectory under `lib/` a schema renders into.
+  ///
+  /// Default: classes whose Dart name ends in `Request` or `Response`
+  /// are treated as message DTOs and land under `messages/`; everything
+  /// else is a domain model and lands under `models/`.
+  ///
+  /// With [Quirks.flatModelDir] on (implied by `Quirks.openapi()`),
+  /// everything lands in a single flat `model/` directory for
+  /// compatibility with OpenAPI Generator's output layout.
+  String _modelSubdir(RenderSchema schema) {
+    if (quirks.flatModelDir) return 'model';
+    final className = schema.typeName;
+    final isMessage =
+        className.endsWith('Request') || className.endsWith('Response');
+    return isMessage ? 'messages' : 'models';
   }
 
-  static String modelPackagePath(RenderSchema schema) {
-    return 'model/${schema.snakeName}.dart';
+  String modelFilePath(RenderSchema schema) {
+    return 'lib/${_modelSubdir(schema)}/${schema.snakeName}.dart';
+  }
+
+  String modelPackagePath(RenderSchema schema) {
+    return '${_modelSubdir(schema)}/${schema.snakeName}.dart';
   }
 
   String modelPackageImport(FileRenderer context, RenderSchema schema) {
-    return 'package:${context.packageName}/model/${schema.snakeName}.dart';
+    return 'package:${context.packageName}/'
+        '${context._modelSubdir(schema)}/${schema.snakeName}.dart';
   }
-
-  // String packageImport(_Context context) {
-  //   final name = p.basenameWithoutExtension(ref!);
-  //   final snakeName = snakeFromCamel(name);
-  //   return 'package:${context.packageName}/model/$snakeName.dart';
-  // }
 
   /// Render a template.
   void _renderTemplate({
@@ -464,7 +475,15 @@ class FileRenderer {
       // Only delete the directories we make to handle the case of changing
       // directory structure or adding/removing files.
       // All other files we make can be overwritten.
-      final dirs = {p.join('lib', 'api'), p.join('lib', 'model')};
+      final dirs = {
+        p.join('lib', 'api'),
+        // Previous output layouts we might inherit from — clear so stale
+        // files from an earlier layout don't linger.
+        p.join('lib', 'model'),
+        // Current layout.
+        p.join('lib', 'models'),
+        p.join('lib', 'messages'),
+      };
       for (final dirName in dirs) {
         final path = p.join(fileWriter.outDir.path, dirName);
         final dir = fileWriter.fs.directory(path);

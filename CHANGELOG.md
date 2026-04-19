@@ -1,5 +1,16 @@
 ## 1.0.2
 
+- **Breaking:** Schemas are now emitted to `lib/models/<name>.dart` or
+  `lib/messages/<name>.dart` (split by name suffix: classes whose name
+  ends in `Request` or `Response` go to `messages/`) instead of a flat
+  `lib/model/` directory. Matches the conventional layout of
+  hand-written Dart packages (models as domain primitives, messages as
+  request/response DTOs). The old flat `lib/model/` layout is still
+  produced by `Quirks.openapi()` via the new `flatModelDir` quirk, so
+  generators targeting OpenAPI Generator compatibility see no change.
+  The previous `lib/model/` directory is also wiped when regenerating,
+  so stale files from the old layout don't linger after an upgrade.
+
 - Emit only the imports a rendered model/api body actually needs: drop
   unconditional `dart:convert`, `dart:io`, `package:meta/meta.dart`, and
   `model_helpers.dart` from models; gate `meta` and `model_helpers` on
