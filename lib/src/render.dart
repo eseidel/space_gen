@@ -45,6 +45,14 @@ void validatePackageName(String packageName) {
   }
 }
 
+/// Format [url] for log output: `file:` URLs are shown as paths
+/// relative to the cwd (readable), everything else prints as-is.
+@visibleForTesting
+String describeSpecUrl(Uri url) {
+  if (url.isScheme('file')) return p.relative(url.toFilePath());
+  return url.toString();
+}
+
 /// Builds the [FileRenderer] used to lay out and write files for a
 /// given spec. The default is `FileRenderer.new`; consumers with
 /// their own layout conventions can pass a builder that returns a
@@ -53,7 +61,7 @@ void validatePackageName(String packageName) {
 typedef FileRendererBuilder = FileRenderer Function(FileRendererConfig config);
 
 /// Top-level configuration for a single [loadAndRenderSpec] run.
-/// Holds every knob that parameterises the generation: where to read
+/// Holds every knob that controls the generation: where to read
 /// from, where to write to, which quirks/layout to use, and which
 /// template directory to pull mustache files out of.
 class GeneratorConfig {
@@ -87,7 +95,7 @@ class GeneratorConfig {
   /// tests inject a no-op.
   final RunProcess? runProcess;
 
-  /// Tunables that change the shape of the generated code (see
+  /// Flags that change the shape of the generated code (see
   /// [Quirks]).
   final Quirks quirks;
 
@@ -134,11 +142,10 @@ Future<void> loadAndRenderSpec(GeneratorConfig config) async {
     quirks: config.quirks,
   );
 
-  final specPathString = config.specUrl.isScheme('file')
-      ? p.relative(config.specUrl.toFilePath())
-      : config.specUrl.toString();
-  final outDirPathString = p.relative(config.outDir.path);
-  logger.info('Generating $specPathString to $outDirPathString');
+  logger.info(
+    'Generating ${describeSpecUrl(config.specUrl)} to '
+    '${p.relative(config.outDir.path)}',
+  );
 
   final formatter = Formatter(runProcess: config.runProcess);
   final spellChecker = SpellChecker(runProcess: config.runProcess);
