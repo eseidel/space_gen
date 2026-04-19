@@ -16,7 +16,7 @@ class DefaultApi {
     final response = await client.invokeApi(method: Method.get, path: '/types');
 
     if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException(response.statusCode, response.body);
+      throw ApiException<Object?>(response.statusCode, response.body);
     }
 
     if (response.body.isNotEmpty) {
@@ -25,6 +25,6 @@ class DefaultApi {
       );
     }
 
-    throw ApiException.unhandled(response.statusCode);
+    throw ApiException<Object?>.unhandled(response.statusCode);
   }
 }

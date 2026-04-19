@@ -49,7 +49,7 @@
             );
             {{/hasErrorType}}
             {{^hasErrorType}}
-            throw ApiException(response.statusCode, response.body.toString());
+            throw ApiException<Object?>(response.statusCode, response.body.toString());
             {{/hasErrorType}}
         }
 {{^isVoidReturn}}
@@ -58,7 +58,7 @@
             return {{{ responseFromJson }}};
         }
 
-        throw ApiException.unhandled(response.statusCode);
+        throw ApiException<Object?>.unhandled(response.statusCode);
 {{/isVoidReturn}}
     }
     {{/endpoints}}
