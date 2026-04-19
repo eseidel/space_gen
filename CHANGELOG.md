@@ -1,5 +1,14 @@
 ## 1.0.2
 
+- Extend typed error bodies to `4XX`/`5XX` range responses. Previously
+  only `default:` contributed to `ApiException<T>`. Now the generator
+  collects error schemas from `default:`, `4XX:`, and `5XX:`,
+  deduplicates by structural equality, and emits the typed throw when exactly one
+  distinct error schema remains (the common case — most specs alias
+  every error to a single `ErrorResponse`). When the error schemas
+  disagree across those slots, the generator falls back to untyped
+  `ApiException<Object?>` rather than lying about what callers will
+  catch.
 - Accept OpenAPI range status code keys (`1XX`/`2XX`/`3XX`/`4XX`/`5XX`)
   in response maps. Previously the parser rejected them with "Invalid
   response code". Range responses are stored separately from
