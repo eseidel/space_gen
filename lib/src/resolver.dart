@@ -177,6 +177,7 @@ ResolvedSchema _resolveSchemaFully(
       common: resolvedCommon,
       defaultValue: schema.defaultValue,
       values: schema.enumValues,
+      descriptions: schema.enumDescriptions,
     );
   }
   if (schema is SchemaBinary) {
@@ -1158,6 +1159,7 @@ class ResolvedEnum extends ResolvedSchema {
     required super.common,
     required this.defaultValue,
     required this.values,
+    required this.descriptions,
   }) : super(createsNewType: true);
 
   /// The values of the resolved schema.
@@ -1168,17 +1170,21 @@ class ResolvedEnum extends ResolvedSchema {
   /// The default value of the enum type.
   final dynamic defaultValue;
 
+  /// Optional per-value dartdoc descriptions, parallel to [values].
+  final List<String>? descriptions;
+
   @override
   ResolvedEnum copyWith({CommonProperties? common}) {
     return ResolvedEnum(
       common: common ?? this.common,
       defaultValue: defaultValue,
       values: values,
+      descriptions: descriptions,
     );
   }
 
   @override
-  List<Object?> get props => [super.props, values, defaultValue];
+  List<Object?> get props => [super.props, values, defaultValue, descriptions];
 }
 
 class ResolvedObject extends ResolvedSchema {
