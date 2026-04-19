@@ -484,7 +484,7 @@ class PathItem extends Equatable implements HasPointer {
     required this.operations,
     required this.summary,
     required this.description,
-    this.parameters = const [],
+    required this.parameters,
   });
 
   /// Where this path item is located in the spec.
