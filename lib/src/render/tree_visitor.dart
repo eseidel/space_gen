@@ -81,6 +81,10 @@ class RenderTreeWalker {
     for (final response in operation.responses) {
       walkResponse(response);
     }
+    final defaultResponse = operation.defaultResponse;
+    if (defaultResponse != null) {
+      walkResponse(defaultResponse);
+    }
     for (final parameter in operation.parameters) {
       walkParameter(parameter);
     }

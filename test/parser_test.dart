@@ -766,7 +766,7 @@ void main() {
           ),
         );
       });
-      test('default response is not supported', () {
+      test('default response is parsed', () {
         final json = {
           'openapi': '3.1.0',
           'info': {'title': 'Space Traders API', 'version': '1.0.0'},
@@ -784,12 +784,12 @@ void main() {
             },
           },
         };
-        final logger = _MockLogger();
-        final spec = runWithLogger(logger, () => parseOpenApi(json));
-        expect(
-          spec.paths['/users'].operations[Method.get]!.responses[200],
-          isNull,
-        );
+        final spec = parseOpenApi(json);
+        final responses =
+            spec.paths['/users'].operations[Method.get]!.responses;
+        expect(responses[201], isNotNull);
+        expect(responses.defaultResponse, isNotNull);
+        expect(responses.defaultResponse!.object!.description, 'Default');
       });
 
       test('responses are required', () {

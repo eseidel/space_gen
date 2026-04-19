@@ -472,6 +472,10 @@ ResolvedOperation resolveOperation({
 }) {
   final requestBody = _resolveRequestBody(operation.requestBody, context);
   final responses = _resolveResponses(operation.responses, context);
+  final defaultResponse = _resolveDefaultResponse(
+    operation.responses.defaultResponse,
+    context,
+  );
 
   // Need to resolve any local security requirements, or otherwise fall back to
   // the global security requirements.
@@ -497,6 +501,7 @@ ResolvedOperation resolveOperation({
     path: path,
     requestBody: requestBody,
     responses: responses,
+    defaultResponse: defaultResponse,
     parameters: _mergeParameters(
       pathItemParameters,
       _resolveParameters(operation.parameters, context),
@@ -581,6 +586,19 @@ List<ResolvedResponse> _resolveResponses(
       content: _resolveContent(response, context),
     );
   }).toList();
+}
+
+ResolvedResponse? _resolveDefaultResponse(
+  RefOr<Response>? ref,
+  ResolveContext context,
+) {
+  if (ref == null) return null;
+  final response = context._resolve(ref);
+  return ResolvedResponse(
+    statusCode: null,
+    description: response.description,
+    content: _resolveContent(response, context),
+  );
 }
 
 class RegistryBuilder extends Visitor {
@@ -867,6 +885,7 @@ class ResolvedOperation {
     required this.snakeName,
     required this.requestBody,
     required this.responses,
+    required this.defaultResponse,
     required this.tags,
     required this.summary,
     required this.description,
@@ -892,8 +911,13 @@ class ResolvedOperation {
   /// The request body of the resolved operation.
   final ResolvedRequestBody? requestBody;
 
-  /// The responses of the resolved operation.
+  /// The responses of the resolved operation. Only contains responses
+  /// keyed by a specific status code — the `default:` response (if any)
+  /// is on [defaultResponse].
   final List<ResolvedResponse> responses;
+
+  /// The `default:` (catch-all) response, if the operation declares one.
+  final ResolvedResponse? defaultResponse;
 
   /// The tags of the resolved operation.
   final List<String> tags;
@@ -915,8 +939,9 @@ class ResolvedResponse {
     required this.content,
   });
 
-  /// The status code of the resolved response.
-  final int statusCode;
+  /// The status code of the resolved response, or null if this is
+  /// the `default:` (catch-all) response.
+  final int? statusCode;
 
   /// The description of the resolved response.
   final String description;

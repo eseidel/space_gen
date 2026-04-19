@@ -951,9 +951,12 @@ Response _parseResponse(MapContext responseJson) {
 Responses parseResponses(MapContext responsesJson) {
   final responseCodes = responsesJson.keys.toList();
 
-  // We don't yet support default responses.
-  _ignored<Map<String, dynamic>>(responsesJson, 'default');
-  responseCodes.remove('default');
+  RefOr<Response>? defaultResponse;
+  if (responseCodes.remove('default')) {
+    defaultResponse = parseResponseOrRef(
+      responsesJson.childAsMap('default').addSnakeName('default'),
+    );
+  }
 
   final responses = <int, RefOr<Response>>{};
   for (final responseCode in responseCodes) {
@@ -967,7 +970,7 @@ Responses parseResponses(MapContext responsesJson) {
     responses[responseCodeInt] = parseResponseOrRef(responseJson);
   }
   _warnUnused(responsesJson);
-  return Responses(responses: responses);
+  return Responses(responses: responses, defaultResponse: defaultResponse);
 }
 
 Map<String, RefOr<T>> _parseComponent<T extends Parseable>(

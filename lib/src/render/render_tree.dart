@@ -423,8 +423,10 @@ class SpecResolver {
   RenderSchema _determineReturnType(ResolvedOperation operation) {
     final responses = operation.responses;
     // Figure out how many different successful responses there are.
+    // `responses` here never contains the default (catch-all), so
+    // statusCode is always non-null.
     final successful = responses.where(
-      (e) => e.statusCode >= 200 && e.statusCode < 300,
+      (e) => e.statusCode! >= 200 && e.statusCode! < 300,
     );
     if (successful.isEmpty) {
       return RenderVoid(
@@ -463,6 +465,9 @@ class SpecResolver {
 
   RenderOperation toRenderOperation(ResolvedOperation operation) {
     final returnType = _determineReturnType(operation);
+    final defaultResponse = operation.defaultResponse == null
+        ? null
+        : toRenderResponse(operation.defaultResponse!);
     return RenderOperation(
       pointer: operation.pointer,
       snakeName: operation.snakeName,
@@ -473,6 +478,7 @@ class SpecResolver {
       tags: operation.tags,
       parameters: operation.parameters.map(toRenderParameter).toList(),
       responses: operation.responses.map(toRenderResponse).toList(),
+      defaultResponse: defaultResponse,
       requestBody: toRenderRequestBody(operation.requestBody),
       returnType: returnType,
       securityRequirements: operation.securityRequirements,
@@ -819,6 +825,7 @@ class RenderOperation {
     required this.parameters,
     required this.requestBody,
     required this.responses,
+    required this.defaultResponse,
     required this.returnType,
     required this.tags,
     required this.summary,
@@ -843,8 +850,16 @@ class RenderOperation {
   /// The request body of the resolved operation.
   final RenderRequestBody? requestBody;
 
-  /// The responses of the resolved operation.
+  /// The responses of the resolved operation. Only contains responses
+  /// keyed by a specific status code — the `default:` response (if any)
+  /// is on [defaultResponse].
   final List<RenderResponse> responses;
+
+  /// The `default:` (catch-all) response, if the operation declares one.
+  /// Its schema is walked for import/emission like any other response,
+  /// so the referenced type is always generated even when no specific
+  /// 4xx/5xx status code also references it.
+  final RenderResponse? defaultResponse;
 
   /// The return type of the resolved operation.
   final RenderSchema returnType;
@@ -983,8 +998,9 @@ class RenderResponse {
     required this.content,
   });
 
-  /// The status code of the resolved response.
-  final int statusCode;
+  /// The status code of the resolved response, or null if this is
+  /// the `default:` (catch-all) response.
+  final int? statusCode;
 
   /// The description of the resolved response.
   final String description;
