@@ -22,26 +22,20 @@ import 'package:path/path.dart' as p;
 import 'package:space_gen/space_gen.dart';
 
 class ShorebirdFileRenderer extends FileRenderer {
-  ShorebirdFileRenderer({
-    required super.packageName,
-    required super.templates,
-    required super.schemaRenderer,
-    required super.formatter,
-    required super.fileWriter,
-    required super.spellChecker,
-  });
+  ShorebirdFileRenderer(super.config);
 
   @override
-  String modelSubdir(RenderSchema schema) {
-    final className = schema.typeName;
+  String modelPath(LayoutContext context) {
+    final snakeName = context.schema.snakeName;
+    final className = context.schema.typeName;
     final isMessage =
         className.endsWith('Request') || className.endsWith('Response');
-    if (!isMessage) return 'models';
-    final base = _messageBaseName(schema.snakeName);
-    if (operationSnakeNames.contains(base)) {
-      return 'messages/$base';
+    if (!isMessage) return 'models/$snakeName.dart';
+    final base = _messageBaseName(snakeName);
+    if (context.operationSnakeNames.contains(base)) {
+      return 'messages/$base/$snakeName.dart';
     }
-    return 'messages';
+    return 'messages/$snakeName.dart';
   }
 
   /// Strip a trailing `_request`/`_response` (and any HTTP status code
@@ -85,11 +79,13 @@ Future<int> main(List<String> arguments) async {
         : fs.directory('lib/templates');
 
     await loadAndRenderSpec(
-      specUrl: specUrl,
-      packageName: packageName,
-      outDir: outDir,
-      templatesDir: templatesDir,
-      fileRendererBuilder: ShorebirdFileRenderer.new,
+      GeneratorConfig(
+        specUrl: specUrl,
+        packageName: packageName,
+        outDir: outDir,
+        templatesDir: templatesDir,
+        fileRendererBuilder: ShorebirdFileRenderer.new,
+      ),
     );
     return 0;
   });

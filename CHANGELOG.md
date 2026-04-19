@@ -2,15 +2,21 @@
 
 - **Experimental:** expose a small customization surface for callers
   with their own layout conventions. `loadAndRenderSpec` now takes a
-  `fileRendererBuilder` callback, and `FileRenderer.modelSubdir` is
-  `@protected`/`@visibleForOverriding` so consumers can subclass the
-  renderer in their own generator entrypoint and steer where each
-  schema lands. `tool/gen_shorebird.dart` ships as a worked example:
-  a downstream renderer that nests request/response DTOs under a
-  per-operation directory (`lib/messages/<op>/…`) to match the
-  hand-written `shorebird_code_push_protocol` layout. The default
-  `FileRenderer` behavior is unchanged; the surface is likely to
-  evolve as more callers surface needs.
+  single `GeneratorConfig` value (replacing 8 individual named
+  arguments) that includes an optional `fileRendererBuilder` hook;
+  [FileRenderer] accepts a single `FileRendererConfig` bundle so
+  subclasses forward `super(config)` without tracking constructor-
+  parameter drift, and exposes a `@protected`
+  `modelPath(LayoutContext)` hook that returns the `lib/`-relative
+  path for a schema's file — letting subclasses redirect both the
+  directory and the filename. `tool/gen_shorebird.dart` ships as a
+  worked example: a downstream renderer that nests request/response
+  DTOs under a per-operation directory (`lib/messages/<op>/…`) to
+  match the hand-written `shorebird_code_push_protocol` layout. The
+  default behavior is unchanged; the public surface is intentionally
+  narrow (`GeneratorConfig`, `FileRenderer`, `FileRendererConfig`,
+  `LayoutContext`, `RenderSchema`, `FileRendererBuilder`) and
+  labelled experimental pending feedback from additional consumers.
 - Wrap a schema's class-level description in a dartdoc
   `{@template <snake_name>}` / `{@endtemplate}` block and emit
   `/// {@macro <snake_name>}` on the generated constructor, so the

@@ -87,20 +87,14 @@ Matcher hasGeneratedSchemaFiles(List<String> files) =>
     _HasGeneratedSchemaFiles(files);
 
 /// Test-only [FileRenderer] subclass that exercises the
-/// `fileRendererBuilder` + `modelSubdir` extension surface by
+/// `fileRendererBuilder` + `modelPath` extension surface by
 /// redirecting every schema to `lib/custom/` regardless of type.
 class _CustomLayoutRenderer extends FileRenderer {
-  _CustomLayoutRenderer({
-    required super.packageName,
-    required super.templates,
-    required super.schemaRenderer,
-    required super.formatter,
-    required super.fileWriter,
-    required super.spellChecker,
-  });
+  _CustomLayoutRenderer(super.config);
 
   @override
-  String modelSubdir(RenderSchema schema) => 'custom';
+  String modelPath(LayoutContext context) =>
+      'custom/${context.schema.snakeName}.dart';
 }
 
 /// True when any generated model or message file has been emitted under
@@ -141,12 +135,14 @@ void main() {
       await runWithLogger(
         logger ?? _MockLogger(),
         () => loadAndRenderSpec(
-          specUrl: Uri.file(specFile.path),
-          packageName: out.path.split('/').last,
-          outDir: out,
-          templatesDir: templatesDir,
-          runProcess: runProcess,
-          logSchemas: false,
+          GeneratorConfig(
+            specUrl: Uri.file(specFile.path),
+            packageName: out.path.split('/').last,
+            outDir: out,
+            templatesDir: templatesDir,
+            runProcess: runProcess,
+            logSchemas: false,
+          ),
         ),
       );
     }
@@ -1460,13 +1456,15 @@ void main() {
       await runWithLogger(
         _MockLogger(),
         () => loadAndRenderSpec(
-          specUrl: Uri.file(specFile.path),
-          packageName: 'custom',
-          outDir: out,
-          templatesDir: templatesDir,
-          runProcess: runProcess,
-          logSchemas: false,
-          fileRendererBuilder: _CustomLayoutRenderer.new,
+          GeneratorConfig(
+            specUrl: Uri.file(specFile.path),
+            packageName: 'custom',
+            outDir: out,
+            templatesDir: templatesDir,
+            runProcess: runProcess,
+            logSchemas: false,
+            fileRendererBuilder: _CustomLayoutRenderer.new,
+          ),
         ),
       );
       expect(out.childFile('lib/custom/widget.dart'), exists);
@@ -1557,14 +1555,16 @@ void main() {
       final formatter = Formatter();
       final spellChecker = SpellChecker();
       final fileRenderer = FileRenderer(
-        packageName: 'spacetraders',
-        schemaRenderer: schemaRenderer,
-        templates: templates,
-        formatter: formatter,
-        fileWriter: FileWriter(
-          outDir: MemoryFileSystem.test().directory('spacetraders'),
+        FileRendererConfig(
+          packageName: 'spacetraders',
+          schemaRenderer: schemaRenderer,
+          templates: templates,
+          formatter: formatter,
+          fileWriter: FileWriter(
+            outDir: MemoryFileSystem.test().directory('spacetraders'),
+          ),
+          spellChecker: spellChecker,
         ),
-        spellChecker: spellChecker,
       );
       final schema = RenderObject(
         common: CommonProperties.test(
@@ -1602,14 +1602,16 @@ void main() {
       final formatter = Formatter();
       final spellChecker = SpellChecker();
       final fileRenderer = FileRenderer(
-        packageName: 'spacetraders',
-        schemaRenderer: schemaRenderer,
-        templates: templates,
-        formatter: formatter,
-        fileWriter: FileWriter(
-          outDir: MemoryFileSystem.test().directory('spacetraders'),
+        FileRendererConfig(
+          packageName: 'spacetraders',
+          schemaRenderer: schemaRenderer,
+          templates: templates,
+          formatter: formatter,
+          fileWriter: FileWriter(
+            outDir: MemoryFileSystem.test().directory('spacetraders'),
+          ),
+          spellChecker: spellChecker,
         ),
-        spellChecker: spellChecker,
       );
       final api = Api(
         snakeName: 'foo',

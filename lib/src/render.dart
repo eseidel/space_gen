@@ -50,34 +50,65 @@ void validatePackageName(String packageName) {
 /// their own layout conventions can pass a builder that returns a
 /// subclass (see `tool/gen_shorebird.dart` in this repo for an
 /// example).
-typedef FileRendererBuilder =
-    FileRenderer Function({
-      required String packageName,
-      required TemplateProvider templates,
-      required SchemaRenderer schemaRenderer,
-      required Formatter formatter,
-      required FileWriter fileWriter,
-      required SpellChecker spellChecker,
-    });
+typedef FileRendererBuilder = FileRenderer Function(FileRendererConfig config);
 
-Future<void> loadAndRenderSpec({
-  required Uri specUrl,
-  required String packageName,
-  required Directory outDir,
-  required Directory templatesDir,
-  RunProcess? runProcess,
-  Quirks quirks = const Quirks(),
-  bool logSchemas = true,
-  FileRendererBuilder fileRendererBuilder = FileRenderer.new,
-}) async {
-  final fs = outDir.fileSystem;
-  validatePackageName(packageName);
+/// Top-level configuration for a single [loadAndRenderSpec] run.
+/// Holds every knob that parameterises the generation: where to read
+/// from, where to write to, which quirks/layout to use, and which
+/// template directory to pull mustache files out of.
+class GeneratorConfig {
+  const GeneratorConfig({
+    required this.specUrl,
+    required this.packageName,
+    required this.outDir,
+    required this.templatesDir,
+    this.runProcess,
+    this.quirks = const Quirks(),
+    this.logSchemas = true,
+    this.fileRendererBuilder = FileRenderer.new,
+  });
 
-  final templates = TemplateProvider.fromDirectory(templatesDir);
+  /// The location of the OpenAPI spec to read.
+  final Uri specUrl;
+
+  /// The Dart package name to write into `pubspec.yaml`.
+  final String packageName;
+
+  /// The directory to generate the package into.
+  final Directory outDir;
+
+  /// The directory containing the mustache templates to render from.
+  /// Typically points at `package:space_gen/templates`; overridden
+  /// only by tests and by consumers that ship patched templates.
+  final Directory templatesDir;
+
+  /// Process runner for post-generation `dart format`/`dart fix`/
+  /// `cspell` invocations. Defaults to running real processes;
+  /// tests inject a no-op.
+  final RunProcess? runProcess;
+
+  /// Tunables that change the shape of the generated code (see
+  /// [Quirks]).
+  final Quirks quirks;
+
+  /// Whether to log each schema seen during resolution. Useful for
+  /// debugging large specs; off by default for CLI usage.
+  final bool logSchemas;
+
+  /// Hook for plugging in a custom [FileRenderer] subclass. Defaults
+  /// to `FileRenderer.new`.
+  final FileRendererBuilder fileRendererBuilder;
+}
+
+Future<void> loadAndRenderSpec(GeneratorConfig config) async {
+  final fs = config.outDir.fileSystem;
+  validatePackageName(config.packageName);
+
+  final templates = TemplateProvider.fromDirectory(config.templatesDir);
 
   // Load the spec and warm the cache before rendering.
   final cache = Cache(fs);
-  final specJson = await cache.load(specUrl);
+  final specJson = await cache.load(config.specUrl);
   final spec = parseOpenApi(specJson);
 
   // Pre-warm the cache. Rendering assumes all refs are present in the cache.
@@ -88,38 +119,45 @@ Future<void> loadAndRenderSpec({
 
     // If any of the refs are network urls, we need to fetch them.
     // The cache does not handle fragments, so we need to remove them.
-    final resolved = specUrl.resolveUri(ref.uri).removeFragment();
+    final resolved = config.specUrl.resolveUri(ref.uri).removeFragment();
     await cache.load(resolved);
   }
 
   // Resolve all references in the spec.
-  final resolved = resolveSpec(spec, specUrl: specUrl);
-  final resolver = SpecResolver(quirks);
+  final resolved = resolveSpec(spec, specUrl: config.specUrl);
+  final resolver = SpecResolver(config.quirks);
   // Convert the resolved spec into render objects.
   final renderSpec = resolver.toRenderSpec(resolved);
   // SchemaRenderer is responsible for rendering schemas and APIs into strings.
-  final schemaRenderer = SchemaRenderer(templates: templates, quirks: quirks);
+  final schemaRenderer = SchemaRenderer(
+    templates: templates,
+    quirks: config.quirks,
+  );
 
-  final specPathString = specUrl.isScheme('file')
-      ? p.relative(specUrl.toFilePath())
-      : specUrl.toString();
-  final outDirPathString = p.relative(outDir.path);
+  final specPathString = config.specUrl.isScheme('file')
+      ? p.relative(config.specUrl.toFilePath())
+      : config.specUrl.toString();
+  final outDirPathString = p.relative(config.outDir.path);
   logger.info('Generating $specPathString to $outDirPathString');
 
-  final formatter = Formatter(runProcess: runProcess);
-  final spellChecker = SpellChecker(runProcess: runProcess);
-  final fileWriter = FileWriter(outDir: outDir);
+  final formatter = Formatter(runProcess: config.runProcess);
+  final spellChecker = SpellChecker(runProcess: config.runProcess);
+  final fileWriter = FileWriter(outDir: config.outDir);
 
   // FileRenderer is responsible for deciding the layout of the files
   // and rendering the rest of directory structure.
-  fileRendererBuilder(
-    packageName: packageName,
-    templates: templates,
-    schemaRenderer: schemaRenderer,
-    formatter: formatter,
-    fileWriter: fileWriter,
-    spellChecker: spellChecker,
-  ).render(renderSpec);
+  config
+      .fileRendererBuilder(
+        FileRendererConfig(
+          packageName: config.packageName,
+          templates: templates,
+          schemaRenderer: schemaRenderer,
+          formatter: formatter,
+          fileWriter: fileWriter,
+          spellChecker: spellChecker,
+        ),
+      )
+      .render(renderSpec);
 }
 
 @visibleForTesting

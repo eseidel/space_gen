@@ -46,11 +46,13 @@ Future<int> run(List<String> arguments) async {
       : fs.directory('lib/templates');
 
   await loadAndRenderSpec(
-    specUrl: specUrl,
-    packageName: packageName,
-    outDir: outDir,
-    quirks: quirks,
-    templatesDir: templatesDir,
+    GeneratorConfig(
+      specUrl: specUrl,
+      packageName: packageName,
+      outDir: outDir,
+      quirks: quirks,
+      templatesDir: templatesDir,
+    ),
   );
   return 0;
 }
