@@ -317,6 +317,72 @@ void main() {
       },
     );
 
+    test(
+      'default response as a ref to components.responses resolves and '
+      'emits the referenced schema',
+      () async {
+        final fs = MemoryFileSystem.test();
+        final spec = {
+          'openapi': '3.1.0',
+          'info': {'title': 'ResponseRef', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/widgets': {
+              'get': {
+                'operationId': 'getWidget',
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {r'$ref': '#/components/schemas/Widget'},
+                      },
+                    },
+                  },
+                  'default': {r'$ref': '#/components/responses/Error'},
+                },
+              },
+            },
+          },
+          'components': {
+            'schemas': {
+              'Widget': {
+                'type': 'object',
+                'properties': {
+                  'name': {'type': 'string'},
+                },
+              },
+              'ErrorBody': {
+                'type': 'object',
+                'properties': {
+                  'message': {'type': 'string'},
+                },
+              },
+            },
+            'responses': {
+              'Error': {
+                'description': 'Standard error',
+                'content': {
+                  'application/json': {
+                    'schema': {r'$ref': '#/components/schemas/ErrorBody'},
+                  },
+                },
+              },
+            },
+          },
+        };
+        final out = fs.directory('out');
+        await renderToDirectory(spec: spec, outDir: out);
+        expect(out.childFile('lib/models/widget.dart').existsSync(), isTrue);
+        expect(
+          out.childFile('lib/models/error_body.dart').existsSync(),
+          isTrue,
+        );
+      },
+    );
+
     test('smoke test with simple spec', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
