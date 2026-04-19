@@ -20,6 +20,12 @@
 - Trim trailing whitespace off doc-comment text so YAML block-scalar
   descriptions (`description: |`) no longer render a dangling `///`
   line before the class or field they document.
+- Complete the Dart reserved-word list used to escape identifiers.
+  Previously only a handful of keywords (`new`, `void`, `null`, ...)
+  were escaped; enum values like `TRY` or `CLASS` generated
+  uncompilable `try._('TRY')` / `class._('CLASS')`. Now all Dart
+  reserved words, built-in identifiers, and contextual keywords are
+  escaped with a trailing underscore.
 - Fix nullable primitive query parameters to be null-safe. Generated
   code previously emitted `?foo.toString()`, which always produced a
   map entry (with the literal string `"null"` as its value) because
