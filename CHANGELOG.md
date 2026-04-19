@@ -1,3 +1,10 @@
+## 1.0.4
+
+- Support path-item-level `parameters`. Parameters declared on a path
+  item now apply to every operation on that path; operation-level
+  parameters still override by (name, in). Previously path-item-level
+  parameters were silently dropped.
+
 ## 1.0.3
 
 - Fix `Future<void>` endpoints so a successful empty body (e.g. 204

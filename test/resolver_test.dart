@@ -170,6 +170,94 @@ void main() {
       );
     });
 
+    test('path-item-level parameters apply to every operation', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users/{id}': {
+            'parameters': [
+              {
+                'name': 'id',
+                'in': 'path',
+                'schema': {'type': 'string'},
+                'required': true,
+              },
+            ],
+            'get': {
+              'operationId': 'getUser',
+              'summary': 'Get user',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+            'delete': {
+              'operationId': 'deleteUser',
+              'summary': 'Delete user',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+      final spec = parseAndResolveTestSpec(json);
+      final operations = spec.paths.first.operations;
+      expect(operations, hasLength(2));
+      for (final op in operations) {
+        expect(op.parameters, hasLength(1));
+        expect(op.parameters.first.name, 'id');
+        expect(op.parameters.first.inLocation, ParameterLocation.path);
+      }
+    });
+
+    test('operation parameter overrides path-item parameter with same '
+        '(name, in)', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users/{id}': {
+            'parameters': [
+              {
+                'name': 'id',
+                'in': 'path',
+                'description': 'shared id',
+                'schema': {'type': 'string'},
+                'required': true,
+              },
+            ],
+            'get': {
+              'summary': 'Get user',
+              'parameters': [
+                {
+                  'name': 'id',
+                  'in': 'path',
+                  'description': 'get-specific id',
+                  'schema': {'type': 'integer'},
+                  'required': true,
+                },
+              ],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+      final spec = parseAndResolveTestSpec(json);
+      final params = spec.paths.first.operations.first.parameters;
+      expect(params, hasLength(1));
+      expect(params.first.description, 'get-specific id');
+      expect(params.first.schema, isA<ResolvedInteger>());
+    });
+
     test('allOf only supports objects', () {
       final json = {
         'allOf': [
