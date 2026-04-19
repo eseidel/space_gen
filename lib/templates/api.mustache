@@ -21,7 +21,7 @@
             {{#hasQueryParameters}}
             queryParameters: {
                 {{#queryParameters}}
-                '{{{ name }}}': {{#isNullable}}?{{/isNullable}}{{{ toJson }}}.toString(),
+                '{{{ name }}}': {{#isNullable}}?{{{ toJson }}}?.toString(){{/isNullable}}{{^isNullable}}{{{ toJson }}}.toString(){{/isNullable}},
                 {{/queryParameters}}
             },
             {{/hasQueryParameters}}

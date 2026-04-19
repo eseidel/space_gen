@@ -430,7 +430,7 @@ void main() {
         "            path: '/users'\n"
         ',\n'
         '            queryParameters: {\n'
-        "                'foo': ?foo.toString(),\n"
+        "                'foo': ?foo?.toString(),\n"
         '            },\n'
         '        );\n'
         '\n'
@@ -488,7 +488,7 @@ void main() {
         "            path: '/users'\n"
         ',\n'
         '            queryParameters: {\n'
-        "                'foo': ?foo.toString(),\n"
+        "                'foo': ?foo?.toString(),\n"
         '            },\n'
         '        );\n'
         '\n'
@@ -543,7 +543,7 @@ void main() {
         "            path: '/users'\n"
         ',\n'
         '            queryParameters: {\n'
-        "                'page': ?page.toString(),\n"
+        "                'page': ?page?.toString(),\n"
         '            },\n'
         '        );\n'
         '\n'
@@ -637,9 +637,9 @@ void main() {
         "            path: '/users'\n"
         ',\n'
         '            queryParameters: {\n'
-        "                'foo': ?foo.toString(),\n"
-        "                'bar': ?bar.toString(),\n"
-        "                'baz': ?baz.toString(),\n"
+        "                'foo': ?foo?.toString(),\n"
+        "                'bar': ?bar?.toString(),\n"
+        "                'baz': ?baz?.toString(),\n"
         '            },\n'
         '        );\n'
         '\n'
@@ -692,7 +692,7 @@ void main() {
           "            path: '/users'\n"
           ',\n'
           '            queryParameters: {\n'
-          "                'foo': ?foo?.toJson().toString(),\n"
+          "                'foo': ?foo?.toJson()?.toString(),\n"
           '            },\n'
           '        );\n'
           '\n'
@@ -762,6 +762,35 @@ void main() {
         '    }\n'
         '}\n',
       );
+    });
+
+    test('nullable primitive query param is null-safe', () {
+      // Regression: previously generated `'foo': ?foo.toString()`, which
+      // always emitted the entry because `.toString()` on a null primitive
+      // returns the literal string "null". Must be `?foo?.toString()` so
+      // the null-aware map entry suppresses the pair entirely.
+      final json = {
+        'summary': 'Get user',
+        'operationId': 'getUser',
+        'tags': ['users'],
+        'parameters': [
+          {
+            'name': 'flag',
+            'in': 'query',
+            'schema': {'type': 'boolean'},
+          },
+        ],
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(result, contains('?flag?.toString()'));
+      expect(result, isNot(contains('?flag.toString()')));
     });
 
     test('void return omits body/unhandled branch (allows 204)', () {
