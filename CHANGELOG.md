@@ -29,6 +29,13 @@
 - Support the `x-enum-descriptions` vendor extension. A parallel array
   of strings alongside `enum:` now renders as per-case dartdoc on the
   generated enum.
+- Fix `RenderMap.jsonStorageType` to honour `isNullable`. Previously a
+  nullable map field emitted
+  `(json[key] as Map<String, dynamic>)?.map(...)` — the cast crashed
+  when the key was missing/null (`type 'Null' is not a subtype of type
+  'Map<String, dynamic>'`). Now emits
+  `(json[key] as Map<String, dynamic>?)?.map(...)` so the null-aware
+  `?.map` chain actually has a nullable receiver.
 - Fix nullable primitive query parameters to be null-safe. Generated
   code previously emitted `?foo.toString()`, which always produced a
   map entry (with the literal string `"null"` as its value) because

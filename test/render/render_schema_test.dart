@@ -801,7 +801,7 @@ void main() {
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
         '        return Test(\n'
-        "            map: (json['map'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, value as String)),\n"
+        "            map: (json['map'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value as String)),\n"
         '        );\n'
         '    }\n'
         '\n'
@@ -895,15 +895,15 @@ void main() {
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
         '        return Test(\n'
-        "            mString: (json['m_string'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, value as String)),\n"
-        "            mInt: (json['m_int'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, (value as int))),\n"
-        "            mNumber: (json['m_number'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, (value as num).toDouble())),\n"
-        "            mBoolean: (json['m_boolean'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, value as bool)),\n"
-        "            mDateTime: (json['m_date_time'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, DateTime.parse(value as String))),\n"
-        "            mUri: (json['m_uri'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, Uri.parse(value as String))),\n"
-        "            mMapOfString: (json['m_map_of_string'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, (value as Map<String, dynamic>).map((key, value) => MapEntry(key, value as String)))),\n"
-        "            mEnum: (json['m_enum'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, TestMEnum.fromJson(value as String))),\n"
-        "            mUnknown: (json['m_unknown'] as Map<String, dynamic>)?.map((key, value) => MapEntry(key, value)),\n"
+        "            mString: (json['m_string'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value as String)),\n"
+        "            mInt: (json['m_int'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, (value as int))),\n"
+        "            mNumber: (json['m_number'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, (value as num).toDouble())),\n"
+        "            mBoolean: (json['m_boolean'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value as bool)),\n"
+        "            mDateTime: (json['m_date_time'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, DateTime.parse(value as String))),\n"
+        "            mUri: (json['m_uri'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, Uri.parse(value as String))),\n"
+        "            mMapOfString: (json['m_map_of_string'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, (value as Map<String, dynamic>).map((key, value) => MapEntry(key, value as String)))),\n"
+        "            mEnum: (json['m_enum'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, TestMEnum.fromJson(value as String))),\n"
+        "            mUnknown: (json['m_unknown'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value)),\n"
         '        );\n'
         '    }\n'
         '\n'
