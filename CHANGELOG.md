@@ -9,12 +9,15 @@
   parameter drift, and exposes a `@protected`
   `modelPath(LayoutContext)` hook that returns the `lib/`-relative
   path for a schema's file — letting subclasses redirect both the
-  directory and the filename. `tool/gen_shorebird.dart` ships as a
-  worked example: a downstream renderer that nests request/response
-  DTOs under a per-operation directory (`lib/messages/<op>/…`) to
-  match the hand-written `shorebird_code_push_protocol` layout. The
-  default behavior is unchanged; the public surface is intentionally
-  narrow (`GeneratorConfig`, `FileRenderer`, `FileRendererConfig`,
+  directory and the filename. Ship a `runCli` entrypoint helper that
+  parses the standard CLI flags and runs `loadAndRenderSpec` so a
+  custom consumer entrypoint is one line — see
+  `tool/gen_shorebird.dart` for a worked example that nests
+  request/response DTOs under a per-operation directory
+  (`lib/messages/<op>/…`) to match the hand-written
+  `shorebird_code_push_protocol` layout. The default behavior is
+  unchanged; the public surface is intentionally narrow
+  (`runCli`, `GeneratorConfig`, `FileRenderer`, `FileRendererConfig`,
   `LayoutContext`, `RenderSchema`, `FileRendererBuilder`) and
   labelled experimental pending feedback from additional consumers.
 - Wrap a schema's class-level description in a dartdoc
