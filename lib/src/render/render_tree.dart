@@ -247,6 +247,7 @@ abstract final class ModelHelpers {
   static const maybeParseUriTemplate = 'maybeParseUriTemplate';
   static const listsEqual = 'listsEqual';
   static const mapsEqual = 'mapsEqual';
+  static const parseFromJson = 'parseFromJson';
 
   static const List<String> all = [
     maybeParseDateTime,
@@ -254,6 +255,7 @@ abstract final class ModelHelpers {
     maybeParseUriTemplate,
     listsEqual,
     mapsEqual,
+    parseFromJson,
   ];
 }
 

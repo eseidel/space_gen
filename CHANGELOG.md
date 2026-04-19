@@ -1,5 +1,13 @@
 ## 1.0.2
 
+- Throw `FormatException` (not raw `TypeError`) from generated object
+  `fromJson` factories on malformed input. A shared `parseFromJson`
+  helper in `model_helpers.dart` wraps the constructor call in a
+  try/catch that converts `TypeError` (which extends `Error`, so routes
+  that do `on Exception catch` were dropping it and returning 500) into
+  a `FormatException` that caller code can handle cleanly as
+  "malformed request body". Generated factories are one line:
+  `return parseFromJson('App', json, () => App(id: json['id'] as String, ...));`.
 - Pick grammatically correct `a`/`an` in generated `fromJson`/`toJson`
   dartdoc (`/// Converts a \`Map<String, dynamic>\` to an [App].` instead
   of `… a [App].`). Class names starting with A/E/I/O get "an"; U is

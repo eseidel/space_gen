@@ -30,9 +30,9 @@ void main() {
         '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
-        '        return Test(\n'
+        "        return parseFromJson('Test', json, () => Test(\n"
         "            foo: json['foo'],\n"
-        '        );\n'
+        '        ));\n'
         '    }\n'
         '\n'
         '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -304,9 +304,9 @@ void main() {
         '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
-        '        return Test(\n'
+        "        return parseFromJson('Test', json, () => Test(\n"
         "            foo: maybeParseDateTime(json['foo'] as String?),\n"
-        '        );\n'
+        '        ));\n'
         '    }\n'
         '\n'
         '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -367,9 +367,9 @@ void main() {
           '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
-          '        return Test(\n'
+          "        return parseFromJson('Test', json, () => Test(\n"
           "            foo: maybeParseUri(json['foo'] as String?),\n"
-          '        );\n'
+          '        ));\n'
           '    }\n'
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -426,9 +426,9 @@ void main() {
           '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
-          '        return Test(\n'
+          "        return parseFromJson('Test', json, () => Test(\n"
           "            foo: Uri.parse(json['foo'] as String),\n"
-          '        );\n'
+          '        ));\n'
           '    }\n'
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -490,9 +490,9 @@ void main() {
           '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
-          '        return Test(\n'
+          "        return parseFromJson('Test', json, () => Test(\n"
           "            foo: maybeParseUriTemplate(json['foo'] as String?),\n"
-          '        );\n'
+          '        ));\n'
           '    }\n'
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -549,9 +549,9 @@ void main() {
           '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
-          '        return Test(\n'
+          "        return parseFromJson('Test', json, () => Test(\n"
           "            foo: UriTemplate(json['foo'] as String),\n"
-          '        );\n'
+          '        ));\n'
           '    }\n'
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -619,10 +619,10 @@ void main() {
         '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
-        '        return Test(\n'
+        "        return parseFromJson('Test', json, () => Test(\n"
         "            foo: json['foo'] as String?,\n"
         "            bar: (json['bar'] as num?)?.toDouble(),\n"
-        '        );\n'
+        '        ));\n'
         '    }\n'
         '\n'
         '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -815,9 +815,9 @@ void main() {
           '    /// Converts a `Map<String, dynamic>` to a [User].\n'
           '    factory User.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
-          '        return User(\n'
+          "        return parseFromJson('User', json, () => User(\n"
           "            foo: Value.maybeFromJson(json['foo'] as Map<String, dynamic>?),\n"
-          '        );\n'
+          '        ));\n'
           '    }\n'
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -877,9 +877,9 @@ void main() {
         '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
-        '        return Test(\n'
+        "        return parseFromJson('Test', json, () => Test(\n"
         "            map: (json['map'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value as String)),\n"
-        '        );\n'
+        '        ));\n'
         '    }\n'
         '\n'
         '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -973,7 +973,7 @@ void main() {
         '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
-        '        return Test(\n'
+        "        return parseFromJson('Test', json, () => Test(\n"
         "            mString: (json['m_string'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value as String)),\n"
         "            mInt: (json['m_int'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, (value as int))),\n"
         "            mNumber: (json['m_number'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, (value as num).toDouble())),\n"
@@ -983,7 +983,7 @@ void main() {
         "            mMapOfString: (json['m_map_of_string'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, (value as Map<String, dynamic>).map((key, value) => MapEntry(key, value as String)))),\n"
         "            mEnum: (json['m_enum'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, TestMEnum.fromJson(value as String))),\n"
         "            mUnknown: (json['m_unknown'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value)),\n"
-        '        );\n'
+        '        ));\n'
         '    }\n'
         '\n'
         '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -1114,7 +1114,7 @@ void main() {
         '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
-        '        return Test(\n'
+        "        return parseFromJson('Test', json, () => Test(\n"
         "            aString: (json['a_string'] as List?)?.cast<String>(),\n"
         "            aInt: (json['a_int'] as List?)?.cast<int>(),\n"
         "            aNumber: (json['a_number'] as List?)?.cast<double>(),\n"
@@ -1124,7 +1124,7 @@ void main() {
         "            aArrayOfString: (json['a_array_of_string'] as List?)?.cast<List<String>>(),\n"
         "            aEnum: (json['a_enum'] as List?)?.map<TestAEnumInner>((e) => TestAEnumInner.fromJson(e as String)).toList(),\n"
         "            aUnknown: (json['a_unknown'] as List?)?.cast<dynamic>(),\n"
-        '        );\n'
+        '        ));\n'
         '    }\n'
         '\n'
         '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -1242,9 +1242,9 @@ void main() {
         '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
-        '        return Test(\n'
+        "        return parseFromJson('Test', json, () => Test(\n"
         '            a: const TestA(),\n'
-        '        );\n'
+        '        ));\n'
         '    }\n'
         '\n'
         '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -1304,9 +1304,9 @@ void main() {
         '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
-        '        return Test(\n'
+        "        return parseFromJson('Test', json, () => Test(\n"
         "            a: (json['a'] as List?)?.cast<String>(),\n"
-        '        );\n'
+        '        ));\n'
         '    }\n'
         '\n'
         '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -1417,7 +1417,7 @@ void main() {
         '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
-        '        return Test(\n'
+        "        return parseFromJson('Test', json, () => Test(\n"
         "            fooBar: json['foo-bar'] as String?,\n"
         "            notPrivate: json['_not_private'] as String?,\n"
         "            barBaz: json['bar baz'] as String?,\n"
@@ -1426,7 +1426,7 @@ void main() {
         "            minus1: json['-1'] as String?,\n"
         "            dont: json['don't'] as String?,\n"
         "            default_: json['default'] as String?,\n"
-        '        );\n'
+        '        ));\n'
         '    }\n'
         '\n'
         '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -1624,9 +1624,9 @@ void main() {
           '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
-          '        return Test(\n'
+          "        return parseFromJson('Test', json, () => Test(\n"
           "            a: (json['a'] as num?)?.toDouble(),\n"
-          '        );\n'
+          '        ));\n'
           '    }\n'
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -1705,9 +1705,9 @@ void main() {
           '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
-          '        return Test(\n'
+          "        return parseFromJson('Test', json, () => Test(\n"
           "            a: (json['a'] as int?),\n"
-          '        );\n'
+          '        ));\n'
           '    }\n'
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -1846,10 +1846,10 @@ void main() {
           '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
-          '        return Test(\n'
+          "        return parseFromJson('Test', json, () => Test(\n"
           "            a: json['a'] as String?,\n"
           "            b: json['b'] as String?,\n"
-          '        );\n'
+          '        ));\n'
           '    }\n'
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -1913,9 +1913,9 @@ void main() {
           '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
-          '        return Test(\n'
+          "        return parseFromJson('Test', json, () => Test(\n"
           "            a: json['a'] as String?,\n"
-          '        );\n'
+          '        ));\n'
           '    }\n'
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -1978,12 +1978,12 @@ void main() {
           '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
-          '        return Test(\n'
+          "        return parseFromJson('Test', json, () => Test(\n"
           "            reqNull: json['req_null'] as String?,\n"
           "            optNull: json['opt_null'] as String?,\n"
           "            req: json['req'] as String,\n"
           "            opt: json['opt'] as String?,\n"
-          '        );\n'
+          '        ));\n'
           '    }\n'
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
@@ -2083,9 +2083,9 @@ void main() {
           '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
-          '        return Test(\n'
+          "        return parseFromJson('Test', json, () => Test(\n"
           "            a: TestA.maybeFromJson(json['a'] as Map<String, dynamic>),\n"
-          '        );\n'
+          '        ));\n'
           '    }\n'
           '\n'
           '    /// Convenience to create a nullable type from a nullable json object.\n'
