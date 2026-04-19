@@ -80,17 +80,19 @@ Iterable<String> wrapLines({
   });
 }
 
+/// Letters a/e/i/o treated as "an"-taking; `u` is excluded because the
+/// dominant class-name U-words (`User`, `Uniform`, `Unique`) start with
+/// a consonant "yoo" sound.
+const _anTakingInitials = {'a', 'e', 'i', 'o', 'A', 'E', 'I', 'O'};
+
 /// Picks "a" or "an" for [word], biased for programming class names.
-/// Returns "an" when [word] starts with A/E/I/O, "a" otherwise — `U`
-/// is *not* treated as a vowel here because the dominant class-name
-/// U-words (`User`, `Uniform`, `Unique`) start with a consonant "yoo"
-/// sound. Misses edge cases like `Upload` (vowel sound, should be
-/// "an") and `FBI` (acronym, should be "an") but those are rare in
-/// class names.
+/// Returns "an" when [word] starts with A/E/I/O, "a" otherwise. Misses
+/// edge cases like `Upload` (vowel sound, should be "an") and `FBI`
+/// (acronym, should be "an"), but those are rare in class names.
 @visibleForTesting
 String aOrAn(String word) {
   if (word.isEmpty) return 'a';
-  return 'aeioAEIO'.contains(word[0]) ? 'an' : 'a';
+  return _anTakingInitials.contains(word[0]) ? 'an' : 'a';
 }
 
 Iterable<String> wrapDocComment(String value, {int indent = 0}) {
