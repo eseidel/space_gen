@@ -658,6 +658,7 @@ class Endpoint implements ToTemplateContext {
 
     final responseSchema = operation.returnType;
     final returnType = responseSchema.typeName;
+    final isVoidReturn = responseSchema is RenderVoid;
     final responseFromJson = responseSchema.fromJsonExpression(
       'jsonDecode(response.body)',
       context,
@@ -726,6 +727,7 @@ class Endpoint implements ToTemplateContext {
       'headerParameters': toTemplateContexts(headerParameters),
       'requestBody': requestBody?.toTemplateContext(context),
       'returnType': returnType,
+      'isVoidReturn': isVoidReturn,
       'responseFromJson': responseFromJson,
       'validationStatements': validationStatementsString,
       'authArgument': authArgumentString,

@@ -1,3 +1,11 @@
+## 1.0.3
+
+- Fix `Future<void>` endpoints so a successful empty body (e.g. 204
+  No Content) returns normally. Generated methods previously fell
+  through to `throw ApiException.unhandled(...)` whenever the body
+  was empty, which meant every successful DELETE/PATCH on a 204 route
+  threw.
+
 ## 1.0.2
 
 - Emit only the imports a rendered model/api body actually needs: drop
