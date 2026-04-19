@@ -1,5 +1,9 @@
 ## 1.0.2
 
+- Pick grammatically correct `a`/`an` in generated `fromJson`/`toJson`
+  dartdoc (`/// Converts a \`Map<String, dynamic>\` to an [App].` instead
+  of `… a [App].`). Class names starting with A/E/I/O get "an"; U is
+  excluded since `User`/`Uniform`/`Unique` start with a consonant sound.
 - Extend typed error bodies to `4XX`/`5XX` range responses. Previously
   only `default:` contributed to `ApiException<T>`. Now the generator
   collects error schemas from `default:`, `4XX:`, and `5XX:`,
