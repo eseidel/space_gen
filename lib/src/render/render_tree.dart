@@ -727,10 +727,34 @@ class Endpoint implements ToTemplateContext {
       dartIsNullable: false,
     );
 
-    final defaultResponse = operation.defaultResponse;
-    final hasErrorType = defaultResponse != null;
-    final errorType = defaultResponse?.content.typeName;
-    final errorFromJson = defaultResponse?.content.fromJsonExpression(
+    // Collect error-body schemas from `default:`, `4XX:`, and `5XX:` and
+    // deduplicate by structural equality. When they all resolve to the same
+    // schema (the common case — most specs alias every error to a single
+    // `ErrorResponse`), emit a typed `ApiException<ErrorType>` throw.
+    // When they disagree, fall back to untyped — picking one would lie
+    // to callers about what they'll actually catch.
+    final errorSchemas = <RenderSchema>[
+      ?operation.defaultResponse?.content,
+      ...operation.rangeResponses
+          .where(
+            (e) =>
+                e.range == StatusCodeRange.clientError ||
+                e.range == StatusCodeRange.serverError,
+          )
+          .map((e) => e.content),
+    ];
+    final distinctErrorSchemas = <RenderSchema>[];
+    for (final schema in errorSchemas) {
+      if (!distinctErrorSchemas.any((e) => e.equalsIgnoringName(schema))) {
+        distinctErrorSchemas.add(schema);
+      }
+    }
+    final errorSchema = distinctErrorSchemas.length == 1
+        ? distinctErrorSchemas.first
+        : null;
+    final hasErrorType = errorSchema != null;
+    final errorType = errorSchema?.typeName;
+    final errorFromJson = errorSchema?.fromJsonExpression(
       'jsonDecode(response.body)',
       context,
       jsonIsNullable: false,

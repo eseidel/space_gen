@@ -1108,5 +1108,127 @@ void main() {
         '}\n',
       );
     });
+
+    test('4XX range alone drives the typed error body', () {
+      final json = {
+        'summary': 'Get widgets',
+        'operationId': 'getWidgets',
+        'responses': {
+          '200': {'description': 'OK'},
+          '4XX': {
+            'description': 'Client error',
+            'content': {
+              'application/json': {
+                'schema': {
+                  'type': 'object',
+                  'properties': {
+                    'reason': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+      final result = renderTestOperation(
+        path: '/widgets',
+        operationJson: json,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      expect(result, contains('throw ApiException<GetWidgets4XXResponse>('));
+      expect(result, contains('body: GetWidgets4XXResponse.fromJson'));
+    });
+
+    test(
+      'default + 4XX with identical inline schemas still typed',
+      () {
+        final errorSchema = {
+          'type': 'object',
+          'properties': {
+            'message': {'type': 'string'},
+          },
+        };
+        final json = {
+          'summary': 'Get widgets',
+          'operationId': 'getWidgets',
+          'responses': {
+            '200': {'description': 'OK'},
+            '4XX': {
+              'description': 'Client error',
+              'content': {
+                'application/json': {'schema': errorSchema},
+              },
+            },
+            'default': {
+              'description': 'Error',
+              'content': {
+                'application/json': {'schema': errorSchema},
+              },
+            },
+          },
+        };
+        final result = renderTestOperation(
+          path: '/widgets',
+          operationJson: json,
+          serverUrl: Uri.parse('https://example.com'),
+        );
+        // Both default and 4XX are structurally the same inline schema;
+        // deduplication collapses them so the typed throw still fires.
+        expect(result, contains('throw ApiException<'));
+        expect(result, isNot(contains('throw ApiException<Object?>')));
+      },
+    );
+
+    test(
+      'default + 4XX with different schemas falls back to untyped',
+      () {
+        final json = {
+          'summary': 'Get widgets',
+          'operationId': 'getWidgets',
+          'responses': {
+            '200': {'description': 'OK'},
+            '4XX': {
+              'description': 'Client error',
+              'content': {
+                'application/json': {
+                  'schema': {
+                    'type': 'object',
+                    'properties': {
+                      'reason': {'type': 'string'},
+                    },
+                  },
+                },
+              },
+            },
+            'default': {
+              'description': 'Error',
+              'content': {
+                'application/json': {
+                  'schema': {
+                    'type': 'object',
+                    'properties': {
+                      'message': {'type': 'string'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        };
+        final result = renderTestOperation(
+          path: '/widgets',
+          operationJson: json,
+          serverUrl: Uri.parse('https://example.com'),
+        );
+        // Schemas disagree — fall back to untyped throw.
+        expect(
+          result,
+          contains(
+            'throw ApiException<Object?>(response.statusCode, '
+            'response.body.toString());',
+          ),
+        );
+      },
+    );
   });
 }
