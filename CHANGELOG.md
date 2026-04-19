@@ -36,6 +36,15 @@
   'Map<String, dynamic>'`). Now emits
   `(json[key] as Map<String, dynamic>?)?.map(...)` so the null-aware
   `?.map` chain actually has a nullable receiver.
+- **Breaking:** `Quirks().allListsDefaultToEmpty` now defaults to
+  `false`. The "nullable lists default to `const []`" behavior was
+  really an OpenAPI convention and is now only on via
+  `Quirks.openapi()`. Callers using the plain default who relied on
+  the old behavior should opt in explicitly:
+  `Quirks(allListsDefaultToEmpty: true)`.
+- Fix `RenderArray.defaultValueString` to return `null` when the
+  schema has no default (previously crashed casting `null as List`
+  once `allListsDefaultToEmpty` was off).
 - Fix nullable primitive query parameters to be null-safe. Generated
   code previously emitted `?foo.toString()`, which always produced a
   map entry (with the literal string `"null"` as its value) because
