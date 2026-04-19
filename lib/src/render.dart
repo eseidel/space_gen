@@ -45,6 +45,36 @@ void validatePackageName(String packageName) {
   }
 }
 
+/// Builds the [FileRenderer] used to lay out and write files for a
+/// given spec. The default returns a stock [FileRenderer]; consumers
+/// with their own layout conventions can pass a builder that returns
+/// a subclass (see `ShorebirdFileRenderer` for an example).
+typedef FileRendererBuilder =
+    FileRenderer Function({
+      required String packageName,
+      required TemplateProvider templates,
+      required SchemaRenderer schemaRenderer,
+      required Formatter formatter,
+      required FileWriter fileWriter,
+      required SpellChecker spellChecker,
+    });
+
+FileRenderer _defaultFileRendererBuilder({
+  required String packageName,
+  required TemplateProvider templates,
+  required SchemaRenderer schemaRenderer,
+  required Formatter formatter,
+  required FileWriter fileWriter,
+  required SpellChecker spellChecker,
+}) => FileRenderer(
+  packageName: packageName,
+  templates: templates,
+  schemaRenderer: schemaRenderer,
+  formatter: formatter,
+  fileWriter: fileWriter,
+  spellChecker: spellChecker,
+);
+
 Future<void> loadAndRenderSpec({
   required Uri specUrl,
   required String packageName,
@@ -53,6 +83,7 @@ Future<void> loadAndRenderSpec({
   RunProcess? runProcess,
   Quirks quirks = const Quirks(),
   bool logSchemas = true,
+  FileRendererBuilder fileRendererBuilder = _defaultFileRendererBuilder,
 }) async {
   final fs = outDir.fileSystem;
   validatePackageName(packageName);
@@ -96,7 +127,7 @@ Future<void> loadAndRenderSpec({
 
   // FileRenderer is responsible for deciding the layout of the files
   // and rendering the rest of directory structure.
-  FileRenderer(
+  fileRendererBuilder(
     packageName: packageName,
     templates: templates,
     schemaRenderer: schemaRenderer,

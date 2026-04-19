@@ -231,6 +231,13 @@ class FileRenderer {
   /// The quirks to use for rendering.
   Quirks get quirks => schemaRenderer.quirks;
 
+  /// Snake-cased operationIds from the spec currently being rendered.
+  /// Populated at the top of [render]. Exposed for subclasses that
+  /// want to key layout decisions off the set of operations (e.g.
+  /// nesting message schemas under an operation-specific directory).
+  @protected
+  Set<String> operationSnakeNames = const {};
+
   /// The path to the api file.
   static String apiFilePath(Api api) {
     // openapi generator does not use /src/ in the path.
@@ -250,7 +257,13 @@ class FileRenderer {
   /// With [Quirks.flatModelDir] on (implied by `Quirks.openapi()`),
   /// everything lands in a single flat `model/` directory for
   /// compatibility with OpenAPI Generator's output layout.
-  String _modelSubdir(RenderSchema schema) {
+  /// Override point for custom layouts: return the `lib/`-relative
+  /// subdirectory a schema renders into. See `tool/gen_shorebird.dart`
+  /// in this repo for an example that nests operation-owned messages
+  /// under a per-operation directory.
+  @protected
+  @visibleForOverriding
+  String modelSubdir(RenderSchema schema) {
     if (quirks.flatModelDir) return 'model';
     final className = schema.typeName;
     final isMessage =
@@ -259,16 +272,16 @@ class FileRenderer {
   }
 
   String modelFilePath(RenderSchema schema) {
-    return 'lib/${_modelSubdir(schema)}/${schema.snakeName}.dart';
+    return 'lib/${modelSubdir(schema)}/${schema.snakeName}.dart';
   }
 
   String modelPackagePath(RenderSchema schema) {
-    return '${_modelSubdir(schema)}/${schema.snakeName}.dart';
+    return '${modelSubdir(schema)}/${schema.snakeName}.dart';
   }
 
   String modelPackageImport(FileRenderer context, RenderSchema schema) {
     return 'package:${context.packageName}/'
-        '${context._modelSubdir(schema)}/${schema.snakeName}.dart';
+        '${context.modelSubdir(schema)}/${schema.snakeName}.dart';
   }
 
   /// Render a template.
@@ -500,6 +513,12 @@ class FileRenderer {
     // file path for each referenced schema?
     // Set up the package directory.
     _renderDirectory();
+    // Collect operation snake names up front so [modelSubdir]
+    // overrides can key layout decisions off the set of operations.
+    operationSnakeNames = {
+      for (final api in spec.apis)
+        for (final endpoint in api.endpoints) endpoint.snakeName,
+    };
     // Render the apis (endpoint groups).
     final renderedApis = _renderApis(spec.apis);
 
