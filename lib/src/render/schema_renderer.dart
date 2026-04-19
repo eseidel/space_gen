@@ -2,6 +2,67 @@ import 'package:space_gen/src/quirks.dart';
 import 'package:space_gen/src/render/render_tree.dart';
 import 'package:space_gen/src/render/templates.dart';
 
+/// Which imports a rendered schema body needs beyond the schemas it
+/// references.
+///
+/// Today we derive this from the rendered body via substring checks. The
+/// long-term plan is for the rendering pipeline in render_tree.dart to
+/// populate this directly as it emits helper calls — the [importsFor]
+/// interface will not change.
+class SchemaUsage {
+  const SchemaUsage({
+    this.usesMetaAnnotations = false,
+    this.usesModelHelpers = false,
+  });
+
+  /// Derives usage by inspecting a rendered body.
+  factory SchemaUsage.fromBody(String body) {
+    return SchemaUsage(
+      usesMetaAnnotations: body.contains('@immutable'),
+      usesModelHelpers: ModelHelpers.all.any(body.contains),
+    );
+  }
+
+  final bool usesMetaAnnotations;
+  final bool usesModelHelpers;
+
+  /// Imports required by the body itself. Package-local imports are
+  /// resolved against [packageName].
+  Iterable<Import> importsFor(String packageName) sync* {
+    if (usesMetaAnnotations) yield const Import('package:meta/meta.dart');
+    if (usesModelHelpers) {
+      yield Import('package:$packageName/model_helpers.dart');
+    }
+  }
+}
+
+/// Which imports a rendered api body needs beyond the schemas it
+/// references.
+class ApiUsage {
+  const ApiUsage();
+
+  // No conditional fields yet; body kept to match the SchemaUsage shape
+  // so a future refactor can populate them without changing callers.
+  // ignore: avoid_unused_constructor_parameters
+  factory ApiUsage.fromBody(String body) => const ApiUsage();
+
+  Iterable<Import> importsFor(String packageName) => const [];
+}
+
+/// A rendered schema body paired with the usage of that body.
+class RenderedSchema {
+  const RenderedSchema({required this.body, required this.usage});
+  final String body;
+  final SchemaUsage usage;
+}
+
+/// A rendered api body paired with the usage of that body.
+class RenderedApi {
+  const RenderedApi({required this.body, required this.usage});
+  final String body;
+  final ApiUsage usage;
+}
+
 /// Context for rendering the spec.
 class SchemaRenderer {
   /// Create a new context for rendering the spec.
@@ -17,8 +78,8 @@ class SchemaRenderer {
   String get fromJsonJsonType =>
       quirks.dynamicJson ? 'dynamic' : 'Map<String, dynamic>';
 
-  /// Renders a schema to a string, does not render the imports.
-  String renderSchema(RenderSchema schema) {
+  /// Renders a schema, does not render the imports.
+  RenderedSchema renderSchema(RenderSchema schema) {
     if (!schema.createsNewType) {
       throw StateError('No code to render non-newtype: $schema');
     }
@@ -31,9 +92,10 @@ class SchemaRenderer {
       RenderEmptyObject() => 'schema_empty_object',
       RenderSchema() => throw StateError('No code to render $schema'),
     };
-    return templates
+    final body = templates
         .loadTemplate(template)
         .renderString(schema.toTemplateContext(this));
+    return RenderedSchema(body: body, usage: SchemaUsage.fromBody(body));
   }
 
   String renderEndpoints({
@@ -52,11 +114,14 @@ class SchemaRenderer {
     });
   }
 
-  /// Renders an api to a string, does not render the imports.
-  String renderApi(Api api) => renderEndpoints(
-    description: api.description,
-    className: api.className,
-    endpoints: api.endpoints,
-    removePrefix: api.removePrefix,
-  );
+  /// Renders an api, does not render the imports.
+  RenderedApi renderApi(Api api) {
+    final body = renderEndpoints(
+      description: api.description,
+      className: api.className,
+      endpoints: api.endpoints,
+      removePrefix: api.removePrefix,
+    );
+    return RenderedApi(body: body, usage: ApiUsage.fromBody(body));
+  }
 }
