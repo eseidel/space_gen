@@ -2,10 +2,11 @@
 //
 // Plugs a custom [FileRenderer] into the standard [runCli] shell.
 // This matches Shorebird's hand-written
-// `shorebird_code_push_protocol` package layout: request/response
-// DTOs owned by a single operation nest under a per-operation
-// directory, domain models land in `lib/models/`, shared messages
-// stay flat.
+// `shorebird_code_push_protocol` package layout: everything lives
+// under `lib/src/` (Dart-package convention for internal files),
+// request/response DTOs owned by a single operation nest under a
+// per-operation directory, domain models land in `lib/src/models/`,
+// shared messages stay flat in `lib/src/messages/`.
 //
 // Treat the space_gen extension surface used here (`runCli`,
 // `FileRendererBuilder`, the `@protected` hooks on `FileRenderer`)
@@ -25,12 +26,12 @@ class ShorebirdFileRenderer extends FileRenderer {
     final className = context.schema.typeName;
     final isMessage =
         className.endsWith('Request') || className.endsWith('Response');
-    if (!isMessage) return 'models/$snakeName.dart';
+    if (!isMessage) return 'src/models/$snakeName.dart';
     final base = _messageBaseName(snakeName);
     if (context.operationSnakeNames.contains(base)) {
-      return 'messages/$base/$snakeName.dart';
+      return 'src/messages/$base/$snakeName.dart';
     }
-    return 'messages/$snakeName.dart';
+    return 'src/messages/$snakeName.dart';
   }
 
   /// Strip a trailing `_request`/`_response` (and any HTTP status code
