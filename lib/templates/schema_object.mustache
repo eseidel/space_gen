@@ -15,14 +15,14 @@ class {{ typeName }} {
     {{^castFromJsonArg}}
         json) {
     {{/castFromJsonArg}}
-        return {{ typeName }}(
+        return parseFromJson('{{ typeName }}', json, () => {{ typeName }}(
             {{#properties}}
             {{ dartName }}: {{{ fromJson }}},
             {{/properties}}
             {{#hasAdditionalProperties}}
             {{additionalPropertiesName}}: json.map((key, value) => MapEntry(key, {{{ valueFromJson }}})),
             {{/hasAdditionalProperties}}
-        );
+        ));
     }
 
     /// Convenience to create a nullable type from a nullable json object.
