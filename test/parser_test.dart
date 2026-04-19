@@ -790,14 +790,25 @@ void main() {
         final responses =
             spec.paths['/users'].operations[Method.get]!.responses;
         expect(responses[200], isNotNull);
-        expect(responses.rangeResponses.keys, containsAll([200, 400, 500]));
-        expect(responses.rangeResponses[200]!.object!.description, 'Success');
         expect(
-          responses.rangeResponses[400]!.object!.description,
+          responses.rangeResponses.keys,
+          containsAll([
+            StatusCodeRange.success,
+            StatusCodeRange.clientError,
+            StatusCodeRange.serverError,
+          ]),
+        );
+        final byRange = responses.rangeResponses;
+        expect(
+          byRange[StatusCodeRange.success]!.object!.description,
+          'Success',
+        );
+        expect(
+          byRange[StatusCodeRange.clientError]!.object!.description,
           'Client error',
         );
         expect(
-          responses.rangeResponses[500]!.object!.description,
+          byRange[StatusCodeRange.serverError]!.object!.description,
           'Server error',
         );
       });

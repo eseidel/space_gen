@@ -949,8 +949,18 @@ Response _parseResponse(MapContext responseJson) {
 }
 
 /// Matches a range status code like `2XX`, `4XX`, etc. Capturing group 1
-/// is the first digit (1-5).
+/// is the leading digit (1-5).
 final _rangeCodeRegex = RegExp(r'^([1-5])XX$');
+
+/// Maps the leading digit of an `NXX` range to the corresponding
+/// [StatusCodeRange] variant.
+const Map<int, StatusCodeRange> _rangesByLeadingDigit = {
+  1: StatusCodeRange.informational,
+  2: StatusCodeRange.success,
+  3: StatusCodeRange.redirect,
+  4: StatusCodeRange.clientError,
+  5: StatusCodeRange.serverError,
+};
 
 Responses parseResponses(MapContext responsesJson) {
   final responseCodes = responsesJson.keys.toList();
@@ -963,15 +973,15 @@ Responses parseResponses(MapContext responsesJson) {
   }
 
   final responses = <int, RefOr<Response>>{};
-  final rangeResponses = <int, RefOr<Response>>{};
+  final rangeResponses = <StatusCodeRange, RefOr<Response>>{};
   for (final responseCode in responseCodes) {
     final responseJson = responsesJson
         .childAsMap(responseCode)
         .addSnakeName(responseCode);
     final rangeMatch = _rangeCodeRegex.firstMatch(responseCode);
     if (rangeMatch != null) {
-      final rangeStart = int.parse(rangeMatch.group(1)!) * 100;
-      rangeResponses[rangeStart] = parseResponseOrRef(responseJson);
+      final range = _rangesByLeadingDigit[int.parse(rangeMatch.group(1)!)]!;
+      rangeResponses[range] = parseResponseOrRef(responseJson);
       continue;
     }
     final responseCodeInt = int.tryParse(responseCode);

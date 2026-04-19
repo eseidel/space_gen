@@ -541,6 +541,30 @@ class PathItem extends Equatable implements HasPointer {
   ];
 }
 
+/// An HTTP status code range declared as `NXX` in OpenAPI. Finite
+/// domain — OpenAPI only allows `1XX`..`5XX`.
+enum StatusCodeRange {
+  /// `1XX` — Informational (100–199).
+  informational(100),
+
+  /// `2XX` — Successful (200–299).
+  success(200),
+
+  /// `3XX` — Redirection (300–399).
+  redirect(300),
+
+  /// `4XX` — Client error (400–499).
+  clientError(400),
+
+  /// `5XX` — Server error (500–599).
+  serverError(500);
+
+  const StatusCodeRange(this.startCode);
+
+  /// The first status code covered by this range (100, 200, 300, 400, 500).
+  final int startCode;
+}
+
 /// A map of response codes to responses.
 /// https://spec.openapis.org/oas/v3.1.0#responses-object
 @immutable
@@ -555,9 +579,8 @@ class Responses extends Equatable implements Parseable {
   /// The responses of this endpoint, keyed by exact status code.
   final Map<int, RefOr<Response>> responses;
 
-  /// The responses of this endpoint, keyed by range (`1XX`..`5XX`). The
-  /// key is the range start (100, 200, 300, 400, or 500).
-  final Map<int, RefOr<Response>> rangeResponses;
+  /// The responses of this endpoint, keyed by range (`1XX`..`5XX`).
+  final Map<StatusCodeRange, RefOr<Response>> rangeResponses;
 
   /// The `default:` response — catches any status code not explicitly
   /// enumerated in [responses] or matched by [rangeResponses].

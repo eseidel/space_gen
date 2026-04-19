@@ -594,14 +594,14 @@ List<ResolvedResponse> _resolveResponses(
 }
 
 List<ResolvedRangeResponse> _resolveRangeResponses(
-  Map<int, RefOr<Response>> rangeResponses,
+  Map<StatusCodeRange, RefOr<Response>> rangeResponses,
   ResolveContext context,
 ) {
   return rangeResponses.entries.map((entry) {
-    final rangeStart = entry.key;
+    final range = entry.key;
     final response = context._resolve(entry.value);
     return ResolvedRangeResponse(
-      rangeStart: rangeStart,
+      range: range,
       description: response.description,
       content: _resolveContent(response, context),
     );
@@ -937,9 +937,7 @@ class ResolvedOperation {
   /// [defaultResponse].
   final List<ResolvedResponse> responses;
 
-  /// The range (`NXX`) responses of the resolved operation, if any. Each
-  /// entry's `rangeStart` is the first code in the range (100, 200, 300,
-  /// 400, or 500).
+  /// The range (`NXX`) responses of the resolved operation, if any.
   final List<ResolvedRangeResponse> rangeResponses;
 
   /// The `default:` (catch-all) response, if the operation declares one.
@@ -977,17 +975,17 @@ class ResolvedResponse {
 }
 
 /// A range (`NXX`) response on an operation. Shares the description +
-/// content shape with [ResolvedResponse] but its "status code" is the
-/// range start (100/200/300/400/500) rather than an exact code.
+/// content shape with [ResolvedResponse] but is keyed by a
+/// [StatusCodeRange] rather than an exact code.
 class ResolvedRangeResponse {
   const ResolvedRangeResponse({
-    required this.rangeStart,
+    required this.range,
     required this.description,
     required this.content,
   });
 
-  /// The first status code of the range: 100, 200, 300, 400, or 500.
-  final int rangeStart;
+  /// Which `NXX` range this response covers.
+  final StatusCodeRange range;
 
   /// The description of the resolved range response.
   final String description;

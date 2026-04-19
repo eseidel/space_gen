@@ -1,5 +1,6 @@
 import 'package:mocktail/mocktail.dart';
 import 'package:space_gen/src/logger.dart';
+import 'package:space_gen/src/parse/spec.dart' show StatusCodeRange;
 import 'package:space_gen/src/parser.dart';
 import 'package:space_gen/src/resolver.dart';
 import 'package:space_gen/src/types.dart';
@@ -742,9 +743,9 @@ void main() {
       final spec = parseAndResolveTestSpec(json);
       final op = spec.paths.first.operations.first;
       expect(op.rangeResponses, hasLength(2));
-      final byStart = {for (final r in op.rangeResponses) r.rangeStart: r};
+      final byRange = {for (final r in op.rangeResponses) r.range: r};
       expect(
-        byStart[200],
+        byRange[StatusCodeRange.success],
         isA<ResolvedRangeResponse>().having(
           (r) => r.description,
           'description',
@@ -752,7 +753,7 @@ void main() {
         ),
       );
       expect(
-        byStart[500],
+        byRange[StatusCodeRange.serverError],
         isA<ResolvedRangeResponse>().having(
           (r) => r.description,
           'description',

@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
+import 'package:space_gen/src/parse/spec.dart' show StatusCodeRange;
 import 'package:space_gen/src/quirks.dart';
 // Any code that depends on SchemaRenderer probably should be moved out
 // of this file and into the schema_renderer.dart file.
@@ -428,7 +429,7 @@ class SpecResolver {
           .where((e) => e.statusCode >= 200 && e.statusCode < 300)
           .map((e) => e.content),
       ...operation.rangeResponses
-          .where((e) => e.rangeStart == 200)
+          .where((e) => e.range == StatusCodeRange.success)
           .map((e) => e.content),
     ];
     if (successfulContent.isEmpty) {
@@ -466,7 +467,7 @@ class SpecResolver {
 
   RenderRangeResponse toRenderRangeResponse(ResolvedRangeResponse response) {
     return RenderRangeResponse(
-      rangeStart: response.rangeStart,
+      range: response.range,
       description: response.description,
       content: toRenderSchema(response.content),
     );
@@ -887,10 +888,9 @@ class RenderOperation {
   final List<RenderResponse> responses;
 
   /// The range (`NXX`) responses of the resolved operation, if any.
-  /// Each entry's `rangeStart` is the first status code of the range
-  /// (100, 200, 300, 400, or 500). 2XX ranges feed the return-type
-  /// determination on the operation method; their schemas are walked
-  /// for import/emission like any other response.
+  /// `2XX` ranges feed the return-type determination on the operation
+  /// method; all range schemas are walked for import/emission like any
+  /// other response.
   final List<RenderRangeResponse> rangeResponses;
 
   /// The `default:` (catch-all) response, if the operation declares one.
@@ -1048,17 +1048,17 @@ class RenderResponse {
 }
 
 /// A range (`NXX`) response on an operation. Shares the description +
-/// content shape with [RenderResponse] but its "status code" is the
-/// range start (100/200/300/400/500) rather than an exact code.
+/// content shape with [RenderResponse] but is keyed by a
+/// [StatusCodeRange] rather than an exact code.
 class RenderRangeResponse {
   const RenderRangeResponse({
-    required this.rangeStart,
+    required this.range,
     required this.description,
     required this.content,
   });
 
-  /// The first status code of the range: 100, 200, 300, 400, or 500.
-  final int rangeStart;
+  /// Which `NXX` range this response covers.
+  final StatusCodeRange range;
 
   /// The description of the resolved range response.
   final String description;
