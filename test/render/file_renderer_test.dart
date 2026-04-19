@@ -1444,14 +1444,17 @@ void main() {
           ),
         },
       );
-      final imports = fileRenderer.importsForModel(schema);
+      final imports = fileRenderer.importsForModel(
+        schema,
+        const SchemaUsage(
+          usesMetaAnnotations: true,
+          usesModelHelpers: true,
+        ),
+      );
       expect(imports, {
-        const Import('dart:convert'),
-        const Import('dart:io'),
         const Import('package:meta/meta.dart'),
-        const Import('package:spacetraders/model/foo.dart'),
-        const Import('dart:typed_data'), // Uint8List from RenderBinary.
         const Import('package:spacetraders/model_helpers.dart'),
+        const Import('dart:typed_data'), // Uint8List from RenderBinary.
       });
     });
 
@@ -1515,7 +1518,7 @@ void main() {
           ),
         ],
       );
-      final imports = fileRenderer.importsForApi(api);
+      final imports = fileRenderer.importsForApi(api, const ApiUsage());
       expect(imports, {
         const Import('dart:async'),
         const Import('dart:convert'),

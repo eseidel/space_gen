@@ -352,15 +352,16 @@ class FileRenderer {
       schema.createsNewType && schema is! RenderRecursiveRef;
 
   @visibleForTesting
-  Iterable<Import> importsForApi(Api api) {
+  Iterable<Import> importsForApi(Api api, ApiUsage usage) {
     // TODO(eseidel): Make type imports dynamic based on used schemas.
     final imports = {
       const Import('dart:async'),
       const Import('dart:convert'), // jsonDecode, for decoding response body.
-      const Import('dart:io'),
+      const Import('dart:io'), // HttpStatus, emitted by api.mustache.
       Import('package:$packageName/api_client.dart'),
       Import('package:$packageName/api_exception.dart'),
       const Import('package:http/http.dart', asName: 'http'),
+      ...usage.importsFor(packageName),
     };
 
     final apiSchemas = collectSchemasUnderApi(api);
@@ -381,8 +382,8 @@ class FileRenderer {
   List<Api> _renderApis(List<Api> apis) {
     final rendered = <Api>[];
     for (final api in apis) {
-      final content = schemaRenderer.renderApi(api);
-      final imports = importsForApi(api);
+      final renderedApi = schemaRenderer.renderApi(api);
+      final imports = importsForApi(api, renderedApi.usage);
       final importsContext = imports
           .sortedBy((i) => i.path)
           .map((i) => i.toTemplateContext())
@@ -391,7 +392,7 @@ class FileRenderer {
       _renderTemplate(
         template: 'add_imports',
         outPath: outPath,
-        context: {'imports': importsContext, 'content': content},
+        context: {'imports': importsContext, 'content': renderedApi.body},
       );
       rendered.add(api);
     }
@@ -414,7 +415,7 @@ class FileRenderer {
   }
 
   @visibleForTesting
-  Iterable<Import> importsForModel(RenderSchema schema) {
+  Iterable<Import> importsForModel(RenderSchema schema, SchemaUsage usage) {
     final referencedSchemas = collectSchemasUnderSchema(schema);
     final localSchemas = referencedSchemas.where(
       (s) => !s.createsNewType,
@@ -428,21 +429,21 @@ class FileRenderer {
         .toList();
 
     final imports = {
-      const Import('dart:convert'),
-      const Import('dart:io'),
-      const Import('package:meta/meta.dart'),
-      Import('package:$packageName/model_helpers.dart'),
+      ...usage.importsFor(packageName),
       ...schema.additionalImports,
       ...localSchemas.expand((s) => s.additionalImports),
       ...referencedImports,
     };
+    // A file never imports itself.
+    final selfPath = modelPackageImport(this, schema);
+    imports.removeWhere((i) => i.path == selfPath);
     return imports;
   }
 
   void renderModels(Iterable<RenderSchema> schemas) {
     for (final schema in schemas) {
-      final content = schemaRenderer.renderSchema(schema);
-      final imports = importsForModel(schema);
+      final rendered = schemaRenderer.renderSchema(schema);
+      final imports = importsForModel(schema, rendered.usage);
       final importsContext = imports
           .sortedBy((i) => i.path)
           .map((i) => i.toTemplateContext())
@@ -452,7 +453,7 @@ class FileRenderer {
       _renderTemplate(
         template: 'add_imports',
         outPath: outPath,
-        context: {'imports': importsContext, 'content': content},
+        context: {'imports': importsContext, 'content': rendered.body},
       );
     }
   }

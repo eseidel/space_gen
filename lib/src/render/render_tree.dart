@@ -188,6 +188,26 @@ class Import extends Equatable {
   List<Object?> get props => [path, asName];
 }
 
+/// Identifiers emitted by the renderer that are defined in the generated
+/// `model_helpers.dart` file. Kept in sync with
+/// `lib/templates/model_helpers.mustache`. Used both at emit sites below
+/// and by [SchemaUsage] to decide whether to import `model_helpers.dart`.
+abstract final class ModelHelpers {
+  static const maybeParseDateTime = 'maybeParseDateTime';
+  static const maybeParseUri = 'maybeParseUri';
+  static const maybeParseUriTemplate = 'maybeParseUriTemplate';
+  static const listsEqual = 'listsEqual';
+  static const mapsEqual = 'mapsEqual';
+
+  static const List<String> all = [
+    maybeParseDateTime,
+    maybeParseUri,
+    maybeParseUriTemplate,
+    listsEqual,
+    mapsEqual,
+  ];
+}
+
 class SpecResolver {
   const SpecResolver(this.quirks);
 
@@ -1203,17 +1223,18 @@ class RenderPod extends RenderSchema {
         return 'DateTime.parse($castedValue)';
       case PodType.dateTime:
         if (jsonIsNullable) {
-          return 'maybeParseDateTime($castedValue)$orDefault';
+          return '${ModelHelpers.maybeParseDateTime}($castedValue)$orDefault';
         }
         return 'DateTime.parse($castedValue)';
       case PodType.uri:
         if (jsonIsNullable) {
-          return 'maybeParseUri($castedValue)$orDefault';
+          return '${ModelHelpers.maybeParseUri}($castedValue)$orDefault';
         }
         return 'Uri.parse($castedValue)';
       case PodType.uriTemplate:
         if (jsonIsNullable) {
-          return 'maybeParseUriTemplate($castedValue)$orDefault';
+          final call = '${ModelHelpers.maybeParseUriTemplate}($castedValue)';
+          return '$call$orDefault';
         }
         return 'UriTemplate($castedValue)';
       case PodType.boolean || PodType.email:
@@ -2068,7 +2089,7 @@ class RenderMap extends RenderSchema {
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
-      'mapsEqual(this.$name, other.$name)';
+      '${ModelHelpers.mapsEqual}(this.$name, other.$name)';
 
   @override
   String jsonStorageType({required bool isNullable}) => 'Map<String, dynamic>';
@@ -2489,7 +2510,7 @@ class RenderBinary extends RenderNoJson {
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
-      'listsEqual(this.$name, other.$name)';
+      '${ModelHelpers.listsEqual}(this.$name, other.$name)';
 
   @override
   bool get defaultCanConstConstruct => false;

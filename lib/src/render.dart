@@ -139,7 +139,7 @@ String renderTestSchema(
 
   final renderSchema = resolver.toRenderSchema(resolvedSchema);
   final schemaRenderer = SchemaRenderer(templates: templates, quirks: quirks);
-  return schemaRenderer.renderSchema(renderSchema);
+  return schemaRenderer.renderSchema(renderSchema).body;
 }
 
 /// Render a set of schemas to separate strings.
@@ -195,7 +195,7 @@ Map<String, String> renderTestSchemas(
   final renderSchemas = resolvedSchemas.map((key, value) {
     final renderSchema = resolver.toRenderSchema(value);
     final schemaRenderer = SchemaRenderer(templates: templates, quirks: quirks);
-    return MapEntry(key, schemaRenderer.renderSchema(renderSchema));
+    return MapEntry(key, schemaRenderer.renderSchema(renderSchema).body);
   });
 
   return renderSchemas;
@@ -272,5 +272,5 @@ String renderTestApiFromSpec({
     templates: templateProvider,
     quirks: quirks,
   );
-  return schemaRenderer.renderApi(api);
+  return schemaRenderer.renderApi(api).body;
 }
