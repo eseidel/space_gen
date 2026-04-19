@@ -34,16 +34,30 @@ void main() {
   });
 
   test('isReservedWord', () {
+    // Built-in type names.
     expect(isReservedWord('void'), true);
     expect(isReservedWord('int'), true);
     expect(isReservedWord('double'), true);
     expect(isReservedWord('num'), true);
     expect(isReservedWord('bool'), true);
     expect(isReservedWord('dynamic'), true);
-    expect(isReservedWord('String'), false);
-    expect(isReservedWord('string'), false);
-    expect(isReservedWord('String'), false);
-    expect(isReservedWord('string'), false);
+    // Reserved keywords that were previously missing.
+    expect(isReservedWord('try'), true);
+    expect(isReservedWord('class'), true);
+    expect(isReservedWord('return'), true);
+    expect(isReservedWord('switch'), true);
+    expect(isReservedWord('catch'), true);
+    expect(isReservedWord('const'), true);
+    expect(isReservedWord('finally'), true);
+    // Previously-covered keywords.
+    expect(isReservedWord('new'), true);
+    expect(isReservedWord('null'), true);
     expect(isReservedWord('in'), true);
+    expect(isReservedWord('required'), true);
+    expect(isReservedWord('yield'), true);
+    // Non-keywords.
+    expect(isReservedWord('String'), false);
+    expect(isReservedWord('string'), false);
+    expect(isReservedWord('foo'), false);
   });
 }
