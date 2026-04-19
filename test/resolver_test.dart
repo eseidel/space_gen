@@ -700,6 +700,67 @@ void main() {
       );
     });
 
+    test('NXX range responses are resolved', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Range', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/widgets': {
+            'get': {
+              'operationId': 'getWidget',
+              'responses': {
+                '2XX': {
+                  'description': 'Success',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Widget'},
+                    },
+                  },
+                },
+                '5XX': {
+                  'description': 'Server error',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Error'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Widget': {'type': 'object'},
+            'Error': {'type': 'object'},
+          },
+        },
+      };
+      final spec = parseAndResolveTestSpec(json);
+      final op = spec.paths.first.operations.first;
+      expect(op.rangeResponses, hasLength(2));
+      final byStart = {for (final r in op.rangeResponses) r.rangeStart: r};
+      expect(
+        byStart[200],
+        isA<ResolvedRangeResponse>().having(
+          (r) => r.description,
+          'description',
+          'Success',
+        ),
+      );
+      expect(
+        byStart[500],
+        isA<ResolvedRangeResponse>().having(
+          (r) => r.description,
+          'description',
+          'Server error',
+        ),
+      );
+    });
+
     test('default response is resolved and referenced schema is emitted', () {
       final json = {
         'openapi': '3.1.0',

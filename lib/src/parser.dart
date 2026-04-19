@@ -948,6 +948,10 @@ Response _parseResponse(MapContext responseJson) {
   );
 }
 
+/// Matches a range status code like `2XX`, `4XX`, etc. Capturing group 1
+/// is the first digit (1-5).
+final _rangeCodeRegex = RegExp(r'^([1-5])XX$');
+
 Responses parseResponses(MapContext responsesJson) {
   final responseCodes = responsesJson.keys.toList();
 
@@ -959,10 +963,17 @@ Responses parseResponses(MapContext responsesJson) {
   }
 
   final responses = <int, RefOr<Response>>{};
+  final rangeResponses = <int, RefOr<Response>>{};
   for (final responseCode in responseCodes) {
     final responseJson = responsesJson
         .childAsMap(responseCode)
         .addSnakeName(responseCode);
+    final rangeMatch = _rangeCodeRegex.firstMatch(responseCode);
+    if (rangeMatch != null) {
+      final rangeStart = int.parse(rangeMatch.group(1)!) * 100;
+      rangeResponses[rangeStart] = parseResponseOrRef(responseJson);
+      continue;
+    }
     final responseCodeInt = int.tryParse(responseCode);
     if (responseCodeInt == null) {
       _error(responsesJson, 'Invalid response code: $responseCode');
@@ -970,7 +981,11 @@ Responses parseResponses(MapContext responsesJson) {
     responses[responseCodeInt] = parseResponseOrRef(responseJson);
   }
   _warnUnused(responsesJson);
-  return Responses(responses: responses, defaultResponse: defaultResponse);
+  return Responses(
+    responses: responses,
+    rangeResponses: rangeResponses,
+    defaultResponse: defaultResponse,
+  );
 }
 
 Map<String, RefOr<T>> _parseComponent<T extends Parseable>(

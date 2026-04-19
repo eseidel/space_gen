@@ -1021,6 +1021,38 @@ void main() {
     });
   });
 
+  group('range (NXX) responses', () {
+    test('2XX schema drives return type when no explicit 2xx code', () {
+      final json = {
+        'summary': 'Get widgets',
+        'operationId': 'getWidgets',
+        'responses': {
+          '2XX': {
+            'description': 'Success',
+            'content': {
+              'application/json': {
+                'schema': {
+                  'type': 'object',
+                  'properties': {
+                    'id': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+      final result = renderTestOperation(
+        path: '/widgets',
+        operationJson: json,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      // Assert on the return type line rather than the whole output —
+      // the interesting bit is that the 2XX schema won.
+      expect(result, contains('Future<GetWidgets2XXResponse> getWidgets('));
+    });
+  });
+
   group('default response (typed error body)', () {
     test('emits ApiException<ErrorType> with parsed body', () {
       final json = {

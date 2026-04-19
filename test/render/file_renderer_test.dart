@@ -1715,6 +1715,7 @@ void main() {
               ],
               requestBody: null,
               responses: <RenderResponse>[],
+              rangeResponses: <RenderRangeResponse>[],
               defaultResponse: null,
               securityRequirements: <ResolvedSecurityRequirement>[],
             ),

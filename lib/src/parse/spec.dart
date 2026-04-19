@@ -546,22 +546,32 @@ class PathItem extends Equatable implements HasPointer {
 @immutable
 class Responses extends Equatable implements Parseable {
   /// Create a new responses object.
-  const Responses({required this.responses, required this.defaultResponse});
+  const Responses({
+    required this.responses,
+    required this.rangeResponses,
+    required this.defaultResponse,
+  });
 
-  /// The responses of this endpoint.
+  /// The responses of this endpoint, keyed by exact status code.
   final Map<int, RefOr<Response>> responses;
 
+  /// The responses of this endpoint, keyed by range (`1XX`..`5XX`). The
+  /// key is the range start (100, 200, 300, 400, or 500).
+  final Map<int, RefOr<Response>> rangeResponses;
+
   /// The `default:` response — catches any status code not explicitly
-  /// enumerated in [responses]. https://spec.openapis.org/oas/v3.1.0#responses-object
+  /// enumerated in [responses] or matched by [rangeResponses].
+  /// https://spec.openapis.org/oas/v3.1.0#responses-object
   final RefOr<Response>? defaultResponse;
 
   /// Whether this endpoint has any responses.
-  bool get isEmpty => responses.isEmpty && defaultResponse == null;
+  bool get isEmpty =>
+      responses.isEmpty && rangeResponses.isEmpty && defaultResponse == null;
 
   RefOr<Response>? operator [](int code) => responses[code];
 
   @override
-  List<Object?> get props => [responses, defaultResponse];
+  List<Object?> get props => [responses, rangeResponses, defaultResponse];
 }
 
 /// A response from an endpoint.

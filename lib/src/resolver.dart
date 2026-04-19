@@ -472,6 +472,10 @@ ResolvedOperation resolveOperation({
 }) {
   final requestBody = _resolveRequestBody(operation.requestBody, context);
   final responses = _resolveResponses(operation.responses, context);
+  final rangeResponses = _resolveRangeResponses(
+    operation.responses.rangeResponses,
+    context,
+  );
   final defaultResponse = _resolveDefaultResponse(
     operation.responses.defaultResponse,
     context,
@@ -501,6 +505,7 @@ ResolvedOperation resolveOperation({
     path: path,
     requestBody: requestBody,
     responses: responses,
+    rangeResponses: rangeResponses,
     defaultResponse: defaultResponse,
     parameters: _mergeParameters(
       pathItemParameters,
@@ -582,6 +587,21 @@ List<ResolvedResponse> _resolveResponses(
 
     return ResolvedResponse(
       statusCode: statusCode,
+      description: response.description,
+      content: _resolveContent(response, context),
+    );
+  }).toList();
+}
+
+List<ResolvedRangeResponse> _resolveRangeResponses(
+  Map<int, RefOr<Response>> rangeResponses,
+  ResolveContext context,
+) {
+  return rangeResponses.entries.map((entry) {
+    final rangeStart = entry.key;
+    final response = context._resolve(entry.value);
+    return ResolvedRangeResponse(
+      rangeStart: rangeStart,
       description: response.description,
       content: _resolveContent(response, context),
     );
@@ -884,6 +904,7 @@ class ResolvedOperation {
     required this.snakeName,
     required this.requestBody,
     required this.responses,
+    required this.rangeResponses,
     required this.defaultResponse,
     required this.tags,
     required this.summary,
@@ -911,9 +932,15 @@ class ResolvedOperation {
   final ResolvedRequestBody? requestBody;
 
   /// The responses of the resolved operation. Only contains responses
-  /// keyed by a specific status code — the `default:` response (if any)
-  /// is on [defaultResponse].
+  /// keyed by a specific status code — range (`NXX`) responses are on
+  /// [rangeResponses] and the `default:` response (if any) is on
+  /// [defaultResponse].
   final List<ResolvedResponse> responses;
+
+  /// The range (`NXX`) responses of the resolved operation, if any. Each
+  /// entry's `rangeStart` is the first code in the range (100, 200, 300,
+  /// 400, or 500).
+  final List<ResolvedRangeResponse> rangeResponses;
 
   /// The `default:` (catch-all) response, if the operation declares one.
   final ResolvedDefaultResponse? defaultResponse;
@@ -945,6 +972,27 @@ class ResolvedResponse {
   final String description;
 
   /// The resolved content of the resolved response.
+  /// We only support json, so we only need a single content.
+  final ResolvedSchema content;
+}
+
+/// A range (`NXX`) response on an operation. Shares the description +
+/// content shape with [ResolvedResponse] but its "status code" is the
+/// range start (100/200/300/400/500) rather than an exact code.
+class ResolvedRangeResponse {
+  const ResolvedRangeResponse({
+    required this.rangeStart,
+    required this.description,
+    required this.content,
+  });
+
+  /// The first status code of the range: 100, 200, 300, 400, or 500.
+  final int rangeStart;
+
+  /// The description of the resolved range response.
+  final String description;
+
+  /// The resolved content of the resolved range response.
   /// We only support json, so we only need a single content.
   final ResolvedSchema content;
 }

@@ -57,6 +57,9 @@ class SpecWalker {
     for (final response in operation.responses.responses.values) {
       _refOr(response);
     }
+    for (final response in operation.responses.rangeResponses.values) {
+      _refOr(response);
+    }
     _maybeRefOr(operation.responses.defaultResponse);
     for (final parameter in operation.parameters) {
       _refOr(parameter);
