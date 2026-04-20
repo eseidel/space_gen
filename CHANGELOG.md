@@ -9,7 +9,7 @@
   (or its own HTTP client, auth, etc.) can override just those hooks
   to no-op, while still regenerating models/messages/tests from the
   spec. Previously these were private `_render*` methods, so the only
-  way to opt out was to overwrite the files after each regen.
+  way to opt out was to overwrite the files after each regeneration.
 - Escape reserved words in generated API method parameter names. A
   spec with a parameter literally named `with`/`try`/`case`/... now
   emits `required String with_` (matching `dartParameterName`) instead
