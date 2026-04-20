@@ -768,6 +768,29 @@ void main() {
       expect(schema.exampleValue(context), 'DateTime.utc(2024, 1, 1)');
     });
 
+    test('unknown returns an empty dynamic map literal', () {
+      const schema = RenderUnknown(common: common);
+      expect(schema.exampleValue(context), '<String, dynamic>{}');
+    });
+
+    test('void returns null (no round-trip possible)', () {
+      const schema = RenderVoid(common: common);
+      expect(schema.exampleValue(context), isNull);
+    });
+
+    test('binary (NoJson) returns null', () {
+      const schema = RenderBinary(common: common);
+      expect(schema.exampleValue(context), isNull);
+    });
+
+    test('recursive ref returns null', () {
+      const schema = RenderRecursiveRef(
+        common: common,
+        targetPointer: JsonPointer.empty(),
+      );
+      expect(schema.exampleValue(context), isNull);
+    });
+
     test('map with keySchema uses its exampleValue', () {
       const inner = RenderString(
         createsNewType: false,
