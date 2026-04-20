@@ -11,6 +11,7 @@ words:
   - cooldown
   - petstore
   - parseable
+  - unparseable
   - renderable
   - Seidel
   - mocktail
