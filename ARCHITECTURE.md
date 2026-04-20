@@ -182,7 +182,7 @@ through `ParseContext`, `MapContext`, `ListContext`, and every
   use this shape, but a file that is literally a single schema
   (`{type: object, properties: {...}}`) isn't reachable. Fixable by
   letting the loader parse the targeted sub-object as its expected
-  type, with a synthesised `MapContext` whose `pointerParts` and
+  type, with a synthesized `MapContext` whose `pointerParts` and
   `snakeNameStack` come from the fragment — same machinery we
   briefly used and reverted. Worth adding if real specs need it.
 
