@@ -7,7 +7,11 @@ import 'package:types/model_helpers.dart';
 
 class Widget {
   /// {@macro widget}
-  Widget({required this.id, required this.attributes, this.tags = const []});
+  Widget({
+    required this.id,
+    required this.attributes,
+    this.tags = const [],
+  });
 
   /// Converts a `Map<String, dynamic>` to a [Widget].
   factory Widget.fromJson(dynamic jsonArg) {
@@ -40,11 +44,19 @@ class Widget {
 
   /// Converts a [Widget] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'id': id, 'tags': tags, 'attributes': attributes};
+    return {
+      'id': id,
+      'tags': tags,
+      'attributes': attributes,
+    };
   }
 
   @override
-  int get hashCode => Object.hashAll([id, listHash(tags), mapHash(attributes)]);
+  int get hashCode => Object.hashAll([
+    id,
+    listHash(tags),
+    mapHash(attributes),
+  ]);
 
   @override
   bool operator ==(Object other) {

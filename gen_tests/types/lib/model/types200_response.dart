@@ -50,7 +50,11 @@ class Types200Response {
   }
 
   @override
-  int get hashCode => Object.hashAll([date, email, widget]);
+  int get hashCode => Object.hashAll([
+    date,
+    email,
+    widget,
+  ]);
 
   @override
   bool operator ==(Object other) {
