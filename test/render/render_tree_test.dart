@@ -768,6 +768,27 @@ void main() {
       expect(schema.exampleValue(context), 'DateTime.utc(2024, 1, 1)');
     });
 
+    test('uri format produces a Uri.parse literal', () {
+      const schema = RenderPod(common: common, type: PodType.uri);
+      expect(
+        schema.exampleValue(context),
+        "Uri.parse('https://example.com')",
+      );
+    });
+
+    test('uriTemplate format produces a UriTemplate literal', () {
+      const schema = RenderPod(common: common, type: PodType.uriTemplate);
+      expect(
+        schema.exampleValue(context),
+        "UriTemplate('https://example.com/{id}')",
+      );
+    });
+
+    test('email format produces an email string literal', () {
+      const schema = RenderPod(common: common, type: PodType.email);
+      expect(schema.exampleValue(context), "'user@example.com'");
+    });
+
     test('unknown returns an empty dynamic map literal', () {
       const schema = RenderUnknown(common: common);
       expect(schema.exampleValue(context), '<String, dynamic>{}');
