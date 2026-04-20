@@ -1,5 +1,7 @@
 import 'package:types/model/date_type.dart';
 import 'package:types/model/email_type.dart';
+import 'package:types/model/timestamp.dart';
+import 'package:types/model/uuid_type.dart';
 import 'package:types/model/widget.dart';
 import 'package:types/model_helpers.dart';
 
@@ -7,6 +9,8 @@ class Types200Response {
   Types200Response({
     required this.date,
     required this.email,
+    required this.uuid,
+    required this.timestamp,
     required this.widget,
   });
 
@@ -19,6 +23,8 @@ class Types200Response {
       () => Types200Response(
         date: DateType.fromJson(json['date'] as String),
         email: EmailType.fromJson(json['email'] as String),
+        uuid: UuidType.fromJson(json['uuid'] as String),
+        timestamp: Timestamp.fromJson(json['timestamp'] as String),
         widget: Widget.fromJson(json['widget'] as Map<String, dynamic>),
       ),
     );
@@ -35,6 +41,8 @@ class Types200Response {
 
   DateType date;
   EmailType email;
+  UuidType uuid;
+  Timestamp timestamp;
 
   /// Smoke-test object to exercise list/map fields through the generated
   /// round-trip test — catches hashCode-vs-== drift on collections.
@@ -45,6 +53,8 @@ class Types200Response {
     return {
       'date': date.toJson(),
       'email': email.toJson(),
+      'uuid': uuid.toJson(),
+      'timestamp': timestamp.toJson(),
       'widget': widget.toJson(),
     };
   }
@@ -53,6 +63,8 @@ class Types200Response {
   int get hashCode => Object.hashAll([
     date,
     email,
+    uuid,
+    timestamp,
     widget,
   ]);
 
@@ -62,6 +74,8 @@ class Types200Response {
     return other is Types200Response &&
         date == other.date &&
         email == other.email &&
+        uuid == other.uuid &&
+        timestamp == other.timestamp &&
         widget == other.widget;
   }
 }

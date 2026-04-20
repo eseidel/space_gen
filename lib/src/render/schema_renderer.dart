@@ -88,6 +88,7 @@ class SchemaRenderer {
       RenderObject() => 'schema_object',
       RenderString() => 'schema_string_newtype',
       RenderInteger() || RenderNumber() => 'schema_number_newtype',
+      RenderPod() => 'schema_pod_newtype',
       RenderOneOf() => 'schema_one_of',
       RenderEmptyObject() => 'schema_empty_object',
       RenderSchema() => throw StateError('No code to render $schema'),

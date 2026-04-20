@@ -6,8 +6,10 @@ void main() {
   group('Types200Response', () {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = Types200Response(
-        date: const DateType('example'),
-        email: const EmailType('example'),
+        date: DateType(DateTime(2024)),
+        email: const EmailType('user@example.com'),
+        uuid: const UuidType('00000000-0000-0000-0000-000000000000'),
+        timestamp: Timestamp(DateTime.utc(2024)),
         widget: Widget(
           id: 0,
           tags: <String>['example'],

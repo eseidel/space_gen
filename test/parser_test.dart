@@ -31,6 +31,13 @@ void main() {
       expect(parse('string', format: 'binary'), isNull);
       expect(parse('string', format: 'date-time'), PodType.dateTime);
       expect(parse('string', format: 'uri'), PodType.uri);
+      expect(parse('string', format: 'uri-template'), PodType.uriTemplate);
+      expect(parse('string', format: 'email'), PodType.email);
+      expect(parse('string', format: 'uuid'), PodType.uuid);
+      expect(parse('string', format: 'date'), PodType.date);
+      // 'time' is accepted (no warning) but has no Dart equivalent, so
+      // it falls through to SchemaString.
+      expect(parse('string', format: 'time'), isNull);
       expect(parse('string', format: 'foo', expectLogs: true), isNull);
       verify(() => logger.warn('Unknown string format: foo in #/')).called(1);
       expect(parse('number'), isNull);
