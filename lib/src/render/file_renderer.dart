@@ -477,13 +477,40 @@ class FileRenderer {
     );
   }
 
-  /// Emit `lib/model_helpers.dart` (the shared runtime helpers used by
-  /// generated `fromJson`/`toJson`/`hashCode`). Most consumers want this.
+  /// The aggregate set of `model_helpers.dart` identifiers referenced by
+  /// every generated file emitted so far. Populated as a side effect of
+  /// [renderModels] and [renderApis]; consumed by [renderModelHelpers]
+  /// to prune helpers that nothing imports.
+  ///
+  /// A subclass that replaces those emit hooks without calling `super`
+  /// and that still writes files referencing model helpers is
+  /// responsible for adding those names here. The default flow does
+  /// this automatically.
+  @protected
+  final Set<String> usedModelHelpers = {};
+
+  /// Emit `lib/model_helpers.dart` containing only the helpers that any
+  /// other generated file actually references (per [usedModelHelpers]).
+  /// Called after [renderModels] and [renderApis] so the aggregate is
+  /// complete.
   @protected
   void renderModelHelpers() {
+    if (usedModelHelpers.isEmpty) return;
     _renderTemplate(
       template: 'model_helpers',
       outPath: 'lib/model_helpers.dart',
+      context: {
+        for (final h in ModelHelpers.all) h: usedModelHelpers.contains(h),
+        'needsCollectionImport': const {
+          ModelHelpers.listsEqual,
+          ModelHelpers.mapsEqual,
+          ModelHelpers.listHash,
+          ModelHelpers.mapHash,
+        }.any(usedModelHelpers.contains),
+        'needsUriPackageImport': usedModelHelpers.contains(
+          ModelHelpers.maybeParseUriTemplate,
+        ),
+      },
     );
   }
 
@@ -563,6 +590,7 @@ class FileRenderer {
     final rendered = <Api>[];
     for (final api in apis) {
       final renderedApi = schemaRenderer.renderApi(api);
+      usedModelHelpers.addAll(renderedApi.usage.modelHelpers);
       final imports = importsForApi(api, renderedApi.usage);
       final importsContext = imports
           .sortedBy((i) => i.path)
@@ -627,6 +655,7 @@ class FileRenderer {
   void renderModels(Iterable<RenderSchema> schemas) {
     for (final schema in schemas) {
       final rendered = schemaRenderer.renderSchema(schema);
+      usedModelHelpers.addAll(rendered.usage.modelHelpers);
       final imports = importsForModel(schema, rendered.usage);
       final importsContext = imports
           .sortedBy((i) => i.path)

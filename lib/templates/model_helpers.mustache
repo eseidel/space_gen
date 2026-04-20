@@ -1,6 +1,11 @@
+{{#needsCollectionImport}}
 import 'package:collection/collection.dart';
+{{/needsCollectionImport}}
+{{#needsUriPackageImport}}
 import 'package:uri/uri.dart';
+{{/needsUriPackageImport}}
 
+{{#maybeParseDateTime}}
 /// Parse a nullable string as a DateTime.
 DateTime? maybeParseDateTime(String? value) {
   if (value == null) {
@@ -8,7 +13,9 @@ DateTime? maybeParseDateTime(String? value) {
   }
   return DateTime.parse(value);
 }
+{{/maybeParseDateTime}}
 
+{{#maybeParseDate}}
 /// Parse a nullable RFC 3339 full-date string (`YYYY-MM-DD`) as a DateTime.
 /// Time and timezone components are zero.
 DateTime? maybeParseDate(String? value) {
@@ -17,7 +24,9 @@ DateTime? maybeParseDate(String? value) {
   }
   return DateTime.parse(value);
 }
+{{/maybeParseDate}}
 
+{{#maybeParseUri}}
 /// Parse a nullable string as a Uri.
 Uri? maybeParseUri(String? value) {
   if (value == null) {
@@ -25,7 +34,9 @@ Uri? maybeParseUri(String? value) {
   }
   return Uri.parse(value);
 }
+{{/maybeParseUri}}
 
+{{#maybeParseUriTemplate}}
 /// Parse a nullable string as a UriTemplate.
 UriTemplate? maybeParseUriTemplate(String? value) {
   if (value == null) {
@@ -33,7 +44,9 @@ UriTemplate? maybeParseUriTemplate(String? value) {
   }
   return UriTemplate(value);
 }
+{{/maybeParseUriTemplate}}
 
+{{#parseFromJson}}
 /// Runs [build] to construct a `fromJson`-parsed value of type [T],
 /// converting any `TypeError` (e.g. an unexpected null or a cast
 /// failure on a required field) into a `FormatException` that names
@@ -51,19 +64,25 @@ T parseFromJson<T>(
     throw FormatException('Failed to parse $className from JSON: $error', json);
   }
 }
+{{/parseFromJson}}
 
+{{#listsEqual}}
 /// Check if two nullable lists are deeply equal.
 bool listsEqual<T>(List<T>? a, List<T>? b) {
   final deepEquals = const DeepCollectionEquality().equals;
   return deepEquals(a, b);
 }
+{{/listsEqual}}
 
+{{#mapsEqual}}
 /// Check if two nullable maps are deeply equal.
 bool mapsEqual<K, V>(Map<K, V>? a, Map<K, V>? b) {
   final deepEquals = const DeepCollectionEquality().equals;
   return deepEquals(a, b);
 }
+{{/mapsEqual}}
 
+{{#listHash}}
 /// A deep hash of a nullable list — consistent with [listsEqual].
 /// Two lists that compare equal under [listsEqual] produce the same
 /// hash. Null hashes to 0.
@@ -71,7 +90,9 @@ int listHash<T>(List<T>? list) {
   if (list == null) return 0;
   return const DeepCollectionEquality().hash(list);
 }
+{{/listHash}}
 
+{{#mapHash}}
 /// A deep hash of a nullable map — consistent with [mapsEqual].
 /// Two maps that compare equal under [mapsEqual] produce the same
 /// hash. Null hashes to 0.
@@ -79,3 +100,4 @@ int mapHash<K, V>(Map<K, V>? map) {
   if (map == null) return 0;
   return const DeepCollectionEquality().hash(map);
 }
+{{/mapHash}}

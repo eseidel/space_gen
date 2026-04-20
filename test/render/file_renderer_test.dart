@@ -520,7 +520,8 @@ void main() {
           'api_client.dart',
           'auth.dart',
           'client.dart',
-          'model_helpers.dart',
+          // model_helpers.dart is omitted because this spec has no
+          // schemas and thus no helpers are referenced.
         ]),
       );
 
@@ -625,6 +626,118 @@ void main() {
           'account_role.dart',
         ]),
       );
+    });
+
+    test('model_helpers.dart only includes helpers that are used', () async {
+      // This spec has strings only — `parseFromJson` is the only helper
+      // any generated file references. The date / uri / list / map
+      // helpers should be pruned out.
+      final fs = MemoryFileSystem.test();
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Test API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/thing': {
+            'get': {
+              'operationId': 'get-thing',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Thing'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Thing': {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+              },
+              'required': ['name'],
+            },
+          },
+        },
+      };
+      final out = fs.directory('out');
+      await renderToDirectory(spec: spec, outDir: out);
+      final helpers = out
+          .childFile('lib/model_helpers.dart')
+          .readAsStringSync();
+      expect(helpers, contains('parseFromJson'));
+      expect(helpers, isNot(contains('maybeParseDateTime')));
+      expect(helpers, isNot(contains('maybeParseUri')));
+      expect(helpers, isNot(contains('listsEqual')));
+      expect(helpers, isNot(contains('mapsEqual')));
+      expect(helpers, isNot(contains('listHash')));
+      expect(helpers, isNot(contains('mapHash')));
+      expect(helpers, isNot(contains("import 'package:collection")));
+      expect(helpers, isNot(contains("import 'package:uri/uri.dart")));
+    });
+
+    test('model_helpers.dart includes collection helpers for list/map '
+        'properties', () async {
+      final fs = MemoryFileSystem.test();
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Test API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/thing': {
+            'get': {
+              'operationId': 'get-thing',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Thing'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Thing': {
+              'type': 'object',
+              'properties': {
+                'tags': {
+                  'type': 'array',
+                  'items': {'type': 'string'},
+                },
+                'createdAt': {'type': 'string', 'format': 'date-time'},
+              },
+              'required': ['tags', 'createdAt'],
+            },
+          },
+        },
+      };
+      final out = fs.directory('out');
+      await renderToDirectory(spec: spec, outDir: out);
+      final helpers = out
+          .childFile('lib/model_helpers.dart')
+          .readAsStringSync();
+      expect(helpers, contains('parseFromJson'));
+      expect(helpers, contains('listsEqual'));
+      expect(helpers, contains('listHash'));
+      expect(helpers, contains("import 'package:collection/collection.dart"));
+      // `createdAt` is required (non-nullable json), so DateTime.parse is
+      // inlined at the call site — `maybeParseDateTime` stays pruned.
+      expect(helpers, isNot(contains('maybeParseDateTime')));
     });
 
     test('with request body', () async {
@@ -2042,7 +2155,7 @@ void main() {
         schema,
         const SchemaUsage(
           usesMetaAnnotations: true,
-          usesModelHelpers: true,
+          modelHelpers: {ModelHelpers.parseFromJson},
         ),
       );
       expect(imports, {
