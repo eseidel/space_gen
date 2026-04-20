@@ -1,5 +1,12 @@
 ## 1.0.2
 
+- Fix generated `hashCode` to be consistent with `==` on list/map
+  fields. Two instances with the same list/map contents now hash to
+  the same value — matching the `listsEqual`/`mapsEqual`-based `==`
+  override. Before, `==` returned true but `hashCode` differed
+  (identity hash on the list/map), violating the Dart contract. New
+  `listHash`/`mapHash` helpers in `model_helpers.dart`, wired through
+  a `RenderSchema.hashCodeExpression` hook.
 - Emit a round-trip test for each generated newtype by default at
   `test/<modelPath>_test.dart`. The test builds an in-memory instance
   via `RenderSchema.exampleValue` (implemented per subclass), then

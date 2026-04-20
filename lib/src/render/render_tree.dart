@@ -247,6 +247,8 @@ abstract final class ModelHelpers {
   static const maybeParseUriTemplate = 'maybeParseUriTemplate';
   static const listsEqual = 'listsEqual';
   static const mapsEqual = 'mapsEqual';
+  static const listHash = 'listHash';
+  static const mapHash = 'mapHash';
   static const parseFromJson = 'parseFromJson';
 
   static const List<String> all = [
@@ -255,6 +257,8 @@ abstract final class ModelHelpers {
     maybeParseUriTemplate,
     listsEqual,
     mapsEqual,
+    listHash,
+    mapHash,
     parseFromJson,
   ];
 }
@@ -1203,6 +1207,14 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   String equalsExpression(String name, SchemaRenderer context) =>
       'this.$name == other.$name';
 
+  /// Expression to feed into the generated `hashCode` `Object.hashAll(...)`
+  /// call for a field named [name]. Default is the field itself —
+  /// primitives and newtypes hash fine that way. List/Map fields
+  /// (and Uint8List) override to use [ModelHelpers.listHash] /
+  /// [ModelHelpers.mapHash] so the hash stays consistent with the
+  /// deep-equality `==`.
+  String hashCodeExpression(String name) => name;
+
   String jsonStorageType({required bool isNullable});
 
   String toJsonExpression(
@@ -1971,6 +1983,7 @@ class RenderObject extends RenderNewType {
         indent: 4,
       ),
       'equals': property.equalsExpression(dartName, context),
+      'hashCode': property.hashCodeExpression(dartName),
       'toJson': property.toJsonExpression(
         dartName,
         context,
@@ -2203,7 +2216,10 @@ class RenderArray extends RenderSchema {
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
-      'listsEqual(this.$name, other.$name)';
+      '${ModelHelpers.listsEqual}(this.$name, other.$name)';
+
+  @override
+  String hashCodeExpression(String name) => '${ModelHelpers.listHash}($name)';
 
   @override
   String? defaultValueString(SchemaRenderer context) {
@@ -2353,6 +2369,9 @@ class RenderMap extends RenderSchema {
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
       '${ModelHelpers.mapsEqual}(this.$name, other.$name)';
+
+  @override
+  String hashCodeExpression(String name) => '${ModelHelpers.mapHash}($name)';
 
   @override
   String jsonStorageType({required bool isNullable}) =>
@@ -2833,6 +2852,9 @@ class RenderBinary extends RenderNoJson {
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
       '${ModelHelpers.listsEqual}(this.$name, other.$name)';
+
+  @override
+  String hashCodeExpression(String name) => '${ModelHelpers.listHash}($name)';
 
   @override
   bool get defaultCanConstConstruct => false;
