@@ -4,9 +4,15 @@ import 'package:test/test.dart';
 
 void main() {
   group('{{{ typeName }}}', () {
-    test('round-trips via fromJson/toJson', () {
+    test('round-trips via maybeFromJson/toJson', () {
       final instance = {{{ exampleValue }}};
-      expect({{{ typeName }}}.fromJson(instance.toJson()), instance);
+      final parsed = {{{ typeName }}}.maybeFromJson(instance.toJson())!;
+      expect(parsed, equals(instance));
+      expect(parsed.hashCode, equals(instance.hashCode));
+    });
+
+    test('maybeFromJson returns null on null input', () {
+      expect({{{ typeName }}}.maybeFromJson(null), isNull);
     });
   });
 }
