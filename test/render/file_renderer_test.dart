@@ -428,7 +428,9 @@ void main() {
       final body = testFile.readAsStringSync();
       expect(body, contains("import 'package:out/out.dart';"));
       expect(body, contains('Widget(id: 0, name: '));
-      expect(body, contains('Widget.fromJson(instance.toJson())'));
+      expect(body, contains('Widget.maybeFromJson(instance.toJson())'));
+      expect(body, contains('Widget.maybeFromJson(null)'));
+      expect(body, contains('parsed.hashCode'));
     });
 
     test('generateTests: false suppresses test emission', () async {
