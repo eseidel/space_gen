@@ -80,6 +80,34 @@ void main() {
       );
       expect(parameter.dartParameterName(quirks), 'aB');
     });
+
+    test('reserved-word parameter name is escaped in template context', () {
+      // A spec with a parameter literally named `with` (or `try`/`case`/
+      // ...) previously emitted `required String with` in the generated
+      // signature — uncompilable. `dartName` in the template context must
+      // match what `dartParameterName` returns so reserved words are
+      // escaped consistently across call sites.
+      final context = SchemaRenderer(
+        templates: TemplateProvider.defaultLocation(),
+      );
+      const common = CommonProperties.test(
+        snakeName: 'with',
+        pointer: JsonPointer.empty(),
+      );
+      const parameter = RenderParameter(
+        description: 'Foo',
+        name: 'with',
+        type: RenderUnknown(common: common),
+        isRequired: true,
+        isDeprecated: false,
+        inLocation: ParameterLocation.query,
+      );
+      final ctx = parameter.toTemplateContext(context);
+      expect(ctx['dartName'], 'with_');
+      // The spec (`name`) and JSON key keep the original reserved word.
+      expect(ctx['name'], 'with');
+      expect(ctx['bracketedName'], '{with}');
+    });
   });
 
   group('createDocComment', () {
@@ -883,9 +911,9 @@ void main() {
     );
 
     RenderPod pod(PodType type, {bool createsNewType = false}) => RenderPod(
-      common: CommonProperties.test(
+      common: const CommonProperties.test(
         snakeName: 'foo_bar',
-        pointer: const JsonPointer.empty(),
+        pointer: JsonPointer.empty(),
       ),
       type: type,
       createsNewType: createsNewType,

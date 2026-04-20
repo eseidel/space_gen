@@ -2759,7 +2759,10 @@ class RenderParameter implements CanBeParameter {
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
     final isNullable = !isRequired;
     final specName = name;
-    final dartName = lowercaseCamelFromSnake(name);
+    // Must match dartParameterName (used elsewhere for the same parameter,
+    // e.g. validation calls) — and importantly, avoid reserved words so a
+    // spec with a parameter like `with`/`try`/`case` compiles.
+    final dartName = dartParameterName(context.quirks);
     final jsonName = name;
     return {
       'parameter_description': createDocCommentFromParts(

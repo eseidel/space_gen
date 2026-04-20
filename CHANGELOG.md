@@ -1,5 +1,12 @@
 ## 1.0.2
 
+- Escape reserved words in generated API method parameter names. A
+  spec with a parameter literally named `with`/`try`/`case`/... now
+  emits `required String with_` (matching `dartParameterName`) instead
+  of the uncompilable `required String with`. `RenderParameter`'s
+  template context was using raw `lowercaseCamelFromSnake(name)` while
+  every other call site went through `variableSafeName`, producing a
+  name mismatch and invalid Dart.
 - Honor the "named → newtype" invariant for pod schemas, and wire up
   more string formats. A top-level named schema whose body is a string
   or boolean pod (`type: string, format: date-time | uri | uri-template
