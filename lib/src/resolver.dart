@@ -51,7 +51,8 @@ class ResolveContext {
   /// Refs inside that document are relative to it, so lookup is
   /// `currentDoc.resolveUri(ref.uri)`. For refs from the root spec this
   /// equals [specUrl]; when the resolver crosses into a different file
-  /// via an external `$ref`, [withTarget] updates it for the recursion.
+  /// via an external `$ref`, [withResolved] updates it for the recursion
+  /// into the target's contents.
   Uri currentDoc;
 
   /// The registry of all the objects we've parsed so far.
@@ -85,35 +86,27 @@ class ResolveContext {
     return nameOverrides[pointer] ?? originalName;
   }
 
-  /// The registry of all the objects we've parsed so far.
-  /// Resolve a nullable [SchemaRef] into a nullable [SchemaObject].
-  T? _maybeResolve<T extends Parseable>(RefOr<T>? ref) {
-    if (ref == null) {
-      return null;
-    }
-    return _resolve(ref);
-  }
-
-  /// Resolve a [SchemaRef] into a [SchemaObject].
-  T _resolve<T extends Parseable>(RefOr<T> refOr) {
-    if (refOr.object != null) {
-      return refOr.object!;
-    }
-    final uri = currentDoc.resolveUri(refOr.ref!.uri);
-    return refRegistry.get<T>(uri);
-  }
-
-  /// Run [body] with [currentDoc] pointing at the document where
-  /// [refOr]'s target lives. For inline refs (no `$ref`) this is a no-op.
-  /// For cross-document refs it switches [currentDoc] so that refs
-  /// encountered while resolving the target are resolved against the
-  /// target's doc, not this one.
-  R withTarget<T extends Parseable, R>(RefOr<T> refOr, R Function() body) {
-    if (refOr.ref == null) return body();
+  /// Resolve [refOr] to its target and invoke [body] with [currentDoc]
+  /// pointing at the target's source document. For inline refs (no
+  /// `$ref`), [currentDoc] is unchanged; for cross-document refs the
+  /// update ensures that refs encountered while resolving the target's
+  /// contents resolve against the target's doc, not the caller's.
+  ///
+  /// This is the only entrypoint for dereferencing a ref — bundling the
+  /// resolve with the doc-switch means no call site can forget to
+  /// switch.
+  R withResolved<T extends Parseable, R>(
+    RefOr<T> refOr,
+    R Function(T target) body,
+  ) {
+    final target = refOr.object != null
+        ? refOr.object!
+        : refRegistry.get<T>(currentDoc.resolveUri(refOr.ref!.uri));
+    if (refOr.ref == null) return body(target);
     final prev = currentDoc;
     currentDoc = currentDoc.resolveUri(refOr.ref!.uri).removeFragment();
     try {
-      return body();
+      return body(target);
     } finally {
       currentDoc = prev;
     }
@@ -139,43 +132,34 @@ ResolvedSchema? _maybeResolveSchemaRef(SchemaRef? ref, ResolveContext context) {
 }
 
 ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
-  final schema = context._maybeResolve(ref);
-  if (schema == null) {
-    throw Exception('Schema not found: $ref');
-  }
+  return context.withResolved(ref, (schema) {
+    final createsNewType = shouldCreateNewType(schema);
 
-  final createsNewType = shouldCreateNewType(schema);
+    // Schema snake_name might change due to collisions, get resolved name.
+    final resolvedCommon = context.resolveCommonProperties(schema.common);
 
-  // Schema snake_name might change due to collisions, get resolved name.
-  final resolvedCommon = context.resolveCommonProperties(schema.common);
-
-  // Only ref-through-a-newtype can cycle (pod/array/map leaves can't $ref
-  // back up to themselves). For non-cyclic refs we keep inlining the
-  // resolved target as before — preserving existing tests and keeping
-  // ResolvedRecursiveRef strictly a cycle-break marker.
-  if (createsNewType && ref.ref != null) {
-    final targetPointer = schema.pointer;
-    if (context.resolvingStack.contains(targetPointer)) {
-      return ResolvedRecursiveRef(
-        common: resolvedCommon,
-        targetPointer: targetPointer,
-      );
+    // Only ref-through-a-newtype can cycle (pod/array/map leaves can't
+    // $ref back up to themselves). For non-cyclic refs we keep inlining
+    // the resolved target as before — preserving existing tests and
+    // keeping ResolvedRecursiveRef strictly a cycle-break marker.
+    if (createsNewType && ref.ref != null) {
+      final targetPointer = schema.pointer;
+      if (context.resolvingStack.contains(targetPointer)) {
+        return ResolvedRecursiveRef(
+          common: resolvedCommon,
+          targetPointer: targetPointer,
+        );
+      }
+      context.resolvingStack.add(targetPointer);
+      try {
+        return _resolveSchemaFully(schema, resolvedCommon, context);
+      } finally {
+        context.resolvingStack.remove(targetPointer);
+      }
     }
-    context.resolvingStack.add(targetPointer);
-    try {
-      return context.withTarget(
-        ref,
-        () => _resolveSchemaFully(schema, resolvedCommon, context),
-      );
-    } finally {
-      context.resolvingStack.remove(targetPointer);
-    }
-  }
 
-  return context.withTarget(
-    ref,
-    () => _resolveSchemaFully(schema, resolvedCommon, context),
-  );
+    return _resolveSchemaFully(schema, resolvedCommon, context);
+  });
 }
 
 ResolvedSchema _resolveSchemaFully(
@@ -376,11 +360,7 @@ ResolvedRequestBody? _resolveRequestBody(
   if (ref == null) {
     return null;
   }
-  final requestBody = context._maybeResolve(ref);
-  if (requestBody == null) {
-    _error('Request body not found', ref.pointer);
-  }
-  return context.withTarget(ref, () {
+  return context.withResolved(ref, (requestBody) {
     final content = requestBody.content;
     final jsonSchema = content['application/json']?.schema;
     if (jsonSchema != null) {
@@ -437,8 +417,7 @@ List<ResolvedParameter> _resolveParameters(
   ResolveContext context,
 ) {
   return parameters.map((parameter) {
-    final resolved = context._resolve(parameter);
-    return context.withTarget(parameter, () {
+    return context.withResolved(parameter, (resolved) {
       final type = resolveSchemaRef(resolved.type, context);
       if (resolved.inLocation == ParameterLocation.path &&
           !_canBePathParameter(type)) {
@@ -618,11 +597,9 @@ List<ResolvedResponse> _resolveResponses(
 ) {
   return responses.responses.entries.map((entry) {
     final statusCode = entry.key;
-    final response = context._resolve(entry.value);
-
-    return context.withTarget(
+    return context.withResolved(
       entry.value,
-      () => ResolvedResponse(
+      (response) => ResolvedResponse(
         statusCode: statusCode,
         description: response.description,
         content: _resolveContent(response, context),
@@ -637,10 +614,9 @@ List<ResolvedRangeResponse> _resolveRangeResponses(
 ) {
   return rangeResponses.entries.map((entry) {
     final range = entry.key;
-    final response = context._resolve(entry.value);
-    return context.withTarget(
+    return context.withResolved(
       entry.value,
-      () => ResolvedRangeResponse(
+      (response) => ResolvedRangeResponse(
         range: range,
         description: response.description,
         content: _resolveContent(response, context),
@@ -654,10 +630,9 @@ ResolvedDefaultResponse? _resolveDefaultResponse(
   ResolveContext context,
 ) {
   if (ref == null) return null;
-  final response = context._resolve(ref);
-  return context.withTarget(
+  return context.withResolved(
     ref,
-    () => ResolvedDefaultResponse(
+    (response) => ResolvedDefaultResponse(
       description: response.description,
       content: _resolveContent(response, context),
     ),
