@@ -12,4 +12,4 @@ export 'src/render.dart'
 // of the exported surface.
 export 'src/render/file_renderer.dart'
     show FileRenderer, FileRendererConfig, LayoutContext;
-export 'src/render/render_tree.dart' show RenderSchema;
+export 'src/render/render_tree.dart' show Api, RenderSchema, RenderSpec;
