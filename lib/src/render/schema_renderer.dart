@@ -3,7 +3,8 @@ import 'package:space_gen/src/render/render_tree.dart';
 import 'package:space_gen/src/render/templates.dart';
 
 /// Which imports a rendered schema body needs beyond the schemas it
-/// references.
+/// references, plus which `model_helpers.dart` helpers the body calls
+/// (used to prune unused helpers from the shared file).
 ///
 /// Today we derive this from the rendered body via substring checks. The
 /// long-term plan is for the rendering pipeline in render_tree.dart to
@@ -12,19 +13,27 @@ import 'package:space_gen/src/render/templates.dart';
 class SchemaUsage {
   const SchemaUsage({
     this.usesMetaAnnotations = false,
-    this.usesModelHelpers = false,
+    this.modelHelpers = const {},
   });
 
   /// Derives usage by inspecting a rendered body.
   factory SchemaUsage.fromBody(String body) {
     return SchemaUsage(
       usesMetaAnnotations: body.contains('@immutable'),
-      usesModelHelpers: ModelHelpers.all.any(body.contains),
+      modelHelpers: {
+        for (final h in ModelHelpers.all)
+          if (body.contains(h)) h,
+      },
     );
   }
 
   final bool usesMetaAnnotations;
-  final bool usesModelHelpers;
+
+  /// The set of `model_helpers.dart` identifiers referenced by the
+  /// rendered body. A subset of [ModelHelpers.all].
+  final Set<String> modelHelpers;
+
+  bool get usesModelHelpers => modelHelpers.isNotEmpty;
 
   /// Imports required by the body itself. Package-local imports are
   /// resolved against [packageName].
@@ -37,16 +46,28 @@ class SchemaUsage {
 }
 
 /// Which imports a rendered api body needs beyond the schemas it
-/// references.
+/// references, plus which `model_helpers.dart` helpers the body calls.
 class ApiUsage {
-  const ApiUsage();
+  const ApiUsage({this.modelHelpers = const {}});
 
-  // No conditional fields yet; body kept to match the SchemaUsage shape
-  // so a future refactor can populate them without changing callers.
-  // ignore: avoid_unused_constructor_parameters
-  factory ApiUsage.fromBody(String body) => const ApiUsage();
+  factory ApiUsage.fromBody(String body) => ApiUsage(
+    modelHelpers: {
+      for (final h in ModelHelpers.all)
+        if (body.contains(h)) h,
+    },
+  );
 
-  Iterable<Import> importsFor(String packageName) => const [];
+  /// The set of `model_helpers.dart` identifiers referenced by the
+  /// rendered body. A subset of [ModelHelpers.all].
+  final Set<String> modelHelpers;
+
+  bool get usesModelHelpers => modelHelpers.isNotEmpty;
+
+  Iterable<Import> importsFor(String packageName) sync* {
+    if (usesModelHelpers) {
+      yield Import('package:$packageName/model_helpers.dart');
+    }
+  }
 }
 
 /// A rendered schema body paired with the usage of that body.

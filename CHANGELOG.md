@@ -1,5 +1,16 @@
 ## 1.0.2
 
+- Prune unused helpers from the generated `lib/model_helpers.dart`.
+  Previously every generated package shipped all nine runtime helpers
+  (`maybeParseDateTime`, `maybeParseDate`, `maybeParseUri`,
+  `maybeParseUriTemplate`, `parseFromJson`, `listsEqual`, `mapsEqual`,
+  `listHash`, `mapHash`) plus the `package:collection` / `package:uri`
+  imports, even when no generated code referenced them. The file
+  renderer now aggregates `SchemaUsage`/`ApiUsage` across every
+  rendered file and emits only the helpers actually called — and
+  skips writing `model_helpers.dart` entirely when the spec uses
+  none. Consumers running coverage on generated code see fewer
+  uncovered lines.
 - Generated round-trip tests now assert the `fromJson` rejection
   contract where applicable. A new `RenderSchema.invalidJsonExample`
   hook returns a guaranteed-invalid JSON payload — implemented for

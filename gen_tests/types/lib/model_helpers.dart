@@ -1,38 +1,4 @@
 import 'package:collection/collection.dart';
-import 'package:uri/uri.dart';
-
-/// Parse a nullable string as a DateTime.
-DateTime? maybeParseDateTime(String? value) {
-  if (value == null) {
-    return null;
-  }
-  return DateTime.parse(value);
-}
-
-/// Parse a nullable RFC 3339 full-date string (`YYYY-MM-DD`) as a DateTime.
-/// Time and timezone components are zero.
-DateTime? maybeParseDate(String? value) {
-  if (value == null) {
-    return null;
-  }
-  return DateTime.parse(value);
-}
-
-/// Parse a nullable string as a Uri.
-Uri? maybeParseUri(String? value) {
-  if (value == null) {
-    return null;
-  }
-  return Uri.parse(value);
-}
-
-/// Parse a nullable string as a UriTemplate.
-UriTemplate? maybeParseUriTemplate(String? value) {
-  if (value == null) {
-    return null;
-  }
-  return UriTemplate(value);
-}
 
 /// Runs [build] to construct a `fromJson`-parsed value of type [T],
 /// converting any `TypeError` (e.g. an unexpected null or a cast
