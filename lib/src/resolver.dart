@@ -26,7 +26,8 @@ class ResolveContext {
     required this.securitySchemes,
     this.nameOverrides = const {},
     Set<JsonPointer>? resolvingStack,
-  }) : resolvingStack = resolvingStack ?? {};
+  }) : resolvingStack = resolvingStack ?? {},
+       currentDoc = specUrl;
 
   /// Used for cases where we need a ResolveContext, but don't actually
   /// plan to look up any objects in the registry.
@@ -40,10 +41,19 @@ class ResolveContext {
   }) : specUrl = specUrl ?? Uri.parse('https://example.com'),
        refRegistry = refRegistry ?? RefRegistry(),
        securitySchemes = securitySchemes ?? [],
-       resolvingStack = resolvingStack ?? {};
+       resolvingStack = resolvingStack ?? {},
+       currentDoc = specUrl ?? Uri.parse('https://example.com');
 
   /// The spec url of the spec.
   final Uri specUrl;
+
+  /// The URL of the document the resolver is currently reading from.
+  /// Refs inside that document are relative to it, so lookup is
+  /// `currentDoc.resolveUri(ref.uri)`. For refs from the root spec this
+  /// equals [specUrl]; when the resolver crosses into a different file
+  /// via an external `$ref`, [withResolved] updates it for the recursion
+  /// into the target's contents.
+  Uri currentDoc;
 
   /// The registry of all the objects we've parsed so far.
   final RefRegistry refRegistry;
@@ -76,26 +86,31 @@ class ResolveContext {
     return nameOverrides[pointer] ?? originalName;
   }
 
-  /// The registry of all the objects we've parsed so far.
-  /// Resolve a nullable [SchemaRef] into a nullable [SchemaObject].
-  T? _maybeResolve<T extends Parseable>(RefOr<T>? ref) {
-    if (ref == null) {
-      return null;
+  /// Resolve [refOr] to its target and invoke [body] with [currentDoc]
+  /// pointing at the target's source document. For inline refs (no
+  /// `$ref`), [currentDoc] is unchanged; for cross-document refs the
+  /// update ensures that refs encountered while resolving the target's
+  /// contents resolve against the target's doc, not the caller's.
+  ///
+  /// This is the only entrypoint for dereferencing a ref — bundling the
+  /// resolve with the doc-switch means no call site can forget to
+  /// switch.
+  R withResolved<T extends Parseable, R>(
+    RefOr<T> refOr,
+    R Function(T target) body,
+  ) {
+    final target = refOr.object != null
+        ? refOr.object!
+        : refRegistry.get<T>(currentDoc.resolveUri(refOr.ref!.uri));
+    if (refOr.ref == null) return body(target);
+    final prev = currentDoc;
+    currentDoc = currentDoc.resolveUri(refOr.ref!.uri).removeFragment();
+    try {
+      return body(target);
+    } finally {
+      currentDoc = prev;
     }
-    return _resolve(ref);
   }
-
-  /// Resolve a [SchemaRef] into a [SchemaObject].
-  T _resolve<T extends Parseable>(RefOr<T> refOr) {
-    if (refOr.object != null) {
-      return refOr.object!;
-    }
-    final uri = specUrl.resolveUri(refOr.ref!.uri);
-    return _resolveUri(uri);
-  }
-
-  /// Resolve a uri into a [SchemaObject].
-  T _resolveUri<T>(Uri uri) => refRegistry.get<T>(uri);
 }
 
 List<ResolvedPath> _resolvePaths(Paths paths, ResolveContext context) {
@@ -117,37 +132,34 @@ ResolvedSchema? _maybeResolveSchemaRef(SchemaRef? ref, ResolveContext context) {
 }
 
 ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
-  final schema = context._maybeResolve(ref);
-  if (schema == null) {
-    throw Exception('Schema not found: $ref');
-  }
+  return context.withResolved(ref, (schema) {
+    final createsNewType = shouldCreateNewType(schema);
 
-  final createsNewType = shouldCreateNewType(schema);
+    // Schema snake_name might change due to collisions, get resolved name.
+    final resolvedCommon = context.resolveCommonProperties(schema.common);
 
-  // Schema snake_name might change due to collisions, get resolved name.
-  final resolvedCommon = context.resolveCommonProperties(schema.common);
-
-  // Only ref-through-a-newtype can cycle (pod/array/map leaves can't $ref
-  // back up to themselves). For non-cyclic refs we keep inlining the
-  // resolved target as before — preserving existing tests and keeping
-  // ResolvedRecursiveRef strictly a cycle-break marker.
-  if (createsNewType && ref.ref != null) {
-    final targetPointer = schema.pointer;
-    if (context.resolvingStack.contains(targetPointer)) {
-      return ResolvedRecursiveRef(
-        common: resolvedCommon,
-        targetPointer: targetPointer,
-      );
+    // Only ref-through-a-newtype can cycle (pod/array/map leaves can't
+    // $ref back up to themselves). For non-cyclic refs we keep inlining
+    // the resolved target as before — preserving existing tests and
+    // keeping ResolvedRecursiveRef strictly a cycle-break marker.
+    if (createsNewType && ref.ref != null) {
+      final targetPointer = schema.pointer;
+      if (context.resolvingStack.contains(targetPointer)) {
+        return ResolvedRecursiveRef(
+          common: resolvedCommon,
+          targetPointer: targetPointer,
+        );
+      }
+      context.resolvingStack.add(targetPointer);
+      try {
+        return _resolveSchemaFully(schema, resolvedCommon, context);
+      } finally {
+        context.resolvingStack.remove(targetPointer);
+      }
     }
-    context.resolvingStack.add(targetPointer);
-    try {
-      return _resolveSchemaFully(schema, resolvedCommon, context);
-    } finally {
-      context.resolvingStack.remove(targetPointer);
-    }
-  }
 
-  return _resolveSchemaFully(schema, resolvedCommon, context);
+    return _resolveSchemaFully(schema, resolvedCommon, context);
+  });
 }
 
 ResolvedSchema _resolveSchemaFully(
@@ -348,43 +360,41 @@ ResolvedRequestBody? _resolveRequestBody(
   if (ref == null) {
     return null;
   }
-  final requestBody = context._maybeResolve(ref);
-  if (requestBody == null) {
-    _error('Request body not found', ref.pointer);
-  }
-  final content = requestBody.content;
-  final jsonSchema = content['application/json']?.schema;
-  if (jsonSchema != null) {
-    return ResolvedRequestBody(
-      mimeType: MimeType.applicationJson,
-      schema: resolveSchemaRef(jsonSchema, context),
-      description: requestBody.description,
-      isRequired: requestBody.isRequired,
+  return context.withResolved(ref, (requestBody) {
+    final content = requestBody.content;
+    final jsonSchema = content['application/json']?.schema;
+    if (jsonSchema != null) {
+      return ResolvedRequestBody(
+        mimeType: MimeType.applicationJson,
+        schema: resolveSchemaRef(jsonSchema, context),
+        description: requestBody.description,
+        isRequired: requestBody.isRequired,
+      );
+    }
+    final octetStreamSchema = content['application/octet-stream']?.schema;
+    if (octetStreamSchema != null) {
+      return ResolvedRequestBody(
+        mimeType: MimeType.applicationOctetStream,
+        schema: resolveSchemaRef(octetStreamSchema, context),
+        description: requestBody.description,
+        isRequired: requestBody.isRequired,
+      );
+    }
+    final textPlainSchema = content['text/plain']?.schema;
+    if (textPlainSchema != null) {
+      return ResolvedRequestBody(
+        mimeType: MimeType.textPlain,
+        schema: resolveSchemaRef(textPlainSchema, context),
+        description: requestBody.description,
+        isRequired: requestBody.isRequired,
+      );
+    }
+    _error(
+      'Request body has no application/json, '
+      'application/octet-stream, or text/plain schema',
+      requestBody.pointer,
     );
-  }
-  final octetStreamSchema = content['application/octet-stream']?.schema;
-  if (octetStreamSchema != null) {
-    return ResolvedRequestBody(
-      mimeType: MimeType.applicationOctetStream,
-      schema: resolveSchemaRef(octetStreamSchema, context),
-      description: requestBody.description,
-      isRequired: requestBody.isRequired,
-    );
-  }
-  final textPlainSchema = content['text/plain']?.schema;
-  if (textPlainSchema != null) {
-    return ResolvedRequestBody(
-      mimeType: MimeType.textPlain,
-      schema: resolveSchemaRef(textPlainSchema, context),
-      description: requestBody.description,
-      isRequired: requestBody.isRequired,
-    );
-  }
-  _error(
-    'Request body has no application/json, '
-    'application/octet-stream, or text/plain schema',
-    requestBody.pointer,
-  );
+  });
 }
 
 bool _canBePathParameter(ResolvedSchema schema) {
@@ -407,20 +417,24 @@ List<ResolvedParameter> _resolveParameters(
   ResolveContext context,
 ) {
   return parameters.map((parameter) {
-    final resolved = context._resolve(parameter);
-    final type = resolveSchemaRef(resolved.type, context);
-    if (resolved.inLocation == ParameterLocation.path &&
-        !_canBePathParameter(type)) {
-      _error('Path parameters must be strings or integers', resolved.pointer);
-    }
-    return ResolvedParameter(
-      name: resolved.name,
-      inLocation: resolved.inLocation,
-      description: resolved.description,
-      isRequired: resolved.isRequired,
-      isDeprecated: resolved.isDeprecated,
-      schema: type,
-    );
+    return context.withResolved(parameter, (resolved) {
+      final type = resolveSchemaRef(resolved.type, context);
+      if (resolved.inLocation == ParameterLocation.path &&
+          !_canBePathParameter(type)) {
+        _error(
+          'Path parameters must be strings or integers',
+          resolved.pointer,
+        );
+      }
+      return ResolvedParameter(
+        name: resolved.name,
+        inLocation: resolved.inLocation,
+        description: resolved.description,
+        isRequired: resolved.isRequired,
+        isDeprecated: resolved.isDeprecated,
+        schema: type,
+      );
+    });
   }).toList();
 }
 
@@ -583,12 +597,13 @@ List<ResolvedResponse> _resolveResponses(
 ) {
   return responses.responses.entries.map((entry) {
     final statusCode = entry.key;
-    final response = context._resolve(entry.value);
-
-    return ResolvedResponse(
-      statusCode: statusCode,
-      description: response.description,
-      content: _resolveContent(response, context),
+    return context.withResolved(
+      entry.value,
+      (response) => ResolvedResponse(
+        statusCode: statusCode,
+        description: response.description,
+        content: _resolveContent(response, context),
+      ),
     );
   }).toList();
 }
@@ -599,11 +614,13 @@ List<ResolvedRangeResponse> _resolveRangeResponses(
 ) {
   return rangeResponses.entries.map((entry) {
     final range = entry.key;
-    final response = context._resolve(entry.value);
-    return ResolvedRangeResponse(
-      range: range,
-      description: response.description,
-      content: _resolveContent(response, context),
+    return context.withResolved(
+      entry.value,
+      (response) => ResolvedRangeResponse(
+        range: range,
+        description: response.description,
+        content: _resolveContent(response, context),
+      ),
     );
   }).toList();
 }
@@ -613,10 +630,12 @@ ResolvedDefaultResponse? _resolveDefaultResponse(
   ResolveContext context,
 ) {
   if (ref == null) return null;
-  final response = context._resolve(ref);
-  return ResolvedDefaultResponse(
-    description: response.description,
-    content: _resolveContent(response, context),
+  return context.withResolved(
+    ref,
+    (response) => ResolvedDefaultResponse(
+      description: response.description,
+      content: _resolveContent(response, context),
+    ),
   );
 }
 
@@ -755,6 +774,7 @@ ResolvedSpec resolveSpec(
   required Uri specUrl,
   bool logSchemas = true,
   Map<JsonPointer, String> nameOverrides = const {},
+  RefRegistry? refRegistry,
 }) {
   // Walk and look for snake_name collisions.
   final nameOverrides = resolveNameCollisions(spec);
@@ -762,13 +782,17 @@ ResolvedSpec resolveSpec(
     logger.detail('Resolved ${nameOverrides.length} naming collisions');
   }
 
-  final refRegistry = RefRegistry();
-  final builder = RegistryBuilder(specUrl, refRegistry);
-  SpecWalker(builder).walkRoot(spec);
+  // When the caller prebuilt a registry (e.g. to pre-load externally-ref'd
+  // docs before resolution), use it; otherwise build one from just the
+  // root spec.
+  final registry = refRegistry ?? RefRegistry();
+  if (refRegistry == null) {
+    SpecWalker(RegistryBuilder(specUrl, registry)).walkRoot(spec);
+  }
 
   if (logSchemas) {
     logger.detail('Registered schemas:');
-    for (final uri in refRegistry.uris) {
+    for (final uri in registry.uris) {
       logger.detail('  - $uri');
     }
   }
@@ -783,7 +807,7 @@ ResolvedSpec resolveSpec(
   );
   final context = ResolveContext(
     specUrl: specUrl,
-    refRegistry: refRegistry,
+    refRegistry: registry,
     globalSecurityRequirements: globalSecurityRequirements,
     securitySchemes: securitySchemes,
     nameOverrides: nameOverrides,

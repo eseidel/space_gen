@@ -1008,6 +1008,163 @@ void main() {
       expect(out.childFile('lib/api/default_api.dart'), exists);
     });
 
+    test('with external schema ref', () async {
+      // The root spec references a schema that lives in another file next
+      // to it. Verifies that the external-ref loader pulls in `shared.json`
+      // and registers `Widget` so the resolver can find it.
+      final fs = MemoryFileSystem.test();
+      final dir = fs.directory('/pkg')..createSync(recursive: true);
+      dir
+          .childFile('shared.json')
+          .writeAsStringSync(
+            jsonEncode({
+              'components': {
+                'schemas': {
+                  'Widget': {
+                    'type': 'object',
+                    'required': ['id'],
+                    'properties': {
+                      'id': {'type': 'integer'},
+                    },
+                  },
+                },
+              },
+            }),
+          );
+      final specFile = dir.childFile('spec.json')
+        ..writeAsStringSync(
+          jsonEncode({
+            'openapi': '3.1.0',
+            'info': {'title': 'Ext', 'version': '1.0.0'},
+            'servers': [
+              {'url': 'https://example.com'},
+            ],
+            'paths': {
+              '/widgets': {
+                'get': {
+                  'operationId': 'getWidget',
+                  'responses': {
+                    '200': {
+                      'description': 'OK',
+                      'content': {
+                        'application/json': {
+                          'schema': {
+                            r'$ref': 'shared.json#/components/schemas/Widget',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          }),
+        );
+      final out = dir.childDirectory('out');
+      await runWithLogger(
+        _MockLogger(),
+        () => loadAndRenderSpec(
+          GeneratorConfig(
+            specUrl: Uri.file(specFile.path),
+            packageName: 'out',
+            outDir: out,
+            templatesDir: templatesDir,
+            runProcess: runProcess,
+            logSchemas: false,
+            generateTests: false,
+          ),
+        ),
+      );
+      expect(out, hasGeneratedSchemaFiles(['widget.dart']));
+    });
+
+    test('with transitive external schema ref', () async {
+      // Root spec refs a schema in `a.json`; that schema refs another in
+      // `b.json`. Both have to be loaded and registered for resolution to
+      // succeed.
+      final fs = MemoryFileSystem.test();
+      final dir = fs.directory('/pkg')..createSync(recursive: true);
+      dir
+          .childFile('b.json')
+          .writeAsStringSync(
+            jsonEncode({
+              'components': {
+                'schemas': {
+                  'Inner': {
+                    'type': 'object',
+                    'required': ['name'],
+                    'properties': {
+                      'name': {'type': 'string'},
+                    },
+                  },
+                },
+              },
+            }),
+          );
+      dir
+          .childFile('a.json')
+          .writeAsStringSync(
+            jsonEncode({
+              'components': {
+                'schemas': {
+                  'Outer': {
+                    'type': 'object',
+                    'required': ['inner'],
+                    'properties': {
+                      'inner': {r'$ref': 'b.json#/components/schemas/Inner'},
+                    },
+                  },
+                },
+              },
+            }),
+          );
+      final specFile = dir.childFile('spec.json')
+        ..writeAsStringSync(
+          jsonEncode({
+            'openapi': '3.1.0',
+            'info': {'title': 'Ext', 'version': '1.0.0'},
+            'servers': [
+              {'url': 'https://example.com'},
+            ],
+            'paths': {
+              '/things': {
+                'get': {
+                  'operationId': 'getThing',
+                  'responses': {
+                    '200': {
+                      'description': 'OK',
+                      'content': {
+                        'application/json': {
+                          'schema': {
+                            r'$ref': 'a.json#/components/schemas/Outer',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          }),
+        );
+      final out = dir.childDirectory('out');
+      await runWithLogger(
+        _MockLogger(),
+        () => loadAndRenderSpec(
+          GeneratorConfig(
+            specUrl: Uri.file(specFile.path),
+            packageName: 'out',
+            outDir: out,
+            templatesDir: templatesDir,
+            runProcess: runProcess,
+            logSchemas: false,
+            generateTests: false,
+          ),
+        ),
+      );
+      expect(out, hasGeneratedSchemaFiles(['outer.dart', 'inner.dart']));
+    });
+
     test('with boolean and unknown type', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
