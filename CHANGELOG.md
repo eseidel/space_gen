@@ -1,5 +1,18 @@
 ## 1.0.2
 
+- Resolve external `$ref`s at generation time. A spec that refs
+  schemas/responses/parameters/request-bodies/headers in another file
+  (`$ref: 'shared.yaml#/components/schemas/Foo'`) now loads that file
+  transitively, parses its `components:` section, and registers those
+  objects under their absolute URIs so the resolver can find them.
+  The resolver tracks which document it is currently reading from and
+  resolves refs against that document — so refs inside an external
+  file (local or cross-file) resolve against the right base rather
+  than the root spec. External docs must be shaped as OpenAPI
+  components libraries (`{components: {...}}`); anything else surfaces
+  a clear `FormatException`. Previously, external refs hit a "Schema
+  not found" at resolve time because only the root spec was walked
+  into the registry.
 - Expose the `FileRenderer` emit methods as `@protected` override
   hooks (`renderPubspec`, `renderAnalysisOptions`, `renderGitignore`,
   `renderApiException`, `renderAuth`, `renderApiClient`,
