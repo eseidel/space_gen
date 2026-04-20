@@ -157,9 +157,12 @@ class Formatter {
   }
 
   void formatAndFix({required String pkgDir}) {
-    // Consider running pub upgrade here to ensure packages are up to date.
-    // Might need to make offline configurable?
-    _runDart(['pub', 'get', '--offline'], workingDirectory: pkgDir);
+    // `pub get` (not `--offline`) so generation doesn't silently depend on
+    // whatever happens to be in the machine-global pub cache. On a warm
+    // cache the network round-trip is marginal; on a cold one (e.g. CI),
+    // `--offline` fails with a confusing "package X not in cache" error
+    // whenever a template dep isn't coincidentally also a space_gen dep.
+    _runDart(['pub', 'get'], workingDirectory: pkgDir);
     // Run format first to add missing commas.
     _runDart(['format', '.'], workingDirectory: pkgDir);
     // Then run fix to clean up various other things.
