@@ -12,32 +12,8 @@
         { {{#namedParameters}}{{#required}}required {{{ type }}}{{/required}}{{^required}}{{{ nullableType }}}{{/required}} {{{ dartName }}}{{#hasDefaultValue}} = {{{ defaultValue }}}{{/hasDefaultValue}},{{/namedParameters}} }
         {{/hasNamedParameters}}
     ) async {
-        {{{ validationStatements }}}final response = await client.invokeApi(
-            method: Method.{{{httpMethod}}},
-            path: '{{{path}}}'
-            {{#pathParameters}}
-            .replaceAll('{{{ bracketedName }}}', "${ {{{ toJson }}} }")
-            {{/pathParameters}},
-            {{#hasQueryParameters}}
-            queryParameters: {
-                {{#queryParameters}}
-                '{{{ name }}}': {{#isNullable}}?{{{ toJson }}}?.toString(){{/isNullable}}{{^isNullable}}{{{ toJson }}}.toString(){{/isNullable}},
-                {{/queryParameters}}
-            },
-            {{/hasQueryParameters}}
-            {{#requestBody}}
-            body: {{{ encodedBody }}},
-            {{/requestBody}}
-            {{#hasHeaderParameters}}
-            headerParameters: {
-                {{#headerParameters}}
-                '{{{ name }}}': {{#isNullable}}?{{/isNullable}}{{{ toJson }}},
-                {{/headerParameters}}
-            },
-            {{/hasHeaderParameters}}
-            {{#authArgument}}
-            authRequest: {{{ authArgument }}},
-            {{/authArgument}}
+        {{{ validationStatements }}}{{{ multipartAssembly }}}final response = await client.{{{invokeMethodName}}}(
+{{{ invokeArgs }}}
         );
 
         if (response.statusCode >= HttpStatus.badRequest) {

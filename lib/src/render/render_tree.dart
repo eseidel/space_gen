@@ -442,6 +442,12 @@ class SpecResolver {
           description: requestBody.description,
           isRequired: requestBody.isRequired,
         );
+      case MimeType.multipartFormData:
+        return RenderRequestBodyMultipart(
+          schema: toRenderSchema(requestBody.schema),
+          description: requestBody.description,
+          isRequired: requestBody.isRequired,
+        );
     }
   }
 
@@ -686,6 +692,11 @@ class Endpoint implements ToTemplateContext {
 
   RenderRequestBody? get requestBody => operation.requestBody;
 
+  /// True when the request body is `multipart/form-data`. Drives both the
+  /// endpoint template (which method name to call) and the arg builder
+  /// (which body keys to emit).
+  bool get isMultipart => requestBody is RenderRequestBodyMultipart;
+
   String get methodName => lowercaseCamelFromSnake(snakeName);
 
   Uri get uri => Uri.parse('$serverUrl$path');
@@ -730,6 +741,283 @@ class Endpoint implements ToTemplateContext {
       buffer.write('$indentString])');
     }
     return buffer.toString();
+  }
+
+  // The two builders below produce strings whose indentation is fixed
+  // by `api.mustache`: the method body sits at 8 spaces, the invokeApi
+  // arg list sits at 12 (inside the outer `(...)`), and map entries
+  // inside queryParameters/headerParameters are one Dart-standard step
+  // deeper. Centralized here so the two builders stay in lockstep with
+  // the template and with each other.
+  static final String _methodBodyIndent = ' ' * 8;
+  static final String _invokeArgIndent = ' ' * 12;
+  static final String _nestedStep = ' ' * 4;
+
+  /// Render every argument of the `client.invokeApi[Multipart](...)` call
+  /// as a single pre-formatted string. Produced in Dart (rather than via
+  /// mustache sections) so the JSON body and multipart body code paths can
+  /// share one template emission point; the two paths only differ here in
+  /// which body/fields/files keys they emit. No trailing newline — the
+  /// template wraps it in `(\n...\n        );`.
+  String _buildInvokeArgs(SchemaRenderer context) {
+    final indent = _invokeArgIndent;
+    final innerIndent = indent + _nestedStep;
+    final lines = <String>[
+      '${indent}method: Method.${method.name},',
+      _pathArgLine(indent, context),
+      ..._queryParamsLines(indent, innerIndent, context),
+      ..._bodyArgLines(indent, context),
+      ..._headerParamsLines(indent, innerIndent, context),
+      ..._authRequestLines(indent),
+    ];
+    return lines.join('\n');
+  }
+
+  String _pathArgLine(String indent, SchemaRenderer context) {
+    final buffer = StringBuffer("${indent}path: '$path'");
+    for (final p in parameters) {
+      if (p.inLocation != ParameterLocation.path) continue;
+      buffer.write(
+        ".replaceAll('${p.bracketedName}', "
+        '"\${ ${p.toJsonExpression(context)} }")',
+      );
+    }
+    buffer.write(',');
+    return buffer.toString();
+  }
+
+  List<String> _queryParamsLines(
+    String indent,
+    String innerIndent,
+    SchemaRenderer context,
+  ) {
+    final queryParams = parameters
+        .where((p) => p.inLocation == ParameterLocation.query)
+        .toList();
+    if (queryParams.isEmpty) return const [];
+    return [
+      '${indent}queryParameters: {',
+      for (final p in queryParams) _queryParamEntry(innerIndent, p, context),
+      '$indent},',
+    ];
+  }
+
+  String _queryParamEntry(
+    String innerIndent,
+    RenderParameter p,
+    SchemaRenderer context,
+  ) {
+    final toJson = p.toJsonExpression(context);
+    final valueExpr = p.isNullable
+        ? '?$toJson?.toString()'
+        : '$toJson.toString()';
+    return "$innerIndent'${p.name}': $valueExpr,";
+  }
+
+  List<String> _bodyArgLines(String indent, SchemaRenderer context) =>
+      switch (requestBody) {
+        null => const [],
+        RenderRequestBodyMultipart() => [
+          '${indent}fields: multipartFields,',
+          '${indent}files: multipartFiles,',
+        ],
+        final RenderRequestBodySimple body => [
+          '${indent}body: ${body.bodyExpression(context)},',
+          '${indent}bodyContentType: ${body.bodyContentTypeExpression},',
+        ],
+      };
+
+  List<String> _headerParamsLines(
+    String indent,
+    String innerIndent,
+    SchemaRenderer context,
+  ) {
+    final headerParams = parameters
+        .where((p) => p.inLocation == ParameterLocation.header)
+        .toList();
+    if (headerParams.isEmpty) return const [];
+    return [
+      '${indent}headerParameters: {',
+      for (final p in headerParams) _headerParamEntry(innerIndent, p, context),
+      '$indent},',
+    ];
+  }
+
+  String _headerParamEntry(
+    String innerIndent,
+    RenderParameter p,
+    SchemaRenderer context,
+  ) {
+    final prefix = p.isNullable ? '?' : '';
+    return "$innerIndent'${p.name}': $prefix${p.toJsonExpression(context)},";
+  }
+
+  List<String> _authRequestLines(String indent) {
+    final authArg = authArgument(indent: indent.length)?.trimLeft();
+    if (authArg == null) return const [];
+    return ['${indent}authRequest: $authArg,'];
+  }
+
+  /// Render the `multipart/form-data` field/file assembly that precedes
+  /// the `invokeApiMultipart` call — empty string for non-multipart
+  /// endpoints. Produced in Dart so the template stays flat; see the
+  /// docs on [_buildInvokeArgs] for why.
+  ///
+  /// Output ends with a trailing newline when non-empty so the template
+  /// can splice it inline before `final response = ...` without caring
+  /// whether it's empty.
+  String _buildMultipartAssembly(SchemaRenderer context) {
+    final body = requestBody;
+    if (body is! RenderRequestBodyMultipart) return '';
+
+    final parts = body.partsFor(context);
+    final scalars = parts.scalars;
+    final files = parts.files;
+
+    final outer = _methodBodyIndent;
+    final inner = outer + _nestedStep;
+    final lines = <String>[];
+
+    if (body.isRequired) {
+      // Body is non-nullable at the Dart call site, so we can read its
+      // fields directly into the initializing literals.
+      lines
+        ..addAll(_multipartFieldsLiteral(outer, inner, scalars))
+        ..addAll(_multipartFilesLiteral(outer, inner, files))
+        ..addAll(_multipartNullableFieldBlocks(outer, inner, scalars))
+        ..addAll(_multipartNullableFileBlocks(outer, inner, files));
+    } else {
+      // Nullable body: empty literals up front, populate inside
+      // `if (body != null) { ... }` so field access doesn't NPE.
+      final paramName = body.dartParameterName(context.quirks);
+      final guarded = inner;
+      final guardedInner = guarded + _nestedStep;
+      lines
+        ..add('${outer}final multipartFields = <String, String>{};')
+        ..add('${outer}final multipartFiles = <http.MultipartFile>[];')
+        ..add('${outer}if ($paramName != null) {');
+      for (final s in scalars.where((s) => !s.isNullable)) {
+        lines.add(_fieldSetLine(guarded, s.fieldName, s.requiredValueExpr));
+      }
+      lines.addAll(
+        _multipartNullableFieldBlocks(guarded, guardedInner, scalars),
+      );
+      for (final f in files.where((f) => !f.isNullable)) {
+        lines.add(_fileAddLine(guarded, f.fieldName, f.dartAccess));
+      }
+      lines
+        ..addAll(_multipartNullableFileBlocks(guarded, guardedInner, files))
+        ..add('$outer}');
+    }
+
+    return '${lines.join('\n')}\n';
+  }
+
+  /// Non-nullable scalar fields as a map literal. Only used when the
+  /// body itself is non-nullable (otherwise they go inside the null
+  /// guard, not a literal).
+  List<String> _multipartFieldsLiteral(
+    String outer,
+    String inner,
+    List<MultipartScalarPart> scalars,
+  ) {
+    final nonNull = scalars.where((s) => !s.isNullable).toList();
+    return [
+      '${outer}final multipartFields = <String, String>{',
+      for (final s in nonNull)
+        _fieldLiteralEntry(inner, s.fieldName, s.requiredValueExpr),
+      '$outer};',
+    ];
+  }
+
+  /// Non-nullable file parts as a list literal. Same shape rule as
+  /// [_multipartFieldsLiteral].
+  List<String> _multipartFilesLiteral(
+    String outer,
+    String inner,
+    List<MultipartFilePart> files,
+  ) {
+    final nonNull = files.where((f) => !f.isNullable).toList();
+    return [
+      '${outer}final multipartFiles = <http.MultipartFile>[',
+      for (final f in nonNull)
+        _fileLiteralEntry(inner, f.fieldName, f.dartAccess),
+      '$outer];',
+    ];
+  }
+
+  /// Per-field block: captures the nullable property to a local and
+  /// assigns to `multipartFields` only when non-null.
+  List<String> _multipartNullableFieldBlocks(
+    String outer,
+    String inner,
+    List<MultipartScalarPart> scalars,
+  ) {
+    final out = <String>[];
+    for (final s in scalars.where((s) => s.isNullable)) {
+      final setStmt = _fieldSetLine('', s.fieldName, s.nullableValueExpr);
+      out.addAll([
+        '$outer{',
+        '${inner}final v = ${s.dartAccess};',
+        '${inner}if (v != null) $setStmt',
+        '$outer}',
+      ]);
+    }
+    return out;
+  }
+
+  /// Per-file block: same shape as [_multipartNullableFieldBlocks] but
+  /// for nullable file parts.
+  List<String> _multipartNullableFileBlocks(
+    String outer,
+    String inner,
+    List<MultipartFilePart> files,
+  ) {
+    final out = <String>[];
+    for (final file in files.where((f) => f.isNullable)) {
+      final addStmt = _fileAddLine('', file.fieldName, 'f');
+      out.addAll([
+        '$outer{',
+        '${inner}final f = ${file.dartAccess};',
+        '${inner}if (f != null) $addStmt',
+        '$outer}',
+      ]);
+    }
+    return out;
+  }
+
+  /// `${indent}'$fieldName': $valueExpr,` — one entry of a
+  /// `multipartFields` map literal.
+  String _fieldLiteralEntry(
+    String indent,
+    String fieldName,
+    String valueExpr,
+  ) => "$indent'$fieldName': $valueExpr,";
+
+  /// `${indent}multipartFields['$fieldName'] = $valueExpr;` — a single
+  /// assignment into `multipartFields` (used inside the null guard or
+  /// when populating a pre-declared empty map).
+  String _fieldSetLine(String indent, String fieldName, String valueExpr) =>
+      "${indent}multipartFields['$fieldName'] = $valueExpr;";
+
+  /// Emits one `http.MultipartFile.fromBytes(...)` entry inside a
+  /// `multipartFiles` list literal. `filename:` is hardcoded to the
+  /// form field name — a known v1 limitation, see CHANGELOG.md.
+  String _fileLiteralEntry(String indent, String fieldName, String bytes) {
+    final constructor =
+        "http.MultipartFile.fromBytes('$fieldName', $bytes, "
+        "filename: '$fieldName')";
+    return '$indent$constructor,';
+  }
+
+  /// Emits `multipartFiles.add(http.MultipartFile.fromBytes(...));` —
+  /// used inside the null guard or when populating a pre-declared empty
+  /// list.
+  String _fileAddLine(String indent, String fieldName, String bytes) {
+    final constructor =
+        "http.MultipartFile.fromBytes('$fieldName', $bytes, "
+        "filename: '$fieldName')";
+    return '${indent}multipartFiles.add($constructor);';
   }
 
   @override
@@ -790,29 +1078,22 @@ class Endpoint implements ToTemplateContext {
       (p) => p.isRequired == true,
     );
 
-    // Only explicit parameters (not request body) need to be split by sendIn.
-    final byLocation = parameters.groupListsBy((p) => p.inLocation);
-    final pathParameters = byLocation[ParameterLocation.path] ?? [];
-    final queryParameters = byLocation[ParameterLocation.query] ?? [];
-    final hasQueryParameters = queryParameters.isNotEmpty;
-    final cookieParameters = byLocation[ParameterLocation.cookie] ?? [];
+    // Cookie parameters are not supported; fail loudly at render time.
+    final cookieParameters = parameters
+        .where((p) => p.inLocation == ParameterLocation.cookie)
+        .toList();
     if (cookieParameters.isNotEmpty) {
       _unimplemented(
         'Cookie parameters are not yet supported.',
         operation.pointer,
       );
     }
-    final headerParameters = byLocation[ParameterLocation.header] ?? [];
-    final hasHeaderParameters = headerParameters.isNotEmpty;
 
     final validationStatementsString = indentWithTrailingNewline(
       validationStatements(context.quirks),
       indent: 8,
       extraTrailingNewline: true,
     );
-
-    // Remove the leading whitespace from the first line.
-    final authArgumentString = authArgument(indent: 12)?.trimLeft();
 
     Iterable<Map<String, dynamic>> toTemplateContexts(
       Iterable<CanBeParameter> parameters,
@@ -831,20 +1112,18 @@ class Endpoint implements ToTemplateContext {
         indent: 4,
       ),
       'methodName': methodName,
-      'httpMethod': method.name,
-      'path': path,
-      'url': uri,
       // Parameters grouped for dart parameter generation.
       'positionalParameters': toTemplateContexts(positionalParameters),
       'hasNamedParameters': namedParameters.isNotEmpty,
       'namedParameters': toTemplateContexts(namedParameters),
-      // Parameters grouped for call to server.
-      'pathParameters': toTemplateContexts(pathParameters),
-      'hasQueryParameters': hasQueryParameters,
-      'queryParameters': toTemplateContexts(queryParameters),
-      'hasHeaderParameters': hasHeaderParameters,
-      'headerParameters': toTemplateContexts(headerParameters),
-      'requestBody': requestBody?.toTemplateContext(context),
+      // Both the invoke call args and the multipart field/file assembly
+      // are pre-rendered in Dart — the template is a thin wrapper that
+      // interpolates the results. Keeps the method/path/query/body/
+      // headers/auth emission in one place, and avoids mustache's
+      // standalone-partial indentation quirks on empty sections.
+      'invokeMethodName': isMultipart ? 'invokeApiMultipart' : 'invokeApi',
+      'invokeArgs': _buildInvokeArgs(context),
+      'multipartAssembly': _buildMultipartAssembly(context),
       'returnType': returnType,
       'isVoidReturn': isVoidReturn,
       'responseFromJson': responseFromJson,
@@ -852,7 +1131,6 @@ class Endpoint implements ToTemplateContext {
       'errorType': errorType,
       'errorFromJson': errorFromJson,
       'validationStatements': validationStatementsString,
-      'authArgument': authArgumentString,
     };
   }
 }
@@ -963,7 +1241,12 @@ class RenderOperation {
   final List<ResolvedSecurityRequirement> securityRequirements;
 }
 
-abstract class RenderRequestBody implements CanBeParameter {
+/// Sealed so the endpoint arg-builder can pattern-match exhaustively on
+/// the body shape: the multipart path emits `fields:`/`files:`, every
+/// other subclass emits `body:`/`bodyContentType:`. Adding a fifth shape
+/// (e.g. `application/x-www-form-urlencoded`) is a compile error in
+/// consumers until they handle it.
+sealed class RenderRequestBody implements CanBeParameter {
   const RenderRequestBody({
     required this.schema,
     required this.description,
@@ -990,7 +1273,48 @@ abstract class RenderRequestBody implements CanBeParameter {
       schema.typeName.lowerFirst().split('<').first;
 }
 
-class RenderRequestBodyJson extends RenderRequestBody {
+/// Request bodies that pass through `ApiClient.invokeApi` as a single
+/// `body:` argument paired with a [bodyContentTypeExpression]. Groups
+/// the JSON/octet-stream/text-plain shapes so the multipart shape (which
+/// uses `fields:`/`files:` on `invokeApiMultipart` instead) doesn't
+/// carry two methods it never uses.
+abstract class RenderRequestBodySimple extends RenderRequestBody {
+  const RenderRequestBodySimple({
+    required super.schema,
+    required super.description,
+    required super.isRequired,
+  });
+
+  /// The `BodyContentType.xxx` Dart expression that pairs with this
+  /// body, passed to `ApiClient.invokeApi(bodyContentType: ...)`.
+  String get bodyContentTypeExpression;
+
+  /// The Dart expression for the `body:` argument to `invokeApi`. For
+  /// JSON: the map/list the client will `jsonEncode`. For octet-stream
+  /// or text/plain: the parameter itself, passed through as-is.
+  String bodyExpression(SchemaRenderer context);
+}
+
+/// Shared template-context for the named-parameter slot in the endpoint
+/// method signature. Only emits the keys that `api.mustache` actually
+/// reads — `type`, `nullableType`, `dartName`, `required`,
+/// `hasDefaultValue`, `defaultValue`. Matches the subset consumed from
+/// [RenderParameter.toTemplateContext].
+Map<String, dynamic> _requestBodyParameterContext(
+  RenderRequestBody body,
+  SchemaRenderer context,
+) {
+  return {
+    'dartName': body.dartParameterName(context.quirks),
+    'required': body.isRequired,
+    'hasDefaultValue': body.schema.defaultValue != null,
+    'defaultValue': body.schema.defaultValueString(context),
+    'type': body.schema.typeName,
+    'nullableType': body.schema.nullableTypeName(context),
+  };
+}
+
+class RenderRequestBodyJson extends RenderRequestBodySimple {
   const RenderRequestBodyJson({
     required super.schema,
     required super.description,
@@ -998,34 +1322,21 @@ class RenderRequestBodyJson extends RenderRequestBody {
   });
 
   @override
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final typeName = schema.typeName;
-    final paramName = dartParameterName(context.quirks);
-    // TODO(eseidel): Share code with Parameter.toTemplateContext.
-    final isNullable = !isRequired;
-    return {
-      'request_body_doc_comment': createDocCommentFromParts(
-        body: description,
-        indent: 4,
-      ),
-      'name': paramName,
-      'dartName': paramName,
-      'bracketedName': '{$paramName}',
-      'required': isRequired,
-      'hasDefaultValue': schema.defaultValue != null,
-      'defaultValue': schema.defaultValueString(context),
-      'type': typeName,
-      'nullableType': schema.nullableTypeName(context),
-      'encodedBody': schema.toJsonExpression(
-        paramName,
-        context,
-        dartIsNullable: isNullable,
-      ),
-    };
-  }
+  String get bodyContentTypeExpression => 'BodyContentType.json';
+
+  @override
+  String bodyExpression(SchemaRenderer context) => schema.toJsonExpression(
+    dartParameterName(context.quirks),
+    context,
+    dartIsNullable: !isRequired,
+  );
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
+      _requestBodyParameterContext(this, context);
 }
 
-class RenderRequestBodyOctetStream extends RenderRequestBody {
+class RenderRequestBodyOctetStream extends RenderRequestBodySimple {
   const RenderRequestBodyOctetStream({
     required super.schema,
     required super.description,
@@ -1033,27 +1344,18 @@ class RenderRequestBodyOctetStream extends RenderRequestBody {
   });
 
   @override
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final paramName = dartParameterName(context.quirks);
-    return {
-      'request_body_doc_comment': createDocCommentFromParts(
-        body: description,
-        indent: 4,
-      ),
-      'name': paramName,
-      'dartName': paramName,
-      'bracketedName': '{$paramName}',
-      'required': isRequired,
-      'hasDefaultValue': schema.defaultValue != null,
-      'defaultValue': schema.defaultValueString(context),
-      'type': schema.typeName,
-      'nullableType': schema.nullableTypeName(context),
-      'encodedBody': paramName,
-    };
-  }
+  String get bodyContentTypeExpression => 'BodyContentType.octetStream';
+
+  @override
+  String bodyExpression(SchemaRenderer context) =>
+      dartParameterName(context.quirks);
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
+      _requestBodyParameterContext(this, context);
 }
 
-class RenderRequestBodyTextPlain extends RenderRequestBody {
+class RenderRequestBodyTextPlain extends RenderRequestBodySimple {
   const RenderRequestBodyTextPlain({
     required super.schema,
     required super.description,
@@ -1061,20 +1363,178 @@ class RenderRequestBodyTextPlain extends RenderRequestBody {
   });
 
   @override
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
+  String get bodyContentTypeExpression => 'BodyContentType.textPlain';
+
+  @override
+  String bodyExpression(SchemaRenderer context) =>
+      dartParameterName(context.quirks);
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
+      _requestBodyParameterContext(this, context);
+}
+
+/// One scalar text part in a `multipart/form-data` body.
+class MultipartScalarPart extends Equatable {
+  const MultipartScalarPart({
+    required this.fieldName,
+    required this.dartAccess,
+    required this.isNullable,
+    required this.requiredValueExpr,
+    required this.nullableValueExpr,
+  });
+
+  /// The spec-side form-field name (also the JSON property name).
+  final String fieldName;
+
+  /// The Dart expression to read the property from the body object,
+  /// e.g. `pet.name`.
+  final String dartAccess;
+
+  /// Whether [dartAccess] is a nullable expression — drives whether the
+  /// generator emits a direct assignment or a captured-local null check.
+  final bool isNullable;
+
+  /// The non-null value expression used when the property is required
+  /// and accessed directly (e.g. `pet.capturedAt.toIso8601String()`).
+  final String requiredValueExpr;
+
+  /// The non-null value expression used inside a null-check block where
+  /// the local has already been captured as `v` (e.g. `v.toIso8601String()`).
+  final String nullableValueExpr;
+
+  @override
+  List<Object?> get props => [
+    fieldName,
+    dartAccess,
+    isNullable,
+    requiredValueExpr,
+    nullableValueExpr,
+  ];
+}
+
+/// One file part in a `multipart/form-data` body (spec-side
+/// `format: binary` / Dart-side `Uint8List`).
+class MultipartFilePart extends Equatable {
+  const MultipartFilePart({
+    required this.fieldName,
+    required this.dartAccess,
+    required this.isNullable,
+  });
+
+  final String fieldName;
+  final String dartAccess;
+  final bool isNullable;
+
+  @override
+  List<Object?> get props => [fieldName, dartAccess, isNullable];
+}
+
+/// `multipart/form-data` request body. The schema must resolve to a
+/// `RenderObject` whose properties are scalars (string/number/bool/pod/
+/// enum) or binary (`format: binary` → `Uint8List`). Scalars become text
+/// parts; binaries become file parts in the generated endpoint method.
+///
+/// Unsupported on purpose (v1): arrays-of-files, nested objects as
+/// fields, per-part `encoding.contentType`, and filenames other than the
+/// property name.
+class RenderRequestBodyMultipart extends RenderRequestBody {
+  const RenderRequestBodyMultipart({
+    required super.schema,
+    required super.description,
+    required super.isRequired,
+  });
+
+  /// Classify this body's properties into scalar (text) and file parts.
+  /// Throws [FormatException] at render time when the schema shape is
+  /// outside the v1-supported set — the ground truth for what the
+  /// generator will emit. Called once from `_buildMultipartAssembly`
+  /// on every render cycle, so schema-shape errors surface even though
+  /// no eager validation happens at construction time.
+  ({List<MultipartScalarPart> scalars, List<MultipartFilePart> files}) partsFor(
+    SchemaRenderer context,
+  ) {
+    final object = schema;
+    if (object is! RenderObject) {
+      throw FormatException(
+        'multipart/form-data request body schema must be an object '
+        '(got ${object.runtimeType}) at ${schema.common.pointer}',
+      );
+    }
     final paramName = dartParameterName(context.quirks);
-    return {
-      'name': paramName,
-      'dartName': paramName,
-      'bracketedName': '{$paramName}',
-      'required': isRequired,
-      'hasDefaultValue': schema.defaultValue != null,
-      'defaultValue': schema.defaultValueString(context),
-      'type': schema.typeName,
-      'nullableType': schema.nullableTypeName(context),
-      'encodedBody': paramName,
-    };
+    final scalars = <MultipartScalarPart>[];
+    final files = <MultipartFilePart>[];
+    for (final entry in object.properties.entries) {
+      final jsonName = entry.key;
+      final property = entry.value;
+      final dartName = variableSafeName(context.quirks, jsonName);
+      final dartAccess = '$paramName.$dartName';
+      final inRequired = object.requiredProperties.contains(jsonName);
+      final isNullable = !inRequired || property.common.nullable;
+
+      if (property is RenderBinary) {
+        files.add(
+          MultipartFilePart(
+            fieldName: jsonName,
+            dartAccess: dartAccess,
+            isNullable: isNullable,
+          ),
+        );
+      } else if (_isMultipartScalar(property)) {
+        scalars.add(
+          MultipartScalarPart(
+            fieldName: jsonName,
+            dartAccess: dartAccess,
+            isNullable: isNullable,
+            // `toJsonExpression` knows how to render each pod correctly
+            // (DateTime → .toIso8601String(), newtype → .toJson(), plain
+            // Dart types → identity). `.toString()` coerces non-String
+            // json types (int, bool, enum with int values) to satisfy
+            // Map<String, String>.
+            requiredValueExpr: _multipartValueExpr(
+              property,
+              dartAccess,
+              context,
+            ),
+            nullableValueExpr: _multipartValueExpr(property, 'v', context),
+          ),
+        );
+      } else {
+        throw FormatException(
+          'multipart/form-data property must be a scalar or binary (got '
+          '${property.runtimeType} for "$jsonName") at '
+          '${property.common.pointer}',
+        );
+      }
+    }
+    return (scalars: scalars, files: files);
   }
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
+      _requestBodyParameterContext(this, context);
+}
+
+String _multipartValueExpr(
+  RenderSchema property,
+  String base,
+  SchemaRenderer context,
+) {
+  final jsonExpr = property.toJsonExpression(
+    base,
+    context,
+    dartIsNullable: false,
+  );
+  final jsonType = property.jsonStorageType(isNullable: false);
+  return jsonType == 'String' ? jsonExpr : '$jsonExpr.toString()';
+}
+
+bool _isMultipartScalar(RenderSchema schema) {
+  return schema is RenderString ||
+      schema is RenderInteger ||
+      schema is RenderNumber ||
+      schema is RenderPod ||
+      schema is RenderEnum;
 }
 
 class RenderResponse {
@@ -2125,6 +2585,13 @@ class RenderObject extends RenderNewType {
     final hasClassDescription =
         common.title != null || common.description != null;
     final templateName = hasClassDescription ? common.snakeName : null;
+    // Objects with no-JSON properties (today: `format: binary` →
+    // `Uint8List`) can't round-trip through JSON. The object lives on
+    // because it's the method parameter type, but toJson/fromJson must
+    // throw wholesale — otherwise the per-property throws become dead
+    // code after the first no-JSON property. Matches what the user gets
+    // if they accidentally call toJson on a multipart body.
+    final hasNoJsonProperty = properties.values.any((p) => p is RenderNoJson);
     return {
       'doc_comment': createDocComment(
         common: common,
@@ -2147,6 +2614,7 @@ class RenderObject extends RenderNewType {
       'hasOneProperty': propertiesCount == 1,
       'properties': renderProperties,
       'hasAdditionalProperties': hasAdditionalProperties,
+      'hasNoJsonProperty': hasNoJsonProperty,
       'assignmentsLine': assignmentsLine,
       'additionalPropertiesName': 'entries', // Matching OpenAPI.
       'valueSchema': valueSchema?.typeName,
@@ -2783,46 +3251,43 @@ class RenderParameter implements CanBeParameter {
   /// Whether the parameter is deprecated.
   final bool isDeprecated;
 
+  /// Whether the Dart storage for this parameter is nullable — the
+  /// inverse of [isRequired]. Named for the use site rather than the
+  /// underlying flag so callers read "is this nullable" directly.
+  bool get isNullable => !isRequired;
+
+  /// The parameter's name wrapped in `{ }` for URL-path interpolation,
+  /// e.g. `{petId}` when [name] is `petId`.
+  String get bracketedName => '{$name}';
+
+  /// The Dart expression that serializes this parameter's value. Wraps
+  /// [RenderSchema.toJsonExpression] with the right [dartParameterName]
+  /// and nullability for this parameter.
+  String toJsonExpression(SchemaRenderer context) {
+    return type.toJsonExpression(
+      dartParameterName(context.quirks),
+      context,
+      dartIsNullable: isNullable,
+    );
+  }
+
   @override
   Iterable<String> get validationCalls => type.validationCalls;
 
+  /// Only the keys `api.mustache` actually reads from an iterated
+  /// parameter context: the named/positional slot in the method
+  /// signature. Everything else (name, bracketedName, toJson, ...)
+  /// is reachable via typed accessors on this instance and used
+  /// directly by the Dart-side invoke-args builder.
   @override
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final isNullable = !isRequired;
-    final specName = name;
-    // Must match dartParameterName (used elsewhere for the same parameter,
-    // e.g. validation calls) — and importantly, avoid reserved words so a
-    // spec with a parameter like `with`/`try`/`case` compiles.
-    final dartName = dartParameterName(context.quirks);
-    final jsonName = name;
-    return {
-      'parameter_description': createDocCommentFromParts(
-        body: description,
-        indent: 4,
-      ),
-      'name': name,
-      'dartName': dartName,
-      'bracketedName': '{$specName}',
-      'required': isRequired,
-      'hasDefaultValue': type.defaultValue != null,
-      'defaultValue': type.defaultValueString(context),
-      'isNullable': isNullable,
-      'type': type.typeName,
-      'nullableType': type.nullableTypeName(context),
-      'sendIn': inLocation.name,
-      'toJson': type.toJsonExpression(
-        dartName,
-        context,
-        dartIsNullable: isNullable,
-      ),
-      'fromJson': type.fromJsonExpression(
-        "json['$jsonName']",
-        context,
-        jsonIsNullable: isNullable,
-        dartIsNullable: isNullable,
-      ),
-    };
-  }
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
+    'dartName': dartParameterName(context.quirks),
+    'required': isRequired,
+    'hasDefaultValue': type.defaultValue != null,
+    'defaultValue': type.defaultValueString(context),
+    'type': type.typeName,
+    'nullableType': type.nullableTypeName(context),
+  };
 }
 
 class RenderUnknown extends RenderSchema {

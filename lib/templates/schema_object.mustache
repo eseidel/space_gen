@@ -10,11 +10,28 @@ class {{ typeName }} {
     {{{ from_json_doc_comment }}}factory {{ typeName }}.fromJson({{{fromJsonJsonType}}}
     {{#castFromJsonArg}}
         jsonArg) {
+    {{#hasNoJsonProperty}}
+        // `jsonArg` appears in the message so the unused-parameter lint
+        // stays quiet on types that can't round-trip through JSON.
+        throw UnsupportedError(
+          '{{ typeName }}: binary field present; '
+          'cannot decode from JSON. Input: $jsonArg',
+        );
+    {{/hasNoJsonProperty}}
+    {{^hasNoJsonProperty}}
     final json = jsonArg as Map<String, dynamic>;
+    {{/hasNoJsonProperty}}
     {{/castFromJsonArg}}
     {{^castFromJsonArg}}
         json) {
+    {{#hasNoJsonProperty}}
+        throw UnsupportedError(
+          'Cannot decode {{ typeName }} from JSON (binary field present). '
+          'Input was: $json',
+        );
+    {{/hasNoJsonProperty}}
     {{/castFromJsonArg}}
+    {{^hasNoJsonProperty}}
         return parseFromJson('{{ typeName }}', json, () => {{ typeName }}(
             {{#properties}}
             {{ dartName }}: {{{ fromJson }}},
@@ -23,6 +40,7 @@ class {{ typeName }} {
             {{additionalPropertiesName}}: json.map((key, value) => MapEntry(key, {{{ valueFromJson }}})),
             {{/hasAdditionalProperties}}
         ));
+    {{/hasNoJsonProperty}}
     }
 
     /// Convenience to create a nullable type from a nullable json object.
@@ -43,6 +61,12 @@ class {{ typeName }} {
     {{/hasAdditionalProperties}}
 
     {{{ to_json_doc_comment }}}Map<String, dynamic> toJson() {
+    {{#hasNoJsonProperty}}
+        throw UnsupportedError(
+          'Cannot encode {{ typeName }} as JSON (binary field present).',
+        );
+    {{/hasNoJsonProperty}}
+    {{^hasNoJsonProperty}}
         return {
             {{#properties}}
             {{{ jsonName }}}: {{{ toJson }}},
@@ -51,6 +75,7 @@ class {{ typeName }} {
             ...{{additionalPropertiesName}}.map((key, value) => MapEntry(key, {{{ valueToJson }}})),
             {{/hasAdditionalProperties}}
         };
+    {{/hasNoJsonProperty}}
     }
 
     @override

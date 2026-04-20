@@ -1,5 +1,24 @@
 ## 1.0.2
 
+- Support `multipart/form-data` request bodies. Endpoints whose request
+  body schema is an object of scalar + `format: binary` properties now
+  generate a Dart method that takes the body object, unpacks it
+  inline into text fields and `http.MultipartFile.fromBytes` file parts,
+  and sends via a new `ApiClient.invokeApiMultipart` runtime method
+  (which builds an `http.MultipartRequest` with its own Content-Type
+  boundary). Objects with binary properties correctly throw
+  `UnsupportedError` from `toJson`/`fromJson` instead of emitting
+  dead-code-after-throw. Priority when a spec lists both JSON and
+  multipart for the same body: JSON still wins. Out of scope for this
+  pass and flagged for follow-up: `application/x-www-form-urlencoded`,
+  arrays of files, nested objects as form fields, per-part
+  `encoding.contentType`, and filenames other than the property name.
+- Fix `application/octet-stream` and `text/plain` request bodies: the
+  generated `ApiClient.invokeApi` was JSON-encoding every non-null body
+  (including `Uint8List` and raw `String`) and always sending
+  `Content-Type: application/json`. Binary and text bodies now pass
+  through unchanged with the correct `Content-Type` header, driven by a
+  new `BodyContentType` enum threaded through the generated call sites.
 - Prune unused helpers from the generated `lib/model_helpers.dart`.
   Previously every generated package shipped all nine runtime helpers
   (`maybeParseDateTime`, `maybeParseDate`, `maybeParseUri`,

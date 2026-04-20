@@ -64,10 +64,9 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/pet/{petId}/uploadImage'\n"
-        '            .replaceAll(\'{petId}\', "\${ petId }")\n'
-        '            ,\n'
+        "            path: '/pet/{petId}/uploadImage'.replaceAll('{petId}', \"\${ petId }\"),\n"
         '            body: uint8List,\n'
+        '            bodyContentType: BodyContentType.octetStream,\n'
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
@@ -75,6 +74,218 @@ void main() {
         '        }\n'
         '    }\n'
         '}\n',
+      );
+    });
+
+    test('multipart/form-data with required file only', () {
+      final operation = {
+        'tags': ['files'],
+        'operationId': 'uploadFile',
+        'requestBody': {
+          'required': true,
+          'content': {
+            'multipart/form-data': {
+              'schema': {
+                'type': 'object',
+                'required': ['file'],
+                'properties': {
+                  'file': {'type': 'string', 'format': 'binary'},
+                },
+              },
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/upload',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      // Required file goes directly into the list literal; no .add call.
+      expect(
+        result,
+        contains(
+          "http.MultipartFile.fromBytes('file', uploadFileRequest.file, filename: 'file'),",
+        ),
+      );
+      expect(result, contains('client.invokeApiMultipart('));
+      expect(result, contains('fields: multipartFields,'));
+      expect(result, contains('files: multipartFiles,'));
+      // No JSON `body:` parameter in the generated call.
+      expect(result, isNot(contains('body:')));
+    });
+
+    test('multipart/form-data with scalar + binary + optional field', () {
+      final operation = {
+        'tags': ['files'],
+        'operationId': 'uploadFile',
+        'requestBody': {
+          'required': true,
+          'content': {
+            'multipart/form-data': {
+              'schema': {
+                'type': 'object',
+                'required': ['file', 'name', 'count'],
+                'properties': {
+                  'file': {'type': 'string', 'format': 'binary'},
+                  'name': {'type': 'string'},
+                  'description': {'type': 'string'},
+                  'count': {'type': 'integer'},
+                },
+              },
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/upload',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      // Required String field inlined in the fields literal.
+      expect(result, contains("'name': uploadFileRequest.name,"));
+      // Required integer field: .toString() inlined in fields literal.
+      expect(
+        result,
+        contains("'count': uploadFileRequest.count.toString(),"),
+      );
+      // Optional scalar: captured to a local, null-checked before set.
+      expect(result, contains('final v = uploadFileRequest.description;'));
+      expect(
+        result,
+        contains("if (v != null) multipartFields['description'] = v;"),
+      );
+      // Required file inlined in the files literal.
+      expect(
+        result,
+        contains(
+          "http.MultipartFile.fromBytes('file', uploadFileRequest.file, filename: 'file'),",
+        ),
+      );
+    });
+
+    test('multipart/form-data with optional file', () {
+      final operation = {
+        'tags': ['files'],
+        'operationId': 'uploadFile',
+        'requestBody': {
+          'required': true,
+          'content': {
+            'multipart/form-data': {
+              'schema': {
+                'type': 'object',
+                'properties': {
+                  'file': {'type': 'string', 'format': 'binary'},
+                },
+              },
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/upload',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      expect(result, contains('final f = uploadFileRequest.file;'));
+      expect(
+        result,
+        contains(
+          "if (f != null) multipartFiles.add(http.MultipartFile.fromBytes('file', f, filename: 'file'));",
+        ),
+      );
+    });
+
+    test(
+      'multipart/form-data nullable body: body access guarded by null check',
+      () {
+        // Regression: previously the template emitted the required-field
+        // literal init *outside* any null guard, so a nullable body
+        // (`required: true` omitted — which is the OpenAPI default) produced
+        // `multipartRequest.file` on a nullable receiver — a compile error.
+        final operation = {
+          'tags': ['files'],
+          'operationId': 'upload',
+          'requestBody': {
+            'content': {
+              'multipart/form-data': {
+                'schema': {
+                  'type': 'object',
+                  'required': ['file'],
+                  'properties': {
+                    'file': {'type': 'string', 'format': 'binary'},
+                  },
+                },
+              },
+            },
+          },
+          'responses': {
+            '200': {'description': 'OK'},
+          },
+        };
+        final result = renderTestOperation(
+          path: '/upload',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        );
+        // The body param itself must be nullable.
+        expect(result, contains('UploadRequest? uploadRequest'));
+        // The literal init must be empty and precede the null guard —
+        // the guarded block does the actual assignment so that the field
+        // access only happens after we confirm the body is non-null.
+        expect(result, contains('final multipartFields = <String, String>{};'));
+        expect(
+          result,
+          contains('final multipartFiles = <http.MultipartFile>[];'),
+        );
+        expect(result, contains('if (uploadRequest != null)'));
+        // Body-field access is inside the guard.
+        final guardIndex = result.indexOf('if (uploadRequest != null)');
+        final accessIndex = result.indexOf('uploadRequest.file');
+        expect(guardIndex, isNonNegative);
+        expect(accessIndex, greaterThan(guardIndex));
+      },
+    );
+
+    test('multipart/form-data rejects non-object schema', () {
+      final operation = {
+        'tags': ['files'],
+        'operationId': 'uploadFile',
+        'requestBody': {
+          'content': {
+            'multipart/form-data': {
+              'schema': {'type': 'string'},
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      expect(
+        () => renderTestOperation(
+          path: '/upload',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        ),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains(
+              'multipart/form-data request body schema must be an object',
+            ),
+          ),
+        ),
       );
     });
 
@@ -113,9 +324,9 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/pet/{petId}/uploadFile'\n"
-        ',\n'
+        "            path: '/pet/{petId}/uploadFile',\n"
         '            body: string,\n'
+        '            bodyContentType: BodyContentType.textPlain,\n'
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
@@ -166,8 +377,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/users'\n"
-        ',\n'
+        "            path: '/users',\n"
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
@@ -222,8 +432,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/users'\n"
-        ',\n'
+        "            path: '/users',\n"
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
@@ -280,8 +489,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/users'\n"
-        ',\n'
+        "            path: '/users',\n"
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
@@ -336,8 +544,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/users'\n"
-        ',\n'
+        "            path: '/users',\n"
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
@@ -379,8 +586,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/users'\n"
-        ',\n'
+        "            path: '/users',\n"
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
@@ -427,8 +633,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/users'\n"
-        ',\n'
+        "            path: '/users',\n"
         '            queryParameters: {\n'
         "                'foo': ?foo?.toString(),\n"
         '            },\n'
@@ -487,8 +692,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/users'\n"
-        ',\n'
+        "            path: '/users',\n"
         '            queryParameters: {\n'
         "                'foo': ?foo?.toString(),\n"
         '            },\n'
@@ -542,8 +746,7 @@ void main() {
         '\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/users'\n"
-        ',\n'
+        "            path: '/users',\n"
         '            queryParameters: {\n'
         "                'page': ?page?.toString(),\n"
         '            },\n'
@@ -636,8 +839,7 @@ void main() {
         '\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/users'\n"
-        ',\n'
+        "            path: '/users',\n"
         '            queryParameters: {\n'
         "                'foo': ?foo?.toString(),\n"
         "                'bar': ?bar?.toString(),\n"
@@ -691,8 +893,7 @@ void main() {
           '    ) async {\n'
           '        final response = await client.invokeApi(\n'
           '            method: Method.post,\n'
-          "            path: '/users'\n"
-          ',\n'
+          "            path: '/users',\n"
           '            queryParameters: {\n'
           "                'foo': ?foo?.toJson()?.toString(),\n"
           '            },\n'
@@ -748,8 +949,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/emojis'\n"
-        ',\n'
+        "            path: '/emojis',\n"
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
@@ -857,8 +1057,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/emojis'\n"
-        ',\n'
+        "            path: '/emojis',\n"
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
@@ -925,8 +1124,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/users'\n"
-        ',\n'
+        "            path: '/users',\n"
         '            authRequest: ApiKeyAuth(name: "apiKey", secretName: "apiKey", sendIn: ApiKeyLocation.header),\n'
         '        );\n'
         '\n'
@@ -994,8 +1192,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/users'\n"
-        ',\n'
+        "            path: '/users',\n"
         '            authRequest: OneOfAuth([\n'
         '              AllOfAuth([\n'
         '                ApiKeyAuth(name: "apiKey", secretName: "apiKey", sendIn: ApiKeyLocation.header),\n'
@@ -1093,8 +1290,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/widgets'\n"
-        ',\n'
+        "            path: '/widgets',\n"
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'

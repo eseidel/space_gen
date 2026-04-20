@@ -102,11 +102,13 @@ void main() {
         isDeprecated: false,
         inLocation: ParameterLocation.query,
       );
-      final ctx = parameter.toTemplateContext(context);
-      expect(ctx['dartName'], 'with_');
-      // The spec (`name`) and JSON key keep the original reserved word.
-      expect(ctx['name'], 'with');
-      expect(ctx['bracketedName'], '{with}');
+      // The Dart-visible identifier gets `_` appended so it compiles;
+      // the spec-side name and its bracketed form keep the original
+      // reserved word since they name the wire-level field, not a Dart
+      // identifier.
+      expect(parameter.dartParameterName(context.quirks), 'with_');
+      expect(parameter.name, 'with');
+      expect(parameter.bracketedName, '{with}');
     });
   });
 

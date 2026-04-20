@@ -2200,8 +2200,7 @@ void main() {
           '\n'
           '        final response = await client.invokeApi(\n'
           '            method: Method.post,\n'
-          "            path: '/pet/{petId}/uploadImage'\n"
-          ',\n'
+          "            path: '/pet/{petId}/uploadImage',\n"
           '            queryParameters: {\n'
           "                'ids': ids.toString(),\n"
           '            },\n'
@@ -2281,8 +2280,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.get,\n'
-        "            path: '/users'\n"
-        ',\n'
+        "            path: '/users',\n"
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'

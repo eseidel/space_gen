@@ -362,36 +362,25 @@ ResolvedRequestBody? _resolveRequestBody(
   }
   return context.withResolved(ref, (requestBody) {
     final content = requestBody.content;
-    final jsonSchema = content['application/json']?.schema;
-    if (jsonSchema != null) {
-      return ResolvedRequestBody(
-        mimeType: MimeType.applicationJson,
-        schema: resolveSchemaRef(jsonSchema, context),
-        description: requestBody.description,
-        isRequired: requestBody.isRequired,
-      );
+    // MimeType.values is declaration-ordered, which defines precedence:
+    // JSON first, then multipart, then octet-stream, then text/plain. When
+    // a spec offers both JSON and multipart on the same body (rare), JSON
+    // wins because it's the well-formed choice.
+    for (final mimeType in MimeType.values) {
+      final schema = content[mimeType.value]?.schema;
+      if (schema != null) {
+        return ResolvedRequestBody(
+          mimeType: mimeType,
+          schema: resolveSchemaRef(schema, context),
+          description: requestBody.description,
+          isRequired: requestBody.isRequired,
+        );
+      }
     }
-    final octetStreamSchema = content['application/octet-stream']?.schema;
-    if (octetStreamSchema != null) {
-      return ResolvedRequestBody(
-        mimeType: MimeType.applicationOctetStream,
-        schema: resolveSchemaRef(octetStreamSchema, context),
-        description: requestBody.description,
-        isRequired: requestBody.isRequired,
-      );
-    }
-    final textPlainSchema = content['text/plain']?.schema;
-    if (textPlainSchema != null) {
-      return ResolvedRequestBody(
-        mimeType: MimeType.textPlain,
-        schema: resolveSchemaRef(textPlainSchema, context),
-        description: requestBody.description,
-        isRequired: requestBody.isRequired,
-      );
-    }
+    final supported = MimeType.values.map((m) => m.value).join(', ');
     _error(
-      'Request body has no application/json, '
-      'application/octet-stream, or text/plain schema',
+      'Request body has no schema for any supported content type '
+      '($supported)',
       requestBody.pointer,
     );
   });
