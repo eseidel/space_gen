@@ -15,6 +15,7 @@ void main() {
           tags: <String>['example'],
           attributes: {'key': 'example'},
         ),
+        status: Status.values.first,
       );
       final parsed = Types200Response.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
@@ -23,6 +24,13 @@ void main() {
 
     test('maybeFromJson returns null on null input', () {
       expect(Types200Response.maybeFromJson(null), isNull);
+    });
+
+    test('maybeFromJson throws FormatException on invalid input', () {
+      expect(
+        () => Types200Response.maybeFromJson(<String, dynamic>{}),
+        throwsFormatException,
+      );
     });
   });
 }

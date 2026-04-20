@@ -3,25 +3,21 @@ import 'package:test/test.dart';
 import 'package:types/api.dart';
 
 void main() {
-  group('Widget', () {
+  group('Status', () {
     test('round-trips via maybeFromJson/toJson', () {
-      final instance = Widget(
-        id: 0,
-        tags: <String>['example'],
-        attributes: {'key': 'example'},
-      );
-      final parsed = Widget.maybeFromJson(instance.toJson())!;
+      final instance = Status.values.first;
+      final parsed = Status.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));
     });
 
     test('maybeFromJson returns null on null input', () {
-      expect(Widget.maybeFromJson(null), isNull);
+      expect(Status.maybeFromJson(null), isNull);
     });
 
     test('maybeFromJson throws FormatException on invalid input', () {
       expect(
-        () => Widget.maybeFromJson(<String, dynamic>{}),
+        () => Status.maybeFromJson('__invalid_enum_value__'),
         throwsFormatException,
       );
     });

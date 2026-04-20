@@ -655,6 +655,7 @@ class FileRenderer {
       if (outPath == null) continue;
       final example = schema.exampleValue(schemaContext);
       if (example == null) continue;
+      final invalidJson = schema.invalidJsonExample(schemaContext);
       _renderTemplate(
         template: 'schema_round_trip_test',
         outPath: outPath,
@@ -663,6 +664,7 @@ class FileRenderer {
           'barrelImportPath': testBarrelImport(),
           'typeName': schema.typeName,
           'exampleValue': example,
+          'invalidJsonExample': invalidJson,
         },
       );
     }

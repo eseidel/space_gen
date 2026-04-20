@@ -1,5 +1,6 @@
 import 'package:types/model/date_type.dart';
 import 'package:types/model/email_type.dart';
+import 'package:types/model/status.dart';
 import 'package:types/model/timestamp.dart';
 import 'package:types/model/uuid_type.dart';
 import 'package:types/model/widget.dart';
@@ -12,6 +13,7 @@ class Types200Response {
     required this.uuid,
     required this.timestamp,
     required this.widget,
+    required this.status,
   });
 
   /// Converts a `Map<String, dynamic>` to a [Types200Response].
@@ -26,6 +28,7 @@ class Types200Response {
         uuid: UuidType.fromJson(json['uuid'] as String),
         timestamp: Timestamp.fromJson(json['timestamp'] as String),
         widget: Widget.fromJson(json['widget'] as Map<String, dynamic>),
+        status: Status.fromJson(json['status'] as String),
       ),
     );
   }
@@ -47,6 +50,7 @@ class Types200Response {
   /// Smoke-test object to exercise list/map fields through the generated
   /// round-trip test — catches hashCode-vs-== drift on collections.
   Widget widget;
+  Status status;
 
   /// Converts a [Types200Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
@@ -56,6 +60,7 @@ class Types200Response {
       'uuid': uuid.toJson(),
       'timestamp': timestamp.toJson(),
       'widget': widget.toJson(),
+      'status': status.toJson(),
     };
   }
 
@@ -66,6 +71,7 @@ class Types200Response {
     uuid,
     timestamp,
     widget,
+    status,
   ]);
 
   @override
@@ -76,6 +82,7 @@ class Types200Response {
         email == other.email &&
         uuid == other.uuid &&
         timestamp == other.timestamp &&
-        widget == other.widget;
+        widget == other.widget &&
+        status == other.status;
   }
 }

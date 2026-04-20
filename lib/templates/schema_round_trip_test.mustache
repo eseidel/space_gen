@@ -14,5 +14,14 @@ void main() {
     test('maybeFromJson returns null on null input', () {
       expect({{{ typeName }}}.maybeFromJson(null), isNull);
     });
+{{#invalidJsonExample}}
+
+    test('maybeFromJson throws FormatException on invalid input', () {
+      expect(
+        () => {{{ typeName }}}.maybeFromJson({{{ invalidJsonExample }}}),
+        throwsFormatException,
+      );
+    });
+{{/invalidJsonExample}}
   });
 }

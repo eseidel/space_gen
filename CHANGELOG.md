@@ -1,5 +1,15 @@
 ## 1.0.2
 
+- Generated round-trip tests now assert the `fromJson` rejection
+  contract where applicable. A new `RenderSchema.invalidJsonExample`
+  hook returns a guaranteed-invalid JSON payload — implemented for
+  enums (unknown string), objects with required properties (empty
+  map, which fails the type cast inside `parseFromJson`), and
+  `date`/`date-time` pods (unparseable string). When non-null, the
+  `schema_round_trip_test` template emits an extra
+  `throwsFormatException` test. No-op pods (string / email / uuid /
+  boolean / uri / uri-template) and objects with no required fields
+  get no negative test because any input is valid for them.
 - Resolve external `$ref`s at generation time. A spec that refs
   schemas/responses/parameters/request-bodies/headers in another file
   (`$ref: 'shared.yaml#/components/schemas/Foo'`) now loads that file

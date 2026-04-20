@@ -1241,6 +1241,15 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// test for the enclosing type.
   String? exampleValue(SchemaRenderer context);
 
+  /// A Dart expression of type [jsonStorageType] that is guaranteed to
+  /// fail this schema's `fromJson`/`maybeFromJson` with a
+  /// `FormatException`. Used by generated tests to lock in the parse
+  /// contract at the type boundary. Returns `null` when no such input
+  /// exists (e.g. a string newtype that accepts any string) or when
+  /// the rejection path isn't through `FormatException` — callers skip
+  /// emitting the negative test for those.
+  String? invalidJsonExample(SchemaRenderer context) => null;
+
   /// The default value of this schema as a string.
   String? defaultValueString(SchemaRenderer context) {
     if (defaultValue == null) {
@@ -1518,6 +1527,16 @@ class RenderPod extends RenderSchema {
     };
     return createsNewType ? '$typeName($raw)' : raw;
   }
+
+  /// Only date/dateTime pods parse through `DateTime.parse`, which
+  /// rejects garbage with FormatException. Uri.parse is famously
+  /// lenient; UriTemplate accepts most strings; string/bool/email/uuid
+  /// pods don't validate at all — so no guaranteed-invalid input.
+  @override
+  String? invalidJsonExample(SchemaRenderer context) => switch (type) {
+    PodType.dateTime || PodType.date => "'not a date'",
+    _ => null,
+  };
 }
 
 abstract class RenderNewType extends RenderSchema {
@@ -2217,6 +2236,14 @@ class RenderObject extends RenderNewType {
     }
     return '$typeName(${args.join(', ')})';
   }
+
+  /// Empty map: any required property will fail its type cast inside
+  /// `parseFromJson`, which rewraps the TypeError as FormatException.
+  /// When there are no required properties, `{}` is a valid instance
+  /// and we have no guaranteed-invalid input.
+  @override
+  String? invalidJsonExample(SchemaRenderer context) =>
+      requiredProperties.isEmpty ? null : '<String, dynamic>{}';
 }
 
 class RenderArray extends RenderSchema {
@@ -2646,6 +2673,10 @@ class RenderEnum extends RenderNewType {
 
   @override
   String? exampleValue(SchemaRenderer context) => '$typeName.values.first';
+
+  @override
+  String? invalidJsonExample(SchemaRenderer context) =>
+      "'__invalid_enum_value__'";
 }
 
 class RenderOneOf extends RenderNewType {
