@@ -1,18 +1,18 @@
 // GENERATED — do not hand-edit.
-import 'package:{{{ packageName }}}/{{{ barrelImportPath }}}';
 import 'package:test/test.dart';
+import 'package:types/api.dart';
 
 void main() {
-  group('{{{ typeName }}}', () {
+  group('DateType', () {
     test('round-trips via maybeFromJson/toJson', () {
-      final instance = {{{ exampleValue }}};
-      final parsed = {{{ typeName }}}.maybeFromJson(instance.toJson())!;
+      const instance = DateType('example');
+      final parsed = DateType.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));
     });
 
     test('maybeFromJson returns null on null input', () {
-      expect({{{ typeName }}}.maybeFromJson(null), isNull);
+      expect(DateType.maybeFromJson(null), isNull);
     });
   });
 }

@@ -99,15 +99,24 @@ class SpellChecker {
   List<String> collectMisspellings(Directory dir) {
     // cspell seems to add an F/A prefix to the misspellings if we don't
     // pass explicit file paths, unclear why.
-    final result = runProcess('cspell', [
-      '--no-summary',
-      '--words-only',
-      '--unique',
-      '--quiet',
-      '--no-color',
-      '--no-progress',
-      ...filesToCheck(dir),
-    ]);
+    final ProcessResult result;
+    try {
+      result = runProcess('cspell', [
+        '--no-summary',
+        '--words-only',
+        '--unique',
+        '--quiet',
+        '--no-color',
+        '--no-progress',
+        ...filesToCheck(dir),
+      ]);
+    } on ProcessException {
+      // cspell not installed — treat as "no misspellings detected".
+      // CI that cares can install it; local runs and pipelines without
+      // it shouldn't hard-fail the whole generator.
+      logger.detail('cspell not found on PATH; skipping misspelling check');
+      return const [];
+    }
     // Lowercase, unique and sort the misspellings.
     return (result.stdout as String)
         .trim()
@@ -330,6 +339,19 @@ class FileRenderer {
     );
     return 'test/$withSuffix';
   }
+
+  /// `lib/`-relative path to the package-level barrel that a generated
+  /// test should import. The test imports a single barrel (rather than
+  /// each nested model) so that any type referenced in an
+  /// example-value expression resolves without extra import wiring.
+  ///
+  /// Default: `api.dart`, which is the barrel space_gen emits by
+  /// default. Consumers that keep their own hand-written barrel (e.g.
+  /// Shorebird's `shorebird_code_push_protocol.dart`) should override
+  /// to point at that.
+  @protected
+  @visibleForOverriding
+  String testBarrelImport() => 'api.dart';
 
   LayoutContext _contextFor(RenderSchema schema) => LayoutContext(
     schema: schema,
@@ -564,7 +586,7 @@ class FileRenderer {
         outPath: outPath,
         context: {
           'packageName': packageName,
-          'modelImportPath': modelPackagePath(schema),
+          'barrelImportPath': testBarrelImport(),
           'typeName': schema.typeName,
           'exampleValue': example,
         },

@@ -37,6 +37,15 @@ jobs:
       - name: Run tests with coverage
         run: ./coverage.sh
 
+      - name: Run end-to-end generator tests
+        run: |
+          # Regenerate the `types` fixture and run its generated tests —
+          # catches runtime issues in emitted code (toJson/fromJson
+          # round-tripping, hashCode consistency with ==, etc.) that
+          # the unit tests above can't see.
+          dart run tool/gen_tests.dart types
+          cd gen_tests/types && dart pub get && dart test
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:

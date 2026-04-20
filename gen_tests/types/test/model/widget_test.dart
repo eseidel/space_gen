@@ -1,18 +1,22 @@
 // GENERATED — do not hand-edit.
-import 'package:{{{ packageName }}}/{{{ barrelImportPath }}}';
 import 'package:test/test.dart';
+import 'package:types/api.dart';
 
 void main() {
-  group('{{{ typeName }}}', () {
+  group('Widget', () {
     test('round-trips via maybeFromJson/toJson', () {
-      final instance = {{{ exampleValue }}};
-      final parsed = {{{ typeName }}}.maybeFromJson(instance.toJson())!;
+      final instance = Widget(
+        id: 0,
+        tags: <String>['example'],
+        attributes: {'key': 'example'},
+      );
+      final parsed = Widget.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));
     });
 
     test('maybeFromJson returns null on null input', () {
-      expect({{{ typeName }}}.maybeFromJson(null), isNull);
+      expect(Widget.maybeFromJson(null), isNull);
     });
   });
 }
