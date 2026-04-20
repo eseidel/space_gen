@@ -874,6 +874,90 @@ void main() {
         equals('#/components/schemas/Foo'),
       );
     });
+
+    group('request body content type selection', () {
+      Map<String, dynamic> specWith(Map<String, dynamic> content) => {
+        'openapi': '3.1.0',
+        'info': {'title': 'T', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/u': {
+            'post': {
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+              'requestBody': {'content': content},
+            },
+          },
+        },
+      };
+
+      test('JSON wins when both JSON and multipart are offered', () {
+        final spec = parseAndResolveTestSpec(
+          specWith({
+            'application/json': {
+              'schema': {'type': 'string'},
+            },
+            'multipart/form-data': {
+              'schema': {
+                'type': 'object',
+                'properties': {
+                  'file': {'type': 'string', 'format': 'binary'},
+                },
+              },
+            },
+          }),
+        );
+        final body = spec.paths.first.operations.first.requestBody!;
+        expect(body.mimeType, MimeType.applicationJson);
+      });
+
+      test('multipart is selected when it is the only offered type', () {
+        final spec = parseAndResolveTestSpec(
+          specWith({
+            'multipart/form-data': {
+              'schema': {
+                'type': 'object',
+                'properties': {
+                  'file': {'type': 'string', 'format': 'binary'},
+                },
+              },
+            },
+          }),
+        );
+        final body = spec.paths.first.operations.first.requestBody!;
+        expect(body.mimeType, MimeType.multipartFormData);
+      });
+
+      test(
+        'unsupported content type errors with all supported types listed',
+        () {
+          expect(
+            () => parseAndResolveTestSpec(
+              specWith({
+                'application/xml': {
+                  'schema': {'type': 'string'},
+                },
+              }),
+            ),
+            throwsA(
+              isA<FormatException>().having(
+                (e) => e.message,
+                'message',
+                allOf(
+                  contains('application/json'),
+                  contains('multipart/form-data'),
+                  contains('application/octet-stream'),
+                  contains('text/plain'),
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    });
   });
 
   group('ResolvedSchema', () {

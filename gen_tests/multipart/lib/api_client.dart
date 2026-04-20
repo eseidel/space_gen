@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart';
-import 'package:types/api_exception.dart';
-import 'package:types/auth.dart';
+import 'package:multipart/api_exception.dart';
+import 'package:multipart/auth.dart';
 
-export 'package:types/auth.dart';
+export 'package:multipart/auth.dart';
 
 /// The HTTP methods supported by the API.
 enum Method {
@@ -46,7 +46,7 @@ class ApiClient {
     Client? client,
     this.defaultHeaders = const {},
     this.readSecret,
-  }) : baseUri = baseUri ?? Uri.parse('https://example.com/types'),
+  }) : baseUri = baseUri ?? Uri.parse('https://example.com/multipart'),
        client = client ?? Client();
 
   final Uri baseUri;

@@ -1,0 +1,198 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Multipart",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://example.com/multipart"
+        }
+    ],
+    "paths": {
+        "/upload/plain": {
+            "post": {
+                "operationId": "uploadPlain",
+                "summary": "Upload a file as the whole request body.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "file"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/upload/mixed": {
+            "post": {
+                "operationId": "uploadMixed",
+                "summary": "Upload a file with metadata.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "file",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "size": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/upload/optional": {
+            "post": {
+                "operationId": "uploadOptional",
+                "summary": "Endpoint whose multipart body itself is optional.",
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "file"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "note": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/upload/rich-scalars": {
+            "post": {
+                "operationId": "uploadRichScalars",
+                "summary": "Upload with enum + date-time scalar fields.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "file",
+                                    "visibility",
+                                    "capturedAt"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "visibility": {
+                                        "type": "string",
+                                        "enum": [
+                                            "public",
+                                            "private",
+                                            "unlisted"
+                                        ]
+                                    },
+                                    "capturedAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "tag": {
+                                        "type": "string",
+                                        "format": "email"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/upload/multi-file": {
+            "post": {
+                "operationId": "uploadMultiFile",
+                "summary": "Upload with one required + one optional file.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "primary"
+                                ],
+                                "properties": {
+                                    "primary": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "thumbnail": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        }
+    }
+}
