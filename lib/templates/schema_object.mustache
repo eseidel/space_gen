@@ -57,7 +57,7 @@ class {{ typeName }} {
     int get hashCode =>
         {{#hasOneProperty}}
           {{#properties}}
-          {{ dartName }}.hashCode;
+          {{{ hashCode }}}.hashCode;
           {{/properties}}
           {{#hasAdditionalProperties}}
           {{additionalPropertiesName}}.hashCode;
@@ -66,7 +66,7 @@ class {{ typeName }} {
         {{^hasOneProperty}}
         Object.hashAll([
           {{#properties}}
-          {{ dartName }},
+          {{{ hashCode }}},
           {{/properties}}
           {{#hasAdditionalProperties}}
           {{additionalPropertiesName}},
