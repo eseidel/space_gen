@@ -10,6 +10,11 @@
   to no-op, while still regenerating models/messages/tests from the
   spec. Previously these were private `_render*` methods, so the only
   way to opt out was to overwrite the files after each regeneration.
+- Export `Api` and `RenderSpec` from `package:space_gen/space_gen.dart`
+  so subclasses of `FileRenderer` can actually spell the parameter
+  types of the new override hooks (`renderApis`, `renderClient`,
+  `renderPublicApi`, `renderApiClient`). Shipped with the hooks in
+  `1.0.2` but initially forgotten, breaking every attempt to override.
 - Escape reserved words in generated API method parameter names. A
   spec with a parameter literally named `with`/`try`/`case`/... now
   emits `required String with_` (matching `dartParameterName`) instead
