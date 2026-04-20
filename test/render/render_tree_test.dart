@@ -201,6 +201,7 @@ void main() {
               description: 'Foo',
             ),
             type: PodType.boolean,
+            createsNewType: false,
           ),
         },
       );
@@ -220,6 +221,7 @@ void main() {
             description: 'Foo',
           ),
           type: PodType.boolean,
+          createsNewType: false,
         ),
       );
       expect(a.equalsIgnoringName(e), isFalse);
@@ -249,6 +251,7 @@ void main() {
             description: 'Foo',
           ),
           type: PodType.dateTime,
+          createsNewType: false,
         ),
       );
       expect(e.equalsIgnoringName(g), isFalse);
@@ -267,6 +270,7 @@ void main() {
               description: 'Foo',
             ),
             type: PodType.boolean,
+            createsNewType: false,
           ),
         },
       );
@@ -381,6 +385,7 @@ void main() {
             description: 'Foo',
           ),
           type: PodType.boolean,
+          createsNewType: false,
         ),
       );
       expect(a.equalsIgnoringName(a), isTrue);
@@ -398,6 +403,7 @@ void main() {
             description: 'Foo',
           ),
           type: PodType.boolean,
+          createsNewType: false,
         ),
       );
       expect(a.equalsIgnoringName(b), isTrue);
@@ -415,6 +421,7 @@ void main() {
             description: 'Foo',
           ),
           type: PodType.dateTime,
+          createsNewType: false,
         ),
       );
       expect(a.equalsIgnoringName(c), isFalse);
@@ -473,6 +480,7 @@ void main() {
               description: 'Foo',
             ),
             type: PodType.boolean,
+            createsNewType: false,
           ),
         ],
       );
@@ -492,6 +500,7 @@ void main() {
               description: 'Foo',
             ),
             type: PodType.boolean,
+            createsNewType: false,
           ),
         ],
       );
@@ -511,6 +520,7 @@ void main() {
               description: 'Foo',
             ),
             type: PodType.boolean,
+            createsNewType: false,
           ),
           RenderPod(
             common: CommonProperties.test(
@@ -519,6 +529,7 @@ void main() {
               description: 'Foo',
             ),
             type: PodType.boolean,
+            createsNewType: false,
           ),
         ],
       );
@@ -533,6 +544,7 @@ void main() {
           description: 'v',
         ),
         type: PodType.boolean,
+        createsNewType: false,
       );
       final enumKey = RenderEnum(
         common: const CommonProperties.test(
@@ -622,6 +634,7 @@ void main() {
             description: 'Foo',
           ),
           type: PodType.uriTemplate,
+          createsNewType: false,
         ).additionalImports,
         equals([const Import('package:uri/uri.dart')]),
       );
@@ -762,13 +775,21 @@ void main() {
       pointer: JsonPointer.empty(),
     );
 
-    test('date format produces a DateTime literal', () {
-      const schema = RenderPod(common: common, type: PodType.date);
-      expect(schema.exampleValue(context), 'DateTime.utc(2024, 1, 1)');
+    test('date format produces a local DateTime literal', () {
+      const schema = RenderPod(
+        common: common,
+        type: PodType.date,
+        createsNewType: false,
+      );
+      expect(schema.exampleValue(context), 'DateTime(2024, 1, 1)');
     });
 
     test('uri format produces a Uri.parse literal', () {
-      const schema = RenderPod(common: common, type: PodType.uri);
+      const schema = RenderPod(
+        common: common,
+        type: PodType.uri,
+        createsNewType: false,
+      );
       expect(
         schema.exampleValue(context),
         "Uri.parse('https://example.com')",
@@ -776,7 +797,11 @@ void main() {
     });
 
     test('uriTemplate format produces a UriTemplate literal', () {
-      const schema = RenderPod(common: common, type: PodType.uriTemplate);
+      const schema = RenderPod(
+        common: common,
+        type: PodType.uriTemplate,
+        createsNewType: false,
+      );
       expect(
         schema.exampleValue(context),
         "UriTemplate('https://example.com/{id}')",
@@ -784,8 +809,24 @@ void main() {
     });
 
     test('email format produces an email string literal', () {
-      const schema = RenderPod(common: common, type: PodType.email);
+      const schema = RenderPod(
+        common: common,
+        type: PodType.email,
+        createsNewType: false,
+      );
       expect(schema.exampleValue(context), "'user@example.com'");
+    });
+
+    test('uuid format produces a uuid string literal', () {
+      const schema = RenderPod(
+        common: common,
+        type: PodType.uuid,
+        createsNewType: false,
+      );
+      expect(
+        schema.exampleValue(context),
+        "'00000000-0000-0000-0000-000000000000'",
+      );
     });
 
     test('unknown returns an empty dynamic map literal', () {

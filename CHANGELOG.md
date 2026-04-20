@@ -1,5 +1,17 @@
 ## 1.0.2
 
+- Honor the "named → newtype" invariant for pod schemas, and wire up
+  more string formats. A top-level named schema whose body is a string
+  or boolean pod (`type: string, format: date-time | uri | uri-template
+  | email | uuid | date`, or `type: boolean`) now renders as an
+  extension-type newtype wrapping its Dart type — previously, named
+  `format: date-time` schemas silently inlined as raw `DateTime` at
+  every reference, losing the wrapper. Inline fields continue to use
+  the raw Dart type. `format: email` / `uuid` now map to a
+  `String`-backed pod; `format: date` maps to a `DateTime` with
+  `YYYY-MM-DD` JSON serialization via a new `maybeParseDate` helper;
+  `format: time` is accepted without warning and falls through to
+  `SchemaString` (no Dart type equivalent).
 - Fix generated `hashCode` to be consistent with `==` on list/map
   fields. Two instances with the same list/map contents now hash to
   the same value — matching the `listsEqual`/`mapsEqual`-based `==`

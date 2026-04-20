@@ -27,11 +27,23 @@
                                         "email": {
                                             "$ref": "#/components/schemas/EmailType"
                                         },
+                                        "uuid": {
+                                            "$ref": "#/components/schemas/UuidType"
+                                        },
+                                        "timestamp": {
+                                            "$ref": "#/components/schemas/Timestamp"
+                                        },
                                         "widget": {
                                             "$ref": "#/components/schemas/Widget"
                                         }
                                     },
-                                    "required": ["date", "email", "widget"]
+                                    "required": [
+                                        "date",
+                                        "email",
+                                        "uuid",
+                                        "timestamp",
+                                        "widget"
+                                    ]
                                 }
                             }
                         }
@@ -49,6 +61,14 @@
             "EmailType": {
                 "type": "string",
                 "format": "email"
+            },
+            "UuidType": {
+                "type": "string",
+                "format": "uuid"
+            },
+            "Timestamp": {
+                "type": "string",
+                "format": "date-time"
             },
             "Widget": {
                 "type": "object",

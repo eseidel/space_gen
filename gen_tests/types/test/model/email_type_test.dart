@@ -5,7 +5,7 @@ import 'package:types/api.dart';
 void main() {
   group('EmailType', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = EmailType('example');
+      const instance = EmailType('user@example.com');
       final parsed = EmailType.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

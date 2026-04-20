@@ -473,7 +473,16 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
       return null;
     }
     final expectedFormats = {
-      'string': {'binary', 'date-time', 'uri', 'uri-template', 'email', 'date'},
+      'string': {
+        'binary',
+        'date-time',
+        'uri',
+        'uri-template',
+        'email',
+        'uuid',
+        'date',
+        'time',
+      },
     };
     final expected = expectedFormats[type];
     if (expected == null || !expected.contains(format)) {
@@ -506,6 +515,19 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
       if (format == 'uri-template') {
         return PodType.uriTemplate;
       }
+      if (format == 'email') {
+        return PodType.email;
+      }
+      if (format == 'uuid') {
+        return PodType.uuid;
+      }
+      if (format == 'date') {
+        return PodType.date;
+      }
+      // 'time' (RFC 3339 partial-time, e.g. 14:30:00) has no clean Dart
+      // type — DateTime requires a date. Leave it as a plain string so
+      // top-level named schemas become String-backed extension-type
+      // newtypes.
     }
     return null;
   }

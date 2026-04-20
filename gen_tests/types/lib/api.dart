@@ -3,5 +3,7 @@ export 'package:types/api_client.dart';
 export 'package:types/api_exception.dart';
 export 'package:types/model/date_type.dart';
 export 'package:types/model/email_type.dart';
+export 'package:types/model/timestamp.dart';
 export 'package:types/model/types200_response.dart';
+export 'package:types/model/uuid_type.dart';
 export 'package:types/model/widget.dart';

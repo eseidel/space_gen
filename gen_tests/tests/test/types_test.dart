@@ -3,25 +3,26 @@ import 'package:types/api.dart';
 
 void main() {
   group('Date', () {
-    test('DateType', () async {
-      final date = DateType('2021-01-01');
-      expect(date.toJson(), '2021-01-01');
+    test('DateType wraps DateTime and serializes to YYYY-MM-DD', () {
+      final date = DateType(DateTime(2021, 1, 15));
+      expect(date.toJson(), '2021-01-15');
       expect(DateType.maybeFromJson(null), isNull);
 
-      // TODO(eseidel): Date should validate the date string.
-      expect(DateType.fromJson('not a date'), isA<String>());
-      expect(DateType.fromJson('01-01-2021'), isA<String>());
+      // Round-trip through fromJson.
+      final parsed = DateType.fromJson('2021-01-15');
+      expect(parsed.value, DateTime.parse('2021-01-15'));
+      expect(parsed.toJson(), '2021-01-15');
     });
   });
   group('Email', () {
-    test('EmailType', () async {
+    test('EmailType wraps String and is a no-op on toJson', () {
       final email = EmailType('test@example.com');
       expect(email.toJson(), 'test@example.com');
       expect(EmailType.maybeFromJson(null), isNull);
 
       // TODO(eseidel): Email should validate the email string.
-      expect(EmailType.fromJson('not an email'), isA<String>());
-      expect(EmailType.fromJson('test@example'), isA<String>());
+      expect(EmailType.fromJson('not an email').value, isA<String>());
+      expect(EmailType.fromJson('test@example').value, isA<String>());
     });
   });
 }

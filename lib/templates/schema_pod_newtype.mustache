@@ -1,0 +1,16 @@
+{{{ doc_comment }}}extension type const {{{ typeName }}}._({{{ dartType }}} value) {
+    const {{ typeName }}(this.value);
+
+    factory {{ typeName }}.fromJson({{{ jsonType }}} json) => {{ typeName }}({{{ fromJsonBody }}});
+
+    /// Convenience to create a nullable type from a nullable json object.
+    /// Useful when parsing optional fields.
+    static {{ nullableTypeName }} maybeFromJson({{{ jsonType }}}? json) {
+        if (json == null) {
+            return null;
+        }
+        return {{ typeName }}.fromJson(json);
+    }
+
+    {{{ jsonType }}} toJson() => {{{ toJsonBody }}};
+}

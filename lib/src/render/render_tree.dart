@@ -243,6 +243,7 @@ class Import extends Equatable {
 /// and by [SchemaUsage] to decide whether to import `model_helpers.dart`.
 abstract final class ModelHelpers {
   static const maybeParseDateTime = 'maybeParseDateTime';
+  static const maybeParseDate = 'maybeParseDate';
   static const maybeParseUri = 'maybeParseUri';
   static const maybeParseUriTemplate = 'maybeParseUriTemplate';
   static const listsEqual = 'listsEqual';
@@ -253,6 +254,7 @@ abstract final class ModelHelpers {
 
   static const List<String> all = [
     maybeParseDateTime,
+    maybeParseDate,
     maybeParseUri,
     maybeParseUriTemplate,
     listsEqual,
@@ -302,6 +304,7 @@ class SpecResolver {
         return RenderPod(
           common: schema.common,
           type: schema.type,
+          createsNewType: schema.createsNewType,
           defaultValue: schema.defaultValue,
         );
       case ResolvedString():
@@ -1279,13 +1282,21 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   String toString() => '$runtimeType(snakeName: $snakeName, pointer: $pointer)';
 }
 
-// Plain old data types (string, number, boolean)
+// Plain old data types (string, number, boolean) plus string formats that
+// map to specific Dart types (DateTime, Uri, UriTemplate) or are known
+// string subsets (email, uuid).
+//
+// When [createsNewType] is true this is a top-level named schema and
+// renders to its own file as an extension type wrapping [dartType]. When
+// false the schema is inline and uses [dartType] directly at the use
+// site.
 class RenderPod extends RenderSchema {
   const RenderPod({
     required super.common,
     required this.type,
+    required super.createsNewType,
     this.defaultValue,
-  }) : super(createsNewType: false);
+  });
 
   /// The type of the resolved schema.
   final PodType type;
@@ -1299,47 +1310,47 @@ class RenderPod extends RenderSchema {
       return true;
     }
     return switch (type) {
-      // Bool is already a json type.
-      PodType.boolean => false,
-      // These require serialization to a string.
+      // Already json-native: no conversion at the use site.
+      PodType.boolean || PodType.email || PodType.uuid => false,
+      // Need serialization to a string.
       PodType.dateTime ||
       PodType.uri ||
       PodType.uriTemplate ||
-      PodType.email ||
       PodType.date => true,
     };
   }
 
   @override
   bool get defaultCanConstConstruct {
+    // Newtype defaults wrap dartType in a constructor call; const-ness
+    // depends on whether the wrapped expression is const.
     return switch (type) {
       PodType.dateTime ||
       PodType.uri ||
       PodType.uriTemplate ||
-      PodType.email ||
       PodType.date => false,
-      PodType.boolean => true,
+      PodType.boolean || PodType.email || PodType.uuid => true,
     };
   }
 
   @override
   List<Object?> get props => [super.props, type, defaultValue];
 
+  /// The Dart type that represents this pod at the use site (when inline)
+  /// or that the newtype wraps (when a newtype).
+  String get dartType => switch (type) {
+    PodType.boolean => 'bool',
+    PodType.dateTime => 'DateTime',
+    PodType.uri => 'Uri',
+    PodType.uriTemplate => 'UriTemplate',
+    // email and uuid are String subsets.
+    PodType.email => 'String',
+    PodType.uuid => 'String',
+    PodType.date => 'DateTime',
+  };
+
   @override
-  String get typeName {
-    // TODO(eseidel): Make RenderPod extensible.
-    // Right now we have this hard-coded list, but we should make it possible
-    // to register generators for various format types, e.g.
-    // https://spec.openapis.org/registry/format/ has many we don't implement.
-    return switch (type) {
-      PodType.boolean => 'bool',
-      PodType.dateTime => 'DateTime',
-      PodType.uri => 'Uri',
-      PodType.uriTemplate => 'UriTemplate',
-      PodType.email => 'String', // Could create a new type for this.
-      PodType.date => 'DateTime',
-    };
-  }
+  String get typeName => createsNewType ? camelFromSnake(snakeName) : dartType;
 
   @override
   String jsonStorageType({required bool isNullable}) {
@@ -1348,6 +1359,7 @@ class RenderPod extends RenderSchema {
       PodType.uri ||
       PodType.uriTemplate ||
       PodType.email ||
+      PodType.uuid ||
       PodType.date => isNullable ? 'String?' : 'String',
       PodType.boolean => isNullable ? 'bool?' : 'bool',
     };
@@ -1359,15 +1371,16 @@ class RenderPod extends RenderSchema {
     if (defaultValue == null) {
       return null;
     }
-    return switch (type) {
+    final raw = switch (type) {
       PodType.dateTime ||
       PodType.date => 'DateTime.parse(${quoteString(defaultValue as String)})',
       PodType.uri => 'Uri.parse(${quoteString(defaultValue as String)})',
       PodType.uriTemplate =>
         'UriTemplate(${quoteString(defaultValue as String)})',
-      PodType.email => quoteString(defaultValue as String),
+      PodType.email || PodType.uuid => quoteString(defaultValue as String),
       PodType.boolean => defaultValue.toString(),
     };
+    return createsNewType ? '$typeName($raw)' : raw;
   }
 
   @override
@@ -1376,21 +1389,42 @@ class RenderPod extends RenderSchema {
     if (type == PodType.uriTemplate) const Import('package:uri/uri.dart'),
   ];
 
+  /// Converts `value` (of type [dartType]) to its JSON representation.
+  /// Used both at the inline use site and inside the newtype's toJson.
+  String _valueToJsonBody(String name, {required bool nameIsNullable}) {
+    final nameCall = nameIsNullable ? '$name?' : name;
+    return switch (type) {
+      PodType.dateTime => '$nameCall.toIso8601String()',
+      // Full-date: YYYY-MM-DD, the first 10 chars of ISO-8601.
+      PodType.date => '$nameCall.toIso8601String().substring(0, 10)',
+      PodType.uri => '$nameCall.toString()',
+      PodType.uriTemplate => '$nameCall.toString()',
+      // String- and bool-backed types: no conversion; `name` already
+      // has the correct nullable/non-nullable type.
+      PodType.email || PodType.uuid || PodType.boolean => name,
+    };
+  }
+
+  /// Converts `json` (of type jsonStorageType) to [dartType]. Used inside
+  /// the newtype's fromJson factory body and (non-nullable only) at the
+  /// inline use site.
+  String _jsonToValueBody(String jsonName) => switch (type) {
+    PodType.dateTime || PodType.date => 'DateTime.parse($jsonName)',
+    PodType.uri => 'Uri.parse($jsonName)',
+    PodType.uriTemplate => 'UriTemplate($jsonName)',
+    PodType.email || PodType.uuid || PodType.boolean => jsonName,
+  };
+
   @override
   String toJsonExpression(
     String dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) {
-    final nameCall = dartIsNullable ? '$dartName?' : dartName;
-    return switch (type) {
-      PodType.dateTime => '$nameCall.toIso8601String()',
-      PodType.uri => '$nameCall.toString()',
-      PodType.uriTemplate => '$nameCall.toString()',
-      PodType.email => nameCall,
-      PodType.date => '$nameCall.toRfc3339FullDate()',
-      PodType.boolean => dartName,
-    };
+    if (createsNewType) {
+      return dartIsNullable ? '$dartName?.toJson()' : '$dartName.toJson()';
+    }
+    return _valueToJsonBody(dartName, nameIsNullable: dartIsNullable);
   }
 
   @override
@@ -1407,15 +1441,24 @@ class RenderPod extends RenderSchema {
       dartIsNullable: dartIsNullable,
     );
     final castedValue = '$jsonValue as $jsonType';
+
+    if (createsNewType) {
+      final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
+      return '$typeName.$jsonMethod($castedValue)$orDefault';
+    }
+
+    // Inline: convert json String -> Dart value at the use site. For
+    // nullable values we call a helper (so the expression remains a
+    // single nullable-aware expression), for non-nullable we inline.
     switch (type) {
-      case PodType.date:
-        if (jsonIsNullable) {
-          return 'maybeParseDate($castedValue)$orDefault';
-        }
-        return 'DateTime.parse($castedValue)';
       case PodType.dateTime:
         if (jsonIsNullable) {
           return '${ModelHelpers.maybeParseDateTime}($castedValue)$orDefault';
+        }
+        return 'DateTime.parse($castedValue)';
+      case PodType.date:
+        if (jsonIsNullable) {
+          return '${ModelHelpers.maybeParseDate}($castedValue)$orDefault';
         }
         return 'DateTime.parse($castedValue)';
       case PodType.uri:
@@ -1429,15 +1472,29 @@ class RenderPod extends RenderSchema {
           return '$call$orDefault';
         }
         return 'UriTemplate($castedValue)';
-      case PodType.boolean || PodType.email:
+      case PodType.boolean || PodType.email || PodType.uuid:
         // 'as' has higher precedence than '??' so no parens are needed.
         return '$castedValue$orDefault';
     }
   }
 
   @override
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
-      throw UnimplementedError('RenderPod.toTemplateContext');
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
+    if (!createsNewType) {
+      throw StateError(
+        '$runtimeType.toTemplateContext called for non-new type: $this',
+      );
+    }
+    return {
+      'doc_comment': createDocComment(common: common),
+      'typeName': typeName,
+      'nullableTypeName': nullableTypeName(context),
+      'dartType': dartType,
+      'jsonType': jsonStorageType(isNullable: false),
+      'fromJsonBody': _jsonToValueBody('json'),
+      'toJsonBody': _valueToJsonBody('value', nameIsNullable: false),
+    };
+  }
 
   @override
   bool equalsIgnoringName(RenderSchema other) =>
@@ -1450,10 +1507,14 @@ class RenderPod extends RenderSchema {
     final raw = switch (type) {
       PodType.boolean => 'false',
       PodType.dateTime => 'DateTime.utc(2024, 1, 1)',
-      PodType.date => 'DateTime.utc(2024, 1, 1)',
+      // Local (not UTC) so `value.toIso8601String().substring(0, 10)`
+      // round-trips back through `DateTime.parse` (which returns a
+      // local DateTime).
+      PodType.date => 'DateTime(2024, 1, 1)',
       PodType.uri => "Uri.parse('https://example.com')",
       PodType.uriTemplate => "UriTemplate('https://example.com/{id}')",
       PodType.email => "'user@example.com'",
+      PodType.uuid => "'00000000-0000-0000-0000-000000000000'",
     };
     return createsNewType ? '$typeName($raw)' : raw;
   }
