@@ -257,9 +257,21 @@ class LayoutContext {
 /// Responsible for determining the layout of the files and rendering the
 /// directory structure of the rendered spec.
 ///
-/// Subclass and override the `@protected` hooks (e.g. [modelPath]) to
-/// plug custom layouts into `loadAndRenderSpec` without forking the
-/// generator.
+/// Subclass and override the `@protected` hooks to plug custom layouts
+/// and file-set choices into `loadAndRenderSpec` without forking the
+/// generator. Two flavors:
+///
+///   - Layout hooks ([modelPath], [testPath], [testBarrelImport]) decide
+///     where each generated file lands.
+///   - Per-file emit hooks ([renderPubspec], [renderAnalysisOptions],
+///     [renderGitignore], [renderApiException], [renderAuth],
+///     [renderApiClient], [renderModelHelpers], [renderApis],
+///     [renderClient], [renderPublicApi], [renderCspellConfig]) each
+///     produce a single output file. A subclass that doesn't want a
+///     given file overrides its hook to a no-op. This is how a
+///     generator-consumer package (e.g. one with a hand-maintained
+///     `pubspec.yaml` or its own HTTP client) keeps the parts it owns
+///     without giving up regeneration of models/messages/tests.
 class FileRenderer {
   FileRenderer(this.config);
 
@@ -383,15 +395,33 @@ class FileRenderer {
     fileWriter.writeFile(path: outPath, content: output);
   }
 
-  /// Render the package directory including
-  /// pubspec, analysis_options, and gitignore.
-  void _renderDirectory() {
+  /// Set up the package directory (creates [fileWriter]'s outDir and
+  /// emits package scaffolding). Default impl calls the three file-level
+  /// hooks below; subclasses generally override those individually
+  /// rather than this composite.
+  @protected
+  void renderPackageScaffold() {
     fileWriter.createOutDir();
+    renderPubspec();
+    renderAnalysisOptions();
+    renderGitignore();
+  }
+
+  /// Emit `pubspec.yaml`. Override with a no-op if the package already
+  /// has a hand-maintained pubspec.
+  @protected
+  void renderPubspec() {
     _renderTemplate(
       template: 'pubspec',
       outPath: 'pubspec.yaml',
       context: {'packageName': packageName},
     );
+  }
+
+  /// Emit `analysis_options.yaml`. Override to no-op to keep a
+  /// hand-maintained lint config.
+  @protected
+  void renderAnalysisOptions() {
     _renderTemplate(
       template: 'analysis_options',
       outPath: 'analysis_options.yaml',
@@ -400,6 +430,12 @@ class FileRenderer {
         'screamingCapsEnums': quirks.screamingCapsEnums,
       },
     );
+  }
+
+  /// Emit `.gitignore`. Override to no-op if the package has a
+  /// hand-maintained one.
+  @protected
+  void renderGitignore() {
     _renderTemplate(template: 'gitignore', outPath: '.gitignore');
   }
 
@@ -413,10 +449,24 @@ class FileRenderer {
     fileWriter.writeFile(path: outPath, content: content);
   }
 
-  /// Render the api client.
-  void _renderApiClient(RenderSpec spec) {
+  /// Emit `lib/api_exception.dart`. Override to no-op if the package
+  /// supplies its own exception type.
+  @protected
+  void renderApiException() {
     _renderDartFile(name: 'api_exception', outPath: 'lib/api_exception.dart');
+  }
+
+  /// Emit `lib/auth.dart`. Override to no-op if the package supplies
+  /// its own auth helpers.
+  @protected
+  void renderAuth() {
     _renderDartFile(name: 'auth', outPath: 'lib/auth.dart');
+  }
+
+  /// Emit `lib/api_client.dart`. Override to no-op if the package
+  /// supplies its own HTTP client.
+  @protected
+  void renderApiClient(RenderSpec spec) {
     _renderDartFile(
       name: 'api_client',
       outPath: 'lib/api_client.dart',
@@ -425,14 +475,23 @@ class FileRenderer {
         'TEMPLATE_BASE_URI': spec.serverUrl.toString(),
       },
     );
+  }
+
+  /// Emit `lib/model_helpers.dart` (the shared runtime helpers used by
+  /// generated `fromJson`/`toJson`/`hashCode`). Most consumers want this.
+  @protected
+  void renderModelHelpers() {
     _renderTemplate(
       template: 'model_helpers',
       outPath: 'lib/model_helpers.dart',
     );
   }
 
-  /// Render the public API file.
-  void _renderPublicApi(Iterable<Api> apis, Iterable<RenderSchema> schemas) {
+  /// Emit `lib/api.dart`, the barrel file re-exporting every generated
+  /// model and api. Override to no-op if the package exposes its own
+  /// hand-maintained barrel.
+  @protected
+  void renderPublicApi(Iterable<Api> apis, Iterable<RenderSchema> schemas) {
     final paths = {
       ...apis.map(apiPackagePath),
       ...schemas.map(modelPackagePath),
@@ -450,7 +509,10 @@ class FileRenderer {
     );
   }
 
-  void _renderCspellConfig(List<String> misspellings) {
+  /// Emit `cspell.config.yaml`. Override to no-op if the package has a
+  /// hand-maintained cspell config.
+  @protected
+  void renderCspellConfig(List<String> misspellings) {
     _renderTemplate(
       template: 'cspell.config',
       outPath: 'cspell.config.yaml',
@@ -492,7 +554,12 @@ class FileRenderer {
     return imports;
   }
 
-  List<Api> _renderApis(List<Api> apis) {
+  /// Emit one `lib/api/<tag>_api.dart` per [Api]. Returns the list of
+  /// APIs that were actually rendered (currently the same list passed
+  /// in). Override to no-op (returning `const []`) if the package
+  /// doesn't want the generated HTTP-client layer.
+  @protected
+  List<Api> renderApis(List<Api> apis) {
     final rendered = <Api>[];
     for (final api in apis) {
       final renderedApi = schemaRenderer.renderApi(api);
@@ -512,7 +579,11 @@ class FileRenderer {
     return rendered;
   }
 
-  void _renderClient(List<Api> apis, {required String specName}) {
+  /// Emit `lib/client.dart`, the facade class holding one instance of
+  /// each generated API. Override to no-op if the package doesn't want
+  /// it.
+  @protected
+  void renderClient(List<Api> apis, {required String specName}) {
     final apiContexts = apis.map((a) {
       return {'apiClassName': a.className, 'apiName': a.clientVariableName};
     }).toList();
@@ -627,7 +698,7 @@ class FileRenderer {
     // And then for each rendered we collect any imports, by asking for the
     // file path for each referenced schema?
     // Set up the package directory.
-    _renderDirectory();
+    renderPackageScaffold();
     // Capture the spec's operation names up front so every
     // [LayoutContext] handed to [modelPath] sees the same set.
     _operationSnakeNames = {
@@ -635,7 +706,7 @@ class FileRenderer {
         for (final endpoint in api.endpoints) endpoint.snakeName,
     };
     // Render the apis (endpoint groups).
-    final renderedApis = _renderApis(spec.apis);
+    final renderedApis = renderApis(spec.apis);
 
     final schemas = collectAllSchemas(spec).where(rendersToSeparateFile);
     logNameCollisions(schemas);
@@ -645,17 +716,20 @@ class FileRenderer {
     if (config.generateTests) {
       renderModelTests(schemas);
     }
-    // Render the api client.
-    _renderApiClient(spec);
+    // Render the api client scaffolding.
+    renderApiException();
+    renderAuth();
+    renderApiClient(spec);
+    renderModelHelpers();
     // This is a bit of hack, but seems to work with the specs I've tested.
     // Probably ClientName should be a parameter to the render function.
     final specName = spec.title.split(' ').firstOrNull ?? '';
-    _renderClient(renderedApis, specName: specName);
+    renderClient(renderedApis, specName: specName);
     // Render the combined api.dart exporting all rendered schemas.
-    _renderPublicApi(spec.apis, schemas);
+    renderPublicApi(spec.apis, schemas);
     formatter.formatAndFix(pkgDir: fileWriter.outDir.path);
 
     final misspellings = spellChecker.collectMisspellings(fileWriter.outDir);
-    _renderCspellConfig(misspellings);
+    renderCspellConfig(misspellings);
   }
 }
