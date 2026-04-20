@@ -1,15 +1,26 @@
 import 'package:types/model/date_type.dart';
 import 'package:types/model/email_type.dart';
+import 'package:types/model/widget.dart';
+import 'package:types/model_helpers.dart';
 
 class Types200Response {
-  Types200Response({required this.date, required this.email});
+  Types200Response({
+    required this.date,
+    required this.email,
+    required this.widget,
+  });
 
   /// Converts a `Map<String, dynamic>` to a [Types200Response].
   factory Types200Response.fromJson(dynamic jsonArg) {
     final json = jsonArg as Map<String, dynamic>;
-    return Types200Response(
-      date: DateType.fromJson(json['date'] as String),
-      email: EmailType.fromJson(json['email'] as String),
+    return parseFromJson(
+      'Types200Response',
+      json,
+      () => Types200Response(
+        date: DateType.fromJson(json['date'] as String),
+        email: EmailType.fromJson(json['email'] as String),
+        widget: Widget.fromJson(json['widget'] as Map<String, dynamic>),
+      ),
     );
   }
 
@@ -25,19 +36,32 @@ class Types200Response {
   DateType date;
   EmailType email;
 
+  /// Smoke-test object to exercise list/map fields through the generated
+  /// round-trip test — catches hashCode-vs-== drift on collections.
+  Widget widget;
+
   /// Converts a [Types200Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'date': date.toJson(), 'email': email.toJson()};
+    return {
+      'date': date.toJson(),
+      'email': email.toJson(),
+      'widget': widget.toJson(),
+    };
   }
 
   @override
-  int get hashCode => Object.hashAll([date, email]);
+  int get hashCode => Object.hashAll([
+    date,
+    email,
+    widget,
+  ]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is Types200Response &&
         date == other.date &&
-        email == other.email;
+        email == other.email &&
+        widget == other.widget;
   }
 }

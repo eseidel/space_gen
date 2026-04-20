@@ -426,7 +426,7 @@ void main() {
       final testFile = out.childFile('test/models/widget_test.dart');
       expect(testFile.existsSync(), isTrue);
       final body = testFile.readAsStringSync();
-      expect(body, contains("import 'package:out/out.dart';"));
+      expect(body, contains("import 'package:out/api.dart';"));
       expect(body, contains('Widget(id: 0, name: '));
       expect(body, contains('Widget.maybeFromJson(instance.toJson())'));
       expect(body, contains('Widget.maybeFromJson(null)'));

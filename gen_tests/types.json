@@ -26,9 +26,12 @@
                                         },
                                         "email": {
                                             "$ref": "#/components/schemas/EmailType"
+                                        },
+                                        "widget": {
+                                            "$ref": "#/components/schemas/Widget"
                                         }
                                     },
-                                    "required": ["date", "email"]
+                                    "required": ["date", "email", "widget"]
                                 }
                             }
                         }
@@ -46,6 +49,22 @@
             "EmailType": {
                 "type": "string",
                 "format": "email"
+            },
+            "Widget": {
+                "type": "object",
+                "description": "Smoke-test object to exercise list/map fields through the generated round-trip test — catches hashCode-vs-== drift on collections.",
+                "required": ["id", "tags", "attributes"],
+                "properties": {
+                    "id": { "type": "integer", "format": "int64" },
+                    "tags": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                    },
+                    "attributes": {
+                        "type": "object",
+                        "additionalProperties": { "type": "string" }
+                    }
+                }
             }
         }
     }

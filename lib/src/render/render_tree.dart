@@ -1446,14 +1446,17 @@ class RenderPod extends RenderSchema {
       super.equalsIgnoringName(other);
 
   @override
-  String? exampleValue(SchemaRenderer context) => switch (type) {
-    PodType.boolean => 'false',
-    PodType.dateTime => 'DateTime.utc(2024, 1, 1)',
-    PodType.date => 'DateTime.utc(2024, 1, 1)',
-    PodType.uri => "Uri.parse('https://example.com')",
-    PodType.uriTemplate => "UriTemplate('https://example.com/{id}')",
-    PodType.email => "'user@example.com'",
-  };
+  String? exampleValue(SchemaRenderer context) {
+    final raw = switch (type) {
+      PodType.boolean => 'false',
+      PodType.dateTime => 'DateTime.utc(2024, 1, 1)',
+      PodType.date => 'DateTime.utc(2024, 1, 1)',
+      PodType.uri => "Uri.parse('https://example.com')",
+      PodType.uriTemplate => "UriTemplate('https://example.com/{id}')",
+      PodType.email => "'user@example.com'",
+    };
+    return createsNewType ? '$typeName($raw)' : raw;
+  }
 }
 
 abstract class RenderNewType extends RenderSchema {
@@ -1601,7 +1604,8 @@ class RenderString extends RenderSchema {
       super.equalsIgnoringName(other);
 
   @override
-  String? exampleValue(SchemaRenderer context) => "'example'";
+  String? exampleValue(SchemaRenderer context) =>
+      createsNewType ? "$typeName('example')" : "'example'";
 }
 
 abstract class RenderNumeric<T extends num> extends RenderSchema {
@@ -1781,7 +1785,8 @@ class RenderNumber extends RenderNumeric<double> {
       jsonIsNullable ? '?.toDouble()' : '.toDouble()';
 
   @override
-  String? exampleValue(SchemaRenderer context) => '0.0';
+  String? exampleValue(SchemaRenderer context) =>
+      createsNewType ? '$typeName(0.0)' : '0.0';
 }
 
 class RenderInteger extends RenderNumeric<int> {
@@ -1808,7 +1813,8 @@ class RenderInteger extends RenderNumeric<int> {
   String jsonToDartCall({required bool jsonIsNullable}) => '';
 
   @override
-  String? exampleValue(SchemaRenderer context) => '0';
+  String? exampleValue(SchemaRenderer context) =>
+      createsNewType ? '$typeName(0)' : '0';
 }
 
 class RenderObject extends RenderNewType {
