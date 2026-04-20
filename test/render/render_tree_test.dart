@@ -756,7 +756,6 @@ void main() {
   group('exampleValue', () {
     final context = SchemaRenderer(
       templates: TemplateProvider.defaultLocation(),
-      quirks: const Quirks(),
     );
     const common = CommonProperties.test(
       snakeName: 'foo',
@@ -826,7 +825,6 @@ void main() {
         values: const ['a', 'b'],
         names: const ['a', 'b'],
         descriptions: null,
-        defaultValue: null,
       );
       final map = RenderMap(
         common: common,
