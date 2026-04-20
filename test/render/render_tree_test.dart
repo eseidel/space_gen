@@ -752,4 +752,89 @@ void main() {
       expect(a, isNot(equals(differentTarget)));
     });
   });
+
+  group('exampleValue', () {
+    final context = SchemaRenderer(
+      templates: TemplateProvider.defaultLocation(),
+      quirks: const Quirks(),
+    );
+    const common = CommonProperties.test(
+      snakeName: 'foo',
+      pointer: JsonPointer.empty(),
+    );
+
+    test('date format produces a DateTime literal', () {
+      const schema = RenderPod(common: common, type: PodType.date);
+      expect(schema.exampleValue(context), 'DateTime.utc(2024, 1, 1)');
+    });
+
+    test('uri format produces a Uri.parse literal', () {
+      const schema = RenderPod(common: common, type: PodType.uri);
+      expect(
+        schema.exampleValue(context),
+        "Uri.parse('https://example.com')",
+      );
+    });
+
+    test('uriTemplate format produces a UriTemplate literal', () {
+      const schema = RenderPod(common: common, type: PodType.uriTemplate);
+      expect(
+        schema.exampleValue(context),
+        "UriTemplate('https://example.com/{id}')",
+      );
+    });
+
+    test('email format produces an email string literal', () {
+      const schema = RenderPod(common: common, type: PodType.email);
+      expect(schema.exampleValue(context), "'user@example.com'");
+    });
+
+    test('unknown returns an empty dynamic map literal', () {
+      const schema = RenderUnknown(common: common);
+      expect(schema.exampleValue(context), '<String, dynamic>{}');
+    });
+
+    test('void returns null (no round-trip possible)', () {
+      const schema = RenderVoid(common: common);
+      expect(schema.exampleValue(context), isNull);
+    });
+
+    test('binary (NoJson) returns null', () {
+      const schema = RenderBinary(common: common);
+      expect(schema.exampleValue(context), isNull);
+    });
+
+    test('recursive ref returns null', () {
+      const schema = RenderRecursiveRef(
+        common: common,
+        targetPointer: JsonPointer.empty(),
+      );
+      expect(schema.exampleValue(context), isNull);
+    });
+
+    test('map with keySchema uses its exampleValue', () {
+      const inner = RenderString(
+        createsNewType: false,
+        common: common,
+        defaultValue: null,
+        maxLength: null,
+        minLength: null,
+        pattern: null,
+      );
+      final keySchema = RenderEnum(
+        common: common,
+        values: const ['a', 'b'],
+        names: const ['a', 'b'],
+        descriptions: null,
+        defaultValue: null,
+      );
+      final map = RenderMap(
+        common: common,
+        valueSchema: inner,
+        keySchema: keySchema,
+      );
+      // Key example is the enum's first value; value is the string example.
+      expect(map.exampleValue(context), "{Foo.values.first: 'example'}");
+    });
+  });
 }

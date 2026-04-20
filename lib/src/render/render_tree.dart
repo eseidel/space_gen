@@ -1218,6 +1218,14 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     required bool dartIsNullable,
   });
 
+  /// A Dart expression that constructs a valid in-memory instance of
+  /// this schema, used by generated round-trip tests. Returns `null`
+  /// when the generator cannot produce a safe example — e.g. a
+  /// [RenderRecursiveRef] in a non-nullable slot would loop forever.
+  /// Callers treat `null` as a signal to skip emitting a round-trip
+  /// test for the enclosing type.
+  String? exampleValue(SchemaRenderer context);
+
   /// The default value of this schema as a string.
   String? defaultValueString(SchemaRenderer context) {
     if (defaultValue == null) {
@@ -1424,6 +1432,16 @@ class RenderPod extends RenderSchema {
       (other is RenderPod) &&
       type == other.type &&
       super.equalsIgnoringName(other);
+
+  @override
+  String? exampleValue(SchemaRenderer context) => switch (type) {
+    PodType.boolean => 'false',
+    PodType.dateTime => 'DateTime.utc(2024, 1, 1)',
+    PodType.date => 'DateTime.utc(2024, 1, 1)',
+    PodType.uri => "Uri.parse('https://example.com')",
+    PodType.uriTemplate => "UriTemplate('https://example.com/{id}')",
+    PodType.email => "'user@example.com'",
+  };
 }
 
 abstract class RenderNewType extends RenderSchema {
@@ -1569,6 +1587,9 @@ class RenderString extends RenderSchema {
       maxLength == other.maxLength &&
       minLength == other.minLength &&
       super.equalsIgnoringName(other);
+
+  @override
+  String? exampleValue(SchemaRenderer context) => "'example'";
 }
 
 abstract class RenderNumeric<T extends num> extends RenderSchema {
@@ -1746,6 +1767,9 @@ class RenderNumber extends RenderNumeric<double> {
   @override
   String jsonToDartCall({required bool jsonIsNullable}) =>
       jsonIsNullable ? '?.toDouble()' : '.toDouble()';
+
+  @override
+  String? exampleValue(SchemaRenderer context) => '0.0';
 }
 
 class RenderInteger extends RenderNumeric<int> {
@@ -1770,6 +1794,9 @@ class RenderInteger extends RenderNumeric<int> {
   // jsonType and dartType are both int, so we don't need to do anything.
   @override
   String jsonToDartCall({required bool jsonIsNullable}) => '';
+
+  @override
+  String? exampleValue(SchemaRenderer context) => '0';
 }
 
 class RenderObject extends RenderNewType {
@@ -2095,6 +2122,21 @@ class RenderObject extends RenderNewType {
     }
     return super.equalsIgnoringName(other);
   }
+
+  @override
+  String? exampleValue(SchemaRenderer context) {
+    final args = <String>[];
+    for (final entry in properties.entries) {
+      final jsonName = entry.key;
+      if (!requiredProperties.contains(jsonName)) continue;
+      final property = entry.value;
+      final example = property.exampleValue(context);
+      if (example == null) return null;
+      final dartName = variableSafeName(context.quirks, jsonName);
+      args.add('$dartName: $example');
+    }
+    return '$typeName(${args.join(', ')})';
+  }
 }
 
 class RenderArray extends RenderSchema {
@@ -2252,6 +2294,13 @@ class RenderArray extends RenderSchema {
     }
     return super.equalsIgnoringName(other);
   }
+
+  @override
+  String? exampleValue(SchemaRenderer context) {
+    final inner = items.exampleValue(context);
+    if (inner == null) return null;
+    return '<${items.typeName}>[$inner]';
+  }
 }
 
 class RenderMap extends RenderSchema {
@@ -2368,6 +2417,14 @@ class RenderMap extends RenderSchema {
     return valueSchema.equalsIgnoringName(other.valueSchema) &&
         RenderSchema.maybeEqualsIgnoringName(keySchema, other.keySchema) &&
         super.equalsIgnoringName(other);
+  }
+
+  @override
+  String? exampleValue(SchemaRenderer context) {
+    final value = valueSchema.exampleValue(context);
+    if (value == null) return null;
+    final key = keySchema?.exampleValue(context) ?? "'key'";
+    return '{$key: $value}';
   }
 }
 
@@ -2500,6 +2557,9 @@ class RenderEnum extends RenderNewType {
     }
     return super.equalsIgnoringName(other);
   }
+
+  @override
+  String? exampleValue(SchemaRenderer context) => '$typeName.values.first';
 }
 
 class RenderOneOf extends RenderNewType {
@@ -2563,6 +2623,15 @@ class RenderOneOf extends RenderNewType {
 
   @override
   dynamic get defaultValue => null;
+
+  @override
+  String? exampleValue(SchemaRenderer context) {
+    for (final branch in schemas) {
+      final example = branch.exampleValue(context);
+      if (example != null) return example;
+    }
+    return null;
+  }
 }
 
 class RenderParameter implements CanBeParameter {
@@ -2675,6 +2744,9 @@ class RenderUnknown extends RenderSchema {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
       throw UnimplementedError('RenderUnknown.toTemplateContext');
+
+  @override
+  String? exampleValue(SchemaRenderer context) => '<String, dynamic>{}';
 }
 
 class RenderVoid extends RenderNoJson {
@@ -2702,6 +2774,9 @@ class RenderVoid extends RenderNoJson {
     required bool dartIsNullable,
   }) => ''; // Unclear if this is correct. The one usage is for returning
   // a void type, maybe we need a "return expression" value instead?
+
+  @override
+  String? exampleValue(SchemaRenderer context) => null;
 }
 
 /// A schema that represents a type which cannot be converted to json.
@@ -2733,6 +2808,11 @@ abstract class RenderNoJson extends RenderSchema {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
       throw UnimplementedError('$runtimeType.toTemplateContext');
+
+  /// No-JSON types (void, binary) can't round-trip via JSON so they
+  /// have no example value.
+  @override
+  String? exampleValue(SchemaRenderer context) => null;
 }
 
 class RenderBinary extends RenderNoJson {
@@ -2792,6 +2872,9 @@ class RenderEmptyObject extends RenderNewType {
     'typeArticle': aOrAn(typeName),
     'nullableTypeName': nullableTypeName(context),
   };
+
+  @override
+  String? exampleValue(SchemaRenderer context) => 'const $typeName()';
 }
 
 /// A cycle-break marker: appears where a $ref would otherwise recurse back
@@ -2866,6 +2949,13 @@ class RenderRecursiveRef extends RenderSchema {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
       throw UnimplementedError('RenderRecursiveRef does not render a template');
+
+  /// Recursive refs by definition loop back through themselves — any
+  /// attempt to build an example value would recurse indefinitely.
+  /// Returning null here propagates up the tree so the enclosing
+  /// schema opts out of test generation.
+  @override
+  String? exampleValue(SchemaRenderer context) => null;
 
   @override
   List<Object?> get props => [super.props, targetPointer];

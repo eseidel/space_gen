@@ -206,6 +206,7 @@ class FileRendererConfig {
     required this.formatter,
     required this.fileWriter,
     required this.spellChecker,
+    this.generateTests = true,
   });
 
   final String packageName;
@@ -214,6 +215,9 @@ class FileRendererConfig {
   final Formatter formatter;
   final FileWriter fileWriter;
   final SpellChecker spellChecker;
+
+  /// Whether to emit round-trip tests for each generated model.
+  final bool generateTests;
 }
 
 /// The information a layout hook (e.g. [FileRenderer.modelPath]) is
@@ -303,6 +307,28 @@ class FileRenderer {
         className.endsWith('Request') || className.endsWith('Response');
     final subdir = isMessage ? 'messages' : 'models';
     return '$subdir/$snakeName.dart';
+  }
+
+  /// Path for a schema's generated round-trip test, relative to the
+  /// package root (so the returned value includes the leading `test/`).
+  /// Return `null` to skip emitting a test for this schema.
+  ///
+  /// Default: mirrors [modelPath] under `test/`, with `_test` before the
+  /// `.dart` extension — so a schema at `lib/models/app.dart` gets a
+  /// test at `test/models/app_test.dart`.
+  ///
+  /// Override this hook to redirect generated tests (e.g. to
+  /// `test/generated/` so they sit alongside hand-written tests without
+  /// colliding), or return null to opt out entirely.
+  @protected
+  @visibleForOverriding
+  String? testPath(LayoutContext context) {
+    final libRelative = modelPath(context);
+    final withSuffix = libRelative.replaceFirst(
+      RegExp(r'\.dart$'),
+      '_test.dart',
+    );
+    return 'test/$withSuffix';
   }
 
   LayoutContext _contextFor(RenderSchema schema) => LayoutContext(
@@ -520,6 +546,32 @@ class FileRenderer {
     }
   }
 
+  /// Render a round-trip test for each schema that has a testable
+  /// example value. Skips schemas for which [testPath] returns null,
+  /// or for which [RenderSchema.exampleValue] returns null (recursive
+  /// types, no-JSON types).
+  void renderModelTests(Iterable<RenderSchema> schemas) {
+    final schemaContext = schemaRenderer;
+    for (final schema in schemas) {
+      if (!schema.createsNewType) continue;
+      final layoutContext = _contextFor(schema);
+      final outPath = testPath(layoutContext);
+      if (outPath == null) continue;
+      final example = schema.exampleValue(schemaContext);
+      if (example == null) continue;
+      _renderTemplate(
+        template: 'schema_round_trip_test',
+        outPath: outPath,
+        context: {
+          'packageName': packageName,
+          'modelImportPath': modelPackagePath(schema),
+          'typeName': schema.typeName,
+          'exampleValue': example,
+        },
+      );
+    }
+  }
+
   /// Render the entire spec.
   void render(RenderSpec spec, {bool clearDirectory = true}) {
     if (clearDirectory) {
@@ -565,6 +617,9 @@ class FileRenderer {
 
     // Render the models (schemas).
     renderModels(schemas);
+    if (config.generateTests) {
+      renderModelTests(schemas);
+    }
     // Render the api client.
     _renderApiClient(spec);
     // This is a bit of hack, but seems to work with the specs I've tested.

@@ -1,5 +1,16 @@
 ## 1.0.2
 
+- Emit a round-trip test for each generated newtype by default at
+  `test/<modelPath>_test.dart`. The test builds an in-memory instance
+  via `RenderSchema.exampleValue` (implemented per subclass), then
+  asserts `Type.fromJson(instance.toJson()) == instance`. Schemas that
+  can't produce a safe example — recursive types, no-JSON types —
+  opt out automatically (propagate `null` up). Consumers control the
+  behavior with the new hooks:
+  - `GeneratorConfig.generateTests` (default `true`): wholesale off
+  - `FileRenderer.testPath(LayoutContext) → String?`: return `null` to
+    skip a schema, or redirect (e.g. to `test/generated/` to avoid
+    colliding with hand-written tests).
 - Throw `FormatException` (not raw `TypeError`) from generated object
   `fromJson` factories on malformed input. A shared `parseFromJson`
   helper in `model_helpers.dart` wraps the constructor call in a

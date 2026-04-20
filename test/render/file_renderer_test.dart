@@ -383,6 +383,112 @@ void main() {
       },
     );
 
+    test('round-trip tests are emitted next to each model', () async {
+      final fs = MemoryFileSystem.test();
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Roundtrip', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/widgets': {
+            'get': {
+              'operationId': 'getWidget',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Widget'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Widget': {
+              'type': 'object',
+              'required': ['id', 'name'],
+              'properties': {
+                'id': {'type': 'integer', 'format': 'int64'},
+                'name': {'type': 'string'},
+              },
+            },
+          },
+        },
+      };
+      final out = fs.directory('out');
+      await renderToDirectory(spec: spec, outDir: out);
+      final testFile = out.childFile('test/models/widget_test.dart');
+      expect(testFile.existsSync(), isTrue);
+      final body = testFile.readAsStringSync();
+      expect(body, contains("import 'package:out/models/widget.dart';"));
+      expect(body, contains('Widget(id: 0, name: '));
+      expect(body, contains('Widget.fromJson(instance.toJson())'));
+    });
+
+    test('generateTests: false suppresses test emission', () async {
+      final fs = MemoryFileSystem.test();
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'NoTests', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/widgets': {
+            'get': {
+              'operationId': 'getWidget',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Widget'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Widget': {
+              'type': 'object',
+              'required': ['id'],
+              'properties': {
+                'id': {'type': 'integer'},
+              },
+            },
+          },
+        },
+      };
+      final out = fs.directory('out');
+      final specFile = fs.file('spec.json')
+        ..createSync(recursive: true)
+        ..writeAsStringSync(jsonEncode(spec));
+      await runWithLogger(
+        _MockLogger(),
+        () => loadAndRenderSpec(
+          GeneratorConfig(
+            specUrl: Uri.file(specFile.path),
+            packageName: 'out',
+            outDir: out,
+            templatesDir: templatesDir,
+            runProcess: runProcess,
+            logSchemas: false,
+            generateTests: false,
+          ),
+        ),
+      );
+      expect(out.childDirectory('test').existsSync(), isFalse);
+    });
+
     test('smoke test with simple spec', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
