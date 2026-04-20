@@ -35,6 +35,9 @@
                                         },
                                         "widget": {
                                             "$ref": "#/components/schemas/Widget"
+                                        },
+                                        "status": {
+                                            "$ref": "#/components/schemas/Status"
                                         }
                                     },
                                     "required": [
@@ -42,7 +45,8 @@
                                         "email",
                                         "uuid",
                                         "timestamp",
-                                        "widget"
+                                        "widget",
+                                        "status"
                                     ]
                                 }
                             }
@@ -69,6 +73,10 @@
             "Timestamp": {
                 "type": "string",
                 "format": "date-time"
+            },
+            "Status": {
+                "type": "string",
+                "enum": ["active", "inactive", "pending"]
             },
             "Widget": {
                 "type": "object",

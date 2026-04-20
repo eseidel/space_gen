@@ -14,5 +14,12 @@ void main() {
     test('maybeFromJson returns null on null input', () {
       expect(DateType.maybeFromJson(null), isNull);
     });
+
+    test('maybeFromJson throws FormatException on invalid input', () {
+      expect(
+        () => DateType.maybeFromJson('not a date'),
+        throwsFormatException,
+      );
+    });
   });
 }
