@@ -876,4 +876,212 @@ void main() {
       expect(map.exampleValue(context), "{Foo.values.first: 'example'}");
     });
   });
+
+  group('RenderPod newtype', () {
+    final context = SchemaRenderer(
+      templates: TemplateProvider.defaultLocation(),
+    );
+
+    RenderPod pod(PodType type, {bool createsNewType = false}) => RenderPod(
+      common: CommonProperties.test(
+        snakeName: 'foo_bar',
+        pointer: const JsonPointer.empty(),
+      ),
+      type: type,
+      createsNewType: createsNewType,
+    );
+
+    test('typeName is the class name when a newtype, else the Dart type', () {
+      expect(pod(PodType.dateTime).typeName, 'DateTime');
+      expect(pod(PodType.email).typeName, 'String');
+      expect(pod(PodType.uuid).typeName, 'String');
+      expect(pod(PodType.date).typeName, 'DateTime');
+      expect(pod(PodType.boolean).typeName, 'bool');
+      expect(pod(PodType.uri).typeName, 'Uri');
+      expect(pod(PodType.uriTemplate).typeName, 'UriTemplate');
+
+      expect(pod(PodType.dateTime, createsNewType: true).typeName, 'FooBar');
+      expect(pod(PodType.email, createsNewType: true).typeName, 'FooBar');
+      expect(pod(PodType.date, createsNewType: true).typeName, 'FooBar');
+    });
+
+    test('dartType is the underlying Dart type regardless of newtype', () {
+      expect(pod(PodType.dateTime).dartType, 'DateTime');
+      expect(pod(PodType.dateTime, createsNewType: true).dartType, 'DateTime');
+      expect(pod(PodType.email).dartType, 'String');
+      expect(pod(PodType.uuid).dartType, 'String');
+      expect(pod(PodType.date).dartType, 'DateTime');
+    });
+
+    test('toJsonExpression delegates to .toJson() when a newtype', () {
+      final schema = pod(PodType.dateTime, createsNewType: true);
+      expect(
+        schema.toJsonExpression('x', context, dartIsNullable: false),
+        'x.toJson()',
+      );
+      expect(
+        schema.toJsonExpression('x', context, dartIsNullable: true),
+        'x?.toJson()',
+      );
+    });
+
+    test('toJsonExpression is inline for pod types when not a newtype', () {
+      expect(
+        pod(PodType.dateTime).toJsonExpression(
+          'x',
+          context,
+          dartIsNullable: false,
+        ),
+        'x.toIso8601String()',
+      );
+      expect(
+        pod(PodType.date).toJsonExpression(
+          'x',
+          context,
+          dartIsNullable: true,
+        ),
+        'x?.toIso8601String().substring(0, 10)',
+      );
+      // email and uuid are Strings; no conversion, just pass dartName.
+      expect(
+        pod(PodType.email).toJsonExpression(
+          'x',
+          context,
+          dartIsNullable: true,
+        ),
+        'x',
+      );
+      expect(
+        pod(PodType.uuid).toJsonExpression(
+          'x',
+          context,
+          dartIsNullable: true,
+        ),
+        'x',
+      );
+    });
+
+    test('fromJsonExpression delegates to fromJson/maybeFromJson '
+        'when a newtype', () {
+      final schema = pod(PodType.date, createsNewType: true);
+      expect(
+        schema.fromJsonExpression(
+          "json['d']",
+          context,
+          jsonIsNullable: false,
+          dartIsNullable: false,
+        ),
+        "FooBar.fromJson(json['d'] as String)",
+      );
+      expect(
+        schema.fromJsonExpression(
+          "json['d']",
+          context,
+          jsonIsNullable: true,
+          dartIsNullable: true,
+        ),
+        "FooBar.maybeFromJson(json['d'] as String?)",
+      );
+    });
+
+    test('fromJsonExpression inline routes nullable date/uuid correctly', () {
+      expect(
+        pod(PodType.date).fromJsonExpression(
+          "json['d']",
+          context,
+          jsonIsNullable: true,
+          dartIsNullable: true,
+        ),
+        "maybeParseDate(json['d'] as String?)",
+      );
+      expect(
+        pod(PodType.date).fromJsonExpression(
+          "json['d']",
+          context,
+          jsonIsNullable: false,
+          dartIsNullable: false,
+        ),
+        "DateTime.parse(json['d'] as String)",
+      );
+      expect(
+        pod(PodType.uuid).fromJsonExpression(
+          "json['u']",
+          context,
+          jsonIsNullable: false,
+          dartIsNullable: false,
+        ),
+        "json['u'] as String",
+      );
+    });
+
+    test('toTemplateContext throws for non-newtype', () {
+      expect(
+        () => pod(PodType.email).toTemplateContext(context),
+        throwsStateError,
+      );
+    });
+
+    test('toTemplateContext exposes the fields the newtype template reads', () {
+      final ctx = pod(
+        PodType.date,
+        createsNewType: true,
+      ).toTemplateContext(context);
+      expect(ctx['typeName'], 'FooBar');
+      expect(ctx['dartType'], 'DateTime');
+      expect(ctx['jsonType'], 'String');
+      expect(ctx['fromJsonBody'], 'DateTime.parse(json)');
+      expect(ctx['toJsonBody'], 'value.toIso8601String().substring(0, 10)');
+
+      final emailCtx = pod(
+        PodType.email,
+        createsNewType: true,
+      ).toTemplateContext(context);
+      expect(emailCtx['dartType'], 'String');
+      expect(emailCtx['fromJsonBody'], 'json');
+      expect(emailCtx['toJsonBody'], 'value');
+    });
+
+    test(
+      'shouldCallToJson: inline pods need conversion iff non-json-native',
+      () {
+        expect(pod(PodType.dateTime).shouldCallToJson, isTrue);
+        expect(pod(PodType.date).shouldCallToJson, isTrue);
+        expect(pod(PodType.uri).shouldCallToJson, isTrue);
+        expect(pod(PodType.uriTemplate).shouldCallToJson, isTrue);
+        expect(pod(PodType.boolean).shouldCallToJson, isFalse);
+        expect(pod(PodType.email).shouldCallToJson, isFalse);
+        expect(pod(PodType.uuid).shouldCallToJson, isFalse);
+        // Newtypes always serialize through .toJson() regardless of the
+        // underlying Dart type.
+        expect(
+          pod(PodType.boolean, createsNewType: true).shouldCallToJson,
+          isTrue,
+        );
+      },
+    );
+
+    test('defaultValueString wraps in typeName constructor when a newtype', () {
+      const newtypeBool = RenderPod(
+        common: CommonProperties.test(
+          snakeName: 'flag',
+          pointer: JsonPointer.empty(),
+        ),
+        type: PodType.boolean,
+        createsNewType: true,
+        defaultValue: true,
+      );
+      expect(newtypeBool.defaultValueString(context), 'Flag(true)');
+
+      const inlineEmail = RenderPod(
+        common: CommonProperties.test(
+          snakeName: 'e',
+          pointer: JsonPointer.empty(),
+        ),
+        type: PodType.email,
+        createsNewType: false,
+        defaultValue: 'a@b.c',
+      );
+      expect(inlineEmail.defaultValueString(context), "'a@b.c'");
+    });
+  });
 }
