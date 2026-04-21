@@ -433,6 +433,99 @@ void main() {
       expect(body, contains('parsed.hashCode'));
     });
 
+    test('enum round-trip test exercises toString and every value', () async {
+      final fs = MemoryFileSystem.test();
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'EnumRoundtrip', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/roles': {
+            'get': {
+              'operationId': 'getRole',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Role'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Role': {
+              'type': 'string',
+              'enum': ['admin', 'user'],
+            },
+          },
+        },
+      };
+      final out = fs.directory('out');
+      await renderToDirectory(spec: spec, outDir: out);
+      final testFile = out.childFile('test/models/role_test.dart');
+      expect(testFile.existsSync(), isTrue);
+      final body = testFile.readAsStringSync();
+      // Object schemas don't get these blocks; enums do.
+      expect(body, contains('toString matches toJson for every value'));
+      expect(body, contains('fromJson round-trips every value'));
+      expect(body, contains('for (final value in Role.values)'));
+      expect(body, contains('value.toString()'));
+      expect(body, contains('Role.fromJson(value.toJson())'));
+    });
+
+    test('non-enum round-trip test omits the enum-only assertions', () async {
+      final fs = MemoryFileSystem.test();
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'NoEnumExtras', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/widgets': {
+            'get': {
+              'operationId': 'getWidget',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Widget'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Widget': {
+              'type': 'object',
+              'required': ['id'],
+              'properties': {
+                'id': {'type': 'integer'},
+              },
+            },
+          },
+        },
+      };
+      final out = fs.directory('out');
+      await renderToDirectory(spec: spec, outDir: out);
+      final body = out
+          .childFile('test/models/widget_test.dart')
+          .readAsStringSync();
+      expect(body, isNot(contains('toString matches toJson')));
+      expect(body, isNot(contains('fromJson round-trips every value')));
+    });
+
     test('generateTests: false suppresses test emission', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
