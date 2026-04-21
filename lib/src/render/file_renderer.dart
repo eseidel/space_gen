@@ -694,6 +694,7 @@ class FileRenderer {
           'typeName': schema.typeName,
           'exampleValue': example,
           'invalidJsonExample': invalidJson,
+          'isEnum': schema is RenderEnum,
         },
       );
     }
