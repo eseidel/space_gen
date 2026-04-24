@@ -90,13 +90,17 @@ class ApiClient {
   }
 
   /// Resolve an [AuthRequest] into a [ResolvedAuth].
-  /// Override this to add custom auth handling.
-  ResolvedAuth resolveAuth(AuthRequest? authRequest) {
+  /// Override this to add custom auth handling (for example, to cache
+  /// OAuth2 tokens across requests).
+  Future<ResolvedAuth> resolveAuth(AuthRequest? authRequest) async {
     if (authRequest == null) {
       return const ResolvedAuth.noAuth();
     }
-    String? getSecret(String name) => readSecret?.call(name);
-    return authRequest.resolve(getSecret);
+    final context = AuthContext(
+      getSecret: (name) => readSecret?.call(name),
+      httpClient: client,
+    );
+    return authRequest.resolve(context);
   }
 
   /// Wraps a request send with the common exception → [ApiException]
@@ -162,7 +166,7 @@ class ApiClient {
       throw ArgumentError('Body is not allowed for ${method.name} requests');
     }
 
-    final auth = resolveAuth(authRequest);
+    final auth = await resolveAuth(authRequest);
     final uri = _resolveUri(
       path: path,
       queryParameters: queryParameters,
@@ -216,7 +220,7 @@ class ApiClient {
       );
     }
 
-    final auth = resolveAuth(authRequest);
+    final auth = await resolveAuth(authRequest);
     final uri = _resolveUri(
       path: path,
       queryParameters: queryParameters,

@@ -1,5 +1,13 @@
 ## 1.0.2
 
+- Make `AuthRequest.resolve` async and pass a new `AuthContext` carrying
+  both the secret reader and the `ApiClient`'s `http.Client`. Existing
+  `HttpAuth`, `ApiKeyAuth`, `NoAuth`, `OneOfAuth`, and `AllOfAuth` still
+  behave identically — this is setup for OAuth2, where the resolve step
+  needs to exchange client credentials over the network. Generated
+  `ApiClient.resolveAuth` is now `Future<ResolvedAuth>` and every
+  `invokeApi*` call awaits it; subclasses overriding `resolveAuth` to
+  add custom auth handling must switch to an async override.
 - Honor `security: []` on an operation as an explicit override of the
   global security requirement (public endpoint), rather than silently
   inheriting from the spec-level `security`. Previously the parser

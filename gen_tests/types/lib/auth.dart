@@ -1,3 +1,4 @@
+import 'package:http/http.dart';
 import 'package:meta/meta.dart';
 
 /// An exception thrown when a required secret is missing.
@@ -53,6 +54,22 @@ class ResolvedAuth {
   }
 }
 
+/// Context passed to [AuthRequest.resolve]. Carries the secret reader and
+/// the [Client] used for any network round-trips an auth scheme needs
+/// (e.g. an OAuth2 token exchange).
+@immutable
+class AuthContext {
+  /// Create a new [AuthContext].
+  const AuthContext({required this.getSecret, required this.httpClient});
+
+  /// Look up a named secret. Returns `null` when the caller has no secret
+  /// under that name.
+  final String? Function(String name) getSecret;
+
+  /// HTTP client for auth flows that require an outbound request.
+  final Client httpClient;
+}
+
 /// An abstract class representing an auth request.
 @immutable
 abstract class AuthRequest {
@@ -61,8 +78,8 @@ abstract class AuthRequest {
   /// Used to check if the getSecret function has all the secrets for this auth.
   bool haveSecrets(String? Function(String name) getSecret);
 
-  /// Used to resolve the auth using the getSecret function.
-  ResolvedAuth resolve(String? Function(String name) getSecret);
+  /// Used to resolve the auth using the [AuthContext].
+  Future<ResolvedAuth> resolve(AuthContext context);
 }
 
 /// An auth request that does nothing.
@@ -77,7 +94,7 @@ class NoAuth extends AuthRequest {
 
   /// Returns a [ResolvedAuth] with no headers or parameters.
   @override
-  ResolvedAuth resolve(String? Function(String name) getSecret) =>
+  Future<ResolvedAuth> resolve(AuthContext context) async =>
       const ResolvedAuth.noAuth();
 }
 
@@ -97,16 +114,16 @@ class OneOfAuth extends AuthRequest {
   /// Returns the resolved auth for the first auth request that has all
   /// necessary secrets.
   @override
-  ResolvedAuth resolve(String? Function(String name) getSecret) {
+  Future<ResolvedAuth> resolve(AuthContext context) async {
     // Walk the auths in order, see if we have all secrets for any of them
     // if so, return the resolved auth for that auth.
     for (final auth in auths) {
-      if (auth.haveSecrets(getSecret)) {
-        return auth.resolve(getSecret);
+      if (auth.haveSecrets(context.getSecret)) {
+        return auth.resolve(context);
       }
     }
     // If we get here, we don't have all the secrets for any of the auths.
-    return throw MissingSecretsException(this);
+    throw MissingSecretsException(this);
   }
 }
 
@@ -127,10 +144,10 @@ class AllOfAuth extends AuthRequest {
   /// Returns the resolved auth for the first auth request that has all
   /// necessary secrets.
   @override
-  ResolvedAuth resolve(String? Function(String name) getSecret) {
+  Future<ResolvedAuth> resolve(AuthContext context) async {
     var resolved = const ResolvedAuth.noAuth();
     for (final auth in auths) {
-      resolved = resolved.merge(auth.resolve(getSecret));
+      resolved = resolved.merge(await auth.resolve(context));
     }
     return resolved;
   }
@@ -159,8 +176,8 @@ class HttpAuth extends SecretAuth {
   final String scheme;
 
   @override
-  ResolvedAuth resolve(String? Function(String name) getSecret) {
-    final secret = getSecret(secretName);
+  Future<ResolvedAuth> resolve(AuthContext context) async {
+    final secret = context.getSecret(secretName);
     if (secret == null) {
       throw MissingSecretsException(this);
     }
@@ -190,8 +207,8 @@ class ApiKeyAuth extends SecretAuth {
   final ApiKeyLocation sendIn;
 
   @override
-  ResolvedAuth resolve(String? Function(String name) getSecret) {
-    final secret = getSecret(secretName);
+  Future<ResolvedAuth> resolve(AuthContext context) async {
+    final secret = context.getSecret(secretName);
     if (secret == null) {
       throw MissingSecretsException(this);
     }
