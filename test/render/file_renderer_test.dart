@@ -583,6 +583,86 @@ void main() {
           barrel,
           contains("export 'package:uri/uri.dart' show UriTemplate;"),
         );
+        // `package:meta/meta.dart` is imported by every RenderObject for
+        // `@immutable`, but without an explicit `shown:` list — it's
+        // internal to the model file and shouldn't leak through the
+        // barrel.
+        expect(
+          barrel,
+          isNot(contains("export 'package:meta/meta.dart'")),
+        );
+        // `package:http/http.dart as http` is used in api files for
+        // multipart uploads (prefix import). Prefix imports don't
+        // translate to exports, so no re-export line.
+        expect(
+          barrel,
+          isNot(contains("export 'package:http/http.dart'")),
+        );
+      },
+    );
+
+    test(
+      'barrel does not re-export same-package or dart: entries',
+      () async {
+        // Sanity-check the remaining filter branches of the barrel
+        // export collector. `package:<pkg>/models/*.dart` is already
+        // re-exported via its own listing in the barrel (and should
+        // not appear as a _third-party_ export). `dart:*` imports
+        // (e.g. `dart:typed_data` from RenderBinary) never translate
+        // to package: exports at all.
+        final fs = MemoryFileSystem.test();
+        final spec = {
+          'openapi': '3.1.0',
+          'info': {'title': 'SamePkgDartFilter', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/upload': {
+              'post': {
+                'operationId': 'upload',
+                'requestBody': {
+                  'required': true,
+                  'content': {
+                    'multipart/form-data': {
+                      'schema': {
+                        'type': 'object',
+                        'required': ['file'],
+                        'properties': {
+                          'file': {'type': 'string', 'format': 'binary'},
+                        },
+                      },
+                    },
+                  },
+                },
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+        };
+        final out = fs.directory('out');
+        await renderToDirectory(spec: spec, outDir: out);
+        final barrel = out.childFile('lib/api.dart').readAsStringSync();
+        // Binary field pulls in `dart:typed_data` at schema level — must
+        // not be re-exported (dart: is not a package:).
+        expect(barrel, isNot(contains("'dart:typed_data'")));
+        // Each export line in the barrel must be either for the
+        // generated package itself or a third-party package with a
+        // `show` clause. Nothing slips through unconditionally.
+        for (final line
+            in barrel.split('\n').where((l) => l.startsWith('export '))) {
+          final isOwnPackage = line.contains(
+            "export 'package:out/",
+          );
+          final isShownThirdParty = line.contains(' show ');
+          expect(
+            isOwnPackage || isShownThirdParty,
+            isTrue,
+            reason: 'Unexpected barrel export: $line',
+          );
+        }
       },
     );
 
