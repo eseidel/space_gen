@@ -1,5 +1,17 @@
 ## 1.0.2
 
+- Skip no-JSON schemas (`RenderVoid`, `RenderBinary`) when deciding
+  whether an operation has a typed error body. Previously, a spec where
+  the `default:` or 4XX/5XX response declared no content (just a
+  `description:`) would collect a `RenderVoid` into `distinctErrorSchemas`,
+  land in the "typed error" branch with `errorType == 'void'` and
+  `errorFromJson == ''`, and emit uncompilable Dart like
+  `throw ApiException<void>(code, body.toString(), body: ,);` — which
+  failed `dart format` and blocked the whole generation. The fix
+  filters `RenderNoJson` out of the error-schema set so such operations
+  fall through to `ApiException<Object?>(code, message)` like any other
+  untyped error. Hit while running petstore, which declares only
+  description-only error responses.
 - Accept unsupported security scheme declarations (`oauth2`,
   `openIdConnect` / `openIDConnect`, `mutualTLS`) at parse time instead
   of crashing the whole generation. Previously, any spec that even

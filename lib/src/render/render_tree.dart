@@ -1050,6 +1050,13 @@ class Endpoint implements ToTemplateContext {
     // `ErrorResponse`), emit a typed `ApiException<ErrorType>` throw.
     // When they disagree, fall back to untyped — picking one would lie
     // to callers about what they'll actually catch.
+    //
+    // Skip `RenderNoJson` subclasses (RenderVoid, RenderBinary) — a
+    // `default:` response with no content resolves to `RenderVoid`, whose
+    // `fromJsonExpression` returns empty string and `typeName` is `void`,
+    // which produced uncompilable Dart like `ApiException<void>(body: ,)`
+    // before this skip (most famously on petstore, whose 4xx/default
+    // responses carry only a description).
     final errorSchemas = <RenderSchema>[
       ?operation.defaultResponse?.content,
       ...operation.rangeResponses
@@ -1062,6 +1069,7 @@ class Endpoint implements ToTemplateContext {
     ];
     final distinctErrorSchemas = <RenderSchema>[];
     for (final schema in errorSchemas) {
+      if (schema is RenderNoJson) continue;
       if (!distinctErrorSchemas.any((e) => e.equalsIgnoringName(schema))) {
         distinctErrorSchemas.add(schema);
       }

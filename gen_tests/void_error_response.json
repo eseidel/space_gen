@@ -1,0 +1,32 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Void Error Response",
+        "version": "1.0.0",
+        "description": "Exercises the petstore-shaped case: a `default:` response with only a description (no content schema). Before the fix, this emitted `ApiException<void>(..., body: ,)` — an empty named argument — which failed `dart format`."
+    },
+    "servers": [
+        {
+            "url": "https://example.com/api/v1"
+        }
+    ],
+    "paths": {
+        "/ping": {
+            "get": {
+                "operationId": "ping",
+                "summary": "Returns OK on success; every error response declares no body.",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "default": {
+                        "description": "Unexpected error"
+                    }
+                }
+            }
+        }
+    }
+}
