@@ -1,98 +1,7 @@
-## 1.0.2
+## 1.1.0
 
-- Re-export third-party types referenced in public field signatures
-  from the `api.dart` barrel, narrowed with `show` to exactly the
-  names used. Model files import `package:uri/uri.dart` directly for
-  `UriTemplate`-typed fields, but Dart exports don't chain through
-  imports — a consumer (or a generated round-trip test) that imports
-  only the barrel couldn't reference `UriTemplate` without also
-  importing `package:uri/uri.dart` itself. The barrel now walks the
-  rendered schemas, collects every third-party `package:` entry from
-  `additionalImports` that has an explicit `shown:` list, and emits
-  `export 'package:<pkg>/<entry>.dart' show <T1, T2, ...>;` covering
-  only the specific types used —
-  `export 'package:uri/uri.dart' show UriTemplate;` today. Imports
-  without a `shown:` list (e.g. `package:meta/meta.dart` for
-  `@immutable`) stay internal to the model file. Motivating case:
-  the GitHub spec's `Root` model (~40 uri-template fields) produced
-  40+ `undefined_function: UriTemplate` errors per regeneration; now
-  clean.
-- Include the synthetic `entries:` field in `RenderObject.exampleValue`
-  so round-trip tests for schemas with `additionalProperties` compile.
-  When a schema has `additionalProperties`, the generated class carries
-  a required `entries: Map<String, V>` field alongside the named
-  properties — but the exampleValue generator iterated only
-  `properties` and produced a constructor call missing the required
-  `entries` argument, yielding `missing_required_argument` errors for
-  every such schema. The value type on the emitted Map literal matches
-  the `additionalProperties.typeName` — `dynamic` for open
-  additionalProperties, `String` for `{type: string}`, etc. Hit by
-  `integration_permissions` and the `copilot_*` family on the GitHub
-  spec.
-- Skip round-trip test generation for schemas whose type is (or
-  transitively contains a required) `oneOf` / `anyOf`. The
-  `schema_one_of.mustache` template emits a sealed class with no
-  concrete subclasses and an `UnimplementedError`-throwing `fromJson`,
-  so there's no Dart value of the sealed type that can be constructed
-  at compile time. Previously `RenderOneOf.exampleValue` returned the
-  first branch's own example (e.g. a raw `'example'` String for
-  `oneOf: [string, integer]`), which didn't type-check against the
-  enclosing sealed-class field and produced errors like `String can't
-  be assigned to IssuesCreateRequestTitle` — ~85 of the 156 broken
-  tests in the generated GitHub client. Returning `null` propagates
-  through `RenderObject.exampleValue` so the round-trip test is
-  skipped for any schema that transitively depends on a oneOf/anyOf.
-  Real coverage here is blocked on discriminator-aware subclass
-  emission (#99); today's coverage was fake.
-- Render `type: null` properties as `dynamic` instead of crashing.
-  OpenAPI 3.1 / JSON Schema 2020-12 allows a property schema to be
-  `{"type": "null"}`, meaning "the only legal value is `null`"; the
-  parser has always produced a `ResolvedNull` for this, but the render
-  layer had no case for it and aborted with
-  `UnimplementedError: Unknown schema: ResolvedNull at <pointer>`.
-  Now `toRenderSchema` maps `ResolvedNull` to `RenderUnknown`, which
-  emits `dynamic` (same treatment as `additionalProperties: true`).
-  A dedicated `RenderNull` with Dart's strict `Null` type would be
-  more precise but isn't useful in practice. Found while running the
-  generator against a real-world spec that declares a reserved-for-
-  future-use `"placeholder": {"type": "null"}` field.
-- Skip no-JSON schemas (`RenderVoid`, `RenderBinary`) when deciding
-  whether an operation has a typed error body. Previously, a spec where
-  the `default:` or 4XX/5XX response declared no content (just a
-  `description:`) would collect a `RenderVoid` into `distinctErrorSchemas`,
-  land in the "typed error" branch with `errorType == 'void'` and
-  `errorFromJson == ''`, and emit uncompilable Dart like
-  `throw ApiException<void>(code, body.toString(), body: ,);` — which
-  failed `dart format` and blocked the whole generation. The fix
-  filters `RenderNoJson` out of the error-schema set so such operations
-  fall through to `ApiException<Object?>(code, message)` like any other
-  untyped error. Hit while running petstore, which declares only
-  description-only error responses.
-- Accept unsupported security scheme declarations (`oauth2`,
-  `openIdConnect` / `openIDConnect`, `mutualTLS`) at parse time instead
-  of crashing the whole generation. Previously, any spec that even
-  *declared* one of these schemes in `components.securitySchemes` died
-  at `parser.dart:1096` with `UnimplementedError`, even when no
-  operation required the scheme. Now those declarations parse to an
-  `UnsupportedSecurityScheme` sentinel that renders as `NoAuth()` in
-  generated operations, plus a `[WARN]` at generation time telling the
-  consumer to override `ApiClient.resolveAuth` or set `defaultHeaders`
-  if they actually need the auth. Unblocks the standard OpenAPI
-  examples (petstore declares `oauth2.implicit`; train-travel declares
-  `oauth2.authorizationCode`) and any other real spec that advertises
-  oauth2/OIDC/mTLS without us having to implement them. The existing
-  `apiKey` and `http` flows are untouched.
-- Allow pod schemas (`format: uuid`, `date`, `date-time`, `email`, `uri`,
-  `uri-template`, `boolean`) as path parameters. Previously
-  `_canBePathParameter` only accepted `ResolvedString`, `ResolvedInteger`,
-  `ResolvedEnum`, and recursive `ResolvedOneOf`, so a common pattern like
-  `/resources/{id}` with `id` declared as `type: string, format: uuid`
-  crashed the resolver with "Path parameters must be strings or
-  integers". All pod types serialize to a single string via their
-  `toJson` — which is the expression interpolated into the URL path —
-  so they're legal path parameters. Found while running the generator
-  against a third-party OpenAPI spec that uses UUID path parameters
-  throughout.
+### Features
+
 - Honor `security: []` on an operation as an explicit override of the
   global security requirement (public endpoint), rather than silently
   inheriting from the spec-level `security`. Previously the parser
@@ -116,12 +25,6 @@
   pass and flagged for follow-up: `application/x-www-form-urlencoded`,
   arrays of files, nested objects as form fields, per-part
   `encoding.contentType`, and filenames other than the property name.
-- Fix `application/octet-stream` and `text/plain` request bodies: the
-  generated `ApiClient.invokeApi` was JSON-encoding every non-null body
-  (including `Uint8List` and raw `String`) and always sending
-  `Content-Type: application/json`. Binary and text bodies now pass
-  through unchanged with the correct `Content-Type` header, driven by a
-  new `BodyContentType` enum threaded through the generated call sites.
 - Prune unused helpers from the generated `lib/model_helpers.dart`.
   Previously every generated package shipped all nine runtime helpers
   (`maybeParseDateTime`, `maybeParseDate`, `maybeParseUri`,
@@ -143,6 +46,17 @@
   `throwsFormatException` test. No-op pods (string / email / uuid /
   boolean / uri / uri-template) and objects with no required fields
   get no negative test because any input is valid for them.
+- Round-trip tests now also cover `toString` and every enum value.
+  Previously each test only round-tripped `exampleValue`, which for
+  enums is `values.first` — the generated `toString` override and
+  every non-first variant were uncovered. Enum round-trip tests now
+  iterate `values`, asserting `toString() == toJson()` and
+  `fromJson(value.toJson()) == value` for each variant.
+- Round-trip through `Type.maybeFromJson(instance.toJson())!` instead
+  of `Type.fromJson`, and assert `parsed.hashCode == instance.hashCode`
+  alongside `parsed == instance`. Exercises the nullable-input branch
+  and catches drift between the generated `==` and `hashCode`
+  overrides. A second test case pins `Type.maybeFromJson(null) == null`.
 - Resolve external `$ref`s at generation time. A spec that refs
   schemas/responses/parameters/request-bodies/headers in another file
   (`$ref: 'shared.yaml#/components/schemas/Foo'`) now loads that file
@@ -156,6 +70,26 @@
   a clear `FormatException`. Previously, external refs hit a "Schema
   not found" at resolve time because only the root spec was walked
   into the registry.
+- Support recursive `$ref` cycles. A schema like `Node` whose `left`
+  and `right` properties both `$ref` back to `Node` previously sent
+  the resolver into an infinite loop trying to inline an immutable
+  tree. The resolver now tracks the stack of pointers currently being
+  resolved; a `$ref` back to one already on the stack emits a
+  `ResolvedRecursiveRef` cycle-break marker that renders as a
+  class-name reference to the original newtype. Non-cyclic refs keep
+  inlining as before — no behavior change for existing specs.
+  Generated Dart: `final Node? left; final Node? right;` with
+  recursive `toJson`/`fromJson` through the standard
+  `Map<String, dynamic>` helpers.
+- Detect name collisions in the spec and rename colliding schemas
+  before emission, rather than writing one Dart file on top of another
+  and silently losing types. When two schemas land with the same
+  flattened class name, the resolver appends a disambiguating suffix
+  drawn from the collision's JSON-pointer context so the generated
+  files don't overwrite each other. Non-rendered types (schemas that
+  never reach a separate file) are excluded from the collision set, so
+  an inline placeholder with a short name doesn't force a rename on a
+  real newtype.
 - Expose the `FileRenderer` emit methods as `@protected` override
   hooks (`renderPubspec`, `renderAnalysisOptions`, `renderGitignore`,
   `renderApiException`, `renderAuth`, `renderApiClient`,
@@ -166,18 +100,6 @@
   to no-op, while still regenerating models/messages/tests from the
   spec. Previously these were private `_render*` methods, so the only
   way to opt out was to overwrite the files after each regeneration.
-- Export `Api` and `RenderSpec` from `package:space_gen/space_gen.dart`
-  so subclasses of `FileRenderer` can actually spell the parameter
-  types of the new override hooks (`renderApis`, `renderClient`,
-  `renderPublicApi`, `renderApiClient`). Shipped with the hooks in
-  `1.0.2` but initially forgotten, breaking every attempt to override.
-- Escape reserved words in generated API method parameter names. A
-  spec with a parameter literally named `with`/`try`/`case`/... now
-  emits `required String with_` (matching `dartParameterName`) instead
-  of the uncompilable `required String with`. `RenderParameter`'s
-  template context was using raw `lowercaseCamelFromSnake(name)` while
-  every other call site went through `variableSafeName`, producing a
-  name mismatch and invalid Dart.
 - Honor the "named → newtype" invariant for pod schemas, and wire up
   more string formats. A top-level named schema whose body is a string
   or boolean pod (`type: string, format: date-time | uri | uri-template
@@ -190,13 +112,6 @@
   `YYYY-MM-DD` JSON serialization via a new `maybeParseDate` helper;
   `format: time` is accepted without warning and falls through to
   `SchemaString` (no Dart type equivalent).
-- Fix generated `hashCode` to be consistent with `==` on list/map
-  fields. Two instances with the same list/map contents now hash to
-  the same value — matching the `listsEqual`/`mapsEqual`-based `==`
-  override. Before, `==` returned true but `hashCode` differed
-  (identity hash on the list/map), violating the Dart contract. New
-  `listHash`/`mapHash` helpers in `model_helpers.dart`, wired through
-  a `RenderSchema.hashCodeExpression` hook.
 - Emit a round-trip test for each generated newtype by default at
   `test/<modelPath>_test.dart`. The test builds an in-memory instance
   via `RenderSchema.exampleValue` (implemented per subclass), then
@@ -293,17 +208,11 @@
   generators targeting OpenAPI Generator compatibility see no change.
   The previous `lib/model/` directory is also wiped when regenerating,
   so stale files from the old layout don't linger after an upgrade.
-
 - Emit only the imports a rendered model/api body actually needs: drop
   unconditional `dart:convert`, `dart:io`, `package:meta/meta.dart`, and
   `model_helpers.dart` from models; gate `meta` and `model_helpers` on
   body contents; filter the schema's own file from its imports. Cuts
   `dart fix` work roughly in half on spacetraders and github.
-- Fix `Future<void>` endpoints so a successful empty body (e.g. 204
-  No Content) returns normally. Generated methods previously fell
-  through to `throw ApiException.unhandled(...)` whenever the body
-  was empty, which meant every successful DELETE/PATCH on a 204 route
-  threw.
 - Support path-item-level `parameters`. Parameters declared on a path
   item now apply to every operation on that path; operation-level
   parameters still override by (name, in). Previously path-item-level
@@ -311,6 +220,154 @@
 - Emit per-field dartdoc from schema property `description`. Previously
   the class-level description was rendered but property-level
   descriptions were dropped.
+- Support the `x-enum-descriptions` vendor extension. A parallel array
+  of strings alongside `enum:` now renders as per-case dartdoc on the
+  generated enum.
+- **Breaking:** `Quirks().allListsDefaultToEmpty` now defaults to
+  `false`. The "nullable lists default to `const []`" behavior was
+  really an OpenAPI convention and is now only on via
+  `Quirks.openapi()`. Callers using the plain default who relied on
+  the old behavior should opt in explicitly:
+  `Quirks(allListsDefaultToEmpty: true)`.
+- Honour the JSON Schema 2020-12 / OpenAPI 3.1 `propertyNames`
+  keyword on map-shaped schemas. When `propertyNames` resolves to a
+  named string enum, the generated field becomes `Map<EnumKey, V>`
+  with the enum's `fromJson`/`toJson` round-tripping each key at the
+  boundary. Handwritten `Map<ReleasePlatform, ReleaseStatus>` can now
+  be expressed spec-compliantly without a vendor extension.
+
+### Bug fixes
+
+- Re-export third-party types referenced in public field signatures
+  from the `api.dart` barrel, narrowed with `show` to exactly the
+  names used. Model files import `package:uri/uri.dart` directly for
+  `UriTemplate`-typed fields, but Dart exports don't chain through
+  imports — a consumer (or a generated round-trip test) that imports
+  only the barrel couldn't reference `UriTemplate` without also
+  importing `package:uri/uri.dart` itself. The barrel now walks the
+  rendered schemas, collects every third-party `package:` entry from
+  `additionalImports` that has an explicit `shown:` list, and emits
+  `export 'package:<pkg>/<entry>.dart' show <T1, T2, ...>;` covering
+  only the specific types used —
+  `export 'package:uri/uri.dart' show UriTemplate;` today. Imports
+  without a `shown:` list (e.g. `package:meta/meta.dart` for
+  `@immutable`) stay internal to the model file. Motivating case:
+  the GitHub spec's `Root` model (~40 uri-template fields) produced
+  40+ `undefined_function: UriTemplate` errors per regeneration; now
+  clean.
+- Include the synthetic `entries:` field in `RenderObject.exampleValue`
+  so round-trip tests for schemas with `additionalProperties` compile.
+  When a schema has `additionalProperties`, the generated class carries
+  a required `entries: Map<String, V>` field alongside the named
+  properties — but the exampleValue generator iterated only
+  `properties` and produced a constructor call missing the required
+  `entries` argument, yielding `missing_required_argument` errors for
+  every such schema. The value type on the emitted Map literal matches
+  the `additionalProperties.typeName` — `dynamic` for open
+  additionalProperties, `String` for `{type: string}`, etc. Hit by
+  `integration_permissions` and the `copilot_*` family on the GitHub
+  spec.
+- Skip round-trip test generation for schemas whose type is (or
+  transitively contains a required) `oneOf` / `anyOf`. The
+  `schema_one_of.mustache` template emits a sealed class with no
+  concrete subclasses and an `UnimplementedError`-throwing `fromJson`,
+  so there's no Dart value of the sealed type that can be constructed
+  at compile time. Previously `RenderOneOf.exampleValue` returned the
+  first branch's own example (e.g. a raw `'example'` String for
+  `oneOf: [string, integer]`), which didn't type-check against the
+  enclosing sealed-class field and produced errors like `String can't
+  be assigned to IssuesCreateRequestTitle` — ~85 of the 156 broken
+  tests in the generated GitHub client. Returning `null` propagates
+  through `RenderObject.exampleValue` so the round-trip test is
+  skipped for any schema that transitively depends on a oneOf/anyOf.
+  Real coverage here is blocked on discriminator-aware subclass
+  emission (#99); today's coverage was fake.
+- Render `type: null` properties as `dynamic` instead of crashing.
+  OpenAPI 3.1 / JSON Schema 2020-12 allows a property schema to be
+  `{"type": "null"}`, meaning "the only legal value is `null`"; the
+  parser has always produced a `ResolvedNull` for this, but the render
+  layer had no case for it and aborted with
+  `UnimplementedError: Unknown schema: ResolvedNull at <pointer>`.
+  Now `toRenderSchema` maps `ResolvedNull` to `RenderUnknown`, which
+  emits `dynamic` (same treatment as `additionalProperties: true`).
+  A dedicated `RenderNull` with Dart's strict `Null` type would be
+  more precise but isn't useful in practice. Found while running the
+  generator against a real-world spec that declares a reserved-for-
+  future-use `"placeholder": {"type": "null"}` field.
+- Skip no-JSON schemas (`RenderVoid`, `RenderBinary`) when deciding
+  whether an operation has a typed error body. Previously, a spec where
+  the `default:` or 4XX/5XX response declared no content (just a
+  `description:`) would collect a `RenderVoid` into `distinctErrorSchemas`,
+  land in the "typed error" branch with `errorType == 'void'` and
+  `errorFromJson == ''`, and emit uncompilable Dart like
+  `throw ApiException<void>(code, body.toString(), body: ,);` — which
+  failed `dart format` and blocked the whole generation. The fix
+  filters `RenderNoJson` out of the error-schema set so such operations
+  fall through to `ApiException<Object?>(code, message)` like any other
+  untyped error. Hit while running petstore, which declares only
+  description-only error responses.
+- Accept unsupported security scheme declarations (`oauth2`,
+  `openIdConnect` / `openIDConnect`, `mutualTLS`) at parse time instead
+  of crashing the whole generation. Previously, any spec that even
+  *declared* one of these schemes in `components.securitySchemes` died
+  at `parser.dart:1096` with `UnimplementedError`, even when no
+  operation required the scheme. Now those declarations parse to an
+  `UnsupportedSecurityScheme` sentinel that renders as `NoAuth()` in
+  generated operations, plus a `[WARN]` at generation time telling the
+  consumer to override `ApiClient.resolveAuth` or set `defaultHeaders`
+  if they actually need the auth. Unblocks the standard OpenAPI
+  examples (petstore declares `oauth2.implicit`; train-travel declares
+  `oauth2.authorizationCode`) and any other real spec that advertises
+  oauth2/OIDC/mTLS without us having to implement them. The existing
+  `apiKey` and `http` flows are untouched.
+- Allow pod schemas (`format: uuid`, `date`, `date-time`, `email`, `uri`,
+  `uri-template`, `boolean`) as path parameters. Previously
+  `_canBePathParameter` only accepted `ResolvedString`, `ResolvedInteger`,
+  `ResolvedEnum`, and recursive `ResolvedOneOf`, so a common pattern like
+  `/resources/{id}` with `id` declared as `type: string, format: uuid`
+  crashed the resolver with "Path parameters must be strings or
+  integers". All pod types serialize to a single string via their
+  `toJson` — which is the expression interpolated into the URL path —
+  so they're legal path parameters. Found while running the generator
+  against a third-party OpenAPI spec that uses UUID path parameters
+  throughout.
+- Normalize whitespace in `toSnakeCase` so tag names with spaces (e.g.
+  `"Payment Methods"`, `"Seller Account"`) no longer survive into
+  generated class names as `class Payment MethodsApi` — a literal
+  space, uncompilable Dart, `dart format` fails, whole generation
+  aborts. Any whitespace run now collapses to `_` before the existing
+  camel/kebab conversions, followed by a final `_+ → _` pass to clean
+  up the doubled underscores the intermediate form produces.
+- Fix `application/octet-stream` and `text/plain` request bodies: the
+  generated `ApiClient.invokeApi` was JSON-encoding every non-null body
+  (including `Uint8List` and raw `String`) and always sending
+  `Content-Type: application/json`. Binary and text bodies now pass
+  through unchanged with the correct `Content-Type` header, driven by a
+  new `BodyContentType` enum threaded through the generated call sites.
+- Export `Api` and `RenderSpec` from `package:space_gen/space_gen.dart`
+  so subclasses of `FileRenderer` can actually spell the parameter
+  types of the new override hooks (`renderApis`, `renderClient`,
+  `renderPublicApi`, `renderApiClient`). Shipped with the hooks
+  initially but briefly forgotten, breaking every attempt to override.
+- Escape reserved words in generated API method parameter names. A
+  spec with a parameter literally named `with`/`try`/`case`/... now
+  emits `required String with_` (matching `dartParameterName`) instead
+  of the uncompilable `required String with`. `RenderParameter`'s
+  template context was using raw `lowercaseCamelFromSnake(name)` while
+  every other call site went through `variableSafeName`, producing a
+  name mismatch and invalid Dart.
+- Fix generated `hashCode` to be consistent with `==` on list/map
+  fields. Two instances with the same list/map contents now hash to
+  the same value — matching the `listsEqual`/`mapsEqual`-based `==`
+  override. Before, `==` returned true but `hashCode` differed
+  (identity hash on the list/map), violating the Dart contract. New
+  `listHash`/`mapHash` helpers in `model_helpers.dart`, wired through
+  a `RenderSchema.hashCodeExpression` hook.
+- Fix `Future<void>` endpoints so a successful empty body (e.g. 204
+  No Content) returns normally. Generated methods previously fell
+  through to `throw ApiException.unhandled(...)` whenever the body
+  was empty, which meant every successful DELETE/PATCH on a 204 route
+  threw.
 - Trim trailing whitespace off doc-comment text so YAML block-scalar
   descriptions (`description: |`) no longer render a dangling `///`
   line before the class or field they document.
@@ -320,9 +377,6 @@
   uncompilable `try._('TRY')` / `class._('CLASS')`. Now all Dart
   reserved words, built-in identifiers, and contextual keywords are
   escaped with a trailing underscore.
-- Support the `x-enum-descriptions` vendor extension. A parallel array
-  of strings alongside `enum:` now renders as per-case dartdoc on the
-  generated enum.
 - Fix `RenderMap.jsonStorageType` to honour `isNullable`. Previously a
   nullable map field emitted
   `(json[key] as Map<String, dynamic>)?.map(...)` — the cast crashed
@@ -330,21 +384,9 @@
   'Map<String, dynamic>'`). Now emits
   `(json[key] as Map<String, dynamic>?)?.map(...)` so the null-aware
   `?.map` chain actually has a nullable receiver.
-- **Breaking:** `Quirks().allListsDefaultToEmpty` now defaults to
-  `false`. The "nullable lists default to `const []`" behavior was
-  really an OpenAPI convention and is now only on via
-  `Quirks.openapi()`. Callers using the plain default who relied on
-  the old behavior should opt in explicitly:
-  `Quirks(allListsDefaultToEmpty: true)`.
 - Fix `RenderArray.defaultValueString` to return `null` when the
   schema has no default (previously crashed casting `null as List`
   once `allListsDefaultToEmpty` was off).
-- Honour the JSON Schema 2020-12 / OpenAPI 3.1 `propertyNames`
-  keyword on map-shaped schemas. When `propertyNames` resolves to a
-  named string enum, the generated field becomes `Map<EnumKey, V>`
-  with the enum's `fromJson`/`toJson` round-tripping each key at the
-  boundary. Handwritten `Map<ReleasePlatform, ReleaseStatus>` can now
-  be expressed spec-compliantly without a vendor extension.
 - Fix nullable primitive query parameters to be null-safe. Generated
   code previously emitted `?foo.toString()`, which always produced a
   map entry (with the literal string `"null"` as its value) because
