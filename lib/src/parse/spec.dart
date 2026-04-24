@@ -481,7 +481,13 @@ class Operation extends Equatable implements HasPointer {
   final bool deprecated;
 
   /// The security requirements of this operation.
-  final List<SecurityRequirement> securityRequirements;
+  ///
+  /// `null` means the `security` key was absent — the operation inherits
+  /// the spec-level global security. An empty list means `security: []`
+  /// was specified explicitly, which per the OpenAPI spec overrides the
+  /// global to "no authentication required" (common for public endpoints
+  /// sitting under an otherwise-authenticated API).
+  final List<SecurityRequirement>? securityRequirements;
 
   @override
   List<Object?> get props => [

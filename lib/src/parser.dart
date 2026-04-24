@@ -845,11 +845,16 @@ Operation parseOperation(MapContext operationJson, String path) {
   if (responses.isEmpty) {
     _error(context, 'Responses are required');
   }
-  final securityRequirements = _mapOptionalList<SecurityRequirement>(
-    context,
-    'security',
-    (child, _) => parseSecurityRequirement(child),
-  );
+  // Distinguish "security absent" (inherit global) from "security: []"
+  // (explicit no-auth override). _mapOptionalList collapses both to [];
+  // check for key presence separately so the resolver can tell them apart.
+  final securityRequirements = context['security'] == null
+      ? null
+      : _mapOptionalList<SecurityRequirement>(
+          context,
+          'security',
+          (child, _) => parseSecurityRequirement(child),
+        );
   return Operation(
     pointer: operationJson.pointer,
     tags: tags,

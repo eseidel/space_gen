@@ -642,6 +642,86 @@ void main() {
       );
     });
 
+    test('operation security overrides global security', () {
+      // Three operations with distinct security states, under a spec that
+      // declares a global apiKey requirement.
+      //   - /inherit: no `security` key -> must inherit the global apiKey.
+      //   - /override: non-empty `security` -> must use what it specifies.
+      //   - /public: `security: []` -> must override global to no auth.
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'security': [
+          {'apiKey': <String>[]},
+        ],
+        'paths': {
+          '/inherit': {
+            'get': {
+              'operationId': 'getInherit',
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+          '/override': {
+            'get': {
+              'operationId': 'getOverride',
+              'security': [
+                {'bearer': <String>[]},
+              ],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+          '/public': {
+            'get': {
+              'operationId': 'getPublic',
+              'security': <Map<String, List<String>>>[],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+        'components': {
+          'securitySchemes': {
+            'apiKey': {'type': 'apiKey', 'name': 'apiKey', 'in': 'header'},
+            'bearer': {'type': 'http', 'scheme': 'bearer'},
+          },
+        },
+      };
+      final spec = parseAndResolveTestSpec(json);
+      final operations = {
+        for (final op in spec.paths.expand((p) => p.operations))
+          op.snakeName: op,
+      };
+
+      // Inherits: one condition referencing the global apiKey scheme.
+      final inherited = operations['get_inherit']!.securityRequirements;
+      expect(inherited, hasLength(1));
+      expect(
+        inherited.single.conditions.keys.single.name,
+        'apiKey',
+      );
+
+      // Override: one condition referencing bearer (not apiKey).
+      final overridden = operations['get_override']!.securityRequirements;
+      expect(overridden, hasLength(1));
+      expect(
+        overridden.single.conditions.keys.single.name,
+        'bearer',
+      );
+
+      // Public: empty list, meaning no auth (overrides global apiKey).
+      // Before the nullable-securityRequirements fix, this incorrectly fell
+      // back to the global requirement.
+      expect(operations['get_public']!.securityRequirements, isEmpty);
+    });
+
     test('recursion', () {
       final json = {
         'openapi': '3.1.0',
