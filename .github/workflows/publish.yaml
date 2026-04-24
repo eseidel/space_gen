@@ -1,0 +1,18 @@
+name: Publish to pub.dev
+
+# Triggered when a `vX.Y.Z` (or `vX.Y.Z-prerelease`) tag is pushed.
+# pub.dev's "Automated publishing from GitHub Actions" must be enabled
+# for the package via Admin → Automated publishing on pub.dev/packages/space_gen,
+# pointing at this repository and the same tag pattern.
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+
+jobs:
+  publish:
+    # `id-token: write` lets the runner mint an OIDC token that pub.dev
+    # accepts in lieu of an API key — no long-lived secret stored here.
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
