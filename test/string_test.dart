@@ -17,6 +17,13 @@ void main() {
     expect(toSnakeCase('Snake_from_camel'), 'snake_from_camel');
     expect(toSnakeCase('snakeFromCamel'), 'snake_from_camel');
     expect(toSnakeCase('snake-from-camel'), 'snake_from_camel');
+    // Tag names with spaces (common in real specs) must normalize to a
+    // single underscore so downstream camel/pascal conversion produces
+    // legal Dart identifiers.
+    expect(toSnakeCase('Two Words'), 'two_words');
+    expect(toSnakeCase('Four More Words Here'), 'four_more_words_here');
+    expect(toSnakeCase('Multi   Space'), 'multi_space');
+    expect(toSnakeCase('Tab\tSeparated'), 'tab_separated');
   });
 
   test('camelFromSnake', () {

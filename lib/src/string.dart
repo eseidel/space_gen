@@ -22,10 +22,19 @@ String lowercaseCamelFromSnake(String snake) =>
 
 String toSnakeCase(String unknown) {
   // We don't know the casing the author used.
-  // First try to convert any UpperCase to snake_case.
-  final lowered = snakeFromCamel(unknown);
+  // First replace whitespace runs with a single underscore — tag names
+  // like "Payment Methods" or "Seller Account" arrive here verbatim
+  // and would otherwise survive into generated class/file names as
+  // `Payment MethodsApi`, which isn't valid Dart.
+  final normalized = unknown.replaceAll(RegExp(r'\s+'), '_');
+  // Try to convert any UpperCase to snake_case.
+  final lowered = snakeFromCamel(normalized);
   // Then convert any kebab-case to snake_case.
-  return snakeFromKebab(lowered);
+  final snake = snakeFromKebab(lowered);
+  // "Payment Methods" → "Payment_Methods" → snakeFromCamel splits at
+  // each uppercase, producing "payment__methods". Collapse the double
+  // underscore (and any others the input introduced) to a single one.
+  return snake.replaceAll(RegExp('_+'), '_');
 }
 
 /// Convert kebab-case to snake_case.
