@@ -1,5 +1,13 @@
 ## 1.0.2
 
+- Normalize whitespace in `toSnakeCase`. Tag names and other user-
+  supplied identifier strings that contain spaces — e.g. multi-word
+  tags common in real specs — used to survive into generated class
+  names as `Multi WordApi` (literal space, uncompilable Dart).
+  `toSnakeCase` now collapses any whitespace run to a single `_`
+  before the existing camel/kebab conversions, then collapses
+  consecutive underscores so the PascalCase and file-name derivations
+  downstream stay clean.
 - Include the synthetic `entries:` field in `RenderObject.exampleValue`
   so round-trip tests for schemas with `additionalProperties` compile.
   When a schema has `additionalProperties`, the generated class carries
