@@ -356,6 +356,14 @@ class SpecResolver {
       case ResolvedVoid():
         return RenderVoid(common: schema.common);
       case ResolvedUnknown():
+      // `type: null` as a property schema (legal per JSON Schema 2020-12 +
+      // OpenAPI 3.1) resolves to `ResolvedNull`. The only legal runtime
+      // value is `null` itself, so rendering as `dynamic` is both correct
+      // and not worse than the alternative. A dedicated `RenderNull` with
+      // Dart's `Null` type would be more precise but rarely useful — any
+      // caller that genuinely wants a null-only field would use a Dart
+      // language feature, not lean on generated code.
+      case ResolvedNull():
         return RenderUnknown(common: schema.common);
       case ResolvedBinary():
         return RenderBinary(common: schema.common);

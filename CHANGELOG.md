@@ -1,5 +1,17 @@
 ## 1.0.2
 
+- Render `type: null` properties as `dynamic` instead of crashing.
+  OpenAPI 3.1 / JSON Schema 2020-12 allows a property schema to be
+  `{"type": "null"}`, meaning "the only legal value is `null`"; the
+  parser has always produced a `ResolvedNull` for this, but the render
+  layer had no case for it and aborted with
+  `UnimplementedError: Unknown schema: ResolvedNull at <pointer>`.
+  Now `toRenderSchema` maps `ResolvedNull` to `RenderUnknown`, which
+  emits `dynamic` (same treatment as `additionalProperties: true`).
+  A dedicated `RenderNull` with Dart's strict `Null` type would be
+  more precise but isn't useful in practice. Found while running the
+  generator against a real-world spec that declares a reserved-for-
+  future-use `"placeholder": {"type": "null"}` field.
 - Skip no-JSON schemas (`RenderVoid`, `RenderBinary`) when deciding
   whether an operation has a typed error body. Previously, a spec where
   the `default:` or 4XX/5XX response declared no content (just a
