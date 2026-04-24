@@ -1093,7 +1093,7 @@ SecurityScheme parseSecurityScheme(String name, MapContext json) {
     case 'mutualTLS':
     case 'oauth2':
     case 'openIdConnect':
-    // OpenAPI 3.0 accidentally specced this as `openIdConnect`, but the
+    // OpenAPI 3.0 uses `openIdConnect` in the schema text, but the
     // majority of real-world specs (and several 3.1 examples) use the
     // alternate-cased `openIDConnect`. Accept both.
     case 'openIDConnect':
