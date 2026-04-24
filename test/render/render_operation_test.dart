@@ -339,6 +339,31 @@ void main() {
   });
 
   group('multiple responses', () {
+    test('default + 4xx with no content → untyped ApiException, no `body: ,`', () {
+      // Regression: a `default:` (or 4XX/5XX) response declared with only a
+      // description — no `content` schema — used to produce a `RenderVoid`
+      // that landed in the typed-error branch with `errorType == 'void'`
+      // and `errorFromJson == ''`. The template emitted
+      // `ApiException<void>(..., body: ,);` — an empty named arg that
+      // failed `dart format` and aborted the whole generation (first
+      // seen on petstore).
+      final json = {
+        'responses': {
+          '200': {'description': 'OK'},
+          '400': {'description': 'Bad request'},
+          'default': {'description': 'Unexpected error'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/ping',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(result, contains('ApiException<Object?>'));
+      expect(result, isNot(contains('ApiException<void>')));
+      expect(result, isNot(contains('body: ,')));
+    });
+
     test('multiple successful responses with different content not supported', () {
       final json = {
         'responses': {
