@@ -67,9 +67,12 @@ approach. See the class-level doc comment on `RenderRecursiveRef` in
 - 80-col wrap (enforced for code, not strict for doc comments).
 - `very_good_analysis` lint.
 - Prefer new atomic commits over `git amend`.
-- `CHANGELOG.md` entries per feature. Don't bump the heading; stack
-  new bullets under the top-most `## x.y.z` until the pubspec version
-  actually bumps.
+- **Don't edit `CHANGELOG.md` in regular PRs.** It's generated at
+  release time from merged PR bodies — see `.claude/skills/release/`.
+  Write the PR body as if it were a CHANGELOG entry (`## Summary`
+  section becomes the bullet) and the release workflow handles the
+  rest. Editing the file in a feature PR just creates merge
+  conflicts with every other open PR.
 - Keep custom words in `cspell.config.yaml` — CI blocks on unknown words.
   `newtype` / `newtypes` / `renderable` are common false positives.
 - **`required` on internal pipeline types**: `Schema*` (parse),
