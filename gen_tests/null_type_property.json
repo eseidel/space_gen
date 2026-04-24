@@ -1,0 +1,54 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Null-Typed Property",
+        "version": "1.0.0",
+        "description": "Exercises the JSON Schema 2020-12 / OpenAPI 3.1 feature where a schema property is declared with `type: null` (legal values: only `null`). Before the fix, the renderer hit `toRenderSchema`'s default branch and aborted with `UnimplementedError: Unknown schema: ResolvedNull`. Now it renders as `dynamic`."
+    },
+    "servers": [
+        {
+            "url": "https://example.com"
+        }
+    ],
+    "paths": {
+        "/things": {
+            "get": {
+                "operationId": "listThings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Thing"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Thing": {
+                "type": "object",
+                "required": [
+                    "id"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "placeholder": {
+                        "type": "null",
+                        "description": "Reserved for future use; valid spec says this is always null."
+                    }
+                }
+            }
+        }
+    }
+}
