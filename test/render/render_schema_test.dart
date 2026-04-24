@@ -67,6 +67,27 @@ void main() {
         '}\n',
       );
     });
+    test('property with `type: null` renders as dynamic', () {
+      // JSON Schema 2020-12 / OpenAPI 3.1 allows `{"type": "null"}` —
+      // a field whose only legal value is null. The parser produces a
+      // ResolvedNull for this; previously toRenderSchema had no case
+      // for it and aborted with
+      // `UnimplementedError: Unknown schema: ResolvedNull`.
+      final schema = {
+        'type': 'object',
+        'required': ['id'],
+        'properties': {
+          'id': {'type': 'string'},
+          'placeholder': {'type': 'null'},
+        },
+      };
+      final result = renderTestSchema(schema);
+      // Field emitted as `dynamic`, passthrough in toJson/fromJson.
+      expect(result, contains('final dynamic? placeholder;'));
+      expect(result, contains("placeholder: json['placeholder'],"));
+      expect(result, contains("'placeholder': placeholder,"));
+    });
+
     test('property description emits dartdoc on the field', () {
       final schema = {
         'type': 'object',
