@@ -8,8 +8,9 @@
   crashed the resolver with "Path parameters must be strings or
   integers". All pod types serialize to a single string via their
   `toJson` — which is the expression interpolated into the URL path —
-  so they're legal path parameters. Hit while triaging the WatchCrunch
-  OpenAPI spec.
+  so they're legal path parameters. Found while running the generator
+  against a third-party OpenAPI spec that uses UUID path parameters
+  throughout.
 - Honor `security: []` on an operation as an explicit override of the
   global security requirement (public endpoint), rather than silently
   inheriting from the spec-level `security`. Previously the parser

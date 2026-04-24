@@ -90,7 +90,7 @@ void main() {
     });
 
     test('path parameters can be pod types (uuid/date/date-time/etc)', () {
-      // Repro for the watchcrunch spec: a `/resource/{id}` path where `id` is
+      // A common real-world pattern: a `/resource/{id}` path where `id` is
       // declared as `type: string, format: uuid`. Previously this crashed
       // the resolver ("Path parameters must be strings or integers") because
       // pod types aren't `ResolvedString`.
