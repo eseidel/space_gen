@@ -132,8 +132,6 @@ void main(List<String> args) async {
       'ignore',
       abbr: 'i',
       help: 'Comma separated list of specs to skip',
-      // TODO(eseidel): remove these once they don't crash.
-      defaultsTo: ['petstore', 'spacetraders'],
     );
   final results = parser.parse(args);
   final verbose = results['verbose'] as bool;
