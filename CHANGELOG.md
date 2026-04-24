@@ -1,5 +1,20 @@
 ## 1.0.2
 
+- Skip round-trip test generation for schemas whose type is (or
+  transitively contains a required) `oneOf` / `anyOf`. The
+  `schema_one_of.mustache` template emits a sealed class with no
+  concrete subclasses and an `UnimplementedError`-throwing `fromJson`,
+  so there's no Dart value of the sealed type that can be constructed
+  at compile time. Previously `RenderOneOf.exampleValue` returned the
+  first branch's own example (e.g. a raw `'example'` String for
+  `oneOf: [string, integer]`), which didn't type-check against the
+  enclosing sealed-class field and produced errors like `String can't
+  be assigned to IssuesCreateRequestTitle` — ~85 of the 156 broken
+  tests in the generated GitHub client. Returning `null` propagates
+  through `RenderObject.exampleValue` so the round-trip test is
+  skipped for any schema that transitively depends on a oneOf/anyOf.
+  Real coverage here is blocked on discriminator-aware subclass
+  emission (#99); today's coverage was fake.
 - Render `type: null` properties as `dynamic` instead of crashing.
   OpenAPI 3.1 / JSON Schema 2020-12 allows a property schema to be
   `{"type": "null"}`, meaning "the only legal value is `null`"; the
