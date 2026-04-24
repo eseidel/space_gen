@@ -262,3 +262,27 @@ class HttpSecurityScheme extends SecurityScheme {
   @override
   List<Object?> get props => [super.props, scheme, bearerFormat];
 }
+
+/// Placeholder for security scheme types the generator doesn't support
+/// yet (`oauth2`, `openIdConnect`, `mutualTLS`). Keeping these schemes in
+/// the sealed hierarchy lets the parser accept specs that declare them
+/// without crashing the whole generation; at render time they emit
+/// `NoAuth()` and a generation-time warning, so operations that require
+/// them end up unauthenticated unless the consumer overrides
+/// `ApiClient.resolveAuth` / `defaultHeaders`.
+@immutable
+class UnsupportedSecurityScheme extends SecurityScheme {
+  const UnsupportedSecurityScheme({
+    required super.pointer,
+    required super.name,
+    required super.description,
+    required this.type,
+  });
+
+  /// The `type` value from the spec (e.g. `oauth2`, `openIdConnect`,
+  /// `mutualTLS`) — retained for diagnostics.
+  final String type;
+
+  @override
+  List<Object?> get props => [super.props, type];
+}

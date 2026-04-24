@@ -640,7 +640,11 @@ extension on ResolvedSecurityRequirement {
 
 extension on SecurityScheme {
   /// Turn the SecurityScheme into an AuthRequest subclass to be
-  /// resolved at runtime by the ApiClient.
+  /// resolved at runtime by the ApiClient. Unsupported scheme types
+  /// (oauth2 / openIdConnect / mutualTLS) render as `NoAuth()` — the
+  /// caller is expected to override `ApiClient.resolveAuth` or set
+  /// `defaultHeaders` to inject auth themselves. The parser emits a
+  /// warning at generation time so consumers notice.
   String toArgumentString({int indent = 0}) {
     final expression = switch (this) {
       ApiKeySecurityScheme(
@@ -651,6 +655,7 @@ extension on SecurityScheme {
             'sendIn: $inLocation)',
       HttpSecurityScheme(scheme: final scheme) =>
         'HttpAuth(scheme: "$scheme", secretName: "$name")',
+      UnsupportedSecurityScheme() => 'NoAuth()',
     };
     return '${' ' * indent}$expression';
   }
