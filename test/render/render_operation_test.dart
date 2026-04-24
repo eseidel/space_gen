@@ -339,14 +339,16 @@ void main() {
   });
 
   group('multiple responses', () {
-    test('default + 4xx with no content → untyped ApiException, no `body: ,`', () {
+    test('default + 4xx with no content → untyped ApiException', () {
       // Regression: a `default:` (or 4XX/5XX) response declared with only a
       // description — no `content` schema — used to produce a `RenderVoid`
       // that landed in the typed-error branch with `errorType == 'void'`
       // and `errorFromJson == ''`. The template emitted
       // `ApiException<void>(..., body: ,);` — an empty named arg that
       // failed `dart format` and aborted the whole generation (first
-      // seen on petstore).
+      // seen on petstore). This operation has no request body or error
+      // body schema, so the emitted method should not contain `body:`
+      // anywhere.
       final json = {
         'responses': {
           '200': {'description': 'OK'},
@@ -359,9 +361,28 @@ void main() {
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
       );
-      expect(result, contains('ApiException<Object?>'));
-      expect(result, isNot(contains('ApiException<void>')));
-      expect(result, isNot(contains('body: ,')));
+      expect(
+        result,
+        '/// Test API\n'
+        'class DefaultApi {\n'
+        '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
+        '\n'
+        '    final ApiClient client;\n'
+        '\n'
+        '    Future<void> ping(\n'
+        '    ) async {\n'
+        '        final response = await client.invokeApi(\n'
+        '            method: Method.post,\n'
+        "            path: '/ping',\n"
+        '        );\n'
+        '\n'
+        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '        }\n'
+        '    }\n'
+        '}\n',
+      );
+      expect(result, isNot(contains('body:')));
     });
 
     test('multiple successful responses with different content not supported', () {
