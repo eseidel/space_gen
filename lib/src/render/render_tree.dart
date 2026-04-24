@@ -107,6 +107,27 @@ Iterable<String> wrapDocComment(String value, {int indent = 0}) {
   ).map((line) => '$prefix$line');
 }
 
+/// Renders a two-part class-member doc comment that fits 80 cols
+/// even when long flattened type names would otherwise push the
+/// single-line form past the lint. Emits `/// $single` when the
+/// combined body fits, otherwise a two-line form: `/// $first` then
+/// `/// $second`. Returns a string ending in `\n    ` so it slots
+/// into templates that assume that trailing indent.
+@visibleForTesting
+String wrappedClassDocComment({
+  required String single,
+  required String first,
+  required String second,
+}) {
+  // Class-member lines render at a 2-space indent after `dart format`,
+  // so `/// ` plus the body has to fit in 80 - 2 = 78 columns.
+  const contentBudget = 80 - 2 - 4; // leading `  /// ` eats 6 cols.
+  if (single.length <= contentBudget) {
+    return '/// $single\n    ';
+  }
+  return '/// $first\n    /// $second\n    ';
+}
+
 String? indentWithTrailingNewline(
   List<String> lines, {
   required int indent,
@@ -2630,12 +2651,20 @@ class RenderObject extends RenderNewType {
         templateName: templateName,
         indent: 4,
       ),
-      'from_json_doc_comment':
-          '/// Converts a `Map<String, dynamic>` to ${aOrAn(typeName)} '
-          '[$typeName].\n    ',
-      'to_json_doc_comment':
-          '/// Converts ${aOrAn(typeName)} [$typeName] to a '
-          '`Map<String, dynamic>`.\n    ',
+      'from_json_doc_comment': wrappedClassDocComment(
+        single:
+            'Converts a `Map<String, dynamic>` to ${aOrAn(typeName)} '
+            '[$typeName].',
+        first: 'Converts a `Map<String, dynamic>` to ${aOrAn(typeName)}',
+        second: '[$typeName].',
+      ),
+      'to_json_doc_comment': wrappedClassDocComment(
+        single:
+            'Converts ${aOrAn(typeName)} [$typeName] to a '
+            '`Map<String, dynamic>`.',
+        first: 'Converts ${aOrAn(typeName)} [$typeName]',
+        second: 'to a `Map<String, dynamic>`.',
+      ),
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
       'hasProperties': hasProperties,

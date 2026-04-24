@@ -155,6 +155,59 @@ void main() {
     });
   });
 
+  group('wrappedClassDocComment', () {
+    test('short single fits on one line', () {
+      expect(
+        wrappedClassDocComment(
+          single: 'Converts a `Map<String, dynamic>` to a [Pet].',
+          first: 'Converts a `Map<String, dynamic>` to a',
+          second: '[Pet].',
+        ),
+        '/// Converts a `Map<String, dynamic>` to a [Pet].\n    ',
+      );
+    });
+
+    test(
+      'long single falls back to the two-line form, and both lines fit '
+      '80 cols at 2-space class indent',
+      () {
+        // Typical spacetraders offender: a 33-char flattened type name
+        // pushes the single-line form past 80 cols when rendered at the
+        // class member indent.
+        const typeName = 'CreateShipWaypointScan201Response';
+        final output = wrappedClassDocComment(
+          single: 'Converts a `Map<String, dynamic>` to a [$typeName].',
+          first: 'Converts a `Map<String, dynamic>` to a',
+          second: '[$typeName].',
+        );
+        expect(
+          output,
+          '/// Converts a `Map<String, dynamic>` to a\n'
+          '    /// [CreateShipWaypointScan201Response].\n'
+          '    ',
+        );
+        for (final line in output.trimRight().split('\n')) {
+          final rendered = line.startsWith('/// ') ? '  $line' : line;
+          expect(rendered.length, lessThanOrEqualTo(80));
+        }
+      },
+    );
+
+    test('to_json phrasing keeps the `Map<String, dynamic>` token intact', () {
+      const typeName = 'CreateShipWaypointScan201Response';
+      expect(
+        wrappedClassDocComment(
+          single: 'Converts a [$typeName] to a `Map<String, dynamic>`.',
+          first: 'Converts a [$typeName]',
+          second: 'to a `Map<String, dynamic>`.',
+        ),
+        '/// Converts a [CreateShipWaypointScan201Response]\n'
+        '    /// to a `Map<String, dynamic>`.\n'
+        '    ',
+      );
+    });
+  });
+
   group('indentWithTrailingNewline', () {
     test('basic', () {
       expect(
