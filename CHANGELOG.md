@@ -1,5 +1,17 @@
 ## 1.0.2
 
+- Include the synthetic `entries:` field in `RenderObject.exampleValue`
+  so round-trip tests for schemas with `additionalProperties` compile.
+  When a schema has `additionalProperties`, the generated class carries
+  a required `entries: Map<String, V>` field alongside the named
+  properties — but the exampleValue generator iterated only
+  `properties` and produced a constructor call missing the required
+  `entries` argument, yielding `missing_required_argument` errors for
+  every such schema. The value type on the emitted Map literal matches
+  the `additionalProperties.typeName` — `dynamic` for open
+  additionalProperties, `String` for `{type: string}`, etc. Hit by
+  `integration_permissions` and the `copilot_*` family on the GitHub
+  spec.
 - Skip round-trip test generation for schemas whose type is (or
   transitively contains a required) `oneOf` / `anyOf`. The
   `schema_one_of.mustache` template emits a sealed class with no

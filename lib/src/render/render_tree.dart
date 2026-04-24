@@ -2723,6 +2723,19 @@ class RenderObject extends RenderNewType {
       final dartName = variableSafeName(context.quirks, jsonName);
       args.add('$dartName: $example');
     }
+    // When the schema has `additionalProperties`, the generated class
+    // carries a synthetic required `entries` Map field whose value type
+    // matches `additionalProperties.typeName` (`dynamic` for open
+    // additionalProperties, or the specific type for
+    // `additionalProperties: { type: string }` etc). Without this
+    // the round-trip test emits a missing-required-arg error for
+    // every schema that uses additionalProperties — `copilot_*`,
+    // `integration_permissions`, and the `checks_create_request_one_of_*`
+    // family on the GitHub spec all hit this.
+    final additional = additionalProperties;
+    if (additional != null) {
+      args.add('entries: <String, ${additional.typeName}>{}');
+    }
     return '$typeName(${args.join(', ')})';
   }
 
