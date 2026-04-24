@@ -98,12 +98,15 @@ is) section verbatim — this skill only appends a new one.
 Update the `version:` line. Nothing else in pubspec should change
 here.
 
-## 7. Verify — before tagging, because tagging publishes
+## 7. Verify — before tagging, because tagging publishes forever
 
 **Important:** pushing a tag triggers automated publishing to pub.dev.
 There is no separate `dart pub publish` step; the tag IS the publish.
-Make sure the release is actually releasable before creating the
-tag.
+And **`pub publish` is forever** — once a version hits pub.dev there's
+no rollback. Retraction marks a version as not-recommended but
+doesn't remove it; the tarball stays on pub.dev for reproducibility.
+The only real recovery is to cut a follow-up patch release with the
+fix. Don't tag without being confident in the release.
 
 Run each in order; stop and surface the error if any fails:
 
@@ -158,6 +161,7 @@ git reset --hard HEAD~1
 
 - **Announcing the release** — the user can write a blurb from the
   generated CHANGELOG if they want.
-- **Rollbacks after publish** — pub.dev doesn't support unpublishing;
-  if a released version is broken, cut a patch release that fixes
-  or retracts it. No automation for that here.
+- **Recovery from a broken release** — there is none. Published
+  versions are permanent on pub.dev; the only fix is a new patch
+  release that supersedes it. That re-enters this skill as a normal
+  release cycle.
