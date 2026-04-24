@@ -1,13 +1,15 @@
 ## 1.0.2
 
-- Normalize whitespace in `toSnakeCase`. Tag names and other user-
-  supplied identifier strings that contain spaces — e.g. multi-word
-  tags common in real specs — used to survive into generated class
-  names as `Multi WordApi` (literal space, uncompilable Dart).
-  `toSnakeCase` now collapses any whitespace run to a single `_`
-  before the existing camel/kebab conversions, then collapses
-  consecutive underscores so the PascalCase and file-name derivations
-  downstream stay clean.
+- Emit single-quoted strings in auth-argument and path-interpolation
+  templates, matching `very_good_analysis`'s `prefer_single_quotes`
+  default. Generated `HttpAuth(scheme: "bearer", secretName: "X")`
+  and `.replaceAll('{id}', "${value}")` used double quotes, which
+  triggered a `prefer_single_quotes` fix in every api file that
+  `dart fix --apply` ran on. On the `spacetraders` spec alone the
+  fleet api had 105 such fixes in a single file; on the whole spec
+  fleet+systems+api families accounted for ~400 fixes. Eliminating
+  them at emission time means `dart fix` has less work to do in the
+  generator's post-processing pipeline.
 - Include the synthetic `entries:` field in `RenderObject.exampleValue`
   so round-trip tests for schemas with `additionalProperties` compile.
   When a schema has `additionalProperties`, the generated class carries

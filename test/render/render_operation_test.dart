@@ -64,7 +64,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/pet/{petId}/uploadImage'.replaceAll('{petId}', \"\${ petId }\"),\n"
+        "            path: '/pet/{petId}/uploadImage'.replaceAll('{petId}', '\${ petId }'),\n"
         '            body: uint8List,\n'
         '            bodyContentType: BodyContentType.octetStream,\n'
         '        );\n'
@@ -1171,7 +1171,7 @@ void main() {
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
         "            path: '/users',\n"
-        '            authRequest: ApiKeyAuth(name: "apiKey", secretName: "apiKey", sendIn: ApiKeyLocation.header),\n'
+        "            authRequest: ApiKeyAuth(name: 'apiKey', secretName: 'apiKey', sendIn: ApiKeyLocation.header),\n"
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
@@ -1241,10 +1241,10 @@ void main() {
         "            path: '/users',\n"
         '            authRequest: OneOfAuth([\n'
         '              AllOfAuth([\n'
-        '                ApiKeyAuth(name: "apiKey", secretName: "apiKey", sendIn: ApiKeyLocation.header),\n'
-        '                HttpAuth(scheme: "Bearer", secretName: "http"),\n'
+        "                ApiKeyAuth(name: 'apiKey', secretName: 'apiKey', sendIn: ApiKeyLocation.header),\n"
+        "                HttpAuth(scheme: 'Bearer', secretName: 'http'),\n"
         '              ]),\n'
-        '              ApiKeyAuth(name: "apiKey", secretName: "apiKey", sendIn: ApiKeyLocation.header),\n'
+        "              ApiKeyAuth(name: 'apiKey', secretName: 'apiKey', sendIn: ApiKeyLocation.header),\n"
         '              NoAuth(),\n'
         '            ]),\n'
         '        );\n'
