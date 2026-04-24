@@ -882,6 +882,33 @@ void main() {
       expect(schema.exampleValue(context), isNull);
     });
 
+    test('oneOf returns null (sealed class, no constructable subtype)', () {
+      // `schema_one_of.mustache` emits a sealed class with no
+      // concrete subclasses and an `UnimplementedError`-throwing
+      // fromJson, so there's no way to construct a value of the
+      // sealed type. Returning a branch example would type-check
+      // against the branch but not the enclosing field, producing
+      // errors like `String can't be assigned to
+      // IssuesCreateRequestTitle` in generated round-trip tests. Opt
+      // out via `null` so the test is skipped.
+      const schema = RenderOneOf(
+        common: common,
+        schemas: [
+          RenderPod(
+            common: common,
+            type: PodType.email,
+            createsNewType: false,
+          ),
+          RenderPod(
+            common: common,
+            type: PodType.uuid,
+            createsNewType: false,
+          ),
+        ],
+      );
+      expect(schema.exampleValue(context), isNull);
+    });
+
     test('map with keySchema uses its exampleValue', () {
       const inner = RenderString(
         createsNewType: false,

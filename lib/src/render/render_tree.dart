@@ -3232,10 +3232,21 @@ class RenderOneOf extends RenderNewType {
 
   @override
   String? exampleValue(SchemaRenderer context) {
-    for (final branch in schemas) {
-      final example = branch.exampleValue(context);
-      if (example != null) return example;
-    }
+    // A oneOf / anyOf currently renders as a sealed class with no
+    // subclasses (the template at `schema_one_of.mustache` emits only
+    // the base class and an `UnimplementedError`-throwing fromJson).
+    // There is therefore no Dart value of the sealed type that can be
+    // constructed at compile time — returning a branch's own example
+    // doesn't type-check against the enclosing field, which produces
+    // errors like `String can't be assigned to IssuesCreateRequestTitle`
+    // in the generated round-trip tests.
+    //
+    // Opting out via `null` propagates through the containing object,
+    // which skips the round-trip test for it entirely. We lose
+    // coverage for every schema that transitively depends on a
+    // oneOf/anyOf, but today's coverage is fake anyway — the tests
+    // don't compile. Restoring real coverage requires real
+    // discriminator-aware subclass emission (#99).
     return null;
   }
 }
