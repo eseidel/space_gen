@@ -1093,7 +1093,37 @@ SecurityScheme parseSecurityScheme(String name, MapContext json) {
     case 'mutualTLS':
       _unimplemented(json, 'Mutual TLS security scheme is not yet supported');
     case 'oauth2':
-      _unimplemented(json, 'OAuth2 security scheme is not yet supported');
+      final flows = _requiredMap(json, 'flows');
+      final clientCredentials = _optionalMap(flows, 'clientCredentials');
+      if (clientCredentials == null) {
+        _unimplemented(
+          json,
+          'OAuth2 flows other than clientCredentials '
+          '(got: ${flows.keys.join(', ')})',
+        );
+      }
+      final tokenUrl = Uri.parse(
+        _required<String>(clientCredentials, 'tokenUrl'),
+      );
+      // Flow-level `scopes` is a catalog of scopes the flow knows about;
+      // per-operation required scopes come from the security requirement
+      // at the operation level (not yet wired through to the token
+      // exchange — see TODO in render_tree.dart).
+      _ignored<Map<String, dynamic>>(clientCredentials, 'scopes');
+      _ignored<String>(clientCredentials, 'refreshUrl');
+      _warnUnused(clientCredentials);
+      // Other flow keys describe alternative exchanges the server offers;
+      // we pick clientCredentials and ignore the rest.
+      _ignored<Map<String, dynamic>>(flows, 'authorizationCode', warn: true);
+      _ignored<Map<String, dynamic>>(flows, 'implicit', warn: true);
+      _ignored<Map<String, dynamic>>(flows, 'password', warn: true);
+      _warnUnused(flows);
+      return OAuth2SecurityScheme(
+        pointer: pointer,
+        name: name,
+        description: description,
+        tokenUrl: tokenUrl,
+      );
     case 'openIDConnect':
       _unimplemented(
         json,

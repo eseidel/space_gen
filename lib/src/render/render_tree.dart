@@ -622,17 +622,22 @@ extension on ResolvedSecurityRequirement {
     if (conditions.isEmpty) {
       return '${indentString}NoAuth()';
     }
-    // TODO(eseidel): Support scopes/roles in conditions.values.
     final buffer = StringBuffer();
     if (conditions.length > 1) {
       buffer.write('${indentString}AllOfAuth([\n');
-      for (final scheme in conditions.keys) {
-        buffer.write('${scheme.toArgumentString(indent: indent + 2)},\n');
+      for (final entry in conditions.entries) {
+        final scheme = entry.key.toArgumentString(
+          indent: indent + 2,
+          scopes: entry.value,
+        );
+        buffer.write('$scheme,\n');
       }
       buffer.write('$indentString])');
     } else {
-      final scheme = conditions.keys.first;
-      buffer.write(scheme.toArgumentString(indent: indent));
+      final entry = conditions.entries.first;
+      buffer.write(
+        entry.key.toArgumentString(indent: indent, scopes: entry.value),
+      );
     }
     return buffer.toString();
   }
@@ -640,8 +645,10 @@ extension on ResolvedSecurityRequirement {
 
 extension on SecurityScheme {
   /// Turn the SecurityScheme into an AuthRequest subclass to be
-  /// resolved at runtime by the ApiClient.
-  String toArgumentString({int indent = 0}) {
+  /// resolved at runtime by the ApiClient. [scopes] come from the
+  /// enclosing security requirement; only `OAuth2SecurityScheme`
+  /// currently threads them into the generated expression.
+  String toArgumentString({int indent = 0, List<String> scopes = const []}) {
     final expression = switch (this) {
       ApiKeySecurityScheme(
         keyName: final keyName,
@@ -651,9 +658,21 @@ extension on SecurityScheme {
             'sendIn: $inLocation)',
       HttpSecurityScheme(scheme: final scheme) =>
         'HttpAuth(scheme: "$scheme", secretName: "$name")',
+      OAuth2SecurityScheme(tokenUrl: final tokenUrl) =>
+        'OAuth2ClientCredentialsAuth('
+            'tokenUrl: Uri.parse("$tokenUrl"), '
+            'secretName: "$name", '
+            'scopes: ${_dartStringListLiteral(scopes)})',
     };
     return '${' ' * indent}$expression';
   }
+}
+
+/// Emit a Dart expression for a list of strings. Empty lists use a
+/// const-promoted form so the resulting expression can be `const`-propagated.
+String _dartStringListLiteral(List<String> values) {
+  if (values.isEmpty) return 'const []';
+  return '[${values.map((s) => '"$s"').join(', ')}]';
 }
 
 /// A convenience class created for each operation within a path item

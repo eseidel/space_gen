@@ -262,3 +262,28 @@ class HttpSecurityScheme extends SecurityScheme {
   @override
   List<Object?> get props => [super.props, scheme, bearerFormat];
 }
+
+/// An OAuth2 security scheme using the `clientCredentials` flow.
+///
+/// Only the `clientCredentials` flow is supported today: at resolve time
+/// the generated client POSTs client_id/client_secret to [tokenUrl] and
+/// uses the returned access token as a bearer header. The other OAuth2
+/// flows (`authorizationCode`, `implicit`, `password`) require user
+/// interaction or a refresh story that a generated server-to-server
+/// client can't meaningfully provide, and are rejected in the parser.
+@immutable
+class OAuth2SecurityScheme extends SecurityScheme {
+  const OAuth2SecurityScheme({
+    required super.pointer,
+    required super.name,
+    required super.description,
+    required this.tokenUrl,
+  });
+
+  /// URL the client POSTs to in order to exchange client_id/client_secret
+  /// for an access token.
+  final Uri tokenUrl;
+
+  @override
+  List<Object?> get props => [super.props, tokenUrl];
+}

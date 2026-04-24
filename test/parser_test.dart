@@ -1575,8 +1575,37 @@ void main() {
           throwsA(isA<FormatException>()),
         );
       });
-      test('oauth not yet supported', () {
-        final json = {'type': 'oauth2', 'name': 'apiKey', 'in': 'unknown'};
+      test('oauth2 clientCredentials parses', () {
+        final json = {
+          'type': 'oauth2',
+          'flows': {
+            'clientCredentials': {
+              'tokenUrl': 'https://example.com/token',
+              'scopes': {'read': 'Read access'},
+            },
+          },
+        };
+        final scheme = runWithLogger(
+          Logger(),
+          () => parseSecurityScheme('name', MapContext.initial(json)),
+        );
+        expect(scheme, isA<OAuth2SecurityScheme>());
+        expect(
+          (scheme as OAuth2SecurityScheme).tokenUrl,
+          Uri.parse('https://example.com/token'),
+        );
+      });
+      test('oauth2 without clientCredentials flow is unsupported', () {
+        final json = {
+          'type': 'oauth2',
+          'flows': {
+            'authorizationCode': {
+              'authorizationUrl': 'https://example.com/auth',
+              'tokenUrl': 'https://example.com/token',
+              'scopes': <String, String>{},
+            },
+          },
+        };
         expect(
           () => parseSecurityScheme('name', MapContext.initial(json)),
           throwsA(isA<UnimplementedError>()),
