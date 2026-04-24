@@ -1091,13 +1091,24 @@ SecurityScheme parseSecurityScheme(String name, MapContext json) {
         bearerFormat: _optional<String>(json, 'bearerFormat'),
       );
     case 'mutualTLS':
-      _unimplemented(json, 'Mutual TLS security scheme is not yet supported');
     case 'oauth2':
-      _unimplemented(json, 'OAuth2 security scheme is not yet supported');
+    case 'openIdConnect':
+    // OpenAPI 3.0 uses `openIdConnect` in the schema text, but the
+    // majority of real-world specs (and several 3.1 examples) use the
+    // alternate-cased `openIDConnect`. Accept both.
     case 'openIDConnect':
-      _unimplemented(
+      _warn(
         json,
-        'OpenID Connect security scheme is not yet supported',
+        "Security scheme '$name' has type '$type', which isn't supported "
+        'yet. Operations requiring it will be generated without an '
+        'authRequest — override ApiClient.resolveAuth or set '
+        'defaultHeaders to inject auth yourself',
+      );
+      return UnsupportedSecurityScheme(
+        pointer: pointer,
+        name: name,
+        description: description,
+        type: type,
       );
     default:
       _error(json, 'Unsupported security scheme type: $type');

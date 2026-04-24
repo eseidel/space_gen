@@ -1,0 +1,87 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Unsupported Auth",
+        "version": "1.0.0",
+        "description": "Exercises the soft-fail path for security schemes we don't implement (oauth2, openIdConnect, mutualTLS). All three are declared at the components level and wired to operations so that the renderer actually walks the UnsupportedSecurityScheme branch and emits NoAuth()."
+    },
+    "servers": [
+        {
+            "url": "https://example.com"
+        }
+    ],
+    "paths": {
+        "/oauth2-protected": {
+            "get": {
+                "operationId": "oauth2Protected",
+                "summary": "Operation requires an oauth2 scheme we don't implement.",
+                "security": [
+                    {
+                        "oauth2Scheme": [
+                            "read"
+                        ]
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/oidc-protected": {
+            "get": {
+                "operationId": "oidcProtected",
+                "summary": "Operation requires an openIdConnect scheme.",
+                "security": [
+                    {
+                        "oidcScheme": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/mtls-protected": {
+            "get": {
+                "operationId": "mtlsProtected",
+                "summary": "Operation requires mutualTLS.",
+                "security": [
+                    {
+                        "mtlsScheme": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "oauth2Scheme": {
+                "type": "oauth2",
+                "flows": {
+                    "implicit": {
+                        "authorizationUrl": "https://example.com/oauth/authorize",
+                        "scopes": {
+                            "read": "Read access"
+                        }
+                    }
+                }
+            },
+            "oidcScheme": {
+                "type": "openIdConnect",
+                "openIdConnectUrl": "https://example.com/.well-known/openid-configuration"
+            },
+            "mtlsScheme": {
+                "type": "mutualTLS"
+            }
+        }
+    }
+}

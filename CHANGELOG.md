@@ -1,5 +1,19 @@
 ## 1.0.2
 
+- Accept unsupported security scheme declarations (`oauth2`,
+  `openIdConnect` / `openIDConnect`, `mutualTLS`) at parse time instead
+  of crashing the whole generation. Previously, any spec that even
+  *declared* one of these schemes in `components.securitySchemes` died
+  at `parser.dart:1096` with `UnimplementedError`, even when no
+  operation required the scheme. Now those declarations parse to an
+  `UnsupportedSecurityScheme` sentinel that renders as `NoAuth()` in
+  generated operations, plus a `[WARN]` at generation time telling the
+  consumer to override `ApiClient.resolveAuth` or set `defaultHeaders`
+  if they actually need the auth. Unblocks the standard OpenAPI
+  examples (petstore declares `oauth2.implicit`; train-travel declares
+  `oauth2.authorizationCode`) and any other real spec that advertises
+  oauth2/OIDC/mTLS without us having to implement them. The existing
+  `apiKey` and `http` flows are untouched.
 - Allow pod schemas (`format: uuid`, `date`, `date-time`, `email`, `uri`,
   `uri-template`, `boolean`) as path parameters. Previously
   `_canBePathParameter` only accepted `ResolvedString`, `ResolvedInteger`,

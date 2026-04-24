@@ -1575,30 +1575,57 @@ void main() {
           throwsA(isA<FormatException>()),
         );
       });
-      test('oauth not yet supported', () {
-        final json = {'type': 'oauth2', 'name': 'apiKey', 'in': 'unknown'};
-        expect(
-          () => parseSecurityScheme('name', MapContext.initial(json)),
-          throwsA(isA<UnimplementedError>()),
-        );
-      });
-      test('mutual TLS not yet supported', () {
-        final json = {'type': 'mutualTLS', 'name': 'apiKey', 'in': 'unknown'};
-        expect(
-          () => parseSecurityScheme('name', MapContext.initial(json)),
-          throwsA(isA<UnimplementedError>()),
-        );
-      });
-      test('openID Connect not yet supported', () {
+      test('oauth2 declaration accepted as UnsupportedSecurityScheme', () {
+        // A spec that *declares* oauth2 (petstore, train-travel, and most
+        // nontrivial specs do) used to crash generation at parse time even
+        // if no operation actually required the scheme. Now it parses to a
+        // sentinel that renders as NoAuth(); consumers override
+        // ApiClient.resolveAuth or set defaultHeaders to inject real auth.
         final json = {
-          'type': 'openIDConnect',
-          'name': 'apiKey',
-          'in': 'unknown',
+          'type': 'oauth2',
+          'flows': {
+            'implicit': {
+              'authorizationUrl': 'https://example.com/auth',
+              'scopes': <String, String>{},
+            },
+          },
         };
-        expect(
+        final scheme = runWithLogger(
+          Logger(),
           () => parseSecurityScheme('name', MapContext.initial(json)),
-          throwsA(isA<UnimplementedError>()),
         );
+        expect(scheme, isA<UnsupportedSecurityScheme>());
+        expect((scheme as UnsupportedSecurityScheme).type, 'oauth2');
+      });
+      test('mutualTLS declaration accepted as UnsupportedSecurityScheme', () {
+        final json = {'type': 'mutualTLS'};
+        final scheme = runWithLogger(
+          Logger(),
+          () => parseSecurityScheme('name', MapContext.initial(json)),
+        );
+        expect(scheme, isA<UnsupportedSecurityScheme>());
+        expect((scheme as UnsupportedSecurityScheme).type, 'mutualTLS');
+      });
+      test('openIdConnect declaration accepted (both spec spellings)', () {
+        // OpenAPI 3.0 specs in the wild ship both 'openIdConnect' (as the
+        // spec technically prescribes in some versions) and 'openIDConnect'
+        // (widely deployed). Accept both.
+        for (final spelling in ['openIdConnect', 'openIDConnect']) {
+          final json = {
+            'type': spelling,
+            'openIdConnectUrl': 'https://example.com/.well-known',
+          };
+          final scheme = runWithLogger(
+            Logger(),
+            () => parseSecurityScheme('name', MapContext.initial(json)),
+          );
+          expect(
+            scheme,
+            isA<UnsupportedSecurityScheme>(),
+            reason: 'should accept type=$spelling',
+          );
+          expect((scheme as UnsupportedSecurityScheme).type, spelling);
+        }
       });
       test('unknown type', () {
         final json = {'type': 'unknown'};
