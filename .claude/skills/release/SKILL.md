@@ -98,7 +98,12 @@ is) section verbatim — this skill only appends a new one.
 Update the `version:` line. Nothing else in pubspec should change
 here.
 
-## 7. Verify
+## 7. Verify — before tagging, because tagging publishes
+
+**Important:** pushing a tag triggers automated publishing to pub.dev.
+There is no separate `dart pub publish` step; the tag IS the publish.
+Make sure the release is actually releasable before creating the
+tag.
 
 Run each in order; stop and surface the error if any fails:
 
@@ -108,10 +113,10 @@ dart test
 dart pub publish --dry-run
 ```
 
-## 8. Commit and tag
+## 8. Commit and tag (local only)
 
-One commit, one tag. Don't push without explicit user confirmation —
-pushing tags is an external action and must be authorized.
+One commit, one tag — but **do not push yet**. The push is a separate
+step below, because it's the point of no return.
 
 ```
 git add pubspec.yaml CHANGELOG.md
@@ -119,15 +124,40 @@ git commit -m "chore: release $NEW_VERSION"
 git tag "v$NEW_VERSION"
 ```
 
-Show the user the diff and the commit before suggesting `git push
-origin main --tags`. If the user has their own release-to-pub
-workflow (e.g. a publish action triggered by the tag), flag that
-before pushing.
+## 9. Confirm, then push — this publishes to pub.dev
+
+Show the user:
+
+- The diff of the release commit (CHANGELOG entries, pubspec bump).
+- The new tag name.
+- A reminder: "Pushing this tag will trigger automated publishing to
+  pub.dev. OK to push?"
+
+Only proceed after explicit user confirmation. Then:
+
+```
+git push origin main
+git push origin "v$NEW_VERSION"
+```
+
+Don't combine the main push with the tag push in a single
+`--tags` / `--follow-tags` invocation — push main first so CI on
+that commit has a chance to run before the tag fires the publish.
+
+If the user has changed their mind and wants to abort after the
+local commit/tag, the unwind is:
+
+```
+git tag -d "v$NEW_VERSION"
+git reset --hard HEAD~1
+```
+
+(safe because nothing has been pushed yet).
 
 ## Out of scope for this skill
 
-- **`dart pub publish`** (the real one, not dry-run) — always user-run.
 - **Announcing the release** — the user can write a blurb from the
   generated CHANGELOG if they want.
-- **Rollbacks** — if the release is bad, the user deletes the tag and
-  issues a follow-up patch release. No rollback automation here.
+- **Rollbacks after publish** — pub.dev doesn't support unpublishing;
+  if a released version is broken, cut a patch release that fixes
+  or retracts it. No automation for that here.
