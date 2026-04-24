@@ -28,6 +28,18 @@ class _ModelCollector extends RenderTreeVisitor {
   }
 }
 
+/// Collects every `additionalImports` entry reachable from one or more
+/// schema subtrees. Used by `renderPublicApi` to decide which
+/// third-party packages to re-export from the barrel.
+class _ImportCollector extends RenderTreeVisitor {
+  final imports = <Import>{};
+
+  @override
+  void visitSchema(RenderSchema schema) {
+    imports.addAll(schema.additionalImports);
+  }
+}
+
 Set<RenderSchema> collectAllSchemas(RenderSpec spec) {
   final collector = _ModelCollector();
   RenderTreeWalker(visitor: collector).walkRoot(spec);
@@ -525,15 +537,56 @@ class FileRenderer {
       'api_client.dart',
       'api_exception.dart',
     };
-    final exports = paths
-        .map((path) => 'package:$packageName/$path')
-        .sorted()
-        .toList();
+    // Collect third-party `package:` types that any model uses
+    // (today: `package:uri/uri.dart` for `UriTemplate`). Dart exports
+    // don't chain through imports — the model file imports them, but
+    // consumers of the barrel (including the generated round-trip
+    // tests) need them in scope to construct those models. Re-export
+    // from the barrel, narrowed to `show <exact types>` so we only
+    // surface the specific names used by public field signatures —
+    // not every symbol the third-party package happens to define.
+    final thirdPartyExports = _collectThirdPartyExports(schemas);
+    final exportContexts = [
+      for (final path in (paths.toList()..sort()))
+        {
+          'path': 'package:$packageName/$path',
+          'hasShow': false,
+          'shownTypes': '',
+        },
+      for (final e in thirdPartyExports)
+        {
+          'path': e.path,
+          'hasShow': e.shown.isNotEmpty,
+          'shownTypes': (e.shown.toList()..sort()).join(', '),
+        },
+    ];
     _renderTemplate(
       template: 'public_api',
       outPath: 'lib/api.dart',
-      context: {'imports': <String>[], 'exports': exports},
+      context: {'imports': <String>[], 'exports': exportContexts},
     );
+  }
+
+  /// Imports (third-party, non-prefixed) that the public API surface
+  /// references, grouped by package path. Each returned `Import` has a
+  /// non-empty `shown` list (the union of shown types across all
+  /// schema-level usages of that package).
+  List<Import> _collectThirdPartyExports(Iterable<RenderSchema> schemas) {
+    final collector = _ImportCollector();
+    for (final schema in schemas) {
+      RenderTreeWalker(visitor: collector).walkSchema(schema);
+    }
+    final byPath = <String, Set<String>>{};
+    for (final i in collector.imports) {
+      if (!i.path.startsWith('package:')) continue;
+      if (i.path.startsWith('package:$packageName/')) continue;
+      if (i.asName != null) continue;
+      byPath.putIfAbsent(i.path, () => <String>{}).addAll(i.shown);
+    }
+    return [
+      for (final entry in byPath.entries)
+        Import(entry.key, shown: entry.value.toList()),
+    ]..sort((a, b) => a.path.compareTo(b.path));
   }
 
   /// Emit `cspell.config.yaml`. Override to no-op if the package has a

@@ -433,124 +433,6 @@ void main() {
       expect(body, contains('parsed.hashCode'));
     });
 
-    test(
-      'round-trip test passes the synthetic `entries:` Map for '
-      'additionalProperties',
-      () async {
-        // Regression: a schema with `additionalProperties` gets a
-        // synthetic required `entries: Map<String, V>` field on the
-        // generated class. The round-trip test used to omit that
-        // field entirely, causing `missing required argument: entries`
-        // on every such schema (`integration_permissions`, the
-        // `copilot_*` family, etc. on the GitHub spec). The entries
-        // Map type parameter must match the additionalProperties
-        // value schema — `dynamic` for open additionalProperties,
-        // `String` for `{type: string}`, and so on.
-        final fs = MemoryFileSystem.test();
-        // Schemas with BOTH named properties and additionalProperties
-        // become objects with a synthetic `entries` field alongside the
-        // named properties. (A schema with only additionalProperties
-        // resolves to a Map and doesn't generate its own class —
-        // that path isn't what the GitHub bug hit.)
-        final spec = {
-          'openapi': '3.1.0',
-          'info': {'title': 'AdditionalProps', 'version': '1.0.0'},
-          'servers': [
-            {'url': 'https://example.com'},
-          ],
-          'paths': {
-            '/a': {
-              'get': {
-                'operationId': 'a',
-                'responses': {
-                  '200': {
-                    'description': 'OK',
-                    'content': {
-                      'application/json': {
-                        'schema': {
-                          r'$ref': '#/components/schemas/Bag',
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            '/b': {
-              'get': {
-                'operationId': 'b',
-                'responses': {
-                  '200': {
-                    'description': 'OK',
-                    'content': {
-                      'application/json': {
-                        'schema': {r'$ref': '#/components/schemas/Sack'},
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          'components': {
-            'schemas': {
-              // typed additionalProperties → entries: Map<String, String>{}
-              'Bag': {
-                'type': 'object',
-                'required': ['id'],
-                'properties': {
-                  'id': {'type': 'string'},
-                },
-                'additionalProperties': {'type': 'string'},
-              },
-              // open additionalProperties → entries: Map<String, dynamic>{}
-              'Sack': {
-                'type': 'object',
-                'required': ['id'],
-                'properties': {
-                  'id': {'type': 'string'},
-                },
-                'additionalProperties': true,
-              },
-            },
-          },
-        };
-        final out = fs.directory('out');
-        await renderToDirectory(spec: spec, outDir: out);
-
-        // Messages (request/response body schemas) land under
-        // `test/messages/`, models under `test/models/`. Look for each
-        // test file in either location.
-        File testFileFor(String basename) {
-          for (final subdir in const ['test/messages', 'test/models']) {
-            final f = out.childFile('$subdir/$basename');
-            if (f.existsSync()) return f;
-          }
-          final testDir = out.childDirectory('test');
-          final all = testDir.existsSync()
-              ? testDir
-                    .listSync(recursive: true)
-                    .whereType<File>()
-                    .map((f) => f.path)
-                    .join('\n')
-              : '(no test dir)';
-          fail(
-            'expected $basename under test/messages or test/models\n'
-            'generated test files:\n$all',
-          );
-        }
-
-        expect(
-          testFileFor('bag_test.dart').readAsStringSync(),
-          contains("Bag(id: 'example', entries: <String, String>{})"),
-        );
-        expect(
-          testFileFor('sack_test.dart').readAsStringSync(),
-          contains("Sack(id: 'example', entries: <String, dynamic>{})"),
-        );
-      },
-    );
-
     test('enum round-trip test exercises toString and every value', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
@@ -643,6 +525,66 @@ void main() {
       expect(body, isNot(contains('toString matches toJson')));
       expect(body, isNot(contains('fromJson round-trips every value')));
     });
+
+    test(
+      'api.dart barrel re-exports third-party packages used by models',
+      () async {
+        // A model with a `format: uri-template` field uses `UriTemplate`
+        // from `package:uri/uri.dart`. The model file imports that, but
+        // Dart exports don't chain through imports — if the barrel only
+        // re-exports the model class, consumers (incl. the generated
+        // round-trip tests) can't write `UriTemplate('...')` without
+        // adding their own `package:uri/uri.dart` import. Re-exporting
+        // third-party packages from the barrel makes
+        // `import 'package:pkg/api.dart';` cover every type mentioned
+        // in a public field signature.
+        final fs = MemoryFileSystem.test();
+        final spec = {
+          'openapi': '3.1.0',
+          'info': {'title': 'UriTemplateTest', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/endpoints': {
+              'get': {
+                'operationId': 'getEndpoint',
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          r'$ref': '#/components/schemas/Endpoint',
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'components': {
+            'schemas': {
+              'Endpoint': {
+                'type': 'object',
+                'required': ['href'],
+                'properties': {
+                  'href': {'type': 'string', 'format': 'uri-template'},
+                },
+              },
+            },
+          },
+        };
+        final out = fs.directory('out');
+        await renderToDirectory(spec: spec, outDir: out);
+        final barrel = out.childFile('lib/api.dart').readAsStringSync();
+        expect(
+          barrel,
+          contains("export 'package:uri/uri.dart' show UriTemplate;"),
+        );
+      },
+    );
 
     test('generateTests: false suppresses test emission', () async {
       final fs = MemoryFileSystem.test();

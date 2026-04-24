@@ -1,15 +1,22 @@
 ## 1.0.2
 
-- Emit single-quoted strings in auth-argument and path-interpolation
-  templates, matching `very_good_analysis`'s `prefer_single_quotes`
-  default. Generated `HttpAuth(scheme: "bearer", secretName: "X")`
-  and `.replaceAll('{id}', "${value}")` used double quotes, which
-  triggered a `prefer_single_quotes` fix in every api file that
-  `dart fix --apply` ran on. On the `spacetraders` spec alone the
-  fleet api had 105 such fixes in a single file; on the whole spec
-  fleet+systems+api families accounted for ~400 fixes. Eliminating
-  them at emission time means `dart fix` has less work to do in the
-  generator's post-processing pipeline.
+- Re-export third-party types referenced in public field signatures
+  from the `api.dart` barrel, narrowed with `show` to exactly the
+  names used. Model files import `package:uri/uri.dart` directly for
+  `UriTemplate`-typed fields, but Dart exports don't chain through
+  imports — a consumer (or a generated round-trip test) that imports
+  only the barrel couldn't reference `UriTemplate` without also
+  importing `package:uri/uri.dart` itself. The barrel now walks the
+  rendered schemas, collects every third-party `package:` entry from
+  `additionalImports` that has an explicit `shown:` list, and emits
+  `export 'package:<pkg>/<entry>.dart' show <T1, T2, ...>;` covering
+  only the specific types used —
+  `export 'package:uri/uri.dart' show UriTemplate;` today. Imports
+  without a `shown:` list (e.g. `package:meta/meta.dart` for
+  `@immutable`) stay internal to the model file. Motivating case:
+  the GitHub spec's `Root` model (~40 uri-template fields) produced
+  40+ `undefined_function: UriTemplate` errors per regeneration; now
+  clean.
 - Include the synthetic `entries:` field in `RenderObject.exampleValue`
   so round-trip tests for schemas with `additionalProperties` compile.
   When a schema has `additionalProperties`, the generated class carries

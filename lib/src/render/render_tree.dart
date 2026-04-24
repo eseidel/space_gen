@@ -226,15 +226,22 @@ abstract class CanBeParameter implements ToTemplateContext {
 // Could make this comparable to have a nicer sort for our test results.
 @immutable
 class Import extends Equatable {
-  const Import(this.path, {this.asName});
+  const Import(this.path, {this.asName, this.shown = const []});
 
   final String path;
   final String? asName;
 
+  /// Specific identifiers to narrow the import/export with a `show`
+  /// clause. Empty means "show all". Only meaningful when `asName` is
+  /// null (prefix imports already scope symbols via the prefix). Used
+  /// by the public-api barrel to narrow third-party re-exports to the
+  /// types the generated API actually references.
+  final List<String> shown;
+
   Map<String, dynamic> toTemplateContext() => {'path': path, 'asName': asName};
 
   @override
-  List<Object?> get props => [path, asName];
+  List<Object?> get props => [path, asName, shown];
 }
 
 /// Identifiers emitted by the renderer that are defined in the generated
@@ -1876,7 +1883,8 @@ class RenderPod extends RenderSchema {
   @override
   Iterable<Import> get additionalImports => [
     ...super.additionalImports,
-    if (type == PodType.uriTemplate) const Import('package:uri/uri.dart'),
+    if (type == PodType.uriTemplate)
+      const Import('package:uri/uri.dart', shown: ['UriTemplate']),
   ];
 
   /// Converts `value` (of type [dartType]) to its JSON representation.

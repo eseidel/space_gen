@@ -666,7 +666,9 @@ void main() {
           type: PodType.uriTemplate,
           createsNewType: false,
         ).additionalImports,
-        equals([const Import('package:uri/uri.dart')]),
+        equals([
+          const Import('package:uri/uri.dart', shown: ['UriTemplate']),
+        ]),
       );
     });
   });
