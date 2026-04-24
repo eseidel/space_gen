@@ -1,5 +1,15 @@
 ## 1.0.2
 
+- Allow pod schemas (`format: uuid`, `date`, `date-time`, `email`, `uri`,
+  `uri-template`, `boolean`) as path parameters. Previously
+  `_canBePathParameter` only accepted `ResolvedString`, `ResolvedInteger`,
+  `ResolvedEnum`, and recursive `ResolvedOneOf`, so a common pattern like
+  `/resources/{id}` with `id` declared as `type: string, format: uuid`
+  crashed the resolver with "Path parameters must be strings or
+  integers". All pod types serialize to a single string via their
+  `toJson` — which is the expression interpolated into the URL path —
+  so they're legal path parameters. Hit while triaging the WatchCrunch
+  OpenAPI spec.
 - Honor `security: []` on an operation as an explicit override of the
   global security requirement (public endpoint), rather than silently
   inheriting from the spec-level `security`. Previously the parser

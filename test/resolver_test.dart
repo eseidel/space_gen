@@ -89,6 +89,55 @@ void main() {
       );
     });
 
+    test('path parameters can be pod types (uuid/date/date-time/etc)', () {
+      // Repro for the watchcrunch spec: a `/resource/{id}` path where `id` is
+      // declared as `type: string, format: uuid`. Previously this crashed
+      // the resolver ("Path parameters must be strings or integers") because
+      // pod types aren't `ResolvedString`.
+      Map<String, dynamic> specWithPodPathParam(String format) => {
+        'openapi': '3.1.0',
+        'info': {'title': 'T', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/things/{id}': {
+            'get': {
+              'summary': 'Get thing',
+              'parameters': [
+                {
+                  'name': 'id',
+                  'in': 'path',
+                  'required': true,
+                  'schema': {'type': 'string', 'format': format},
+                },
+              ],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+
+      for (final format in [
+        'uuid',
+        'date',
+        'date-time',
+        'email',
+        'uri',
+        'uri-template',
+      ]) {
+        final spec = parseAndResolveTestSpec(specWithPodPathParam(format));
+        final param = spec.paths.first.operations.first.parameters.first;
+        expect(
+          param.schema,
+          isA<ResolvedPod>(),
+          reason: 'format: $format should resolve to a ResolvedPod',
+        );
+      }
+    });
+
     test('path parameters can be oneOf of strings or integers', () {
       final json = {
         'openapi': '3.1.0',
