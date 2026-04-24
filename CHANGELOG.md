@@ -1,5 +1,15 @@
 ## 1.0.2
 
+- Honor `security: []` on an operation as an explicit override of the
+  global security requirement (public endpoint), rather than silently
+  inheriting from the spec-level `security`. Previously the parser
+  conflated "security key absent" with "security is the empty list",
+  so any operation marked public under an otherwise-authenticated API
+  still generated an `authRequest:` argument pointing at the global
+  scheme. Covered by a new `gen_tests/security.json` fixture that
+  exercises the Shorebird-shaped case: global bearer auth, one endpoint
+  opting out via `security: []`, and one endpoint swapping to an
+  `apiKey` scheme.
 - Support `multipart/form-data` request bodies. Endpoints whose request
   body schema is an object of scalar + `format: binary` properties now
   generate a Dart method that takes the body object, unpacks it

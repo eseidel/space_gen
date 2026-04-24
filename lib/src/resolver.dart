@@ -448,11 +448,14 @@ ResolvedSecurityRequirement _resolveSecurityRequirement({
 }
 
 List<ResolvedSecurityRequirement> _resolveSecurityRequirements({
-  required List<SecurityRequirement> securityRequirements,
+  required List<SecurityRequirement>? securityRequirements,
   required List<SecurityScheme> securitySchemes,
   required List<ResolvedSecurityRequirement> globalSecurityRequirements,
 }) {
-  if (securityRequirements.isEmpty) {
+  // null: `security` key was absent on the operation → inherit global.
+  // empty: `security: []` was specified → explicit no-auth override,
+  // return empty so rendering emits no authRequest argument.
+  if (securityRequirements == null) {
     return globalSecurityRequirements;
   }
 

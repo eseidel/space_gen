@@ -1,0 +1,93 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Security",
+        "version": "1.0.0",
+        "description": "Exercises global + per-operation security. Covers the Shorebird-shaped case: globally-required bearer auth with a public endpoint that opts out via `security: []`, plus a scheme swap to apiKey."
+    },
+    "servers": [
+        {
+            "url": "https://example.com/api/v1"
+        }
+    ],
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ],
+    "paths": {
+        "/me": {
+            "get": {
+                "operationId": "getMe",
+                "summary": "Inherits the global bearer requirement.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/public/health": {
+            "get": {
+                "operationId": "getHealth",
+                "summary": "Public endpoint — explicitly overrides global security to require none.",
+                "security": [],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/keys/rotate": {
+            "post": {
+                "operationId": "rotateKey",
+                "summary": "Uses an API key instead of the global bearer scheme.",
+                "security": [
+                    {
+                        "apiKeyAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            },
+            "apiKeyAuth": {
+                "type": "apiKey",
+                "name": "X-Api-Key",
+                "in": "header"
+            }
+        },
+        "schemas": {
+            "User": {
+                "type": "object",
+                "required": [
+                    "id"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}
