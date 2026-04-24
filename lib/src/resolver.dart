@@ -390,6 +390,14 @@ bool _canBePathParameter(ResolvedSchema schema) {
   if (schema is ResolvedString || schema is ResolvedInteger) {
     return true;
   }
+  // Pod types (uuid, email, date, date-time, uri, uri-template, boolean) all
+  // serialize to a single string on the wire via their `toJson` — which is
+  // the expression interpolated into the URL path — so they're legal path
+  // parameters. Without this, common patterns like `format: uuid` on a
+  // `/things/{id}` path crash the resolver.
+  if (schema is ResolvedPod) {
+    return true;
+  }
   if (schema is ResolvedOneOf) {
     return schema.schemas.every(_canBePathParameter);
   }
