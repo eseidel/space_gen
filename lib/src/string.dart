@@ -30,11 +30,11 @@ String toSnakeCase(String unknown) {
   // Try to convert any UpperCase to snake_case.
   final lowered = snakeFromCamel(normalized);
   // Then convert any kebab-case to snake_case.
-  final dekebabed = snakeFromKebab(lowered);
+  final snake = snakeFromKebab(lowered);
   // "Payment Methods" → "Payment_Methods" → snakeFromCamel splits at
   // each uppercase, producing "payment__methods". Collapse the double
   // underscore (and any others the input introduced) to a single one.
-  return dekebabed.replaceAll(RegExp('_+'), '_');
+  return snake.replaceAll(RegExp('_+'), '_');
 }
 
 /// Convert kebab-case to snake_case.
