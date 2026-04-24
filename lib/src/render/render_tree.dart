@@ -659,10 +659,10 @@ extension on SecurityScheme {
         keyName: final keyName,
         inLocation: final inLocation,
       ) =>
-        'ApiKeyAuth(name: "$keyName", secretName: "$name", '
+        "ApiKeyAuth(name: '$keyName', secretName: '$name', "
             'sendIn: $inLocation)',
       HttpSecurityScheme(scheme: final scheme) =>
-        'HttpAuth(scheme: "$scheme", secretName: "$name")',
+        "HttpAuth(scheme: '$scheme', secretName: '$name')",
       UnsupportedSecurityScheme() => 'NoAuth()',
     };
     return '${' ' * indent}$expression';
@@ -792,7 +792,7 @@ class Endpoint implements ToTemplateContext {
       if (p.inLocation != ParameterLocation.path) continue;
       buffer.write(
         ".replaceAll('${p.bracketedName}', "
-        '"\${ ${p.toJsonExpression(context)} }")',
+        "'\${ ${p.toJsonExpression(context)} }')",
       );
     }
     buffer.write(',');
