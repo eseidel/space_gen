@@ -2312,6 +2312,78 @@ void main() {
     });
   });
 
+  group('suppressLongLineLintInGeneratedFiles', () {
+    Directory setUpDir(Map<String, String> files) {
+      final fs = MemoryFileSystem.test();
+      final dir = fs.directory('/out')..createSync(recursive: true);
+      for (final entry in files.entries) {
+        dir.childFile(entry.key)
+          ..parent.createSync(recursive: true)
+          ..writeAsStringSync(entry.value);
+      }
+      return dir;
+    }
+
+    test('leaves short-only files untouched', () {
+      final shortContent = List.generate(5, (i) => 'var x$i = $i;').join('\n');
+      final dir = setUpDir({'lib/short.dart': shortContent});
+      suppressLongLineLintInGeneratedFiles(dir);
+      expect(
+        dir.childFile('lib/short.dart').readAsStringSync(),
+        shortContent,
+      );
+    });
+
+    test('prepends directive to files with any line > 80 cols', () {
+      final longLine = '// ${'a' * 100}';
+      const shortContent = 'var x = 1;\n';
+      final dir = setUpDir({
+        'lib/long.dart': '$shortContent$longLine\n',
+        'lib/also_short.dart': shortContent,
+      });
+      suppressLongLineLintInGeneratedFiles(dir);
+      expect(
+        dir.childFile('lib/long.dart').readAsStringSync(),
+        startsWith('$longLineIgnoreBlock\n'),
+      );
+      expect(
+        dir.childFile('lib/also_short.dart').readAsStringSync(),
+        shortContent,
+      );
+    });
+
+    test('is idempotent — does not stack the directive', () {
+      final longLine = '// ${'a' * 100}';
+      final dir = setUpDir({
+        'lib/long.dart': '$longLineIgnoreBlock\n$longLine\n',
+      });
+      suppressLongLineLintInGeneratedFiles(dir);
+      final content = dir.childFile('lib/long.dart').readAsStringSync();
+      // Directive appears exactly once.
+      expect(
+        longLineIgnoreBlock.allMatches(content).length,
+        1,
+      );
+    });
+
+    test('ignores non-dart files', () {
+      final longLine = 'x' * 100;
+      final dir = setUpDir({'README.md': longLine});
+      suppressLongLineLintInGeneratedFiles(dir);
+      expect(dir.childFile('README.md').readAsStringSync(), longLine);
+    });
+
+    test('ignores a line exactly 80 chars (at the limit, not over)', () {
+      final exactly80 = 'x' * 80;
+      final dir = setUpDir({'lib/borderline.dart': '$exactly80\n'});
+      suppressLongLineLintInGeneratedFiles(dir);
+      expect(
+        dir.childFile('lib/borderline.dart').readAsStringSync(),
+        '$exactly80\n',
+      );
+    });
+  });
+
   // While we still support logging, this should no longer happen since
   // we detect collisions and fix them during resolution.
   test('logNameCollisions', () {
