@@ -910,12 +910,12 @@ void main() {
       expect(result, contains('value.toJson()'));
     });
 
-    test('non-discriminator oneOf with two object variants falls back '
-        'to legacy stub (no shape disambiguation possible)', () {
-      // Two objects share Map<String, dynamic> at the JSON level — no
-      // way to pick by runtime type. Without a discriminator + without
-      // structural-required-field disambiguation (follow-up), this
-      // stays UnimplementedError.
+    test('non-discriminator oneOf with two object variants and no '
+        'required fields falls back to legacy stub (no shape or '
+        'required-field disambiguation possible)', () {
+      // Two objects share Map<String, dynamic> at the JSON level. With
+      // no required fields on either side there's no key to dispatch
+      // on, so this stays UnimplementedError.
       final results = renderTestSchemas(
         {
           'Pet': {
@@ -935,6 +935,86 @@ void main() {
             'properties': {
               'bark': {'type': 'boolean'},
             },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      expect(
+        results['Pet'],
+        contains("throw UnimplementedError('Pet.fromJson')"),
+      );
+    });
+
+    test('non-discriminator oneOf with two object variants and disjoint '
+        'required fields uses required-field dispatch', () {
+      // Each variant has a property uniquely required by it — pick the
+      // variant by checking which key is present.
+      final results = renderTestSchemas(
+        {
+          'Pet': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Cat'},
+              {r'$ref': '#/components/schemas/Dog'},
+            ],
+          },
+          'Cat': {
+            'type': 'object',
+            'properties': {
+              'meow': {'type': 'boolean'},
+              'shared': {'type': 'string'},
+            },
+            'required': ['meow', 'shared'],
+          },
+          'Dog': {
+            'type': 'object',
+            'properties': {
+              'bark': {'type': 'boolean'},
+              'shared': {'type': 'string'},
+            },
+            'required': ['bark', 'shared'],
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final pet = results['Pet'];
+      expect(pet, isNotNull);
+      expect(pet, contains('factory Pet.fromJson(Map<String, dynamic> json)'));
+      expect(pet, contains("if (json.containsKey('meow'))"));
+      expect(pet, contains('return PetCat(Cat.fromJson(json))'));
+      expect(pet, contains("if (json.containsKey('bark'))"));
+      expect(pet, contains('return PetDog(Dog.fromJson(json))'));
+      expect(pet, contains('No variant of Pet matched json keys'));
+      expect(pet, contains('final class PetCat extends Pet'));
+      expect(pet, contains('final class PetDog extends Pet'));
+    });
+
+    test('required-field dispatch falls back to legacy when one variant '
+        'has no required field unique to it', () {
+      // Cat requires {a, b}; Dog requires {a}. Cat has unique "b" but
+      // Dog has no field that Cat doesn't also require → can't pick
+      // Dog deterministically → fall back.
+      final results = renderTestSchemas(
+        {
+          'Pet': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Cat'},
+              {r'$ref': '#/components/schemas/Dog'},
+            ],
+          },
+          'Cat': {
+            'type': 'object',
+            'properties': {
+              'a': {'type': 'string'},
+              'b': {'type': 'string'},
+            },
+            'required': ['a', 'b'],
+          },
+          'Dog': {
+            'type': 'object',
+            'properties': {
+              'a': {'type': 'string'},
+            },
+            'required': ['a'],
           },
         },
         specUrl: Uri.parse('file:///spec.yaml'),
