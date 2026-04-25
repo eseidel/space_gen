@@ -1262,6 +1262,53 @@ void main() {
         '}\n',
       );
     });
+
+    test('oauth2 scheme emits bearer pass-through', () {
+      // oauth2 schemes deliver a bearer token at the wire level. We
+      // generate the same `HttpAuth(scheme: 'bearer', ...)` plumbing
+      // as `http` + `bearer` so callers can supply the token through
+      // the standard `readSecret` callback. Token acquisition (OAuth2
+      // grants, refresh) is the caller's problem — we don't generate
+      // any flow logic.
+      final json = {
+        'description': 'Get a user',
+        'operationId': 'usersGet',
+        'tags': ['users'],
+        'security': [
+          {
+            'oauth2': <String>['read'],
+          },
+        ],
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final componentsJson = {
+        'securitySchemes': {
+          'oauth2': {
+            'type': 'oauth2',
+            'flows': {
+              'implicit': {
+                'authorizationUrl': 'https://example.com/auth',
+                'scopes': {'read': 'Read access'},
+              },
+            },
+          },
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users',
+        operationJson: json,
+        componentsJson: componentsJson,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      expect(
+        result,
+        contains(
+          "authRequest: HttpAuth(scheme: 'bearer', secretName: 'oauth2'),",
+        ),
+      );
+    });
   });
 
   group('range (NXX) responses', () {

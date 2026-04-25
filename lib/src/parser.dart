@@ -1090,13 +1090,27 @@ SecurityScheme parseSecurityScheme(String name, MapContext json) {
         scheme: _required<String>(json, 'scheme'),
         bearerFormat: _optional<String>(json, 'bearerFormat'),
       );
-    case 'mutualTLS':
     case 'oauth2':
     case 'openIdConnect':
     // OpenAPI 3.0 uses `openIdConnect` in the schema text, but the
     // majority of real-world specs (and several 3.1 examples) use the
     // alternate-cased `openIDConnect`. Accept both.
     case 'openIDConnect':
+      // Pass-through: at the wire level both schemes deliver an opaque
+      // bearer token in the `Authorization` header. We don't generate
+      // any flow logic — token acquisition (OIDC discovery, the OAuth2
+      // grants, refresh) stays the caller's responsibility — but we DO
+      // generate the same `authRequest:` plumbing as `http` + `bearer`
+      // so the caller's existing secret resolver can supply the token.
+      // mutualTLS isn't bearer-shaped at all, so it stays unsupported.
+      return HttpSecurityScheme(
+        pointer: pointer,
+        name: name,
+        description: description,
+        scheme: 'bearer',
+        bearerFormat: null,
+      );
+    case 'mutualTLS':
       _warn(
         json,
         "Security scheme '$name' has type '$type', which isn't supported "
