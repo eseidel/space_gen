@@ -1799,6 +1799,36 @@ void main() {
           '}\n',
         );
       });
+      test('bool newtype suppresses positional-bool lint', () {
+        // The generated extension-type, fromJson, and maybeFromJson all
+        // take a positional `bool`, which trips
+        // `avoid_positional_boolean_parameters`. The lint is correct
+        // for user-facing APIs but wrong for a newtype wrapper — the
+        // type name is the disambiguation. Suppress file-locally.
+        // See github's `prevent_self_review` in api.github.com.json.
+        final json = {'type': 'boolean'};
+        expect(
+          renderTestSchema(json, asComponent: true),
+          '// ignore_for_file: avoid_positional_boolean_parameters\n'
+          '\n'
+          'extension type const Test._(bool value) {\n'
+          '    const Test(this.value);\n'
+          '\n'
+          '    factory Test.fromJson(bool json) => Test(json);\n'
+          '\n'
+          '    /// Convenience to create a nullable type from a nullable json object.\n'
+          '    /// Useful when parsing optional fields.\n'
+          '    static Test? maybeFromJson(bool? json) {\n'
+          '        if (json == null) {\n'
+          '            return null;\n'
+          '        }\n'
+          '        return Test.fromJson(json);\n'
+          '    }\n'
+          '\n'
+          '    bool toJson() => value;\n'
+          '}\n',
+        );
+      });
       test('number newtype', () {
         final json = {
           'type': 'number',

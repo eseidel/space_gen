@@ -2033,6 +2033,13 @@ class RenderPod extends RenderSchema {
       'jsonType': jsonStorageType(isNullable: false),
       'fromJsonBody': _jsonToValueBody('json'),
       'toJsonBody': _valueToJsonBody('value', nameIsNullable: false),
+      // Bool newtypes wrap a single positional `bool` in three places
+      // (the extension-type representation, `fromJson`, `maybeFromJson`)
+      // that all trip `avoid_positional_boolean_parameters`. The lint
+      // is right about user-facing APIs (`widget.setVisible(true)`) but
+      // wrong here — the type name *is* the disambiguation. Suppress
+      // file-locally so the lint stays live for everyone else.
+      'isBoolPod': type == PodType.boolean,
     };
   }
 
