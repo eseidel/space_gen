@@ -2384,6 +2384,64 @@ void main() {
     });
   });
 
+  group('suppressCommentReferencesLintInGeneratedFiles', () {
+    Directory setUpDir(Map<String, String> files) {
+      final fs = MemoryFileSystem.test();
+      final dir = fs.directory('/out')..createSync(recursive: true);
+      for (final entry in files.entries) {
+        dir.childFile(entry.key)
+          ..parent.createSync(recursive: true)
+          ..writeAsStringSync(entry.value);
+      }
+      return dir;
+    }
+
+    test('leaves files without bracketed dartdoc references untouched', () {
+      const content = '/// A class with no bracket refs.\nclass Foo {}\n';
+      final dir = setUpDir({'lib/foo.dart': content});
+      suppressCommentReferencesLintInGeneratedFiles(dir);
+      expect(dir.childFile('lib/foo.dart').readAsStringSync(), content);
+    });
+
+    test('prepends directive when dartdoc has prose-style placeholder', () {
+      // Mirrors github's `code_of_conduct.dart` ("contacting the project
+      // team at [EMAIL]") and `license.dart` (`[year] [fullname]`).
+      const content =
+          '/// Reach out at [EMAIL] for support.\nclass CodeOfConduct {}\n';
+      final dir = setUpDir({'lib/code_of_conduct.dart': content});
+      suppressCommentReferencesLintInGeneratedFiles(dir);
+      expect(
+        dir.childFile('lib/code_of_conduct.dart').readAsStringSync(),
+        startsWith('$commentReferencesIgnoreBlock\n'),
+      );
+    });
+
+    test('skips legitimate `[Foo](url)` markdown links', () {
+      const content =
+          '/// See [the docs](https://example.com).\nclass Bar {}\n';
+      final dir = setUpDir({'lib/bar.dart': content});
+      suppressCommentReferencesLintInGeneratedFiles(dir);
+      expect(dir.childFile('lib/bar.dart').readAsStringSync(), content);
+    });
+
+    test('is idempotent — does not stack the directive', () {
+      const content =
+          '$commentReferencesIgnoreBlock\n/// Has [PLACEHOLDER] inside.\n'
+          'class Baz {}\n';
+      final dir = setUpDir({'lib/baz.dart': content});
+      suppressCommentReferencesLintInGeneratedFiles(dir);
+      final after = dir.childFile('lib/baz.dart').readAsStringSync();
+      expect(commentReferencesIgnoreBlock.allMatches(after).length, 1);
+    });
+
+    test('ignores non-dart files', () {
+      const content = '/// Has [EMAIL] in markdown';
+      final dir = setUpDir({'README.md': content});
+      suppressCommentReferencesLintInGeneratedFiles(dir);
+      expect(dir.childFile('README.md').readAsStringSync(), content);
+    });
+  });
+
   // While we still support logging, this should no longer happen since
   // we detect collisions and fix them during resolution.
   test('logNameCollisions', () {
