@@ -3623,7 +3623,7 @@ class RenderOneOf extends RenderNewType {
 
   /// True iff every variant has a known shape key AND all keys are
   /// pairwise distinct. Context-free so [additionalImports] and
-  /// [_hasDispatch] can answer the dispatchability question without a
+  /// [_hasDispatch] can answer the can-we-dispatch question without a
   /// [SchemaRenderer]; the context-taking [_shapeDispatchPlans] adds
   /// the items' fromJson/toJson expressions when arrays are involved.
   bool get _canShapeDispatch {
