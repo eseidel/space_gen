@@ -9,12 +9,12 @@ class DefaultApi {
 
   final ApiClient client;
 
-  /// Operation requires an oauth2 scheme we don't implement.
+  /// Requires an oauth2 scheme — pass-through bearer.
   Future<void> oauth2Protected() async {
     final response = await client.invokeApi(
       method: Method.get,
       path: '/oauth2-protected',
-      authRequest: const NoAuth(),
+      authRequest: const HttpAuth(scheme: 'bearer', secretName: 'oauth2Scheme'),
     );
 
     if (response.statusCode >= HttpStatus.badRequest) {
@@ -25,12 +25,12 @@ class DefaultApi {
     }
   }
 
-  /// Operation requires an openIdConnect scheme.
+  /// Requires an openIdConnect scheme — pass-through bearer.
   Future<void> oidcProtected() async {
     final response = await client.invokeApi(
       method: Method.get,
       path: '/oidc-protected',
-      authRequest: const NoAuth(),
+      authRequest: const HttpAuth(scheme: 'bearer', secretName: 'oidcScheme'),
     );
 
     if (response.statusCode >= HttpStatus.badRequest) {

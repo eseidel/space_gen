@@ -1575,12 +1575,11 @@ void main() {
           throwsA(isA<FormatException>()),
         );
       });
-      test('oauth2 declaration accepted as UnsupportedSecurityScheme', () {
-        // A spec that *declares* oauth2 (petstore, train-travel, and most
-        // nontrivial specs do) used to crash generation at parse time even
-        // if no operation actually required the scheme. Now it parses to a
-        // sentinel that renders as NoAuth(); consumers override
-        // ApiClient.resolveAuth or set defaultHeaders to inject real auth.
+      test('oauth2 parses as bearer pass-through', () {
+        // oauth2 schemes deliver an opaque bearer token at the wire
+        // level, so we generate the same `HttpAuth(scheme: 'bearer', …)`
+        // plumbing as a `http` + `bearer` scheme. Token acquisition (the
+        // OAuth2 grants, refresh) stays the caller's responsibility.
         final json = {
           'type': 'oauth2',
           'flows': {
@@ -1594,8 +1593,9 @@ void main() {
           Logger(),
           () => parseSecurityScheme('name', MapContext.initial(json)),
         );
-        expect(scheme, isA<UnsupportedSecurityScheme>());
-        expect((scheme as UnsupportedSecurityScheme).type, 'oauth2');
+        expect(scheme, isA<HttpSecurityScheme>());
+        expect((scheme as HttpSecurityScheme).scheme, 'bearer');
+        expect(scheme.bearerFormat, isNull);
       });
       test('mutualTLS declaration accepted as UnsupportedSecurityScheme', () {
         final json = {'type': 'mutualTLS'};
@@ -1606,10 +1606,11 @@ void main() {
         expect(scheme, isA<UnsupportedSecurityScheme>());
         expect((scheme as UnsupportedSecurityScheme).type, 'mutualTLS');
       });
-      test('openIdConnect declaration accepted (both spec spellings)', () {
+      test('openIdConnect parses as bearer pass-through', () {
         // OpenAPI 3.0 specs in the wild ship both 'openIdConnect' (as the
         // spec technically prescribes in some versions) and 'openIDConnect'
-        // (widely deployed). Accept both.
+        // (widely deployed). Accept both, treating each as bearer
+        // pass-through — at the wire level OIDC lands on a bearer token.
         for (final spelling in ['openIdConnect', 'openIDConnect']) {
           final json = {
             'type': spelling,
@@ -1621,10 +1622,10 @@ void main() {
           );
           expect(
             scheme,
-            isA<UnsupportedSecurityScheme>(),
+            isA<HttpSecurityScheme>(),
             reason: 'should accept type=$spelling',
           );
-          expect((scheme as UnsupportedSecurityScheme).type, spelling);
+          expect((scheme as HttpSecurityScheme).scheme, 'bearer');
         }
       });
       test('unknown type', () {
