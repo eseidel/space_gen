@@ -1809,6 +1809,9 @@ void main() {
         final json = {'type': 'boolean'};
         expect(
           renderTestSchema(json, asComponent: true),
+          '// `avoid_positional_boolean_parameters` is correct for user-facing\n'
+          '// APIs but wrong for a newtype wrapper — the type name is the\n'
+          '// disambiguation. Suppress file-locally.\n'
           '// ignore_for_file: avoid_positional_boolean_parameters\n'
           '\n'
           'extension type const Test._(bool value) {\n'
