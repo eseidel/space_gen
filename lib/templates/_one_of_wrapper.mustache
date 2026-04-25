@@ -1,0 +1,24 @@
+@immutable
+final class {{{ wrapperTypeName }}} extends {{ typeName }} {
+{{#positionalBoolIgnore}}
+    // The wrapper has a single positional arg by design — naming it
+    // would force `Wrapper(value: x)` at every call site, which buys
+    // nothing for a one-field shim.
+    // ignore: avoid_positional_boolean_parameters
+{{/positionalBoolIgnore}}
+    const {{{ wrapperTypeName }}}(this.value);
+
+    final {{{ valueType }}} value;
+
+    @override
+    {{{ toJsonReturnType }}} toJson() => {{{ toJsonBody }}};
+
+    @override
+    int get hashCode => value.hashCode;
+
+    @override
+    bool operator ==(Object other) {
+        if (identical(this, other)) return true;
+        return other is {{{ wrapperTypeName }}} && value == other.value;
+    }
+}

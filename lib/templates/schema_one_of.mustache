@@ -14,39 +14,14 @@
         };
     }
 
-    /// Convenience to create a nullable type from a nullable json object.
-    /// Useful when parsing optional fields.
-    static {{ nullableTypeName }} maybeFromJson(Map<String, dynamic>? json) {
-        if (json == null) {
-            return null;
-        }
-        return {{ typeName }}.fromJson(json);
-    }
+    {{> _one_of_maybe_from_json}}
 
     /// Require all subclasses to implement toJson.
     Map<String, dynamic> toJson();
 }
 
 {{#variants}}
-@immutable
-final class {{{ wrapperTypeName }}} extends {{ typeName }} {
-    const {{{ wrapperTypeName }}}(this.value);
-
-    final {{{ valueType }}} value;
-
-    @override
-    Map<String, dynamic> toJson() => value.toJson();
-
-    @override
-    int get hashCode => value.hashCode;
-
-    @override
-    bool operator ==(Object other) {
-        if (identical(this, other)) return true;
-        return other is {{{ wrapperTypeName }}} && value == other.value;
-    }
-}
-
+{{> _one_of_wrapper}}
 {{/variants}}
 {{/has_discriminator_dispatch}}
 {{#has_shape_dispatch}}
@@ -64,45 +39,14 @@ final class {{{ wrapperTypeName }}} extends {{ typeName }} {
         };
     }
 
-    /// Convenience to create a nullable type from a nullable json object.
-    /// Useful when parsing optional fields.
-    static {{ nullableTypeName }} maybeFromJson(dynamic json) {
-        if (json == null) {
-            return null;
-        }
-        return {{ typeName }}.fromJson(json);
-    }
+    {{> _one_of_maybe_from_json}}
 
     /// Require all subclasses to implement toJson.
     dynamic toJson();
 }
 
 {{#variants}}
-@immutable
-final class {{{ wrapperTypeName }}} extends {{ typeName }} {
-{{#positionalBoolIgnore}}
-    // The wrapper has a single positional arg by design — naming it
-    // would force `Wrapper(value: x)` at every call site, which buys
-    // nothing for a one-field shim.
-    // ignore: avoid_positional_boolean_parameters
-{{/positionalBoolIgnore}}
-    const {{{ wrapperTypeName }}}(this.value);
-
-    final {{{ valueType }}} value;
-
-    @override
-    dynamic toJson() => {{{ toJson }}};
-
-    @override
-    int get hashCode => value.hashCode;
-
-    @override
-    bool operator ==(Object other) {
-        if (identical(this, other)) return true;
-        return other is {{{ wrapperTypeName }}} && value == other.value;
-    }
-}
-
+{{> _one_of_wrapper}}
 {{/variants}}
 {{/has_shape_dispatch}}
 {{#has_required_field_dispatch}}
@@ -120,39 +64,14 @@ final class {{{ wrapperTypeName }}} extends {{ typeName }} {
         );
     }
 
-    /// Convenience to create a nullable type from a nullable json object.
-    /// Useful when parsing optional fields.
-    static {{ nullableTypeName }} maybeFromJson(Map<String, dynamic>? json) {
-        if (json == null) {
-            return null;
-        }
-        return {{ typeName }}.fromJson(json);
-    }
+    {{> _one_of_maybe_from_json}}
 
     /// Require all subclasses to implement toJson.
     Map<String, dynamic> toJson();
 }
 
 {{#variants}}
-@immutable
-final class {{{ wrapperTypeName }}} extends {{ typeName }} {
-    const {{{ wrapperTypeName }}}(this.value);
-
-    final {{{ valueType }}} value;
-
-    @override
-    Map<String, dynamic> toJson() => value.toJson();
-
-    @override
-    int get hashCode => value.hashCode;
-
-    @override
-    bool operator ==(Object other) {
-        if (identical(this, other)) return true;
-        return other is {{{ wrapperTypeName }}} && value == other.value;
-    }
-}
-
+{{> _one_of_wrapper}}
 {{/variants}}
 {{/has_required_field_dispatch}}
 {{#no_dispatch}}
@@ -163,14 +82,7 @@ final class {{{ wrapperTypeName }}} extends {{ typeName }} {
         throw UnimplementedError('{{ typeName }}.fromJson');
     }
 
-    /// Convenience to create a nullable type from a nullable json object.
-    /// Useful when parsing optional fields.
-    static {{ nullableTypeName }} maybeFromJson(dynamic json) {
-        if (json == null) {
-            return null;
-        }
-        return {{ typeName }}.fromJson(json);
-    }
+    {{> _one_of_maybe_from_json}}
 
     /// Require all subclasses to implement toJson.
     dynamic toJson();

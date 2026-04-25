@@ -3628,16 +3628,26 @@ class RenderOneOf extends RenderNewType {
       'has_shape_dispatch': false,
       'has_required_field_dispatch': false,
       'no_dispatch': false,
+      // Defaults for the maybeFromJson partial — overridden per path
+      // below. Dispatch paths that take a Map override; shape and the
+      // legacy stub keep this dynamic default.
+      'maybeFromJsonParamType': 'dynamic',
     };
+
+    /// Wrapper-variant context for the object-only paths
+    /// (discriminator, required-field). Both produce
+    /// `Map<String, dynamic> toJson() => value.toJson()` wrappers.
+    Map<String, dynamic> objectWrapperContext(RenderSchema variant) => {
+      'wrapperTypeName': wrapperTypeName(variant),
+      'valueType': variant.typeName,
+      'toJsonReturnType': 'Map<String, dynamic>',
+      'toJsonBody': 'value.toJson()',
+      'positionalBoolIgnore': false,
+    };
+
     final disc = discriminator;
     if (disc != null && _hasDiscriminatorDispatch) {
-      final variants = <Map<String, dynamic>>[];
-      for (final schema in schemas) {
-        variants.add({
-          'wrapperTypeName': wrapperTypeName(schema),
-          'valueType': schema.typeName,
-        });
-      }
+      final variants = schemas.map(objectWrapperContext).toList();
       final dispatch = <Map<String, dynamic>>[];
       for (final entry in disc.mapping.entries) {
         dispatch.add({
@@ -3650,6 +3660,7 @@ class RenderOneOf extends RenderNewType {
       ctx['discriminatorProperty'] = disc.propertyName;
       ctx['variants'] = variants;
       ctx['dispatch'] = dispatch;
+      ctx['maybeFromJsonParamType'] = 'Map<String, dynamic>?';
       return ctx;
     }
     final shapePlans = _shapeDispatchPlans;
@@ -3662,7 +3673,11 @@ class RenderOneOf extends RenderNewType {
               'valueType': p.valueType,
               'jsonTestType': p.jsonTestType,
               'fromJson': p.fromJson,
-              'toJson': p.toJson,
+              // The wrapper partial expects `toJsonBody` and
+              // `toJsonReturnType`; shape variants always return
+              // `dynamic` (variants might be primitives).
+              'toJsonBody': p.toJson,
+              'toJsonReturnType': 'dynamic',
               'positionalBoolIgnore': p.positionalBoolIgnore,
             },
           )
@@ -3681,16 +3696,10 @@ class RenderOneOf extends RenderNewType {
             },
           )
           .toList();
-      // Same wrapper-block shape as the discriminator path (object-only,
-      // delegates fromJson/toJson to the variant class).
       ctx['variants'] = reqArms
-          .map(
-            (a) => {
-              'wrapperTypeName': wrapperTypeName(a.variant),
-              'valueType': a.variant.typeName,
-            },
-          )
+          .map((a) => objectWrapperContext(a.variant))
           .toList();
+      ctx['maybeFromJsonParamType'] = 'Map<String, dynamic>?';
       return ctx;
     }
     ctx['no_dispatch'] = true;

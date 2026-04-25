@@ -1,0 +1,8 @@
+/// Convenience to create a nullable type from a nullable json object.
+/// Useful when parsing optional fields.
+static {{ nullableTypeName }} maybeFromJson({{{ maybeFromJsonParamType }}} json) {
+    if (json == null) {
+        return null;
+    }
+    return {{ typeName }}.fromJson(json);
+}
