@@ -21,8 +21,18 @@ Never _unimplemented(String message, JsonPointer pointer) {
   throw UnimplementedError('$message at $pointer');
 }
 
-/// Convert an enum value to a variable name.
-String variableSafeName(Quirks quirks, String jsonName) {
+/// Convert a spec-side identifier (enum value, property name, parameter
+/// name) into a legal Dart identifier. [preserveCase] preserves the
+/// input's original casing after sanitization — only enum values should
+/// set this (under the `screamingCapsEnums` quirk), so SCREAMING_CAPS
+/// enum constants survive. Everything else gets camelCased so
+/// snake_case spec-side names like `api_key` don't leak into generated
+/// parameter/property identifiers.
+String variableSafeName(
+  Quirks quirks,
+  String jsonName, {
+  bool preserveCase = false,
+}) {
   var escapedName = jsonName.replaceAll(' ', '_');
   escapedName = escapedName
       // These are kinda hacky for the GitHub spec which has +1 and -1 as names.
@@ -37,8 +47,7 @@ String variableSafeName(Quirks quirks, String jsonName) {
       // TODO(eseidel): Tweak this to make nicer names.
       .replaceAll(RegExp('[^a-zA-Z0-9_]'), '_');
 
-  // This should probably only apply to enums?
-  if (!quirks.screamingCapsEnums) {
+  if (!preserveCase) {
     // Dart style uses camelCase.
     escapedName = toLowerCamelCase(escapedName);
   }
@@ -3110,7 +3119,14 @@ class RenderEnum extends RenderNewType {
   static List<String> variableNamesFor(Quirks quirks, List<String> values) {
     final commonPrefix = sharedPrefixFromSnakeNames(values);
     String toShortVariableName(String value) {
-      var dartName = variableSafeName(quirks, value);
+      var dartName = variableSafeName(
+        quirks,
+        value,
+        // Enum values — and only enum values — honor the SCREAMING_CAPS
+        // preservation quirk. For every other identifier (parameters,
+        // properties) camelCase is the right Dart style.
+        preserveCase: quirks.screamingCapsEnums,
+      );
       // OpenAPI also removes shared prefixes from enum values.
       dartName = dartName.replaceAll(commonPrefix, '');
       // Avoid reserved words again in case removing the prefix caused
