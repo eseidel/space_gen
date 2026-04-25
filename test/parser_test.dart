@@ -328,6 +328,56 @@ void main() {
       expect(schema, isA<SchemaOneOf>());
     });
 
+    test('oneOf with discriminator + mapping', () {
+      final json = {
+        'oneOf': [
+          {r'$ref': '#/components/schemas/Cat'},
+          {r'$ref': '#/components/schemas/Dog'},
+        ],
+        'discriminator': {
+          'propertyName': 'pet_type',
+          'mapping': {
+            'cat': '#/components/schemas/Cat',
+            // Bare-name form is normalized to a full ref.
+            'dog': 'Dog',
+          },
+        },
+      };
+      final schemas = parseTestSchemas({
+        'Test': json,
+        'Cat': {'type': 'object'},
+        'Dog': {'type': 'object'},
+      });
+      final object = schemas['Test']?.object;
+      if (object is! SchemaOneOf) {
+        fail('Expected SchemaOneOf, got ${object.runtimeType}');
+      }
+      final discriminator = object.discriminator;
+      if (discriminator == null) fail('discriminator unexpectedly null');
+      expect(discriminator.propertyName, 'pet_type');
+      final mapping = discriminator.mapping;
+      if (mapping == null) fail('mapping unexpectedly null');
+      expect(
+        mapping['cat']?.ref?.uri,
+        Uri.parse('#/components/schemas/Cat'),
+      );
+      expect(
+        mapping['dog']?.ref?.uri,
+        Uri.parse('#/components/schemas/Dog'),
+      );
+    });
+
+    test('oneOf without discriminator', () {
+      final json = {
+        'oneOf': [
+          {'type': 'string'},
+          {'type': 'integer'},
+        ],
+      };
+      final oneOf = parseTestSchema(json) as SchemaOneOf;
+      expect(oneOf.discriminator, isNull);
+    });
+
     test('components schemas as ref not supported', () {
       // Refs are generally fine.
       final json = {

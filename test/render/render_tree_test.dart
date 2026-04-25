@@ -621,6 +621,7 @@ void main() {
             createsNewType: false,
           ),
         ],
+        discriminator: null,
       );
       expect(a.equalsIgnoringName(a), isTrue);
 
@@ -641,6 +642,7 @@ void main() {
             createsNewType: false,
           ),
         ],
+        discriminator: null,
       );
       expect(a.equalsIgnoringName(b), isTrue);
 
@@ -670,6 +672,7 @@ void main() {
             createsNewType: false,
           ),
         ],
+        discriminator: null,
       );
       expect(a.equalsIgnoringName(c), isFalse);
     });
@@ -1015,6 +1018,7 @@ void main() {
             createsNewType: false,
           ),
         ],
+        discriminator: null,
       );
       expect(schema.exampleValue(context), isNull);
     });

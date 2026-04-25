@@ -341,7 +341,43 @@ class SchemaAllOf extends SchemaCombiner {
 }
 
 class SchemaOneOf extends SchemaCombiner {
-  const SchemaOneOf({required super.common, required super.schemas});
+  const SchemaOneOf({
+    required super.common,
+    required super.schemas,
+    required this.discriminator,
+  });
+
+  /// The OpenAPI discriminator object, if any.
+  final SchemaDiscriminator? discriminator;
+
+  @override
+  List<Object?> get props => [super.props, discriminator];
+}
+
+/// An OpenAPI discriminator object.
+/// https://spec.openapis.org/oas/v3.0.0#discriminator-object
+///
+/// `propertyName` names the JSON property whose value selects which
+/// variant of the oneOf is in use. `mapping` optionally maps property
+/// values to specific variants; without it, the variant is selected
+/// implicitly by schema name (we don't yet support the implicit form).
+@immutable
+class SchemaDiscriminator extends Equatable {
+  const SchemaDiscriminator({
+    required this.propertyName,
+    required this.mapping,
+  });
+
+  final String propertyName;
+
+  /// Map of discriminator property values to references to one of the
+  /// oneOf variants. Stored as raw [SchemaRef]s (already normalized to
+  /// `#/components/schemas/<name>` form when the spec used a short name);
+  /// the resolver matches them up to entries in the oneOf.
+  final Map<String, SchemaRef>? mapping;
+
+  @override
+  List<Object?> get props => [propertyName, mapping];
 }
 
 /// A schema is a json object that describes the shape of a json object.
