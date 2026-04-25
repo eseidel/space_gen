@@ -279,6 +279,7 @@ abstract final class ModelHelpers {
   static const listHash = 'listHash';
   static const mapHash = 'mapHash';
   static const parseFromJson = 'parseFromJson';
+  static const checkedKey = 'checkedKey';
 
   static const List<String> all = [
     maybeParseDateTime,
@@ -290,6 +291,7 @@ abstract final class ModelHelpers {
     listHash,
     mapHash,
     parseFromJson,
+    checkedKey,
   ];
 }
 
@@ -2539,8 +2541,8 @@ class RenderObject extends RenderNewType {
   }) {
     final dartName = variableSafeName(context.quirks, jsonName);
     final hasDefaultValue = property.hasDefaultValue(context);
-    final jsonIsNullable =
-        !requiredProperties.contains(jsonName) || property.common.nullable;
+    final jsonKeyIsRequired = requiredProperties.contains(jsonName);
+    final jsonIsNullable = !jsonKeyIsRequired || property.common.nullable;
     final dartIsNullable =
         propertyDartIsNullable(
           jsonName: jsonName,
@@ -2548,6 +2550,15 @@ class RenderObject extends RenderNewType {
           propertyHasDefaultValue: hasDefaultValue,
         ) ||
         property.common.nullable;
+    // OpenAPI 3.1 lets a property be both `required` and accept `null`
+    // as its value (`type: [T, "null"]` + `required: [key]`). A plain
+    // `json[key] as T?` cast would then accept a missing key as a null
+    // value, silently violating `required`. Route the read through
+    // `checkedKey`, which throws `FormatException` when the key is
+    // absent — other combinations still read `json[key]` directly.
+    final jsonRead = jsonKeyIsRequired && property.common.nullable
+        ? "${ModelHelpers.checkedKey}(json, '$jsonName')"
+        : "json['$jsonName']";
 
     // Means that the constructor parameter is required which is only true if
     // both the json property is required and it does not have a default.
@@ -2586,7 +2597,7 @@ class RenderObject extends RenderNewType {
         dartIsNullable: dartIsNullable,
       ),
       'fromJson': property.fromJsonExpression(
-        "json['$jsonName']",
+        jsonRead,
         context,
         dartIsNullable: dartIsNullable,
         jsonIsNullable: jsonIsNullable,
