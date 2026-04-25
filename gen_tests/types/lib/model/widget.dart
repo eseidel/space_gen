@@ -1,3 +1,9 @@
+// Spec descriptions copy prose verbatim into dartdoc, where `[x]`
+// inside a sentence (placeholder text, ALL_CAPS tokens, license
+// templates) is parsed as a symbol reference even when no such
+// symbol exists. Suppress file-locally so the lint stays live
+// elsewhere; spec authors do not always escape brackets.
+// ignore_for_file: comment_references
 import 'package:types/model_helpers.dart';
 
 /// {@template widget}

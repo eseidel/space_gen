@@ -2384,23 +2384,10 @@ void main() {
     });
   });
 
-  group('suppressCommentReferencesLintInGeneratedFiles', () {
-    Directory setUpDir(Map<String, String> files) {
-      final fs = MemoryFileSystem.test();
-      final dir = fs.directory('/out')..createSync(recursive: true);
-      for (final entry in files.entries) {
-        dir.childFile(entry.key)
-          ..parent.createSync(recursive: true)
-          ..writeAsStringSync(entry.value);
-      }
-      return dir;
-    }
-
-    test('leaves files without bracketed dartdoc references untouched', () {
+  group('maybeAddCommentReferencesIgnore', () {
+    test('passes through content with no bracketed dartdoc tokens', () {
       const content = '/// A class with no bracket refs.\nclass Foo {}\n';
-      final dir = setUpDir({'lib/foo.dart': content});
-      suppressCommentReferencesLintInGeneratedFiles(dir);
-      expect(dir.childFile('lib/foo.dart').readAsStringSync(), content);
+      expect(maybeAddCommentReferencesIgnore(content), content);
     });
 
     test('prepends directive when dartdoc has prose-style placeholder', () {
@@ -2408,68 +2395,23 @@ void main() {
       // team at [EMAIL]") and `license.dart` (`[year] [fullname]`).
       const content =
           '/// Reach out at [EMAIL] for support.\nclass CodeOfConduct {}\n';
-      final dir = setUpDir({'lib/code_of_conduct.dart': content});
-      suppressCommentReferencesLintInGeneratedFiles(dir);
       expect(
-        dir.childFile('lib/code_of_conduct.dart').readAsStringSync(),
+        maybeAddCommentReferencesIgnore(content),
         startsWith('$commentReferencesIgnoreBlock\n'),
       );
     });
 
-    test('skips legitimate `[Foo](url)` markdown links', () {
+    test('passes through `[Foo](url)` markdown links', () {
       const content =
           '/// See [the docs](https://example.com).\nclass Bar {}\n';
-      final dir = setUpDir({'lib/bar.dart': content});
-      suppressCommentReferencesLintInGeneratedFiles(dir);
-      expect(dir.childFile('lib/bar.dart').readAsStringSync(), content);
+      expect(maybeAddCommentReferencesIgnore(content), content);
     });
 
-    test('is idempotent — does not stack the directive', () {
-      const content =
-          '$commentReferencesIgnoreBlock\n/// Has [PLACEHOLDER] inside.\n'
-          'class Baz {}\n';
-      final dir = setUpDir({'lib/baz.dart': content});
-      suppressCommentReferencesLintInGeneratedFiles(dir);
-      final after = dir.childFile('lib/baz.dart').readAsStringSync();
-      expect(commentReferencesIgnoreBlock.allMatches(after).length, 1);
-    });
-
-    test('ignores non-dart files', () {
-      const content = '/// Has [EMAIL] in markdown';
-      final dir = setUpDir({'README.md': content});
-      suppressCommentReferencesLintInGeneratedFiles(dir);
-      expect(dir.childFile('README.md').readAsStringSync(), content);
-    });
-
-    test('skips hand-written template files in the allowlist', () {
-      // Bracketed references in hand-written templates (`auth.dart`,
-      // `model_helpers.dart`, etc.) always resolve at compile time, so
-      // the suppression block is pure noise there. Mirrors the bug
-      // reported in #135.
-      const content = '/// See [Foo] for details.\nclass Bar {}\n';
-      final dir = setUpDir({
-        for (final name in handWrittenTemplateBasenames) 'lib/$name': content,
-      });
-      suppressCommentReferencesLintInGeneratedFiles(dir);
-      for (final name in handWrittenTemplateBasenames) {
-        expect(
-          dir.childFile('lib/$name').readAsStringSync(),
-          content,
-          reason: '$name should not get the directive prepended',
-        );
-      }
-    });
-
-    test('still prepends directive for spec-driven model files', () {
-      // Regression — making sure the allowlist didn't widen to skip
-      // the model files we actually want to cover.
-      const content = '/// See [Foo] for details.\nclass Bar {}\n';
-      final dir = setUpDir({'lib/models/foo.dart': content});
-      suppressCommentReferencesLintInGeneratedFiles(dir);
-      expect(
-        dir.childFile('lib/models/foo.dart').readAsStringSync(),
-        startsWith('$commentReferencesIgnoreBlock\n'),
-      );
+    test('does not match plain-comment brackets, only `///` doc comments', () {
+      // Inline `// [SOMETHING]` comments are invisible to dartdoc and
+      // can't trip `comment_references`.
+      const content = '// [PLACEHOLDER] not a dartdoc.\nclass Foo {}\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
     });
   });
 

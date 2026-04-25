@@ -127,49 +127,22 @@ const commentReferencesIgnoreBlock =
     '// elsewhere; spec authors do not always escape brackets.\n'
     '// ignore_for_file: comment_references';
 
-/// Basenames of files emitted from hand-written templates rather than
-/// from spec content. These never carry spec-author prose, so any
-/// bracketed dartdoc token in them is a template bug to fix at the
-/// source — not a spec-driven artifact to suppress.
+/// Returns [content] with [commentReferencesIgnoreBlock] prepended if
+/// any `///` doc comment carries a bracketed token that doesn't look
+/// like a `[Foo](url)` markdown link. Used at file-emit time on the
+/// two render paths that splice raw spec descriptions into dartdoc
+/// (schemas, operations) — hand-written templates skip the call so a
+/// spurious `[FormatException]` reference in their docs doesn't get
+/// silently suppressed when it should be fixed at the source.
 @visibleForTesting
-const handWrittenTemplateBasenames = {
-  'api_exception.dart',
-  'auth.dart',
-  'api_client.dart',
-  'model_helpers.dart',
-  'client.dart',
-  'api.dart',
-};
-
-/// Walks [dir] and prepends [commentReferencesIgnoreBlock] to any
-/// `.dart` file with a `///` line containing `[<token>]` that doesn't
-/// look like a `[Foo](link)` link reference. Sister to
-/// [suppressLongLineLintInGeneratedFiles] — same per-file pattern,
-/// different lint.
-@visibleForTesting
-void suppressCommentReferencesLintInGeneratedFiles(Directory dir) {
-  const marker = '// ignore_for_file: comment_references';
+String maybeAddCommentReferencesIgnore(String content) {
   // `///` followed by anything, then a `[word]` bracketed token NOT
   // followed by `(` (which would make it a `[Foo](url)` link). Matches
   // both prose placeholders (`[EMAIL]`, `[year]`) and stray symbol
   // references the spec author meant as plain text.
   final docCommentBracketRe = RegExp(r'///.*\[[^\]\s]+\](?!\()');
-  final dartFiles = dir
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((f) => f.path.endsWith('.dart'));
-  for (final file in dartFiles) {
-    // Skip hand-written template files: any unresolved bracketed
-    // reference there is a template bug to fix upstream rather than
-    // suppress per-file.
-    if (handWrittenTemplateBasenames.contains(p.basename(file.path))) {
-      continue;
-    }
-    final content = file.readAsStringSync();
-    if (content.contains(marker)) continue;
-    if (!docCommentBracketRe.hasMatch(content)) continue;
-    file.writeAsStringSync('$commentReferencesIgnoreBlock\n$content');
-  }
+  if (!docCommentBracketRe.hasMatch(content)) return content;
+  return '$commentReferencesIgnoreBlock\n$content';
 }
 
 @visibleForTesting
@@ -495,14 +468,19 @@ class FileRenderer {
   String modelPackageImport(FileRenderer context, RenderSchema schema) =>
       'package:${context.packageName}/${context.modelPackagePath(schema)}';
 
-  /// Render a template.
+  /// Render a template. [transform] runs on the rendered content
+  /// before it lands on disk — used by the schema/operation paths to
+  /// add `// ignore_for_file: comment_references` when the spec's
+  /// description text would trip the lint.
   void _renderTemplate({
     required String template,
     required String outPath,
     Map<String, dynamic> context = const {},
+    String Function(String content)? transform,
   }) {
     final output = templates.loadTemplate(template).renderString(context);
-    fileWriter.writeFile(path: outPath, content: output);
+    final finalContent = transform == null ? output : transform(output);
+    fileWriter.writeFile(path: outPath, content: finalContent);
   }
 
   /// Set up the package directory (creates [fileWriter]'s outDir and
@@ -760,6 +738,7 @@ class FileRenderer {
         template: 'add_imports',
         outPath: outPath,
         context: {'imports': importsContext, 'content': renderedApi.body},
+        transform: maybeAddCommentReferencesIgnore,
       );
       rendered.add(api);
     }
@@ -826,6 +805,7 @@ class FileRenderer {
         template: 'add_imports',
         outPath: outPath,
         context: {'imports': importsContext, 'content': rendered.body},
+        transform: maybeAddCommentReferencesIgnore,
       );
     }
   }
@@ -920,7 +900,6 @@ class FileRenderer {
     renderPublicApi(spec.apis, schemas);
     formatter.formatAndFix(pkgDir: fileWriter.outDir.path);
     suppressLongLineLintInGeneratedFiles(fileWriter.outDir);
-    suppressCommentReferencesLintInGeneratedFiles(fileWriter.outDir);
 
     final misspellings = spellChecker.collectMisspellings(fileWriter.outDir);
     renderCspellConfig(misspellings);
