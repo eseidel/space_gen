@@ -837,7 +837,7 @@ void main() {
           '    factory User.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           "        return parseFromJson('User', json, () => User(\n"
-          "            foo: Value.maybeFromJson(json['foo'] as Map<String, dynamic>?),\n"
+          "            foo: Value.maybeFromJson(checkedKey(json, 'foo') as Map<String, dynamic>?),\n"
           '        ));\n'
           '    }\n'
           '\n'
@@ -2000,7 +2000,7 @@ void main() {
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           "        return parseFromJson('Test', json, () => Test(\n"
-          "            reqNull: json['req_null'] as String?,\n"
+          "            reqNull: checkedKey(json, 'req_null') as String?,\n"
           "            optNull: json['opt_null'] as String?,\n"
           "            req: json['req'] as String,\n"
           "            opt: json['opt'] as String?,\n"
