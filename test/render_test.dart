@@ -25,16 +25,22 @@ void main() {
     expect(sanitizePackageName('api.github.com'), 'api_github_com');
     expect(sanitizePackageName('my-package'), 'my_package');
     // Uppercase gets lowered.
-    expect(sanitizePackageName('MyApi'), 'myapi');
+    expect(sanitizePackageName('Package'), 'package');
     // Leading digits get a `p_` prefix.
-    expect(sanitizePackageName('123api'), 'p_123api');
+    expect(sanitizePackageName('123_client'), 'p_123_client');
     // Leading underscores strip, not prefix.
-    expect(sanitizePackageName('_api'), 'api');
+    expect(sanitizePackageName('_client'), 'client');
     // Empty-after-sanitize falls back to a non-empty valid name.
     expect(sanitizePackageName('.'), 'p');
     expect(sanitizePackageName(''), 'p');
     // Result always passes validatePackageName.
-    for (final raw in ['api.github.com', '123api', '.', '_api', 'MyApi']) {
+    for (final raw in [
+      'api.github.com',
+      '123_client',
+      '.',
+      '_client',
+      'Package',
+    ]) {
       expect(
         () => validatePackageName(sanitizePackageName(raw)),
         returnsNormally,
