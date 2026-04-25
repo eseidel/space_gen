@@ -1,3 +1,9 @@
+// Spec descriptions copy prose verbatim into dartdoc, where `[x]`
+// inside a sentence (placeholder text, ALL_CAPS tokens, license
+// templates) is parsed as a symbol reference even when no such
+// symbol exists. Suppress file-locally so the lint stays live
+// elsewhere; spec authors do not always escape brackets.
+// ignore_for_file: comment_references
 import 'package:meta/meta.dart';
 
 /// An exception thrown when a required secret is missing.
@@ -38,8 +44,12 @@ class ResolvedAuth {
     headers.addAll(this.headers);
   }
 
-  /// Apply the resolved auth to the given parameters.
-  void applyToParams(Map<String, String> params) {
+  /// Apply the resolved auth to the given parameters. Accepts a
+  /// `Map<String, dynamic>` so it can be called with the same map the
+  /// generated client builds for `Uri.replace`, which carries either
+  /// `String` (scalar params) or `Iterable<String>` (array params with
+  /// explode=true). Auth-injected values are always `String`.
+  void applyToParams(Map<String, dynamic> params) {
     params.addAll(this.params);
   }
 

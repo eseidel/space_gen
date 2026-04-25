@@ -757,9 +757,9 @@ void main() {
       );
       expect(
         result,
-        // This expectation is wrong.  foo should just default to null
-        // even when quirking for OpenAPI.  Example:
-        // https://github.com/eseidel/space_traders/blob/a40923167bb6fec2069ec3c42b6ff69c7fc14439/packages/openapi/lib/api/systems_api.dart#L482
+        // The `const []` default is an openapi-quirk artifact; foo should
+        // really default to null. Tracked separately — that quirk is
+        // out of scope for this query-array fix.
         '/// Test API\n'
         'class DefaultApi {\n'
         '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
@@ -774,7 +774,7 @@ void main() {
         '            method: Method.post,\n'
         "            path: '/users',\n"
         '            queryParameters: {\n'
-        "                'foo': ?foo?.toString(),\n"
+        "                'foo': ?foo?.map((e) => e.toString()).toList(),\n"
         '            },\n'
         '        );\n'
         '\n'

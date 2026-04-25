@@ -38,8 +38,12 @@ class ResolvedAuth {
     headers.addAll(this.headers);
   }
 
-  /// Apply the resolved auth to the given parameters.
-  void applyToParams(Map<String, String> params) {
+  /// Apply the resolved auth to the given parameters. Accepts a
+  /// `Map<String, dynamic>` so it can be called with the same map the
+  /// generated client builds for `Uri.replace`, which carries either
+  /// `String` (scalar params) or `Iterable<String>` (array params with
+  /// explode=true). Auth-injected values are always `String`.
+  void applyToParams(Map<String, dynamic> params) {
     params.addAll(this.params);
   }
 

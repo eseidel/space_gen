@@ -56,7 +56,7 @@ class ApiClient {
 
   Uri _resolveUri({
     required String path,
-    required Map<String, String> queryParameters,
+    required Map<String, dynamic> queryParameters,
     required ResolvedAuth auth,
   }) {
     // baseUri can contain a path, so we need to resolve the passed path
@@ -64,7 +64,15 @@ class ApiClient {
     // but should be interpreted as relative to the baseUri.
     final uri = Uri.parse('$baseUri$path');
     // baseUri can also include query parameters, so we need to merge them.
-    final mergedParameters = {...baseUri.queryParameters, ...queryParameters};
+    // The map is `dynamic`-valued so array query params can land here as
+    // `Iterable<String>` and survive into `Uri.replace` — which spreads
+    // them into repeated `?key=v1&key=v2` (form/explode=true). Scalar
+    // params still land as plain `String`. Auth-injected api keys are
+    // always scalar strings.
+    final mergedParameters = <String, dynamic>{
+      ...baseUri.queryParameters,
+      ...queryParameters,
+    };
     auth.applyToParams(mergedParameters);
     return uri.replace(queryParameters: mergedParameters);
   }
@@ -149,7 +157,7 @@ class ApiClient {
   Future<Response> invokeApi({
     required Method method,
     required String path,
-    Map<String, String> queryParameters = const {},
+    Map<String, dynamic> queryParameters = const {},
     // Body is nullable to allow for post requests which have an optional body
     // to not have to generate two separate calls depending on whether the
     // body is present or not.
@@ -206,7 +214,7 @@ class ApiClient {
     required String path,
     required Map<String, String> fields,
     required List<MultipartFile> files,
-    Map<String, String> queryParameters = const {},
+    Map<String, dynamic> queryParameters = const {},
     Map<String, String> headerParameters = const {},
     AuthRequest? authRequest,
   }) async {

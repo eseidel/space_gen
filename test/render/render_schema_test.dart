@@ -2291,6 +2291,79 @@ void main() {
       );
     });
 
+    group('array parameters', () {
+      test(
+        'nullable string-array query param emits .map((e) => e.toString()).toList()',
+        () {
+          // Default OpenAPI style=form, explode=true: each value gets its own
+          // ?key=v repetition. Generated client emits an Iterable<String>
+          // and `Uri.replace` handles the spreading.
+          final operation = {
+            'parameters': [
+              {
+                'name': 'tags',
+                'in': 'query',
+                'schema': {
+                  'type': 'array',
+                  'items': {'type': 'string'},
+                },
+              },
+            ],
+            'responses': {
+              '200': {'description': 'OK'},
+            },
+          };
+          final result = renderTestOperation(
+            path: '/items',
+            operationJson: operation,
+            serverUrl: Uri.parse('https://example.com'),
+          );
+          expect(
+            result,
+            contains(
+              "                'tags': ?tags?.map((e) => e.toString()).toList(),",
+            ),
+          );
+          // The buggy old emission must be gone — `?tags?.toString()` would
+          // ship the list as `[a, b]` literal on the wire.
+          expect(result, isNot(contains('?tags?.toString()')));
+        },
+      );
+
+      test('array header param joins items with comma', () {
+        // Default style=simple, explode=false for headers: HTTP headers
+        // can't repeat with arbitrary semantics, so values are CSV-joined
+        // into a single string.
+        final operation = {
+          'parameters': [
+            {
+              'name': 'X-Tags',
+              'in': 'header',
+              'required': true,
+              'schema': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          ],
+          'responses': {
+            '200': {'description': 'OK'},
+          },
+        };
+        final result = renderTestOperation(
+          path: '/items',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        );
+        expect(
+          result,
+          contains(
+            "                'X-Tags': xTags.map((e) => e.toString()).join(','),",
+          ),
+        );
+      });
+    });
+
     group('array validations', () {
       test('operation', () {
         final operation = {
@@ -2341,7 +2414,7 @@ void main() {
           '            method: Method.post,\n'
           "            path: '/pet/{petId}/uploadImage',\n"
           '            queryParameters: {\n'
-          "                'ids': ids.toString(),\n"
+          "                'ids': ids.map((e) => e.toString()).toList(),\n"
           '            },\n'
           '        );\n'
           '\n'
