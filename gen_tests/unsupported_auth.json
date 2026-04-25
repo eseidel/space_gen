@@ -3,7 +3,7 @@
     "info": {
         "title": "Unsupported Auth",
         "version": "1.0.0",
-        "description": "Exercises auth scheme handling beyond plain `http`. oauth2 and openIdConnect are pass-through bearer (renderer emits `HttpAuth(scheme: 'bearer', ...)`); mutualTLS is genuinely unsupported and walks the soft-fail branch that emits `NoAuth()`. Keep all three wired to operations so the codegen path is exercised end-to-end."
+        "description": "Exercises auth scheme handling beyond plain `http`. oauth2 and openIdConnect are pass-through bearer (renderer emits `HttpAuth(scheme: 'bearer', ...)`); mutualTLS is genuinely unsupported and walks the soft-fail branch that emits `NoAuth()`. Keep all three wired to operations so the generator path is exercised end-to-end."
     },
     "servers": [
         {

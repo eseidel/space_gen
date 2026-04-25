@@ -1275,7 +1275,9 @@ void main() {
         'operationId': 'usersGet',
         'tags': ['users'],
         'security': [
-          {'oauth2': <String>['read']},
+          {
+            'oauth2': <String>['read'],
+          },
         ],
         'responses': {
           '200': {'description': 'OK'},
