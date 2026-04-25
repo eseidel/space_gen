@@ -1707,6 +1707,59 @@ void main() {
       });
 
       test(
+        'optional property with const default under openapi quirks emits '
+        '?? default in fromJson and non-nullable field',
+        () {
+          // Covers the `!dartIsNullable` arm of `orDefaultExpression`:
+          // `nonNullableDefaultValues` makes the Dart field non-null
+          // when a default is present, and `as int? ?? 1` is what
+          // populates the field on a missing JSON key. Mirrors github's
+          // `repository.private = false` shape.
+          final json = {
+            'type': 'object',
+            'properties': {
+              'count': {'type': 'integer', 'default': 1},
+            },
+          };
+          final result = renderTestSchema(
+            json,
+            quirks: const Quirks.openapi(),
+          );
+          expect(result, contains('int count;'));
+          expect(result, contains("count: (json['count'] as int?) ?? 1,"));
+        },
+      );
+
+      test(
+        'reference to a number-newtype WITH a default emits T(value) at '
+        'the substitution site',
+        () {
+          // Counterpart to the no-default test below. Locks in the
+          // `createsNewType && defaultValue != null` branch of
+          // `RenderNumeric.defaultValueString` — and confirms the
+          // newtype-wrapped substitution is what callers actually get
+          // when the spec ships a default on a number newtype under
+          // the openapi quirks (where the property becomes non-null).
+          final results = renderTestSchemas(
+            {
+              'WaitTimer': {'type': 'integer', 'default': 30},
+              'Rule': {
+                'type': 'object',
+                'properties': {
+                  'wait_timer': {r'$ref': '#/components/schemas/WaitTimer'},
+                },
+              },
+            },
+            specUrl: Uri.parse('file:///spec.yaml'),
+            quirks: const Quirks.openapi(),
+          );
+          final rule = results['Rule']!;
+          expect(rule, contains('?? WaitTimer(30)'));
+          expect(rule, isNot(contains('WaitTimer(null)')));
+        },
+      );
+
+      test(
         'optional reference to a number-newtype with no default does '
         'not emit T(null)',
         () {
