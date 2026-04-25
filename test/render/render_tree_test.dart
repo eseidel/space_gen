@@ -81,6 +81,39 @@ void main() {
       expect(parameter.dartParameterName(quirks), 'aB');
     });
 
+    test('parameter names always camelCase under openapi quirks', () {
+      // `screamingCapsEnums: true` controls enum-value casing, not every
+      // identifier — petstore's `api_key` header parameter would otherwise
+      // survive into generated code as a snake_case Dart variable and trip
+      // `non_constant_identifier_names`.
+      const quirks = Quirks.openapi();
+      expect(quirks.screamingCapsEnums, isTrue);
+      const common = CommonProperties.test(
+        snakeName: 'api_key',
+        pointer: JsonPointer.empty(),
+      );
+      const parameter = RenderParameter(
+        description: null,
+        name: 'api_key',
+        type: RenderUnknown(common: common),
+        isRequired: false,
+        isDeprecated: false,
+        inLocation: ParameterLocation.header,
+      );
+      expect(parameter.dartParameterName(quirks), 'apiKey');
+    });
+
+    test('enum values preserve SCREAMING_CAPS under openapi quirks', () {
+      const quirks = Quirks.openapi();
+      expect(quirks.screamingCapsEnums, isTrue);
+      final names = RenderEnum.variableNamesFor(quirks, [
+        'AVAILABLE',
+        'PENDING',
+        'SOLD',
+      ]);
+      expect(names, ['AVAILABLE', 'PENDING', 'SOLD']);
+    });
+
     test('reserved-word parameter name is escaped in template context', () {
       // A spec with a parameter literally named `with` (or `try`/`case`/
       // ...) previously emitted `required String with` in the generated
