@@ -801,7 +801,7 @@ void main() {
       expect(pet, contains("final discriminator = json['pet_type']"));
       expect(pet, contains("'cat' => PetCat(Cat.fromJson(json))"));
       expect(pet, contains("'dog' => PetDog(Dog.fromJson(json))"));
-      expect(pet, contains("Unknown pet_type '\$discriminator' for Pet"));
+      expect(pet, contains(r"Unknown pet_type '$discriminator' for Pet"));
       // Wrapper subclasses with @immutable + structural equality.
       expect(pet, contains('@immutable'));
       expect(pet, contains('final class PetCat extends Pet'));
@@ -812,11 +812,10 @@ void main() {
     });
 
     test(
-      'oneOf with discriminator but a non-object variant falls back to '
-      'the legacy stub',
+      'oneOf with discriminator but a non-object variant falls through '
+      'to shape dispatch (discriminator is ignored — un-honorable on '
+      'the non-object branch)',
       () {
-        // Mixed-shape oneOf: dispatch needs `<Variant>.fromJson(Map)` on
-        // every variant, which doesn't exist for the inline pod.
         final results = renderTestSchemas(
           {
             'Mixed': {
@@ -843,16 +842,75 @@ void main() {
         );
         final mixed = results['Mixed'];
         expect(mixed, isNotNull);
-        expect(mixed, contains("throw UnimplementedError('Mixed.fromJson')"));
-        expect(mixed, isNot(contains('factory Mixed.fromJson')));
-        expect(mixed, isNot(contains('final class MixedCat')));
+        // Distinct shapes (Map vs String) → shape dispatch.
+        expect(mixed, contains('factory Mixed.fromJson(dynamic json)'));
+        expect(mixed, contains('Map<String, dynamic> v => MixedCat'));
+        expect(mixed, contains('String v => MixedString'));
+        expect(mixed, isNot(contains('UnimplementedError')));
       },
     );
 
-    test('oneOf with discriminator but no mapping falls back to legacy '
-        'stub (implicit mapping not yet supported)', () {
-      // No `mapping` key — discriminator is parsed but we don't yet
-      // emit dispatch without an explicit table.
+    test('non-discriminator oneOf with distinct shapes uses shape '
+        'dispatch', () {
+      final result = renderTestSchema({
+        'oneOf': [
+          {'type': 'integer'},
+          {'type': 'string'},
+        ],
+      });
+      // Pattern-matched switch on the runtime json type.
+      expect(result, contains('factory Test.fromJson(dynamic json)'));
+      expect(result, contains('int v => TestInt(v)'));
+      expect(result, contains('String v => TestString(v)'));
+      // Wrappers store the primitive value directly, toJson is just the
+      // value.
+      expect(result, contains('final int value;'));
+      expect(result, contains('dynamic toJson() => value;'));
+      expect(result, contains('final class TestInt extends Test'));
+      expect(result, contains('final class TestString extends Test'));
+      expect(result, contains('@immutable'));
+    });
+
+    test('non-discriminator oneOf with two object variants falls back '
+        'to legacy stub (no shape disambiguation possible)', () {
+      // Two objects share Map<String, dynamic> at the JSON level — no
+      // way to pick by runtime type. Without a discriminator + without
+      // structural-required-field disambiguation (follow-up), this
+      // stays UnimplementedError.
+      final results = renderTestSchemas(
+        {
+          'Pet': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Cat'},
+              {r'$ref': '#/components/schemas/Dog'},
+            ],
+          },
+          'Cat': {
+            'type': 'object',
+            'properties': {
+              'meow': {'type': 'boolean'},
+            },
+          },
+          'Dog': {
+            'type': 'object',
+            'properties': {
+              'bark': {'type': 'boolean'},
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      expect(
+        results['Pet'],
+        contains("throw UnimplementedError('Pet.fromJson')"),
+      );
+    });
+
+    test('oneOf with discriminator but no mapping falls through to '
+        'shape dispatch (implicit-mapping not yet supported)', () {
+      // No `mapping` key — discriminator-dispatch needs the explicit
+      // table, so we drop into the shape-dispatch path. With a single
+      // object variant, shape dispatch trivially picks it.
       final results = renderTestSchemas(
         {
           'Pet': {
@@ -872,8 +930,9 @@ void main() {
         specUrl: Uri.parse('file:///spec.yaml'),
       );
       final pet = results['Pet'];
-      expect(pet, contains("throw UnimplementedError('Pet.fromJson')"));
-      expect(pet, isNot(contains('factory Pet.fromJson')));
+      expect(pet, contains('factory Pet.fromJson(dynamic json)'));
+      expect(pet, contains('Map<String, dynamic> v => PetCat'));
+      expect(pet, isNot(contains('UnimplementedError')));
     });
 
     group('anyOf', () {
