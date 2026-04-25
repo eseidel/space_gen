@@ -1780,8 +1780,9 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     // `this.foo = default`, which only fires when the param is omitted.
     // `fromJson` always passes a value (possibly null), so substitute
     // the default at the cast site — otherwise a missing JSON key
-    // produces `null` instead of the spec's default. Surfaced by
-    // watchcrunch's `ListingDto.is_favorited: bool = false`.
+    // produces `null` instead of the spec's default. Surfaced by a
+    // real spec with `bool` properties marked `default: false` outside
+    // the `required` array.
     if (defaultCanConstConstruct) return ' ?? $defaultValue';
     // Nullable Dart slot with a non-const default: the constructor uses
     // an initializer list (`: foo = foo ?? default`) that substitutes
