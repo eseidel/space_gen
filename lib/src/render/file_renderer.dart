@@ -181,7 +181,7 @@ Set<String> _bracketedDartdocTokens(String content) {
 Set<String> _topLevelDeclarations(String content) {
   final declRe = RegExp(
     r'(?:class|enum|mixin|extension type(?:\s+const)?)\s+'
-    r'([A-Z][A-Za-z0-9_]*)',
+    '([A-Z][A-Za-z0-9_]*)',
   );
   return declRe.allMatches(content).map((m) => m.group(1)!).toSet();
 }
