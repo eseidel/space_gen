@@ -24,6 +24,14 @@ void main() {
     expect(toSnakeCase('Four More Words Here'), 'four_more_words_here');
     expect(toSnakeCase('Multi   Space'), 'multi_space');
     expect(toSnakeCase('Tab\tSeparated'), 'tab_separated');
+    // .NET / NSwag-style dotted schema keys must normalize the same way
+    // whitespace does — otherwise the dots survive into Dart type names.
+    expect(toSnakeCase('App.Features.Order'), 'app_features_order');
+    expect(
+      toSnakeCase('.App.Features.Marketplace.Order.Enums.OrderTimelineEvent'),
+      'app_features_marketplace_order_enums_order_timeline_event',
+    );
+    expect(toSnakeCase('Foo..Bar'), 'foo_bar');
   });
 
   test('camelFromSnake', () {
