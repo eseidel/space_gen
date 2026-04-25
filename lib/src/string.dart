@@ -26,7 +26,10 @@ String toSnakeCase(String unknown) {
   // like "Payment Methods" or "Seller Account" arrive here verbatim
   // and would otherwise survive into generated class/file names as
   // `Payment MethodsApi`, which isn't valid Dart.
-  final normalized = unknown.replaceAll(RegExp(r'\s+'), '_');
+  // Dots get the same treatment: .NET-style specs declare schemas under
+  // dotted namespace keys like `.App.Features.Order.Enums.Foo`, which
+  // would otherwise land in generated code verbatim and fail to parse.
+  final normalized = unknown.replaceAll(RegExp(r'[\s.]+'), '_');
   // Try to convert any UpperCase to snake_case.
   final lowered = snakeFromCamel(normalized);
   // Then convert any kebab-case to snake_case.
@@ -34,7 +37,11 @@ String toSnakeCase(String unknown) {
   // "Payment Methods" → "Payment_Methods" → snakeFromCamel splits at
   // each uppercase, producing "payment__methods". Collapse the double
   // underscore (and any others the input introduced) to a single one.
-  return snake.replaceAll(RegExp('_+'), '_');
+  final collapsed = snake.replaceAll(RegExp('_+'), '_');
+  // A leading dot (`.App.Features.X`) normalizes to a leading underscore;
+  // strip it so snake names don't start with `_` (which makes generated
+  // file/identifier names private and reads as noise).
+  return collapsed.startsWith('_') ? collapsed.substring(1) : collapsed;
 }
 
 /// Convert kebab-case to snake_case.
