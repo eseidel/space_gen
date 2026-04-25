@@ -179,6 +179,69 @@ ParameterLocation _parseParameterLocation(MapContext context, String location) {
   }
 }
 
+/// Default `style` for a parameter at the given OpenAPI location.
+/// Per OpenAPI 3.x: query/cookie default to `form`, header/path to `simple`.
+String _defaultStyle(ParameterLocation location) {
+  switch (location) {
+    case ParameterLocation.query:
+    case ParameterLocation.cookie:
+      return 'form';
+    case ParameterLocation.header:
+    case ParameterLocation.path:
+      return 'simple';
+  }
+}
+
+/// Default `explode` for a parameter at the given OpenAPI location.
+/// True when the default style is `form`, false otherwise.
+bool _defaultExplode(ParameterLocation location) {
+  switch (location) {
+    case ParameterLocation.query:
+    case ParameterLocation.cookie:
+      return true;
+    case ParameterLocation.header:
+    case ParameterLocation.path:
+      return false;
+  }
+}
+
+/// Read `style`, `explode`, and `allowReserved` and warn if any non-default
+/// value is set. The generator only honors the default wire format today;
+/// non-default values would silently produce wrong output, so we surface
+/// them as `_warn` (visible without --verbose). Spec-explicit defaults are
+/// consumed quietly.
+void _warnUnsupportedSerialization(
+  MapContext json,
+  ParameterLocation location,
+) {
+  final style = _optional<String>(json, 'style');
+  final defaultStyle = _defaultStyle(location);
+  if (style != null && style != defaultStyle) {
+    _warn(
+      json,
+      'style="$style" is not honored on ${location.name} parameters; '
+      'generator emits the default ($defaultStyle) wire format',
+    );
+  }
+  final explode = _optional<bool>(json, 'explode');
+  final defaultExplode = _defaultExplode(location);
+  if (explode != null && explode != defaultExplode) {
+    _warn(
+      json,
+      'explode=$explode is not honored on ${location.name} parameters; '
+      'generator emits the default (explode=$defaultExplode) wire format',
+    );
+  }
+  final allowReserved = _optional<bool>(json, 'allowReserved') ?? false;
+  if (allowReserved) {
+    _warn(
+      json,
+      'allowReserved=true is not honored on ${location.name} parameters; '
+      'generator URL-encodes reserved characters',
+    );
+  }
+}
+
 /// Parse a parameter from a json object.
 Parameter parseParameter(MapContext json) {
   _refNotExpected(json);
@@ -201,9 +264,7 @@ Parameter parseParameter(MapContext json) {
   if (hasSchema && !hasContent) {
     // Schema fields.
     type = parseSchemaOrRef(schema);
-    _ignored<String>(json, 'style');
-    _ignored<bool>(json, 'explode');
-    _ignored<bool>(json, 'allowReserved');
+    _warnUnsupportedSerialization(json, inLocation);
     _ignored<dynamic>(json, 'example');
     _ignored<dynamic>(json, 'examples');
   } else if (!hasSchema && hasContent) {
@@ -248,9 +309,7 @@ Header parseHeader(MapContext json) {
   final description = _optional<String>(json, 'description');
   _ignored<bool>(json, 'deprecated');
   _ignored<bool>(json, 'allowEmptyValue');
-  _ignored<dynamic>(json, 'style');
-  _ignored<bool>(json, 'explode');
-  _ignored<bool>(json, 'allowReserved');
+  _warnUnsupportedSerialization(json, ParameterLocation.header);
   _ignored<dynamic>(json, 'example');
   _ignored<Map<String, dynamic>>(json, 'examples');
 
@@ -741,7 +800,6 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   }
 
   // Some of these probably apply to enum and array types.
-  _ignored<bool>(json, 'nullable');
   _ignored<bool>(json, 'readOnly');
   _ignored<bool>(json, 'writeOnly');
   _ignored<dynamic>(json, 'discriminator');
