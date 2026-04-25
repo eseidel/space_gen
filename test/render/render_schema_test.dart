@@ -1706,6 +1706,38 @@ void main() {
         );
       });
 
+      test(
+        'optional reference to a number-newtype with no default does '
+        'not emit T(null)',
+        () {
+          // Regression for github's `WaitTimer` referenced from
+          // `environment_protection_rule.wait_timer`. WaitTimer is a
+          // number newtype (`type: integer` with its own component name)
+          // and has no `default:`. Under openapi quirks, a non-required
+          // property whose schema is const-constructible would trigger
+          // `orDefaultExpression` to call `defaultValueString` — which
+          // for a number-newtype was emitting `WaitTimer(null)` even
+          // though the underlying `defaultValue` was null. That made
+          // the generated `?? const WaitTimer(null)` fail to compile
+          // (Null can't fit a non-null int parameter).
+          final results = renderTestSchemas(
+            {
+              'WaitTimer': {'type': 'integer'},
+              'Rule': {
+                'type': 'object',
+                'properties': {
+                  'wait_timer': {r'$ref': '#/components/schemas/WaitTimer'},
+                },
+              },
+            },
+            specUrl: Uri.parse('file:///spec.yaml'),
+            quirks: const Quirks.openapi(),
+          );
+          final rule = results['Rule']!;
+          expect(rule, isNot(contains('WaitTimer(null)')));
+        },
+      );
+
       test('integer property with default values', () {
         final json = {
           'type': 'object',
