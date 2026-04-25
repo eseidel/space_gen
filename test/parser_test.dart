@@ -718,6 +718,133 @@ void main() {
       );
     });
 
+    group('parameter serialization', () {
+      Map<String, dynamic> specWithQueryParam(Map<String, dynamic> extra) {
+        return {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'parameters': [
+                  {
+                    'name': 'foo',
+                    'in': 'query',
+                    'schema': {'type': 'string'},
+                    ...extra,
+                  },
+                ],
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+        };
+      }
+
+      Map<String, dynamic> specWithHeader(Map<String, dynamic> extra) {
+        return {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'headers': {
+                      'X-Foo': {
+                        'schema': {'type': 'string'},
+                        ...extra,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        };
+      }
+
+      test('default style and explode on query are silent', () {
+        final logger = _MockLogger();
+        runWithLogger(
+          logger,
+          () => parseOpenApi(
+            specWithQueryParam({'style': 'form', 'explode': true}),
+          ),
+        );
+        verifyNever(() => logger.warn(any()));
+      });
+
+      test('non-default explode on query warns', () {
+        final logger = _MockLogger();
+        runWithLogger(
+          logger,
+          () => parseOpenApi(specWithQueryParam({'explode': false})),
+        );
+        verify(
+          () => logger.warn(
+            'explode=false is not honored on query parameters; '
+            'generator emits the default (explode=true) wire format '
+            'in #/paths/~1users/get/parameters/0',
+          ),
+        ).called(1);
+      });
+
+      test('non-default style on query warns', () {
+        final logger = _MockLogger();
+        runWithLogger(
+          logger,
+          () => parseOpenApi(specWithQueryParam({'style': 'spaceDelimited'})),
+        );
+        verify(
+          () => logger.warn(
+            'style="spaceDelimited" is not honored on query parameters; '
+            'generator emits the default (form) wire format '
+            'in #/paths/~1users/get/parameters/0',
+          ),
+        ).called(1);
+      });
+
+      test('non-default explode on header warns', () {
+        final logger = _MockLogger();
+        runWithLogger(
+          logger,
+          () => parseOpenApi(specWithHeader({'explode': true})),
+        );
+        verify(
+          () => logger.warn(
+            'explode=true is not honored on header parameters; '
+            'generator emits the default (explode=false) wire format '
+            'in #/paths/~1users/get/responses/200/headers/X-Foo',
+          ),
+        ).called(1);
+      });
+
+      test('allowReserved=true on query warns', () {
+        final logger = _MockLogger();
+        runWithLogger(
+          logger,
+          () => parseOpenApi(specWithQueryParam({'allowReserved': true})),
+        );
+        verify(
+          () => logger.warn(
+            'allowReserved=true is not honored on query parameters; '
+            'generator URL-encodes reserved characters '
+            'in #/paths/~1users/get/parameters/0',
+          ),
+        ).called(1);
+      });
+    });
+
     group('responses', () {
       test('wrong type for responses', () {
         final json = {
