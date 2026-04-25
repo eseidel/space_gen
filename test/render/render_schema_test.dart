@@ -871,6 +871,82 @@ void main() {
       expect(result, contains('@immutable'));
     });
 
+    test('non-discriminator oneOf with an array variant uses shape '
+        'dispatch', () {
+      // Common github pattern: a request body that's either a string
+      // or a list-of-strings. List<dynamic> vs String are distinct
+      // shapes, so dispatch works.
+      final result = renderTestSchema({
+        'oneOf': [
+          {'type': 'string'},
+          {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+        ],
+      });
+      expect(result, contains('factory Test.fromJson(dynamic json)'));
+      expect(result, contains('String v => TestString(v)'));
+      expect(result, contains('List<dynamic> v => TestList'));
+      // For primitive-item arrays we cast rather than map.
+      expect(result, contains('TestList(v.cast<String>())'));
+      // toJson on the list wrapper just returns value (List<String>
+      // is already JSON-compatible).
+      expect(result, contains('final List<String> value;'));
+      expect(result, contains('final class TestList extends Test'));
+    });
+
+    test('non-discriminator oneOf with array of objects maps each item '
+        "through the item type's fromJson", () {
+      final results = renderTestSchemas(
+        {
+          'Wrapper': {
+            'oneOf': [
+              {'type': 'string'},
+              {
+                'type': 'array',
+                'items': {r'$ref': '#/components/schemas/Inner'},
+              },
+            ],
+          },
+          'Inner': {
+            'type': 'object',
+            'properties': {
+              'name': {'type': 'string'},
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final wrapper = results['Wrapper'];
+      expect(wrapper, isNotNull);
+      expect(wrapper, contains('List<dynamic> v => WrapperList'));
+      // Object items go through their own fromJson factory.
+      expect(wrapper, contains('v.map<Inner>((e) => Inner.fromJson('));
+      expect(wrapper, contains('final List<Inner> value;'));
+      // Object items also need toJson on each element.
+      expect(wrapper, contains('value.map((e) => e.toJson()).toList()'));
+    });
+
+    test('non-discriminator oneOf with two array variants falls back '
+        '(both share List<dynamic>)', () {
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+          {
+            'type': 'array',
+            'items': {'type': 'integer'},
+          },
+        ],
+      });
+      // Two arrays both have jsonShapeKey = List<dynamic>; dispatch
+      // can't distinguish — fall through to the legacy stub.
+      expect(result, contains("throw UnimplementedError('Test.fromJson')"));
+    });
+
     test('non-discriminator oneOf shape-dispatch with an enum variant '
         '(distinct from a Map<String, dynamic> object variant)', () {
       // The enum's JSON storage type is `String` — same as RenderString,
