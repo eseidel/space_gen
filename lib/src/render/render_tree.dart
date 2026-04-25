@@ -3569,8 +3569,43 @@ class RenderOneOf extends RenderNewType {
     return plans;
   }
 
+  /// Required-field dispatch: every variant is a [RenderObject] and
+  /// each has at least one required property that no other variant
+  /// requires. We dispatch by checking for that property's presence
+  /// in the JSON. Useful for (object, object) oneOfs without a
+  /// discriminator — github has ~9 such sites, e.g. `simple-user`
+  /// (requires `login`) vs `enterprise` (requires `slug`).
+  ///
+  /// Returns one [_RequiredFieldArm] per variant in [schemas] order,
+  /// or null if any variant lacks a uniquely-required property.
+  List<_RequiredFieldArm>? get _requiredFieldDispatchArms {
+    if (!schemas.every((s) => s is RenderObject)) return null;
+    final objects = schemas.cast<RenderObject>();
+    final allRequired = objects
+        .map((o) => o.requiredProperties.toSet())
+        .toList();
+    final arms = <_RequiredFieldArm>[];
+    for (var i = 0; i < objects.length; i++) {
+      final mine = allRequired[i];
+      final others = <String>{};
+      for (var j = 0; j < allRequired.length; j++) {
+        if (i != j) others.addAll(allRequired[j]);
+      }
+      final unique = mine.difference(others);
+      if (unique.isEmpty) return null;
+      // Pick the lexicographically-first unique field for stable output.
+      final tagField = (unique.toList()..sort()).first;
+      arms.add(
+        _RequiredFieldArm(variant: objects[i], tagField: tagField),
+      );
+    }
+    return arms;
+  }
+
   bool get _hasDispatch =>
-      _hasDiscriminatorDispatch || _shapeDispatchPlans != null;
+      _hasDiscriminatorDispatch ||
+      _shapeDispatchPlans != null ||
+      _requiredFieldDispatchArms != null;
 
   @override
   Iterable<Import> get additionalImports => [
@@ -3591,6 +3626,7 @@ class RenderOneOf extends RenderNewType {
       'nullableTypeName': nullableTypeName(context),
       'has_discriminator_dispatch': false,
       'has_shape_dispatch': false,
+      'has_required_field_dispatch': false,
       'no_dispatch': false,
     };
     final disc = discriminator;
@@ -3628,6 +3664,30 @@ class RenderOneOf extends RenderNewType {
               'fromJson': p.fromJson,
               'toJson': p.toJson,
               'positionalBoolIgnore': p.positionalBoolIgnore,
+            },
+          )
+          .toList();
+      return ctx;
+    }
+    final reqArms = _requiredFieldDispatchArms;
+    if (reqArms != null) {
+      ctx['has_required_field_dispatch'] = true;
+      ctx['dispatch'] = reqArms
+          .map(
+            (a) => {
+              'tagField': a.tagField,
+              'wrapperTypeName': wrapperTypeName(a.variant),
+              'valueType': a.variant.typeName,
+            },
+          )
+          .toList();
+      // Same wrapper-block shape as the discriminator path (object-only,
+      // delegates fromJson/toJson to the variant class).
+      ctx['variants'] = reqArms
+          .map(
+            (a) => {
+              'wrapperTypeName': wrapperTypeName(a.variant),
+              'valueType': a.variant.typeName,
             },
           )
           .toList();
@@ -3671,6 +3731,19 @@ class RenderOneOf extends RenderNewType {
     // discriminator-aware subclass emission (#99).
     return null;
   }
+}
+
+/// One arm of the required-field dispatch: a [RenderObject] variant
+/// keyed off the presence of a property unique to its required-set.
+@immutable
+class _RequiredFieldArm {
+  const _RequiredFieldArm({required this.variant, required this.tagField});
+
+  final RenderObject variant;
+
+  /// JSON property name whose presence picks this variant. Required
+  /// only by [variant]; absent from every sibling's required-set.
+  final String tagField;
 }
 
 /// One arm of the shape-based dispatch: how a single variant in a
