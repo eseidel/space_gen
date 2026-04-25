@@ -116,6 +116,23 @@ void validatePackageName(String packageName) {
   }
 }
 
+/// Coerce an arbitrary string into something that passes
+/// [validatePackageName]: `.` `-` and any other non-alnum characters
+/// collapse to `_`, casing is lowered, leading underscores and digits
+/// are prefixed with `p`, and the result is clamped to 64 chars.
+/// Used by the CLI so `--out api.github.com` works without the user
+/// having to pre-sanitize the directory name for pub.
+String sanitizePackageName(String raw) {
+  var s = raw.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]'), '_');
+  s = s.replaceAll(RegExp('_+'), '_').replaceAll(RegExp(r'^_+|_+$'), '');
+  if (s.isEmpty || RegExp('^[0-9]').hasMatch(s)) {
+    s = 'p_$s';
+    s = s.replaceAll(RegExp(r'_+$'), '');
+  }
+  if (s.length > 64) s = s.substring(0, 64);
+  return s;
+}
+
 /// Format [url] for log output: `file:` URLs are shown as paths
 /// relative to the cwd (readable), everything else prints as-is.
 @visibleForTesting
