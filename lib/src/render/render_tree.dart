@@ -872,11 +872,36 @@ class Endpoint implements ToTemplateContext {
     RenderParameter p,
     SchemaRenderer context,
   ) {
-    final toJson = p.toJsonExpression(context);
-    final valueExpr = p.isNullable
-        ? '?$toJson?.toString()'
-        : '$toJson.toString()';
-    return "$innerIndent'${p.name}': $valueExpr,";
+    // queryParameters is typed `Map<String, List<String>>`. `Uri.replace`
+    // spreads each list across repeated keys (form/explode=true), so a
+    // 1-element list yields `?k=v` and an N-element list yields
+    // `?k=v1&k=v2&…`. Scalars wrap into a single-element list; arrays
+    // come through directly. Items must be `String`, so each item runs
+    // through `.toString()` — a no-op when the json expression already
+    // produces a `String` (raw string, dateTime/date/uri pods, enums)
+    // and the conversion when it doesn't (int/double/bool).
+    final dartName = p.dartParameterName(context.quirks);
+    final paramType = p.type;
+    final String value;
+    if (paramType is RenderArray) {
+      final itemsToJson = paramType.items.toJsonExpression(
+        'e',
+        context,
+        dartIsNullable: false,
+      );
+      value = '$dartName.map((e) => $itemsToJson.toString()).toList()';
+    } else {
+      final scalarToJson = paramType.toJsonExpression(
+        dartName,
+        context,
+        dartIsNullable: false,
+      );
+      value = '[$scalarToJson.toString()]';
+    }
+    if (p.isNullable) {
+      return "${innerIndent}if ($dartName != null) '${p.name}': $value,";
+    }
+    return "$innerIndent'${p.name}': $value,";
   }
 
   List<String> _bodyArgLines(String indent, SchemaRenderer context) =>
@@ -913,6 +938,21 @@ class Endpoint implements ToTemplateContext {
     RenderParameter p,
     SchemaRenderer context,
   ) {
+    // headerParameters stays `Map<String, String>` — HTTP headers can't
+    // repeat with arbitrary semantics, so OpenAPI default for header
+    // arrays is style=simple, explode=false: comma-join into one value.
+    final paramType = p.type;
+    if (paramType is RenderArray) {
+      final dartName = p.dartParameterName(context.quirks);
+      final itemsToJson = paramType.items.toJsonExpression(
+        'e',
+        context,
+        dartIsNullable: false,
+      );
+      final mapCall = ".map((e) => $itemsToJson.toString()).join(',')";
+      final value = p.isNullable ? '?$dartName?$mapCall' : '$dartName$mapCall';
+      return "$innerIndent'${p.name}': $value,";
+    }
     final prefix = p.isNullable ? '?' : '';
     return "$innerIndent'${p.name}': $prefix${p.toJsonExpression(context)},";
   }

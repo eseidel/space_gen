@@ -56,15 +56,23 @@ class ApiClient {
 
   Uri _resolveUri({
     required String path,
-    required Map<String, String> queryParameters,
+    required Map<String, List<String>> queryParameters,
     required ResolvedAuth auth,
   }) {
     // baseUri can contain a path, so we need to resolve the passed path
     // relative to it.  The passed path will always be absolute (leading slash)
     // but should be interpreted as relative to the baseUri.
     final uri = Uri.parse('$baseUri$path');
-    // baseUri can also include query parameters, so we need to merge them.
-    final mergedParameters = {...baseUri.queryParameters, ...queryParameters};
+    // Single-shape map: every value is a `List<String>`. `Uri.replace`
+    // spreads each list across repeated keys, so a 1-element list yields
+    // `?k=v` and an N-element list yields `?k=v1&k=v2&…` (the OpenAPI
+    // default style=form, explode=true). baseUri's pre-parsed parameters
+    // arrive as `Map<String, List<String>>` via `queryParametersAll`, so
+    // they merge cleanly without per-key wrapping.
+    final mergedParameters = <String, List<String>>{
+      ...baseUri.queryParametersAll,
+      ...queryParameters,
+    };
     auth.applyToParams(mergedParameters);
     return uri.replace(queryParameters: mergedParameters);
   }
@@ -149,7 +157,7 @@ class ApiClient {
   Future<Response> invokeApi({
     required Method method,
     required String path,
-    Map<String, String> queryParameters = const {},
+    Map<String, List<String>> queryParameters = const {},
     // Body is nullable to allow for post requests which have an optional body
     // to not have to generate two separate calls depending on whether the
     // body is present or not.
@@ -206,7 +214,7 @@ class ApiClient {
     required String path,
     required Map<String, String> fields,
     required List<MultipartFile> files,
-    Map<String, String> queryParameters = const {},
+    Map<String, List<String>> queryParameters = const {},
     Map<String, String> headerParameters = const {},
     AuthRequest? authRequest,
   }) async {
