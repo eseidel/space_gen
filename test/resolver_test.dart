@@ -587,11 +587,14 @@ void main() {
         'discriminator': {'propertyName': 'kind'},
       };
       final logger = _MockLogger();
-      final schema = runWithLogger(
+      final resolved = runWithLogger(
         logger,
         () => parseAndResolveTestSchema(json),
-      ) as ResolvedOneOf;
-      final discriminator = schema.discriminator;
+      );
+      if (resolved is! ResolvedOneOf) {
+        fail('Expected ResolvedOneOf, got ${resolved.runtimeType}');
+      }
+      final discriminator = resolved.discriminator;
       expect(discriminator, isNotNull);
       expect(discriminator?.propertyName, 'kind');
       expect(discriminator?.mapping, isNull);

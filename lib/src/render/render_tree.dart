@@ -3438,10 +3438,7 @@ class RenderOneOf extends RenderNewType {
         return false;
       }
     }
-    if ((discriminator == null) != (other.discriminator == null)) {
-      return false;
-    }
-    if (discriminator != null && discriminator != other.discriminator) {
+    if (discriminator != other.discriminator) {
       return false;
     }
     return super.equalsIgnoringName(other);
@@ -3463,32 +3460,27 @@ class RenderOneOf extends RenderNewType {
   String wrapperTypeName(RenderSchema variant) =>
       '$typeName${variant.typeName}';
 
-  /// The discriminator iff dispatch can be generated. Dispatch reads a
+  /// True when the dispatch path can be emitted. Dispatch reads a
   /// discriminator property out of a `Map<String, dynamic>` and calls
   /// `<Variant>.fromJson(json)` on the chosen variant — both require
   /// every variant to be an object-shaped newtype with a fromJson
   /// factory. Array/map/pod variants (e.g. github's `content-directory`,
   /// which is `type: array`) fall through to the legacy stub.
-  RenderDiscriminator? get _dispatchableDiscriminator {
-    final disc = discriminator;
-    if (disc == null) return null;
-    if (!schemas.every((s) => s is RenderObject)) return null;
-    return disc;
-  }
+  bool get _hasDispatch =>
+      discriminator != null && schemas.every((s) => s is RenderObject);
 
   @override
   Iterable<Import> get additionalImports => [
     ...super.additionalImports,
     // The dispatch path emits @immutable wrappers that override == /
     // hashCode; the legacy UnimplementedError stub doesn't need it.
-    if (_dispatchableDiscriminator != null)
-      const Import('package:meta/meta.dart'),
+    if (_hasDispatch) const Import('package:meta/meta.dart'),
   ];
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final disc = _dispatchableDiscriminator;
-    if (disc == null) {
+    final disc = discriminator;
+    if (disc == null || !_hasDispatch) {
       return {
         'doc_comment': createDocComment(common: common),
         'typeName': typeName,
