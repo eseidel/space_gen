@@ -3461,11 +3461,13 @@ class RenderOneOf extends RenderNewType {
     if (variant is RenderObject || variant is RenderEnum) {
       return variant.typeName;
     }
-    if (variant is RenderInteger && !variant.createsNewType) return 'Int';
-    if (variant is RenderString && !variant.createsNewType) return 'String';
-    if (variant is RenderPod &&
-        !variant.createsNewType &&
-        variant.type == PodType.boolean) {
+    // Anything beyond here is only handled in its inline form (the
+    // newtype variants generate their own classes and would also fit
+    // RenderObject/RenderEnum-style wrapping, but we don't bother yet).
+    if (variant.createsNewType) return null;
+    if (variant is RenderInteger) return 'Int';
+    if (variant is RenderString) return 'String';
+    if (variant is RenderPod && variant.type == PodType.boolean) {
       return 'Bool';
     }
     return null;
@@ -3496,55 +3498,45 @@ class RenderOneOf extends RenderNewType {
   _VariantPlan? _planVariant(RenderSchema variant) {
     final tag = _wrapperTagFor(variant);
     if (tag == null) return null;
-    if (variant is RenderObject) {
+    final wrapperTypeName = '$typeName$tag';
+
+    // Newtype variants (objects, enums): the wrapper holds the parsed
+    // value and forwards fromJson/toJson to the variant's own class.
+    // Only the JSON shape distinguishes them.
+    if (variant is RenderObject || variant is RenderEnum) {
       return _VariantPlan(
-        wrapperTypeName: '$typeName$tag',
+        wrapperTypeName: wrapperTypeName,
         valueType: variant.typeName,
-        jsonTestType: 'Map<String, dynamic>',
+        jsonTestType: variant is RenderObject
+            ? 'Map<String, dynamic>'
+            : 'String',
         fromJson: '${variant.typeName}.fromJson(v)',
         toJson: 'value.toJson()',
       );
     }
-    if (variant is RenderEnum) {
-      return _VariantPlan(
-        wrapperTypeName: '$typeName$tag',
-        valueType: variant.typeName,
-        jsonTestType: 'String',
-        fromJson: '${variant.typeName}.fromJson(v)',
-        toJson: 'value.toJson()',
-      );
+
+    // Inline pod variants: the wrapper just stores the raw JSON value
+    // (int / String / bool) — no parsing on either side. _wrapperTagFor
+    // has already filtered out the createsNewType case.
+    final String? podType;
+    if (variant is RenderInteger) {
+      podType = 'int';
+    } else if (variant is RenderString) {
+      podType = 'String';
+    } else if (variant is RenderPod && variant.type == PodType.boolean) {
+      podType = 'bool';
+    } else {
+      podType = null;
     }
-    if (variant is RenderInteger && !variant.createsNewType) {
-      return _VariantPlan(
-        wrapperTypeName: '$typeName$tag',
-        valueType: 'int',
-        jsonTestType: 'int',
-        fromJson: 'v',
-        toJson: 'value',
-      );
-    }
-    if (variant is RenderString && !variant.createsNewType) {
-      return _VariantPlan(
-        wrapperTypeName: '$typeName$tag',
-        valueType: 'String',
-        jsonTestType: 'String',
-        fromJson: 'v',
-        toJson: 'value',
-      );
-    }
-    if (variant is RenderPod &&
-        !variant.createsNewType &&
-        variant.type == PodType.boolean) {
-      return _VariantPlan(
-        wrapperTypeName: '$typeName$tag',
-        valueType: 'bool',
-        jsonTestType: 'bool',
-        fromJson: 'v',
-        toJson: 'value',
-        positionalBoolIgnore: true,
-      );
-    }
-    return null;
+    if (podType == null) return null;
+    return _VariantPlan(
+      wrapperTypeName: wrapperTypeName,
+      valueType: podType,
+      jsonTestType: podType,
+      fromJson: 'v',
+      toJson: 'value',
+      positionalBoolIgnore: podType == 'bool',
+    );
   }
 
   /// Discriminator-driven dispatch: every variant must be an object-
