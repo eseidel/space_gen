@@ -759,6 +759,123 @@ void main() {
       );
     });
 
+    test('oneOf with discriminator + mapping renders sealed dispatch', () {
+      final results = renderTestSchemas(
+        {
+          'Pet': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Cat'},
+              {r'$ref': '#/components/schemas/Dog'},
+            ],
+            'discriminator': {
+              'propertyName': 'pet_type',
+              'mapping': {
+                'cat': '#/components/schemas/Cat',
+                'dog': '#/components/schemas/Dog',
+              },
+            },
+          },
+          'Cat': {
+            'type': 'object',
+            'properties': {
+              'pet_type': {'type': 'string'},
+            },
+            'required': ['pet_type'],
+          },
+          'Dog': {
+            'type': 'object',
+            'properties': {
+              'pet_type': {'type': 'string'},
+            },
+            'required': ['pet_type'],
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final pet = results['Pet'];
+      expect(pet, isNotNull);
+      // Spot-check the dispatch shape rather than snapshot-matching the
+      // full template — keeps the test resilient to whitespace tweaks.
+      expect(pet, contains('sealed class Pet'));
+      expect(pet, contains('factory Pet.fromJson(Map<String, dynamic> json)'));
+      expect(pet, contains("final discriminator = json['pet_type']"));
+      expect(pet, contains("'cat' => PetCat(Cat.fromJson(json))"));
+      expect(pet, contains("'dog' => PetDog(Dog.fromJson(json))"));
+      expect(pet, contains("Unknown pet_type '\$discriminator' for Pet"));
+      // Wrapper subclasses with @immutable + structural equality.
+      expect(pet, contains('@immutable'));
+      expect(pet, contains('final class PetCat extends Pet'));
+      expect(pet, contains('final Cat value;'));
+      expect(pet, contains('final class PetDog extends Pet'));
+      expect(pet, contains('final Dog value;'));
+      expect(pet, contains('Map<String, dynamic> toJson() => value.toJson()'));
+    });
+
+    test(
+      'oneOf with discriminator but a non-object variant falls back to '
+      'the legacy stub',
+      () {
+        // Mixed-shape oneOf: dispatch needs `<Variant>.fromJson(Map)` on
+        // every variant, which doesn't exist for the inline pod.
+        final results = renderTestSchemas(
+          {
+            'Mixed': {
+              'oneOf': [
+                {r'$ref': '#/components/schemas/Cat'},
+                {'type': 'string'},
+              ],
+              'discriminator': {
+                'propertyName': 'pet_type',
+                'mapping': {
+                  'cat': '#/components/schemas/Cat',
+                },
+              },
+            },
+            'Cat': {
+              'type': 'object',
+              'properties': {
+                'pet_type': {'type': 'string'},
+              },
+              'required': ['pet_type'],
+            },
+          },
+          specUrl: Uri.parse('file:///spec.yaml'),
+        );
+        final mixed = results['Mixed'];
+        expect(mixed, isNotNull);
+        expect(mixed, contains("throw UnimplementedError('Mixed.fromJson')"));
+        expect(mixed, isNot(contains('factory Mixed.fromJson')));
+        expect(mixed, isNot(contains('final class MixedCat')));
+      },
+    );
+
+    test('oneOf with discriminator but no mapping falls back to legacy '
+        'stub (implicit mapping not yet supported)', () {
+      // No `mapping` key — discriminator is parsed but we don't yet
+      // emit dispatch without an explicit table.
+      final results = renderTestSchemas(
+        {
+          'Pet': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Cat'},
+            ],
+            'discriminator': {'propertyName': 'pet_type'},
+          },
+          'Cat': {
+            'type': 'object',
+            'properties': {
+              'pet_type': {'type': 'string'},
+            },
+            'required': ['pet_type'],
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final pet = results['Pet'];
+      expect(pet, contains("throw UnimplementedError('Pet.fromJson')"));
+      expect(pet, isNot(contains('factory Pet.fromJson')));
+    });
+
     group('anyOf', () {
       test('two pod types', () {
         final schema = {
