@@ -2448,6 +2448,67 @@ void main() {
         startsWith('$commentReferencesIgnoreBlock\n'),
       );
     });
+
+    test('collects multiple refs on a single doc comment line', () {
+      // Greedy regexes have a habit of seeing only the first or last
+      // bracket on a line. Both refs need to be considered: if any
+      // one fails to resolve, we suppress.
+      const contentAllResolve =
+          '/// Compare [A] with [B] and [C].\n'
+          'class A {}\nclass B {}\nclass C {}\n';
+      expect(
+        maybeAddCommentReferencesIgnore(contentAllResolve),
+        contentAllResolve,
+      );
+
+      const contentMiddleEscapes =
+          '/// Compare [A] with [Missing] and [C].\n'
+          'class A {}\nclass C {}\n';
+      expect(
+        maybeAddCommentReferencesIgnore(contentMiddleEscapes),
+        startsWith('$commentReferencesIgnoreBlock\n'),
+      );
+    });
+
+    test('member refs resolve via the head before the dot', () {
+      // `[Foo.fromJson]` resolves iff `Foo` does — the analyzer walks
+      // the head against scope, then looks up the member on whatever
+      // it finds. Test both the resolves-via-head case and the head-
+      // doesn't-resolve case.
+      const resolves =
+          '/// Round-trips through [Foo.fromJson] and [Foo.toJson].\n'
+          'class Foo {}\n';
+      expect(maybeAddCommentReferencesIgnore(resolves), resolves);
+
+      const headMissing =
+          '/// Calls [Missing.method] internally.\nclass Foo {}\n';
+      expect(
+        maybeAddCommentReferencesIgnore(headMissing),
+        startsWith('$commentReferencesIgnoreBlock\n'),
+      );
+    });
+
+    test('refs are checked against every top-level declaration', () {
+      // A real generated file can declare more than one class (e.g. a
+      // model plus an inner enum). The declaration scan has to find
+      // them all, not just the first one.
+      const content =
+          '/// [Outer] holds a list of [Inner].\n'
+          'class Outer {}\n\nenum Inner { a, b }\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
+    });
+
+    test('indented `///` member docs still count', () {
+      // Generated classes sit at the top level but their member dartdoc
+      // lives inside the class body, indented. The token scan must not
+      // require the `///` to be at column 0.
+      const content =
+          'class Foo {\n'
+          '  /// Members of [Foo] go here.\n'
+          '  void doThing() {}\n'
+          '}\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
+    });
   });
 
   // While we still support logging, this should no longer happen since
