@@ -61,7 +61,14 @@ Future<int> _runCli(
 
   final specUrl = Uri.parse(results['in'] as String);
   final outDir = fs.directory(results['out'] as String);
-  final packageName = p.basename(outDir.path);
+  final rawPackageName = p.basename(outDir.path);
+  final packageName = sanitizePackageName(rawPackageName);
+  if (packageName != rawPackageName) {
+    logger.info(
+      "Using '$packageName' as the package name "
+      "since '$rawPackageName' is not a valid Dart package name.",
+    );
+  }
   final quirks = results['openapi'] as bool
       ? const Quirks.openapi()
       : const Quirks();
