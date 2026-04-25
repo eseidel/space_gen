@@ -495,7 +495,16 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
       if (ignored != null && ignored.contains(format)) {
         _ignored<String>(json, 'format');
       } else {
-        _warn(json, 'Unknown $type format: $format');
+        // Unknown format on a recognized base type — generated code
+        // falls back to the plain Dart type (`int`/`String`/...) which
+        // is correct for almost every real-world non-standard format
+        // (`timestamp`, `repo.nwo`, ...). Log as detail rather than
+        // warn: there's nothing the user can act on, and surfacing
+        // every spec-author idiosyncrasy at WARN level buries the
+        // diagnostics that actually matter.
+        logger.detail(
+          'Ignoring unknown $type format: $format in ${json.pointer}',
+        );
       }
     }
     return format;
