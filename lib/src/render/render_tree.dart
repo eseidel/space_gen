@@ -3477,9 +3477,9 @@ class RenderOneOf extends RenderNewType {
   /// variant's own standalone class (the parser names inline variants
   /// `<parent_snake>_one_of_<i>`, so the variant typeName equals the
   /// would-be deduped wrapper name). The double-prefix is ugly but
-  /// unambiguous; smooshing the inline variant into the parent's file
-  /// is a follow-up that fixes both the ugliness and the duplicate
-  /// emission.
+  /// unambiguous; co-locating the inline variant into the parent's
+  /// file is a follow-up that fixes both the ugliness and the
+  /// duplicate emission.
   String wrapperTypeName(RenderSchema variant) {
     final tag = _wrapperTagFor(variant);
     if (tag == null) {
@@ -3552,12 +3552,12 @@ class RenderOneOf extends RenderNewType {
   bool get _hasDiscriminatorDispatch =>
       discriminator != null && schemas.every((s) => s is RenderObject);
 
-  /// Shape-driven dispatch (runtime-type switch). Every variant must be
-  /// plannable AND every plan's [_VariantPlan.jsonTestType] must be
-  /// unique so a `case T v =>` arm is unambiguous. Falls through from
-  /// the discriminator path when the discriminator can't be honored
-  /// (e.g. non-object variants under a discriminator) — shape is a
-  /// strict fallback rather than a competitor.
+  /// Shape-driven dispatch (runtime-type switch). Every variant must
+  /// have a known plan AND every plan's [_VariantPlan.jsonTestType]
+  /// must be unique so a `case T v =>` arm is unambiguous. Falls
+  /// through from the discriminator path when the discriminator can't
+  /// be honored (e.g. non-object variants under a discriminator) —
+  /// shape is a strict fallback rather than a competitor.
   List<_VariantPlan>? get _shapeDispatchPlans {
     final plans = <_VariantPlan>[];
     for (final v in schemas) {
