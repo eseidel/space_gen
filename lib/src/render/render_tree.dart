@@ -1758,13 +1758,35 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
-    if (jsonIsNullable && !dartIsNullable) {
-      final defaultValue = defaultValueString(context);
-      if (defaultValue == null) {
+    final defaultValue = defaultValueString(context);
+    if (defaultValue == null) {
+      if (jsonIsNullable && !dartIsNullable) {
+        // Belt-and-braces: a non-nullable Dart slot fed by a nullable
+        // JSON value with no default would silently produce a null-cast
+        // crash at runtime. That combination only arises today via the
+        // [nonNullableDefaultValues] quirk, which only forces non-null
+        // when the property has a default — so reaching here means the
+        // generator violated its own invariant, not user error.
         throw StateError('No default value for nullable property: $this');
       }
-      return ' ?? $defaultValue';
+      return '';
     }
+    if (!jsonIsNullable) return '';
+    // Non-null Dart slot fed by nullable JSON: an `as T?` cast would
+    // crash on null. Substitute the default whether the default is
+    // const or not.
+    if (!dartIsNullable) return ' ?? $defaultValue';
+    // Nullable Dart slot with a const default: the constructor uses
+    // `this.foo = default`, which only fires when the param is omitted.
+    // `fromJson` always passes a value (possibly null), so substitute
+    // the default at the cast site — otherwise a missing JSON key
+    // produces `null` instead of the spec's default. Surfaced by a
+    // real spec with `bool` properties marked `default: false` outside
+    // the `required` array.
+    if (defaultCanConstConstruct) return ' ?? $defaultValue';
+    // Nullable Dart slot with a non-const default: the constructor uses
+    // an initializer list (`: foo = foo ?? default`) that substitutes
+    // on null too, so the default lands without `fromJson`'s help.
     return '';
   }
 
@@ -2315,11 +2337,14 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
 
   @override
   String? defaultValueString(SchemaRenderer context) {
+    if (defaultValue == null) {
+      return null;
+    }
     if (createsNewType) {
       final typeName = camelFromSnake(snakeName);
       return '$typeName($defaultValue)';
     }
-    return defaultValue?.toString();
+    return defaultValue.toString();
   }
 
   @override

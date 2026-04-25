@@ -1136,15 +1136,15 @@ void main() {
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
         "        return parseFromJson('Test', json, () => Test(\n"
-        "            aString: (json['a_string'] as List?)?.cast<String>(),\n"
-        "            aInt: (json['a_int'] as List?)?.cast<int>(),\n"
-        "            aNumber: (json['a_number'] as List?)?.cast<double>(),\n"
-        "            aBoolean: (json['a_boolean'] as List?)?.cast<bool>(),\n"
-        "            aDateTime: (json['a_date_time'] as List?)?.cast<DateTime>(),\n"
-        "            aUri: (json['a_uri'] as List?)?.cast<Uri>(),\n"
-        "            aArrayOfString: (json['a_array_of_string'] as List?)?.cast<List<String>>(),\n"
-        "            aEnum: (json['a_enum'] as List?)?.map<TestAEnumInner>((e) => TestAEnumInner.fromJson(e as String)).toList(),\n"
-        "            aUnknown: (json['a_unknown'] as List?)?.cast<dynamic>(),\n"
+        "            aString: (json['a_string'] as List?)?.cast<String>() ?? const [],\n"
+        "            aInt: (json['a_int'] as List?)?.cast<int>() ?? const [],\n"
+        "            aNumber: (json['a_number'] as List?)?.cast<double>() ?? const [],\n"
+        "            aBoolean: (json['a_boolean'] as List?)?.cast<bool>() ?? const [],\n"
+        "            aDateTime: (json['a_date_time'] as List?)?.cast<DateTime>() ?? const [],\n"
+        "            aUri: (json['a_uri'] as List?)?.cast<Uri>() ?? const [],\n"
+        "            aArrayOfString: (json['a_array_of_string'] as List?)?.cast<List<String>>() ?? const [],\n"
+        "            aEnum: (json['a_enum'] as List?)?.map<TestAEnumInner>((e) => TestAEnumInner.fromJson(e as String)).toList() ?? const [],\n"
+        "            aUnknown: (json['a_unknown'] as List?)?.cast<dynamic>() ?? const [],\n"
         '        ));\n'
         '    }\n'
         '\n'
@@ -1326,7 +1326,7 @@ void main() {
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
         "        return parseFromJson('Test', json, () => Test(\n"
-        "            a: (json['a'] as List?)?.cast<String>(),\n"
+        "            a: (json['a'] as List?)?.cast<String>() ?? const <String>['a', 'b'],\n"
         '        ));\n'
         '    }\n'
         '\n'
@@ -1646,7 +1646,7 @@ void main() {
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           "        return parseFromJson('Test', json, () => Test(\n"
-          "            a: (json['a'] as num?)?.toDouble(),\n"
+          "            a: (json['a'] as num?)?.toDouble() ?? 1.2,\n"
           '        ));\n'
           '    }\n'
           '\n'
@@ -1706,6 +1706,91 @@ void main() {
         );
       });
 
+      test(
+        'optional property with const default under openapi quirks emits '
+        '?? default in fromJson and non-nullable field',
+        () {
+          // Covers the `!dartIsNullable` arm of `orDefaultExpression`:
+          // `nonNullableDefaultValues` makes the Dart field non-null
+          // when a default is present, and `as int? ?? 1` is what
+          // populates the field on a missing JSON key. Mirrors github's
+          // `repository.private = false` shape.
+          final json = {
+            'type': 'object',
+            'properties': {
+              'count': {'type': 'integer', 'default': 1},
+            },
+          };
+          final result = renderTestSchema(
+            json,
+            quirks: const Quirks.openapi(),
+          );
+          expect(result, contains('int count;'));
+          expect(result, contains("count: (json['count'] as int?) ?? 1,"));
+        },
+      );
+
+      test(
+        'reference to a number-newtype WITH a default emits T(value) at '
+        'the substitution site',
+        () {
+          // Counterpart to the no-default test below. Locks in the
+          // `createsNewType && defaultValue != null` branch of
+          // `RenderNumeric.defaultValueString` — and confirms the
+          // newtype-wrapped substitution is what callers actually get
+          // when the spec ships a default on a number newtype under
+          // the openapi quirks (where the property becomes non-null).
+          final results = renderTestSchemas(
+            {
+              'WaitTimer': {'type': 'integer', 'default': 30},
+              'Rule': {
+                'type': 'object',
+                'properties': {
+                  'wait_timer': {r'$ref': '#/components/schemas/WaitTimer'},
+                },
+              },
+            },
+            specUrl: Uri.parse('file:///spec.yaml'),
+            quirks: const Quirks.openapi(),
+          );
+          final rule = results['Rule']!;
+          expect(rule, contains('?? WaitTimer(30)'));
+          expect(rule, isNot(contains('WaitTimer(null)')));
+        },
+      );
+
+      test(
+        'optional reference to a number-newtype with no default does '
+        'not emit T(null)',
+        () {
+          // Regression for github's `WaitTimer` referenced from
+          // `environment_protection_rule.wait_timer`. WaitTimer is a
+          // number newtype (`type: integer` with its own component name)
+          // and has no `default:`. Under openapi quirks, a non-required
+          // property whose schema is const-constructible would trigger
+          // `orDefaultExpression` to call `defaultValueString` — which
+          // for a number-newtype was emitting `WaitTimer(null)` even
+          // though the underlying `defaultValue` was null. That made
+          // the generated `?? const WaitTimer(null)` fail to compile
+          // (Null can't fit a non-null int parameter).
+          final results = renderTestSchemas(
+            {
+              'WaitTimer': {'type': 'integer'},
+              'Rule': {
+                'type': 'object',
+                'properties': {
+                  'wait_timer': {r'$ref': '#/components/schemas/WaitTimer'},
+                },
+              },
+            },
+            specUrl: Uri.parse('file:///spec.yaml'),
+            quirks: const Quirks.openapi(),
+          );
+          final rule = results['Rule']!;
+          expect(rule, isNot(contains('WaitTimer(null)')));
+        },
+      );
+
       test('integer property with default values', () {
         final json = {
           'type': 'object',
@@ -1727,7 +1812,7 @@ void main() {
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           "        return parseFromJson('Test', json, () => Test(\n"
-          "            a: (json['a'] as int?),\n"
+          "            a: (json['a'] as int?) ?? 1,\n"
           '        ));\n'
           '    }\n'
           '\n'
