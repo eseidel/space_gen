@@ -1821,6 +1821,13 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// toJson to convert to json.
   bool get shouldCallToJson => createsNewType;
 
+  /// Suffix used to name a [RenderOneOf] wrapper subclass for this
+  /// schema in shape dispatch (`<ParentTypeName><wrapperTag>`).
+  /// Returns null when this schema can't appear as a shape-dispatch
+  /// variant (the runtime-type test wouldn't pin it down, or we
+  /// haven't taught the dispatch to handle it yet).
+  String? get wrapperTag => null;
+
   @override
   List<Object?> get props => [snakeName, pointer];
 
@@ -2025,6 +2032,15 @@ class RenderPod extends RenderSchema {
 
   @override
   String get typeName => createsNewType ? camelFromSnake(snakeName) : dartType;
+
+  // Boolean is the only PodType with a `is bool` test that's distinct
+  // from the other JSON storage types (the date/uri/uuid/etc. all
+  // parse from String, which would conflict with RenderString in a
+  // oneOf — we'd need to inspect the format at runtime, which we
+  // don't).
+  @override
+  String? get wrapperTag =>
+      !createsNewType && type == PodType.boolean ? 'Bool' : null;
 
   @override
   String jsonStorageType({required bool isNullable}) {
@@ -2288,6 +2304,9 @@ class RenderString extends RenderSchema {
     'typeName': typeName,
     'nullableTypeName': nullableTypeName(context),
   };
+
+  @override
+  String? get wrapperTag => createsNewType ? null : 'String';
 
   @override
   String jsonStorageType({required bool isNullable}) =>
@@ -2561,6 +2580,9 @@ class RenderInteger extends RenderNumeric<int> {
   String get typeName => createsNewType ? camelFromSnake(snakeName) : 'int';
 
   @override
+  String? get wrapperTag => createsNewType ? null : 'Int';
+
+  @override
   String jsonStorageType({required bool isNullable}) =>
       isNullable ? 'int?' : 'int';
 
@@ -2589,6 +2611,9 @@ class RenderObject extends RenderNewType {
 
   /// The required properties of the resolved schema.
   final List<String> requiredProperties;
+
+  @override
+  String? get wrapperTag => typeName;
 
   @override
   List<Object?> get props => [
@@ -3309,6 +3334,9 @@ class RenderEnum extends RenderNewType {
   final List<String>? descriptions;
 
   @override
+  String? get wrapperTag => typeName;
+
+  @override
   List<Object?> get props => [
     super.props,
     values,
@@ -3452,38 +3480,20 @@ class RenderOneOf extends RenderNewType {
     return 'Map<String, dynamic>';
   }
 
-  /// Wrapper subclass name for [variant], shaped `<ParentTypeName><Tag>`.
-  /// For named variants (objects/enums with their own typeName) the tag
-  /// is the variant's typeName. For inline primitive variants there is
-  /// no useful name, so we tag by the Dart storage type — `Int`,
-  /// `String`, `Bool`. Returns null if we can't form a stable tag.
-  String? _wrapperTagFor(RenderSchema variant) {
-    if (variant is RenderObject || variant is RenderEnum) {
-      return variant.typeName;
-    }
-    // Anything beyond here is only handled in its inline form (the
-    // newtype variants generate their own classes and would also fit
-    // RenderObject/RenderEnum-style wrapping, but we don't bother yet).
-    if (variant.createsNewType) return null;
-    if (variant is RenderInteger) return 'Int';
-    if (variant is RenderString) return 'String';
-    if (variant is RenderPod && variant.type == PodType.boolean) {
-      return 'Bool';
-    }
-    return null;
-  }
-
-  /// Build the wrapper class name as `<ParentTypeName><Tag>`. We
-  /// always prepend even when the tag already starts with the parent's
-  /// typeName — stripping the duplicate would collide with the
-  /// variant's own standalone class (the parser names inline variants
-  /// `<parent_snake>_one_of_<i>`, so the variant typeName equals the
-  /// would-be deduped wrapper name). The double-prefix is ugly but
-  /// unambiguous; co-locating the inline variant into the parent's
-  /// file is a follow-up that fixes both the ugliness and the
-  /// duplicate emission.
+  /// Build the wrapper class name as `<ParentTypeName><wrapperTag>`.
+  /// We always prepend — even when the variant's tag already starts
+  /// with the parent's typeName — because stripping the duplicate
+  /// would collide with the variant's own standalone class (the
+  /// parser names inline variants `<parent_snake>_one_of_<i>`, so the
+  /// variant typeName equals the would-be deduped wrapper name). The
+  /// double-prefix is ugly but unambiguous; co-locating the inline
+  /// variant into the parent's file is a follow-up that fixes both
+  /// the ugliness and the duplicate emission.
+  ///
+  /// Caller must have established that [variant] has a non-null
+  /// [RenderSchema.wrapperTag] (e.g. via the dispatch gates).
   String wrapperTypeName(RenderSchema variant) {
-    final tag = _wrapperTagFor(variant);
+    final tag = variant.wrapperTag;
     if (tag == null) {
       throw StateError('No wrapper tag available for $variant');
     }
@@ -3492,11 +3502,11 @@ class RenderOneOf extends RenderNewType {
 
   /// Per-variant info needed to emit a dispatch arm + wrapper subclass.
   /// Returns null when [variant] isn't representable in the dispatch
-  /// (unsupported shape, or runtime-type test would conflict with another
-  /// variant). The caller checks for null + checks for distinct test
-  /// types before committing to the dispatch path.
+  /// (unsupported shape, or runtime-type test would conflict with
+  /// another variant). The caller checks for null and checks for
+  /// distinct test types before committing to the dispatch path.
   _VariantPlan? _planVariant(RenderSchema variant) {
-    final tag = _wrapperTagFor(variant);
+    final tag = variant.wrapperTag;
     if (tag == null) return null;
     final wrapperTypeName = '$typeName$tag';
 
@@ -3516,18 +3526,15 @@ class RenderOneOf extends RenderNewType {
     }
 
     // Inline pod variants: the wrapper just stores the raw JSON value
-    // (int / String / bool) — no parsing on either side. _wrapperTagFor
-    // has already filtered out the createsNewType case.
-    final String? podType;
-    if (variant is RenderInteger) {
-      podType = 'int';
-    } else if (variant is RenderString) {
-      podType = 'String';
-    } else if (variant is RenderPod && variant.type == PodType.boolean) {
-      podType = 'bool';
-    } else {
-      podType = null;
-    }
+    // (int / String / bool) — no parsing on either side. wrapperTag is
+    // null on the createsNewType branch, so by here we're guaranteed
+    // an inline pod.
+    final podType = switch (variant) {
+      RenderInteger() => 'int',
+      RenderString() => 'String',
+      RenderPod(type: PodType.boolean) => 'bool',
+      _ => null,
+    };
     if (podType == null) return null;
     return _VariantPlan(
       wrapperTypeName: wrapperTypeName,
@@ -3592,7 +3599,7 @@ class RenderOneOf extends RenderNewType {
       for (final schema in schemas) {
         variants.add({
           'wrapperTypeName': wrapperTypeName(schema),
-          'innerTypeName': schema.typeName,
+          'valueType': schema.typeName,
         });
       }
       final dispatch = <Map<String, dynamic>>[];
@@ -3600,7 +3607,7 @@ class RenderOneOf extends RenderNewType {
         dispatch.add({
           'value': entry.key,
           'wrapperTypeName': wrapperTypeName(entry.value),
-          'innerTypeName': entry.value.typeName,
+          'valueType': entry.value.typeName,
         });
       }
       ctx['has_discriminator_dispatch'] = true;

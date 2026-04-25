@@ -6,7 +6,7 @@
         final discriminator = json['{{ discriminatorProperty }}'];
         return switch (discriminator) {
 {{#dispatch}}
-            '{{ value }}' => {{{ wrapperTypeName }}}({{{ innerTypeName }}}.fromJson(json)),
+            '{{ value }}' => {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(json)),
 {{/dispatch}}
             _ => throw FormatException(
                 "Unknown {{ discriminatorProperty }} '$discriminator' for {{ typeName }}",
@@ -32,7 +32,7 @@
 final class {{{ wrapperTypeName }}} extends {{ typeName }} {
     const {{{ wrapperTypeName }}}(this.value);
 
-    final {{{ innerTypeName }}} value;
+    final {{{ valueType }}} value;
 
     @override
     Map<String, dynamic> toJson() => value.toJson();
