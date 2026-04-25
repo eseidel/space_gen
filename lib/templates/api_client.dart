@@ -74,6 +74,10 @@ class ApiClient {
       ...queryParameters,
     };
     auth.applyToParams(mergedParameters);
+    // `Uri.replace(queryParameters: {})` always appends a trailing `?`,
+    // so skip it when there's nothing to add — endpoints with no query
+    // params would otherwise ship URLs ending in `?` for no reason.
+    if (mergedParameters.isEmpty) return uri;
     return uri.replace(queryParameters: mergedParameters);
   }
 
