@@ -127,6 +127,20 @@ const commentReferencesIgnoreBlock =
     '// elsewhere; spec authors do not always escape brackets.\n'
     '// ignore_for_file: comment_references';
 
+/// Basenames of files emitted from hand-written templates rather than
+/// from spec content. These never carry spec-author prose, so any
+/// bracketed dartdoc token in them is a template bug to fix at the
+/// source — not a spec-driven artifact to suppress.
+@visibleForTesting
+const handWrittenTemplateBasenames = {
+  'api_exception.dart',
+  'auth.dart',
+  'api_client.dart',
+  'model_helpers.dart',
+  'client.dart',
+  'api.dart',
+};
+
 /// Walks [dir] and prepends [commentReferencesIgnoreBlock] to any
 /// `.dart` file with a `///` line containing `[<token>]` that doesn't
 /// look like a `[Foo](link)` link reference. Sister to
@@ -145,6 +159,12 @@ void suppressCommentReferencesLintInGeneratedFiles(Directory dir) {
       .whereType<File>()
       .where((f) => f.path.endsWith('.dart'));
   for (final file in dartFiles) {
+    // Skip hand-written template files: any unresolved bracketed
+    // reference there is a template bug to fix upstream rather than
+    // suppress per-file.
+    if (handWrittenTemplateBasenames.contains(p.basename(file.path))) {
+      continue;
+    }
     final content = file.readAsStringSync();
     if (content.contains(marker)) continue;
     if (!docCommentBracketRe.hasMatch(content)) continue;

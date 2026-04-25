@@ -2440,6 +2440,37 @@ void main() {
       suppressCommentReferencesLintInGeneratedFiles(dir);
       expect(dir.childFile('README.md').readAsStringSync(), content);
     });
+
+    test('skips hand-written template files in the allowlist', () {
+      // Bracketed references in hand-written templates (`auth.dart`,
+      // `model_helpers.dart`, etc.) always resolve at compile time, so
+      // the suppression block is pure noise there. Mirrors the bug
+      // reported in #135.
+      const content = '/// See [Foo] for details.\nclass Bar {}\n';
+      final dir = setUpDir({
+        for (final name in handWrittenTemplateBasenames) 'lib/$name': content,
+      });
+      suppressCommentReferencesLintInGeneratedFiles(dir);
+      for (final name in handWrittenTemplateBasenames) {
+        expect(
+          dir.childFile('lib/$name').readAsStringSync(),
+          content,
+          reason: '$name should not get the directive prepended',
+        );
+      }
+    });
+
+    test('still prepends directive for spec-driven model files', () {
+      // Regression — making sure the allowlist didn't widen to skip
+      // the model files we actually want to cover.
+      const content = '/// See [Foo] for details.\nclass Bar {}\n';
+      final dir = setUpDir({'lib/models/foo.dart': content});
+      suppressCommentReferencesLintInGeneratedFiles(dir);
+      expect(
+        dir.childFile('lib/models/foo.dart').readAsStringSync(),
+        startsWith('$commentReferencesIgnoreBlock\n'),
+      );
+    });
   });
 
   // While we still support logging, this should no longer happen since
