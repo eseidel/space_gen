@@ -1136,15 +1136,15 @@ void main() {
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
         "        return parseFromJson('Test', json, () => Test(\n"
-        "            aString: (json['a_string'] as List?)?.cast<String>(),\n"
-        "            aInt: (json['a_int'] as List?)?.cast<int>(),\n"
-        "            aNumber: (json['a_number'] as List?)?.cast<double>(),\n"
-        "            aBoolean: (json['a_boolean'] as List?)?.cast<bool>(),\n"
-        "            aDateTime: (json['a_date_time'] as List?)?.cast<DateTime>(),\n"
-        "            aUri: (json['a_uri'] as List?)?.cast<Uri>(),\n"
-        "            aArrayOfString: (json['a_array_of_string'] as List?)?.cast<List<String>>(),\n"
-        "            aEnum: (json['a_enum'] as List?)?.map<TestAEnumInner>((e) => TestAEnumInner.fromJson(e as String)).toList(),\n"
-        "            aUnknown: (json['a_unknown'] as List?)?.cast<dynamic>(),\n"
+        "            aString: (json['a_string'] as List?)?.cast<String>() ?? const [],\n"
+        "            aInt: (json['a_int'] as List?)?.cast<int>() ?? const [],\n"
+        "            aNumber: (json['a_number'] as List?)?.cast<double>() ?? const [],\n"
+        "            aBoolean: (json['a_boolean'] as List?)?.cast<bool>() ?? const [],\n"
+        "            aDateTime: (json['a_date_time'] as List?)?.cast<DateTime>() ?? const [],\n"
+        "            aUri: (json['a_uri'] as List?)?.cast<Uri>() ?? const [],\n"
+        "            aArrayOfString: (json['a_array_of_string'] as List?)?.cast<List<String>>() ?? const [],\n"
+        "            aEnum: (json['a_enum'] as List?)?.map<TestAEnumInner>((e) => TestAEnumInner.fromJson(e as String)).toList() ?? const [],\n"
+        "            aUnknown: (json['a_unknown'] as List?)?.cast<dynamic>() ?? const [],\n"
         '        ));\n'
         '    }\n'
         '\n'
@@ -1326,7 +1326,7 @@ void main() {
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
         "        return parseFromJson('Test', json, () => Test(\n"
-        "            a: (json['a'] as List?)?.cast<String>(),\n"
+        "            a: (json['a'] as List?)?.cast<String>() ?? const <String>['a', 'b'],\n"
         '        ));\n'
         '    }\n'
         '\n'
@@ -1646,7 +1646,7 @@ void main() {
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           "        return parseFromJson('Test', json, () => Test(\n"
-          "            a: (json['a'] as num?)?.toDouble(),\n"
+          "            a: (json['a'] as num?)?.toDouble() ?? 1.2,\n"
           '        ));\n'
           '    }\n'
           '\n'
@@ -1727,7 +1727,7 @@ void main() {
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           "        return parseFromJson('Test', json, () => Test(\n"
-          "            a: (json['a'] as int?),\n"
+          "            a: (json['a'] as int?) ?? 1,\n"
           '        ));\n'
           '    }\n'
           '\n'
