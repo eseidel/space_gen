@@ -39,7 +39,12 @@ void main() {
       // it falls through to SchemaString.
       expect(parse('string', format: 'time'), isNull);
       expect(parse('string', format: 'foo', expectLogs: true), isNull);
-      verify(() => logger.warn('Unknown string format: foo in #/')).called(1);
+      // Unknown formats are detail-logged (the generator falls back to
+      // the plain base type, which is correct for the vast majority of
+      // non-standard format names ship in real specs).
+      verify(
+        () => logger.detail('Ignoring unknown string format: foo in #/'),
+      ).called(1);
       expect(parse('number'), isNull);
       expect(parse('integer'), isNull);
       expect(parse('boolean'), PodType.boolean);
