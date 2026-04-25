@@ -1,3 +1,55 @@
+{{#has_dispatch}}
+{{{ doc_comment }}}sealed class {{ typeName }} {
+    const {{ typeName }}();
+
+    factory {{ typeName }}.fromJson(Map<String, dynamic> json) {
+        final discriminator = json['{{ discriminatorProperty }}'];
+        return switch (discriminator) {
+{{#dispatch}}
+            '{{ value }}' => {{{ wrapperTypeName }}}({{{ innerTypeName }}}.fromJson(json)),
+{{/dispatch}}
+            _ => throw FormatException(
+                "Unknown {{ discriminatorProperty }} '$discriminator' for {{ typeName }}",
+            ),
+        };
+    }
+
+    /// Convenience to create a nullable type from a nullable json object.
+    /// Useful when parsing optional fields.
+    static {{ nullableTypeName }} maybeFromJson(Map<String, dynamic>? json) {
+        if (json == null) {
+            return null;
+        }
+        return {{ typeName }}.fromJson(json);
+    }
+
+    /// Require all subclasses to implement toJson.
+    Map<String, dynamic> toJson();
+}
+
+{{#variants}}
+@immutable
+final class {{{ wrapperTypeName }}} extends {{ typeName }} {
+    const {{{ wrapperTypeName }}}(this.value);
+
+    final {{{ innerTypeName }}} value;
+
+    @override
+    Map<String, dynamic> toJson() => value.toJson();
+
+    @override
+    int get hashCode => value.hashCode;
+
+    @override
+    bool operator ==(Object other) {
+        if (identical(this, other)) return true;
+        return other is {{{ wrapperTypeName }}} && value == other.value;
+    }
+}
+
+{{/variants}}
+{{/has_dispatch}}
+{{^has_dispatch}}
 {{{ doc_comment }}}sealed class {{ typeName }} {
     static {{ typeName }} fromJson(dynamic jsonArg) {
         // Determine which schema to use based on the json.
@@ -17,3 +69,4 @@
     /// Require all subclasses to implement toJson.
     dynamic toJson();
 }
+{{/has_dispatch}}

@@ -330,6 +330,38 @@ RefOr<Header> parseHeaderOrRef(MapContext json) {
   return RefOr<Header>.object(parseHeader(json), json.pointer);
 }
 
+/// Parse the optional `discriminator` keyword that appears alongside
+/// oneOf/anyOf/allOf. Mapping values may be either a JSON Pointer
+/// (`#/components/schemas/Foo`) or a bare schema name (`Foo`); the
+/// latter is normalized here to the canonical pointer form. The
+/// resolver later matches each mapping value to one of the variants.
+SchemaDiscriminator? _parseDiscriminator(MapContext json) {
+  final discriminatorJson = _optionalMap(json, 'discriminator');
+  if (discriminatorJson == null) {
+    return null;
+  }
+  final propertyName = _required<String>(discriminatorJson, 'propertyName');
+  final mappingJson = _optionalMap(discriminatorJson, 'mapping');
+  Map<String, SchemaRef>? mapping;
+  if (mappingJson != null) {
+    mapping = <String, SchemaRef>{};
+    for (final key in mappingJson.json.keys) {
+      final raw = mappingJson[key];
+      if (raw is! String) {
+        _error(
+          mappingJson,
+          'discriminator.mapping[$key] must be a string',
+        );
+      }
+      final refString = raw.startsWith('#/') || raw.startsWith('/')
+          ? raw
+          : '#/components/schemas/$raw';
+      mapping[key] = SchemaRef.ref(refString, mappingJson.pointer.add(key));
+    }
+  }
+  return SchemaDiscriminator(propertyName: propertyName, mapping: mapping);
+}
+
 Schema? _handleCollectionTypes(
   MapContext json, {
   required CommonProperties common,
@@ -342,7 +374,12 @@ Schema? _handleCollectionTypes(
         parseSchemaOrRef(oneOf.indexAsMap(i).addSnakeName('one_of_$i')),
       );
     }
-    return SchemaOneOf(common: common, schemas: schemas);
+    final discriminator = _parseDiscriminator(json);
+    return SchemaOneOf(
+      common: common,
+      schemas: schemas,
+      discriminator: discriminator,
+    );
   }
 
   if (json.containsKey('allOf')) {
@@ -694,7 +731,11 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
       final schema = _createCorrectSchemaSubtype(fakeJson);
       schemas.add(SchemaRef.object(schema, json.pointer));
     }
-    return SchemaOneOf(common: common, schemas: schemas);
+    return SchemaOneOf(
+      common: common,
+      schemas: schemas,
+      discriminator: null,
+    );
   }
 
   final collectionType = _handleCollectionTypes(json, common: common);

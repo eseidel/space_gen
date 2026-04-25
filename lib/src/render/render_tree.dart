@@ -417,9 +417,38 @@ class SpecResolver {
       case ResolvedBinary():
         return RenderBinary(common: schema.common);
       case ResolvedOneOf():
+        final renderSchemas = schema.schemas.map(toRenderSchema).toList();
+        final disc = schema.discriminator;
+        RenderDiscriminator? renderDiscriminator;
+        if (disc != null) {
+          final rawMapping = disc.mapping;
+          if (rawMapping != null) {
+            // For each ResolvedSchema in the resolver-side mapping, find
+            // its index in schema.schemas (identity match, established by
+            // the resolver) and use the corresponding rendered variant.
+            final renderMapping = <String, RenderSchema>{};
+            for (final entry in rawMapping.entries) {
+              final i = schema.schemas.indexWhere(
+                (s) => identical(s, entry.value),
+              );
+              if (i == -1) {
+                // Resolver invariant violation — should never happen.
+                throw StateError(
+                  'discriminator mapping target not in oneOf.schemas',
+                );
+              }
+              renderMapping[entry.key] = renderSchemas[i];
+            }
+            renderDiscriminator = RenderDiscriminator(
+              propertyName: disc.propertyName,
+              mapping: renderMapping,
+            );
+          }
+        }
         return RenderOneOf(
           common: schema.common,
-          schemas: schema.schemas.map(toRenderSchema).toList(),
+          schemas: renderSchemas,
+          discriminator: renderDiscriminator,
         );
       case ResolvedAllOf():
         // Generate a synthetic object type for allOf.
@@ -440,6 +469,7 @@ class SpecResolver {
         return RenderOneOf(
           common: schema.common,
           schemas: schema.schemas.map(toRenderSchema).toList(),
+          discriminator: null,
         );
       case ResolvedMap():
         final keyEnum = schema.keySchema;
@@ -548,6 +578,7 @@ class SpecResolver {
           pointer: operation.pointer,
         ),
         schemas: distinctSchemas.toList(),
+        discriminator: null,
       );
     }
     return distinctSchemas.first;
@@ -3370,10 +3401,21 @@ class RenderEnum extends RenderNewType {
 }
 
 class RenderOneOf extends RenderNewType {
-  const RenderOneOf({required super.common, required this.schemas});
+  const RenderOneOf({
+    required super.common,
+    required this.schemas,
+    required this.discriminator,
+  });
 
   /// The schemas of the resolved schema.
   final List<RenderSchema> schemas;
+
+  /// Optional discriminator dispatch table. When present, [schemas] are
+  /// rendered as final wrapper subclasses of the sealed parent and the
+  /// generated `fromJson` reads the discriminator property to pick the
+  /// right variant. When absent, today's renderer falls back to the
+  /// UnimplementedError stub — a gap to close in a follow-up.
+  final RenderDiscriminator? discriminator;
 
   /// We could do something smarter here, to determine if the oneOf has a
   /// const constructor, but it's not worth the complexity for now.
@@ -3381,7 +3423,7 @@ class RenderOneOf extends RenderNewType {
   bool get defaultCanConstConstruct => false;
 
   @override
-  List<Object?> get props => [super.props, schemas];
+  List<Object?> get props => [super.props, schemas, discriminator];
 
   @override
   bool equalsIgnoringName(RenderSchema other) {
@@ -3396,6 +3438,9 @@ class RenderOneOf extends RenderNewType {
         return false;
       }
     }
+    if (discriminator != other.discriminator) {
+      return false;
+    }
     return super.equalsIgnoringName(other);
   }
 
@@ -3407,12 +3452,65 @@ class RenderOneOf extends RenderNewType {
     return 'Map<String, dynamic>';
   }
 
+  /// Wrapper subclass name for [variant], shaped
+  /// `<ParentTypeName><VariantTypeName>`. We don't shorten using the
+  /// discriminator value (e.g. "private") because the variant's own
+  /// typeName is already a unique, valid Dart identifier while
+  /// discriminator strings are arbitrary.
+  String wrapperTypeName(RenderSchema variant) =>
+      '$typeName${variant.typeName}';
+
+  /// True when the dispatch path can be emitted. Dispatch reads a
+  /// discriminator property out of a `Map<String, dynamic>` and calls
+  /// `<Variant>.fromJson(json)` on the chosen variant — both require
+  /// every variant to be an object-shaped newtype with a fromJson
+  /// factory. Array/map/pod variants (e.g. github's `content-directory`,
+  /// which is `type: array`) fall through to the legacy stub.
+  bool get _hasDispatch =>
+      discriminator != null && schemas.every((s) => s is RenderObject);
+
+  @override
+  Iterable<Import> get additionalImports => [
+    ...super.additionalImports,
+    // The dispatch path emits @immutable wrappers that override == /
+    // hashCode; the legacy UnimplementedError stub doesn't need it.
+    if (_hasDispatch) const Import('package:meta/meta.dart'),
+  ];
+
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
+    final disc = discriminator;
+    if (disc == null || !_hasDispatch) {
+      return {
+        'doc_comment': createDocComment(common: common),
+        'typeName': typeName,
+        'nullableTypeName': nullableTypeName(context),
+        'has_dispatch': false,
+      };
+    }
+    final variants = <Map<String, dynamic>>[];
+    for (final schema in schemas) {
+      variants.add({
+        'wrapperTypeName': wrapperTypeName(schema),
+        'innerTypeName': schema.typeName,
+      });
+    }
+    final dispatch = <Map<String, dynamic>>[];
+    for (final entry in disc.mapping.entries) {
+      dispatch.add({
+        'value': entry.key,
+        'wrapperTypeName': wrapperTypeName(entry.value),
+        'innerTypeName': entry.value.typeName,
+      });
+    }
     return {
       'doc_comment': createDocComment(common: common),
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
+      'has_dispatch': true,
+      'discriminatorProperty': disc.propertyName,
+      'variants': variants,
+      'dispatch': dispatch,
     };
   }
 
@@ -3450,6 +3548,24 @@ class RenderOneOf extends RenderNewType {
     // discriminator-aware subclass emission (#99).
     return null;
   }
+}
+
+/// Render-side discriminator dispatch table for a [RenderOneOf].
+/// Each [mapping] value is one of the entries in
+/// [RenderOneOf.schemas] (same instance), so the renderer can look up
+/// wrapper names by variant.
+@immutable
+class RenderDiscriminator extends Equatable {
+  const RenderDiscriminator({
+    required this.propertyName,
+    required this.mapping,
+  });
+
+  final String propertyName;
+  final Map<String, RenderSchema> mapping;
+
+  @override
+  List<Object?> get props => [propertyName, mapping];
 }
 
 class RenderParameter implements CanBeParameter {

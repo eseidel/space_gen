@@ -507,6 +507,154 @@ void main() {
       );
     });
 
+    test('oneOf with discriminator + mapping resolves variants by '
+        'identity', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Pets', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.example.com'},
+        ],
+        'paths': {
+          '/pet': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'oneOf': [
+                          {r'$ref': '#/components/schemas/Cat'},
+                          {r'$ref': '#/components/schemas/Dog'},
+                        ],
+                        'discriminator': {
+                          'propertyName': 'pet_type',
+                          'mapping': {
+                            'cat': '#/components/schemas/Cat',
+                            'dog': 'Dog',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Cat': {
+              'type': 'object',
+              'properties': {
+                'pet_type': {'type': 'string'},
+              },
+              'required': ['pet_type'],
+            },
+            'Dog': {
+              'type': 'object',
+              'properties': {
+                'pet_type': {'type': 'string'},
+              },
+              'required': ['pet_type'],
+            },
+          },
+        },
+      };
+      final logger = _MockLogger();
+      final spec = runWithLogger(logger, () => parseAndResolveTestSpec(json));
+      final response =
+          spec.paths.first.operations.first.responses.first.content
+              as ResolvedOneOf;
+      final discriminator = response.discriminator;
+      expect(discriminator, isNotNull);
+      expect(discriminator?.propertyName, 'pet_type');
+      // Mapping values must be identical (same instance) to one of the
+      // oneOf variant entries — that's the contract the renderer relies on.
+      final mapping = discriminator?.mapping;
+      expect(mapping, isNotNull);
+      expect(identical(mapping?['cat'], response.schemas[0]), isTrue);
+      expect(identical(mapping?['dog'], response.schemas[1]), isTrue);
+    });
+
+    test('oneOf with discriminator but no mapping', () {
+      final json = {
+        'oneOf': [
+          {'type': 'string'},
+          {'type': 'integer'},
+        ],
+        'discriminator': {'propertyName': 'kind'},
+      };
+      final logger = _MockLogger();
+      final resolved = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      if (resolved is! ResolvedOneOf) {
+        fail('Expected ResolvedOneOf, got ${resolved.runtimeType}');
+      }
+      final discriminator = resolved.discriminator;
+      expect(discriminator, isNotNull);
+      expect(discriminator?.propertyName, 'kind');
+      expect(discriminator?.mapping, isNull);
+    });
+
+    test('discriminator mapping that does not reference a oneOf variant '
+        'errors', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Pets', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.example.com'},
+        ],
+        'paths': {
+          '/pet': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'oneOf': [
+                          {r'$ref': '#/components/schemas/Cat'},
+                        ],
+                        'discriminator': {
+                          'propertyName': 'pet_type',
+                          'mapping': {
+                            // Points at a schema that's not in the oneOf list.
+                            'dog': '#/components/schemas/Dog',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Cat': {'type': 'object'},
+            'Dog': {'type': 'object'},
+          },
+        },
+      };
+      final logger = _MockLogger();
+      expect(
+        () => runWithLogger(logger, () => parseAndResolveTestSpec(json)),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('does not point at any of the oneOf variants'),
+          ),
+        ),
+      );
+    });
+
     test('allOf with one item', () {
       final json = {
         'allOf': [
@@ -1445,6 +1593,7 @@ void main() {
               type: PodType.boolean,
             ),
           ],
+          discriminator: null,
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.schemas, equals(schema.schemas));

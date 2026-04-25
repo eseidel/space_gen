@@ -5,6 +5,7 @@
 
 import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
+import 'package:meta/meta.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/parse/spec.dart';
 import 'package:space_gen/src/parse/visitor.dart';
@@ -162,6 +163,54 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   });
 }
 
+/// Resolve a [SchemaDiscriminator]: turn each mapping ref into a pointer
+/// match against [resolvedVariants], so the result shares identity with
+/// the corresponding ResolvedOneOf.schemas entry.
+ResolvedDiscriminator? _resolveDiscriminator(
+  SchemaDiscriminator? discriminator,
+  List<ResolvedSchema> resolvedVariants,
+  JsonPointer oneOfPointer,
+) {
+  if (discriminator == null) {
+    return null;
+  }
+  final rawMapping = discriminator.mapping;
+  if (rawMapping == null) {
+    return ResolvedDiscriminator(
+      propertyName: discriminator.propertyName,
+      mapping: null,
+    );
+  }
+  final byPointer = <JsonPointer, ResolvedSchema>{
+    for (final v in resolvedVariants) v.common.pointer: v,
+  };
+  final mapping = <String, ResolvedSchema>{};
+  for (final entry in rawMapping.entries) {
+    final ref = entry.value.ref;
+    if (ref == null) {
+      // Parser invariant: mapping values are built via SchemaRef.ref.
+      _error(
+        'discriminator.mapping[${entry.key}] must be a \$ref',
+        oneOfPointer,
+      );
+    }
+    final targetPointer = JsonPointer.parse(ref.uri.toString());
+    final variant = byPointer[targetPointer];
+    if (variant == null) {
+      _error(
+        'discriminator.mapping[${entry.key}] = $targetPointer does not '
+        'point at any of the oneOf variants',
+        oneOfPointer,
+      );
+    }
+    mapping[entry.key] = variant;
+  }
+  return ResolvedDiscriminator(
+    propertyName: discriminator.propertyName,
+    mapping: mapping,
+  );
+}
+
 ResolvedSchema _resolveSchemaFully(
   Schema schema,
   CommonProperties resolvedCommon,
@@ -257,9 +306,18 @@ ResolvedSchema _resolveSchemaFully(
   if (schema is SchemaOneOf) {
     assert(createsNewType, 'SchemaOneOf should create a new type');
     final oneOf = schema;
+    final resolvedSchemas = oneOf.schemas
+        .map((e) => resolveSchemaRef(e, context))
+        .toList();
+    final discriminator = _resolveDiscriminator(
+      oneOf.discriminator,
+      resolvedSchemas,
+      oneOf.pointer,
+    );
     return ResolvedOneOf(
       common: resolvedCommon,
-      schemas: oneOf.schemas.map((e) => resolveSchemaRef(e, context)).toList(),
+      schemas: resolvedSchemas,
+      discriminator: discriminator,
     );
   }
   if (schema is SchemaAllOf) {
@@ -1394,13 +1452,44 @@ abstract class ResolvedSchemaCollection extends ResolvedSchema {
 }
 
 class ResolvedOneOf extends ResolvedSchemaCollection {
-  const ResolvedOneOf({required super.schemas, required super.common})
-    : super(createsNewType: true);
+  const ResolvedOneOf({
+    required super.schemas,
+    required super.common,
+    required this.discriminator,
+  }) : super(createsNewType: true);
+
+  /// The resolved discriminator, if any. Each [ResolvedDiscriminator.mapping]
+  /// value points at one of the [schemas] entries (same instance), so
+  /// callers can do identity lookups.
+  final ResolvedDiscriminator? discriminator;
+
+  @override
+  List<Object?> get props => [super.props, discriminator];
 
   @override
   ResolvedOneOf copyWith({CommonProperties? common}) {
-    return ResolvedOneOf(common: common ?? this.common, schemas: schemas);
+    return ResolvedOneOf(
+      common: common ?? this.common,
+      schemas: schemas,
+      discriminator: discriminator,
+    );
   }
+}
+
+/// Resolved form of [SchemaDiscriminator]. Each [mapping] value is one
+/// of the [ResolvedOneOf.schemas] entries, identified by pointer match.
+@immutable
+class ResolvedDiscriminator extends Equatable {
+  const ResolvedDiscriminator({
+    required this.propertyName,
+    required this.mapping,
+  });
+
+  final String propertyName;
+  final Map<String, ResolvedSchema>? mapping;
+
+  @override
+  List<Object?> get props => [propertyName, mapping];
 }
 
 class ResolvedAnyOf extends ResolvedSchemaCollection {
