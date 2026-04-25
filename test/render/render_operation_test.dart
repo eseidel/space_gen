@@ -715,7 +715,7 @@ void main() {
         '            method: Method.post,\n'
         "            path: '/users',\n"
         '            queryParameters: {\n'
-        "                'foo': ?foo?.toString(),\n"
+        "                if (foo != null) 'foo': [foo.toString()],\n"
         '            },\n'
         '        );\n'
         '\n'
@@ -774,7 +774,7 @@ void main() {
         '            method: Method.post,\n'
         "            path: '/users',\n"
         '            queryParameters: {\n'
-        "                'foo': ?foo?.map((e) => e.toString()).toList(),\n"
+        "                if (foo != null) 'foo': foo.map((e) => e.toString()).toList(),\n"
         '            },\n'
         '        );\n'
         '\n'
@@ -828,7 +828,7 @@ void main() {
         '            method: Method.post,\n'
         "            path: '/users',\n"
         '            queryParameters: {\n'
-        "                'page': ?page?.toString(),\n"
+        "                if (page != null) 'page': [page.toString()],\n"
         '            },\n'
         '        );\n'
         '\n'
@@ -921,9 +921,9 @@ void main() {
         '            method: Method.post,\n'
         "            path: '/users',\n"
         '            queryParameters: {\n'
-        "                'foo': ?foo?.toString(),\n"
-        "                'bar': ?bar?.toString(),\n"
-        "                'baz': ?baz?.toString(),\n"
+        "                if (foo != null) 'foo': [foo.toString()],\n"
+        "                if (bar != null) 'bar': [bar.toString()],\n"
+        "                if (baz != null) 'baz': [baz.toString()],\n"
         '            },\n'
         '        );\n'
         '\n'
@@ -975,7 +975,7 @@ void main() {
           '            method: Method.post,\n'
           "            path: '/users',\n"
           '            queryParameters: {\n'
-          "                'foo': ?foo?.toJson()?.toString(),\n"
+          "                if (foo != null) 'foo': [foo.toJson().toString()],\n"
           '            },\n'
           '        );\n'
           '\n'
@@ -1049,8 +1049,9 @@ void main() {
     test('nullable primitive query param is null-safe', () {
       // Regression: previously generated `'foo': ?foo.toString()`, which
       // always emitted the entry because `.toString()` on a null primitive
-      // returns the literal string "null". Must be `?foo?.toString()` so
-      // the null-aware map entry suppresses the pair entirely.
+      // returns the literal string "null". Now wraps in
+      // `if (flag != null) 'flag': [flag.toString()]` — the conditional
+      // map entry suppresses the pair entirely when the value is null.
       final json = {
         'summary': 'Get user',
         'operationId': 'getUser',
@@ -1071,8 +1072,11 @@ void main() {
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
       );
-      expect(result, contains('?flag?.toString()'));
+      expect(result, contains('if (flag != null)'));
+      expect(result, contains('[flag.toString()]'));
+      // The buggy variants must stay gone.
       expect(result, isNot(contains('?flag.toString()')));
+      expect(result, isNot(contains("'flag': ?flag.toString()")));
     });
 
     test('void return omits body/unhandled branch (allows 204)', () {

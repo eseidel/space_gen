@@ -2321,7 +2321,7 @@ void main() {
           expect(
             result,
             contains(
-              "                'tags': ?tags?.map((e) => e.toString()).toList(),",
+              "                if (tags != null) 'tags': tags.map((e) => e.toString()).toList(),",
             ),
           );
           // The buggy old emission must be gone — `?tags?.toString()` would

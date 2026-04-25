@@ -44,13 +44,15 @@ class ResolvedAuth {
     headers.addAll(this.headers);
   }
 
-  /// Apply the resolved auth to the given parameters. Accepts a
-  /// `Map<String, dynamic>` so it can be called with the same map the
-  /// generated client builds for `Uri.replace`, which carries either
-  /// `String` (scalar params) or `Iterable<String>` (array params with
-  /// explode=true). Auth-injected values are always `String`.
-  void applyToParams(Map<String, dynamic> params) {
-    params.addAll(this.params);
+  /// Apply the resolved auth to the given parameters. The generated
+  /// client builds a `Map<String, List<String>>` (every value a list, so
+  /// `Uri.replace` can spread arrays across repeated keys). Auth-injected
+  /// values are always single scalar strings, so they wrap into a
+  /// 1-element list at the boundary.
+  void applyToParams(Map<String, List<String>> params) {
+    for (final entry in this.params.entries) {
+      params[entry.key] = [entry.value];
+    }
   }
 
   /// Merge the given [ResolvedAuth] with the current [ResolvedAuth].
