@@ -113,6 +113,45 @@ void suppressLongLineLintInGeneratedFiles(Directory dir) {
   }
 }
 
+/// Block prepended to generated `.dart` files whose dartdoc contains
+/// `[…]` patterns that don't resolve (e.g. github's code-of-conduct
+/// description literally says "contacting the project team at
+/// [EMAIL]", and the MIT license template carries `[year] [fullname]`
+/// placeholders). Exposed for tests.
+@visibleForTesting
+const commentReferencesIgnoreBlock =
+    "// Spec descriptions copy prose verbatim into dartdoc, where `[x]`\n"
+    '// inside a sentence (placeholder text, ALL_CAPS tokens, license\n'
+    "// templates) is parsed as a symbol reference even when no such\n"
+    '// symbol exists. Suppress file-locally so the lint stays live\n'
+    '// elsewhere; spec authors do not always escape brackets.\n'
+    '// ignore_for_file: comment_references';
+
+/// Walks [dir] and prepends [commentReferencesIgnoreBlock] to any
+/// `.dart` file with a `///` line containing `[<token>]` that doesn't
+/// look like a `[Foo](link)` link reference. Sister to
+/// [suppressLongLineLintInGeneratedFiles] — same per-file pattern,
+/// different lint.
+@visibleForTesting
+void suppressCommentReferencesLintInGeneratedFiles(Directory dir) {
+  const marker = '// ignore_for_file: comment_references';
+  // `///` followed by anything, then a `[word]` bracketed token NOT
+  // followed by `(` (which would make it a `[Foo](url)` link). Matches
+  // both prose placeholders (`[EMAIL]`, `[year]`) and stray symbol
+  // references the spec author meant as plain text.
+  final docCommentBracketRe = RegExp(r'///.*\[[^\]\s]+\](?!\()');
+  final dartFiles = dir
+      .listSync(recursive: true)
+      .whereType<File>()
+      .where((f) => f.path.endsWith('.dart'));
+  for (final file in dartFiles) {
+    final content = file.readAsStringSync();
+    if (content.contains(marker)) continue;
+    if (!docCommentBracketRe.hasMatch(content)) continue;
+    file.writeAsStringSync('$commentReferencesIgnoreBlock\n$content');
+  }
+}
+
 @visibleForTesting
 String applyMandatoryReplacements(
   String template,
@@ -861,6 +900,7 @@ class FileRenderer {
     renderPublicApi(spec.apis, schemas);
     formatter.formatAndFix(pkgDir: fileWriter.outDir.path);
     suppressLongLineLintInGeneratedFiles(fileWriter.outDir);
+    suppressCommentReferencesLintInGeneratedFiles(fileWriter.outDir);
 
     final misspellings = spellChecker.collectMisspellings(fileWriter.outDir);
     renderCspellConfig(misspellings);
