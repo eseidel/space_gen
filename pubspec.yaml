@@ -6,6 +6,9 @@ repository: https://github.com/eseidel/space_gen
 environment:
   sdk: ^3.8.0
 
+executables:
+  space_gen:
+
 dependencies:
   args: ^2.4.2
   collection: ^1.19.1
