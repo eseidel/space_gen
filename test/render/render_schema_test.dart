@@ -871,6 +871,45 @@ void main() {
       expect(result, contains('@immutable'));
     });
 
+    test('non-discriminator oneOf shape-dispatch with an enum variant '
+        '(distinct from a Map<String, dynamic> object variant)', () {
+      // The enum's JSON storage type is `String` — same as RenderString,
+      // so it would conflict with a String variant; but here it's
+      // paired with an object, which uses Map<String, dynamic>. The
+      // dispatch picks the enum on String inputs.
+      final results = renderTestSchemas(
+        {
+          'Result': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Status'},
+              {r'$ref': '#/components/schemas/Detail'},
+            ],
+          },
+          'Status': {
+            'type': 'string',
+            'enum': ['ok', 'error'],
+          },
+          'Detail': {
+            'type': 'object',
+            'properties': {
+              'message': {'type': 'string'},
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final result = results['Result'];
+      expect(result, isNotNull);
+      expect(result, contains('factory Result.fromJson(dynamic json)'));
+      expect(result, contains('String v => ResultStatus(Status.fromJson(v))'));
+      expect(
+        result,
+        contains('Map<String, dynamic> v => ResultDetail(Detail.fromJson(v))'),
+      );
+      expect(result, contains('final Status value;'));
+      expect(result, contains('value.toJson()'));
+    });
+
     test('non-discriminator oneOf with two object variants falls back '
         'to legacy stub (no shape disambiguation possible)', () {
       // Two objects share Map<String, dynamic> at the JSON level — no
