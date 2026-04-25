@@ -473,6 +473,7 @@ class SpecResolver {
       statusCode: response.statusCode,
       description: response.description,
       content: toRenderSchema(response.content),
+      contentType: response.contentType,
     );
   }
 
@@ -557,6 +558,7 @@ class SpecResolver {
       range: response.range,
       description: response.description,
       content: toRenderSchema(response.content),
+      contentType: response.contentType,
     );
   }
 
@@ -568,6 +570,7 @@ class SpecResolver {
         : RenderDefaultResponse(
             description: resolvedDefault.description,
             content: toRenderSchema(resolvedDefault.content),
+            contentType: resolvedDefault.contentType,
           );
     return RenderOperation(
       pointer: operation.pointer,
@@ -1094,12 +1097,23 @@ class Endpoint implements ToTemplateContext {
     final responseSchema = operation.returnType;
     final returnType = responseSchema.typeName;
     final isVoidReturn = responseSchema is RenderVoid;
-    final responseFromJson = responseSchema.fromJsonExpression(
-      'jsonDecode(response.body)',
-      context,
-      jsonIsNullable: false,
-      dartIsNullable: false,
-    );
+    // When the success response advertises a non-JSON content type
+    // (text/plain, text/html, application/octocat-stream, …) the wire
+    // body is NOT JSON. Skip `jsonDecode`: `package:http`'s
+    // `Response.body` is already a `String`, which matches the
+    // `type: string` schema such responses use in practice. github's
+    // `/zen`, `/octocat`, `/markdown`, `/markdown/raw` all live here.
+    final successContentType = operation.successContentType;
+    final isJsonResponse =
+        successContentType == null || successContentType == 'application/json';
+    final responseFromJson = isJsonResponse
+        ? responseSchema.fromJsonExpression(
+            'jsonDecode(response.body)',
+            context,
+            jsonIsNullable: false,
+            dartIsNullable: false,
+          )
+        : 'response.body';
 
     // Collect error-body schemas from `default:`, `4XX:`, and `5XX:` and
     // deduplicate by structural equality. When they all resolve to the same
@@ -1297,6 +1311,24 @@ class RenderOperation {
 
   /// The return type of the resolved operation.
   final RenderSchema returnType;
+
+  /// Wire content type of the response that drove [returnType] — first
+  /// matching 2xx, then `2XX` range. `null` when the operation has no
+  /// successful response body. Used by the operation renderer to skip
+  /// `jsonDecode` when the body isn't JSON.
+  String? get successContentType {
+    for (final r in responses) {
+      if (r.statusCode >= 200 && r.statusCode < 300) {
+        return r.contentType;
+      }
+    }
+    for (final r in rangeResponses) {
+      if (r.range == StatusCodeRange.success) {
+        return r.contentType;
+      }
+    }
+    return null;
+  }
 
   /// The tags of the resolved operation.
   final List<String> tags;
@@ -1612,6 +1644,7 @@ class RenderResponse {
     required this.statusCode,
     required this.description,
     required this.content,
+    required this.contentType,
   });
 
   /// The status code of the resolved response.
@@ -1621,8 +1654,11 @@ class RenderResponse {
   final String description;
 
   /// The resolved content of the resolved response.
-  /// We only support json, so we only need a single content.
   final RenderSchema content;
+
+  /// Wire content type of [content] (e.g. `application/json`,
+  /// `text/plain`). `null` when the response has no body.
+  final String? contentType;
 }
 
 /// A range (`NXX`) response on an operation. Shares the description +
@@ -1633,6 +1669,7 @@ class RenderRangeResponse {
     required this.range,
     required this.description,
     required this.content,
+    required this.contentType,
   });
 
   /// Which `NXX` range this response covers.
@@ -1642,8 +1679,10 @@ class RenderRangeResponse {
   final String description;
 
   /// The resolved content of the resolved range response.
-  /// We only support json, so we only need a single content.
   final RenderSchema content;
+
+  /// Wire content type of [content]; see [RenderResponse.contentType].
+  final String? contentType;
 }
 
 /// The `default:` (catch-all) response on an operation. Shares the
@@ -1653,14 +1692,17 @@ class RenderDefaultResponse {
   const RenderDefaultResponse({
     required this.description,
     required this.content,
+    required this.contentType,
   });
 
   /// The description of the resolved default response.
   final String description;
 
   /// The resolved content of the resolved default response.
-  /// We only support json, so we only need a single content.
   final RenderSchema content;
+
+  /// Wire content type of [content]; see [RenderResponse.contentType].
+  final String? contentType;
 }
 
 abstract class RenderSchema extends Equatable implements ToTemplateContext {

@@ -289,6 +289,40 @@ void main() {
       );
     });
 
+    test(
+      'text/plain response body returns response.body without jsonDecode',
+      () {
+        // Surfaced by github's `/zen` (and `/octocat`, `/markdown`,
+        // `/markdown/raw`): the spec declares non-JSON response content
+        // (`text/plain`, `text/html`, `application/octocat-stream`) with
+        // a `type: string` schema. `package:http`'s `Response.body` is
+        // already a `String`; wrapping it in `jsonDecode` would crash
+        // at runtime (`Mind your words …` isn't JSON).
+        final operation = {
+          'tags': ['meta'],
+          'summary': 'Get the zen',
+          'operationId': 'getZen',
+          'responses': {
+            '200': {
+              'description': 'Response',
+              'content': {
+                'text/plain': {
+                  'schema': {'type': 'string'},
+                },
+              },
+            },
+          },
+        };
+        final result = renderTestOperation(
+          path: '/zen',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://api.github.com'),
+        );
+        expect(result, contains('return response.body;'));
+        expect(result, isNot(contains('jsonDecode')));
+      },
+    );
+
     test('text/plain', () {
       final operation = {
         'tags': ['pet'],

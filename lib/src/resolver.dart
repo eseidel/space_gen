@@ -567,7 +567,11 @@ List<ResolvedOperation> _resolveOperations(
   }).toList();
 }
 
-ResolvedSchema _resolveContent(Response response, ResolveContext context) {
+/// Resolved content + the wire content type the schema came from.
+/// `null` content type means "no body" (void).
+typedef _ResolvedContent = (ResolvedSchema schema, String? contentType);
+
+_ResolvedContent _resolveContent(Response response, ResolveContext context) {
   final content = response.content;
   final voidSchema = ResolvedVoid(
     // TODO(eseidel): Should this pass along description?
@@ -577,18 +581,22 @@ ResolvedSchema _resolveContent(Response response, ResolveContext context) {
     ),
   );
   if (content == null) {
-    return voidSchema;
+    return (voidSchema, null);
   }
   if (content.isEmpty) {
     _warn('Response has no content: $response', response.pointer);
-    return voidSchema;
+    return (voidSchema, null);
   }
-  final jsonSchema = content['application/json']?.schema;
-  if (jsonSchema != null) {
-    return resolveSchemaRef(jsonSchema, context);
+  final jsonContent = content['application/json'];
+  if (jsonContent != null) {
+    return (resolveSchemaRef(jsonContent.schema, context), 'application/json');
   }
-  _warn('Response has no application/json schema: $response', response.pointer);
-  return resolveSchemaRef(content.values.first.schema, context);
+  // No `application/json` declared. Fall back to the first content type
+  // and report it back so the renderer can decide whether the body needs
+  // jsonDecode (if it does turn out to be JSON-shaped) or pass-through
+  // (text/plain, text/html, application/octocat-stream, …).
+  final entry = content.entries.first;
+  return (resolveSchemaRef(entry.value.schema, context), entry.key);
 }
 
 List<ResolvedResponse> _resolveResponses(
@@ -597,14 +605,15 @@ List<ResolvedResponse> _resolveResponses(
 ) {
   return responses.responses.entries.map((entry) {
     final statusCode = entry.key;
-    return context.withResolved(
-      entry.value,
-      (response) => ResolvedResponse(
+    return context.withResolved(entry.value, (response) {
+      final (content, contentType) = _resolveContent(response, context);
+      return ResolvedResponse(
         statusCode: statusCode,
         description: response.description,
-        content: _resolveContent(response, context),
-      ),
-    );
+        content: content,
+        contentType: contentType,
+      );
+    });
   }).toList();
 }
 
@@ -614,14 +623,15 @@ List<ResolvedRangeResponse> _resolveRangeResponses(
 ) {
   return rangeResponses.entries.map((entry) {
     final range = entry.key;
-    return context.withResolved(
-      entry.value,
-      (response) => ResolvedRangeResponse(
+    return context.withResolved(entry.value, (response) {
+      final (content, contentType) = _resolveContent(response, context);
+      return ResolvedRangeResponse(
         range: range,
         description: response.description,
-        content: _resolveContent(response, context),
-      ),
-    );
+        content: content,
+        contentType: contentType,
+      );
+    });
   }).toList();
 }
 
@@ -630,13 +640,14 @@ ResolvedDefaultResponse? _resolveDefaultResponse(
   ResolveContext context,
 ) {
   if (ref == null) return null;
-  return context.withResolved(
-    ref,
-    (response) => ResolvedDefaultResponse(
+  return context.withResolved(ref, (response) {
+    final (content, contentType) = _resolveContent(response, context);
+    return ResolvedDefaultResponse(
       description: response.description,
-      content: _resolveContent(response, context),
-    ),
-  );
+      content: content,
+      contentType: contentType,
+    );
+  });
 }
 
 class RegistryBuilder extends Visitor {
@@ -985,6 +996,7 @@ class ResolvedResponse {
     required this.statusCode,
     required this.description,
     required this.content,
+    required this.contentType,
   });
 
   /// The status code of the resolved response.
@@ -994,8 +1006,11 @@ class ResolvedResponse {
   final String description;
 
   /// The resolved content of the resolved response.
-  /// We only support json, so we only need a single content.
   final ResolvedSchema content;
+
+  /// Wire content type of [content] (e.g. `application/json`,
+  /// `text/plain`). `null` when the response has no body.
+  final String? contentType;
 }
 
 /// A range (`NXX`) response on an operation. Shares the description +
@@ -1006,6 +1021,7 @@ class ResolvedRangeResponse {
     required this.range,
     required this.description,
     required this.content,
+    required this.contentType,
   });
 
   /// Which `NXX` range this response covers.
@@ -1015,8 +1031,10 @@ class ResolvedRangeResponse {
   final String description;
 
   /// The resolved content of the resolved range response.
-  /// We only support json, so we only need a single content.
   final ResolvedSchema content;
+
+  /// Wire content type of [content]; see [ResolvedResponse.contentType].
+  final String? contentType;
 }
 
 /// The `default:` (catch-all) response on an operation. Shares the
@@ -1026,14 +1044,17 @@ class ResolvedDefaultResponse {
   const ResolvedDefaultResponse({
     required this.description,
     required this.content,
+    required this.contentType,
   });
 
   /// The description of the resolved default response.
   final String description;
 
   /// The resolved content of the resolved default response.
-  /// We only support json, so we only need a single content.
   final ResolvedSchema content;
+
+  /// Wire content type of [content]; see [ResolvedResponse.contentType].
+  final String? contentType;
 }
 
 abstract class ResolvedSchema extends Equatable {
