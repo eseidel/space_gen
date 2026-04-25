@@ -127,29 +127,63 @@ const commentReferencesIgnoreBlock =
     '// elsewhere; spec authors do not always escape brackets.\n'
     '// ignore_for_file: comment_references';
 
-/// Walks [dir] and prepends [commentReferencesIgnoreBlock] to any
-/// `.dart` file with a `///` line containing `[<token>]` that doesn't
-/// look like a `[Foo](link)` link reference. Sister to
-/// [suppressLongLineLintInGeneratedFiles] — same per-file pattern,
-/// different lint.
+/// Returns [content] with [commentReferencesIgnoreBlock] prepended if
+/// any `///` doc comment carries a bracketed token that wouldn't
+/// resolve in scope. Used at file-emit time on the two render paths
+/// that splice raw spec descriptions into dartdoc (schemas,
+/// operations) — hand-written templates skip the call so a spurious
+/// `[FormatException]` reference in their docs doesn't get silently
+/// suppressed when it should be fixed at the source.
+///
+/// "In scope" today means *declared as a top-level type in the same
+/// file* (class / enum / extension type / mixin). Imported names
+/// aren't tracked yet — see #142 — so a `[Foo]` ref to an imported
+/// type still triggers the directive even when it would resolve.
+/// Harmless: extra suppression doesn't break anything, just adds a
+/// 6-line preamble. The same-file check alone removes the bulk of
+/// false positives, where every dartdoc ref is a self-mention of the
+/// class the file declares.
 @visibleForTesting
-void suppressCommentReferencesLintInGeneratedFiles(Directory dir) {
-  const marker = '// ignore_for_file: comment_references';
-  // `///` followed by anything, then a `[word]` bracketed token NOT
-  // followed by `(` (which would make it a `[Foo](url)` link). Matches
-  // both prose placeholders (`[EMAIL]`, `[year]`) and stray symbol
-  // references the spec author meant as plain text.
-  final docCommentBracketRe = RegExp(r'///.*\[[^\]\s]+\](?!\()');
-  final dartFiles = dir
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((f) => f.path.endsWith('.dart'));
-  for (final file in dartFiles) {
-    final content = file.readAsStringSync();
-    if (content.contains(marker)) continue;
-    if (!docCommentBracketRe.hasMatch(content)) continue;
-    file.writeAsStringSync('$commentReferencesIgnoreBlock\n$content');
+String maybeAddCommentReferencesIgnore(String content) {
+  final tokens = _bracketedDartdocTokens(content);
+  if (tokens.isEmpty) return content;
+  final declared = _topLevelDeclarations(content);
+  // For a member-style ref like `[Foo.fromJson]`, the analyzer resolves
+  // it iff the head (`Foo`) does — so check against the head, not the
+  // full token. Doesn't catch refs to inherited members reached without
+  // a qualifier (`[fromJson]`); those still trip the directive, which
+  // is fine.
+  bool resolvesLocally(String t) => declared.contains(t.split('.').first);
+  if (tokens.every(resolvesLocally)) return content;
+  return '$commentReferencesIgnoreBlock\n$content';
+}
+
+/// Collects every `[token]` bracketed reference inside a `///` doc
+/// comment, ignoring `[Foo](url)` markdown links (the `(?!\()` guard).
+Set<String> _bracketedDartdocTokens(String content) {
+  final tokenRe = RegExp(r'\[([^\]\s]+)\](?!\()');
+  final tokens = <String>{};
+  for (final line in content.split('\n')) {
+    final stripped = line.trimLeft();
+    if (!stripped.startsWith('///')) continue;
+    for (final m in tokenRe.allMatches(stripped)) {
+      tokens.add(m.group(1)!);
+    }
   }
+  return tokens;
+}
+
+/// Collects the names of top-level type declarations the file emits.
+/// Covers the kinds the renderer actually produces: `class`, `enum`,
+/// `mixin`, and `extension type [const] Foo._(...)`. Names follow Dart
+/// style (start with uppercase). Imported names — and inherited
+/// members reached through `[fooMethod]` refs — aren't tracked.
+Set<String> _topLevelDeclarations(String content) {
+  final declRe = RegExp(
+    r'(?:class|enum|mixin|extension type(?:\s+const)?)\s+'
+    '([A-Z][A-Za-z0-9_]*)',
+  );
+  return declRe.allMatches(content).map((m) => m.group(1)!).toSet();
 }
 
 @visibleForTesting
@@ -475,14 +509,19 @@ class FileRenderer {
   String modelPackageImport(FileRenderer context, RenderSchema schema) =>
       'package:${context.packageName}/${context.modelPackagePath(schema)}';
 
-  /// Render a template.
+  /// Render a template. [transform] runs on the rendered content
+  /// before it lands on disk — used by the schema/operation paths to
+  /// add `// ignore_for_file: comment_references` when the spec's
+  /// description text would trip the lint.
   void _renderTemplate({
     required String template,
     required String outPath,
     Map<String, dynamic> context = const {},
+    String Function(String content)? transform,
   }) {
     final output = templates.loadTemplate(template).renderString(context);
-    fileWriter.writeFile(path: outPath, content: output);
+    final finalContent = transform == null ? output : transform(output);
+    fileWriter.writeFile(path: outPath, content: finalContent);
   }
 
   /// Set up the package directory (creates [fileWriter]'s outDir and
@@ -740,6 +779,7 @@ class FileRenderer {
         template: 'add_imports',
         outPath: outPath,
         context: {'imports': importsContext, 'content': renderedApi.body},
+        transform: maybeAddCommentReferencesIgnore,
       );
       rendered.add(api);
     }
@@ -806,6 +846,7 @@ class FileRenderer {
         template: 'add_imports',
         outPath: outPath,
         context: {'imports': importsContext, 'content': rendered.body},
+        transform: maybeAddCommentReferencesIgnore,
       );
     }
   }
@@ -900,7 +941,6 @@ class FileRenderer {
     renderPublicApi(spec.apis, schemas);
     formatter.formatAndFix(pkgDir: fileWriter.outDir.path);
     suppressLongLineLintInGeneratedFiles(fileWriter.outDir);
-    suppressCommentReferencesLintInGeneratedFiles(fileWriter.outDir);
 
     final misspellings = spellChecker.collectMisspellings(fileWriter.outDir);
     renderCspellConfig(misspellings);

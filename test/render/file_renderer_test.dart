@@ -2384,23 +2384,10 @@ void main() {
     });
   });
 
-  group('suppressCommentReferencesLintInGeneratedFiles', () {
-    Directory setUpDir(Map<String, String> files) {
-      final fs = MemoryFileSystem.test();
-      final dir = fs.directory('/out')..createSync(recursive: true);
-      for (final entry in files.entries) {
-        dir.childFile(entry.key)
-          ..parent.createSync(recursive: true)
-          ..writeAsStringSync(entry.value);
-      }
-      return dir;
-    }
-
-    test('leaves files without bracketed dartdoc references untouched', () {
+  group('maybeAddCommentReferencesIgnore', () {
+    test('passes through content with no bracketed dartdoc tokens', () {
       const content = '/// A class with no bracket refs.\nclass Foo {}\n';
-      final dir = setUpDir({'lib/foo.dart': content});
-      suppressCommentReferencesLintInGeneratedFiles(dir);
-      expect(dir.childFile('lib/foo.dart').readAsStringSync(), content);
+      expect(maybeAddCommentReferencesIgnore(content), content);
     });
 
     test('prepends directive when dartdoc has prose-style placeholder', () {
@@ -2408,37 +2395,119 @@ void main() {
       // team at [EMAIL]") and `license.dart` (`[year] [fullname]`).
       const content =
           '/// Reach out at [EMAIL] for support.\nclass CodeOfConduct {}\n';
-      final dir = setUpDir({'lib/code_of_conduct.dart': content});
-      suppressCommentReferencesLintInGeneratedFiles(dir);
       expect(
-        dir.childFile('lib/code_of_conduct.dart').readAsStringSync(),
+        maybeAddCommentReferencesIgnore(content),
         startsWith('$commentReferencesIgnoreBlock\n'),
       );
     });
 
-    test('skips legitimate `[Foo](url)` markdown links', () {
+    test('passes through `[Foo](url)` markdown links', () {
       const content =
           '/// See [the docs](https://example.com).\nclass Bar {}\n';
-      final dir = setUpDir({'lib/bar.dart': content});
-      suppressCommentReferencesLintInGeneratedFiles(dir);
-      expect(dir.childFile('lib/bar.dart').readAsStringSync(), content);
+      expect(maybeAddCommentReferencesIgnore(content), content);
     });
 
-    test('is idempotent — does not stack the directive', () {
+    test('does not match plain-comment brackets, only `///` doc comments', () {
+      // Inline `// [SOMETHING]` comments are invisible to dartdoc and
+      // can't trip `comment_references`.
+      const content = '// [PLACEHOLDER] not a dartdoc.\nclass Foo {}\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
+    });
+
+    test('passes through when every ref is a same-file class', () {
+      // The most common case for spec-derived model files: the doc
+      // comment refers to the class the file declares. The lint
+      // wouldn't fire on these — no need to suppress.
       const content =
-          '$commentReferencesIgnoreBlock\n/// Has [PLACEHOLDER] inside.\n'
-          'class Baz {}\n';
-      final dir = setUpDir({'lib/baz.dart': content});
-      suppressCommentReferencesLintInGeneratedFiles(dir);
-      final after = dir.childFile('lib/baz.dart').readAsStringSync();
-      expect(commentReferencesIgnoreBlock.allMatches(after).length, 1);
+          '/// Convert a Map to a [Foo].\n'
+          '/// Round-trips with [Foo.fromJson].\n'
+          'class Foo {}\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
     });
 
-    test('ignores non-dart files', () {
-      const content = '/// Has [EMAIL] in markdown';
-      final dir = setUpDir({'README.md': content});
-      suppressCommentReferencesLintInGeneratedFiles(dir);
-      expect(dir.childFile('README.md').readAsStringSync(), content);
+    test('passes through same-file enum and extension-type refs', () {
+      // The renderer emits all three top-level declaration kinds
+      // (class, enum, extension type); they all need to count as
+      // in-scope.
+      const content =
+          '/// See [Mood] and [Tag].\n'
+          'enum Mood { happy, sad }\n'
+          'extension type const Tag._(String value) {}\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
+    });
+
+    test('prepends when even one ref escapes the same-file set', () {
+      // `[Foo]` resolves locally, but `[ImportedThing]` does not
+      // (imports aren't tracked yet — see #142). One unresolved ref
+      // is enough to need the directive.
+      const content =
+          '/// [Foo] uses an [ImportedThing] under the hood.\n'
+          'class Foo {}\n';
+      expect(
+        maybeAddCommentReferencesIgnore(content),
+        startsWith('$commentReferencesIgnoreBlock\n'),
+      );
+    });
+
+    test('collects multiple refs on a single doc comment line', () {
+      // Greedy regexes have a habit of seeing only the first or last
+      // bracket on a line. Both refs need to be considered: if any
+      // one fails to resolve, we suppress.
+      const contentAllResolve =
+          '/// Compare [A] with [B] and [C].\n'
+          'class A {}\nclass B {}\nclass C {}\n';
+      expect(
+        maybeAddCommentReferencesIgnore(contentAllResolve),
+        contentAllResolve,
+      );
+
+      const contentMiddleEscapes =
+          '/// Compare [A] with [Missing] and [C].\n'
+          'class A {}\nclass C {}\n';
+      expect(
+        maybeAddCommentReferencesIgnore(contentMiddleEscapes),
+        startsWith('$commentReferencesIgnoreBlock\n'),
+      );
+    });
+
+    test('member refs resolve via the head before the dot', () {
+      // `[Foo.fromJson]` resolves iff `Foo` does — the analyzer walks
+      // the head against scope, then looks up the member on whatever
+      // it finds. Test both the resolves-via-head case and the head-
+      // doesn't-resolve case.
+      const resolves =
+          '/// Round-trips through [Foo.fromJson] and [Foo.toJson].\n'
+          'class Foo {}\n';
+      expect(maybeAddCommentReferencesIgnore(resolves), resolves);
+
+      const headMissing =
+          '/// Calls [Missing.method] internally.\nclass Foo {}\n';
+      expect(
+        maybeAddCommentReferencesIgnore(headMissing),
+        startsWith('$commentReferencesIgnoreBlock\n'),
+      );
+    });
+
+    test('refs are checked against every top-level declaration', () {
+      // A real generated file can declare more than one class (e.g. a
+      // model plus an inner enum). The declaration scan has to find
+      // them all, not just the first one.
+      const content =
+          '/// [Outer] holds a list of [Inner].\n'
+          'class Outer {}\n\nenum Inner { a, b }\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
+    });
+
+    test('indented `///` member docs still count', () {
+      // Generated classes sit at the top level but their member dartdoc
+      // lives inside the class body, indented. The token scan must not
+      // require the `///` to be at column 0.
+      const content =
+          'class Foo {\n'
+          '  /// Members of [Foo] go here.\n'
+          '  void doThing() {}\n'
+          '}\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
     });
   });
 
