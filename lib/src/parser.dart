@@ -800,7 +800,6 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   }
 
   // Some of these probably apply to enum and array types.
-  _ignored<bool>(json, 'nullable');
   _ignored<bool>(json, 'readOnly');
   _ignored<bool>(json, 'writeOnly');
   _ignored<dynamic>(json, 'discriminator');
