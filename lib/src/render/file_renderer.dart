@@ -128,21 +128,62 @@ const commentReferencesIgnoreBlock =
     '// ignore_for_file: comment_references';
 
 /// Returns [content] with [commentReferencesIgnoreBlock] prepended if
-/// any `///` doc comment carries a bracketed token that doesn't look
-/// like a `[Foo](url)` markdown link. Used at file-emit time on the
-/// two render paths that splice raw spec descriptions into dartdoc
-/// (schemas, operations) — hand-written templates skip the call so a
-/// spurious `[FormatException]` reference in their docs doesn't get
-/// silently suppressed when it should be fixed at the source.
+/// any `///` doc comment carries a bracketed token that wouldn't
+/// resolve in scope. Used at file-emit time on the two render paths
+/// that splice raw spec descriptions into dartdoc (schemas,
+/// operations) — hand-written templates skip the call so a spurious
+/// `[FormatException]` reference in their docs doesn't get silently
+/// suppressed when it should be fixed at the source.
+///
+/// "In scope" today means *declared as a top-level type in the same
+/// file* (class / enum / extension type / mixin). Imported names
+/// aren't tracked yet — see #142 — so a `[Foo]` ref to an imported
+/// type still triggers the directive even when it would resolve.
+/// Harmless: extra suppression doesn't break anything, just adds a
+/// 6-line preamble. The same-file check alone removes the bulk of
+/// false positives, where every dartdoc ref is a self-mention of the
+/// class the file declares.
 @visibleForTesting
 String maybeAddCommentReferencesIgnore(String content) {
-  // `///` followed by anything, then a `[word]` bracketed token NOT
-  // followed by `(` (which would make it a `[Foo](url)` link). Matches
-  // both prose placeholders (`[EMAIL]`, `[year]`) and stray symbol
-  // references the spec author meant as plain text.
-  final docCommentBracketRe = RegExp(r'///.*\[[^\]\s]+\](?!\()');
-  if (!docCommentBracketRe.hasMatch(content)) return content;
+  final tokens = _bracketedDartdocTokens(content);
+  if (tokens.isEmpty) return content;
+  final declared = _topLevelDeclarations(content);
+  // For a member-style ref like `[Foo.fromJson]`, the analyzer resolves
+  // it iff the head (`Foo`) does — so check against the head, not the
+  // full token. Doesn't catch refs to inherited members reached without
+  // a qualifier (`[fromJson]`); those still trip the directive, which
+  // is fine.
+  bool resolvesLocally(String t) => declared.contains(t.split('.').first);
+  if (tokens.every(resolvesLocally)) return content;
   return '$commentReferencesIgnoreBlock\n$content';
+}
+
+/// Collects every `[token]` bracketed reference inside a `///` doc
+/// comment, ignoring `[Foo](url)` markdown links (the `(?!\()` guard).
+Set<String> _bracketedDartdocTokens(String content) {
+  final tokenRe = RegExp(r'\[([^\]\s]+)\](?!\()');
+  final tokens = <String>{};
+  for (final line in content.split('\n')) {
+    final stripped = line.trimLeft();
+    if (!stripped.startsWith('///')) continue;
+    for (final m in tokenRe.allMatches(stripped)) {
+      tokens.add(m.group(1)!);
+    }
+  }
+  return tokens;
+}
+
+/// Collects the names of top-level type declarations the file emits.
+/// Covers the kinds the renderer actually produces: `class`, `enum`,
+/// `mixin`, and `extension type [const] Foo._(...)`. Names follow Dart
+/// style (start with uppercase). Imported names — and inherited
+/// members reached through `[fooMethod]` refs — aren't tracked.
+Set<String> _topLevelDeclarations(String content) {
+  final declRe = RegExp(
+    r'(?:class|enum|mixin|extension type(?:\s+const)?)\s+'
+    r'([A-Z][A-Za-z0-9_]*)',
+  );
+  return declRe.allMatches(content).map((m) => m.group(1)!).toSet();
 }
 
 @visibleForTesting

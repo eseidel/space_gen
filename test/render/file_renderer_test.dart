@@ -2413,6 +2413,41 @@ void main() {
       const content = '// [PLACEHOLDER] not a dartdoc.\nclass Foo {}\n';
       expect(maybeAddCommentReferencesIgnore(content), content);
     });
+
+    test('passes through when every ref is a same-file class', () {
+      // The most common case for spec-derived model files: the doc
+      // comment refers to the class the file declares. The lint
+      // wouldn't fire on these — no need to suppress.
+      const content =
+          '/// Convert a Map to a [Foo].\n'
+          '/// Round-trips with [Foo.fromJson].\n'
+          'class Foo {}\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
+    });
+
+    test('passes through same-file enum and extension-type refs', () {
+      // The renderer emits all three top-level declaration kinds
+      // (class, enum, extension type); they all need to count as
+      // in-scope.
+      const content =
+          '/// See [Mood] and [Tag].\n'
+          'enum Mood { happy, sad }\n'
+          'extension type const Tag._(String value) {}\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
+    });
+
+    test('prepends when even one ref escapes the same-file set', () {
+      // `[Foo]` resolves locally, but `[ImportedThing]` does not
+      // (imports aren't tracked yet — see #142). One unresolved ref
+      // is enough to need the directive.
+      const content =
+          '/// [Foo] uses an [ImportedThing] under the hood.\n'
+          'class Foo {}\n';
+      expect(
+        maybeAddCommentReferencesIgnore(content),
+        startsWith('$commentReferencesIgnoreBlock\n'),
+      );
+    });
   });
 
   // While we still support logging, this should no longer happen since
