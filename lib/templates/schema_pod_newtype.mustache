@@ -1,4 +1,7 @@
-{{#isBoolPod}}// ignore_for_file: avoid_positional_boolean_parameters
+{{#isBoolPod}}// `avoid_positional_boolean_parameters` is correct for user-facing
+// APIs but wrong for a newtype wrapper — the type name is the
+// disambiguation. Suppress file-locally.
+// ignore_for_file: avoid_positional_boolean_parameters
 
 {{/isBoolPod}}{{{ doc_comment }}}extension type const {{{ typeName }}}._({{{ dartType }}} value) {
     const {{ typeName }}(this.value);
