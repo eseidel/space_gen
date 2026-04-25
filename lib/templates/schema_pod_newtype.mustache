@@ -1,4 +1,6 @@
-{{{ doc_comment }}}extension type const {{{ typeName }}}._({{{ dartType }}} value) {
+{{#isBoolPod}}// ignore_for_file: avoid_positional_boolean_parameters
+
+{{/isBoolPod}}{{{ doc_comment }}}extension type const {{{ typeName }}}._({{{ dartType }}} value) {
     const {{ typeName }}(this.value);
 
     factory {{ typeName }}.fromJson({{{ jsonType }}} json) => {{ typeName }}({{{ fromJsonBody }}});
