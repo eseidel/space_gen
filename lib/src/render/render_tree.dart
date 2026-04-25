@@ -1821,6 +1821,13 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// toJson to convert to json.
   bool get shouldCallToJson => createsNewType;
 
+  /// Suffix used to name a [RenderOneOf] wrapper subclass for this
+  /// schema in shape dispatch (`<ParentTypeName><wrapperTag>`).
+  /// Returns null when this schema can't appear as a shape-dispatch
+  /// variant (the runtime-type test wouldn't pin it down, or we
+  /// haven't taught the dispatch to handle it yet).
+  String? get wrapperTag => null;
+
   @override
   List<Object?> get props => [snakeName, pointer];
 
@@ -2025,6 +2032,15 @@ class RenderPod extends RenderSchema {
 
   @override
   String get typeName => createsNewType ? camelFromSnake(snakeName) : dartType;
+
+  // Boolean is the only PodType with a `is bool` test that's distinct
+  // from the other JSON storage types (the date/uri/uuid/etc. all
+  // parse from String, which would conflict with RenderString in a
+  // oneOf — we'd need to inspect the format at runtime, which we
+  // don't).
+  @override
+  String? get wrapperTag =>
+      !createsNewType && type == PodType.boolean ? 'Bool' : null;
 
   @override
   String jsonStorageType({required bool isNullable}) {
@@ -2288,6 +2304,9 @@ class RenderString extends RenderSchema {
     'typeName': typeName,
     'nullableTypeName': nullableTypeName(context),
   };
+
+  @override
+  String? get wrapperTag => createsNewType ? null : 'String';
 
   @override
   String jsonStorageType({required bool isNullable}) =>
@@ -2561,6 +2580,9 @@ class RenderInteger extends RenderNumeric<int> {
   String get typeName => createsNewType ? camelFromSnake(snakeName) : 'int';
 
   @override
+  String? get wrapperTag => createsNewType ? null : 'Int';
+
+  @override
   String jsonStorageType({required bool isNullable}) =>
       isNullable ? 'int?' : 'int';
 
@@ -2589,6 +2611,9 @@ class RenderObject extends RenderNewType {
 
   /// The required properties of the resolved schema.
   final List<String> requiredProperties;
+
+  @override
+  String? get wrapperTag => typeName;
 
   @override
   List<Object?> get props => [
@@ -3309,6 +3334,9 @@ class RenderEnum extends RenderNewType {
   final List<String>? descriptions;
 
   @override
+  String? get wrapperTag => typeName;
+
+  @override
   List<Object?> get props => [
     super.props,
     values,
@@ -3452,22 +3480,97 @@ class RenderOneOf extends RenderNewType {
     return 'Map<String, dynamic>';
   }
 
-  /// Wrapper subclass name for [variant], shaped
-  /// `<ParentTypeName><VariantTypeName>`. We don't shorten using the
-  /// discriminator value (e.g. "private") because the variant's own
-  /// typeName is already a unique, valid Dart identifier while
-  /// discriminator strings are arbitrary.
-  String wrapperTypeName(RenderSchema variant) =>
-      '$typeName${variant.typeName}';
+  /// Build the wrapper class name as `<ParentTypeName><wrapperTag>`.
+  /// We always prepend — even when the variant's tag already starts
+  /// with the parent's typeName — because stripping the duplicate
+  /// would collide with the variant's own standalone class (the
+  /// parser names inline variants `<parent_snake>_one_of_<i>`, so the
+  /// variant typeName equals the would-be deduped wrapper name). The
+  /// double-prefix is ugly but unambiguous; co-locating the inline
+  /// variant into the parent's file is a follow-up that fixes both
+  /// the ugliness and the duplicate emission.
+  ///
+  /// Caller must have established that [variant] has a non-null
+  /// [RenderSchema.wrapperTag] (e.g. via the dispatch gates).
+  String wrapperTypeName(RenderSchema variant) {
+    final tag = variant.wrapperTag;
+    if (tag == null) {
+      throw StateError('No wrapper tag available for $variant');
+    }
+    return '$typeName$tag';
+  }
 
-  /// True when the dispatch path can be emitted. Dispatch reads a
-  /// discriminator property out of a `Map<String, dynamic>` and calls
-  /// `<Variant>.fromJson(json)` on the chosen variant — both require
-  /// every variant to be an object-shaped newtype with a fromJson
-  /// factory. Array/map/pod variants (e.g. github's `content-directory`,
-  /// which is `type: array`) fall through to the legacy stub.
-  bool get _hasDispatch =>
+  /// Per-variant info needed to emit a dispatch arm + wrapper subclass.
+  /// Returns null when [variant] isn't representable in the dispatch
+  /// (unsupported shape, or runtime-type test would conflict with
+  /// another variant). The caller checks for null and checks for
+  /// distinct test types before committing to the dispatch path.
+  _VariantPlan? _planVariant(RenderSchema variant) {
+    final tag = variant.wrapperTag;
+    if (tag == null) return null;
+    final wrapperTypeName = '$typeName$tag';
+
+    // Newtype variants (objects, enums): the wrapper holds the parsed
+    // value and forwards fromJson/toJson to the variant's own class.
+    // Only the JSON shape distinguishes them.
+    if (variant is RenderObject || variant is RenderEnum) {
+      return _VariantPlan(
+        wrapperTypeName: wrapperTypeName,
+        valueType: variant.typeName,
+        jsonTestType: variant is RenderObject
+            ? 'Map<String, dynamic>'
+            : 'String',
+        fromJson: '${variant.typeName}.fromJson(v)',
+        toJson: 'value.toJson()',
+      );
+    }
+
+    // Inline pod variants: the wrapper just stores the raw JSON value
+    // (int / String / bool) — no parsing on either side. wrapperTag is
+    // null on the createsNewType branch, so by here we're guaranteed
+    // an inline pod.
+    final podType = switch (variant) {
+      RenderInteger() => 'int',
+      RenderString() => 'String',
+      RenderPod(type: PodType.boolean) => 'bool',
+      _ => null,
+    };
+    if (podType == null) return null;
+    return _VariantPlan(
+      wrapperTypeName: wrapperTypeName,
+      valueType: podType,
+      jsonTestType: podType,
+      fromJson: 'v',
+      toJson: 'value',
+      positionalBoolIgnore: podType == 'bool',
+    );
+  }
+
+  /// Discriminator-driven dispatch: every variant must be an object-
+  /// shaped newtype with a `fromJson` factory.
+  bool get _hasDiscriminatorDispatch =>
       discriminator != null && schemas.every((s) => s is RenderObject);
+
+  /// Shape-driven dispatch (runtime-type switch). Every variant must
+  /// have a known plan AND every plan's [_VariantPlan.jsonTestType]
+  /// must be unique so a `case T v =>` arm is unambiguous. Falls
+  /// through from the discriminator path when the discriminator can't
+  /// be honored (e.g. non-object variants under a discriminator) —
+  /// shape is a strict fallback rather than a competitor.
+  List<_VariantPlan>? get _shapeDispatchPlans {
+    final plans = <_VariantPlan>[];
+    for (final v in schemas) {
+      final plan = _planVariant(v);
+      if (plan == null) return null;
+      plans.add(plan);
+    }
+    final testTypes = plans.map((p) => p.jsonTestType).toSet();
+    if (testTypes.length != plans.length) return null;
+    return plans;
+  }
+
+  bool get _hasDispatch =>
+      _hasDiscriminatorDispatch || _shapeDispatchPlans != null;
 
   @override
   Iterable<Import> get additionalImports => [
@@ -3479,39 +3582,59 @@ class RenderOneOf extends RenderNewType {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final disc = discriminator;
-    if (disc == null || !_hasDispatch) {
-      return {
-        'doc_comment': createDocComment(common: common),
-        'typeName': typeName,
-        'nullableTypeName': nullableTypeName(context),
-        'has_dispatch': false,
-      };
-    }
-    final variants = <Map<String, dynamic>>[];
-    for (final schema in schemas) {
-      variants.add({
-        'wrapperTypeName': wrapperTypeName(schema),
-        'innerTypeName': schema.typeName,
-      });
-    }
-    final dispatch = <Map<String, dynamic>>[];
-    for (final entry in disc.mapping.entries) {
-      dispatch.add({
-        'value': entry.key,
-        'wrapperTypeName': wrapperTypeName(entry.value),
-        'innerTypeName': entry.value.typeName,
-      });
-    }
-    return {
+    // Mustache section tags must all be present in the context map (with
+    // a falsy value to skip). Default all three modes off, then enable
+    // exactly one below.
+    final ctx = <String, dynamic>{
       'doc_comment': createDocComment(common: common),
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
-      'has_dispatch': true,
-      'discriminatorProperty': disc.propertyName,
-      'variants': variants,
-      'dispatch': dispatch,
+      'has_discriminator_dispatch': false,
+      'has_shape_dispatch': false,
+      'no_dispatch': false,
     };
+    final disc = discriminator;
+    if (disc != null && _hasDiscriminatorDispatch) {
+      final variants = <Map<String, dynamic>>[];
+      for (final schema in schemas) {
+        variants.add({
+          'wrapperTypeName': wrapperTypeName(schema),
+          'valueType': schema.typeName,
+        });
+      }
+      final dispatch = <Map<String, dynamic>>[];
+      for (final entry in disc.mapping.entries) {
+        dispatch.add({
+          'value': entry.key,
+          'wrapperTypeName': wrapperTypeName(entry.value),
+          'valueType': entry.value.typeName,
+        });
+      }
+      ctx['has_discriminator_dispatch'] = true;
+      ctx['discriminatorProperty'] = disc.propertyName;
+      ctx['variants'] = variants;
+      ctx['dispatch'] = dispatch;
+      return ctx;
+    }
+    final shapePlans = _shapeDispatchPlans;
+    if (shapePlans != null) {
+      ctx['has_shape_dispatch'] = true;
+      ctx['variants'] = shapePlans
+          .map(
+            (p) => {
+              'wrapperTypeName': p.wrapperTypeName,
+              'valueType': p.valueType,
+              'jsonTestType': p.jsonTestType,
+              'fromJson': p.fromJson,
+              'toJson': p.toJson,
+              'positionalBoolIgnore': p.positionalBoolIgnore,
+            },
+          )
+          .toList();
+      return ctx;
+    }
+    ctx['no_dispatch'] = true;
+    return ctx;
   }
 
   @override
@@ -3548,6 +3671,46 @@ class RenderOneOf extends RenderNewType {
     // discriminator-aware subclass emission (#99).
     return null;
   }
+}
+
+/// One arm of the shape-based dispatch: how a single variant in a
+/// non-discriminator [RenderOneOf] turns into a wrapper subclass and a
+/// `case T v =>` arm in the parent's `fromJson`.
+@immutable
+class _VariantPlan {
+  const _VariantPlan({
+    required this.wrapperTypeName,
+    required this.valueType,
+    required this.jsonTestType,
+    required this.fromJson,
+    required this.toJson,
+    this.positionalBoolIgnore = false,
+  });
+
+  /// The wrapper subclass name (e.g. `FooInt`, `FooBar`).
+  final String wrapperTypeName;
+
+  /// The wrapper's `value` field type (e.g. `int`, `Bar`).
+  final String valueType;
+
+  /// The Dart type used in the `case` pattern (e.g. `int`,
+  /// `Map<String, dynamic>`). All test types in a single dispatch must
+  /// be pairwise distinct so the dispatch is unambiguous.
+  final String jsonTestType;
+
+  /// Expression that constructs the wrapper's `value` from the matched
+  /// variable `v` (the JSON, already promoted to [jsonTestType]).
+  final String fromJson;
+
+  /// Expression that the wrapper's `toJson()` returns. References
+  /// `value` (the wrapper field).
+  final String toJson;
+
+  /// True for `bool`-valued wrappers; the template emits an
+  /// `// ignore: avoid_positional_boolean_parameters` above the
+  /// constructor since the wrapper has exactly one positional arg by
+  /// design.
+  final bool positionalBoolIgnore;
 }
 
 /// Render-side discriminator dispatch table for a [RenderOneOf].

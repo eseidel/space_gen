@@ -1,4 +1,4 @@
-{{#has_dispatch}}
+{{#has_discriminator_dispatch}}
 {{{ doc_comment }}}sealed class {{ typeName }} {
     const {{ typeName }}();
 
@@ -6,7 +6,7 @@
         final discriminator = json['{{ discriminatorProperty }}'];
         return switch (discriminator) {
 {{#dispatch}}
-            '{{ value }}' => {{{ wrapperTypeName }}}({{{ innerTypeName }}}.fromJson(json)),
+            '{{ value }}' => {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(json)),
 {{/dispatch}}
             _ => throw FormatException(
                 "Unknown {{ discriminatorProperty }} '$discriminator' for {{ typeName }}",
@@ -32,7 +32,7 @@
 final class {{{ wrapperTypeName }}} extends {{ typeName }} {
     const {{{ wrapperTypeName }}}(this.value);
 
-    final {{{ innerTypeName }}} value;
+    final {{{ valueType }}} value;
 
     @override
     Map<String, dynamic> toJson() => value.toJson();
@@ -48,8 +48,64 @@ final class {{{ wrapperTypeName }}} extends {{ typeName }} {
 }
 
 {{/variants}}
-{{/has_dispatch}}
-{{^has_dispatch}}
+{{/has_discriminator_dispatch}}
+{{#has_shape_dispatch}}
+{{{ doc_comment }}}sealed class {{ typeName }} {
+    const {{ typeName }}();
+
+    factory {{ typeName }}.fromJson(dynamic json) {
+        return switch (json) {
+{{#variants}}
+            {{{ jsonTestType }}} v => {{{ wrapperTypeName }}}({{{ fromJson }}}),
+{{/variants}}
+            _ => throw FormatException(
+                'Unsupported shape for {{ typeName }}: ${json.runtimeType}',
+            ),
+        };
+    }
+
+    /// Convenience to create a nullable type from a nullable json object.
+    /// Useful when parsing optional fields.
+    static {{ nullableTypeName }} maybeFromJson(dynamic json) {
+        if (json == null) {
+            return null;
+        }
+        return {{ typeName }}.fromJson(json);
+    }
+
+    /// Require all subclasses to implement toJson.
+    dynamic toJson();
+}
+
+{{#variants}}
+@immutable
+final class {{{ wrapperTypeName }}} extends {{ typeName }} {
+{{#positionalBoolIgnore}}
+    // The wrapper has a single positional arg by design — naming it
+    // would force `Wrapper(value: x)` at every call site, which buys
+    // nothing for a one-field shim.
+    // ignore: avoid_positional_boolean_parameters
+{{/positionalBoolIgnore}}
+    const {{{ wrapperTypeName }}}(this.value);
+
+    final {{{ valueType }}} value;
+
+    @override
+    dynamic toJson() => {{{ toJson }}};
+
+    @override
+    int get hashCode => value.hashCode;
+
+    @override
+    bool operator ==(Object other) {
+        if (identical(this, other)) return true;
+        return other is {{{ wrapperTypeName }}} && value == other.value;
+    }
+}
+
+{{/variants}}
+{{/has_shape_dispatch}}
+{{#no_dispatch}}
 {{{ doc_comment }}}sealed class {{ typeName }} {
     static {{ typeName }} fromJson(dynamic jsonArg) {
         // Determine which schema to use based on the json.
@@ -69,4 +125,4 @@ final class {{{ wrapperTypeName }}} extends {{ typeName }} {
     /// Require all subclasses to implement toJson.
     dynamic toJson();
 }
-{{/has_dispatch}}
+{{/no_dispatch}}
