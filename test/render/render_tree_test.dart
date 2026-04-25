@@ -186,6 +186,28 @@ void main() {
         '    ',
       );
     });
+
+    test('wrapping does not split inside a backtick code span', () {
+      // A line break inside `…` would leave an unclosed backtick on each
+      // half, and the analyzer's `unintended_html_in_doc_comment` lint
+      // then flags any `<…>` inside the broken span. Surfaced by github's
+      // `git/matching-refs/{ref}` description, which contains
+      // `` `heads/<branch name>` ``.
+      const longLine =
+          'The reference must be formatted as `heads/<branch name>` for '
+          'branches and `tags/<tag name>` for tags.';
+      final output = createDocCommentFromParts(body: longLine, indent: 4);
+      expect(output, isNotNull);
+      // No emitted line should contain an odd number of backticks.
+      for (final line in output!.split('\n')) {
+        final backticks = '`'.allMatches(line).length;
+        expect(
+          backticks.isEven,
+          isTrue,
+          reason: 'unbalanced backticks in line: $line',
+        );
+      }
+    });
   });
 
   group('wrappedClassDocComment', () {

@@ -77,7 +77,17 @@ Iterable<String> wrapLines({
     for (final word in words) {
       if (currentLine.isEmpty) {
         currentLine = word;
-      } else if (currentLine.length + word.length + 1 <= maxWidth) {
+        continue;
+      }
+      // Don't break inside a backtick code span: an odd backtick count
+      // on the line so far means the next word continues the span.
+      // Splitting there breaks the span across lines, leaves an unclosed
+      // backtick on each half, and any `<…>` inside trips
+      // `unintended_html_in_doc_comment`. Tolerating an over-width line
+      // here is the lesser evil — `suppressLongLineLintInGeneratedFiles`
+      // will silence the line-length lint after the fact.
+      final inBacktick = '`'.allMatches(currentLine).length.isOdd;
+      if (inBacktick || currentLine.length + word.length + 1 <= maxWidth) {
         currentLine += ' $word';
       } else {
         result.add(currentLine);
