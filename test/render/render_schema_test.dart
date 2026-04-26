@@ -1394,6 +1394,69 @@ void main() {
       expect(author, isNot(contains('throw UnimplementedError')));
     });
 
+    test('hybrid dispatch: array variant + multiple objects with disjoint '
+        'required uses shape-then-required-field', () {
+      // Github's `repos/get-content` 200 response shape: an array
+      // variant (`content-directory`) plus three object variants
+      // (`content-file` keyed on `content`, `content-symlink` keyed on
+      // `target`, `content-submodule` keyed on `submodule_git_url`).
+      // Pure shape dispatch fails because all three objects collide
+      // on `Map<String, dynamic>`; pure required-field fails because
+      // the array variant isn't an object. Hybrid: shape-arm the
+      // array, then required-field-dispatch the objects in a Map
+      // sub-arm.
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+          {
+            'type': 'object',
+            'required': ['content'],
+            'properties': {
+              'content': {'type': 'string'},
+            },
+          },
+          {
+            'type': 'object',
+            'required': ['target'],
+            'properties': {
+              'target': {'type': 'string'},
+            },
+          },
+          {
+            'type': 'object',
+            'required': ['submodule_git_url'],
+            'properties': {
+              'submodule_git_url': {'type': 'string'},
+            },
+          },
+        ],
+      });
+      // Outer shape arm for the array.
+      expect(result, contains('final List<dynamic> v => TestList'));
+      // Inner required-field arms for the three objects, guarded by
+      // `when v.containsKey('...')`.
+      expect(
+        result,
+        contains("final Map<String, dynamic> v when v.containsKey('content')"),
+      );
+      expect(
+        result,
+        contains("final Map<String, dynamic> v when v.containsKey('target')"),
+      );
+      expect(
+        result,
+        contains(
+          'final Map<String, dynamic> v '
+          "when v.containsKey('submodule_git_url')",
+        ),
+      );
+      // No legacy stub.
+      expect(result, isNot(contains('throw UnimplementedError')));
+    });
+
     test('property-presence dispatch falls back to optional-unique tags '
         'when a sibling has no unique fields (the fallback)', () {
       // Github's `environment.protection_rules.items` shape: three
