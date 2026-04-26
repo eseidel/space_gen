@@ -773,7 +773,10 @@ void main() {
       expect(result, isNot(contains('throw UnimplementedError')));
     });
 
-    test('oneOf with pods', () {
+    test('oneOf with [string, number] uses shape dispatch', () {
+      // RenderNumber's shape key is `num` (matching jsonStorageType),
+      // distinct from RenderString's `String`. Github's
+      // webhook-config-insecure-ssl is the canonical real-spec site.
       final schema = {
         'oneOf': [
           {'type': 'string'},
@@ -781,28 +784,12 @@ void main() {
         ],
       };
       final result = renderTestSchema(schema);
-      expect(
-        result,
-        'sealed class Test {\n'
-        '    static Test fromJson(dynamic jsonArg) {\n'
-        '        // Determine which schema to use based on the json.\n'
-        '        // TODO(eseidel): Implement this.\n'
-        "        throw UnimplementedError('Test.fromJson');\n"
-        '    }\n'
-        '\n'
-        '    /// Convenience to create a nullable type from a nullable json object.\n'
-        '    /// Useful when parsing optional fields.\n'
-        '    static Test? maybeFromJson(dynamic json) {\n'
-        '        if (json == null) {\n'
-        '            return null;\n'
-        '        }\n'
-        '        return Test.fromJson(json);\n'
-        '    }\n'
-        '\n'
-        '    /// Require all subclasses to implement toJson.\n'
-        '    dynamic toJson();\n'
-        '}\n',
-      );
+      expect(result, contains('String v => TestString(v)'));
+      expect(result, contains('num v => TestNum(v)'));
+      expect(result, contains('final class TestString extends Test'));
+      expect(result, contains('final class TestNum extends Test'));
+      expect(result, contains('final num value;'));
+      expect(result, isNot(contains('throw UnimplementedError')));
     });
 
     test('oneOf with objects', () {
@@ -1367,29 +1354,12 @@ void main() {
           ],
         };
         final result = renderTestSchema(schema);
-        // anyOf currently renders as a oneOf, which is wrong.
-        expect(
-          result,
-          'sealed class Test {\n'
-          '    static Test fromJson(dynamic jsonArg) {\n'
-          '        // Determine which schema to use based on the json.\n'
-          '        // TODO(eseidel): Implement this.\n'
-          "        throw UnimplementedError('Test.fromJson');\n"
-          '    }\n'
-          '\n'
-          '    /// Convenience to create a nullable type from a nullable json object.\n'
-          '    /// Useful when parsing optional fields.\n'
-          '    static Test? maybeFromJson(dynamic json) {\n'
-          '        if (json == null) {\n'
-          '            return null;\n'
-          '        }\n'
-          '        return Test.fromJson(json);\n'
-          '    }\n'
-          '\n'
-          '    /// Require all subclasses to implement toJson.\n'
-          '    dynamic toJson();\n'
-          '}\n',
-        );
+        // anyOf currently renders as a oneOf, which is wrong — but it
+        // is at least dispatched on shape now that RenderNumber has a
+        // shape key. The legacy stub here is gone.
+        expect(result, contains('String v => TestString(v)'));
+        expect(result, contains('num v => TestNum(v)'));
+        expect(result, isNot(contains('throw UnimplementedError')));
       });
 
       test('two object types', () {
@@ -2776,28 +2746,12 @@ void main() {
         final json = {
           'type': ['string', 'number'],
         };
-        expect(
-          renderTestSchema(json, asComponent: true),
-          'sealed class Test {\n'
-          '    static Test fromJson(dynamic jsonArg) {\n'
-          '        // Determine which schema to use based on the json.\n'
-          '        // TODO(eseidel): Implement this.\n'
-          "        throw UnimplementedError('Test.fromJson');\n"
-          '    }\n'
-          '\n'
-          '    /// Convenience to create a nullable type from a nullable json object.\n'
-          '    /// Useful when parsing optional fields.\n'
-          '    static Test? maybeFromJson(dynamic json) {\n'
-          '        if (json == null) {\n'
-          '            return null;\n'
-          '        }\n'
-          '        return Test.fromJson(json);\n'
-          '    }\n'
-          '\n'
-          '    /// Require all subclasses to implement toJson.\n'
-          '    dynamic toJson();\n'
-          '}\n',
-        );
+        // `type: [string, number]` resolves into a oneOf, which now
+        // shape-dispatches now that RenderNumber has a shape key.
+        final result = renderTestSchema(json, asComponent: true);
+        expect(result, contains('String v => TestString(v)'));
+        expect(result, contains('num v => TestNum(v)'));
+        expect(result, isNot(contains('throw UnimplementedError')));
       });
       test('string or number as property', () {
         final json = {
