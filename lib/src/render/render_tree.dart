@@ -540,15 +540,6 @@ class SpecResolver {
   }
 
   OperationReturn _determineReturnShape(ResolvedOperation operation) {
-    SingleSchemaReturn voidReturn() => SingleSchemaReturn(
-      RenderVoid(
-        common: CommonProperties.empty(
-          snakeName: '${operation.snakeName}_response',
-          pointer: operation.pointer,
-        ),
-      ),
-    );
-
     // Figure out how many different successful responses there are.
     // Successful = explicit 2xx codes plus the `2XX` range if declared.
     final explicit2xx = operation.responses
@@ -562,7 +553,14 @@ class SpecResolver {
       ...successfulRange.map((e) => e.content),
     ];
     if (successfulContent.isEmpty) {
-      return voidReturn();
+      return SingleSchemaReturn(
+        RenderVoid(
+          common: CommonProperties.empty(
+            snakeName: '${operation.snakeName}_response',
+            pointer: operation.pointer,
+          ),
+        ),
+      );
     }
     if (successfulContent.length == 1) {
       return SingleSchemaReturn(toRenderSchema(successfulContent.first));
