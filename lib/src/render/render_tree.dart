@@ -451,15 +451,27 @@ class SpecResolver {
           discriminator: renderDiscriminator,
         );
       case ResolvedAllOf():
-        // Generate a synthetic object type for allOf.
+        // Generate a synthetic object type for allOf. A property is
+        // required iff any member requires it (allOf semantics: all
+        // members must validate, so a member's required field is
+        // required overall). Dropping the union here would silently
+        // make required fields nullable in the generated constructor
+        // and also hide a required single-value-enum tag from oneOf
+        // dispatch detection (allOf-shaped variants).
         final properties = <String, RenderSchema>{};
+        final requiredProperties = <String>{};
         for (final schema in schema.schemas) {
           final renderSchema = toRenderSchema(schema);
           if (renderSchema is RenderObject) {
             properties.addAll(renderSchema.properties);
+            requiredProperties.addAll(renderSchema.requiredProperties);
           }
         }
-        return RenderObject(common: schema.common, properties: properties);
+        return RenderObject(
+          common: schema.common,
+          properties: properties,
+          requiredProperties: requiredProperties.toList(),
+        );
       case ResolvedAnyOf():
         // Resolver already makes anyOf with 1 schema to just be that schema.
         // For multiple schemas, we just generate a oneOf, which is wrong.

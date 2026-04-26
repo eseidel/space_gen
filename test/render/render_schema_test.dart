@@ -685,6 +685,94 @@ void main() {
       );
     });
 
+    test('allOf merges required across members', () {
+      // Both members require their own property; the synthesized
+      // RenderObject must mark both required, otherwise downstream
+      // generation drops the `required` modifier and silently makes
+      // them nullable.
+      final schema = {
+        'allOf': [
+          {
+            'type': 'object',
+            'required': ['foo'],
+            'properties': {
+              'foo': {'type': 'string'},
+            },
+          },
+          {
+            'type': 'object',
+            'required': ['bar'],
+            'properties': {
+              'bar': {'type': 'integer'},
+            },
+          },
+        ],
+      };
+      final result = renderTestSchema(schema);
+      expect(result, contains('required this.foo'));
+      expect(result, contains('required this.bar'));
+      expect(result, contains('final String foo;'));
+      expect(result, contains('final int bar;'));
+    });
+
+    test('oneOf of allOf variants tagged by single-value enum', () {
+      // Each variant is `allOf: [<rule>, <info>]` where the first
+      // member tags itself with a single-value enum on `type`. After
+      // the allOf merge propagates `requiredProperties`, the implicit
+      // discriminator detection should engage and produce a switch
+      // on `json['type']` instead of the legacy stub.
+      final schema = {
+        'oneOf': [
+          {
+            'allOf': [
+              {
+                'type': 'object',
+                'required': ['type'],
+                'properties': {
+                  'type': {
+                    'type': 'string',
+                    'enum': ['creation'],
+                  },
+                },
+              },
+              {
+                'type': 'object',
+                'properties': {
+                  'extra': {'type': 'string'},
+                },
+              },
+            ],
+          },
+          {
+            'allOf': [
+              {
+                'type': 'object',
+                'required': ['type'],
+                'properties': {
+                  'type': {
+                    'type': 'string',
+                    'enum': ['deletion'],
+                  },
+                },
+              },
+              {
+                'type': 'object',
+                'properties': {
+                  'extra': {'type': 'string'},
+                },
+              },
+            ],
+          },
+        ],
+      };
+      final result = renderTestSchema(schema);
+      expect(result, contains("final discriminator = json['type']"));
+      expect(result, contains('switch (discriminator)'));
+      expect(result, contains("'creation' =>"));
+      expect(result, contains("'deletion' =>"));
+      expect(result, isNot(contains('throw UnimplementedError')));
+    });
+
     test('oneOf with pods', () {
       final schema = {
         'oneOf': [
