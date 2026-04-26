@@ -1340,6 +1340,83 @@ void main() {
       );
     });
 
+    test('required-field dispatch with one no-required variant uses it as '
+        'the fallback', () {
+      // SimpleUser-like A requires {login, id}; B has no required at
+      // all. Required-field dispatch picks A on `id` (or `login`),
+      // and falls through to B as the catch-all. No throw.
+      final results = renderTestSchemas(
+        {
+          'Author': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/SimpleUser'},
+              {r'$ref': '#/components/schemas/EmptyAuthor'},
+            ],
+          },
+          'SimpleUser': {
+            'type': 'object',
+            'properties': {
+              'login': {'type': 'string'},
+              'id': {'type': 'integer'},
+            },
+            'required': ['login', 'id'],
+          },
+          'EmptyAuthor': {
+            'type': 'object',
+            'properties': <String, dynamic>{},
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final author = results['Author'];
+      expect(author, isNotNull);
+      // Checked arm fires when the unique required field is present.
+      expect(author, contains("if (json.containsKey('id'))"));
+      expect(author, contains('return AuthorSimpleUser(SimpleUser.fromJson'));
+      // Fallback arm has no `containsKey` guard — emitted as a
+      // bare `return …`.
+      expect(
+        author,
+        contains('return AuthorEmptyAuthor(EmptyAuthor.fromJson(json));'),
+      );
+      // No throw — the fallback always matches.
+      expect(author, isNot(contains('throw FormatException')));
+      expect(author, isNot(contains('throw UnimplementedError')));
+    });
+
+    test('two no-required variants are ambiguous — fall back to legacy', () {
+      // Both X and Y have no required fields. Without a tag, the
+      // dispatch can't pick deterministically — return null and let
+      // the legacy stub fire.
+      final results = renderTestSchemas(
+        {
+          'XOrY': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/X'},
+              {r'$ref': '#/components/schemas/Y'},
+            ],
+          },
+          'X': {
+            'type': 'object',
+            'properties': {
+              'a': {'type': 'string'},
+            },
+          },
+          'Y': {
+            'type': 'object',
+            'properties': {
+              'b': {'type': 'string'},
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      expect(
+        results['XOrY'],
+        contains("throw UnimplementedError('XOrY.fromJson')"),
+      );
+    });
+
     test('oneOf with discriminator but no mapping falls through to '
         'shape dispatch (implicit-mapping not yet supported)', () {
       // No `mapping` key — discriminator-dispatch needs the explicit
@@ -1503,10 +1580,14 @@ void main() {
         },
         specUrl: Uri.parse('file:///spec.yaml'),
       );
-      expect(
-        results['Rule'],
-        contains("throw UnimplementedError('Rule.fromJson')"),
-      );
+      // The implicit-discriminator gate on `type` is the contract
+      // here — we must NOT switch on `json['type']` over 'a' / 'b',
+      // because B doesn't require `type`. Required-field-with-fallback
+      // dispatch happens to pick this up legitimately (A is keyed on
+      // `type`, B is the fallback), which is fine; just verify the
+      // implicit-discriminator path didn't engage.
+      expect(results['Rule'], isNot(contains("'a' =>")));
+      expect(results['Rule'], isNot(contains('switch (discriminator)')));
     });
 
     group('anyOf', () {
