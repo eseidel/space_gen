@@ -3753,10 +3753,83 @@ class RenderOneOf extends RenderNewType {
     );
   }
 
+  /// The discriminator we'll dispatch on: the spec's explicit one when
+  /// present, otherwise an implicit one synthesized from variants that
+  /// each tag themselves with a single-value enum property (see
+  /// [_implicitDiscriminator]). Explicit always wins.
+  RenderDiscriminator? get _effectiveDiscriminator =>
+      discriminator ?? _implicitDiscriminator;
+
   /// Discriminator-driven dispatch: every variant must be an object-
   /// shaped newtype with a `fromJson` factory.
   bool get _hasDiscriminatorDispatch =>
-      discriminator != null && schemas.every((s) => s is RenderObject);
+      _effectiveDiscriminator != null &&
+      schemas.every((s) => s is RenderObject);
+
+  /// Synthesized discriminator for object-only oneOfs whose variants
+  /// each tag themselves with a single-value enum property — github's
+  /// `repository-rule` shape. The spec doesn't declare a
+  /// `discriminator`, but every variant has, e.g.,
+  /// `type: { enum: ['creation'] }` with that property required. The
+  /// values are pairwise distinct, so the parent's `fromJson` can
+  /// switch on `json[<that property>]` and pick a variant.
+  ///
+  /// Conservative on purpose: requires the tag property to be in
+  /// every variant's `requiredProperties` (an absent field would
+  /// crash dispatch) and that the single-enum values be unique
+  /// across variants (otherwise dispatch is ambiguous). Returns null
+  /// if no property qualifies; the caller falls through to shape /
+  /// required-field dispatch as usual.
+  RenderDiscriminator? get _implicitDiscriminator {
+    if (schemas.isEmpty) return null;
+    if (!schemas.every((s) => s is RenderObject)) return null;
+    final objects = schemas.cast<RenderObject>();
+    // A property qualifies as an implicit discriminator iff every
+    // variant has it as a required, single-value enum. Walk the first
+    // variant's properties to seed candidates; for each, gather the
+    // per-variant tag value while validating the others. Recording
+    // values here avoids a second lookup later.
+    final candidates = <(String, List<String>)>[];
+    for (final entry in objects.first.properties.entries) {
+      final propName = entry.key;
+      if (!objects.first.requiredProperties.contains(propName)) continue;
+      final firstType = entry.value;
+      if (firstType is! RenderEnum || firstType.values.length != 1) {
+        continue;
+      }
+      final values = [firstType.values.first];
+      var allMatch = true;
+      for (var i = 1; i < objects.length; i++) {
+        final other = objects[i];
+        if (!other.requiredProperties.contains(propName)) {
+          allMatch = false;
+          break;
+        }
+        final otherType = other.properties[propName];
+        if (otherType is! RenderEnum || otherType.values.length != 1) {
+          allMatch = false;
+          break;
+        }
+        values.add(otherType.values.first);
+      }
+      if (allMatch) candidates.add((propName, values));
+    }
+    if (candidates.isEmpty) return null;
+    // Stable pick: lexicographically-first candidate property whose
+    // values are unique. Sorting first means small spec edits don't
+    // shuffle the chosen discriminator.
+    candidates.sort((a, b) => a.$1.compareTo(b.$1));
+    for (final (propName, values) in candidates) {
+      if (values.toSet().length != values.length) continue;
+      return RenderDiscriminator(
+        propertyName: propName,
+        mapping: {
+          for (var i = 0; i < objects.length; i++) values[i]: objects[i],
+        },
+      );
+    }
+    return null;
+  }
 
   /// True iff every variant has a known shape key AND all keys are
   /// pairwise distinct. Context-free so [additionalImports] and
@@ -3864,7 +3937,7 @@ class RenderOneOf extends RenderNewType {
       'positionalBoolIgnore': false,
     };
 
-    final disc = discriminator;
+    final disc = _effectiveDiscriminator;
     if (disc != null && _hasDiscriminatorDispatch) {
       final variants = schemas.map(objectWrapperContext).toList();
       final dispatch = <Map<String, dynamic>>[];

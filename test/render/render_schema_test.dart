@@ -1130,6 +1130,146 @@ void main() {
       expect(pet, isNot(contains('UnimplementedError')));
     });
 
+    test('non-discriminator oneOf whose object variants each tag '
+        'themselves with a single-value enum property uses '
+        'implicit-discriminator dispatch', () {
+      // github's `repository-rule` shape: no explicit discriminator,
+      // but every variant has a required `type` property whose enum
+      // has a single, variant-unique value. Treat that as an implicit
+      // discriminator so we generate real dispatch instead of a stub.
+      final results = renderTestSchemas(
+        {
+          'Rule': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Creation'},
+              {r'$ref': '#/components/schemas/Deletion'},
+            ],
+          },
+          'Creation': {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'string',
+                'enum': ['creation'],
+              },
+            },
+            'required': ['type'],
+          },
+          'Deletion': {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'string',
+                'enum': ['deletion'],
+              },
+            },
+            'required': ['type'],
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final rule = results['Rule'];
+      expect(rule, isNotNull);
+      expect(rule, contains('sealed class Rule'));
+      expect(
+        rule,
+        contains('factory Rule.fromJson(Map<String, dynamic> json)'),
+      );
+      expect(rule, contains("final discriminator = json['type']"));
+      expect(
+        rule,
+        contains("'creation' => RuleCreation(Creation.fromJson(json))"),
+      );
+      expect(
+        rule,
+        contains("'deletion' => RuleDeletion(Deletion.fromJson(json))"),
+      );
+      expect(rule, contains('final class RuleCreation extends Rule'));
+      expect(rule, contains('final class RuleDeletion extends Rule'));
+      expect(rule, isNot(contains('UnimplementedError')));
+    });
+
+    test('implicit-discriminator dispatch falls back when the single-enum '
+        'values collide across variants', () {
+      // Both variants tag themselves `type: 'creation'` — no unique
+      // dispatch value, so we can't pick a variant from the JSON.
+      final results = renderTestSchemas(
+        {
+          'Rule': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/A'},
+              {r'$ref': '#/components/schemas/B'},
+            ],
+          },
+          'A': {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'string',
+                'enum': ['creation'],
+              },
+            },
+            'required': ['type'],
+          },
+          'B': {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'string',
+                'enum': ['creation'],
+              },
+            },
+            'required': ['type'],
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      expect(
+        results['Rule'],
+        contains("throw UnimplementedError('Rule.fromJson')"),
+      );
+    });
+
+    test('implicit-discriminator dispatch ignores a tag property that is '
+        'not required by every variant', () {
+      // `type` is single-enum on both, but optional on B. An absent
+      // discriminator field would crash dispatch, so don't bite.
+      final results = renderTestSchemas(
+        {
+          'Rule': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/A'},
+              {r'$ref': '#/components/schemas/B'},
+            ],
+          },
+          'A': {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'string',
+                'enum': ['a'],
+              },
+            },
+            'required': ['type'],
+          },
+          'B': {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'string',
+                'enum': ['b'],
+              },
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      expect(
+        results['Rule'],
+        contains("throw UnimplementedError('Rule.fromJson')"),
+      );
+    });
+
     group('anyOf', () {
       test('two pod types', () {
         final schema = {
