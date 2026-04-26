@@ -921,6 +921,28 @@ void main() {
       expect(result, contains('throw UnimplementedError'));
     });
 
+    test('oneOf with [empty-object, string] uses shape dispatch', () {
+      // RenderEmptyObject (an inline `type: object` with no
+      // properties, or a `$ref` to one) needs `wrapperTag` and
+      // `jsonShapeKey` to participate in shape dispatch. Pinning that
+      // here covers the per-schema overrides plus the
+      // `_variantConversion` arm that delegates to the EmptyObject
+      // newtype's own `fromJson`/`toJson`.
+      final schema = {
+        'oneOf': [
+          {'type': 'object', 'properties': <String, dynamic>{}},
+          {'type': 'string'},
+        ],
+      };
+      final result = renderTestSchema(schema);
+      // Empty-object wrapper delegates to the named class.
+      expect(result, contains('Map<String, dynamic> v =>'));
+      expect(result, contains('.fromJson(v)'));
+      expect(result, contains('value.toJson()'));
+      expect(result, contains('String v => TestString(v)'));
+      expect(result, isNot(contains('throw UnimplementedError')));
+    });
+
     test('number newtype does not participate in shape dispatch', () {
       // A `number` schema with validations becomes a newtype (its own
       // class), and `wrapperTag` / `jsonShapeKey` deliberately gate on
