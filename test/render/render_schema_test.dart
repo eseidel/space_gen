@@ -860,12 +860,12 @@ void main() {
       );
       final wrapper = results['Wrapper'];
       expect(wrapper, isNotNull);
-      // Newtype-Number is not shape-dispatchable today (and the inline
-      // String variant alone isn't enough to dispatch a 2-variant
-      // oneOf), so this falls through to the legacy stub. The contract
-      // here is: whatever fallback fires, it must NOT emit a `num v =>`
-      // arm pointing at the newtype, since that would conflict with
-      // Score's own factory.
+      // Newtype-Number cannot drive shape dispatch today (and the
+      // inline String variant alone isn't enough to dispatch a
+      // 2-variant oneOf), so this falls through to the legacy stub.
+      // The contract here is: whatever fallback fires, it must NOT
+      // emit a `num v =>` arm pointing at the newtype, since that
+      // would conflict with Score's own factory.
       expect(wrapper, isNot(contains('num v => WrapperScore')));
     });
 
