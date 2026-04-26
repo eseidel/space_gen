@@ -834,6 +834,25 @@ void main() {
       expect(result, isNot(contains('throw UnimplementedError')));
     });
 
+    test('oneOf with [string, boolean] uses shape dispatch', () {
+      // Pins the `RenderPod(type: PodType.boolean) => 'bool'` arm of
+      // `_planVariant` — the only path that exercises it from a unit
+      // test. (Github's Metadata1 anyOf hits it end-to-end, but that
+      // is regen coverage, not test coverage.)
+      final schema = {
+        'oneOf': [
+          {'type': 'string'},
+          {'type': 'boolean'},
+        ],
+      };
+      final result = renderTestSchema(schema);
+      expect(result, contains('String v => TestString(v)'));
+      expect(result, contains('bool v => TestBool(v)'));
+      expect(result, contains('final bool value;'));
+      expect(result, contains('final class TestBool extends Test'));
+      expect(result, isNot(contains('throw UnimplementedError')));
+    });
+
     test('number newtype does not participate in shape dispatch', () {
       // A `number` schema with validations becomes a newtype (its own
       // class), and `wrapperTag` / `jsonShapeKey` deliberately gate on
