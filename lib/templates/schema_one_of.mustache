@@ -59,9 +59,14 @@
             return {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(json));
         }
 {{/dispatch}}
+{{#fallback}}
+        return {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(json));
+{{/fallback}}
+{{^fallback}}
         throw FormatException(
             'No variant of {{ typeName }} matched json keys: ${json.keys.toList()}',
         );
+{{/fallback}}
     }
 
     {{> _one_of_maybe_from_json}}

@@ -3950,22 +3950,35 @@ class RenderOneOf extends RenderNewType {
     return plans;
   }
 
-  /// Required-field dispatch: every variant is a [RenderObject] and
-  /// each has at least one required property that no other variant
-  /// requires. We dispatch by checking for that property's presence
-  /// in the JSON. Useful for (object, object) oneOfs without a
-  /// discriminator — github has ~9 such sites, e.g. `simple-user`
-  /// (requires `login`) vs `enterprise` (requires `slug`).
+  /// Required-field dispatch: every variant is a [RenderObject], and
+  /// every variant either (a) has at least one required property that
+  /// no other variant requires, or (b) has no required properties at
+  /// all and is the dispatch's fallback. At most one fallback is
+  /// allowed; with two the dispatch would be ambiguous.
+  ///
+  /// Useful for (object, object) oneOfs without a discriminator —
+  /// github has ~9 such sites with disjoint required-sets (e.g.
+  /// `simple-user` requires `login`, `enterprise` requires `slug`)
+  /// plus a handful where one variant is empty (`commit.author` is
+  /// `[simple-user, empty-object]`, the `interactions` 200 responses
+  /// are `[interaction-limit-response, <empty>]`).
   ///
   /// Returns one [_RequiredFieldArm] per variant in [schemas] order,
-  /// or null if any variant lacks a uniquely-required property.
+  /// or null if no fallback fits and any variant lacks a uniquely-
+  /// required property — in which case dispatch falls through to the
+  /// legacy stub.
   List<_RequiredFieldArm>? get _requiredFieldDispatchArms {
-    if (!schemas.every((s) => s is RenderObject)) return null;
-    final objects = schemas.cast<RenderObject>();
-    final allRequired = objects
-        .map((o) => o.requiredProperties.toSet())
-        .toList();
+    // Object-shaped variants only (RenderObject for normal objects,
+    // RenderEmptyObject for `{}`-shaped fallbacks).
+    if (!schemas.every((s) => s is RenderObject || s is RenderEmptyObject)) {
+      return null;
+    }
+    final objects = schemas.cast<RenderNewType>();
+    Set<String> requiredOf(RenderNewType o) =>
+        o is RenderObject ? o.requiredProperties.toSet() : const <String>{};
+    final allRequired = objects.map(requiredOf).toList();
     final arms = <_RequiredFieldArm>[];
+    var fallbackCount = 0;
     for (var i = 0; i < objects.length; i++) {
       final mine = allRequired[i];
       final others = <String>{};
@@ -3973,7 +3986,17 @@ class RenderOneOf extends RenderNewType {
         if (i != j) others.addAll(allRequired[j]);
       }
       final unique = mine.difference(others);
-      if (unique.isEmpty) return null;
+      if (unique.isEmpty) {
+        // A variant with no required fields at all is a legitimate
+        // catch-all — use it as the fallback. A variant with required
+        // fields that are all shared with siblings is ambiguous, so
+        // bail.
+        if (mine.isNotEmpty) return null;
+        fallbackCount++;
+        if (fallbackCount > 1) return null;
+        arms.add(_RequiredFieldArm(variant: objects[i], tagField: null));
+        continue;
+      }
       // Pick the lexicographically-first unique field for stable output.
       final tagField = (unique.toList()..sort()).first;
       arms.add(
@@ -4068,7 +4091,15 @@ class RenderOneOf extends RenderNewType {
     final reqArms = _requiredFieldDispatchArms;
     if (reqArms != null) {
       ctx['has_required_field_dispatch'] = true;
-      ctx['dispatch'] = reqArms
+      // Checked arms (have a uniquely-required tagField) get their
+      // own `if (json.containsKey(...))` guard. The fallback arm (at
+      // most one, no required fields) emits without a guard at the
+      // bottom and replaces the throw — so the template needs the
+      // two groups separately. Subclasses still emit in the schemas-
+      // declared order via `variants`.
+      final checked = reqArms.where((a) => a.tagField != null).toList();
+      final fallback = reqArms.where((a) => a.tagField == null).firstOrNull;
+      ctx['dispatch'] = checked
           .map(
             (a) => {
               'tagField': a.tagField,
@@ -4077,6 +4108,12 @@ class RenderOneOf extends RenderNewType {
             },
           )
           .toList();
+      ctx['fallback'] = fallback == null
+          ? false
+          : {
+              'wrapperTypeName': wrapperTypeName(fallback.variant),
+              'valueType': fallback.variant.typeName,
+            };
       ctx['variants'] = reqArms
           .map((a) => objectWrapperContext(a.variant))
           .toList();
@@ -4220,17 +4257,22 @@ final class _MultiStatusContext {
   final List<Map<String, dynamic>> switchCases;
 }
 
-/// One arm of the required-field dispatch: a [RenderObject] variant
-/// keyed off the presence of a property unique to its required-set.
+/// One arm of the required-field dispatch: an object-shaped variant
+/// (RenderObject or RenderEmptyObject) keyed off the presence of a
+/// property unique to its required-set. [tagField] is null for the
+/// fallback variant (one variant per oneOf is allowed to have no
+/// required fields and act as the catch-all). RenderEmptyObject is
+/// always a fallback since it requires nothing.
 @immutable
 class _RequiredFieldArm {
   const _RequiredFieldArm({required this.variant, required this.tagField});
 
-  final RenderObject variant;
+  final RenderNewType variant;
 
   /// JSON property name whose presence picks this variant. Required
   /// only by [variant]; absent from every sibling's required-set.
-  final String tagField;
+  /// Null when this is the fallback (no-required) variant.
+  final String? tagField;
 }
 
 /// The schema-specific bits of a shape-dispatch wrapper: how the
@@ -4562,6 +4604,23 @@ class RenderEmptyObject extends RenderNewType {
 
   @override
   bool get defaultCanConstConstruct => true;
+
+  // EmptyObject is always a newtype with a Map<String, dynamic> wire
+  // shape. Participates in shape dispatch (when the only Map-shaped
+  // variant in a oneOf) and in required-field dispatch as the
+  // fallback variant (since it requires no fields). A second Map-
+  // shaped sibling collides on shape key; `_canShapeDispatch` rejects
+  // that path and required-field dispatch's no-fallback gate would
+  // also bail.
+  @override
+  String? get wrapperTag => typeName;
+
+  @override
+  String? get jsonShapeKey => 'Map<String, dynamic>';
+
+  @override
+  _VariantConversion? _variantConversion(SchemaRenderer context) =>
+      _newtypeConversion(typeName);
 
   @override
   String jsonStorageType({required bool isNullable}) => 'Map<String, dynamic>';
