@@ -2715,6 +2715,19 @@ class RenderNumber extends RenderNumeric<double> {
   String get typeName => createsNewType ? camelFromSnake(snakeName) : 'double';
 
   @override
+  String? get wrapperTag => createsNewType ? null : 'Num';
+
+  // Use `num` (matching jsonStorageType) rather than `double` so the
+  // shape test `case num v` accepts both JSON ints and doubles without
+  // a coercion step. A oneOf that mixes `integer` and `number` would
+  // be ambiguous (every int satisfies num too) — github has no such
+  // site, and `_canShapeDispatch` would still pass on key uniqueness;
+  // if one ever shows up, ordering int-before-num in the switch keeps
+  // the dispatch correct, but the spec is the real bug.
+  @override
+  String? get jsonShapeKey => createsNewType ? null : 'num';
+
+  @override
   String jsonStorageType({required bool isNullable}) =>
       isNullable ? 'num?' : 'num';
 
@@ -3750,6 +3763,7 @@ class RenderOneOf extends RenderNewType {
     // an inline pod.
     final podType = switch (variant) {
       RenderInteger() => 'int',
+      RenderNumber() => 'num',
       RenderString() => 'String',
       RenderPod(type: PodType.boolean) => 'bool',
       _ => null,
