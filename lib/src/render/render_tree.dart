@@ -1828,6 +1828,13 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// haven't taught the dispatch to handle it yet).
   String? get wrapperTag => null;
 
+  /// Dart type used in the `case T v =>` pattern for shape-based
+  /// [RenderOneOf] dispatch (`Map<String, dynamic>`, `int`,
+  /// `List<dynamic>`, etc.). Null when this schema isn't eligible.
+  /// Two variants in the same oneOf are only distinguishable when
+  /// their [jsonShapeKey]s differ.
+  String? get jsonShapeKey => null;
+
   @override
   List<Object?> get props => [snakeName, pointer];
 
@@ -2041,6 +2048,10 @@ class RenderPod extends RenderSchema {
   @override
   String? get wrapperTag =>
       !createsNewType && type == PodType.boolean ? 'Bool' : null;
+
+  @override
+  String? get jsonShapeKey =>
+      !createsNewType && type == PodType.boolean ? 'bool' : null;
 
   @override
   String jsonStorageType({required bool isNullable}) {
@@ -2307,6 +2318,9 @@ class RenderString extends RenderSchema {
 
   @override
   String? get wrapperTag => createsNewType ? null : 'String';
+
+  @override
+  String? get jsonShapeKey => createsNewType ? null : 'String';
 
   @override
   String jsonStorageType({required bool isNullable}) =>
@@ -2583,6 +2597,9 @@ class RenderInteger extends RenderNumeric<int> {
   String? get wrapperTag => createsNewType ? null : 'Int';
 
   @override
+  String? get jsonShapeKey => createsNewType ? null : 'int';
+
+  @override
   String jsonStorageType({required bool isNullable}) =>
       isNullable ? 'int?' : 'int';
 
@@ -2614,6 +2631,9 @@ class RenderObject extends RenderNewType {
 
   @override
   String? get wrapperTag => typeName;
+
+  @override
+  String? get jsonShapeKey => 'Map<String, dynamic>';
 
   @override
   List<Object?> get props => [
@@ -3043,6 +3063,14 @@ class RenderArray extends RenderSchema {
   @override
   bool get shouldCallToJson => items.shouldCallToJson;
 
+  // Inline arrays show up as a oneOf variant; the shape-dispatch
+  // wrapper class is `<ParentTypeName>List`.
+  @override
+  String? get wrapperTag => 'List';
+
+  @override
+  String? get jsonShapeKey => 'List<dynamic>';
+
   /// The type name of this schema.
   @override
   String get typeName => 'List<${items.typeName}>';
@@ -3337,6 +3365,9 @@ class RenderEnum extends RenderNewType {
   String? get wrapperTag => typeName;
 
   @override
+  String? get jsonShapeKey => 'String';
+
+  @override
   List<Object?> get props => [
     super.props,
     values,
@@ -3503,25 +3534,64 @@ class RenderOneOf extends RenderNewType {
   /// Per-variant info needed to emit a dispatch arm + wrapper subclass.
   /// Returns null when [variant] isn't representable in the dispatch
   /// (unsupported shape, or runtime-type test would conflict with
-  /// another variant). The caller checks for null and checks for
-  /// distinct test types before committing to the dispatch path.
-  _VariantPlan? _planVariant(RenderSchema variant) {
+  /// another variant). Takes [context] because some variants (arrays)
+  /// compose with the items' fromJson/toJson expressions.
+  _VariantPlan? _planVariant(RenderSchema variant, SchemaRenderer context) {
     final tag = variant.wrapperTag;
     if (tag == null) return null;
+    final shapeKey = variant.jsonShapeKey;
+    if (shapeKey == null) return null;
     final wrapperTypeName = '$typeName$tag';
 
     // Newtype variants (objects, enums): the wrapper holds the parsed
     // value and forwards fromJson/toJson to the variant's own class.
-    // Only the JSON shape distinguishes them.
     if (variant is RenderObject || variant is RenderEnum) {
       return _VariantPlan(
         wrapperTypeName: wrapperTypeName,
         valueType: variant.typeName,
-        jsonTestType: variant is RenderObject
-            ? 'Map<String, dynamic>'
-            : 'String',
+        jsonTestType: shapeKey,
         fromJson: '${variant.typeName}.fromJson(v)',
         toJson: 'value.toJson()',
+      );
+    }
+
+    // Array variants: parse the raw `List<dynamic>` into a
+    // `List<itemType>` using the items' fromJsonExpression, and the
+    // reverse for toJson. wrapperTag is non-null only for inline
+    // arrays (we don't support array-newtypes yet — the README notes
+    // that as a future direction).
+    if (variant is RenderArray) {
+      final items = variant.items;
+      final itemTypeName = items.typeName;
+      final String fromJson;
+      if (items.createsNewType) {
+        final itemFrom = items.fromJsonExpression(
+          'e',
+          context,
+          jsonIsNullable: false,
+          dartIsNullable: false,
+        );
+        fromJson = 'v.map<$itemTypeName>((e) => $itemFrom).toList()';
+      } else {
+        fromJson = 'v.cast<$itemTypeName>()';
+      }
+      final String toJson;
+      if (items.shouldCallToJson) {
+        final itemTo = items.toJsonExpression(
+          'e',
+          context,
+          dartIsNullable: false,
+        );
+        toJson = 'value.map((e) => $itemTo).toList()';
+      } else {
+        toJson = 'value';
+      }
+      return _VariantPlan(
+        wrapperTypeName: wrapperTypeName,
+        valueType: 'List<$itemTypeName>',
+        jsonTestType: shapeKey,
+        fromJson: fromJson,
+        toJson: toJson,
       );
     }
 
@@ -3539,7 +3609,7 @@ class RenderOneOf extends RenderNewType {
     return _VariantPlan(
       wrapperTypeName: wrapperTypeName,
       valueType: podType,
-      jsonTestType: podType,
+      jsonTestType: shapeKey,
       fromJson: 'v',
       toJson: 'value',
       positionalBoolIgnore: podType == 'bool',
@@ -3551,21 +3621,33 @@ class RenderOneOf extends RenderNewType {
   bool get _hasDiscriminatorDispatch =>
       discriminator != null && schemas.every((s) => s is RenderObject);
 
-  /// Shape-driven dispatch (runtime-type switch). Every variant must
-  /// have a known plan AND every plan's [_VariantPlan.jsonTestType]
-  /// must be unique so a `case T v =>` arm is unambiguous. Falls
-  /// through from the discriminator path when the discriminator can't
-  /// be honored (e.g. non-object variants under a discriminator) —
-  /// shape is a strict fallback rather than a competitor.
-  List<_VariantPlan>? get _shapeDispatchPlans {
+  /// True iff every variant has a known shape key AND all keys are
+  /// pairwise distinct. Context-free so [additionalImports] and
+  /// [_hasDispatch] can answer the can-we-dispatch question without a
+  /// [SchemaRenderer]; the context-taking [_shapeDispatchPlans] adds
+  /// the items' fromJson/toJson expressions when arrays are involved.
+  bool get _canShapeDispatch {
+    final keys = <String>{};
+    for (final v in schemas) {
+      final k = v.jsonShapeKey;
+      if (k == null) return false;
+      if (!keys.add(k)) return false;
+    }
+    return true;
+  }
+
+  /// Shape-driven dispatch (runtime-type switch). Falls through from
+  /// the discriminator path when the discriminator can't be honored
+  /// (e.g. non-object variants under a discriminator) — shape is a
+  /// strict fallback rather than a competitor.
+  List<_VariantPlan>? _shapeDispatchPlans(SchemaRenderer context) {
+    if (!_canShapeDispatch) return null;
     final plans = <_VariantPlan>[];
     for (final v in schemas) {
-      final plan = _planVariant(v);
+      final plan = _planVariant(v, context);
       if (plan == null) return null;
       plans.add(plan);
     }
-    final testTypes = plans.map((p) => p.jsonTestType).toSet();
-    if (testTypes.length != plans.length) return null;
     return plans;
   }
 
@@ -3604,7 +3686,7 @@ class RenderOneOf extends RenderNewType {
 
   bool get _hasDispatch =>
       _hasDiscriminatorDispatch ||
-      _shapeDispatchPlans != null ||
+      _canShapeDispatch ||
       _requiredFieldDispatchArms != null;
 
   @override
@@ -3663,7 +3745,7 @@ class RenderOneOf extends RenderNewType {
       ctx['maybeFromJsonParamType'] = 'Map<String, dynamic>?';
       return ctx;
     }
-    final shapePlans = _shapeDispatchPlans;
+    final shapePlans = _shapeDispatchPlans(context);
     if (shapePlans != null) {
       ctx['has_shape_dispatch'] = true;
       ctx['variants'] = shapePlans
