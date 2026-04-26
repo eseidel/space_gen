@@ -978,7 +978,11 @@ void main() {
       expect(wrapper, isNot(contains('num v => WrapperScore')));
     });
 
-    test('oneOf with objects', () {
+    test('oneOf with two objects sharing no props uses optional-tag '
+        'dispatch', () {
+      // Each variant has a unique optional property. Property-presence
+      // dispatch keys on those (best-effort: the JSON might omit the
+      // tag, in which case the throw at the end fires).
       final schema = {
         'oneOf': [
           {
@@ -996,28 +1000,10 @@ void main() {
         ],
       };
       final result = renderTestSchema(schema);
-      expect(
-        result,
-        'sealed class Test {\n'
-        '    static Test fromJson(dynamic jsonArg) {\n'
-        '        // Determine which schema to use based on the json.\n'
-        '        // TODO(eseidel): Implement this.\n'
-        "        throw UnimplementedError('Test.fromJson');\n"
-        '    }\n'
-        '\n'
-        '    /// Convenience to create a nullable type from a nullable json object.\n'
-        '    /// Useful when parsing optional fields.\n'
-        '    static Test? maybeFromJson(dynamic json) {\n'
-        '        if (json == null) {\n'
-        '            return null;\n'
-        '        }\n'
-        '        return Test.fromJson(json);\n'
-        '    }\n'
-        '\n'
-        '    /// Require all subclasses to implement toJson.\n'
-        '    dynamic toJson();\n'
-        '}\n',
-      );
+      expect(result, contains("if (json.containsKey('foo'))"));
+      expect(result, contains("if (json.containsKey('bar'))"));
+      expect(result, contains('throw FormatException'));
+      expect(result, isNot(contains('throw UnimplementedError')));
     });
 
     test('oneOf with discriminator + mapping renders sealed dispatch', () {
@@ -1248,11 +1234,11 @@ void main() {
     });
 
     test('non-discriminator oneOf with two object variants and no '
-        'required fields falls back to legacy stub (no shape or '
-        'required-field disambiguation possible)', () {
-      // Two objects share Map<String, dynamic> at the JSON level. With
-      // no required fields on either side there's no key to dispatch
-      // on, so this stays UnimplementedError.
+        'required fields uses optional-tag dispatch', () {
+      // Two objects share Map<String, dynamic> at the JSON level so
+      // shape dispatch can't fire. Neither has required fields, but
+      // each has a unique optional. Property-presence dispatch keys
+      // on those.
       final results = renderTestSchemas(
         {
           'Pet': {
@@ -1278,7 +1264,7 @@ void main() {
       );
       expect(
         results['Pet'],
-        contains("throw UnimplementedError('Pet.fromJson')"),
+        contains("if (json.containsKey('meow'))"),
       );
     });
 
@@ -1325,11 +1311,12 @@ void main() {
       expect(pet, contains('final class PetDog extends Pet'));
     });
 
-    test('required-field dispatch falls back to legacy when one variant '
-        'has no required field unique to it', () {
-      // Cat requires {a, b}; Dog requires {a}. Cat has unique "b" but
-      // Dog has no field that Cat doesn't also require → can't pick
-      // Dog deterministically → fall back.
+    test('property-presence dispatch falls back to legacy when one '
+        'variant has nothing unique at all', () {
+      // Cat requires {a, b}; Dog requires {a, b} too with the same
+      // properties — neither variant has anything unique (required
+      // or optional). With two would-be-fallback variants the
+      // dispatch is ambiguous and falls through to the legacy stub.
       final results = renderTestSchemas(
         {
           'Pet': {
@@ -1350,8 +1337,9 @@ void main() {
             'type': 'object',
             'properties': {
               'a': {'type': 'string'},
+              'b': {'type': 'string'},
             },
-            'required': ['a'],
+            'required': ['a', 'b'],
           },
         },
         specUrl: Uri.parse('file:///spec.yaml'),
@@ -1406,37 +1394,108 @@ void main() {
       expect(author, isNot(contains('throw UnimplementedError')));
     });
 
-    test('two no-required variants are ambiguous — fall back to legacy', () {
-      // Both X and Y have no required fields. Without a tag, the
-      // dispatch can't pick deterministically — return null and let
-      // the legacy stub fire.
+    test('property-presence dispatch falls back to optional-unique tags '
+        'when a sibling has no unique fields (the fallback)', () {
+      // Github's `environment.protection_rules.items` shape: three
+      // variants share `[id, node_id, type]` as required and differ
+      // only in optional fields. WaitTimer has unique optional
+      // `wait_timer`; ReviewersRule has `reviewers`; BranchPolicy has
+      // no unique fields and acts as the fallback.
       final results = renderTestSchemas(
         {
-          'XOrY': {
+          'Rule': {
             'oneOf': [
-              {r'$ref': '#/components/schemas/X'},
-              {r'$ref': '#/components/schemas/Y'},
+              {r'$ref': '#/components/schemas/WaitTimer'},
+              {r'$ref': '#/components/schemas/ReviewersRule'},
+              {r'$ref': '#/components/schemas/BranchPolicy'},
             ],
           },
-          'X': {
+          'WaitTimer': {
             'type': 'object',
+            'required': ['id', 'node_id', 'type'],
             'properties': {
-              'a': {'type': 'string'},
+              'id': {'type': 'integer'},
+              'node_id': {'type': 'string'},
+              'type': {'type': 'string'},
+              'wait_timer': {'type': 'integer'},
             },
           },
-          'Y': {
+          'ReviewersRule': {
             'type': 'object',
+            'required': ['id', 'node_id', 'type'],
             'properties': {
-              'b': {'type': 'string'},
+              'id': {'type': 'integer'},
+              'node_id': {'type': 'string'},
+              'type': {'type': 'string'},
+              'reviewers': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+          'BranchPolicy': {
+            'type': 'object',
+            'required': ['id', 'node_id', 'type'],
+            'properties': {
+              'id': {'type': 'integer'},
+              'node_id': {'type': 'string'},
+              'type': {'type': 'string'},
             },
           },
         },
         specUrl: Uri.parse('file:///spec.yaml'),
       );
+      final rule = results['Rule'];
+      expect(rule, isNotNull);
+      expect(rule, contains("if (json.containsKey('wait_timer'))"));
+      expect(rule, contains('return RuleWaitTimer(WaitTimer.fromJson'));
+      expect(rule, contains("if (json.containsKey('reviewers'))"));
+      expect(rule, contains('return RuleReviewersRule(ReviewersRule.fromJson'));
       expect(
-        results['XOrY'],
-        contains("throw UnimplementedError('XOrY.fromJson')"),
+        rule,
+        contains('return RuleBranchPolicy(BranchPolicy.fromJson(json));'),
       );
+      expect(rule, isNot(contains('throw UnimplementedError')));
+      expect(rule, isNot(contains('throw FormatException')));
+    });
+
+    test('optional-tag dispatch with no fallback uses throw at end', () {
+      // Github's `git/create-blob` 422 shape: two error variants
+      // share `[message]` as a common optional but each has its own
+      // unique optional (`url` for Basic, `metadata` for Violation).
+      // No fallback exists, so the dispatch emits a throw at the end
+      // for "neither tag present" — best-effort: github's actual
+      // responses always emit one or the other.
+      final results = renderTestSchemas(
+        {
+          'Err': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Basic'},
+              {r'$ref': '#/components/schemas/Violation'},
+            ],
+          },
+          'Basic': {
+            'type': 'object',
+            'properties': {
+              'message': {'type': 'string'},
+              'url': {'type': 'string'},
+            },
+          },
+          'Violation': {
+            'type': 'object',
+            'properties': {
+              'message': {'type': 'string'},
+              'metadata': {'type': 'string'},
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final err = results['Err'];
+      expect(err, contains("if (json.containsKey('url'))"));
+      expect(err, contains("if (json.containsKey('metadata'))"));
+      expect(err, contains('throw FormatException'));
+      expect(err, isNot(contains('throw UnimplementedError')));
     });
 
     test('oneOf with discriminator but no mapping falls through to '
