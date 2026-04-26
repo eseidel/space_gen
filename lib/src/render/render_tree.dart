@@ -1984,6 +1984,19 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// their [jsonShapeKey]s differ.
   String? get jsonShapeKey => null;
 
+  /// Schema-specific data for participating in [RenderOneOf] shape
+  /// dispatch as a variant: how the wrapper's `value` field is
+  /// typed, how it's built from the matched `v`, how it's serialized
+  /// back. Returns null when this schema can't be a dispatch variant
+  /// (e.g. unsupported shape, or — for inline pods — when the schema
+  /// owns its own newtype class). Override on subclasses; the
+  /// default returning null keeps non-participants out.
+  ///
+  /// [context] is needed so collection variants (Map, Array) can
+  /// compose their entry/element conversion expressions through the
+  /// inner schema's [fromJsonExpression] / [toJsonExpression].
+  _VariantConversion? _variantConversion(SchemaRenderer context) => null;
+
   @override
   List<Object?> get props => [snakeName, pointer];
 
@@ -2201,6 +2214,12 @@ class RenderPod extends RenderSchema {
   @override
   String? get jsonShapeKey =>
       !createsNewType && type == PodType.boolean ? 'bool' : null;
+
+  @override
+  _VariantConversion? _variantConversion(SchemaRenderer context) {
+    if (createsNewType || type != PodType.boolean) return null;
+    return _inlinePodConversion('bool', positionalBoolIgnore: true);
+  }
 
   @override
   String jsonStorageType({required bool isNullable}) {
@@ -2472,6 +2491,10 @@ class RenderString extends RenderSchema {
   String? get jsonShapeKey => createsNewType ? null : 'String';
 
   @override
+  _VariantConversion? _variantConversion(SchemaRenderer context) =>
+      createsNewType ? null : _inlinePodConversion('String');
+
+  @override
   String jsonStorageType({required bool isNullable}) =>
       isNullable ? 'String?' : 'String';
 
@@ -2728,6 +2751,10 @@ class RenderNumber extends RenderNumeric<double> {
   String? get jsonShapeKey => createsNewType ? null : 'num';
 
   @override
+  _VariantConversion? _variantConversion(SchemaRenderer context) =>
+      createsNewType ? null : _inlinePodConversion('num');
+
+  @override
   String jsonStorageType({required bool isNullable}) =>
       isNullable ? 'num?' : 'num';
 
@@ -2760,6 +2787,10 @@ class RenderInteger extends RenderNumeric<int> {
 
   @override
   String? get jsonShapeKey => createsNewType ? null : 'int';
+
+  @override
+  _VariantConversion? _variantConversion(SchemaRenderer context) =>
+      createsNewType ? null : _inlinePodConversion('int');
 
   @override
   String jsonStorageType({required bool isNullable}) =>
@@ -2796,6 +2827,10 @@ class RenderObject extends RenderNewType {
 
   @override
   String? get jsonShapeKey => 'Map<String, dynamic>';
+
+  @override
+  _VariantConversion? _variantConversion(SchemaRenderer context) =>
+      _newtypeConversion(typeName);
 
   @override
   List<Object?> get props => [
@@ -3233,6 +3268,39 @@ class RenderArray extends RenderSchema {
   @override
   String? get jsonShapeKey => 'List<dynamic>';
 
+  @override
+  _VariantConversion? _variantConversion(SchemaRenderer context) {
+    final itemTypeName = items.typeName;
+    final String fromJson;
+    if (items.createsNewType) {
+      final itemFrom = items.fromJsonExpression(
+        'e',
+        context,
+        jsonIsNullable: false,
+        dartIsNullable: false,
+      );
+      fromJson = 'v.map<$itemTypeName>((e) => $itemFrom).toList()';
+    } else {
+      fromJson = 'v.cast<$itemTypeName>()';
+    }
+    final String toJson;
+    if (items.shouldCallToJson) {
+      final itemTo = items.toJsonExpression(
+        'e',
+        context,
+        dartIsNullable: false,
+      );
+      toJson = 'value.map((e) => $itemTo).toList()';
+    } else {
+      toJson = 'value';
+    }
+    return _VariantConversion(
+      valueType: 'List<$itemTypeName>',
+      fromJson: fromJson,
+      toJson: toJson,
+    );
+  }
+
   /// The type name of this schema.
   @override
   String get typeName => 'List<${items.typeName}>';
@@ -3378,6 +3446,46 @@ class RenderMap extends RenderSchema {
 
   @override
   String? get jsonShapeKey => 'Map<String, dynamic>';
+
+  @override
+  _VariantConversion? _variantConversion(SchemaRenderer context) {
+    // When the entries are JSON-native (no key enum, no value
+    // conversion), the matched `v` is already the right shape — just
+    // store it. Otherwise walk each entry through the inner schemas'
+    // expressions. RenderMap.fromJsonExpression always casts
+    // `v as Map<String, dynamic>`, redundantly after the
+    // pattern-match, so we build the entry conversion here instead
+    // of reusing it.
+    final keyEnum = keySchema;
+    final value = valueSchema;
+    if (keyEnum == null && !value.shouldCallToJson) {
+      return _VariantConversion(
+        valueType: typeName,
+        fromJson: 'v',
+        toJson: 'value',
+      );
+    }
+    final keyFromJson = keyEnum == null
+        ? 'k'
+        : '${keyEnum.typeName}.fromJson(k)';
+    final valueFromJson = value.fromJsonExpression(
+      'val',
+      context,
+      jsonIsNullable: false,
+      dartIsNullable: false,
+    );
+    final keyToJson = keyEnum == null ? 'k' : 'k.toJson()';
+    final valueToJson = value.toJsonExpression(
+      'val',
+      context,
+      dartIsNullable: false,
+    );
+    return _VariantConversion(
+      valueType: typeName,
+      fromJson: 'v.map((k, val) => MapEntry($keyFromJson, $valueFromJson))',
+      toJson: 'value.map((k, val) => MapEntry($keyToJson, $valueToJson))',
+    );
+  }
 
   @override
   bool get shouldCallToJson =>
@@ -3539,6 +3647,10 @@ class RenderEnum extends RenderNewType {
 
   @override
   String? get jsonShapeKey => 'String';
+
+  @override
+  _VariantConversion? _variantConversion(SchemaRenderer context) =>
+      _newtypeConversion(typeName);
 
   @override
   List<Object?> get props => [
@@ -3707,130 +3819,26 @@ class RenderOneOf extends RenderNewType {
   /// Per-variant info needed to emit a dispatch arm + wrapper subclass.
   /// Returns null when [variant] isn't representable in the dispatch
   /// (unsupported shape, or runtime-type test would conflict with
-  /// another variant). Takes [context] because some variants (arrays)
-  /// compose with the items' fromJson/toJson expressions.
+  /// another variant). Takes [context] because some variants (Map,
+  /// Array) compose with their inner schemas' fromJson/toJson.
+  ///
+  /// Each variant subclass owns the conversion specifics via
+  /// [RenderSchema._variantConversion]; this method just composes the
+  /// wrapper class name (parent + tag) and shape key around it.
   _VariantPlan? _planVariant(RenderSchema variant, SchemaRenderer context) {
     final tag = variant.wrapperTag;
     if (tag == null) return null;
     final shapeKey = variant.jsonShapeKey;
     if (shapeKey == null) return null;
-    final wrapperTypeName = '$typeName$tag';
-
-    // Newtype variants (objects, enums): the wrapper holds the parsed
-    // value and forwards fromJson/toJson to the variant's own class.
-    if (variant is RenderObject || variant is RenderEnum) {
-      return _VariantPlan(
-        wrapperTypeName: wrapperTypeName,
-        valueType: variant.typeName,
-        jsonTestType: shapeKey,
-        fromJson: '${variant.typeName}.fromJson(v)',
-        toJson: 'value.toJson()',
-      );
-    }
-
-    // Map variants: the wire shape is `Map<String, dynamic>`. When the
-    // key/value schemas need conversion, walk entries through the
-    // per-entry expressions; otherwise the raw json value is already
-    // the right shape and we just store it. The fromJsonExpression
-    // built into RenderMap always casts `v as Map<String, dynamic>`,
-    // which is redundant after the pattern-match — so we build the
-    // entry conversion locally instead of reusing it.
-    if (variant is RenderMap) {
-      final keyEnum = variant.keySchema;
-      final value = variant.valueSchema;
-      final needsConversion = keyEnum != null || value.shouldCallToJson;
-      final String fromJson;
-      final String toJson;
-      if (!needsConversion) {
-        fromJson = 'v';
-        toJson = 'value';
-      } else {
-        final keyFromJson = keyEnum == null
-            ? 'k'
-            : '${keyEnum.typeName}.fromJson(k)';
-        final valueFromJson = value.fromJsonExpression(
-          'val',
-          context,
-          jsonIsNullable: false,
-          dartIsNullable: false,
-        );
-        fromJson = 'v.map((k, val) => MapEntry($keyFromJson, $valueFromJson))';
-        final keyToJson = keyEnum == null ? 'k' : 'k.toJson()';
-        final valueToJson = value.toJsonExpression(
-          'val',
-          context,
-          dartIsNullable: false,
-        );
-        toJson = 'value.map((k, val) => MapEntry($keyToJson, $valueToJson))';
-      }
-      return _VariantPlan(
-        wrapperTypeName: wrapperTypeName,
-        valueType: variant.typeName,
-        jsonTestType: shapeKey,
-        fromJson: fromJson,
-        toJson: toJson,
-      );
-    }
-
-    // Array variants: parse the raw `List<dynamic>` into a
-    // `List<itemType>` using the items' fromJsonExpression, and the
-    // reverse for toJson. wrapperTag is non-null only for inline
-    // arrays (we don't support array-newtypes yet — the README notes
-    // that as a future direction).
-    if (variant is RenderArray) {
-      final items = variant.items;
-      final itemTypeName = items.typeName;
-      final String fromJson;
-      if (items.createsNewType) {
-        final itemFrom = items.fromJsonExpression(
-          'e',
-          context,
-          jsonIsNullable: false,
-          dartIsNullable: false,
-        );
-        fromJson = 'v.map<$itemTypeName>((e) => $itemFrom).toList()';
-      } else {
-        fromJson = 'v.cast<$itemTypeName>()';
-      }
-      final String toJson;
-      if (items.shouldCallToJson) {
-        final itemTo = items.toJsonExpression(
-          'e',
-          context,
-          dartIsNullable: false,
-        );
-        toJson = 'value.map((e) => $itemTo).toList()';
-      } else {
-        toJson = 'value';
-      }
-      return _VariantPlan(
-        wrapperTypeName: wrapperTypeName,
-        valueType: 'List<$itemTypeName>',
-        jsonTestType: shapeKey,
-        fromJson: fromJson,
-        toJson: toJson,
-      );
-    }
-
-    // Inline pod variants: the wrapper just stores the raw JSON value
-    // (int / String / bool) — no parsing on either side. wrapperTag is
-    // null on the createsNewType branch, so by here we're guaranteed
-    // an inline pod.
-    final podType = switch (variant) {
-      RenderInteger() => 'int',
-      RenderNumber() => 'num',
-      RenderString() => 'String',
-      RenderPod(type: PodType.boolean) => 'bool',
-      _ => null,
-    };
-    if (podType == null) return null;
+    final conversion = variant._variantConversion(context);
+    if (conversion == null) return null;
     return _VariantPlan(
-      wrapperTypeName: wrapperTypeName,
-      valueType: podType,
+      wrapperTypeName: '$typeName$tag',
+      valueType: conversion.valueType,
       jsonTestType: shapeKey,
-      fromJson: 'v',
-      toJson: 'value',
-      positionalBoolIgnore: podType == 'bool',
+      fromJson: conversion.fromJson,
+      toJson: conversion.toJson,
+      positionalBoolIgnore: conversion.positionalBoolIgnore,
     );
   }
 
@@ -4224,6 +4232,62 @@ class _RequiredFieldArm {
   /// only by [variant]; absent from every sibling's required-set.
   final String tagField;
 }
+
+/// The schema-specific bits of a shape-dispatch wrapper: how the
+/// wrapper's `value` field is typed, how it's constructed from the
+/// pattern-matched variable `v`, and how it's serialized back. The
+/// parent ([RenderOneOf]) layers the wrapper class name and the
+/// `case T v =>` shape key around these.
+///
+/// Each [RenderSchema] subclass that participates in shape dispatch
+/// returns one of these from [RenderSchema._variantConversion]. Schemas
+/// that don't participate (newtypes that own their class, or types
+/// with no shape key) return null.
+@immutable
+class _VariantConversion {
+  const _VariantConversion({
+    required this.valueType,
+    required this.fromJson,
+    required this.toJson,
+    this.positionalBoolIgnore = false,
+  });
+
+  /// The wrapper's `value` field type.
+  final String valueType;
+
+  /// Expression building the wrapper's `value` from the
+  /// pattern-matched variable `v`.
+  final String fromJson;
+
+  /// Expression returned by the wrapper's `toJson()`. References the
+  /// wrapper's `value` field.
+  final String toJson;
+
+  /// True for `bool`-valued wrappers; see [_VariantPlan].
+  final bool positionalBoolIgnore;
+}
+
+/// Conversion for an inline-pod variant (int / num / String / bool):
+/// the wrapper just stores the matched JSON value verbatim, since
+/// pods are JSON-native on both sides.
+_VariantConversion _inlinePodConversion(
+  String dartType, {
+  bool positionalBoolIgnore = false,
+}) => _VariantConversion(
+  valueType: dartType,
+  fromJson: 'v',
+  toJson: 'value',
+  positionalBoolIgnore: positionalBoolIgnore,
+);
+
+/// Conversion for a newtype variant (RenderObject, RenderEnum,
+/// RenderEmptyObject, etc.): the wrapper holds the parsed value and
+/// forwards `fromJson`/`toJson` to the variant's own class.
+_VariantConversion _newtypeConversion(String typeName) => _VariantConversion(
+  valueType: typeName,
+  fromJson: '$typeName.fromJson(v)',
+  toJson: 'value.toJson()',
+);
 
 /// One arm of the shape-based dispatch: how a single variant in a
 /// non-discriminator [RenderOneOf] turns into a wrapper subclass and a
