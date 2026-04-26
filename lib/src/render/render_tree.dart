@@ -1190,9 +1190,9 @@ class Endpoint implements ToTemplateContext {
     final typeName = camelFromSnake('${operation.snakeName}_response');
     final sortedEntries = multiStatus.bodyByStatus.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
-    final arms = [
+    final statuses = [
       for (final entry in sortedEntries)
-        _StatusArmInfo(
+        _StatusInfo(
           statusCode: entry.key,
           wrapperTypeName: '$typeName${entry.key}',
           body: entry.value,
@@ -1200,8 +1200,8 @@ class Endpoint implements ToTemplateContext {
     ];
     return _MultiStatusContext(
       typeName: typeName,
-      wrapperClassDefs: arms.map((a) => a.wrapperClassDef()).toList(),
-      switchArms: arms.map((a) => a.switchArm(context)).toList(),
+      wrapperClassDefs: statuses.map((s) => s.wrapperClassDef()).toList(),
+      switchCases: statuses.map((s) => s.switchCase(context)).toList(),
     );
   }
 
@@ -1365,7 +1365,7 @@ class Endpoint implements ToTemplateContext {
           : {
               'typeName': multiStatusContext.typeName,
               'wrapperClassDefs': multiStatusContext.wrapperClassDefs,
-              'switchArms': multiStatusContext.switchArms,
+              'switchCases': multiStatusContext.switchCases,
             },
       'hasErrorType': hasErrorType,
       'errorType': errorType,
@@ -3956,15 +3956,15 @@ class RenderOneOf extends RenderNewType {
   }
 }
 
-/// One status-code arm of a multi-status response: the status, the
+/// One status-code entry in a multi-status response: the status, the
 /// wrapper subclass name (`<Parent>200`), and the body schema (null
-/// for empty-body statuses like 204). Owns the per-arm projection
+/// for empty-body statuses like 204). Owns the per-status projection
 /// into the two template contexts it feeds — keeps the body / no-body
 /// branch in one place per output instead of fanning out across the
 /// caller's loop.
 @immutable
-class _StatusArmInfo {
-  const _StatusArmInfo({
+final class _StatusInfo {
+  const _StatusInfo({
     required this.statusCode,
     required this.wrapperTypeName,
     required this.body,
@@ -3994,11 +3994,11 @@ class _StatusArmInfo {
 
   /// Mustache context for one `case` in the api method's
   /// `switch (response.statusCode)`.
-  Map<String, dynamic> switchArm(SchemaRenderer context) {
+  Map<String, dynamic> switchCase(SchemaRenderer context) {
     final body = this.body;
-    final String armConstruction;
+    final String construction;
     if (body == null) {
-      armConstruction = 'const $wrapperTypeName()';
+      construction = 'const $wrapperTypeName()';
     } else {
       final fromJson = body.fromJsonExpression(
         'jsonDecode(response.body)',
@@ -4006,22 +4006,22 @@ class _StatusArmInfo {
         jsonIsNullable: false,
         dartIsNullable: false,
       );
-      armConstruction = '$wrapperTypeName($fromJson)';
+      construction = '$wrapperTypeName($fromJson)';
     }
     return {
       'statusCode': statusCode,
-      'armConstruction': armConstruction,
+      'construction': construction,
     };
   }
 }
 
 /// Pre-built template context for a multi-status operation.
 @immutable
-class _MultiStatusContext {
+final class _MultiStatusContext {
   const _MultiStatusContext({
     required this.typeName,
     required this.wrapperClassDefs,
-    required this.switchArms,
+    required this.switchCases,
   });
 
   /// Synthesized sealed-class name (e.g. `ReposGetResponse`).
@@ -4035,8 +4035,8 @@ class _MultiStatusContext {
 
   /// One mustache context per `case` in the api method's
   /// `switch (response.statusCode)`. Carries `statusCode` and
-  /// `armConstruction` (the Dart expression that builds the wrapper).
-  final List<Map<String, dynamic>> switchArms;
+  /// `construction` (the Dart expression that builds the wrapper).
+  final List<Map<String, dynamic>> switchCases;
 }
 
 /// One arm of the required-field dispatch: a [RenderObject] variant
