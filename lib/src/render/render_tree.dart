@@ -1352,10 +1352,21 @@ class Endpoint implements ToTemplateContext {
       'returnType': returnType,
       'isVoidReturn': isVoidReturn,
       'responseFromJson': responseFromJson,
-      'hasMultiStatus': multiStatusContext != null,
-      'multiStatusTypeName': multiStatusContext?.typeName,
-      'multiStatusWrapperClassDefs': multiStatusContext?.wrapperClassDefs,
-      'multiStatusSwitchArms': multiStatusContext?.switchArms,
+      // Mustache treats a non-empty map as a single-iteration section
+      // that pushes the map onto the context — so
+      // `{{#multiStatus}}...{{/multiStatus}}` doubles as both the
+      // presence check and the scope opener for `typeName`,
+      // `wrapperClassDefs`, `switchArms`. The `false` sentinel (rather
+      // than null) matters for the `{{^multiStatus}}` inverse: the
+      // mustache_template package errors on null in inverse sections
+      // but treats `false` correctly as "render the inverse."
+      'multiStatus': multiStatusContext == null
+          ? false
+          : {
+              'typeName': multiStatusContext.typeName,
+              'wrapperClassDefs': multiStatusContext.wrapperClassDefs,
+              'switchArms': multiStatusContext.switchArms,
+            },
       'hasErrorType': hasErrorType,
       'errorType': errorType,
       'errorFromJson': errorFromJson,

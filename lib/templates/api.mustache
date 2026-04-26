@@ -1,7 +1,7 @@
 {{#endpoints}}
-{{#hasMultiStatus}}
+{{#multiStatus}}
 {{> _multi_status_response}}
-{{/hasMultiStatus}}
+{{/multiStatus}}
 {{/endpoints}}
 {{{ api_doc_comment }}}class {{ className }} {
     {{ className }}(ApiClient? client) : client = client ?? ApiClient();
@@ -34,23 +34,23 @@
             {{/hasErrorType}}
         }
 {{^isVoidReturn}}
-{{#hasMultiStatus}}
+{{#multiStatus}}
 
         return switch (response.statusCode) {
-{{#multiStatusSwitchArms}}
+{{#switchArms}}
             {{ statusCode }} => {{{ armConstruction }}},
-{{/multiStatusSwitchArms}}
+{{/switchArms}}
             _ => throw ApiException<Object?>.unhandled(response.statusCode),
         };
-{{/hasMultiStatus}}
-{{^hasMultiStatus}}
+{{/multiStatus}}
+{{^multiStatus}}
 
         if (response.body.isNotEmpty) {
             return {{{ responseFromJson }}};
         }
 
         throw ApiException<Object?>.unhandled(response.statusCode);
-{{/hasMultiStatus}}
+{{/multiStatus}}
 {{/isVoidReturn}}
     }
     {{/endpoints}}

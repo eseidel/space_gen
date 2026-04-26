@@ -1,11 +1,11 @@
-sealed class {{ multiStatusTypeName }} {
-    const {{ multiStatusTypeName }}();
+sealed class {{ typeName }} {
+    const {{ typeName }}();
 }
 
-{{#multiStatusWrapperClassDefs}}
+{{#wrapperClassDefs}}
 {{#hasBody}}
 @immutable
-final class {{ wrapperTypeName }} extends {{ multiStatusTypeName }} {
+final class {{ wrapperTypeName }} extends {{ typeName }} {
     const {{ wrapperTypeName }}(this.value);
 
     final {{{ valueType }}} value;
@@ -22,7 +22,7 @@ final class {{ wrapperTypeName }} extends {{ multiStatusTypeName }} {
 {{/hasBody}}
 {{^hasBody}}
 @immutable
-final class {{ wrapperTypeName }} extends {{ multiStatusTypeName }} {
+final class {{ wrapperTypeName }} extends {{ typeName }} {
     const {{ wrapperTypeName }}();
 
     @override
@@ -33,4 +33,4 @@ final class {{ wrapperTypeName }} extends {{ multiStatusTypeName }} {
 }
 {{/hasBody}}
 
-{{/multiStatusWrapperClassDefs}}
+{{/wrapperClassDefs}}
