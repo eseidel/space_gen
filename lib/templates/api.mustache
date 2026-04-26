@@ -37,9 +37,9 @@
 {{#hasMultiStatus}}
 
         return switch (response.statusCode) {
-{{#multiStatusArms}}
+{{#multiStatusSwitchArms}}
             {{ statusCode }} => {{{ armConstruction }}},
-{{/multiStatusArms}}
+{{/multiStatusSwitchArms}}
             _ => throw ApiException<Object?>.unhandled(response.statusCode),
         };
 {{/hasMultiStatus}}

@@ -2634,11 +2634,13 @@ void main() {
               pointer: JsonPointer.parse('#/bar'),
               method: Method.get,
               tags: ['foo'],
-              returnType: RenderVoid(
-                common: CommonProperties.test(
-                  snakeName: 'bar',
-                  pointer: JsonPointer.parse('#/bar'),
-                  description: 'Bar description',
+              returnShape: SingleSchemaReturn(
+                RenderVoid(
+                  common: CommonProperties.test(
+                    snakeName: 'bar',
+                    pointer: JsonPointer.parse('#/bar'),
+                    description: 'Bar description',
+                  ),
                 ),
               ),
               summary: 'Bar',
@@ -2663,7 +2665,6 @@ void main() {
               responses: <RenderResponse>[],
               rangeResponses: <RenderRangeResponse>[],
               defaultResponse: null,
-              multiStatus: null,
               securityRequirements: <ResolvedSecurityRequirement>[],
             ),
             serverUrl: Uri.parse('https://api.spacetraders.io/v2'),

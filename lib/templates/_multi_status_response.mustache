@@ -2,7 +2,7 @@ sealed class {{ multiStatusTypeName }} {
     const {{ multiStatusTypeName }}();
 }
 
-{{#multiStatusVariants}}
+{{#multiStatusWrapperClassDefs}}
 {{#hasBody}}
 @immutable
 final class {{ wrapperTypeName }} extends {{ multiStatusTypeName }} {
@@ -33,4 +33,4 @@ final class {{ wrapperTypeName }} extends {{ multiStatusTypeName }} {
 }
 {{/hasBody}}
 
-{{/multiStatusVariants}}
+{{/multiStatusWrapperClassDefs}}

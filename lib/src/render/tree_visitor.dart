@@ -93,7 +93,16 @@ class RenderTreeWalker {
     for (final parameter in operation.parameters) {
       walkParameter(parameter);
     }
-    walkSchema(operation.returnType);
+    // SingleSchemaReturn is a synthesized type (the legacy oneOf
+    // fallback or a real schema) that needs its imports collected.
+    // MultiStatusReturn's per-status bodies are already covered by the
+    // walkResponse loop above — they live on operation.responses.
+    switch (operation.returnShape) {
+      case SingleSchemaReturn(:final schema):
+        walkSchema(schema);
+      case MultiStatusReturn():
+        break;
+    }
   }
 
   void walkRequestBody(RenderRequestBody requestBody) {
