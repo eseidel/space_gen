@@ -853,6 +853,74 @@ void main() {
       expect(result, isNot(contains('throw UnimplementedError')));
     });
 
+    test('oneOf with [map, string] uses shape dispatch', () {
+      // `type: object, additionalProperties: true` resolves to a
+      // RenderMap (any-key string-to-dynamic map), not a RenderObject
+      // newtype. Github's `deployment.payload` is the canonical site
+      // — `oneOf: [<map>, string]`.
+      final schema = {
+        'oneOf': [
+          {'type': 'object', 'additionalProperties': true},
+          {'type': 'string'},
+        ],
+      };
+      final result = renderTestSchema(schema);
+      expect(result, contains('Map<String, dynamic> v => TestMap(v)'));
+      expect(result, contains('String v => TestString(v)'));
+      expect(result, contains('final Map<String, dynamic> value;'));
+      // No per-entry conversion when the value type is dynamic.
+      expect(result, contains('dynamic toJson() => value;'));
+      expect(result, isNot(contains('throw UnimplementedError')));
+    });
+
+    test('typed map variant walks each entry through fromJson/toJson', () {
+      // Map with a non-trivial value schema. The wrapper must convert
+      // each entry on fromJson and reverse on toJson.
+      final results = renderTestSchemas(
+        {
+          'Wrapper': {
+            'oneOf': [
+              {
+                'type': 'object',
+                'additionalProperties': {r'$ref': '#/components/schemas/Tag'},
+              },
+              {'type': 'string'},
+            ],
+          },
+          'Tag': {
+            'type': 'string',
+            'minLength': 1,
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final wrapper = results['Wrapper'];
+      expect(wrapper, isNotNull);
+      expect(wrapper, contains('Map<String, dynamic> v => WrapperMap'));
+      // Each entry's value is parsed through Tag.fromJson.
+      expect(wrapper, contains('Tag.fromJson(val'));
+      expect(wrapper, contains('MapEntry'));
+    });
+
+    test('two map variants do not shape-dispatch (key collision)', () {
+      // Both map variants share `Map<String, dynamic>` as their shape
+      // key — `_canShapeDispatch`'s key-uniqueness gate must reject
+      // the dispatch and fall back to the legacy stub. Without the
+      // gate, the second map wrapper would shadow the first at
+      // runtime.
+      final schema = {
+        'oneOf': [
+          {'type': 'object', 'additionalProperties': true},
+          {
+            'type': 'object',
+            'additionalProperties': {'type': 'string'},
+          },
+        ],
+      };
+      final result = renderTestSchema(schema);
+      expect(result, contains('throw UnimplementedError'));
+    });
+
     test('number newtype does not participate in shape dispatch', () {
       // A `number` schema with validations becomes a newtype (its own
       // class), and `wrapperTag` / `jsonShapeKey` deliberately gate on
