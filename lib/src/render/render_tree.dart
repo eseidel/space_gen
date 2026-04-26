@@ -1188,46 +1188,20 @@ class Endpoint implements ToTemplateContext {
     SchemaRenderer context,
   ) {
     final typeName = camelFromSnake('${operation.snakeName}_response');
-    final entries = multiStatus.bodyByStatus.entries.toList()
+    final sortedEntries = multiStatus.bodyByStatus.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
-    final wrapperClassDefs = <Map<String, dynamic>>[];
-    final switchArms = <Map<String, dynamic>>[];
-    for (final entry in entries) {
-      final statusCode = entry.key;
-      final body = entry.value;
-      final wrapperTypeName = '$typeName$statusCode';
-      if (body == null) {
-        wrapperClassDefs.add({
-          'wrapperTypeName': wrapperTypeName,
-          'statusCode': statusCode,
-          'hasBody': false,
-        });
-        switchArms.add({
-          'statusCode': statusCode,
-          'armConstruction': 'const $wrapperTypeName()',
-        });
-      } else {
-        final fromJson = body.fromJsonExpression(
-          'jsonDecode(response.body)',
-          context,
-          jsonIsNullable: false,
-          dartIsNullable: false,
-        );
-        wrapperClassDefs.add({
-          'wrapperTypeName': wrapperTypeName,
-          'valueType': body.typeName,
-          'hasBody': true,
-        });
-        switchArms.add({
-          'statusCode': statusCode,
-          'armConstruction': '$wrapperTypeName($fromJson)',
-        });
-      }
-    }
+    final arms = [
+      for (final entry in sortedEntries)
+        _StatusArmInfo(
+          statusCode: entry.key,
+          wrapperTypeName: '$typeName${entry.key}',
+          body: entry.value,
+        ),
+    ];
     return _MultiStatusContext(
       typeName: typeName,
-      wrapperClassDefs: wrapperClassDefs,
-      switchArms: switchArms,
+      wrapperClassDefs: arms.map((a) => a.wrapperClassDef()).toList(),
+      switchArms: arms.map((a) => a.switchArm(context)).toList(),
     );
   }
 
@@ -3968,6 +3942,65 @@ class RenderOneOf extends RenderNewType {
     // don't compile. Restoring real coverage requires real
     // discriminator-aware subclass emission (#99).
     return null;
+  }
+}
+
+/// One status-code arm of a multi-status response: the status, the
+/// wrapper subclass name (`<Parent>200`), and the body schema (null
+/// for empty-body statuses like 204). Owns the per-arm projection
+/// into the two template contexts it feeds — keeps the body / no-body
+/// branch in one place per output instead of fanning out across the
+/// caller's loop.
+@immutable
+class _StatusArmInfo {
+  const _StatusArmInfo({
+    required this.statusCode,
+    required this.wrapperTypeName,
+    required this.body,
+  });
+
+  final int statusCode;
+  final String wrapperTypeName;
+  final RenderSchema? body;
+
+  /// Mustache context for the wrapper class definition emitted by the
+  /// `_multi_status_response` partial.
+  Map<String, dynamic> wrapperClassDef() {
+    final body = this.body;
+    if (body == null) {
+      return {
+        'wrapperTypeName': wrapperTypeName,
+        'statusCode': statusCode,
+        'hasBody': false,
+      };
+    }
+    return {
+      'wrapperTypeName': wrapperTypeName,
+      'valueType': body.typeName,
+      'hasBody': true,
+    };
+  }
+
+  /// Mustache context for one `case` in the api method's
+  /// `switch (response.statusCode)`.
+  Map<String, dynamic> switchArm(SchemaRenderer context) {
+    final body = this.body;
+    final String armConstruction;
+    if (body == null) {
+      armConstruction = 'const $wrapperTypeName()';
+    } else {
+      final fromJson = body.fromJsonExpression(
+        'jsonDecode(response.body)',
+        context,
+        jsonIsNullable: false,
+        dartIsNullable: false,
+      );
+      armConstruction = '$wrapperTypeName($fromJson)';
+    }
+    return {
+      'statusCode': statusCode,
+      'armConstruction': armConstruction,
+    };
   }
 }
 
