@@ -1188,8 +1188,8 @@ class Endpoint implements ToTemplateContext {
   /// Build the per-status sealed-class context for a multi-status
   /// operation. The synthesized class name follows the same
   /// `<snake>_response` convention (where `<snake>` is the operation's
-  /// snake name) that the legacy oneOf path used, so existing regen
-  /// diffs only show the dispatch change, not a rename.
+  /// snake name) that the legacy oneOf path used, so existing
+  /// regenerated output only shows the dispatch change, not a rename.
   ///
   /// Sorted-by-status iteration matters for output stability — the
   /// underlying map is unordered.
