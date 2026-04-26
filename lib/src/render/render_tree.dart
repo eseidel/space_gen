@@ -3950,23 +3950,33 @@ class RenderOneOf extends RenderNewType {
     return plans;
   }
 
-  /// Required-field dispatch: every variant is a [RenderObject], and
-  /// every variant either (a) has at least one required property that
-  /// no other variant requires, or (b) has no required properties at
-  /// all and is the dispatch's fallback. At most one fallback is
-  /// allowed; with two the dispatch would be ambiguous.
+  /// Property-presence dispatch on object-shaped variants: each
+  /// variant is keyed off the presence of a property unique to it
+  /// across the oneOf. "Unique" means *not present in any sibling's
+  /// property set* — required or optional. A required-unique tag is
+  /// always emitted in valid JSON for that variant (safe); an
+  /// optional-unique tag is best-effort but still works for typical
+  /// real-world responses where servers emit the distinguishing
+  /// optional (e.g. github's `validation-error` reliably emits
+  /// `errors`, `repository-rule-violation-error` reliably emits
+  /// `metadata`). A variant with no unique props at all is the
+  /// dispatch's fallback; at most one is allowed.
   ///
   /// Useful for (object, object) oneOfs without a discriminator —
   /// github has ~9 such sites with disjoint required-sets (e.g.
-  /// `simple-user` requires `login`, `enterprise` requires `slug`)
-  /// plus a handful where one variant is empty (`commit.author` is
+  /// `simple-user` requires `login`, `enterprise` requires `slug`),
+  /// a handful where one variant is empty (`commit.author` is
   /// `[simple-user, empty-object]`, the `interactions` 200 responses
-  /// are `[interaction-limit-response, <empty>]`).
+  /// are `[interaction-limit-response, <empty>]`), plus
+  /// `environment.protection_rules.items` (three variants share
+  /// `[id, node_id, type]` as required and differ by unique
+  /// optionals) and `git/create-blob` 422
+  /// (`[validation-error, repository-rule-violation-error]`,
+  /// distinguished by `errors` vs `metadata`).
   ///
   /// Returns one [_RequiredFieldArm] per variant in [schemas] order,
-  /// or null if no fallback fits and any variant lacks a uniquely-
-  /// required property — in which case dispatch falls through to the
-  /// legacy stub.
+  /// or null if the dispatch can't be made unambiguous — in which
+  /// case dispatch falls through to the legacy stub.
   List<_RequiredFieldArm>? get _requiredFieldDispatchArms {
     // Object-shaped variants only (RenderObject for normal objects,
     // RenderEmptyObject for `{}`-shaped fallbacks).
@@ -3976,32 +3986,44 @@ class RenderOneOf extends RenderNewType {
     final objects = schemas.cast<RenderNewType>();
     Set<String> requiredOf(RenderNewType o) =>
         o is RenderObject ? o.requiredProperties.toSet() : const <String>{};
+    Set<String> propsOf(RenderNewType o) =>
+        o is RenderObject ? o.properties.keys.toSet() : const <String>{};
     final allRequired = objects.map(requiredOf).toList();
+    final allProps = objects.map(propsOf).toList();
     final arms = <_RequiredFieldArm>[];
     var fallbackCount = 0;
     for (var i = 0; i < objects.length; i++) {
-      final mine = allRequired[i];
-      final others = <String>{};
-      for (var j = 0; j < allRequired.length; j++) {
-        if (i != j) others.addAll(allRequired[j]);
+      final mineReq = allRequired[i];
+      final mineProps = allProps[i];
+      final othersProps = <String>{};
+      for (var j = 0; j < allProps.length; j++) {
+        if (i == j) continue;
+        othersProps.addAll(allProps[j]);
       }
-      final unique = mine.difference(others);
-      if (unique.isEmpty) {
-        // A variant with no required fields at all is a legitimate
-        // catch-all — use it as the fallback. A variant with required
-        // fields that are all shared with siblings is ambiguous, so
-        // bail.
-        if (mine.isNotEmpty) return null;
+      // Strict uniqueness — fields no sibling lists as a property.
+      // Prefer a required-unique tag (always present in valid JSON
+      // for this variant); fall back to any unique prop. Required-
+      // unique includes spec-quirky required fields that aren't in
+      // the variant's own `properties` map (e.g. github's
+      // `checks/create-request` lists `conclusion` as required but
+      // doesn't define it as a property).
+      final uniqueRequired = mineReq.difference(othersProps);
+      final uniqueProps = mineProps.difference(othersProps);
+      final candidates = uniqueRequired.isNotEmpty
+          ? uniqueRequired
+          : uniqueProps;
+      if (candidates.isEmpty) {
+        // No unique anything — this variant is the fallback. At most
+        // one fallback per dispatch; with two the dispatch would be
+        // ambiguous.
         fallbackCount++;
         if (fallbackCount > 1) return null;
         arms.add(_RequiredFieldArm(variant: objects[i], tagField: null));
         continue;
       }
-      // Pick the lexicographically-first unique field for stable output.
-      final tagField = (unique.toList()..sort()).first;
-      arms.add(
-        _RequiredFieldArm(variant: objects[i], tagField: tagField),
-      );
+      // Lex-first for stable output.
+      final tag = (candidates.toList()..sort()).first;
+      arms.add(_RequiredFieldArm(variant: objects[i], tagField: tag));
     }
     return arms;
   }
