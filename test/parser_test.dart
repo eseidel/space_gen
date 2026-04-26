@@ -378,6 +378,92 @@ void main() {
       expect(oneOf.discriminator, isNull);
     });
 
+    test('object with required-only oneOf constraint parses as object', () {
+      // Github's `pulls/request-reviewers` request body shape: a
+      // single object with two optional list properties, plus an
+      // anyOf saying "exactly one of `reviewers` or `team_reviewers`
+      // must be present". The constraint is a runtime-only thing
+      // (clients enforce it; servers should send valid responses) —
+      // the right Dart shape is the object, not a polymorphic wrapper.
+      final json = {
+        'type': 'object',
+        'properties': {
+          'reviewers': {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+          'team_reviewers': {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+        },
+        'anyOf': [
+          {
+            'required': ['reviewers'],
+          },
+          {
+            'required': ['team_reviewers'],
+          },
+        ],
+      };
+      final schema = parseTestSchema(json);
+      expect(schema, isA<SchemaObject>());
+      final obj = schema as SchemaObject;
+      expect(obj.properties.keys, ['reviewers', 'team_reviewers']);
+    });
+
+    test('oneOf with required-only constraint variants is also an object', () {
+      // Same shape as the anyOf case above, with `oneOf` instead of
+      // `anyOf` — the github `code-scanning/create-variant-analysis`
+      // request body. Either constraint kind drops out at parse time.
+      final json = {
+        'type': 'object',
+        'properties': {
+          'a': {'type': 'string'},
+          'b': {'type': 'string'},
+          'c': {'type': 'string'},
+        },
+        'required': ['a'],
+        'oneOf': [
+          {
+            'required': ['b'],
+          },
+          {
+            'required': ['c'],
+          },
+        ],
+      };
+      final schema = parseTestSchema(json);
+      expect(schema, isA<SchemaObject>());
+      final obj = schema as SchemaObject;
+      expect(obj.properties.keys, ['a', 'b', 'c']);
+      expect(obj.requiredProperties, ['a']);
+    });
+
+    test('oneOf with a real polymorphic variant stays a oneOf', () {
+      // A oneOf where any variant brings its own shape (here, a
+      // `type: string` variant) is a real polymorphic schema — the
+      // constraint-only short-circuit must not fire. The
+      // `required: [x]` sibling has no other keys and triggers
+      // `_warnUnused` during normal parse, which needs a logger
+      // scope.
+      final json = {
+        'type': 'object',
+        'properties': {
+          'x': {'type': 'string'},
+        },
+        'oneOf': [
+          {'type': 'string'},
+          {
+            'required': ['x'],
+          },
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(logger, () => parseTestSchema(json));
+      expect(schema, isA<SchemaOneOf>());
+    });
+
     test('components schemas as ref not supported', () {
       // Refs are generally fine.
       final json = {

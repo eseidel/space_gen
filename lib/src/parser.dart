@@ -367,6 +367,9 @@ Schema? _handleCollectionTypes(
   required CommonProperties common,
 }) {
   if (json.containsKey('oneOf')) {
+    if (_isConstraintOnlyCollection(json, 'oneOf')) {
+      return null;
+    }
     final oneOf = json.childAsList('oneOf');
     final schemas = <SchemaRef>[];
     for (var i = 0; i < oneOf.length; i++) {
@@ -394,6 +397,9 @@ Schema? _handleCollectionTypes(
   }
 
   if (json.containsKey('anyOf')) {
+    if (_isConstraintOnlyCollection(json, 'anyOf')) {
+      return null;
+    }
     final anyOf = json.childAsList('anyOf');
     final schemas = <SchemaRef>[];
     for (var i = 0; i < anyOf.length; i++) {
@@ -404,6 +410,43 @@ Schema? _handleCollectionTypes(
     return SchemaAnyOf(common: common, schemas: schemas);
   }
   return null;
+}
+
+/// Returns true when [json] declares its own object shape (type:object
+/// + non-empty properties) AND every entry of the [collectionKey]
+/// (oneOf/anyOf) is a "required-only" constraint — a map containing
+/// nothing but a `required` list. Github uses this OpenAPI shape to
+/// say "exactly one of these properties must be present" (e.g.
+/// `pulls/request-reviewers` requires either `reviewers` or
+/// `team_reviewers`); the parent already names the properties, so the
+/// right Dart shape is a single object with all of them, and the
+/// oneOf is a runtime constraint we don't carry into the type system.
+///
+/// When this matches we return null from [_handleCollectionTypes] so
+/// the outer parse falls through to normal object parsing — the
+/// oneOf/anyOf becomes "ignored" (each variant's `required` already
+/// surfaces in the verbose log via `_warnUnused`).
+bool _isConstraintOnlyCollection(MapContext json, String collectionKey) {
+  // The parent must declare its own object shape — explicit
+  // `type: object` (or a list type containing `'object'`) and a
+  // non-empty `properties` map.
+  final type = json['type'];
+  final hasObjectType =
+      type == 'object' || (type is List && type.contains('object'));
+  if (!hasObjectType) return false;
+  final properties = json['properties'];
+  if (properties is! Map || properties.isEmpty) return false;
+  // Every variant must contain only `required` (and no other keys —
+  // no type, properties, oneOf, etc.). A variant that brings its own
+  // shape is a real polymorphic branch; only `required: [...]` is a
+  // constraint.
+  final list = json[collectionKey];
+  if (list is! List) return false;
+  for (final variant in list) {
+    if (variant is! Map) return false;
+    if (variant.length != 1 || !variant.containsKey('required')) return false;
+  }
+  return true;
 }
 
 SchemaRef? _handleAdditionalProperties(MapContext parent) {
