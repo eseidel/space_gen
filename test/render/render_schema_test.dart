@@ -1561,6 +1561,63 @@ void main() {
       expect(err, isNot(contains('throw UnimplementedError')));
     });
 
+    test('required-tag uniqueness on the pure path is strict — a sibling '
+        'that lists the tag as optional disqualifies it', () {
+      // Github's `git/create-blob` 422 shape: a `validation-error`
+      // requires `[documentation_url, message]`; a
+      // `repository-rule-violation-error` lists those as optional
+      // (and emits them in real responses). Loose required-uniqueness
+      // would tag validation on `documentation_url` and misclassify
+      // every violation response. The pure required-field path keeps
+      // strict uniqueness — falls through to optional-strict, which
+      // tags on `errors` (only validation has it) and `metadata`
+      // (only violation has it).
+      final results = renderTestSchemas(
+        {
+          'Err': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Validation'},
+              {r'$ref': '#/components/schemas/Violation'},
+            ],
+          },
+          'Validation': {
+            'type': 'object',
+            'required': ['documentation_url', 'message'],
+            'properties': {
+              'documentation_url': {'type': 'string'},
+              'message': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+          'Violation': {
+            'type': 'object',
+            'properties': {
+              'documentation_url': {'type': 'string'},
+              'message': {'type': 'string'},
+              'metadata': {'type': 'string'},
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final err = results['Err'];
+      // Strict-required failed (documentation_url is in violation's
+      // props), so the dispatch falls through to strict-optional:
+      // `errors` for validation, `metadata` for violation.
+      expect(err, contains("if (json.containsKey('errors'))"));
+      expect(err, contains("if (json.containsKey('metadata'))"));
+      // The forbidden loose dispatch tag — a violation response that
+      // emits `documentation_url` (which github does) would
+      // misclassify as validation if this fired.
+      expect(
+        err,
+        isNot(contains("if (json.containsKey('documentation_url'))")),
+      );
+    });
+
     test('oneOf with discriminator but no mapping falls through to '
         'shape dispatch (implicit-mapping not yet supported)', () {
       // No `mapping` key — discriminator-dispatch needs the explicit

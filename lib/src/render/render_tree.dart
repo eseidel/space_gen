@@ -3984,9 +3984,24 @@ class RenderOneOf extends RenderNewType {
   /// an arbitrary subset of variants — used by the hybrid path below
   /// to dispatch the Map-shaped variants when the shape arm sees a
   /// `Map<String, dynamic>` collision.
+  ///
+  /// [looseRequiredUniqueness] relaxes the required-tag uniqueness
+  /// check to "no sibling *requires* it" instead of "no sibling
+  /// lists it as a property at all". The looser check lets the
+  /// hybrid path dispatch when a sibling spuriously lists the tag
+  /// as optional (github's `repos/get-content` shape — `content-file`
+  /// declares `target` and `submodule_git_url` optional even though
+  /// the server never emits them for files). It's NOT safe for the
+  /// pure required-field path: a real-world example is
+  /// `git/create-blob` 422, where every error variant emits
+  /// `documentation_url` even though only the validation error
+  /// requires it — loose would tag validation on `documentation_url`
+  /// and misclassify rule-violation responses. Strict is the default;
+  /// the hybrid caller opts in.
   static List<_RequiredFieldArm>? _requiredFieldArmsFor(
-    List<RenderSchema> variants,
-  ) {
+    List<RenderSchema> variants, {
+    bool looseRequiredUniqueness = false,
+  }) {
     // Object-shaped variants only (RenderObject for normal objects,
     // RenderEmptyObject for `{}`-shaped fallbacks).
     if (!variants.every((s) => s is RenderObject || s is RenderEmptyObject)) {
@@ -4011,20 +4026,17 @@ class RenderOneOf extends RenderNewType {
         othersReq.addAll(allRequired[j]);
         othersProps.addAll(allProps[j]);
       }
-      // Required-unique uses LOOSE uniqueness (no sibling *requires*
-      // it). A sibling that merely lists the field as optional is OK
-      // to share — github's `repos/get-content` is the canonical
-      // example: `content-file` has `target` and `submodule_git_url`
-      // as optional fields, but `content-symlink` and
-      // `content-submodule` still safely tag on those because the
-      // tag is *required* on the right variant and only optional on
-      // the wrong one.
-      //
-      // Optional-unique uses STRICT uniqueness (no sibling lists it
-      // at all): a variant's optional tag might or might not be
-      // emitted in valid JSON, so we want zero risk of cross-match
-      // from another variant that also defines the field.
-      final uniqueRequired = mineReq.difference(othersReq);
+      // Required-unique: STRICT by default — fields no sibling
+      // lists at all (so no risk that a sibling's optional copy
+      // crosses with the tag). Hybrid callers flip to LOOSE
+      // (`mineReq - othersReq`) to accept benign optional-overlap
+      // cases like `repos/get-content` — see the doc on this
+      // function. Optional-unique always uses STRICT: an optional
+      // tag might or might not be emitted, so we want zero risk
+      // of cross-match.
+      final uniqueRequired = mineReq.difference(
+        looseRequiredUniqueness ? othersReq : othersProps,
+      );
       final uniqueProps = mineProps.difference(othersProps);
       final candidates = uniqueRequired.isNotEmpty
           ? uniqueRequired
@@ -4084,7 +4096,13 @@ class RenderOneOf extends RenderNewType {
       if (entry.value.length > 1) return null;
     }
     // The Map variants must themselves be required-field dispatchable.
-    final mapArms = _requiredFieldArmsFor(mapShape);
+    // Use loose uniqueness on the required-tag check — a sibling's
+    // optional overlap with the tag is benign here because the tag
+    // is required on the right variant; see [_requiredFieldArmsFor].
+    final mapArms = _requiredFieldArmsFor(
+      mapShape,
+      looseRequiredUniqueness: true,
+    );
     if (mapArms == null) return null;
     // Build the non-Map shape arms reusing the existing per-variant
     // planner.
@@ -4124,7 +4142,11 @@ class RenderOneOf extends RenderNewType {
     final mapVariants = schemas.where(
       (s) => s.jsonShapeKey == 'Map<String, dynamic>',
     );
-    return _requiredFieldArmsFor(mapVariants.toList()) != null;
+    return _requiredFieldArmsFor(
+          mapVariants.toList(),
+          looseRequiredUniqueness: true,
+        ) !=
+        null;
   }
 
   bool get _hasDispatch =>
