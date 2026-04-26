@@ -837,8 +837,8 @@ void main() {
     test('oneOf with [string, boolean] uses shape dispatch', () {
       // Pins the `RenderPod(type: PodType.boolean) => 'bool'` arm of
       // `_planVariant` — the only path that exercises it from a unit
-      // test. (Github's Metadata1 anyOf hits it end-to-end, but that
-      // is regen coverage, not test coverage.)
+      // test. (Github's Metadata1 anyOf hits it end-to-end via a full
+      // generator run, but that is not unit-test coverage.)
       final schema = {
         'oneOf': [
           {'type': 'string'},
