@@ -1766,6 +1766,11 @@ void main() {
       },
     );
     test('multiple responses with different content', () async {
+      // Multi-status responses are operation-level, not schema-level —
+      // the sealed wrapper is emitted inline in the api file rather
+      // than carved into its own `users_response.dart`. See the
+      // matching render_operation_test.dart cases for the emitted
+      // dispatch shape.
       final spec = {
         'openapi': '3.1.0',
         'info': {'title': 'Space Traders API', 'version': '1.0.0'},
@@ -1801,11 +1806,14 @@ void main() {
       final out = fs.directory('spacetraders');
 
       await renderToDirectory(spec: spec, outDir: out);
-      expect(out.childFile('lib/api/default_api.dart'), exists);
-      expect(
-        out,
-        hasGeneratedSchemaFiles(['users_response.dart']),
-      );
+      final apiFile = out.childFile('lib/api/default_api.dart');
+      expect(apiFile, exists);
+      final apiContents = apiFile.readAsStringSync();
+      expect(apiContents, contains('sealed class UsersResponse {'));
+      expect(apiContents, contains('final class UsersResponse200'));
+      expect(apiContents, contains('final class UsersResponse201'));
+      expect(apiContents, contains('switch (response.statusCode)'));
+      expect(out.childFile('lib/models/users_response.dart'), isNot(exists));
     });
     test('empty object creates new file', () async {
       final spec = {
@@ -2626,11 +2634,13 @@ void main() {
               pointer: JsonPointer.parse('#/bar'),
               method: Method.get,
               tags: ['foo'],
-              returnType: RenderVoid(
-                common: CommonProperties.test(
-                  snakeName: 'bar',
-                  pointer: JsonPointer.parse('#/bar'),
-                  description: 'Bar description',
+              returnShape: SingleSchemaReturn(
+                RenderVoid(
+                  common: CommonProperties.test(
+                    snakeName: 'bar',
+                    pointer: JsonPointer.parse('#/bar'),
+                    description: 'Bar description',
+                  ),
                 ),
               ),
               summary: 'Bar',

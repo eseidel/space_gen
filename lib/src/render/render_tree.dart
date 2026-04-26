@@ -539,39 +539,58 @@ class SpecResolver {
     }
   }
 
-  RenderSchema _determineReturnType(ResolvedOperation operation) {
+  OperationReturn _determineReturnShape(ResolvedOperation operation) {
     // Figure out how many different successful responses there are.
     // Successful = explicit 2xx codes plus the `2XX` range if declared.
+    final explicit2xx = operation.responses
+        .where((e) => e.statusCode >= 200 && e.statusCode < 300)
+        .toList();
+    final successfulRange = operation.rangeResponses
+        .where((e) => e.range == StatusCodeRange.success)
+        .toList();
     final successfulContent = [
-      ...operation.responses
-          .where((e) => e.statusCode >= 200 && e.statusCode < 300)
-          .map((e) => e.content),
-      ...operation.rangeResponses
-          .where((e) => e.range == StatusCodeRange.success)
-          .map((e) => e.content),
+      ...explicit2xx.map((e) => e.content),
+      ...successfulRange.map((e) => e.content),
     ];
     if (successfulContent.isEmpty) {
-      return RenderVoid(
-        common: CommonProperties.empty(
-          snakeName: '${operation.snakeName}_response',
-          pointer: operation.pointer,
+      return SingleSchemaReturn(
+        RenderVoid(
+          common: CommonProperties.empty(
+            snakeName: '${operation.snakeName}_response',
+            pointer: operation.pointer,
+          ),
         ),
       );
     }
     if (successfulContent.length == 1) {
-      return toRenderSchema(successfulContent.first);
+      return SingleSchemaReturn(toRenderSchema(successfulContent.first));
     }
     final renderSchemas = successfulContent.map(toRenderSchema).toList();
-    // We don't implement hashCode/equals but rather equalsIgnoringName
+    // We don't implement hashCode/equals but rather equalsIgnoringName.
     final distinctSchemas = <RenderSchema>{};
     for (final schema in renderSchemas) {
       if (!distinctSchemas.any((e) => e.equalsIgnoringName(schema))) {
         distinctSchemas.add(schema);
       }
     }
-    // If there are multiple and they are different, generate a OneOf type.
-    if (distinctSchemas.length > 1) {
-      return RenderOneOf(
+    if (distinctSchemas.length == 1) {
+      return SingleSchemaReturn(distinctSchemas.first);
+    }
+    // Multiple distinct success bodies. Status-code dispatch only kicks
+    // in when every response has an explicit status code (no `2XX`
+    // range): the wrapper subclasses are named per code (`Foo200`,
+    // `Foo201`), and a range can't be enumerated. Range-mixed cases
+    // fall through to the legacy oneOf path for now.
+    if (successfulRange.isEmpty) {
+      return MultiStatusReturn(
+        responses: {
+          for (final response in explicit2xx)
+            response.statusCode: toRenderResponse(response),
+        },
+      );
+    }
+    return SingleSchemaReturn(
+      RenderOneOf(
         // TODO(eseidel): Should this pass along description?
         common: CommonProperties.empty(
           snakeName: '${operation.snakeName}_response',
@@ -579,9 +598,8 @@ class SpecResolver {
         ),
         schemas: distinctSchemas.toList(),
         discriminator: null,
-      );
-    }
-    return distinctSchemas.first;
+      ),
+    );
   }
 
   RenderRangeResponse toRenderRangeResponse(ResolvedRangeResponse response) {
@@ -594,7 +612,6 @@ class SpecResolver {
   }
 
   RenderOperation toRenderOperation(ResolvedOperation operation) {
-    final returnType = _determineReturnType(operation);
     final resolvedDefault = operation.defaultResponse;
     final defaultResponse = resolvedDefault == null
         ? null
@@ -618,7 +635,7 @@ class SpecResolver {
           .toList(),
       defaultResponse: defaultResponse,
       requestBody: toRenderRequestBody(operation.requestBody),
-      returnType: returnType,
+      returnShape: _determineReturnShape(operation),
       securityRequirements: operation.securityRequirements,
     );
   }
@@ -1156,6 +1173,44 @@ class Endpoint implements ToTemplateContext {
     return '${indent}multipartFiles.add($constructor);';
   }
 
+  /// Build the per-status sealed-class context for a multi-status
+  /// operation. The synthesized class name follows the same
+  /// `<snake>_response` convention (where `<snake>` is the operation's
+  /// snake name) that the legacy oneOf path used, so existing
+  /// regenerated output only shows the dispatch change, not a rename.
+  ///
+  /// Sorting on the status code guarantees `200` ahead of `204` in
+  /// the emitted switch regardless of spec ordering.
+  ///
+  /// Synthesized typeName can collide with a schema in the spec named
+  /// `<op>_response`. Not handled here — that's the job of a future
+  /// resolve-stage collision pass that accounts for generated names.
+  _MultiStatusContext _buildMultiStatusContext(
+    MultiStatusReturn multiStatus,
+    SchemaRenderer context,
+  ) {
+    final typeName = camelFromSnake('${operation.snakeName}_response');
+    final sortedEntries = multiStatus.responses.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final statuses = [
+      for (final entry in sortedEntries)
+        _StatusInfo(
+          statusCode: entry.key,
+          wrapperTypeName: '$typeName${entry.key}',
+          // RenderVoid means the response has no body — null in
+          // [_StatusInfo.body] signals the wrapper for that status
+          // carries no `value` field.
+          body: entry.value.content is RenderVoid ? null : entry.value.content,
+          contentType: entry.value.contentType,
+        ),
+    ];
+    return _MultiStatusContext(
+      typeName: typeName,
+      wrapperClassDefs: statuses.map((s) => s.wrapperClassDef()).toList(),
+      switchCases: statuses.map((s) => s.switchCase(context)).toList(),
+    );
+  }
+
   @override
   Map<String, dynamic> toTemplateContext(
     SchemaRenderer context, {
@@ -1165,26 +1220,45 @@ class Endpoint implements ToTemplateContext {
     // body if it exists.
     final dartParameters = <CanBeParameter>[...parameters, ?requestBody];
 
-    final responseSchema = operation.returnType;
-    final returnType = responseSchema.typeName;
-    final isVoidReturn = responseSchema is RenderVoid;
-    // When the success response advertises a non-JSON content type
-    // (text/plain, text/html, application/octocat-stream, …) the wire
-    // body is NOT JSON. Skip `jsonDecode`: `package:http`'s
-    // `Response.body` is already a `String`, which matches the
-    // `type: string` schema such responses use in practice. github's
-    // `/zen`, `/octocat`, `/markdown`, `/markdown/raw` all live here.
-    final successContentType = operation.successContentType;
-    final isJsonResponse =
-        successContentType == null || successContentType == 'application/json';
-    final responseFromJson = isJsonResponse
-        ? responseSchema.fromJsonExpression(
-            'jsonDecode(response.body)',
-            context,
-            jsonIsNullable: false,
-            dartIsNullable: false,
-          )
-        : 'response.body';
+    // Pattern-match on the operation's return shape: single schema
+    // (the legacy / non-multi-status path) or multi-status (synthesize
+    // a sealed class inline in the api file and dispatch on
+    // `response.statusCode` in the method body). The sealed wrapper
+    // lives in the api file rather than the schema graph because
+    // status-code multiplexing is operation-level — the dispatch key
+    // is the HTTP status, not anything in the JSON body.
+    final returnShape = operation.returnShape;
+    final String returnType;
+    final bool isVoidReturn;
+    final String? responseFromJson;
+    final _MultiStatusContext? multiStatusContext;
+    switch (returnShape) {
+      case SingleSchemaReturn(:final schema):
+        multiStatusContext = null;
+        returnType = schema.typeName;
+        isVoidReturn = schema is RenderVoid;
+        // When the success response advertises a non-JSON content
+        // type, `_responseBodySource` returns the raw `response.body`
+        // string instead of the `jsonDecode(...)` expression — keeps
+        // github's `/zen`, `/octocat`, `/markdown`, `/markdown/raw`
+        // (text/plain) emitting clean Dart. The non-JSON path then
+        // falls back to the raw body without going through
+        // `fromJsonExpression`, since that expects JSON-shaped input.
+        final source = _responseBodySource(operation.successContentType);
+        responseFromJson = source == 'response.body'
+            ? source
+            : schema.fromJsonExpression(
+                source,
+                context,
+                jsonIsNullable: false,
+                dartIsNullable: false,
+              );
+      case MultiStatusReturn():
+        multiStatusContext = _buildMultiStatusContext(returnShape, context);
+        returnType = multiStatusContext.typeName;
+        isVoidReturn = false;
+        responseFromJson = null;
+    }
 
     // Collect error-body schemas from `default:`, `4XX:`, and `5XX:` and
     // deduplicate by structural equality. When they all resolve to the same
@@ -1282,6 +1356,21 @@ class Endpoint implements ToTemplateContext {
       'returnType': returnType,
       'isVoidReturn': isVoidReturn,
       'responseFromJson': responseFromJson,
+      // Mustache treats a non-empty map as a single-iteration section
+      // that pushes the map onto the context — so
+      // `{{#multiStatus}}...{{/multiStatus}}` doubles as both the
+      // presence check and the scope opener for `typeName`,
+      // `wrapperClassDefs`, `switchArms`. The `false` sentinel (rather
+      // than null) matters for the `{{^multiStatus}}` inverse: the
+      // mustache_template package errors on null in inverse sections
+      // but treats `false` correctly as "render the inverse."
+      'multiStatus': multiStatusContext == null
+          ? false
+          : {
+              'typeName': multiStatusContext.typeName,
+              'wrapperClassDefs': multiStatusContext.wrapperClassDefs,
+              'switchCases': multiStatusContext.switchCases,
+            },
       'hasErrorType': hasErrorType,
       'errorType': errorType,
       'errorFromJson': errorFromJson,
@@ -1338,7 +1427,7 @@ class RenderOperation {
     required this.responses,
     required this.rangeResponses,
     required this.defaultResponse,
-    required this.returnType,
+    required this.returnShape,
     required this.tags,
     required this.summary,
     required this.description,
@@ -1380,10 +1469,24 @@ class RenderOperation {
   /// 4xx/5xx status code also references it.
   final RenderDefaultResponse? defaultResponse;
 
-  /// The return type of the resolved operation.
-  final RenderSchema returnType;
+  /// What the operation's API method returns. Sealed so emit-time code
+  /// (template context, walker) pattern-matches on the case rather than
+  /// branching on a nullable. The two cases:
+  ///
+  /// - [SingleSchemaReturn]: one schema for every success path
+  ///   (no-content `RenderVoid`, a single 2xx, all-2xx-identical, or
+  ///   the legacy oneOf fallback for range-mixed cases). Today's
+  ///   default; matches the pre-multi-status world.
+  /// - [MultiStatusReturn]: structurally-different bodies per HTTP
+  ///   status (e.g. github's `200` → user, `202` → accepted job).
+  ///   Lives here rather than in the schema graph because status-code
+  ///   multiplexing is operation-level — the dispatch key is the HTTP
+  ///   status, not anything in the JSON body. Conflating it with
+  ///   [RenderOneOf] (which dispatches on body shape) is what
+  ///   produced the legacy `UnimplementedError` stub.
+  final OperationReturn returnShape;
 
-  /// Wire content type of the response that drove [returnType] — first
+  /// Wire content type of the response that drove [returnShape] — first
   /// matching 2xx, then `2XX` range. `null` when the operation has no
   /// successful response body. Used by the operation renderer to skip
   /// `jsonDecode` when the body isn't JSON.
@@ -1412,6 +1515,40 @@ class RenderOperation {
 
   /// The security requirements of the resolved operation.
   final List<ResolvedSecurityRequirement> securityRequirements;
+}
+
+/// What an operation's API method returns at the Dart level. Sealed so
+/// the renderer pattern-matches exhaustively on the two emit shapes.
+sealed class OperationReturn {
+  const OperationReturn();
+}
+
+/// One schema covers every successful response path: a single 2xx,
+/// multiple 2xx with the same body, the no-content [RenderVoid] case,
+/// or the legacy `RenderOneOf` fallback for range-mixed responses.
+/// The API method's return type is `Future<schema.typeName>`.
+@immutable
+final class SingleSchemaReturn extends OperationReturn {
+  const SingleSchemaReturn(this.schema);
+
+  final RenderSchema schema;
+}
+
+/// Multi-status response: the operation has multiple successful
+/// responses with structurally-different body schemas. The Dart emit
+/// is a sealed parent (named after the operation, e.g.
+/// `ReposGetResponse`) plus one `final` subclass per status code; the
+/// API method body switches on `response.statusCode` to construct the
+/// right subclass.
+@immutable
+final class MultiStatusReturn extends OperationReturn {
+  const MultiStatusReturn({required this.responses});
+
+  /// Status code → response. Carries content-type per status so each
+  /// switch arm can pick the right decode (`jsonDecode` vs raw
+  /// `response.body`); a `RenderVoid` content signals no body and
+  /// produces a value-less wrapper subclass.
+  final Map<int, RenderResponse> responses;
 }
 
 /// Sealed so the endpoint arg-builder can pattern-match exhaustively on
@@ -3822,6 +3959,103 @@ class RenderOneOf extends RenderNewType {
     // discriminator-aware subclass emission (#99).
     return null;
   }
+}
+
+/// Wire-source expression for decoding a response body. Returns
+/// `jsonDecode(response.body)` for JSON content (or unspecified —
+/// most specs imply JSON), and the raw `response.body` for everything
+/// else (`text/plain`, `text/html`, `application/octet-stream`, …).
+/// Used by both the single-schema return path and the per-arm
+/// decode in multi-status dispatch.
+String _responseBodySource(String? contentType) =>
+    contentType == null || contentType == 'application/json'
+    ? 'jsonDecode(response.body)'
+    : 'response.body';
+
+/// One status-code entry in a multi-status response: the status, the
+/// wrapper subclass name (`<Parent>200`), the body schema (null for
+/// empty-body statuses like 204), and the wire content type (drives
+/// `jsonDecode` vs raw `response.body` per status). Owns the per-
+/// status projection into the two template contexts it feeds —
+/// keeps the body / no-body branch in one place per output instead
+/// of fanning out across the caller's loop.
+@immutable
+final class _StatusInfo {
+  const _StatusInfo({
+    required this.statusCode,
+    required this.wrapperTypeName,
+    required this.body,
+    required this.contentType,
+  });
+
+  final int statusCode;
+  final String wrapperTypeName;
+  final RenderSchema? body;
+  final String? contentType;
+
+  /// Mustache context for the wrapper class definition emitted by the
+  /// `_multi_status_response` partial.
+  Map<String, dynamic> wrapperClassDef() {
+    final body = this.body;
+    if (body == null) {
+      return {
+        'wrapperTypeName': wrapperTypeName,
+        'statusCode': statusCode,
+        'hasBody': false,
+      };
+    }
+    return {
+      'wrapperTypeName': wrapperTypeName,
+      'valueType': body.typeName,
+      'hasBody': true,
+    };
+  }
+
+  /// Mustache context for one `case` in the api method's
+  /// `switch (response.statusCode)`.
+  Map<String, dynamic> switchCase(SchemaRenderer context) {
+    final body = this.body;
+    final String construction;
+    if (body == null) {
+      construction = 'const $wrapperTypeName()';
+    } else {
+      final decoded = body.fromJsonExpression(
+        _responseBodySource(contentType),
+        context,
+        jsonIsNullable: false,
+        dartIsNullable: false,
+      );
+      construction = '$wrapperTypeName($decoded)';
+    }
+    return {
+      'statusCode': statusCode,
+      'construction': construction,
+    };
+  }
+}
+
+/// Pre-built template context for a multi-status operation.
+@immutable
+final class _MultiStatusContext {
+  const _MultiStatusContext({
+    required this.typeName,
+    required this.wrapperClassDefs,
+    required this.switchCases,
+  });
+
+  /// Synthesized sealed-class name (e.g. `ReposGetResponse`).
+  final String typeName;
+
+  /// One mustache context per wrapper subclass to emit, consumed by
+  /// the `_multi_status_response` partial. Carries `wrapperTypeName`,
+  /// `hasBody`, and either `valueType` (body present) or `statusCode`
+  /// (empty body, used for the identity-only `hashCode`).
+  final List<Map<String, dynamic>> wrapperClassDefs;
+
+  /// One mustache context per `case` in the api method's
+  /// `switch (response.statusCode)`. Carries `statusCode` and
+  /// `construction` (the Dart expression that builds the wrapper).
+  final List<Map<String, dynamic>> switchCases;
 }
 
 /// One arm of the required-field dispatch: a [RenderObject] variant

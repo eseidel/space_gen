@@ -1,0 +1,36 @@
+sealed class {{ typeName }} {
+    const {{ typeName }}();
+}
+
+{{#wrapperClassDefs}}
+{{#hasBody}}
+@immutable
+final class {{ wrapperTypeName }} extends {{ typeName }} {
+    const {{ wrapperTypeName }}(this.value);
+
+    final {{{ valueType }}} value;
+
+    @override
+    int get hashCode => value.hashCode;
+
+    @override
+    bool operator ==(Object other) {
+        if (identical(this, other)) return true;
+        return other is {{ wrapperTypeName }} && value == other.value;
+    }
+}
+{{/hasBody}}
+{{^hasBody}}
+@immutable
+final class {{ wrapperTypeName }} extends {{ typeName }} {
+    const {{ wrapperTypeName }}();
+
+    @override
+    int get hashCode => {{ statusCode }};
+
+    @override
+    bool operator ==(Object other) => other is {{ wrapperTypeName }};
+}
+{{/hasBody}}
+
+{{/wrapperClassDefs}}
