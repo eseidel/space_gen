@@ -3368,6 +3368,17 @@ class RenderMap extends RenderSchema {
     defaultValue,
   ];
 
+  // Map shape — `Map<String, dynamic>` on the wire. Inline maps
+  // (additionalProperties on a parent, or `additionalProperties: true`
+  // sibling in a oneOf) use this as their dispatch shape. Typed maps
+  // would collide with object variants on the same shape key, but
+  // `_canShapeDispatch`'s key-uniqueness gate rejects that case.
+  @override
+  String? get wrapperTag => 'Map';
+
+  @override
+  String? get jsonShapeKey => 'Map<String, dynamic>';
+
   @override
   bool get shouldCallToJson =>
       keySchema != null || valueSchema.shouldCallToJson;
@@ -3714,6 +3725,50 @@ class RenderOneOf extends RenderNewType {
         jsonTestType: shapeKey,
         fromJson: '${variant.typeName}.fromJson(v)',
         toJson: 'value.toJson()',
+      );
+    }
+
+    // Map variants: the wire shape is `Map<String, dynamic>`. When the
+    // key/value schemas need conversion, walk entries through the
+    // per-entry expressions; otherwise the raw json value is already
+    // the right shape and we just store it. The fromJsonExpression
+    // built into RenderMap always casts `v as Map<String, dynamic>`,
+    // which is redundant after the pattern-match — so we build the
+    // entry conversion locally instead of reusing it.
+    if (variant is RenderMap) {
+      final keyEnum = variant.keySchema;
+      final value = variant.valueSchema;
+      final needsConversion = keyEnum != null || value.shouldCallToJson;
+      final String fromJson;
+      final String toJson;
+      if (!needsConversion) {
+        fromJson = 'v';
+        toJson = 'value';
+      } else {
+        final keyFromJson = keyEnum == null
+            ? 'k'
+            : '${keyEnum.typeName}.fromJson(k)';
+        final valueFromJson = value.fromJsonExpression(
+          'val',
+          context,
+          jsonIsNullable: false,
+          dartIsNullable: false,
+        );
+        fromJson = 'v.map((k, val) => MapEntry($keyFromJson, $valueFromJson))';
+        final keyToJson = keyEnum == null ? 'k' : 'k.toJson()';
+        final valueToJson = value.toJsonExpression(
+          'val',
+          context,
+          dartIsNullable: false,
+        );
+        toJson = 'value.map((k, val) => MapEntry($keyToJson, $valueToJson))';
+      }
+      return _VariantPlan(
+        wrapperTypeName: wrapperTypeName,
+        valueType: variant.typeName,
+        jsonTestType: shapeKey,
+        fromJson: fromJson,
+        toJson: toJson,
       );
     }
 
