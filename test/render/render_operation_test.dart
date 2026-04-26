@@ -419,60 +419,100 @@ void main() {
       expect(result, isNot(contains('body:')));
     });
 
-    test('multiple successful responses with different content not supported', () {
-      final json = {
-        'responses': {
-          '200': {
-            'description': 'OK',
-            'content': {
-              'application/json': {
-                'schema': {'type': 'boolean'},
+    test(
+      'multiple successful responses with different content emit '
+      'status-code dispatch',
+      () {
+        final json = {
+          'responses': {
+            '200': {
+              'description': 'OK',
+              'content': {
+                'application/json': {
+                  'schema': {'type': 'boolean'},
+                },
+              },
+            },
+            '201': {
+              'description': 'Created',
+              'content': {
+                'application/json': {
+                  'schema': {'type': 'string'},
+                },
               },
             },
           },
-          '201': {
-            'description': 'Created',
-            'content': {
-              'application/json': {
-                'schema': {'type': 'string'},
-              },
-            },
-          },
-        },
-      };
-      final result = renderTestOperation(
-        path: '/users',
-        operationJson: json,
-        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
-      );
-      expect(
-        result,
-        '/// Test API\n'
-        'class DefaultApi {\n'
-        '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
-        '\n'
-        '    final ApiClient client;\n'
-        '\n'
-        '    Future<UsersResponse> users(\n'
-        '    ) async {\n'
-        '        final response = await client.invokeApi(\n'
-        '            method: Method.post,\n'
-        "            path: '/users',\n"
-        '        );\n'
-        '\n'
-        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
-        '        }\n'
-        '\n'
-        '        if (response.body.isNotEmpty) {\n'
-        '            return UsersResponse.fromJson(jsonDecode(response.body) as dynamic);\n'
-        '        }\n'
-        '\n'
-        '        throw ApiException<Object?>.unhandled(response.statusCode);\n'
-        '    }\n'
-        '}\n',
-      );
-    });
+        };
+        final result = renderTestOperation(
+          path: '/users',
+          operationJson: json,
+          serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+        );
+        expect(
+          result,
+          'sealed class UsersResponse {\n'
+          '    const UsersResponse();\n'
+          '}\n'
+          '\n'
+          '@immutable\n'
+          'final class UsersResponse200 extends UsersResponse {\n'
+          '    const UsersResponse200(this.value);\n'
+          '\n'
+          '    final bool value;\n'
+          '\n'
+          '    @override\n'
+          '    int get hashCode => value.hashCode;\n'
+          '\n'
+          '    @override\n'
+          '    bool operator ==(Object other) {\n'
+          '        if (identical(this, other)) return true;\n'
+          '        return other is UsersResponse200 && value == other.value;\n'
+          '    }\n'
+          '}\n'
+          '\n'
+          '@immutable\n'
+          'final class UsersResponse201 extends UsersResponse {\n'
+          '    const UsersResponse201(this.value);\n'
+          '\n'
+          '    final String value;\n'
+          '\n'
+          '    @override\n'
+          '    int get hashCode => value.hashCode;\n'
+          '\n'
+          '    @override\n'
+          '    bool operator ==(Object other) {\n'
+          '        if (identical(this, other)) return true;\n'
+          '        return other is UsersResponse201 && value == other.value;\n'
+          '    }\n'
+          '}\n'
+          '\n'
+          '/// Test API\n'
+          'class DefaultApi {\n'
+          '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
+          '\n'
+          '    final ApiClient client;\n'
+          '\n'
+          '    Future<UsersResponse> users(\n'
+          '    ) async {\n'
+          '        final response = await client.invokeApi(\n'
+          '            method: Method.post,\n'
+          "            path: '/users',\n"
+          '        );\n'
+          '\n'
+          '        if (response.statusCode >= HttpStatus.badRequest) {\n'
+          '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+          '        }\n'
+          '\n'
+          '        return switch (response.statusCode) {\n'
+          '            200 => UsersResponse200(jsonDecode(response.body) as bool),\n'
+          '            201 => UsersResponse201(jsonDecode(response.body) as String),\n'
+          '            _ => throw ApiException<Object?>.unhandled(response.statusCode),\n'
+          '        };\n'
+          '    }\n'
+          '}\n',
+        );
+      },
+    );
 
     test('multiple successful responses with same content is supported', () {
       final json = {
@@ -529,7 +569,68 @@ void main() {
       );
     });
 
-    test('multiple successful responses with content ignores empty responses', () {
+    test(
+      'response with empty schema dispatches as a dynamic-valued arm',
+      () {
+        // The Space Traders `get-cooldown` 204 declares
+        // `content: application/json` with an empty (description-only)
+        // schema as a workaround for tooling that requires content. The
+        // schema parses as RenderUnknown, so the wrapper holds a
+        // `dynamic` value rather than collapsing to no-body. Specs that
+        // really mean "no body" should omit `content:` entirely (which
+        // resolves to RenderVoid → null arm — see the next test).
+        final json = {
+          'responses': {
+            '200': {
+              'description': 'OK',
+              'content': {
+                'application/json': {
+                  'schema': {'type': 'boolean'},
+                },
+              },
+            },
+            '204': {
+              'description': 'No content',
+              'content': {
+                'application/json': {
+                  'schema': {'description': 'No content'},
+                },
+              },
+            },
+          },
+        };
+        final result = renderTestOperation(
+          path: '/users',
+          operationJson: json,
+          serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+        );
+        expect(
+          result,
+          contains(
+            '        return switch (response.statusCode) {\n'
+            '            200 => UsersResponse200(jsonDecode(response.body) as bool),\n'
+            '            204 => UsersResponse204(jsonDecode(response.body)),\n'
+            '            _ => throw ApiException<Object?>.unhandled(response.statusCode),\n'
+            '        };\n',
+          ),
+        );
+        expect(
+          result,
+          contains(
+            '@immutable\n'
+            'final class UsersResponse204 extends UsersResponse {\n'
+            '    const UsersResponse204(this.value);\n'
+            '\n'
+            '    final dynamic value;\n',
+          ),
+        );
+      },
+    );
+
+    test('204 without content emits a no-value wrapper arm', () {
+      // The well-formed way to declare "no body": 204 carries only a
+      // description, no `content:`. Resolves to RenderVoid → null in
+      // bodyByStatus → empty wrapper subclass with no `value` field.
       final json = {
         'responses': {
           '200': {
@@ -540,13 +641,58 @@ void main() {
               },
             },
           },
-          '204': {
-            'description': 'No content',
+          '204': {'description': 'No content'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(
+        result,
+        contains(
+          '        return switch (response.statusCode) {\n'
+          '            200 => UsersResponse200(jsonDecode(response.body) as bool),\n'
+          '            204 => const UsersResponse204(),\n'
+          '            _ => throw ApiException<Object?>.unhandled(response.statusCode),\n'
+          '        };\n',
+        ),
+      );
+      expect(
+        result,
+        contains(
+          '@immutable\n'
+          'final class UsersResponse204 extends UsersResponse {\n'
+          '    const UsersResponse204();\n'
+          '\n'
+          '    @override\n'
+          '    int get hashCode => 204;\n',
+        ),
+      );
+    });
+
+    test('2XX range mixed with explicit 2xx falls back to legacy oneOf', () {
+      // Status-code dispatch only kicks in when every successful
+      // response has an explicit code — `2XX` ranges can't be
+      // enumerated, and the wrapper subclasses are named per code. This
+      // case keeps the legacy stub until either #144 covers ranges or
+      // the spec is rewritten to enumerate codes.
+      final json = {
+        'responses': {
+          '200': {
+            'description': 'OK',
             'content': {
               'application/json': {
-                // This doesn't error because schema is empty.
-                // This is a hack for Space Traders get-cooldown.
-                'schema': {'description': 'No content'},
+                'schema': {'type': 'boolean'},
+              },
+            },
+          },
+          '2XX': {
+            'description': 'Other success',
+            'content': {
+              'application/json': {
+                'schema': {'type': 'string'},
               },
             },
           },
@@ -557,33 +703,9 @@ void main() {
         operationJson: json,
         serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
       );
-      expect(
-        result,
-        '/// Test API\n'
-        'class DefaultApi {\n'
-        '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
-        '\n'
-        '    final ApiClient client;\n'
-        '\n'
-        '    Future<UsersResponse> users(\n'
-        '    ) async {\n'
-        '        final response = await client.invokeApi(\n'
-        '            method: Method.post,\n'
-        "            path: '/users',\n"
-        '        );\n'
-        '\n'
-        '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
-        '        }\n'
-        '\n'
-        '        if (response.body.isNotEmpty) {\n'
-        '            return UsersResponse.fromJson(jsonDecode(response.body) as dynamic);\n'
-        '        }\n'
-        '\n'
-        '        throw ApiException<Object?>.unhandled(response.statusCode);\n'
-        '    }\n'
-        '}\n',
-      );
+      expect(result, isNot(contains('switch (response.statusCode)')));
+      expect(result, isNot(contains('sealed class UsersResponse {')));
+      expect(result, contains('UsersResponse.fromJson'));
     });
 
     test('multiple responses with content ignores non-successful responses', () {

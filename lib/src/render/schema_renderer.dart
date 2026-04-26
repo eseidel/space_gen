@@ -48,14 +48,23 @@ class SchemaUsage {
 /// Which imports a rendered api body needs beyond the schemas it
 /// references, plus which `model_helpers.dart` helpers the body calls.
 class ApiUsage {
-  const ApiUsage({this.modelHelpers = const {}});
+  const ApiUsage({
+    this.usesMetaAnnotations = false,
+    this.modelHelpers = const {},
+  });
 
   factory ApiUsage.fromBody(String body) => ApiUsage(
+    usesMetaAnnotations: body.contains('@immutable'),
     modelHelpers: {
       for (final h in ModelHelpers.all)
         if (body.contains(h)) h,
     },
   );
+
+  /// True when the body emits `@immutable` (multi-status response
+  /// wrappers do; the legacy single-return path does not). Drives the
+  /// `package:meta/meta.dart` import.
+  final bool usesMetaAnnotations;
 
   /// The set of `model_helpers.dart` identifiers referenced by the
   /// rendered body. A subset of [ModelHelpers.all].
@@ -64,6 +73,7 @@ class ApiUsage {
   bool get usesModelHelpers => modelHelpers.isNotEmpty;
 
   Iterable<Import> importsFor(String packageName) sync* {
+    if (usesMetaAnnotations) yield const Import('package:meta/meta.dart');
     if (usesModelHelpers) {
       yield Import('package:$packageName/model_helpers.dart');
     }
