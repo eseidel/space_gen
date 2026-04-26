@@ -1457,6 +1457,98 @@ void main() {
       expect(result, isNot(contains('throw UnimplementedError')));
     });
 
+    test('hybrid dispatch: Map sub-arms include a fallback when one '
+        'object has no unique props', () {
+      // String variant + two object variants where Tagged has unique
+      // `tag` and Anything has nothing unique. The Map sub-dispatch
+      // emits an unguarded `final Map<String, dynamic> v =>` arm
+      // pointing at the fallback variant — no Map-specific throw.
+      final result = renderTestSchema({
+        'oneOf': [
+          {'type': 'string'},
+          {
+            'type': 'object',
+            'required': ['tag'],
+            'properties': {
+              'tag': {'type': 'string'},
+            },
+          },
+          {'type': 'object', 'properties': <String, dynamic>{}},
+        ],
+      });
+      // Outer shape arm for the string.
+      expect(result, contains('final String v =>'));
+      // Map sub-arms — checked then fallback.
+      expect(
+        result,
+        contains("final Map<String, dynamic> v when v.containsKey('tag')"),
+      );
+      // The Map fallback uses an unguarded arm (no `when`).
+      expect(
+        result,
+        matches(
+          RegExp(r'final Map<String, dynamic> v\s*=>\s*Test'),
+        ),
+      );
+      // No "no Map variant matched" throw — the fallback handles it.
+      expect(result, isNot(contains('No variant of Test matched json keys')));
+    });
+
+    test('hybrid dispatch bails when Map variants are not '
+        'required-field dispatchable', () {
+      // String variant + two object variants that share both their
+      // required and optional sets. The Map sub-dispatch can't pick
+      // one over the other, so the whole hybrid plan bails and we
+      // fall through to the legacy stub.
+      final result = renderTestSchema({
+        'oneOf': [
+          {'type': 'string'},
+          {
+            'type': 'object',
+            'required': ['shared'],
+            'properties': {
+              'shared': {'type': 'string'},
+            },
+          },
+          {
+            'type': 'object',
+            'required': ['shared'],
+            'properties': {
+              'shared': {'type': 'string'},
+            },
+          },
+        ],
+      });
+      expect(result, contains('throw UnimplementedError'));
+    });
+
+    test('hybrid dispatch bails when a non-Map shape collides', () {
+      // Two array variants alongside an object variant. Pure shape
+      // can't pick between the two arrays (both `List<dynamic>`).
+      // Hybrid only knows how to disambiguate Map collisions, so it
+      // also bails — array-of-X vs array-of-Y is a separate gap.
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+          {
+            'type': 'array',
+            'items': {'type': 'integer'},
+          },
+          {
+            'type': 'object',
+            'required': ['note'],
+            'properties': {
+              'note': {'type': 'string'},
+            },
+          },
+        ],
+      });
+      expect(result, contains('throw UnimplementedError'));
+    });
+
     test('property-presence dispatch falls back to optional-unique tags '
         'when a sibling has no unique fields (the fallback)', () {
       // Github's `environment.protection_rules.items` shape: three
