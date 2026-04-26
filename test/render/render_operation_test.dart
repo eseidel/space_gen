@@ -672,6 +672,47 @@ void main() {
       );
     });
 
+    test('mixed content types: each switch arm decodes per its own type', () {
+      // 200 returns text/plain (raw `response.body`), 201 returns
+      // JSON (`jsonDecode(response.body)`). Pre-fix, every arm would
+      // jsonDecode and crash at runtime on the text/plain status.
+      final json = {
+        'responses': {
+          '200': {
+            'description': 'OK',
+            'content': {
+              'text/plain': {
+                'schema': {'type': 'string'},
+              },
+            },
+          },
+          '201': {
+            'description': 'Created',
+            'content': {
+              'application/json': {
+                'schema': {'type': 'boolean'},
+              },
+            },
+          },
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(
+        result,
+        contains(
+          '        return switch (response.statusCode) {\n'
+          '            200 => UsersResponse200(response.body as String),\n'
+          '            201 => UsersResponse201(jsonDecode(response.body) as bool),\n'
+          '            _ => throw ApiException<Object?>.unhandled(response.statusCode),\n'
+          '        };\n',
+        ),
+      );
+    });
+
     test('2XX range mixed with explicit 2xx falls back to legacy oneOf', () {
       // Status-code dispatch only kicks in when every successful
       // response has an explicit code — `2XX` ranges can't be

@@ -582,14 +582,12 @@ class SpecResolver {
     // `Foo201`), and a range can't be enumerated. Range-mixed cases
     // fall through to the legacy oneOf path for now.
     if (successfulRange.isEmpty) {
-      final bodyByStatus = <int, RenderSchema?>{};
-      for (final response in explicit2xx) {
-        // RenderVoid means the response has no body — null in the map
-        // signals the wrapper for that status carries no value.
-        final body = toRenderSchema(response.content);
-        bodyByStatus[response.statusCode] = body is RenderVoid ? null : body;
-      }
-      return MultiStatusReturn(bodyByStatus: bodyByStatus);
+      return MultiStatusReturn(
+        responses: {
+          for (final response in explicit2xx)
+            response.statusCode: toRenderResponse(response),
+        },
+      );
     }
     return SingleSchemaReturn(
       RenderOneOf(
@@ -1181,21 +1179,29 @@ class Endpoint implements ToTemplateContext {
   /// snake name) that the legacy oneOf path used, so existing
   /// regenerated output only shows the dispatch change, not a rename.
   ///
-  /// Sorted-by-status iteration matters for output stability — the
-  /// underlying map is unordered.
+  /// Sorting on the status code guarantees `200` ahead of `204` in
+  /// the emitted switch regardless of spec ordering.
+  ///
+  /// Synthesized typeName can collide with a schema in the spec named
+  /// `<op>_response`. Not handled here — that's the job of a future
+  /// resolve-stage collision pass that accounts for generated names.
   _MultiStatusContext _buildMultiStatusContext(
     MultiStatusReturn multiStatus,
     SchemaRenderer context,
   ) {
     final typeName = camelFromSnake('${operation.snakeName}_response');
-    final sortedEntries = multiStatus.bodyByStatus.entries.toList()
+    final sortedEntries = multiStatus.responses.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
     final statuses = [
       for (final entry in sortedEntries)
         _StatusInfo(
           statusCode: entry.key,
           wrapperTypeName: '$typeName${entry.key}',
-          body: entry.value,
+          // RenderVoid means the response has no body — null in
+          // [_StatusInfo.body] signals the wrapper for that status
+          // carries no `value` field.
+          body: entry.value.content is RenderVoid ? null : entry.value.content,
+          contentType: entry.value.contentType,
         ),
     ];
     return _MultiStatusContext(
@@ -1231,24 +1237,22 @@ class Endpoint implements ToTemplateContext {
         multiStatusContext = null;
         returnType = schema.typeName;
         isVoidReturn = schema is RenderVoid;
-        // When the success response advertises a non-JSON content type
-        // (text/plain, text/html, application/octocat-stream, …) the
-        // wire body is NOT JSON. Skip `jsonDecode`: `package:http`'s
-        // `Response.body` is already a `String`, which matches the
-        // `type: string` schema such responses use in practice. github's
-        // `/zen`, `/octocat`, `/markdown`, `/markdown/raw` all live here.
-        final successContentType = operation.successContentType;
-        final isJsonResponse =
-            successContentType == null ||
-            successContentType == 'application/json';
-        responseFromJson = isJsonResponse
-            ? schema.fromJsonExpression(
-                'jsonDecode(response.body)',
+        // When the success response advertises a non-JSON content
+        // type, `_responseBodySource` returns the raw `response.body`
+        // string instead of the `jsonDecode(...)` expression — keeps
+        // github's `/zen`, `/octocat`, `/markdown`, `/markdown/raw`
+        // (text/plain) emitting clean Dart. The non-JSON path then
+        // falls back to the raw body without going through
+        // `fromJsonExpression`, since that expects JSON-shaped input.
+        final source = _responseBodySource(operation.successContentType);
+        responseFromJson = source == 'response.body'
+            ? source
+            : schema.fromJsonExpression(
+                source,
                 context,
                 jsonIsNullable: false,
                 dartIsNullable: false,
-              )
-            : 'response.body';
+              );
       case MultiStatusReturn():
         multiStatusContext = _buildMultiStatusContext(returnShape, context);
         returnType = multiStatusContext.typeName;
@@ -1538,12 +1542,13 @@ final class SingleSchemaReturn extends OperationReturn {
 /// right subclass.
 @immutable
 final class MultiStatusReturn extends OperationReturn {
-  const MultiStatusReturn({required this.bodyByStatus});
+  const MultiStatusReturn({required this.responses});
 
-  /// Status code → body schema. A `null` value means the response has
-  /// no body (e.g. `204 No Content`); the synthesized wrapper for that
-  /// status carries no `value` field.
-  final Map<int, RenderSchema?> bodyByStatus;
+  /// Status code → response. Carries content-type per status so each
+  /// switch arm can pick the right decode (`jsonDecode` vs raw
+  /// `response.body`); a `RenderVoid` content signals no body and
+  /// produces a value-less wrapper subclass.
+  final Map<int, RenderResponse> responses;
 }
 
 /// Sealed so the endpoint arg-builder can pattern-match exhaustively on
@@ -3956,23 +3961,37 @@ class RenderOneOf extends RenderNewType {
   }
 }
 
+/// Wire-source expression for decoding a response body. Returns
+/// `jsonDecode(response.body)` for JSON content (or unspecified —
+/// most specs imply JSON), and the raw `response.body` for everything
+/// else (`text/plain`, `text/html`, `application/octet-stream`, …).
+/// Used by both the single-schema return path and the per-arm
+/// decode in multi-status dispatch.
+String _responseBodySource(String? contentType) =>
+    contentType == null || contentType == 'application/json'
+    ? 'jsonDecode(response.body)'
+    : 'response.body';
+
 /// One status-code entry in a multi-status response: the status, the
-/// wrapper subclass name (`<Parent>200`), and the body schema (null
-/// for empty-body statuses like 204). Owns the per-status projection
-/// into the two template contexts it feeds — keeps the body / no-body
-/// branch in one place per output instead of fanning out across the
-/// caller's loop.
+/// wrapper subclass name (`<Parent>200`), the body schema (null for
+/// empty-body statuses like 204), and the wire content type (drives
+/// `jsonDecode` vs raw `response.body` per status). Owns the per-
+/// status projection into the two template contexts it feeds —
+/// keeps the body / no-body branch in one place per output instead
+/// of fanning out across the caller's loop.
 @immutable
 final class _StatusInfo {
   const _StatusInfo({
     required this.statusCode,
     required this.wrapperTypeName,
     required this.body,
+    required this.contentType,
   });
 
   final int statusCode;
   final String wrapperTypeName;
   final RenderSchema? body;
+  final String? contentType;
 
   /// Mustache context for the wrapper class definition emitted by the
   /// `_multi_status_response` partial.
@@ -4000,13 +4019,13 @@ final class _StatusInfo {
     if (body == null) {
       construction = 'const $wrapperTypeName()';
     } else {
-      final fromJson = body.fromJsonExpression(
-        'jsonDecode(response.body)',
+      final decoded = body.fromJsonExpression(
+        _responseBodySource(contentType),
         context,
         jsonIsNullable: false,
         dartIsNullable: false,
       );
-      construction = '$wrapperTypeName($fromJson)';
+      construction = '$wrapperTypeName($decoded)';
     }
     return {
       'statusCode': statusCode,
