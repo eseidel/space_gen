@@ -784,12 +784,89 @@ void main() {
         ],
       };
       final result = renderTestSchema(schema);
+      expect(result, contains('factory Test.fromJson(dynamic json)'));
       expect(result, contains('String v => TestString(v)'));
       expect(result, contains('num v => TestNum(v)'));
       expect(result, contains('final class TestString extends Test'));
       expect(result, contains('final class TestNum extends Test'));
       expect(result, contains('final num value;'));
+      // Wrapper toJson returns the raw num — no `.toJson()` call,
+      // since num is already JSON-native.
+      expect(result, contains('dynamic toJson() => value;'));
+      expect(result, contains('@immutable'));
       expect(result, isNot(contains('throw UnimplementedError')));
+    });
+
+    test('oneOf with [number, object] uses shape dispatch (num vs Map)', () {
+      // Verifies RenderNumber's shape key composes with RenderObject's
+      // `Map<String, dynamic>` — distinct shapes, so dispatch works.
+      final schema = {
+        'oneOf': [
+          {'type': 'number'},
+          {
+            'type': 'object',
+            'properties': {
+              'foo': {'type': 'string'},
+            },
+          },
+        ],
+      };
+      final result = renderTestSchema(schema);
+      expect(result, contains('num v => TestNum(v)'));
+      expect(result, contains('Map<String, dynamic> v => TestTestOneOf1'));
+      expect(result, isNot(contains('throw UnimplementedError')));
+    });
+
+    test('oneOf with [number, array] uses shape dispatch (num vs List)', () {
+      // num and List<dynamic> are distinct runtime shapes.
+      final schema = {
+        'oneOf': [
+          {'type': 'number'},
+          {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+        ],
+      };
+      final result = renderTestSchema(schema);
+      expect(result, contains('num v => TestNum(v)'));
+      expect(result, contains('List<dynamic> v => TestList'));
+      expect(result, isNot(contains('throw UnimplementedError')));
+    });
+
+    test('number newtype does not participate in shape dispatch', () {
+      // A `number` schema with validations becomes a newtype (its own
+      // class), and `wrapperTag` / `jsonShapeKey` deliberately gate on
+      // `!createsNewType`. So a oneOf whose variant is a *named* number
+      // newtype can't shape-dispatch — the wrapper would shadow the
+      // newtype's own class. This test pins that gate; without it, the
+      // newtype case would silently hit the inline-pod arm of
+      // `_planVariant` and emit a wrong dispatch.
+      final results = renderTestSchemas(
+        {
+          'Wrapper': {
+            'oneOf': [
+              {'type': 'string'},
+              {r'$ref': '#/components/schemas/Score'},
+            ],
+          },
+          'Score': {
+            'type': 'number',
+            'minimum': 0,
+            'maximum': 1,
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final wrapper = results['Wrapper'];
+      expect(wrapper, isNotNull);
+      // Newtype-Number is not shape-dispatchable today (and the inline
+      // String variant alone isn't enough to dispatch a 2-variant
+      // oneOf), so this falls through to the legacy stub. The contract
+      // here is: whatever fallback fires, it must NOT emit a `num v =>`
+      // arm pointing at the newtype, since that would conflict with
+      // Score's own factory.
+      expect(wrapper, isNot(contains('num v => WrapperScore')));
     });
 
     test('oneOf with objects', () {
