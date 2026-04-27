@@ -59,7 +59,7 @@
             final {{{ jsonTestType }}} v => {{{ wrapperTypeName }}}({{{ fromJson }}}),
 {{/shapeArms}}
 {{#mapArms}}
-            final Map<String, dynamic> v when v.containsKey('{{ tagField }}') => {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(v)),
+            final Map<String, dynamic> v when {{{ predicateTest }}} => {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(v)),
 {{/mapArms}}
 {{#mapFallback}}
             final Map<String, dynamic> v => {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(v)),
@@ -91,7 +91,7 @@
 
     factory {{ typeName }}.fromJson(Map<String, dynamic> json) {
 {{#dispatch}}
-        if (json.containsKey('{{ tagField }}')) {
+        if ({{{ predicateTest }}}) {
             return {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(json));
         }
 {{/dispatch}}
