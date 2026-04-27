@@ -4123,30 +4123,19 @@ class RenderOneOf extends RenderNewType {
     );
   }
 
-  /// Cheap context-free check for [_hybridDispatchPlan] — used by
-  /// [_hasDispatch] / [additionalImports] which run before the
-  /// SchemaRenderer is available. Skips the per-variant
-  /// [_planVariant] step, but every schema with a non-null
-  /// [RenderSchema.jsonShapeKey] also has a non-null [wrapperTag]
-  /// and non-null [_variantConversion] (the three are gated together
-  /// per subclass), so a successful eligibility + Map sub-dispatch
-  /// here implies [_hybridDispatchPlan] would succeed too.
-  bool get _canHybridDispatch {
-    final eligibility = _hybridEligibility();
-    if (eligibility == null) return false;
-    return _requiredFieldArmsFor(
-          eligibility.mapVariants,
-          looseRequiredUniqueness: true,
-        ) !=
-        null;
-  }
-
-  /// Shared eligibility gate for the hybrid path: every variant has a
-  /// shape key, there's at least one Map variant collision, at least
-  /// one non-Map sibling, and no non-Map shape collides with itself
-  /// (e.g. two arrays — that's its own gap). Returns the shape and
-  /// Map partitions on success, null when the hybrid path doesn't
-  /// apply.
+  /// Shared eligibility gate for [_hybridDispatchPlan]: every
+  /// variant has a shape key, there's at least one Map variant
+  /// collision, at least one non-Map sibling, and no non-Map shape
+  /// collides with itself (e.g. two arrays — that's its own gap).
+  /// Returns the shape and Map partitions on success, null when the
+  /// hybrid path doesn't apply.
+  ///
+  /// [_hasDispatch] and [additionalImports] also use the eligibility
+  /// check directly — they need to know whether hybrid will fire but
+  /// run before a SchemaRenderer is available, so they can't invoke
+  /// [_planVariant] or the Map sub-dispatch. A false positive there
+  /// only adds a stray `package:meta/meta.dart` import that
+  /// `dart fix` strips.
   _HybridEligibility? _hybridEligibility() {
     final byShape = <String, List<RenderSchema>>{};
     for (final v in schemas) {
@@ -4176,7 +4165,7 @@ class RenderOneOf extends RenderNewType {
   bool get _hasDispatch =>
       _hasDiscriminatorDispatch ||
       _canShapeDispatch ||
-      _canHybridDispatch ||
+      _hybridEligibility() != null ||
       _requiredFieldDispatchArms != null;
 
   @override
