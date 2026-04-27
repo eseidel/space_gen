@@ -4059,12 +4059,16 @@ class RenderOneOf extends RenderNewType {
         // ambiguous.
         fallbackCount++;
         if (fallbackCount > 1) return null;
-        arms.add(_RequiredFieldArm(variant: objects[i], tagField: null));
+        arms.add(
+          _RequiredFieldArm(variant: objects[i], predicate: const _Always()),
+        );
         continue;
       }
       // Lex-first for stable output.
       final tag = (candidates.toList()..sort()).first;
-      arms.add(_RequiredFieldArm(variant: objects[i], tagField: tag));
+      arms.add(
+        _RequiredFieldArm(variant: objects[i], predicate: _KeyExists(tag)),
+      );
     }
     return arms;
   }
@@ -4224,14 +4228,14 @@ class RenderOneOf extends RenderNewType {
     if (hybrid == null) return null;
     // Map sub-dispatch arms split into checked (`when
     // v.containsKey(tag)`) and the optional fallback (no `when`,
-    // catches everything else).
-    final checked = hybrid.mapArms.where((a) => a.tagField != null);
-    final fallback = hybrid.mapArms
-        .where((a) => a.tagField == null)
-        .firstOrNull;
+    // catches everything else). The hybrid template's switch binds
+    // the matched JSON to `v`, so the predicate's if-test is rooted
+    // on `v` rather than `json`.
+    final checked = hybrid.mapArms.where((a) => !a.isFallback);
+    final fallback = hybrid.mapArms.where((a) => a.isFallback).firstOrNull;
     return _HybridMode(
       shapeArms: hybrid.shapeArms.map(_shapeWrapperContext).toList(),
-      mapArms: checked.map(_taggedArmContext).toList(),
+      mapArms: checked.map((a) => _taggedArmContext(a, jsonVar: 'v')).toList(),
       mapFallback: fallback == null ? null : _fallbackArmContext(fallback),
       variants: hybrid.variantContexts,
     );
@@ -4240,10 +4244,14 @@ class RenderOneOf extends RenderNewType {
   _RequiredFieldMode? _pickRequiredFieldMode() {
     final arms = _requiredFieldDispatchArms;
     if (arms == null) return null;
-    final checked = arms.where((a) => a.tagField != null);
-    final fallback = arms.where((a) => a.tagField == null).firstOrNull;
+    // The pure required-field template's factory parameter is
+    // `Map<String, dynamic> json`, so predicates are rooted on `json`.
+    final checked = arms.where((a) => !a.isFallback);
+    final fallback = arms.where((a) => a.isFallback).firstOrNull;
     return _RequiredFieldMode(
-      dispatch: checked.map(_taggedArmContext).toList(),
+      dispatch: checked
+          .map((a) => _taggedArmContext(a, jsonVar: 'json'))
+          .toList(),
       fallback: fallback == null ? null : _fallbackArmContext(fallback),
       variants: arms.map((a) => objectWrapperContext(a.variant)).toList(),
     );
@@ -4251,9 +4259,17 @@ class RenderOneOf extends RenderNewType {
 
   /// Template-context shape for a checked required-field arm —
   /// used by both the pure required-field path and the hybrid Map
-  /// sub-dispatch.
-  Map<String, dynamic> _taggedArmContext(_RequiredFieldArm arm) => {
-    'tagField': arm.tagField,
+  /// sub-dispatch. The mustache template emits the `if (...)` guard
+  /// from the `predicateTest` field verbatim, so each predicate kind
+  /// owns its own test syntax (containsKey today; array-element peek
+  /// later). [jsonVar] names the in-scope JSON value the predicate
+  /// tests against — `json` for the pure required-field factory
+  /// parameter, `v` for the hybrid template's switch-bound variable.
+  Map<String, dynamic> _taggedArmContext(
+    _RequiredFieldArm arm, {
+    required String jsonVar,
+  }) => {
+    'predicateTest': arm.predicate.dartIfTest(jsonVar),
     'wrapperTypeName': wrapperTypeName(arm.variant),
     'valueType': arm.variant.typeName,
   };
@@ -4597,22 +4613,67 @@ void _applyDispatchMode(_DispatchMode mode, Map<String, dynamic> ctx) {
   }
 }
 
-/// One arm of the required-field dispatch: an object-shaped variant
-/// (RenderObject or RenderEmptyObject) keyed off the presence of a
-/// property unique to its required-set. [tagField] is null for the
-/// fallback variant (one variant per oneOf is allowed to have no
-/// required fields and act as the catch-all). RenderEmptyObject is
-/// always a fallback since it requires nothing.
+/// Boolean test that picks one variant of a oneOf at runtime.
+///
+/// The dispatch picker collects one [_Predicate] per variant. Each
+/// kind knows how to emit its own Dart `if (...)` test, so adding a
+/// new way to distinguish variants (e.g. peeking at an array's first
+/// element) is a new subtype here rather than a new dispatch mode.
+///
+/// Today only the if-chain branches (pure required-field and the
+/// Map sub-dispatch of hybrid) consume predicates — the discriminator
+/// and shape branches stay specialized because their generated form
+/// (`switch` with literal/type patterns) is more idiomatic than an
+/// if-chain for those cases.
+sealed class _Predicate {
+  const _Predicate();
+
+  /// Dart boolean expression that's true iff [jsonVar] matches this
+  /// variant. [jsonVar] is the name of the in-scope JSON value
+  /// (typically `json`).
+  String dartIfTest(String jsonVar);
+}
+
+/// `jsonVar.containsKey('propertyName')` — picks variants by the
+/// presence of a unique property (required or optional).
+@immutable
+class _KeyExists extends _Predicate {
+  const _KeyExists(this.propertyName);
+
+  final String propertyName;
+
+  @override
+  String dartIfTest(String jsonVar) => "$jsonVar.containsKey('$propertyName')";
+}
+
+/// Catch-all predicate — used by the dispatch's optional fallback
+/// variant. Never emits an `if` test; the template treats it as the
+/// unconditional `return Wrapper(...)` at the end of the chain.
+@immutable
+class _Always extends _Predicate {
+  const _Always();
+
+  @override
+  String dartIfTest(String jsonVar) =>
+      throw StateError('_Always has no if-test — emit it as the fallback.');
+}
+
+/// One arm of the required-field (a.k.a. property-presence) dispatch:
+/// an object-shaped variant (RenderObject or RenderEmptyObject) paired
+/// with the predicate that picks it. [predicate] is [_Always] for the
+/// fallback variant — at most one per dispatch — and [_KeyExists] for
+/// every checked arm. RenderEmptyObject is always a fallback since
+/// it requires nothing.
 @immutable
 class _RequiredFieldArm {
-  const _RequiredFieldArm({required this.variant, required this.tagField});
+  const _RequiredFieldArm({required this.variant, required this.predicate});
 
   final RenderNewType variant;
+  final _Predicate predicate;
 
-  /// JSON property name whose presence picks this variant. Required
-  /// only by [variant]; absent from every sibling's required-set.
-  /// Null when this is the fallback (no-required) variant.
-  final String? tagField;
+  /// True when this arm is the unconditional fallback at the end of
+  /// the if-chain (no `if` guard emitted).
+  bool get isFallback => predicate is _Always;
 }
 
 /// The schema-specific bits of a shape-dispatch wrapper: how the
