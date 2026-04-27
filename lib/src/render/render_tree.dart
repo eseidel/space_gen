@@ -4166,11 +4166,21 @@ class RenderOneOf extends RenderNewType {
     );
   }
 
+  /// Context-free eligibility check for [_pickArrayElementMode] —
+  /// used by [_hasDispatch] (and through it, [additionalImports])
+  /// which run before a [SchemaRenderer] is available.
+  bool get _isArrayElementEligible {
+    if (!schemas.every((s) => s is RenderArray)) return false;
+    final arrays = schemas.cast<RenderArray>();
+    return _requiredFieldArmsFor(arrays.map((a) => a.items).toList()) != null;
+  }
+
   bool get _hasDispatch =>
       _hasDiscriminatorDispatch ||
       _canShapeDispatch ||
       _hybridEligibility() != null ||
-      _requiredFieldDispatchArms != null;
+      _requiredFieldDispatchArms != null ||
+      _isArrayElementEligible;
 
   @override
   Iterable<Import> get additionalImports => [
@@ -4192,12 +4202,17 @@ class RenderOneOf extends RenderNewType {
   }
 
   /// Picks the dispatch mode for this oneOf in priority order:
-  /// discriminator → pure shape → hybrid → required-field → none.
+  /// discriminator → pure shape → hybrid → required-field →
+  /// array-element → none. Array-element is last among the typed
+  /// modes because it requires every variant to be `array<object>` —
+  /// strict enough that earlier modes have already claimed any
+  /// dispatch they can.
   _DispatchMode _pickDispatchMode(SchemaRenderer context) =>
       _pickDiscriminatorMode() ??
       _pickShapeMode(context) ??
       _pickHybridMode(context) ??
       _pickRequiredFieldMode() ??
+      _pickArrayElementMode(context) ??
       const _NoDispatchMode();
 
   _DiscriminatorMode? _pickDiscriminatorMode() {
@@ -4241,19 +4256,117 @@ class RenderOneOf extends RenderNewType {
     );
   }
 
-  _RequiredFieldMode? _pickRequiredFieldMode() {
+  _PredicateDispatchMode? _pickRequiredFieldMode() {
     final arms = _requiredFieldDispatchArms;
     if (arms == null) return null;
-    // The pure required-field template's factory parameter is
-    // `Map<String, dynamic> json`, so predicates are rooted on `json`.
+    // Pure required-field: factory takes the Map directly; predicates
+    // are rooted on `json`; wrappers wrap the Map back unchanged.
     final checked = arms.where((a) => !a.isFallback);
     final fallback = arms.where((a) => a.isFallback).firstOrNull;
-    return _RequiredFieldMode(
-      dispatch: checked
-          .map((a) => _taggedArmContext(a, jsonVar: 'json'))
-          .toList(),
-      fallback: fallback == null ? null : _fallbackArmContext(fallback),
+    String constructionFor(RenderNewType variant) =>
+        '${variant.typeName}.fromJson(json)';
+    return _PredicateDispatchMode(
+      dispatch: [
+        for (final arm in checked)
+          {
+            'predicateTest': arm.predicate.dartIfTest('json'),
+            'wrapperTypeName': wrapperTypeName(arm.variant),
+            'construction': constructionFor(arm.variant),
+          },
+      ],
+      fallback: fallback == null
+          ? null
+          : {
+              'wrapperTypeName': wrapperTypeName(fallback.variant),
+              'construction': constructionFor(fallback.variant),
+            },
       variants: arms.map((a) => objectWrapperContext(a.variant)).toList(),
+      factoryParamType: 'Map<String, dynamic>',
+      preamble: false,
+      throwMessage:
+          'No variant of $typeName matched json keys: '
+          r'${json.keys.toList()}',
+      toJsonReturnType: 'Map<String, dynamic>',
+    );
+  }
+
+  /// Array-element dispatch fires when every variant is `array<object>`
+  /// and the *element* types have unique required-or-optional fields.
+  /// Same algorithm as required-field, but one level deeper through
+  /// [_requiredFieldArmsFor] applied to each array's `items`. Each
+  /// inner `_KeyExists(tag)` becomes an outer `_ArrayElementHasKey(tag)`
+  /// rooted on the cast list local (`v`).
+  _PredicateDispatchMode? _pickArrayElementMode(SchemaRenderer context) {
+    if (!schemas.every((s) => s is RenderArray)) return null;
+    final arrays = schemas.cast<RenderArray>();
+    final innerArms = _requiredFieldArmsFor(
+      arrays.map((a) => a.items).toList(),
+    );
+    if (innerArms == null) return null;
+    final dispatch = <Map<String, dynamic>>[];
+    Map<String, dynamic>? fallback;
+    final variants = <Map<String, dynamic>>[];
+    for (var i = 0; i < arrays.length; i++) {
+      final plan = _planVariant(arrays[i], context);
+      // Every array variant has a known shape key (`List<dynamic>`)
+      // and a [_VariantConversion], so [_planVariant] never returns
+      // null here — but guarding keeps the picker honest if a future
+      // RenderSchema type weakens that guarantee.
+      if (plan == null) return null;
+      // [_planVariant] would name every array `<Parent>List` (the
+      // shared `wrapperTag = 'List'`), so the sibling array variants
+      // would collide. Splice in the items type to keep wrapper class
+      // names unique: `<Parent><ItemType>List`.
+      final wrapperName = '$typeName${arrays[i].items.typeName}List';
+      variants.add({
+        'wrapperTypeName': wrapperName,
+        'valueType': plan.valueType,
+        'jsonTestType': plan.jsonTestType,
+        'fromJson': plan.fromJson,
+        'toJsonBody': plan.toJson,
+        'toJsonReturnType': 'dynamic',
+        'positionalBoolIgnore': plan.positionalBoolIgnore,
+      });
+      final innerPredicate = innerArms[i].predicate;
+      // Translate the inner predicate (operating on the items'
+      // Map representation) to the outer one (operating on the
+      // List local, peeking [0]). _Always passes through unchanged —
+      // a fallback-eligible items schema produces a fallback-eligible
+      // array variant.
+      final outerPredicate = switch (innerPredicate) {
+        _KeyExists(:final propertyName) => _ArrayElementHasKey(propertyName),
+        _Always() => const _Always(),
+        // Composing _ArrayElementHasKey with itself would mean
+        // `array<array<object>>` element-of-element dispatch — a
+        // generalization we haven't needed.
+        _ArrayElementHasKey() => throw StateError(
+          'Unexpected nested array-element predicate from inner arms',
+        ),
+      };
+      final arm = <String, dynamic>{
+        'wrapperTypeName': wrapperName,
+        // Per-arm construction differs across siblings — each array
+        // wraps a `List<X>` of its own element type, so the conversion
+        // expression varies (`v.map<X>((e) => X.fromJson(e)).toList()`).
+        'construction': plan.fromJson,
+      };
+      if (outerPredicate is _Always) {
+        fallback = arm;
+      } else {
+        arm['predicateTest'] = outerPredicate.dartIfTest('v');
+        dispatch.add(arm);
+      }
+    }
+    return _PredicateDispatchMode(
+      dispatch: dispatch,
+      fallback: fallback,
+      variants: variants,
+      factoryParamType: 'dynamic',
+      preamble: const [
+        {'line': 'final v = json as List;'},
+      ],
+      throwMessage: 'No variant of $typeName matched first array element',
+      toJsonReturnType: 'dynamic',
     );
   }
 
@@ -4537,19 +4650,66 @@ class _HybridMode extends _DispatchMode {
   final List<Map<String, dynamic>> variants;
 }
 
-/// Required-field dispatch (a.k.a. property-presence) — checked-arm
-/// `if (json.containsKey('tag')) return ...` chain followed by an
-/// optional fallback variant.
-class _RequiredFieldMode extends _DispatchMode {
-  const _RequiredFieldMode({
+/// Predicate-driven if-chain dispatch — covers every mode whose
+/// generated `fromJson` is "test predicate, return wrapper" repeated
+/// per arm with an optional unguarded fallback. Currently:
+///
+/// - **Required-field / property-presence**: factory takes a
+///   `Map<String, dynamic>` directly; predicates run `containsKey`
+///   on it; wrappers wrap the Map back as `value.toJson()`.
+/// - **Array-element**: factory takes `dynamic`, casts to `List` in
+///   the preamble, predicates peek the first element; wrappers wrap
+///   `List<X>` and serialize element-wise.
+///
+/// The two differ in five knobs: factory parameter type, optional
+/// preamble line, per-arm wrapper construction, the throw message
+/// used when no arm matches, and the `toJson()` return type. Adding
+/// a new predicate kind that fits the if-chain shape (e.g. peeking
+/// a property's array, an `int`-valued tag) is a new picker that
+/// builds this mode with different knob values — no new mode class,
+/// no new template branch.
+class _PredicateDispatchMode extends _DispatchMode {
+  const _PredicateDispatchMode({
     required this.dispatch,
     required this.fallback,
     required this.variants,
+    required this.factoryParamType,
+    required this.preamble,
+    required this.throwMessage,
+    required this.toJsonReturnType,
   });
 
+  /// Per-arm contexts for each checked branch. Each entry has
+  /// `predicateTest`, `wrapperTypeName`, and `construction` keys.
   final List<Map<String, dynamic>> dispatch;
+
+  /// Unguarded fallback at the end of the if-chain (no `if`).
+  /// Same per-arm shape as [dispatch] entries.
   final Map<String, dynamic>? fallback;
+
+  /// Wrapper subclass declarations, in declaration order.
   final List<Map<String, dynamic>> variants;
+
+  /// Type of the `fromJson(... json)` parameter — `Map<String, dynamic>`
+  /// for object-shaped dispatches, `dynamic` for ones whose preamble
+  /// performs the cast.
+  final String factoryParamType;
+
+  /// Truthy-or-`false` mustache section value: a single-element list
+  /// `[{'line': '...'}]` to emit one preamble line, or `false` to
+  /// emit nothing. Modes that need to bind a local before the
+  /// if-chain (e.g. `final v = json as List;`) use this; modes that
+  /// run predicates directly on the factory parameter pass `false`.
+  final Object preamble;
+
+  /// Message inside the unguarded-fallback `throw FormatException(...)`.
+  /// Pre-substitutes the parent typeName so mustache only splices.
+  final String throwMessage;
+
+  /// Wrapper `toJson()` return type — `Map<String, dynamic>` when
+  /// every variant's wrapped value is itself a Map, `dynamic` when
+  /// any variant wraps a non-Map value (List, primitive, etc).
+  final String toJsonReturnType;
 }
 
 /// No dispatch picked — emits the legacy `UnimplementedError` stub.
@@ -4567,7 +4727,7 @@ void _applyDispatchMode(_DispatchMode mode, Map<String, dynamic> ctx) {
   ctx['has_discriminator_dispatch'] = false;
   ctx['has_shape_dispatch'] = false;
   ctx['has_hybrid_dispatch'] = false;
-  ctx['has_required_field_dispatch'] = false;
+  ctx['has_predicate_dispatch'] = false;
   ctx['no_dispatch'] = false;
   // Modes that take a Map argument override below; shape / hybrid /
   // no-dispatch keep `dynamic` since the matched JSON might be a
@@ -4598,16 +4758,29 @@ void _applyDispatchMode(_DispatchMode mode, Map<String, dynamic> ctx) {
       ctx['mapArms'] = mapArms;
       ctx['mapFallback'] = mapFallback ?? false;
       ctx['variants'] = variants;
-    case _RequiredFieldMode(
+    case _PredicateDispatchMode(
       :final dispatch,
       :final fallback,
       :final variants,
+      :final factoryParamType,
+      :final preamble,
+      :final throwMessage,
+      :final toJsonReturnType,
     ):
-      ctx['has_required_field_dispatch'] = true;
+      ctx['has_predicate_dispatch'] = true;
       ctx['dispatch'] = dispatch;
       ctx['fallback'] = fallback ?? false;
       ctx['variants'] = variants;
-      ctx['maybeFromJsonParamType'] = 'Map<String, dynamic>?';
+      ctx['factoryParamType'] = factoryParamType;
+      ctx['preamble'] = preamble;
+      ctx['throwMessage'] = throwMessage;
+      ctx['toJsonReturnType'] = toJsonReturnType;
+      // [maybeFromJson]'s parameter mirrors the factory's. A `Map`
+      // factory pairs with `Map?`; `dynamic` already accepts null so
+      // we leave the default.
+      if (factoryParamType == 'Map<String, dynamic>') {
+        ctx['maybeFromJsonParamType'] = 'Map<String, dynamic>?';
+      }
     case _NoDispatchMode():
       ctx['no_dispatch'] = true;
   }
@@ -4644,6 +4817,26 @@ class _KeyExists extends _Predicate {
 
   @override
   String dartIfTest(String jsonVar) => "$jsonVar.containsKey('$propertyName')";
+}
+
+/// `(jsonVar.first as Map<String, dynamic>).containsKey('propertyName')` —
+/// peeks the first element of a List local for a unique property. Used
+/// by array-element dispatch to distinguish `array<object>` variants
+/// whose outer `List<dynamic>` shape collides but whose elements differ.
+/// Caller is responsible for binding `jsonVar` to a non-null `List`;
+/// the predicate short-circuits on `.isNotEmpty` so empty lists fall
+/// through to the next arm (or the unguarded fallback) without throwing.
+@immutable
+class _ArrayElementHasKey extends _Predicate {
+  const _ArrayElementHasKey(this.propertyName);
+
+  final String propertyName;
+
+  @override
+  String dartIfTest(String jsonVar) {
+    final cast = '($jsonVar.first as Map<String, dynamic>)';
+    return "$jsonVar.isNotEmpty && $cast.containsKey('$propertyName')";
+  }
 }
 
 /// Catch-all predicate — used by the dispatch's optional fallback

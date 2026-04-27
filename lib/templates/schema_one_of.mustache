@@ -85,22 +85,25 @@
 {{> _one_of_wrapper}}
 {{/variants}}
 {{/has_hybrid_dispatch}}
-{{#has_required_field_dispatch}}
+{{#has_predicate_dispatch}}
 {{{ doc_comment }}}sealed class {{ typeName }} {
     const {{ typeName }}();
 
-    factory {{ typeName }}.fromJson(Map<String, dynamic> json) {
+    factory {{ typeName }}.fromJson({{{ factoryParamType }}} json) {
+{{#preamble}}
+        {{ line }}
+{{/preamble}}
 {{#dispatch}}
         if ({{{ predicateTest }}}) {
-            return {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(json));
+            return {{{ wrapperTypeName }}}({{{ construction }}});
         }
 {{/dispatch}}
 {{#fallback}}
-        return {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(json));
+        return {{{ wrapperTypeName }}}({{{ construction }}});
 {{/fallback}}
 {{^fallback}}
         throw FormatException(
-            'No variant of {{ typeName }} matched json keys: ${json.keys.toList()}',
+            '{{{ throwMessage }}}',
         );
 {{/fallback}}
     }
@@ -108,13 +111,13 @@
     {{> _one_of_maybe_from_json}}
 
     /// Require all subclasses to implement toJson.
-    Map<String, dynamic> toJson();
+    {{{ toJsonReturnType }}} toJson();
 }
 
 {{#variants}}
 {{> _one_of_wrapper}}
 {{/variants}}
-{{/has_required_field_dispatch}}
+{{/has_predicate_dispatch}}
 {{#no_dispatch}}
 {{{ doc_comment }}}sealed class {{ typeName }} {
     static {{ typeName }} fromJson(dynamic jsonArg) {

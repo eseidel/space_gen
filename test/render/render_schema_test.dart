@@ -1189,8 +1189,150 @@ void main() {
           },
         ],
       });
-      // Two arrays both have jsonShapeKey = List<dynamic>; dispatch
-      // can't distinguish — fall through to the legacy stub.
+      // Two arrays of *primitive* items both share List<dynamic> AND
+      // have no element-level required fields to peek at — dispatch
+      // can't distinguish, fall through to the legacy stub.
+      expect(result, contains("throw UnimplementedError('Test.fromJson')"));
+    });
+
+    test('non-discriminator anyOf with two array<object> variants where '
+        'the element types have a unique required tag uses array-element '
+        'dispatch', () {
+      // Real-world site: github's `activity/list-stargazers-for-repo`
+      // has `anyOf<array<simple-user>, array<stargazer>>`. Stargazer
+      // requires `starred_at` (which simple-user doesn't list at all),
+      // so we can peek `(json as List).first.containsKey('starred_at')`
+      // and pick the right wrapper.
+      final results = renderTestSchemas(
+        {
+          'StarsResp': {
+            'anyOf': [
+              {
+                'type': 'array',
+                'items': {r'$ref': '#/components/schemas/Stargazer'},
+              },
+              {
+                'type': 'array',
+                'items': {r'$ref': '#/components/schemas/User'},
+              },
+            ],
+          },
+          'Stargazer': {
+            'type': 'object',
+            'required': ['starred_at', 'user'],
+            'properties': {
+              'starred_at': {'type': 'string'},
+              'user': {'type': 'object'},
+            },
+          },
+          'User': {
+            'type': 'object',
+            'required': ['login'],
+            'properties': {
+              'login': {'type': 'string'},
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final result = results['StarsResp'];
+      expect(result, isNotNull);
+      // Factory takes a dynamic since we cast to List inside.
+      expect(result, contains('factory StarsResp.fromJson(dynamic json)'));
+      // Cast once to a list local; predicates and wrappers reuse it.
+      expect(result, contains('final v = json as List;'));
+      // Element-peek dispatch: stargazer's tag is `starred_at`.
+      expect(
+        result,
+        contains(
+          'v.isNotEmpty && '
+          "(v.first as Map<String, dynamic>).containsKey('starred_at')",
+        ),
+      );
+      // Wrapper subclass names splice in the items type so the two
+      // `array<>` variants produce distinct classes.
+      expect(result, contains('class StarsRespStargazerList'));
+      expect(result, contains('class StarsRespUserList'));
+      expect(result, isNot(contains('throw UnimplementedError')));
+    });
+
+    test('array-element dispatch puts the variant whose items have no '
+        'unique fields at the end as a fallback (no `if` guard)', () {
+      // Plain `Item` is a subset of `Tagged` — Tagged adds a unique
+      // `kind` property. The picker promotes `Item` to fallback so
+      // an empty list (or one whose first element lacks `kind`) flows
+      // there without throwing.
+      final results = renderTestSchemas(
+        {
+          'Resp': {
+            'oneOf': [
+              {
+                'type': 'array',
+                'items': {r'$ref': '#/components/schemas/Item'},
+              },
+              {
+                'type': 'array',
+                'items': {r'$ref': '#/components/schemas/Tagged'},
+              },
+            ],
+          },
+          'Item': {
+            'type': 'object',
+            'properties': {
+              'name': {'type': 'string'},
+            },
+          },
+          'Tagged': {
+            'type': 'object',
+            'required': ['kind'],
+            'properties': {
+              'kind': {'type': 'string'},
+              'name': {'type': 'string'},
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final result = results['Resp'];
+      expect(result, isNotNull);
+      // Tagged is dispatched on `kind`; Item is the unguarded fallback.
+      expect(
+        result,
+        contains(
+          'v.isNotEmpty && '
+          "(v.first as Map<String, dynamic>).containsKey('kind')",
+        ),
+      );
+      // Fallback variant has no `if` guard — it's the unconditional
+      // return after the checked arm.
+      expect(result, contains('return RespItemList('));
+      expect(result, isNot(contains('throw UnimplementedError')));
+      // Empty-list fallthrough: no `containsKey` for `name` (the only
+      // property of Item), since Item is the fallback variant.
+      expect(
+        result,
+        isNot(
+          contains("(v.first as Map<String, dynamic>).containsKey('name')"),
+        ),
+      );
+    });
+
+    test('array-element dispatch bails when items are primitives '
+        '(no required-fields to peek)', () {
+      // Same primitive-arrays case as the legacy fallback test,
+      // confirming the new array-element picker doesn't claim it.
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+          {
+            'type': 'array',
+            'items': {'type': 'integer'},
+          },
+        ],
+      });
       expect(result, contains("throw UnimplementedError('Test.fromJson')"));
     });
 
