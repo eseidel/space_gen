@@ -1455,6 +1455,15 @@ void main() {
       );
       // No legacy stub.
       expect(result, isNot(contains('throw UnimplementedError')));
+      // Sealed subclass declarations land in spec order: array first,
+      // then the three objects. The List wrapper holds the parsed
+      // List<itemType>; the object wrappers delegate to the variant
+      // class's own fromJson/toJson.
+      expect(result, contains('final class TestList extends Test'));
+      expect(result, contains('final List<String> value;'));
+      expect(result, contains('final class TestTestOneOf1 extends Test'));
+      expect(result, contains('final class TestTestOneOf2 extends Test'));
+      expect(result, contains('final class TestTestOneOf3 extends Test'));
     });
 
     test('hybrid dispatch: Map sub-arms include a fallback when one '

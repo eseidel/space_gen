@@ -3816,6 +3816,18 @@ class RenderOneOf extends RenderNewType {
     return '$typeName$tag';
   }
 
+  /// Wrapper-variant context for the object-only dispatch paths
+  /// (discriminator, required-field, hybrid Map sub-arms). Each
+  /// produces a `Map<String, dynamic> toJson() => value.toJson()`
+  /// wrapper around the variant's own newtype.
+  Map<String, dynamic> objectWrapperContext(RenderSchema variant) => {
+    'wrapperTypeName': wrapperTypeName(variant),
+    'valueType': variant.typeName,
+    'toJsonReturnType': 'Map<String, dynamic>',
+    'toJsonBody': 'value.toJson()',
+    'positionalBoolIgnore': false,
+  };
+
   /// Per-variant info needed to emit a dispatch arm + wrapper subclass.
   /// Returns null when [variant] isn't representable in the dispatch
   /// (unsupported shape, or runtime-type test would conflict with
@@ -4082,25 +4094,43 @@ class RenderOneOf extends RenderNewType {
       looseRequiredUniqueness: true,
     );
     if (mapArms == null) return null;
-    // Build the non-Map shape arms reusing the existing per-variant
-    // planner.
+
+    // Walk variants in [schemas] order — that's the order sealed
+    // subclasses get declared in the generated file. Each variant is
+    // either a Map arm (already keyed in [mapArms]) or a non-Map
+    // shape arm (we build the plan here). Building both arm lists
+    // and the parallel [variantContexts] in a single pass keeps the
+    // routing explicit; pulling them apart later would need lookup
+    // tables and bang-asserts.
+    final mapArmByVariant = {for (final a in mapArms) a.variant: a};
     final shapeArms = <_VariantPlan>[];
-    for (final variant in eligibility.shapeVariants) {
+    final variantContexts = <Map<String, dynamic>>[];
+    for (final variant in schemas) {
+      final mapArm = mapArmByVariant[variant];
+      if (mapArm != null) {
+        variantContexts.add(objectWrapperContext(mapArm.variant));
+        continue;
+      }
       final plan = _planVariant(variant, context);
       if (plan == null) return null;
       shapeArms.add(plan);
+      variantContexts.add(_shapeWrapperContext(plan));
     }
-    return _HybridDispatchPlan(shapeArms: shapeArms, mapArms: mapArms);
+    return _HybridDispatchPlan(
+      shapeArms: shapeArms,
+      mapArms: mapArms,
+      variantContexts: variantContexts,
+    );
   }
 
   /// Cheap context-free check for [_hybridDispatchPlan] — used by
   /// [_hasDispatch] / [additionalImports] which run before the
   /// SchemaRenderer is available. Skips the per-variant
-  /// [_planVariant] step, which composes context-dependent inner
-  /// schemas. Soundness: any [_planVariant] that fails downstream
-  /// just falls through to required-field or no_dispatch in
-  /// [toTemplateContext], with a stray `package:meta/meta.dart`
-  /// import that dart fix removes.
+  /// [_planVariant] step, but every schema with a non-null
+  /// [RenderSchema.jsonShapeKey] also has a non-null [wrapperTag]
+  /// and non-null [_variantConversion] (the three are gated together
+  /// per subclass), so a successful eligibility + Map sub-dispatch
+  /// here implies [_hybridDispatchPlan] would succeed too.
   bool get _canHybridDispatch {
     final eligibility = _hybridEligibility();
     if (eligibility == null) return false;
@@ -4177,17 +4207,6 @@ class RenderOneOf extends RenderNewType {
       'maybeFromJsonParamType': 'dynamic',
     };
 
-    /// Wrapper-variant context for the object-only paths
-    /// (discriminator, required-field). Both produce
-    /// `Map<String, dynamic> toJson() => value.toJson()` wrappers.
-    Map<String, dynamic> objectWrapperContext(RenderSchema variant) => {
-      'wrapperTypeName': wrapperTypeName(variant),
-      'valueType': variant.typeName,
-      'toJsonReturnType': 'Map<String, dynamic>',
-      'toJsonBody': 'value.toJson()',
-      'positionalBoolIgnore': false,
-    };
-
     final disc = _effectiveDiscriminator;
     if (disc != null && _hasDiscriminatorDispatch) {
       final variants = schemas.map(objectWrapperContext).toList();
@@ -4209,41 +4228,13 @@ class RenderOneOf extends RenderNewType {
     final shapePlans = _shapeDispatchPlans(context);
     if (shapePlans != null) {
       ctx['has_shape_dispatch'] = true;
-      ctx['variants'] = shapePlans
-          .map(
-            (p) => {
-              'wrapperTypeName': p.wrapperTypeName,
-              'valueType': p.valueType,
-              'jsonTestType': p.jsonTestType,
-              'fromJson': p.fromJson,
-              // The wrapper partial expects `toJsonBody` and
-              // `toJsonReturnType`; shape variants always return
-              // `dynamic` (variants might be primitives).
-              'toJsonBody': p.toJson,
-              'toJsonReturnType': 'dynamic',
-              'positionalBoolIgnore': p.positionalBoolIgnore,
-            },
-          )
-          .toList();
+      ctx['variants'] = shapePlans.map(_shapeWrapperContext).toList();
       return ctx;
     }
     final hybrid = _hybridDispatchPlan(context);
     if (hybrid != null) {
       ctx['has_hybrid_dispatch'] = true;
-      // Outer shape arms (non-Map variants).
-      ctx['shapeArms'] = hybrid.shapeArms
-          .map(
-            (p) => {
-              'wrapperTypeName': p.wrapperTypeName,
-              'valueType': p.valueType,
-              'jsonTestType': p.jsonTestType,
-              'fromJson': p.fromJson,
-              'toJsonBody': p.toJson,
-              'toJsonReturnType': 'dynamic',
-              'positionalBoolIgnore': p.positionalBoolIgnore,
-            },
-          )
-          .toList();
+      ctx['shapeArms'] = hybrid.shapeArms.map(_shapeWrapperContext).toList();
       // Inner Map sub-dispatch arms — same shape as the pure
       // required-field path (checked arms + optional fallback).
       final mapChecked = hybrid.mapArms
@@ -4267,36 +4258,7 @@ class RenderOneOf extends RenderNewType {
               'wrapperTypeName': wrapperTypeName(mapFallback.variant),
               'valueType': mapFallback.variant.typeName,
             };
-      // All variants — shape ones get the inline-pod/array wrapper
-      // partials; map ones get the object wrapper. Emit in
-      // schemas-declared order so the sealed subclass list matches
-      // the spec. Map variants are exactly the ones in [mapArms];
-      // shape variants are exactly the ones with a non-Map shape key.
-      final mapArmsByVariant = <RenderSchema, _RequiredFieldArm>{
-        for (final a in hybrid.mapArms) a.variant: a,
-      };
-      final shapeArmsByShape = <String, _VariantPlan>{
-        for (final p in hybrid.shapeArms) p.jsonTestType: p,
-      };
-      final variantContexts = <Map<String, dynamic>>[];
-      for (final v in schemas) {
-        final mapArm = mapArmsByVariant[v];
-        if (mapArm != null) {
-          variantContexts.add(objectWrapperContext(mapArm.variant));
-          continue;
-        }
-        final shapePlan = shapeArmsByShape[v.jsonShapeKey]!;
-        variantContexts.add({
-          'wrapperTypeName': shapePlan.wrapperTypeName,
-          'valueType': shapePlan.valueType,
-          'jsonTestType': shapePlan.jsonTestType,
-          'fromJson': shapePlan.fromJson,
-          'toJsonBody': shapePlan.toJson,
-          'toJsonReturnType': 'dynamic',
-          'positionalBoolIgnore': shapePlan.positionalBoolIgnore,
-        });
-      }
-      ctx['variants'] = variantContexts;
+      ctx['variants'] = hybrid.variantContexts;
       ctx['maybeFromJsonParamType'] = 'dynamic';
       return ctx;
     }
@@ -4475,6 +4437,21 @@ final class _MultiStatusContext {
 /// authoritative spelling.
 const String _mapShapeKey = 'Map<String, dynamic>';
 
+/// Wrapper-variant context for the shape-dispatch paths (pure shape
+/// and the non-Map arms of hybrid). The wrapper stores the matched
+/// JSON value verbatim and `toJson()` returns it — for primitive
+/// variants the return type can't be `Map<String, dynamic>` since it
+/// might be `int`, `String`, etc., so we use `dynamic`.
+Map<String, dynamic> _shapeWrapperContext(_VariantPlan p) => {
+  'wrapperTypeName': p.wrapperTypeName,
+  'valueType': p.valueType,
+  'jsonTestType': p.jsonTestType,
+  'fromJson': p.fromJson,
+  'toJsonBody': p.toJson,
+  'toJsonReturnType': 'dynamic',
+  'positionalBoolIgnore': p.positionalBoolIgnore,
+};
+
 /// Eligibility result for [RenderOneOf._hybridEligibility]: which
 /// variants land in shape arms vs which collide on the Map shape and
 /// need a required-field sub-dispatch.
@@ -4499,16 +4476,28 @@ class _HybridEligibility {
 /// (so multiple objects can coexist alongside e.g. an array).
 @immutable
 class _HybridDispatchPlan {
-  const _HybridDispatchPlan({required this.shapeArms, required this.mapArms});
+  const _HybridDispatchPlan({
+    required this.shapeArms,
+    required this.mapArms,
+    required this.variantContexts,
+  });
 
   /// Per-shape arms for non-Map variants (e.g. array, string). Each
-  /// arm corresponds to exactly one variant.
+  /// arm corresponds to exactly one variant. Order is the order
+  /// non-Map variants appear in [RenderOneOf.schemas].
   final List<_VariantPlan> shapeArms;
 
   /// Required-field arms for the Map-shaped variants — checked-then-
   /// (optional)-fallback, same shape as a pure required-field
   /// dispatch.
   final List<_RequiredFieldArm> mapArms;
+
+  /// Wrapper-class template contexts in [RenderOneOf.schemas] order,
+  /// so the sealed subclass declarations match the spec's variant
+  /// order. Each context is either a [_shapeWrapperContext] (for
+  /// non-Map variants) or an `objectWrapperContext` (for Map
+  /// variants).
+  final List<Map<String, dynamic>> variantContexts;
 }
 
 /// One arm of the required-field dispatch: an object-shaped variant
