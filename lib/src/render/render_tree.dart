@@ -4178,149 +4178,92 @@ class RenderOneOf extends RenderNewType {
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    // Mustache section tags must all be present in the context map
-    // (with a falsy value to skip), so seed every dispatch flag to
-    // false. The switch below flips exactly one true and writes
-    // that mode's keys — having all five branches in one place
-    // makes the "this mode → these template keys" mapping easy to
-    // read.
     final ctx = <String, dynamic>{
       'doc_comment': createDocComment(common: common),
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
-      'has_discriminator_dispatch': false,
-      'has_shape_dispatch': false,
-      'has_hybrid_dispatch': false,
-      'has_required_field_dispatch': false,
-      'no_dispatch': false,
-      // Modes that take a Map argument override the default below
-      // (`Map<String, dynamic>?`); shape / hybrid / no-dispatch
-      // keep `dynamic` since the matched JSON might be a primitive.
-      'maybeFromJsonParamType': 'dynamic',
     };
-    switch (_pickDispatchMode(context)) {
-      case _DiscriminatorMode(
-        :final discriminatorProperty,
-        :final dispatch,
-        :final variants,
-      ):
-        ctx['has_discriminator_dispatch'] = true;
-        ctx['discriminatorProperty'] = discriminatorProperty;
-        ctx['dispatch'] = dispatch;
-        ctx['variants'] = variants;
-        ctx['maybeFromJsonParamType'] = 'Map<String, dynamic>?';
-      case _ShapeMode(:final variants):
-        ctx['has_shape_dispatch'] = true;
-        ctx['variants'] = variants;
-      case _HybridMode(
-        :final shapeArms,
-        :final mapArms,
-        :final mapFallback,
-        :final variants,
-      ):
-        ctx['has_hybrid_dispatch'] = true;
-        ctx['shapeArms'] = shapeArms;
-        ctx['mapArms'] = mapArms;
-        ctx['mapFallback'] = mapFallback ?? false;
-        ctx['variants'] = variants;
-      case _RequiredFieldMode(
-        :final dispatch,
-        :final fallback,
-        :final variants,
-      ):
-        ctx['has_required_field_dispatch'] = true;
-        ctx['dispatch'] = dispatch;
-        ctx['fallback'] = fallback ?? false;
-        ctx['variants'] = variants;
-        ctx['maybeFromJsonParamType'] = 'Map<String, dynamic>?';
-      case _NoDispatchMode():
-        ctx['no_dispatch'] = true;
-    }
+    _applyDispatchMode(_pickDispatchMode(context), ctx);
     return ctx;
   }
 
   /// Picks the dispatch mode for this oneOf in priority order:
   /// discriminator → pure shape → hybrid → required-field → none.
-  /// Each branch peels off the matching mode and packs its
-  /// template-ready data into the returned [_DispatchMode]; the
-  /// caller projects that onto the Mustache context.
-  _DispatchMode _pickDispatchMode(SchemaRenderer context) {
+  _DispatchMode _pickDispatchMode(SchemaRenderer context) =>
+      _pickDiscriminatorMode() ??
+      _pickShapeMode(context) ??
+      _pickHybridMode(context) ??
+      _pickRequiredFieldMode() ??
+      const _NoDispatchMode();
+
+  _DiscriminatorMode? _pickDiscriminatorMode() {
     final disc = _effectiveDiscriminator;
-    if (disc != null && _hasDiscriminatorDispatch) {
-      return _DiscriminatorMode(
-        discriminatorProperty: disc.propertyName,
-        dispatch: [
-          for (final entry in disc.mapping.entries)
-            {
-              'value': entry.key,
-              'wrapperTypeName': wrapperTypeName(entry.value),
-              'valueType': entry.value.typeName,
-            },
-        ],
-        variants: schemas.map(objectWrapperContext).toList(),
-      );
-    }
-    final shapePlans = _shapeDispatchPlans(context);
-    if (shapePlans != null) {
-      return _ShapeMode(
-        variants: shapePlans.map(_shapeWrapperContext).toList(),
-      );
-    }
-    final hybrid = _hybridDispatchPlan(context);
-    if (hybrid != null) {
-      // Map sub-dispatch arms split into checked (`when
-      // v.containsKey(tag)`) and the optional fallback (no `when`,
-      // catches everything else).
-      final mapChecked = hybrid.mapArms
-          .where((a) => a.tagField != null)
-          .toList();
-      final mapFallback = hybrid.mapArms
-          .where((a) => a.tagField == null)
-          .firstOrNull;
-      return _HybridMode(
-        shapeArms: hybrid.shapeArms.map(_shapeWrapperContext).toList(),
-        mapArms: [
-          for (final a in mapChecked)
-            {
-              'tagField': a.tagField,
-              'wrapperTypeName': wrapperTypeName(a.variant),
-              'valueType': a.variant.typeName,
-            },
-        ],
-        mapFallback: mapFallback == null
-            ? null
-            : {
-                'wrapperTypeName': wrapperTypeName(mapFallback.variant),
-                'valueType': mapFallback.variant.typeName,
-              },
-        variants: hybrid.variantContexts,
-      );
-    }
-    final reqArms = _requiredFieldDispatchArms;
-    if (reqArms != null) {
-      // Same checked-then-fallback split as the hybrid Map arm.
-      final checked = reqArms.where((a) => a.tagField != null).toList();
-      final fallback = reqArms.where((a) => a.tagField == null).firstOrNull;
-      return _RequiredFieldMode(
-        dispatch: [
-          for (final a in checked)
-            {
-              'tagField': a.tagField,
-              'wrapperTypeName': wrapperTypeName(a.variant),
-              'valueType': a.variant.typeName,
-            },
-        ],
-        fallback: fallback == null
-            ? null
-            : {
-                'wrapperTypeName': wrapperTypeName(fallback.variant),
-                'valueType': fallback.variant.typeName,
-              },
-        variants: reqArms.map((a) => objectWrapperContext(a.variant)).toList(),
-      );
-    }
-    return const _NoDispatchMode();
+    if (disc == null || !_hasDiscriminatorDispatch) return null;
+    return _DiscriminatorMode(
+      discriminatorProperty: disc.propertyName,
+      dispatch: [
+        for (final entry in disc.mapping.entries)
+          {
+            'value': entry.key,
+            'wrapperTypeName': wrapperTypeName(entry.value),
+            'valueType': entry.value.typeName,
+          },
+      ],
+      variants: schemas.map(objectWrapperContext).toList(),
+    );
   }
+
+  _ShapeMode? _pickShapeMode(SchemaRenderer context) {
+    final plans = _shapeDispatchPlans(context);
+    if (plans == null) return null;
+    return _ShapeMode(variants: plans.map(_shapeWrapperContext).toList());
+  }
+
+  _HybridMode? _pickHybridMode(SchemaRenderer context) {
+    final hybrid = _hybridDispatchPlan(context);
+    if (hybrid == null) return null;
+    // Map sub-dispatch arms split into checked (`when
+    // v.containsKey(tag)`) and the optional fallback (no `when`,
+    // catches everything else).
+    final checked = hybrid.mapArms.where((a) => a.tagField != null);
+    final fallback = hybrid.mapArms
+        .where((a) => a.tagField == null)
+        .firstOrNull;
+    return _HybridMode(
+      shapeArms: hybrid.shapeArms.map(_shapeWrapperContext).toList(),
+      mapArms: checked.map(_taggedArmContext).toList(),
+      mapFallback: fallback == null ? null : _fallbackArmContext(fallback),
+      variants: hybrid.variantContexts,
+    );
+  }
+
+  _RequiredFieldMode? _pickRequiredFieldMode() {
+    final arms = _requiredFieldDispatchArms;
+    if (arms == null) return null;
+    final checked = arms.where((a) => a.tagField != null);
+    final fallback = arms.where((a) => a.tagField == null).firstOrNull;
+    return _RequiredFieldMode(
+      dispatch: checked.map(_taggedArmContext).toList(),
+      fallback: fallback == null ? null : _fallbackArmContext(fallback),
+      variants: arms.map((a) => objectWrapperContext(a.variant)).toList(),
+    );
+  }
+
+  /// Template-context shape for a checked required-field arm —
+  /// used by both the pure required-field path and the hybrid Map
+  /// sub-dispatch.
+  Map<String, dynamic> _taggedArmContext(_RequiredFieldArm arm) => {
+    'tagField': arm.tagField,
+    'wrapperTypeName': wrapperTypeName(arm.variant),
+    'valueType': arm.variant.typeName,
+  };
+
+  /// Template-context shape for the unguarded fallback arm of a
+  /// required-field or hybrid-Map dispatch.
+  Map<String, dynamic> _fallbackArmContext(_RequiredFieldArm arm) => {
+    'wrapperTypeName': wrapperTypeName(arm.variant),
+    'valueType': arm.variant.typeName,
+  };
 
   @override
   String fromJsonExpression(
@@ -4596,6 +4539,62 @@ class _RequiredFieldMode extends _DispatchMode {
 /// No dispatch picked — emits the legacy `UnimplementedError` stub.
 class _NoDispatchMode extends _DispatchMode {
   const _NoDispatchMode();
+}
+
+/// Project [mode] onto the Mustache context [ctx] — seeds every
+/// `has_*_dispatch` flag to false (mustache section tags require
+/// the key to exist), flips the matching one to true, and writes
+/// that mode's per-template-branch keys. The exhaustive switch is
+/// the single place that maps each mode to its template keys, so
+/// the per-mode key lists read side-by-side.
+void _applyDispatchMode(_DispatchMode mode, Map<String, dynamic> ctx) {
+  ctx['has_discriminator_dispatch'] = false;
+  ctx['has_shape_dispatch'] = false;
+  ctx['has_hybrid_dispatch'] = false;
+  ctx['has_required_field_dispatch'] = false;
+  ctx['no_dispatch'] = false;
+  // Modes that take a Map argument override below; shape / hybrid /
+  // no-dispatch keep `dynamic` since the matched JSON might be a
+  // primitive.
+  ctx['maybeFromJsonParamType'] = 'dynamic';
+  switch (mode) {
+    case _DiscriminatorMode(
+      :final discriminatorProperty,
+      :final dispatch,
+      :final variants,
+    ):
+      ctx['has_discriminator_dispatch'] = true;
+      ctx['discriminatorProperty'] = discriminatorProperty;
+      ctx['dispatch'] = dispatch;
+      ctx['variants'] = variants;
+      ctx['maybeFromJsonParamType'] = 'Map<String, dynamic>?';
+    case _ShapeMode(:final variants):
+      ctx['has_shape_dispatch'] = true;
+      ctx['variants'] = variants;
+    case _HybridMode(
+      :final shapeArms,
+      :final mapArms,
+      :final mapFallback,
+      :final variants,
+    ):
+      ctx['has_hybrid_dispatch'] = true;
+      ctx['shapeArms'] = shapeArms;
+      ctx['mapArms'] = mapArms;
+      ctx['mapFallback'] = mapFallback ?? false;
+      ctx['variants'] = variants;
+    case _RequiredFieldMode(
+      :final dispatch,
+      :final fallback,
+      :final variants,
+    ):
+      ctx['has_required_field_dispatch'] = true;
+      ctx['dispatch'] = dispatch;
+      ctx['fallback'] = fallback ?? false;
+      ctx['variants'] = variants;
+      ctx['maybeFromJsonParamType'] = 'Map<String, dynamic>?';
+    case _NoDispatchMode():
+      ctx['no_dispatch'] = true;
+  }
 }
 
 /// One arm of the required-field dispatch: an object-shaped variant
