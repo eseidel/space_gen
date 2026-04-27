@@ -49,6 +49,42 @@
 {{> _one_of_wrapper}}
 {{/variants}}
 {{/has_shape_dispatch}}
+{{#has_hybrid_dispatch}}
+{{{ doc_comment }}}sealed class {{ typeName }} {
+    const {{ typeName }}();
+
+    factory {{ typeName }}.fromJson(dynamic json) {
+        return switch (json) {
+{{#shapeArms}}
+            final {{{ jsonTestType }}} v => {{{ wrapperTypeName }}}({{{ fromJson }}}),
+{{/shapeArms}}
+{{#mapArms}}
+            final Map<String, dynamic> v when v.containsKey('{{ tagField }}') => {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(v)),
+{{/mapArms}}
+{{#mapFallback}}
+            final Map<String, dynamic> v => {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(v)),
+{{/mapFallback}}
+{{^mapFallback}}
+            final Map<String, dynamic> v => throw FormatException(
+                'No variant of {{ typeName }} matched json keys: ${v.keys.toList()}',
+            ),
+{{/mapFallback}}
+            _ => throw FormatException(
+                'Unsupported shape for {{ typeName }}: ${json.runtimeType}',
+            ),
+        };
+    }
+
+    {{> _one_of_maybe_from_json}}
+
+    /// Require all subclasses to implement toJson.
+    dynamic toJson();
+}
+
+{{#variants}}
+{{> _one_of_wrapper}}
+{{/variants}}
+{{/has_hybrid_dispatch}}
 {{#has_required_field_dispatch}}
 {{{ doc_comment }}}sealed class {{ typeName }} {
     const {{ typeName }}();

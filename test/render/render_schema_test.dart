@@ -1394,6 +1394,170 @@ void main() {
       expect(author, isNot(contains('throw UnimplementedError')));
     });
 
+    test('hybrid dispatch: array variant + multiple objects with disjoint '
+        'required uses shape-then-required-field', () {
+      // Github's `repos/get-content` 200 response shape: an array
+      // variant (`content-directory`) plus three object variants
+      // (`content-file` keyed on `content`, `content-symlink` keyed on
+      // `target`, `content-submodule` keyed on `submodule_git_url`).
+      // Pure shape dispatch fails because all three objects collide
+      // on `Map<String, dynamic>`; pure required-field fails because
+      // the array variant isn't an object. Hybrid: shape-arm the
+      // array, then required-field-dispatch the objects in a Map
+      // sub-arm.
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+          {
+            'type': 'object',
+            'required': ['content'],
+            'properties': {
+              'content': {'type': 'string'},
+            },
+          },
+          {
+            'type': 'object',
+            'required': ['target'],
+            'properties': {
+              'target': {'type': 'string'},
+            },
+          },
+          {
+            'type': 'object',
+            'required': ['submodule_git_url'],
+            'properties': {
+              'submodule_git_url': {'type': 'string'},
+            },
+          },
+        ],
+      });
+      // Outer shape arm for the array.
+      expect(result, contains('final List<dynamic> v => TestList'));
+      // Inner required-field arms for the three objects, guarded by
+      // `when v.containsKey('...')`.
+      expect(
+        result,
+        contains("final Map<String, dynamic> v when v.containsKey('content')"),
+      );
+      expect(
+        result,
+        contains("final Map<String, dynamic> v when v.containsKey('target')"),
+      );
+      expect(
+        result,
+        contains(
+          'final Map<String, dynamic> v '
+          "when v.containsKey('submodule_git_url')",
+        ),
+      );
+      // No legacy stub.
+      expect(result, isNot(contains('throw UnimplementedError')));
+      // Sealed subclass declarations land in spec order: array first,
+      // then the three objects. The List wrapper holds the parsed
+      // List<itemType>; the object wrappers delegate to the variant
+      // class's own fromJson/toJson.
+      expect(result, contains('final class TestList extends Test'));
+      expect(result, contains('final List<String> value;'));
+      expect(result, contains('final class TestTestOneOf1 extends Test'));
+      expect(result, contains('final class TestTestOneOf2 extends Test'));
+      expect(result, contains('final class TestTestOneOf3 extends Test'));
+    });
+
+    test('hybrid dispatch: Map sub-arms include a fallback when one '
+        'object has no unique props', () {
+      // String variant + two object variants where Tagged has unique
+      // `tag` and Anything has nothing unique. The Map sub-dispatch
+      // emits an unguarded `final Map<String, dynamic> v =>` arm
+      // pointing at the fallback variant — no Map-specific throw.
+      final result = renderTestSchema({
+        'oneOf': [
+          {'type': 'string'},
+          {
+            'type': 'object',
+            'required': ['tag'],
+            'properties': {
+              'tag': {'type': 'string'},
+            },
+          },
+          {'type': 'object', 'properties': <String, dynamic>{}},
+        ],
+      });
+      // Outer shape arm for the string.
+      expect(result, contains('final String v =>'));
+      // Map sub-arms — checked then fallback.
+      expect(
+        result,
+        contains("final Map<String, dynamic> v when v.containsKey('tag')"),
+      );
+      // The Map fallback uses an unguarded arm (no `when`).
+      expect(
+        result,
+        matches(
+          RegExp(r'final Map<String, dynamic> v\s*=>\s*Test'),
+        ),
+      );
+      // No "no Map variant matched" throw — the fallback handles it.
+      expect(result, isNot(contains('No variant of Test matched json keys')));
+    });
+
+    test('hybrid dispatch bails when Map variants are not '
+        'required-field dispatchable', () {
+      // String variant + two object variants that share both their
+      // required and optional sets. The Map sub-dispatch can't pick
+      // one over the other, so the whole hybrid plan bails and we
+      // fall through to the legacy stub.
+      final result = renderTestSchema({
+        'oneOf': [
+          {'type': 'string'},
+          {
+            'type': 'object',
+            'required': ['shared'],
+            'properties': {
+              'shared': {'type': 'string'},
+            },
+          },
+          {
+            'type': 'object',
+            'required': ['shared'],
+            'properties': {
+              'shared': {'type': 'string'},
+            },
+          },
+        ],
+      });
+      expect(result, contains('throw UnimplementedError'));
+    });
+
+    test('hybrid dispatch bails when a non-Map shape collides', () {
+      // Two array variants alongside an object variant. Pure shape
+      // can't pick between the two arrays (both `List<dynamic>`).
+      // Hybrid only knows how to disambiguate Map collisions, so it
+      // also bails — array-of-X vs array-of-Y is a separate gap.
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+          {
+            'type': 'array',
+            'items': {'type': 'integer'},
+          },
+          {
+            'type': 'object',
+            'required': ['note'],
+            'properties': {
+              'note': {'type': 'string'},
+            },
+          },
+        ],
+      });
+      expect(result, contains('throw UnimplementedError'));
+    });
+
     test('property-presence dispatch falls back to optional-unique tags '
         'when a sibling has no unique fields (the fallback)', () {
       // Github's `environment.protection_rules.items` shape: three
@@ -1496,6 +1660,63 @@ void main() {
       expect(err, contains("if (json.containsKey('metadata'))"));
       expect(err, contains('throw FormatException'));
       expect(err, isNot(contains('throw UnimplementedError')));
+    });
+
+    test('required-tag uniqueness on the pure path is strict — a sibling '
+        'that lists the tag as optional disqualifies it', () {
+      // Github's `git/create-blob` 422 shape: a `validation-error`
+      // requires `[documentation_url, message]`; a
+      // `repository-rule-violation-error` lists those as optional
+      // (and emits them in real responses). Loose required-uniqueness
+      // would tag validation on `documentation_url` and misclassify
+      // every violation response. The pure required-field path keeps
+      // strict uniqueness — falls through to optional-strict, which
+      // tags on `errors` (only validation has it) and `metadata`
+      // (only violation has it).
+      final results = renderTestSchemas(
+        {
+          'Err': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Validation'},
+              {r'$ref': '#/components/schemas/Violation'},
+            ],
+          },
+          'Validation': {
+            'type': 'object',
+            'required': ['documentation_url', 'message'],
+            'properties': {
+              'documentation_url': {'type': 'string'},
+              'message': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+          'Violation': {
+            'type': 'object',
+            'properties': {
+              'documentation_url': {'type': 'string'},
+              'message': {'type': 'string'},
+              'metadata': {'type': 'string'},
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final err = results['Err'];
+      // Strict-required failed (documentation_url is in violation's
+      // props), so the dispatch falls through to strict-optional:
+      // `errors` for validation, `metadata` for violation.
+      expect(err, contains("if (json.containsKey('errors'))"));
+      expect(err, contains("if (json.containsKey('metadata'))"));
+      // The forbidden loose dispatch tag — a violation response that
+      // emits `documentation_url` (which github does) would
+      // misclassify as validation if this fired.
+      expect(
+        err,
+        isNot(contains("if (json.containsKey('documentation_url'))")),
+      );
     });
 
     test('oneOf with discriminator but no mapping falls through to '
