@@ -813,7 +813,7 @@ void main() {
       };
       final result = renderTestSchema(schema);
       expect(result, contains('num v => TestNum(v)'));
-      expect(result, contains('Map<String, dynamic> v => TestTestOneOf1'));
+      expect(result, contains('Map<String, dynamic> v => TestVariant1'));
       expect(result, isNot(contains('throw UnimplementedError')));
     });
 
@@ -1453,6 +1453,43 @@ void main() {
       expect(pet, contains('final class PetDog extends Pet'));
     });
 
+    test('wrapper subclass uses position-based name when the variant '
+        'tag would double the parent prefix', () {
+      // Inline oneOf variants get parser-synthesized names that already
+      // contain the parent (`<Parent>OneOf<i>`). Composing the wrapper
+      // as `<Parent><variantTypeName>` would then double the prefix
+      // (e.g. `RequestRequestOneOf0`). The naming pass detects this and
+      // falls back to a position-based name — `RequestVariant0` —
+      // keeping the wrapper readable. Top-level `$ref` variants (whose
+      // names never start with the parent) are unaffected; see the Pet
+      // test above.
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'object',
+            'required': ['note'],
+            'properties': {
+              'note': {'type': 'string'},
+            },
+          },
+          {
+            'type': 'object',
+            'required': ['content_id'],
+            'properties': {
+              'content_id': {'type': 'integer'},
+            },
+          },
+        ],
+      });
+      expect(result, contains('final class TestVariant0 extends Test'));
+      expect(result, contains('final class TestVariant1 extends Test'));
+      // Variant data classes still use their parser-synthesized names.
+      expect(result, contains('final TestOneOf0 value;'));
+      expect(result, contains('final TestOneOf1 value;'));
+      // No doubled prefix anywhere.
+      expect(result, isNot(contains('TestTestOneOf')));
+    });
+
     test('property-presence dispatch falls back to legacy when one '
         'variant has nothing unique at all', () {
       // Cat requires {a, b}; Dog requires {a, b} too with the same
@@ -1603,9 +1640,9 @@ void main() {
       // class's own fromJson/toJson.
       expect(result, contains('final class TestList extends Test'));
       expect(result, contains('final List<String> value;'));
-      expect(result, contains('final class TestTestOneOf1 extends Test'));
-      expect(result, contains('final class TestTestOneOf2 extends Test'));
-      expect(result, contains('final class TestTestOneOf3 extends Test'));
+      expect(result, contains('final class TestVariant1 extends Test'));
+      expect(result, contains('final class TestVariant2 extends Test'));
+      expect(result, contains('final class TestVariant3 extends Test'));
     });
 
     test('hybrid dispatch: Map sub-arms include a fallback when one '

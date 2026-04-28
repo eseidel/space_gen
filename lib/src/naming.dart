@@ -168,7 +168,7 @@ class _NameAssigner {
     if (parentName == null) return;
     for (var i = 0; i < collection.schemas.length; i++) {
       final variant = collection.schemas[i];
-      final wrapperName = _wrapperNameFor(parentName, variant, decision);
+      final wrapperName = _wrapperNameFor(parentName, variant, decision, i);
       if (wrapperName == null) continue;
       _names[AssignedNames.wrapperPointer(collection.pointer, i)] = wrapperName;
     }
@@ -184,6 +184,7 @@ class _NameAssigner {
     String parentName,
     ResolvedSchema variant,
     DispatchDecision decision,
+    int variantIndex,
   ) {
     if (decision is PredicateDispatch &&
         decision.kind == PredicateDispatchKind.arrayElement) {
@@ -198,6 +199,18 @@ class _NameAssigner {
     }
     final tag = _wrapperTagOf(variant);
     if (tag == null) return null;
+    // For object-like variants, the tag is the variant's own typeName.
+    // When the variant was synthesized inline by the parser
+    // (`<parent>OneOf<i>`), that name already contains the parent —
+    // composing `<parent><tag>` then doubles the prefix
+    // (`ProjectsCreateCardRequestProjectsCreateCardRequestOneOf0`).
+    // Fall back to a position-based name to keep wrappers readable.
+    // Top-level $ref variants (e.g. `PrivateUser` under
+    // `UsersGetAuthenticated200Response`) don't trip this and keep
+    // their descriptive `<parent><variant>` form.
+    if (tag.startsWith(parentName)) {
+      return '${parentName}Variant$variantIndex';
+    }
     return '$parentName$tag';
   }
 
