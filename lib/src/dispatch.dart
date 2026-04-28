@@ -217,6 +217,14 @@ class NoDispatch extends DispatchDecision {
 /// schemas' shapes (required/optional properties, items types,
 /// discriminator). Returns [NoDispatch] when no strategy fits.
 DispatchDecision decideDispatch(ResolvedSchemaCollection collection) {
+  // AllOf isn't a polymorphic dispatch — every member must validate,
+  // so there's no "pick one variant" at runtime. Render flattens it
+  // into a synthetic merged object; dispatch is never consulted in
+  // that path. Returning NoDispatch unconditionally keeps the
+  // contract honest for callers that walk every collection (the
+  // naming pass enumerates wrappers from each `decideDispatch`
+  // result, and AllOf produces none).
+  if (collection is ResolvedAllOf) return const NoDispatch();
   final variants = collection.schemas;
   return _pickDiscriminator(collection, variants) ??
       _pickShape(variants) ??

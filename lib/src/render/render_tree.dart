@@ -340,6 +340,16 @@ class SpecResolver {
   /// non-newtype schemas like inline arrays/maps).
   String? _nameFor(JsonPointer pointer) => _names.maybeGet(pointer);
 
+  /// Looks up the wrapper-subclass names assigned by the naming pass
+  /// for each variant of a oneOf/anyOf, in `coll.schemas` order.
+  /// Indexes that the naming pass didn't enumerate (e.g. NoDispatch)
+  /// land as null; render only reads the entries it needs (the
+  /// dispatch decision tells it which).
+  List<String?> _wrapperNamesFor(ResolvedSchemaCollection coll) => [
+    for (var i = 0; i < coll.schemas.length; i++)
+      _names.maybeGet(AssignedNames.wrapperPointer(coll.pointer, i)),
+  ];
+
   RenderSchema? maybeRenderSchema(ResolvedSchema? schema) {
     if (schema == null) {
       return null;
@@ -483,6 +493,7 @@ class SpecResolver {
           discriminator: renderDiscriminator,
           source: schema,
           assignedName: _nameFor(schema.pointer),
+          wrapperNames: _wrapperNamesFor(schema),
         );
       case ResolvedAllOf():
         // Generate a synthetic object type for allOf. A property is
@@ -519,6 +530,7 @@ class SpecResolver {
           discriminator: null,
           source: schema,
           assignedName: _nameFor(schema.pointer),
+          wrapperNames: _wrapperNamesFor(schema),
         );
       case ResolvedMap():
         final keyEnum = schema.keySchema;
@@ -3849,6 +3861,7 @@ class RenderOneOf extends RenderNewType {
     required this.schemas,
     required this.discriminator,
     required this.source,
+    this.wrapperNames = const [],
     super.assignedName,
   });
 
@@ -3875,6 +3888,13 @@ class RenderOneOf extends RenderNewType {
   /// multi-status responses. These always render as [NoDispatch] /
   /// the legacy `UnimplementedError` stub.
   final ResolvedSchemaCollection? source;
+
+  /// Wrapper subclass class name per variant — index parallel to
+  /// [schemas]. Populated by [SpecResolver.toRenderSchema] from the
+  /// naming pass's wrapper enumeration. Empty for synthesized
+  /// RenderOneOfs (no `source`) and for genuine [NoDispatch] oneOfs
+  /// (no wrappers emitted). [wrapperTypeName] looks up by index.
+  final List<String?> wrapperNames;
 
   /// We could do something smarter here, to determine if the oneOf has a
   /// const constructor, but it's not worth the complexity for now.
@@ -3911,24 +3931,30 @@ class RenderOneOf extends RenderNewType {
     return 'Map<String, dynamic>';
   }
 
-  /// Build the wrapper class name as `<ParentTypeName><wrapperTag>`.
-  /// We always prepend — even when the variant's tag already starts
-  /// with the parent's typeName — because stripping the duplicate
-  /// would collide with the variant's own standalone class (the
-  /// parser names inline variants `<parent_snake>_one_of_<i>`, so the
-  /// variant typeName equals the would-be deduped wrapper name). The
-  /// double-prefix is ugly but unambiguous; co-locating the inline
-  /// variant into the parent's file is a follow-up that fixes both
-  /// the ugliness and the duplicate emission.
+  /// Looks up the wrapper subclass class name assigned by the naming
+  /// pass for [variant]. Variant identity is by index in [schemas]
+  /// (which is parallel to `source.schemas`); the naming pass keyed
+  /// each wrapper name by `(parentPointer, variantIndex)` and stored
+  /// it under [AssignedNames.wrapperPointer]. We thread the resolved
+  /// names from there through [wrapperNames] at construction.
   ///
-  /// Caller must have established that [variant] has a non-null
-  /// [RenderSchema.wrapperTag] (e.g. via the dispatch gates).
+  /// Today's algorithm composes the wrapper name as
+  /// `<ParentTypeName><wrapperTag>` (computed in `naming.dart`). A
+  /// future PR will swap to shortest-unique-with-fallback; render
+  /// doesn't need to know.
   String wrapperTypeName(RenderSchema variant) {
-    final tag = variant.wrapperTag;
-    if (tag == null) {
-      throw StateError('No wrapper tag available for $variant');
+    final i = schemas.indexWhere((s) => identical(s, variant));
+    if (i == -1) {
+      throw StateError('Variant $variant not in this oneOf\'s schemas.');
     }
-    return '$typeName$tag';
+    final name = wrapperNames[i];
+    if (name == null) {
+      throw StateError(
+        'Naming pass did not assign a wrapper name for variant $i '
+        'of ${common.pointer}.',
+      );
+    }
+    return name;
   }
 
   /// Wrapper-variant context for the object-only dispatch paths
@@ -3953,14 +3979,18 @@ class RenderOneOf extends RenderNewType {
   /// [RenderSchema._variantConversion]; this method just composes the
   /// wrapper class name (parent + tag) and shape key around it.
   _VariantPlan? _planVariant(RenderSchema variant, SchemaRenderer context) {
-    final tag = variant.wrapperTag;
-    if (tag == null) return null;
+    // Gate on `wrapperTag != null` — variants with no tag don't
+    // participate in shape dispatch (and the naming pass also
+    // skipped them, so [wrapperTypeName] would throw). Treating
+    // "no tag" as "no plan" keeps the gate semantically the same as
+    // before the wrapper-name lift.
+    if (variant.wrapperTag == null) return null;
     final shapeKey = variant.jsonShapeKey;
     if (shapeKey == null) return null;
     final conversion = variant._variantConversion(context);
     if (conversion == null) return null;
     return _VariantPlan(
-      wrapperTypeName: '$typeName$tag',
+      wrapperTypeName: wrapperTypeName(variant),
       valueType: conversion.valueType,
       jsonTestType: shapeKey,
       fromJson: conversion.fromJson,
@@ -4128,15 +4158,12 @@ class RenderOneOf extends RenderNewType {
           variants.add(objectWrapperContext(renderVariant));
         case PredicateDispatchKind.arrayElement:
           // Each array variant wraps `List<X>` and serializes via
-          // the items' own conversion. Wrapper class name splices
+          // the items' own conversion. Wrapper class names splice
           // the items type so sibling array variants don't collide
-          // on the shared `wrapperTag = 'List'`. The items'
-          // RenderSchema is on the parallel render array (the
-          // resolved items aren't a direct member of source.schemas
-          // and so can't go through renderOf).
-          final renderArray = renderVariant as RenderArray;
-          final innerTypeName = renderArray.items.typeName;
-          final wrapperName = '$typeName${innerTypeName}List';
+          // on the shared `wrapperTag = 'List'`; the naming pass
+          // composed the splice when it enumerated wrappers, and we
+          // read it back here through the standard lookup.
+          final wrapperName = wrapperTypeName(renderVariant);
           final plan = _planVariant(renderVariant, context)!;
           armCtx = {
             'wrapperTypeName': wrapperName,

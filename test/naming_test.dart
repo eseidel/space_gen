@@ -172,6 +172,212 @@ void main() {
       expect(userEntry.value, 'User');
     });
 
+    test('oneOf with discriminator gets one wrapper name per variant '
+        'under the synthesized wrapper pointer', () {
+      // Discriminator dispatch emits a `<Parent><Variant>` wrapper
+      // per variant. Naming pass stores each under
+      // `AssignedNames.wrapperPointer(parent, i)`.
+      final names = namesFor({
+        'openapi': '3.1.0',
+        'info': {'title': 'X', 'version': '1.0'},
+        'servers': [
+          {'url': 'https://x'},
+        ],
+        'paths': {
+          '/u': {
+            'get': {
+              'summary': 'Get',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Pet'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Pet': {
+              'oneOf': [
+                {r'$ref': '#/components/schemas/Cat'},
+                {r'$ref': '#/components/schemas/Dog'},
+              ],
+              'discriminator': {
+                'propertyName': 'kind',
+                'mapping': {
+                  'cat': '#/components/schemas/Cat',
+                  'dog': '#/components/schemas/Dog',
+                },
+              },
+            },
+            'Cat': {
+              'type': 'object',
+              'required': ['kind'],
+              'properties': {
+                'kind': {
+                  'type': 'string',
+                  'enum': ['cat'],
+                },
+              },
+            },
+            'Dog': {
+              'type': 'object',
+              'required': ['kind'],
+              'properties': {
+                'kind': {
+                  'type': 'string',
+                  'enum': ['dog'],
+                },
+              },
+            },
+          },
+        },
+      });
+      final pet = JsonPointer.parse('#/components/schemas/Pet');
+      expect(
+        names[AssignedNames.wrapperPointer(pet, 0)],
+        'PetCat',
+      );
+      expect(
+        names[AssignedNames.wrapperPointer(pet, 1)],
+        'PetDog',
+      );
+    });
+
+    test('array-element dispatch wraps per-variant items with '
+        '`<Parent><Items>List`', () {
+      final names = namesFor({
+        'openapi': '3.1.0',
+        'info': {'title': 'X', 'version': '1.0'},
+        'servers': [
+          {'url': 'https://x'},
+        ],
+        'paths': {
+          '/u': {
+            'get': {
+              'summary': 'Get',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'anyOf': [
+                          {
+                            'type': 'array',
+                            'items': {
+                              r'$ref': '#/components/schemas/Stargazer',
+                            },
+                          },
+                          {
+                            'type': 'array',
+                            'items': {r'$ref': '#/components/schemas/User'},
+                          },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Stargazer': {
+              'type': 'object',
+              'required': ['starred_at'],
+              'properties': {
+                'starred_at': {'type': 'string'},
+              },
+            },
+            'User': {
+              'type': 'object',
+              'required': ['login'],
+              'properties': {
+                'login': {'type': 'string'},
+              },
+            },
+          },
+        },
+      });
+      // The synthesized anyOf gets a name (something like
+      // `Get200Response` — exact synthesized name is implementation-
+      // detail), and each wrapper splices the items type:
+      // `<Parent>StargazerList` and `<Parent>UserList`.
+      final wrappers = names.entries
+          .where((e) => e.key.toString().contains('_wrapper'))
+          .map((e) => e.value)
+          .toList();
+      expect(wrappers, hasLength(2));
+      expect(wrappers.any((w) => w.endsWith('StargazerList')), isTrue);
+      expect(wrappers.any((w) => w.endsWith('UserList')), isTrue);
+    });
+
+    test('allOf collapses (no wrappers, NoDispatch path)', () {
+      // allOf renders as a synthetic merged RenderObject — no oneOf
+      // wrapper subclasses. The naming pass walks it (recurses into
+      // members) but `_assignWrapperNames` returns early on
+      // NoDispatch, so no wrapper-pointer entries appear.
+      final names = namesFor({
+        'openapi': '3.1.0',
+        'info': {'title': 'X', 'version': '1.0'},
+        'servers': [
+          {'url': 'https://x'},
+        ],
+        'paths': {
+          '/u': {
+            'get': {
+              'summary': 'Get',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Both'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Both': {
+              'allOf': [
+                {r'$ref': '#/components/schemas/A'},
+                {r'$ref': '#/components/schemas/B'},
+              ],
+            },
+            'A': {
+              'type': 'object',
+              'properties': {
+                'a': {'type': 'string'},
+              },
+            },
+            'B': {
+              'type': 'object',
+              'properties': {
+                'b': {'type': 'string'},
+              },
+            },
+          },
+        },
+      });
+      // Components are still named; no wrapper-pointer entries.
+      expect(names[JsonPointer.parse('#/components/schemas/Both')], 'Both');
+      final wrappers = names.entries
+          .where((e) => e.key.toString().contains('_wrapper'))
+          .toList();
+      expect(wrappers, isEmpty);
+    });
+
     test('walks anyOf and allOf variants', () {
       final names = namesFor({
         'openapi': '3.1.0',
