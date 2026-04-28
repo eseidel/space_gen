@@ -1266,4 +1266,65 @@ void main() {
       expect(inlineEmail.defaultValueString(context), "'a@b.c'");
     });
   });
+
+  group('strict assignedName', () {
+    // typeName on a `createsNewType: true` schema constructed without
+    // an `assignedName` must throw — that's the strict-mode invariant
+    // that catches naming-pass bypasses (a test forgot to populate
+    // `SpecResolver.names`, or a render path didn't go through one of
+    // the documented entry points).
+    test('newtype RenderObject without assignedName throws on typeName', () {
+      const schema = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+        ),
+        properties: {},
+      );
+      expect(
+        () => schema.typeName,
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('Naming pass did not assign a name'),
+              contains('snakeName: foo'),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('non-newtype RenderString returns Dart primitive without '
+        'consulting assignedName', () {
+      // Non-newtypes never look up assignedName; their `typeName` is
+      // structural ('String', 'int', etc.). Verifies the strict
+      // assertion only fires on the newtype branch.
+      const inline = RenderString(
+        common: CommonProperties.test(
+          snakeName: 'whatever',
+          pointer: JsonPointer.empty(),
+        ),
+        defaultValue: null,
+        maxLength: null,
+        minLength: null,
+        pattern: null,
+        createsNewType: false,
+      );
+      expect(inline.typeName, 'String');
+    });
+
+    test('newtype with assignedName returns it as typeName', () {
+      const schema = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+        ),
+        properties: {},
+        assignedName: 'CustomName',
+      );
+      expect(schema.typeName, 'CustomName');
+    });
+  });
 }
