@@ -794,6 +794,7 @@ void main() {
         pointer: JsonPointer.empty(),
       ),
       targetPointer: JsonPointer.empty(),
+      assignedName: 'Node',
     );
 
     test('is a newtype but does not render its own file', () {
@@ -1041,6 +1042,7 @@ void main() {
         values: const ['a', 'b'],
         names: const ['a', 'b'],
         descriptions: null,
+        assignedName: 'Foo',
       );
       final map = RenderMap(
         common: common,
@@ -1064,6 +1066,10 @@ void main() {
       ),
       type: type,
       createsNewType: createsNewType,
+      // Pass an assigned name only for newtype cases (typeName falls
+      // back to the Dart primitive otherwise). Mirrors what the
+      // naming pass would produce: `camelFromSnake('foo_bar')`.
+      assignedName: createsNewType ? 'FooBar' : null,
     );
 
     test('typeName is the class name when a newtype, else the Dart type', () {
@@ -1244,6 +1250,7 @@ void main() {
         type: PodType.boolean,
         createsNewType: true,
         defaultValue: true,
+        assignedName: 'Flag',
       );
       expect(newtypeBool.defaultValueString(context), 'Flag(true)');
 
@@ -1257,6 +1264,67 @@ void main() {
         defaultValue: 'a@b.c',
       );
       expect(inlineEmail.defaultValueString(context), "'a@b.c'");
+    });
+  });
+
+  group('strict assignedName', () {
+    // typeName on a `createsNewType: true` schema constructed without
+    // an `assignedName` must throw — that's the strict-mode invariant
+    // that catches naming-pass bypasses (a test forgot to populate
+    // `SpecResolver.names`, or a render path didn't go through one of
+    // the documented entry points).
+    test('newtype RenderObject without assignedName throws on typeName', () {
+      const schema = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+        ),
+        properties: {},
+      );
+      expect(
+        () => schema.typeName,
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('Naming pass did not assign a name'),
+              contains('snakeName: foo'),
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('non-newtype RenderString returns Dart primitive without '
+        'consulting assignedName', () {
+      // Non-newtypes never look up assignedName; their `typeName` is
+      // structural ('String', 'int', etc.). Verifies the strict
+      // assertion only fires on the newtype branch.
+      const inline = RenderString(
+        common: CommonProperties.test(
+          snakeName: 'whatever',
+          pointer: JsonPointer.empty(),
+        ),
+        defaultValue: null,
+        maxLength: null,
+        minLength: null,
+        pattern: null,
+        createsNewType: false,
+      );
+      expect(inline.typeName, 'String');
+    });
+
+    test('newtype with assignedName returns it as typeName', () {
+      const schema = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+        ),
+        properties: {},
+        assignedName: 'CustomName',
+      );
+      expect(schema.typeName, 'CustomName');
     });
   });
 }

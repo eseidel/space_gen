@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:space_gen/src/loader.dart';
 import 'package:space_gen/src/logger.dart';
+import 'package:space_gen/src/naming.dart';
 import 'package:space_gen/src/parse/spec.dart';
 import 'package:space_gen/src/parse/visitor.dart';
 import 'package:space_gen/src/parser.dart';
@@ -296,7 +297,8 @@ String renderTestSchema(
     SchemaRef.object(parsedSchema, const JsonPointer.empty()),
     ResolveContext.test(),
   );
-  final resolver = SpecResolver(quirks);
+  final resolver = SpecResolver(quirks)
+    ..names = assignNamesForSchema(resolvedSchema);
   final templates = TemplateProvider.defaultLocation();
 
   final renderSchema = resolver.toRenderSchema(resolvedSchema);
@@ -351,7 +353,15 @@ Map<String, String> renderTestSchemas(
       ),
     );
   });
-  final resolver = SpecResolver(quirks);
+  // Aggregate names across every resolved schema in the set so a
+  // ref from one to another resolves correctly.
+  final names = <JsonPointer, String>{};
+  for (final s in resolvedSchemas.values) {
+    for (final entry in assignNamesForSchema(s).entries) {
+      names[entry.key] = entry.value;
+    }
+  }
+  final resolver = SpecResolver(quirks)..names = AssignedNames(names);
   final templates = TemplateProvider.defaultLocation();
 
   final renderSchemas = resolvedSchemas.map((key, value) {
@@ -397,7 +407,8 @@ String renderTestOperation({
     operation: parsedOperation,
     context: resolveContext,
   );
-  final resolver = SpecResolver(quirks);
+  final resolver = SpecResolver(quirks)
+    ..names = assignNamesForOperation(resolvedOperation);
   final renderOperation = resolver.toRenderOperation(resolvedOperation);
   final templateProvider = TemplateProvider.defaultLocation();
   final schemaRenderer = SchemaRenderer(

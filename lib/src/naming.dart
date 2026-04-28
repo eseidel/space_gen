@@ -84,6 +84,24 @@ AssignedNames assignNames(ResolvedSpec spec) {
   return AssignedNames(names);
 }
 
+/// Assigns names for a single resolved operation. Used by test
+/// helpers (`renderTestOperation`) that render an operation in
+/// isolation, without a surrounding spec.
+AssignedNames assignNamesForOperation(ResolvedOperation op) {
+  final names = <JsonPointer, String>{};
+  _NameAssigner(names).visitOperation(op);
+  return AssignedNames(names);
+}
+
+/// Assigns names reachable from a single resolved schema. Used by
+/// test helpers (`renderTestSchema`, `renderTestSchemas`) that
+/// render schemas in isolation, without a surrounding spec.
+AssignedNames assignNamesForSchema(ResolvedSchema schema) {
+  final names = <JsonPointer, String>{};
+  _NameAssigner(names).visitSchema(schema);
+  return AssignedNames(names);
+}
+
 class _NameAssigner {
   _NameAssigner(this._names);
 
@@ -93,22 +111,38 @@ class _NameAssigner {
   void visit(ResolvedSpec spec) {
     for (final path in spec.paths) {
       for (final op in path.operations) {
-        for (final param in op.parameters) {
-          _visitSchema(param.schema);
-        }
-        final reqBody = op.requestBody;
-        if (reqBody != null) _visitSchema(reqBody.schema);
-        for (final response in op.responses) {
-          _visitSchema(response.content);
-        }
-        for (final rangeResp in op.rangeResponses) {
-          _visitSchema(rangeResp.content);
-        }
-        final defaultResp = op.defaultResponse;
-        if (defaultResp != null) _visitSchema(defaultResp.content);
+        visitOperation(op);
       }
     }
   }
+
+  void visitOperation(ResolvedOperation op) {
+    for (final param in op.parameters) {
+      visitSchema(param.schema);
+    }
+    final reqBody = op.requestBody;
+    if (reqBody != null) visitSchema(reqBody.schema);
+    for (final response in op.responses) {
+      visitSchema(response.content);
+    }
+    for (final rangeResp in op.rangeResponses) {
+      visitSchema(rangeResp.content);
+    }
+    final defaultResp = op.defaultResponse;
+    if (defaultResp != null) visitSchema(defaultResp.content);
+    // Operation-level synthesized response wrapper: when the spec
+    // mixes explicit 2xx codes with a 2XX range, the renderer
+    // synthesizes a `RenderOneOf` that doesn't correspond to any
+    // resolved schema. The naming pass assigns its name here
+    // (keyed by the operation's pointer, which no schema otherwise
+    // claims) so render reads the name through the same map. Most
+    // operations don't trigger the synthesized wrapper; assigning
+    // unconditionally is cheap and keeps the lookup unconditional
+    // on the render side.
+    _names[op.pointer] = camelFromSnake('${op.snakeName}_response');
+  }
+
+  void visitSchema(ResolvedSchema schema) => _visitSchema(schema);
 
   void _visitSchema(ResolvedSchema schema) {
     if (!_visited.add(schema.pointer)) return;

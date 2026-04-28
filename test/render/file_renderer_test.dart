@@ -2581,6 +2581,7 @@ void main() {
           pointer: JsonPointer.parse('#/foo'),
           description: 'Foo description',
         ),
+        assignedName: 'Foo',
         properties: {
           'bar': RenderBinary(
             common: CommonProperties.test(
