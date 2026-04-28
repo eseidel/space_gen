@@ -594,7 +594,7 @@ void main() {
       final alloc = NameAllocator()
         ..claim(p('a'), ['Foo'])
         ..resolve();
-      expect(alloc.assigned[p('a')], 'Foo');
+      expect(alloc.lookup(p('a')), 'Foo');
     });
 
     test('single-tier collision falls through to a numeric suffix', () {
@@ -605,8 +605,8 @@ void main() {
         ..claim(p('a'), ['Foo'])
         ..claim(p('b'), ['Foo'])
         ..resolve();
-      expect(alloc.assigned[p('a')], 'Foo');
-      expect(alloc.assigned[p('b')], 'Foo2');
+      expect(alloc.lookup(p('a')), 'Foo');
+      expect(alloc.lookup(p('b')), 'Foo2');
     });
 
     test('multi-tier collision lets each entity step up to its next '
@@ -618,8 +618,8 @@ void main() {
         ..claim(p('a'), ['Foo', 'Bar'])
         ..claim(p('b'), ['Foo', 'Baz'])
         ..resolve();
-      expect(alloc.assigned[p('a')], 'Bar');
-      expect(alloc.assigned[p('b')], 'Baz');
+      expect(alloc.lookup(p('a')), 'Bar');
+      expect(alloc.lookup(p('b')), 'Baz');
     });
 
     test('symmetric multi-tier collision exhausts preferences, then '
@@ -631,8 +631,8 @@ void main() {
         ..claim(p('a'), ['Foo', 'Bar'])
         ..claim(p('b'), ['Foo', 'Bar'])
         ..resolve();
-      expect(alloc.assigned[p('a')], 'Bar');
-      expect(alloc.assigned[p('b')], 'Bar2');
+      expect(alloc.lookup(p('a')), 'Bar');
+      expect(alloc.lookup(p('b')), 'Bar2');
     });
 
     test('an entity with a single preference holds it; richer-list '
@@ -644,8 +644,8 @@ void main() {
         ..claim(p('a'), ['Foo'])
         ..claim(p('b'), ['Foo', 'Bar'])
         ..resolve();
-      expect(alloc.assigned[p('a')], 'Foo');
-      expect(alloc.assigned[p('b')], 'Bar');
+      expect(alloc.lookup(p('a')), 'Foo');
+      expect(alloc.lookup(p('b')), 'Bar');
     });
 
     test('three-way collision on first tier', () {
@@ -656,9 +656,9 @@ void main() {
         ..claim(p('b'), ['Foo', 'Banana'])
         ..claim(p('c'), ['Foo', 'Cherry'])
         ..resolve();
-      expect(alloc.assigned[p('a')], 'Apple');
-      expect(alloc.assigned[p('b')], 'Banana');
-      expect(alloc.assigned[p('c')], 'Cherry');
+      expect(alloc.lookup(p('a')), 'Apple');
+      expect(alloc.lookup(p('b')), 'Banana');
+      expect(alloc.lookup(p('c')), 'Cherry');
     });
 
     test('subsequent resolve() honors names already assigned in '
@@ -670,8 +670,8 @@ void main() {
         ..resolve()
         ..claim(p('b'), ['Foo', 'Bar'])
         ..resolve();
-      expect(alloc.assigned[p('a')], 'Foo');
-      expect(alloc.assigned[p('b')], 'Bar');
+      expect(alloc.lookup(p('a')), 'Foo');
+      expect(alloc.lookup(p('b')), 'Bar');
     });
 
     test('a re-claim on an already-assigned pointer is a no-op', () {
@@ -683,7 +683,7 @@ void main() {
         ..resolve()
         ..claim(p('a'), ['Bar'])
         ..resolve();
-      expect(alloc.assigned[p('a')], 'Foo');
+      expect(alloc.lookup(p('a')), 'Foo');
     });
 
     test('empty preference list is rejected', () {
@@ -703,7 +703,7 @@ void main() {
         // alloc has Foo and Foo2 taken now.
         ..claim(p('c'), ['Foo'])
         ..resolve();
-      expect(alloc.assigned[p('c')], 'Foo3');
+      expect(alloc.lookup(p('c')), 'Foo3');
     });
   });
 }
