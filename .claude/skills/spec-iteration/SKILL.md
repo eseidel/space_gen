@@ -14,6 +14,8 @@ description: |
   any spec-driven follow-up.
 ---
 
+<!-- cspell:words customise behaviour parameterise addl -->
+
 # State as of 2026-04-28
 
 ## What this is
