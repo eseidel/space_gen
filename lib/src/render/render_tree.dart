@@ -908,9 +908,17 @@ class Endpoint implements ToTemplateContext {
   /// auth: OneOf([
   ///     MultiAuth([
   ///         HttpAuth(scheme: "Bearer", secretName: "AgentToken"),
-  ///         ApiKeyAuth(name: "apiKey", secretName: "ApiKey", sendIn: SendIn.header),
+  ///         ApiKeyAuth(
+  ///             name: "apiKey",
+  ///             secretName: "ApiKey",
+  ///             sendIn: SendIn.header,
+  ///         ),
   ///     ]),
-  ///     ApiKeyAuth(name: "apiKey", secretName: "ApiKey", sendIn: SendIn.header),
+  ///     ApiKeyAuth(
+  ///         name: "apiKey",
+  ///         secretName: "ApiKey",
+  ///         sendIn: SendIn.header,
+  ///     ),
   ///     NoAuth(),
   /// ]),
   String? authArgument({int indent = 0}) {
@@ -3945,7 +3953,7 @@ class RenderOneOf extends RenderNewType {
   String wrapperTypeName(RenderSchema variant) {
     final i = schemas.indexWhere((s) => identical(s, variant));
     if (i == -1) {
-      throw StateError('Variant $variant not in this oneOf\'s schemas.');
+      throw StateError("Variant $variant not in this oneOf's schemas.");
     }
     final name = wrapperNames[i];
     if (name == null) {

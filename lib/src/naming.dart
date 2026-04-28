@@ -7,12 +7,21 @@
 /// collisions with `_1`, renderer composes wrappers from parent +
 /// tag). Each layer makes a local decision with only partial
 /// information, so we get artifacts like
-/// `ProjectsCreateCardRequestProjectsCreateCardRequestOneOf0` and
-/// `RepositoryRulesetConditions1`. A single pass with the full set
-/// of named entities in view can pick shorter, less-collision-prone
-/// names. This file is the first step — it consolidates the lookup
-/// without changing the algorithm. A future pass can swap the
-/// algorithm to shortest-unique-with-fallback.
+/// `ProjectsCreateCardRequestProjectsCreateCardRequestOneOf0`. A
+/// single pass with the full set of named entities in view can pick
+/// shorter, less-collision-prone names.
+///
+/// Each entity submits a *preference list* — best (shortest /
+/// most-descriptive) first, longest-but-guaranteed-unique last — and
+/// the [NameAllocator] runs a fixpoint: when two entities propose the
+/// same name, both advance to their next preference; when an entity
+/// reaches the end of its list and still conflicts, a numeric suffix
+/// disambiguates. Today every caller passes a single-element list
+/// (the same name the old algorithm produced), so generated output
+/// is byte-identical to before. Future PRs opt entities into
+/// shorter forms by widening their preference lists — wrapper
+/// subclasses, inline variants with a `title`, and synthesized
+/// op-response names are the natural candidates.
 ///
 /// Resolver stays Dart-blind: this pass is the only place that
 /// knows about Dart class names. The resolver produces snake-case
@@ -78,46 +87,61 @@ class AssignedNames {
   Map<JsonPointer, String> toMap() => Map.unmodifiable(_byPointer);
 }
 
-/// Walks the resolved tree and assigns a Dart class name to every
-/// schema that creates a new type. Today's algorithm: for each
-/// `createsNewType: true` schema, the name is
-/// `camelFromSnake(common.snakeName)`. The resolver has already
-/// applied any `_1`-style snake-name collision suffixes upstream, so
-/// this pass produces the same output the renderer's existing
-/// `typeName` getters would compute on their own.
-///
-/// The eventual quality win is changing this algorithm to
-/// shortest-unique-with-fallback (PR 3+). This PR just consolidates
-/// the lookup so one place owns the answer.
-AssignedNames assignNames(ResolvedSpec spec) {
-  final names = <JsonPointer, String>{};
-  _NameAssigner(names).visit(spec);
-  return AssignedNames(names);
-}
+/// Walks the resolved tree, builds a preference list for each named
+/// entity, and runs an [NameAllocator] fixpoint to settle on final
+/// Dart class names. See the library doc for the algorithm; today
+/// most callers pass single-element preference lists, so the output
+/// matches the prior `camelFromSnake(common.snakeName)` algorithm.
+AssignedNames assignNames(ResolvedSpec spec) =>
+    (_NameAssigner()..visit(spec)).finalize();
 
 /// Assigns names for a single resolved operation. Used by test
 /// helpers (`renderTestOperation`) that render an operation in
 /// isolation, without a surrounding spec.
-AssignedNames assignNamesForOperation(ResolvedOperation op) {
-  final names = <JsonPointer, String>{};
-  _NameAssigner(names).visitOperation(op);
-  return AssignedNames(names);
-}
+AssignedNames assignNamesForOperation(ResolvedOperation op) =>
+    (_NameAssigner()..visitOperation(op)).finalize();
 
 /// Assigns names reachable from a single resolved schema. Used by
 /// test helpers (`renderTestSchema`, `renderTestSchemas`) that
 /// render schemas in isolation, without a surrounding spec.
-AssignedNames assignNamesForSchema(ResolvedSchema schema) {
-  final names = <JsonPointer, String>{};
-  _NameAssigner(names).visitSchema(schema);
-  return AssignedNames(names);
-}
+AssignedNames assignNamesForSchema(ResolvedSchema schema) =>
+    (_NameAssigner()..visitSchema(schema)).finalize();
 
 class _NameAssigner {
-  _NameAssigner(this._names);
+  _NameAssigner();
 
-  final Map<JsonPointer, String> _names;
+  final NameAllocator _allocator = NameAllocator();
   final Set<JsonPointer> _visited = {};
+  // Schema collections seen in phase 1, processed in phase 2 once
+  // their variants' Dart names have been resolved.
+  final List<ResolvedSchemaCollection> _collectionsForWrappers = [];
+
+  /// Run the allocator over both phases and return the final
+  /// pointer → Dart name map. The assigner is single-use; calling
+  /// this a second time would re-resolve already-assigned names as
+  /// no-ops and produce the same snapshot.
+  AssignedNames finalize() {
+    _resolvePhase1();
+    _resolvePhase2();
+    return AssignedNames(_allocator.snapshot());
+  }
+
+  /// Phase 1: schema names + the synthesized op-response name. These
+  /// were claimed during the tree walk; resolve them so phase 2 can
+  /// read final schema names when it composes wrapper preferences.
+  void _resolvePhase1() {
+    _allocator.resolve();
+  }
+
+  /// Phase 2: wrapper-subclass preferences depend on phase-1 names,
+  /// so we claim them now (reading from the resolved phase-1
+  /// snapshot) and then resolve again.
+  void _resolvePhase2() {
+    for (final collection in _collectionsForWrappers) {
+      _claimWrapperNames(collection);
+    }
+    _allocator.resolve();
+  }
 
   void visit(ResolvedSpec spec) {
     for (final path in spec.paths) {
@@ -144,33 +168,42 @@ class _NameAssigner {
     // Operation-level synthesized response wrapper: when the spec
     // mixes explicit 2xx codes with a 2XX range, the renderer
     // synthesizes a `RenderOneOf` that doesn't correspond to any
-    // resolved schema. The naming pass assigns its name here
-    // (keyed by the operation's pointer, which no schema otherwise
-    // claims) so render reads the name through the same map. Most
-    // operations don't trigger the synthesized wrapper; assigning
-    // unconditionally is cheap and keeps the lookup unconditional
-    // on the render side.
-    _names[op.pointer] = camelFromSnake('${op.snakeName}_response');
+    // resolved schema. We claim its name on the operation's pointer
+    // (no schema otherwise claims it) so render reads the name
+    // through the same map. Most operations don't trigger the
+    // synthesized wrapper; claiming unconditionally is cheap and
+    // keeps the lookup unconditional on the render side.
+    //
+    // Single-tier preference list: if a real schema ever ends up
+    // wanting `<op>Response`, the allocator's numeric-suffix
+    // fallback handles disambiguation correctly. Multi-tier
+    // alternatives are pointless here (every op has the same
+    // shape of preference list, so they'd march through tiers in
+    // lockstep and finalize at a *worse* name than single-tier
+    // gives via the suffix path).
+    _allocator.claim(op.pointer, [
+      camelFromSnake('${op.snakeName}_response'),
+    ]);
   }
 
   void visitSchema(ResolvedSchema schema) => _visitSchema(schema);
 
-  /// Once every variant of [collection] has its own assigned name,
-  /// enumerate the wrapper subclasses the dispatch will emit and
-  /// assign each its name. Stored under [AssignedNames.wrapperPointer]
-  /// so the render side can look them up using the parent pointer +
-  /// variant index, the same way it already maps variants between
-  /// `source.schemas[i]` and the parallel `RenderOneOf.schemas[i]`.
-  void _assignWrapperNames(ResolvedSchemaCollection collection) {
+  /// Phase-2 wrapper-subclass name claims. Reads the resolved variant
+  /// names produced by phase 1 and submits one claim per dispatch-
+  /// emitted wrapper. Variant identity is by index in
+  /// [collection]`.schemas` — matches `AssignedNames.wrapperPointer`.
+  void _claimWrapperNames(ResolvedSchemaCollection collection) {
     final decision = decideDispatch(collection);
     if (decision is NoDispatch) return;
-    final parentName = _names[collection.pointer];
+    final parentName = _allocator.lookup(collection.pointer);
     if (parentName == null) return;
     for (var i = 0; i < collection.schemas.length; i++) {
       final variant = collection.schemas[i];
       final wrapperName = _wrapperNameFor(parentName, variant, decision, i);
       if (wrapperName == null) continue;
-      _names[AssignedNames.wrapperPointer(collection.pointer, i)] = wrapperName;
+      _allocator.claim(AssignedNames.wrapperPointer(collection.pointer, i), [
+        wrapperName,
+      ]);
     }
   }
 
@@ -216,14 +249,15 @@ class _NameAssigner {
 
   /// The Dart type name for a schema as it would appear at a use
   /// site. Mirrors the render-side `typeName` getter chain: looks up
-  /// the assigned name for newtypes; returns the structural Dart
+  /// the resolved name for newtypes; returns the structural Dart
   /// type for non-newtype primitives. Returns null when neither
   /// applies (uncovered case — caller decides whether to skip).
+  /// Called from phase 2; reads phase-1's resolved names.
   String? _typeNameOf(ResolvedSchema schema) {
-    final assigned = _names[schema.pointer];
+    final assigned = _allocator.lookup(schema.pointer);
     if (assigned != null) return assigned;
     return switch (schema) {
-      ResolvedRecursiveRef() => _names[schema.targetPointer],
+      ResolvedRecursiveRef() => _allocator.lookup(schema.targetPointer),
       ResolvedString() => schema.createsNewType ? null : 'String',
       ResolvedInteger() => schema.createsNewType ? null : 'int',
       ResolvedNumber() => schema.createsNewType ? null : 'double',
@@ -240,16 +274,16 @@ class _NameAssigner {
   String? _wrapperTagOf(ResolvedSchema variant) {
     return switch (variant) {
       // Object / enum / empty-object variants tag with the variant's
-      // own assigned name (they're always newtypes; the tag IS the
+      // own resolved name (they're always newtypes; the tag IS the
       // class name). AllOf collapses into a synthetic merged
       // `RenderObject` at render time, so it's the same case here —
-      // the AllOf's own assigned name.
+      // the AllOf's own resolved name.
       ResolvedObject() ||
       ResolvedEnum() ||
       ResolvedEmptyObject() ||
-      ResolvedAllOf() => _names[variant.pointer],
-      // Recursive refs tag with the target's assigned name.
-      ResolvedRecursiveRef() => _names[variant.targetPointer],
+      ResolvedAllOf() => _allocator.lookup(variant.pointer),
+      // Recursive refs tag with the target's resolved name.
+      ResolvedRecursiveRef() => _allocator.lookup(variant.targetPointer),
       // Primitives: null when newtype (no shape-dispatch
       // participation), else the structural Dart type name.
       ResolvedString() => variant.createsNewType ? null : 'String',
@@ -272,7 +306,10 @@ class _NameAssigner {
   void _visitSchema(ResolvedSchema schema) {
     if (!_visited.add(schema.pointer)) return;
     if (schema.createsNewType) {
-      _names[schema.pointer] = camelFromSnake(schema.snakeName);
+      // Single-element preference list for now — today's behavior.
+      // Future PRs can widen this (e.g., title-derived shorter forms
+      // ahead of the parser-synthesized name).
+      _allocator.claim(schema.pointer, [camelFromSnake(schema.snakeName)]);
     }
     // Recurse into structural children so inline newtypes get named.
     switch (schema) {
@@ -295,11 +332,12 @@ class _NameAssigner {
         for (final variant in collection.schemas) {
           _visitSchema(variant);
         }
-        // After variants are named, enumerate any wrapper subclass
-        // names. AllOf gets `NoDispatch` from [decideDispatch] (it
-        // collapses to a synthetic object) and the helper is a
-        // no-op there, so no gate needed.
-        _assignWrapperNames(collection);
+        // Defer wrapper-name claims to phase 2 — they need the
+        // resolved variant names. AllOf gets `NoDispatch` from
+        // [decideDispatch] (it collapses to a synthetic object), so
+        // no wrappers will actually be claimed for it; queueing it
+        // is harmless and keeps the gate in one place.
+        _collectionsForWrappers.add(collection);
       case ResolvedString():
       case ResolvedInteger():
       case ResolvedNumber():
@@ -314,5 +352,128 @@ class _NameAssigner {
         // Leaf — no inline children to visit.
         break;
     }
+  }
+}
+
+/// Collision-aware Dart name allocator. Each entity submits a
+/// preference list (best first, longest/safest last) via [claim];
+/// [resolve] runs a fixpoint that advances colliding entities to
+/// their next preference, then suffixes any remaining ties with a
+/// numeric tail (`Foo`, `Foo2`, `Foo3`, …).
+///
+/// The fixpoint is order-independent: same set of claims → same
+/// assignments regardless of insertion order. This matters because
+/// the naming pass walks the spec in declaration order, but a stable
+/// algorithm means future visit-order tweaks can't silently shuffle
+/// names.
+///
+/// [resolve] can be called multiple times — each call assigns the
+/// claims pending at the time of the call. Names assigned in earlier
+/// `resolve()` cycles are treated as taken: subsequent claims work
+/// around them. The naming pass uses two cycles (phase 1: schemas +
+/// op-response synthetics; phase 2: wrappers, which need phase-1
+/// resolved names to compose their preferences).
+///
+/// Public so unit tests can drive it directly with hand-built claims;
+/// most callers should go through [_NameAssigner].
+class NameAllocator {
+  NameAllocator();
+
+  final Map<JsonPointer, String> _assigned = {};
+  final Set<String> _takenNames = {};
+  final Map<JsonPointer, List<String>> _pending = {};
+
+  /// O(1) lookup of the resolved name for [pointer]. Returns null
+  /// when the pointer isn't yet assigned (no prior [resolve] cycle
+  /// has settled it). Safe to call from hot paths — the naming
+  /// pass's wrapper-name composition reads through this on every
+  /// variant.
+  String? lookup(JsonPointer pointer) => _assigned[pointer];
+
+  /// Snapshot the resolved assignments as an unmodifiable map. Call
+  /// once at the end of the naming pass; intermediate readers should
+  /// use [lookup]. Returns a freshly-wrapped view each call, so
+  /// don't call this in a loop.
+  Map<JsonPointer, String> snapshot() => Map.unmodifiable(_assigned);
+
+  /// Submit a claim. [preferences] must be non-empty and ordered
+  /// best-first. A pointer that already has a resolved name (from a
+  /// prior [resolve]) silently ignores the claim — re-visits during
+  /// recursion are common and benign.
+  void claim(JsonPointer pointer, List<String> preferences) {
+    if (preferences.isEmpty) {
+      throw ArgumentError('Preferences cannot be empty: $pointer');
+    }
+    if (_assigned.containsKey(pointer)) return;
+    _pending[pointer] = preferences;
+  }
+
+  /// Run the fixpoint over pending claims, settling each on its
+  /// best non-conflicting preference. Already-assigned names from
+  /// prior [resolve] cycles are treated as taken and won't be
+  /// reused. Empties the pending queue.
+  void resolve() {
+    if (_pending.isEmpty) return;
+
+    final pending = Map.of(_pending);
+    _pending.clear();
+
+    // Per-entity tier index, advanced when its current proposal
+    // conflicts with another pending claimant or with an already-
+    // assigned name.
+    final tiers = <JsonPointer, int>{
+      for (final p in pending.keys) p: 0,
+    };
+
+    while (true) {
+      final proposals = <String, List<JsonPointer>>{};
+      for (final p in pending.keys) {
+        proposals.putIfAbsent(pending[p]![tiers[p]!], () => []).add(p);
+      }
+      var changed = false;
+      for (final entry in proposals.entries) {
+        final group = entry.value;
+        final inConflict = group.length > 1 || _takenNames.contains(entry.key);
+        if (!inConflict) continue;
+        for (final p in group) {
+          final prefs = pending[p]!;
+          if (tiers[p]! < prefs.length - 1) {
+            tiers[p] = tiers[p]! + 1;
+            changed = true;
+          }
+        }
+      }
+      if (!changed) break;
+    }
+
+    // Finalize: each pending claim takes its current-tier name.
+    // Any remaining ties (multiple pending claimants stuck on the
+    // same last-tier name, or a pending claim whose final preference
+    // matches an already-assigned name) get a numeric suffix. Order
+    // by pointer string so the suffix assignment is deterministic.
+    final byName = <String, List<JsonPointer>>{};
+    for (final p in pending.keys) {
+      byName.putIfAbsent(pending[p]![tiers[p]!], () => []).add(p);
+    }
+    for (final entry in byName.entries) {
+      final base = entry.key;
+      final group = entry.value
+        ..sort((a, b) => a.toString().compareTo(b.toString()));
+      var baseTaken = _takenNames.contains(base);
+      for (final p in group) {
+        final name = baseTaken ? _disambiguate(base) : base;
+        _assigned[p] = name;
+        _takenNames.add(name);
+        baseTaken = true;
+      }
+    }
+  }
+
+  String _disambiguate(String base) {
+    var i = 2;
+    while (_takenNames.contains('$base$i')) {
+      i++;
+    }
+    return '$base$i';
   }
 }

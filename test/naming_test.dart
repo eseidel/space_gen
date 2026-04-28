@@ -586,4 +586,124 @@ void main() {
       expect(loginNames, isEmpty);
     });
   });
+
+  group('NameAllocator', () {
+    JsonPointer p(String s) => JsonPointer.parse('#/$s');
+
+    test('single-tier preference resolves to itself when uncontested', () {
+      final alloc = NameAllocator()
+        ..claim(p('a'), ['Foo'])
+        ..resolve();
+      expect(alloc.lookup(p('a')), 'Foo');
+    });
+
+    test('single-tier collision falls through to a numeric suffix', () {
+      // Two claims, identical preference — neither can advance, both
+      // settle on the last tier and the second gets the suffix in
+      // pointer-string order.
+      final alloc = NameAllocator()
+        ..claim(p('a'), ['Foo'])
+        ..claim(p('b'), ['Foo'])
+        ..resolve();
+      expect(alloc.lookup(p('a')), 'Foo');
+      expect(alloc.lookup(p('b')), 'Foo2');
+    });
+
+    test('multi-tier collision lets each entity step up to its next '
+        'preference', () {
+      // The whole point of multi-tier: A and B both want `Foo`; the
+      // fixpoint advances both to their next preference, where they
+      // happen not to collide. Both keep a meaningful name.
+      final alloc = NameAllocator()
+        ..claim(p('a'), ['Foo', 'Bar'])
+        ..claim(p('b'), ['Foo', 'Baz'])
+        ..resolve();
+      expect(alloc.lookup(p('a')), 'Bar');
+      expect(alloc.lookup(p('b')), 'Baz');
+    });
+
+    test('symmetric multi-tier collision exhausts preferences, then '
+        'suffixes', () {
+      // Identical preference lists — nothing can disambiguate them.
+      // After both tiers collide, the finalize step sorts by pointer
+      // string and applies a suffix to all but the first.
+      final alloc = NameAllocator()
+        ..claim(p('a'), ['Foo', 'Bar'])
+        ..claim(p('b'), ['Foo', 'Bar'])
+        ..resolve();
+      expect(alloc.lookup(p('a')), 'Bar');
+      expect(alloc.lookup(p('b')), 'Bar2');
+    });
+
+    test('an entity with a single preference holds it; richer-list '
+        'rivals defer', () {
+      // A's single preference is its only option. B has a fallback,
+      // so the fixpoint advances B (not A) and both win their
+      // own slot.
+      final alloc = NameAllocator()
+        ..claim(p('a'), ['Foo'])
+        ..claim(p('b'), ['Foo', 'Bar'])
+        ..resolve();
+      expect(alloc.lookup(p('a')), 'Foo');
+      expect(alloc.lookup(p('b')), 'Bar');
+    });
+
+    test('three-way collision on first tier', () {
+      // All three want Foo first, all bump. Second tier is unique
+      // for each. No suffixing required.
+      final alloc = NameAllocator()
+        ..claim(p('a'), ['Foo', 'Apple'])
+        ..claim(p('b'), ['Foo', 'Banana'])
+        ..claim(p('c'), ['Foo', 'Cherry'])
+        ..resolve();
+      expect(alloc.lookup(p('a')), 'Apple');
+      expect(alloc.lookup(p('b')), 'Banana');
+      expect(alloc.lookup(p('c')), 'Cherry');
+    });
+
+    test('subsequent resolve() honors names already assigned in '
+        'earlier rounds', () {
+      // Phase 1 assigns A=Foo. Phase 2 brings in B which would also
+      // prefer Foo; it must bump because Foo is already taken.
+      final alloc = NameAllocator()
+        ..claim(p('a'), ['Foo'])
+        ..resolve()
+        ..claim(p('b'), ['Foo', 'Bar'])
+        ..resolve();
+      expect(alloc.lookup(p('a')), 'Foo');
+      expect(alloc.lookup(p('b')), 'Bar');
+    });
+
+    test('a re-claim on an already-assigned pointer is a no-op', () {
+      // The naming pass calls `claim` from a recursive walker; a
+      // duplicate claim during a re-visit must not overwrite the
+      // already-resolved name.
+      final alloc = NameAllocator()
+        ..claim(p('a'), ['Foo'])
+        ..resolve()
+        ..claim(p('a'), ['Bar'])
+        ..resolve();
+      expect(alloc.lookup(p('a')), 'Foo');
+    });
+
+    test('empty preference list is rejected', () {
+      expect(
+        () => NameAllocator().claim(p('a'), const []),
+        throwsArgumentError,
+      );
+    });
+
+    test('numeric suffix walks past a name already in use', () {
+      // A holds Foo from phase 1 and Foo2 from phase 2. A new claim
+      // for Foo lands at Foo3, not Foo2.
+      final alloc = NameAllocator()
+        ..claim(p('a'), ['Foo'])
+        ..claim(p('b'), ['Foo'])
+        ..resolve()
+        // alloc has Foo and Foo2 taken now.
+        ..claim(p('c'), ['Foo'])
+        ..resolve();
+      expect(alloc.lookup(p('c')), 'Foo3');
+    });
+  });
 }
