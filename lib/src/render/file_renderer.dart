@@ -115,14 +115,14 @@ void suppressLongLineLintInGeneratedFiles(Directory dir) {
 
 /// Block prepended to generated `.dart` files whose dartdoc contains
 /// `[…]` patterns that don't resolve (e.g. github's code-of-conduct
-/// description literally says "contacting the project team at
-/// [EMAIL]", and the MIT license template carries `[year] [fullname]`
-/// placeholders). Exposed for tests.
+/// description literally has the form "contacting the project team
+/// at \[EMAIL\]", and the MIT license template carries \[year\] and
+/// \[fullname\] placeholders). Exposed for tests.
 @visibleForTesting
 const commentReferencesIgnoreBlock =
-    "// Spec descriptions copy prose verbatim into dartdoc, where `[x]`\n"
+    '// Spec descriptions copy prose verbatim into dartdoc, where `[x]`\n'
     '// inside a sentence (placeholder text, ALL_CAPS tokens, license\n'
-    "// templates) is parsed as a symbol reference even when no such\n"
+    '// templates) is parsed as a symbol reference even when no such\n'
     '// symbol exists. Suppress file-locally so the lint stays live\n'
     '// elsewhere; spec authors do not always escape brackets.\n'
     '// ignore_for_file: comment_references';

@@ -124,7 +124,7 @@ void validatePackageName(String packageName) {
 /// chars. Used by the CLI so `--out api.github.com` works without the
 /// user having to pre-sanitize the directory name for pub.
 String sanitizePackageName(String raw) {
-  var s = raw.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]'), '_');
+  var s = raw.toLowerCase().replaceAll(RegExp('[^a-z0-9_]'), '_');
   s = s.replaceAll(RegExp('_+'), '_').replaceAll(RegExp(r'^_+|_+$'), '');
   if (s.isEmpty || RegExp('^[0-9]').hasMatch(s)) {
     s = 'p_$s';
