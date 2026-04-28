@@ -14,8 +14,6 @@ description: |
   any spec-driven follow-up.
 ---
 
-<!-- cspell:words customise behaviour parameterise addl -->
-
 # State as of 2026-04-28
 
 ## What this is
@@ -236,12 +234,12 @@ From the project's CLAUDE.md and saved memory:
 - **Don't use `!`**: bind nullable fields to a local, null-check
   the local. Same for tests — use `is` patterns or `if (x ==
   null) fail(...)` instead of postfix `!`.
-- **American English**. cspell will trip on British spellings
-  (`customise`, `behaviour`, `parameterise`); use American forms.
-  For coined / informal words (`smooshing`, `dispatchable`,
-  `regen`, `unioned`), just add them to `cspell.config.yaml` —
-  rephrase only for British spellings or if the word is just an
-  abbreviation (e.g. `addl` → rename the local to `extraProps`).
+- **American English**. cspell catches British spellings — use the
+  American form. For coined / informal words (`smooshing`,
+  `dispatchable`, `regen`, `unioned`), just add them to
+  `cspell.config.yaml`. Rephrase or rename for British spellings
+  and for abbreviations that aren't real words (rename the local
+  rather than dictionary-allowing the abbreviation).
 - **`required` on internal types**: every constructor parameter
   on `Schema*` / `Resolved*` / `Render*` classes is `required`,
   including fields that default to null/[]. CLAUDE.md explains
