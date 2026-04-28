@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
 import 'package:space_gen/src/dispatch.dart';
+import 'package:space_gen/src/naming.dart';
 import 'package:space_gen/src/parse/spec.dart' show StatusCodeRange;
 import 'package:space_gen/src/quirks.dart';
 // Any code that depends on SchemaRenderer probably should be moved out
@@ -316,9 +317,21 @@ abstract final class ModelHelpers {
 }
 
 class SpecResolver {
-  const SpecResolver(this.quirks);
+  SpecResolver(this.quirks);
 
   final Quirks quirks;
+
+  /// The naming-pass output for the spec currently being rendered.
+  /// Populated at the start of [toRenderSpec]; consulted by
+  /// [toRenderSchema] when constructing each [RenderSchema] so its
+  /// `typeName` can read the assigned name instead of computing one
+  /// from `snakeName`.
+  AssignedNames _names = AssignedNames.empty;
+
+  /// Looks up the assigned Dart class name for a resolved schema's
+  /// pointer, or null if the naming pass didn't enumerate it (e.g.
+  /// non-newtype schemas like inline arrays/maps).
+  String? _nameFor(JsonPointer pointer) => _names.maybeGet(pointer);
 
   RenderSchema? maybeRenderSchema(ResolvedSchema? schema) {
     if (schema == null) {
@@ -330,9 +343,14 @@ class SpecResolver {
   RenderSchema toRenderSchema(ResolvedSchema schema) {
     switch (schema) {
       case ResolvedRecursiveRef():
+        // The recursive ref's type name is the target's class name —
+        // look up by targetPointer, not the ref site's own pointer
+        // (the ref site has createsNewType: false, so it isn't named
+        // in its own right).
         return RenderRecursiveRef(
           common: schema.common,
           targetPointer: schema.targetPointer,
+          assignedName: _nameFor(schema.targetPointer),
         );
       case ResolvedEnum():
         return RenderEnum(
@@ -340,6 +358,7 @@ class SpecResolver {
           values: schema.values,
           names: RenderEnum.variableNamesFor(quirks, schema.values),
           descriptions: schema.descriptions,
+          assignedName: _nameFor(schema.pointer),
         );
       case ResolvedObject():
         return RenderObject(
@@ -349,6 +368,7 @@ class SpecResolver {
           ),
           additionalProperties: maybeRenderSchema(schema.additionalProperties),
           requiredProperties: schema.requiredProperties,
+          assignedName: _nameFor(schema.pointer),
         );
       case ResolvedPod():
         return RenderPod(
@@ -356,6 +376,7 @@ class SpecResolver {
           type: schema.type,
           createsNewType: schema.createsNewType,
           defaultValue: schema.defaultValue,
+          assignedName: _nameFor(schema.pointer),
         );
       case ResolvedString():
         return RenderString(
@@ -365,6 +386,7 @@ class SpecResolver {
           maxLength: schema.maxLength,
           minLength: schema.minLength,
           pattern: schema.pattern,
+          assignedName: _nameFor(schema.pointer),
         );
       case ResolvedNumber():
         return RenderNumber(
@@ -376,6 +398,7 @@ class SpecResolver {
           exclusiveMaximum: schema.exclusiveMaximum,
           exclusiveMinimum: schema.exclusiveMinimum,
           multipleOf: schema.multipleOf,
+          assignedName: _nameFor(schema.pointer),
         );
       case ResolvedInteger():
         return RenderInteger(
@@ -387,6 +410,7 @@ class SpecResolver {
           exclusiveMaximum: schema.exclusiveMaximum,
           exclusiveMinimum: schema.exclusiveMinimum,
           multipleOf: schema.multipleOf,
+          assignedName: _nameFor(schema.pointer),
         );
       case ResolvedArray():
         var defaultValue = schema.defaultValue;
@@ -451,6 +475,7 @@ class SpecResolver {
           schemas: renderSchemas,
           discriminator: renderDiscriminator,
           source: schema,
+          assignedName: _nameFor(schema.pointer),
         );
       case ResolvedAllOf():
         // Generate a synthetic object type for allOf. A property is
@@ -473,6 +498,7 @@ class SpecResolver {
           common: schema.common,
           properties: properties,
           requiredProperties: requiredProperties.toList(),
+          assignedName: _nameFor(schema.pointer),
         );
       case ResolvedAnyOf():
         // Resolver already makes anyOf with 1 schema to just be that schema.
@@ -485,6 +511,7 @@ class SpecResolver {
           schemas: schema.schemas.map(toRenderSchema).toList(),
           discriminator: null,
           source: schema,
+          assignedName: _nameFor(schema.pointer),
         );
       case ResolvedMap():
         final keyEnum = schema.keySchema;
@@ -496,7 +523,10 @@ class SpecResolver {
               : toRenderSchema(keyEnum) as RenderEnum,
         );
       case ResolvedEmptyObject():
-        return RenderEmptyObject(common: schema.common);
+        return RenderEmptyObject(
+          common: schema.common,
+          assignedName: _nameFor(schema.pointer),
+        );
       default:
         _unimplemented('Unknown schema: $schema', schema.pointer);
     }
@@ -671,6 +701,10 @@ class SpecResolver {
   }
 
   RenderSpec toRenderSpec(ResolvedSpec spec) {
+    // Run the naming pass once over the resolved tree; subsequent
+    // [toRenderSchema] calls consult [_names] when constructing
+    // newtypes so each `typeName` is a lookup, not a recomputation.
+    _names = assignNames(spec);
     return RenderSpec(
       title: spec.title,
       serverUrl: spec.serverUrl,
@@ -1933,9 +1967,27 @@ class RenderDefaultResponse {
 }
 
 abstract class RenderSchema extends Equatable implements ToTemplateContext {
-  const RenderSchema({required this.common, required this.createsNewType});
+  const RenderSchema({
+    required this.common,
+    required this.createsNewType,
+    this.assignedName,
+  });
 
   final CommonProperties common;
+
+  /// Dart class name assigned by the naming pass. Populated by
+  /// [SpecResolver.toRenderSchema] for `createsNewType: true` schemas
+  /// (and for [RenderRecursiveRef] whose target is named); null
+  /// otherwise.
+  ///
+  /// Subclass `typeName` getters consult this as an override of the
+  /// snake-derived computation. Today the override and the
+  /// computation produce the same string (the naming pass uses
+  /// `camelFromSnake(snakeName)` itself); future PRs swap the
+  /// algorithm to shortest-unique-with-fallback, at which point this
+  /// field becomes the source of truth and the snake-derived
+  /// fallback goes away.
+  final String? assignedName;
 
   /// The snake name of the resolved schema.
   String get snakeName => common.snakeName;
@@ -2153,6 +2205,7 @@ class RenderPod extends RenderSchema {
     required this.type,
     required super.createsNewType,
     this.defaultValue,
+    super.assignedName,
   });
 
   /// The type of the resolved schema.
@@ -2207,7 +2260,8 @@ class RenderPod extends RenderSchema {
   };
 
   @override
-  String get typeName => createsNewType ? camelFromSnake(snakeName) : dartType;
+  String get typeName =>
+      createsNewType ? (assignedName ?? camelFromSnake(snakeName)) : dartType;
 
   // Boolean is the only PodType with a `is bool` test that's distinct
   // from the other JSON storage types (the date/uri/uuid/etc. all
@@ -2415,13 +2469,17 @@ class RenderPod extends RenderSchema {
 }
 
 abstract class RenderNewType extends RenderSchema {
-  const RenderNewType({required super.common}) : super(createsNewType: true);
+  const RenderNewType({required super.common, super.assignedName})
+    : super(createsNewType: true);
 
   @override
   bool get shouldCallToJson => true;
 
-  /// The class name of the new type. Used by subclasses.
-  String get className => camelFromSnake(snakeName);
+  /// The class name of the new type. Used by subclasses. Prefers the
+  /// naming-pass-assigned name when present; falls back to the
+  /// snake-derived computation when not (e.g. tests that build
+  /// schemas directly without going through [SpecResolver]).
+  String get className => assignedName ?? camelFromSnake(snakeName);
 
   @override
   String get typeName => className;
@@ -2445,6 +2503,7 @@ class RenderString extends RenderSchema {
     required this.minLength,
     required this.pattern,
     required super.createsNewType,
+    super.assignedName,
   });
 
   @override
@@ -2466,7 +2525,8 @@ class RenderString extends RenderSchema {
   List<Object?> get props => [super.props, defaultValue, maxLength, minLength];
 
   @override
-  String get typeName => createsNewType ? camelFromSnake(snakeName) : 'String';
+  String get typeName =>
+      createsNewType ? (assignedName ?? camelFromSnake(snakeName)) : 'String';
 
   /// The default value of this schema as a string.
   @override
@@ -2583,6 +2643,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     required this.exclusiveMinimum,
     required this.multipleOf,
     required super.createsNewType,
+    super.assignedName,
   });
 
   @override
@@ -2739,10 +2800,12 @@ class RenderNumber extends RenderNumeric<double> {
     required super.exclusiveMinimum,
     required super.multipleOf,
     required super.createsNewType,
+    super.assignedName,
   });
 
   @override
-  String get typeName => createsNewType ? camelFromSnake(snakeName) : 'double';
+  String get typeName =>
+      createsNewType ? (assignedName ?? camelFromSnake(snakeName)) : 'double';
 
   @override
   String? get wrapperTag => createsNewType ? null : 'Num';
@@ -2784,10 +2847,12 @@ class RenderInteger extends RenderNumeric<int> {
     required super.exclusiveMinimum,
     required super.multipleOf,
     required super.createsNewType,
+    super.assignedName,
   });
 
   @override
-  String get typeName => createsNewType ? camelFromSnake(snakeName) : 'int';
+  String get typeName =>
+      createsNewType ? (assignedName ?? camelFromSnake(snakeName)) : 'int';
 
   @override
   String? get wrapperTag => createsNewType ? null : 'Int';
@@ -2818,6 +2883,7 @@ class RenderObject extends RenderNewType {
     required this.properties,
     this.additionalProperties,
     this.requiredProperties = const [],
+    super.assignedName,
   });
 
   /// The properties of the resolved schema.
@@ -3603,6 +3669,7 @@ class RenderEnum extends RenderNewType {
     required this.names,
     required this.descriptions,
     this.defaultValue,
+    super.assignedName,
   }) : assert(
          names.length == values.length,
          'names and values must have the same length',
@@ -3757,6 +3824,7 @@ class RenderOneOf extends RenderNewType {
     required this.schemas,
     required this.discriminator,
     required this.source,
+    super.assignedName,
   });
 
   /// The schemas of the resolved schema.
@@ -4760,7 +4828,7 @@ class RenderBinary extends RenderNoJson {
 }
 
 class RenderEmptyObject extends RenderNewType {
-  const RenderEmptyObject({required super.common});
+  const RenderEmptyObject({required super.common, super.assignedName});
 
   @override
   dynamic get defaultValue => null;
@@ -4837,6 +4905,7 @@ class RenderRecursiveRef extends RenderSchema {
   const RenderRecursiveRef({
     required super.common,
     required this.targetPointer,
+    super.assignedName,
   }) : super(createsNewType: true);
 
   final JsonPointer targetPointer;
@@ -4851,7 +4920,7 @@ class RenderRecursiveRef extends RenderSchema {
   bool get shouldCallToJson => true;
 
   @override
-  String get typeName => camelFromSnake(snakeName);
+  String get typeName => assignedName ?? camelFromSnake(snakeName);
 
   @override
   String jsonStorageType({required bool isNullable}) =>
