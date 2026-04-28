@@ -1,32 +1,39 @@
-/// Assigns Dart class names to every named entity in the resolved
-/// tree. The renderer reads these names instead of computing them
-/// from `common.snakeName` per schema.
+/// Assigns names to every named entity in the resolved tree. The
+/// renderer reads these names instead of computing them from
+/// `common.snakeName` per schema.
 ///
-/// Why a separate phase: today, names get decided in three layers
-/// (parser synthesizes inline-schema names, resolver suffixes
-/// collisions with `_1`, renderer composes wrappers from parent +
-/// tag). Each layer makes a local decision with only partial
-/// information, so we get artifacts like
-/// `ProjectsCreateCardRequestProjectsCreateCardRequestOneOf0`. A
-/// single pass with the full set of named entities in view can pick
-/// shorter, less-collision-prone names.
+/// Why a separate phase: names get decided in multiple layers (parser
+/// synthesizes inline-schema names, resolver suffixes collisions with
+/// `_1`, renderer composes wrappers from parent + tag). Each layer
+/// makes a local decision with only partial information, so we get
+/// artifacts like `ProjectsCreateCardRequestProjectsCreateCardRequestOneOf0`
+/// or a class whose Dart name says one thing while its file name says
+/// another. A single pass with the full set of named entities in view
+/// can pick shorter, less-collision-prone names — and pair the file
+/// name with the class name automatically.
 ///
-/// Each entity submits a *preference list* — best (shortest /
-/// most-descriptive) first, longest-but-guaranteed-unique last — and
-/// the [NameAllocator] runs a fixpoint: when two entities propose the
-/// same name, both advance to their next preference; when an entity
-/// reaches the end of its list and still conflicts, a numeric suffix
-/// disambiguates. Today every caller passes a single-element list
-/// (the same name the old algorithm produced), so generated output
-/// is byte-identical to before. Future PRs opt entities into
-/// shorter forms by widening their preference lists — wrapper
-/// subclasses, inline variants with a `title`, and synthesized
-/// op-response names are the natural candidates.
+/// Each entity submits a *preference list* of snake names — best
+/// (shortest / most-descriptive) first, longest-but-guaranteed-unique
+/// last — and the [NameAllocator] runs a fixpoint: when two entities
+/// propose the same name, both advance to their next preference;
+/// when an entity reaches the end of its list and still conflicts,
+/// a numeric suffix disambiguates. The allocator stores snake names;
+/// camel-case Dart class names are derived on read via
+/// [camelFromSnake]. The pairing means a snake collision and a camel
+/// collision are the same event — no parallel allocator needed.
+///
+/// Inline oneOf/anyOf variants whose spec carries a `title` opt into
+/// a multi-tier preference list: the title's snake form first, the
+/// parser-synthesized name (`<parent>_one_of_<i>`) as fallback. When
+/// the title is unique that nicer name wins, file and class
+/// together; otherwise we fall back gracefully. Top-level component
+/// schemas, op responses, and other entities keep single-element
+/// lists — generated output for those is unchanged.
 ///
 /// Resolver stays Dart-blind: this pass is the only place that
-/// knows about Dart class names. The resolver produces snake-case
-/// identifiers (still parser-level); naming converts them to
-/// CamelCase Dart class names and resolves collisions.
+/// converts snake to camel. The resolver produces snake-case
+/// identifiers (still parser-level); naming claims them, resolves
+/// collisions, and exposes both forms via [AssignedNames].
 library;
 
 import 'package:meta/meta.dart';
@@ -35,27 +42,35 @@ import 'package:space_gen/src/parse/spec.dart';
 import 'package:space_gen/src/resolver.dart';
 import 'package:space_gen/src/string.dart';
 
-/// The set of Dart class names assigned by the naming pass, keyed by
-/// each named entity's identifier (typically its [JsonPointer]).
-///
-/// The renderer consults this map for every typed reference; its own
-/// `typeName` getters are thin lookups now, not computations.
+/// Names assigned by the naming pass, keyed by each named entity's
+/// identifier (typically its [JsonPointer]). Storage is snake-case
+/// (so file names and class names share a single source of truth);
+/// camel-case Dart class names are derived via [camelFromSnake] on
+/// read.
 @immutable
 class AssignedNames {
-  const AssignedNames(this._byPointer);
+  const AssignedNames(this._snakeByPointer);
 
-  final Map<JsonPointer, String> _byPointer;
+  final Map<JsonPointer, String> _snakeByPointer;
 
-  /// Looks up the Dart class name for [pointer]. Returns null when
-  /// the entity at [pointer] doesn't have a name (non-newtype
-  /// schemas, refs, etc.).
-  String? maybeGet(JsonPointer pointer) => _byPointer[pointer];
+  /// Looks up the snake-case name for [pointer]. Used as a file
+  /// basename. Returns null when the entity at [pointer] doesn't
+  /// have a name (non-newtype schemas, refs, etc.).
+  String? snakeFor(JsonPointer pointer) => _snakeByPointer[pointer];
 
-  /// Looks up the Dart class name for [pointer]. Throws when the
-  /// entity isn't named — calls that hit this path are bugs in the
-  /// naming pass (an entity that should have been enumerated wasn't).
+  /// Looks up the camel-case Dart class name for [pointer]. Returns
+  /// null when [pointer] isn't named.
+  String? maybeGet(JsonPointer pointer) {
+    final snake = _snakeByPointer[pointer];
+    return snake == null ? null : camelFromSnake(snake);
+  }
+
+  /// Looks up the camel-case Dart class name for [pointer]. Throws
+  /// when the entity isn't named — calls that hit this path are bugs
+  /// in the naming pass (an entity that should have been enumerated
+  /// wasn't).
   String operator [](JsonPointer pointer) {
-    final name = _byPointer[pointer];
+    final name = maybeGet(pointer);
     if (name == null) {
       throw StateError(
         'No name assigned for $pointer — naming pass missed this entity.',
@@ -79,12 +94,18 @@ class AssignedNames {
     int variantIndex,
   ) => parentPointer.add('_wrapper').add('$variantIndex');
 
-  /// All assigned (pointer, name) pairs. Iteration order matches the
-  /// underlying map; use only for debugging / tests / metrics.
-  Iterable<MapEntry<JsonPointer, String>> get entries => _byPointer.entries;
+  /// All assigned (pointer, camel-name) pairs. Iteration order
+  /// matches the underlying map; use only for debugging / tests /
+  /// metrics.
+  Iterable<MapEntry<JsonPointer, String>> get entries =>
+      _snakeByPointer.entries.map(
+        (e) => MapEntry(e.key, camelFromSnake(e.value)),
+      );
 
-  /// Returns an unmodifiable view of the underlying map. Test-only.
-  Map<JsonPointer, String> toMap() => Map.unmodifiable(_byPointer);
+  /// Returns an unmodifiable view of the camel-name map. Test-only.
+  Map<JsonPointer, String> toMap() => Map.unmodifiable({
+    for (final e in _snakeByPointer.entries) e.key: camelFromSnake(e.value),
+  });
 }
 
 /// Walks the resolved tree, builds a preference list for each named
@@ -181,9 +202,7 @@ class _NameAssigner {
     // shape of preference list, so they'd march through tiers in
     // lockstep and finalize at a *worse* name than single-tier
     // gives via the suffix path).
-    _allocator.claim(op.pointer, [
-      camelFromSnake('${op.snakeName}_response'),
-    ]);
+    _allocator.claim(op.pointer, ['${op.snakeName}_response']);
   }
 
   void visitSchema(ResolvedSchema schema) => _visitSchema(schema);
@@ -207,14 +226,14 @@ class _NameAssigner {
     }
   }
 
-  /// Computes the Dart class name for one wrapper subclass. Mirrors
-  /// the render-side `wrapperTypeName` / array-element logic, but
-  /// reads variant names from `_names` instead of the variant's own
-  /// `typeName` getter. Returns null for the rare case where the
+  /// Computes the snake-case wrapper-subclass name for one variant.
+  /// Mirrors the render-side `wrapperTypeName` / array-element logic
+  /// in snake space; the allocator stores snake and the camel form
+  /// is derived later. Returns null for the rare case where the
   /// dispatch doesn't actually emit a wrapper for this variant
   /// (caller skips the assignment).
   String? _wrapperNameFor(
-    String parentName,
+    String parentSnake,
     ResolvedSchema variant,
     DispatchDecision decision,
     int variantIndex,
@@ -222,73 +241,72 @@ class _NameAssigner {
     if (decision is PredicateDispatch &&
         decision.kind == PredicateDispatchKind.arrayElement) {
       // Array-element wrappers splice the items type so sibling
-      // arrays don't collide on the shared `wrapperTag = 'List'`.
+      // arrays don't collide on the shared `list` wrapper tag.
       // `_pickArrayElementMode` only fires when every variant is a
       // `ResolvedArray`, so the cast is safe.
       final array = variant as ResolvedArray;
       final itemName = _typeNameOf(array.items);
       if (itemName == null) return null;
-      return '$parentName${itemName}List';
+      return '${parentSnake}_${itemName}_list';
     }
     final tag = _wrapperTagOf(variant);
     if (tag == null) return null;
-    // For object-like variants, the tag is the variant's own typeName.
-    // When the variant was synthesized inline by the parser
-    // (`<parent>OneOf<i>`), that name already contains the parent —
-    // composing `<parent><tag>` then doubles the prefix
-    // (`ProjectsCreateCardRequestProjectsCreateCardRequestOneOf0`).
-    // Fall back to a position-based name to keep wrappers readable.
-    // Top-level $ref variants (e.g. `PrivateUser` under
-    // `UsersGetAuthenticated200Response`) don't trip this and keep
-    // their descriptive `<parent><variant>` form.
-    if (tag.startsWith(parentName)) {
-      return '${parentName}Variant$variantIndex';
+    // For object-like variants, the tag is the variant's own snake
+    // name. When the variant was synthesized inline by the parser
+    // (`<parent>_one_of_<i>`), that name already contains the parent —
+    // composing `<parent>_<tag>` then doubles the prefix. Fall back
+    // to a position-based name to keep wrappers readable. Top-level
+    // $ref variants (e.g. `private_user` under `users_get_..._200_response`)
+    // don't trip this and keep their descriptive `<parent>_<variant>`
+    // form.
+    if (tag.startsWith(parentSnake)) {
+      return '${parentSnake}_variant_$variantIndex';
     }
-    return '$parentName$tag';
+    return '${parentSnake}_$tag';
   }
 
-  /// The Dart type name for a schema as it would appear at a use
-  /// site. Mirrors the render-side `typeName` getter chain: looks up
-  /// the resolved name for newtypes; returns the structural Dart
-  /// type for non-newtype primitives. Returns null when neither
-  /// applies (uncovered case — caller decides whether to skip).
-  /// Called from phase 2; reads phase-1's resolved names.
+  /// Snake-case name for a schema at a use site. Mirrors
+  /// [_wrapperTagOf] for the type-name slot: looks up the resolved
+  /// snake name for newtypes; returns the structural snake form
+  /// (e.g. `string`, `int`) for non-newtype primitives. Returns null
+  /// when neither applies. Called from phase 2; reads phase-1's
+  /// resolved names.
   String? _typeNameOf(ResolvedSchema schema) {
     final assigned = _allocator.lookup(schema.pointer);
     if (assigned != null) return assigned;
     return switch (schema) {
       ResolvedRecursiveRef() => _allocator.lookup(schema.targetPointer),
-      ResolvedString() => schema.createsNewType ? null : 'String',
+      ResolvedString() => schema.createsNewType ? null : 'string',
       ResolvedInteger() => schema.createsNewType ? null : 'int',
       ResolvedNumber() => schema.createsNewType ? null : 'double',
       _ => null,
     };
   }
 
-  /// The wrapper-tag string used to compose a wrapper class name as
-  /// `<parent><tag>` for non-array-element dispatches. Mirrors each
-  /// `RenderSchema` subclass's `wrapperTag` getter exactly — see
-  /// those getters for why each case looks the way it does. Returns
-  /// null when the variant has no wrapperTag (e.g., a primitive
-  /// newtype that gates shape-dispatch out).
+  /// Snake-case wrapper tag composed into a wrapper class name as
+  /// `<parent>_<tag>`. Returns null when the variant has no tag
+  /// (e.g., a primitive newtype that gates shape-dispatch out).
+  /// Snake forms here become the snake-form wrapper name; the camel
+  /// derivation matches each `RenderSchema` subclass's `wrapperTag`
+  /// getter exactly (`int` → `Int`, `string` → `String`, `list` →
+  /// `List`, etc.).
   String? _wrapperTagOf(ResolvedSchema variant) {
     return switch (variant) {
       // Object / enum / empty-object variants tag with the variant's
-      // own resolved name (they're always newtypes; the tag IS the
-      // class name). AllOf collapses into a synthetic merged
-      // `RenderObject` at render time, so it's the same case here —
-      // the AllOf's own resolved name.
+      // own resolved snake name. AllOf collapses into a synthetic
+      // merged `RenderObject` at render time, so it's the same case
+      // here — the AllOf's own resolved name.
       ResolvedObject() ||
       ResolvedEnum() ||
       ResolvedEmptyObject() ||
       ResolvedAllOf() => _allocator.lookup(variant.pointer),
-      // Recursive refs tag with the target's resolved name.
+      // Recursive refs tag with the target's resolved snake name.
       ResolvedRecursiveRef() => _allocator.lookup(variant.targetPointer),
       // Primitives: null when newtype (no shape-dispatch
-      // participation), else the structural Dart type name.
-      ResolvedString() => variant.createsNewType ? null : 'String',
-      ResolvedInteger() => variant.createsNewType ? null : 'Int',
-      ResolvedNumber() => variant.createsNewType ? null : 'Num',
+      // participation), else the structural snake form.
+      ResolvedString() => variant.createsNewType ? null : 'string',
+      ResolvedInteger() => variant.createsNewType ? null : 'int',
+      ResolvedNumber() => variant.createsNewType ? null : 'num',
       ResolvedPod() =>
         !variant.createsNewType && variant.type == PodType.boolean
             ? 'Bool'
@@ -296,20 +314,46 @@ class _NameAssigner {
       // Array / Map: always the structural literal, even when the
       // variant is a top-level newtype. The variant's `typeName` for
       // an array is `List<X>`; we can't splice that into a class
-      // name, so the wrapper uses just `'List'`.
-      ResolvedArray() => 'List',
-      ResolvedMap() => 'Map',
+      // name, so the wrapper uses just `'list'` (`List` after
+      // camelization).
+      ResolvedArray() => 'list',
+      ResolvedMap() => 'map',
       _ => null,
     };
+  }
+
+  /// Snake-case preference list for [schema]. Inline oneOf/anyOf
+  /// variants whose spec carries a `title` get a multi-tier list:
+  /// the title's snake form first (e.g., github's `org-ruleset-conditions`
+  /// variant titled `repository_name_and_ref_name` shortens to
+  /// that name and matching file basename), with the parser-
+  /// synthesized fallback (`<parent>_one_of_<i>`) as the safety
+  /// net. Other entities pass single-element lists.
+  List<String> _preferencesFor(ResolvedSchema schema) {
+    final fallback = schema.common.snakeName;
+    if (!_isInlineCollectionVariant(schema)) return [fallback];
+    final title = schema.common.title;
+    if (title == null || title.isEmpty) return [fallback];
+    final titleSnake = toSnakeCase(title);
+    if (titleSnake.isEmpty || titleSnake == fallback) return [fallback];
+    return [titleSnake, fallback];
+  }
+
+  /// True when [schema]'s pointer ends in `/oneOf/<i>` or
+  /// `/anyOf/<i>` — i.e. it's an inline variant whose parser-
+  /// synthesized snake name embeds the parent's name. These are the
+  /// schemas where a `title` gives us a clearly better short form.
+  bool _isInlineCollectionVariant(ResolvedSchema schema) {
+    final parts = schema.common.pointer.parts;
+    if (parts.length < 2) return false;
+    final secondToLast = parts[parts.length - 2];
+    return secondToLast == 'oneOf' || secondToLast == 'anyOf';
   }
 
   void _visitSchema(ResolvedSchema schema) {
     if (!_visited.add(schema.pointer)) return;
     if (schema.createsNewType) {
-      // Single-element preference list for now — today's behavior.
-      // Future PRs can widen this (e.g., title-derived shorter forms
-      // ahead of the parser-synthesized name).
-      _allocator.claim(schema.pointer, [camelFromSnake(schema.snakeName)]);
+      _allocator.claim(schema.pointer, _preferencesFor(schema));
     }
     // Recurse into structural children so inline newtypes get named.
     switch (schema) {

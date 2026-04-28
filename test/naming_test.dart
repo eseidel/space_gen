@@ -585,6 +585,135 @@ void main() {
           .toList();
       expect(loginNames, isEmpty);
     });
+
+    test('inline oneOf variant with a title shortens to the title-derived '
+        'snake name (file and class paired)', () {
+      // The github `org-ruleset-conditions` shape: variants are
+      // inline objects with a `title` that's clearly more readable
+      // than the parser-synthesized `<parent>OneOf<i>`. With a
+      // multi-tier preference list `[<title>, <parent>OneOf<i>]`,
+      // the title wins when it's globally unique. Snake form is
+      // what the allocator stores, so file basename and class name
+      // are paired automatically.
+      final names = namesFor({
+        'openapi': '3.1.0',
+        'info': {'title': 'X', 'version': '1.0'},
+        'servers': [
+          {'url': 'https://x'},
+        ],
+        'paths': {
+          '/u': {
+            'get': {
+              'summary': 'Get',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Conditions'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Conditions': {
+              'oneOf': [
+                {
+                  'title': 'with_name',
+                  'type': 'object',
+                  'properties': {
+                    'name': {'type': 'string'},
+                  },
+                  'required': ['name'],
+                },
+                {
+                  'title': 'with_id',
+                  'type': 'object',
+                  'properties': {
+                    'id': {'type': 'integer'},
+                  },
+                  'required': ['id'],
+                },
+              ],
+            },
+          },
+        },
+      });
+      final v0 = JsonPointer.parse('#/components/schemas/Conditions/oneOf/0');
+      final v1 = JsonPointer.parse('#/components/schemas/Conditions/oneOf/1');
+      // Class names come from the title.
+      expect(names[v0], 'WithName');
+      expect(names[v1], 'WithId');
+      // File basenames pair with the class names.
+      expect(names.snakeFor(v0), 'with_name');
+      expect(names.snakeFor(v1), 'with_id');
+    });
+
+    test('title-based preference falls back to the parser snake name '
+        'when two variants pick the same title', () {
+      // Same `title` on two variants — they collide on the first
+      // preference, both fall back to the parser synthesized
+      // `<parent>_one_of_<i>`. (The fallbacks are unique by index,
+      // so no further suffixing is needed.)
+      final names = namesFor({
+        'openapi': '3.1.0',
+        'info': {'title': 'X', 'version': '1.0'},
+        'servers': [
+          {'url': 'https://x'},
+        ],
+        'paths': {
+          '/u': {
+            'get': {
+              'summary': 'Get',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Twins'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Twins': {
+              'oneOf': [
+                {
+                  'title': 'twin',
+                  'type': 'object',
+                  'properties': {
+                    'a': {'type': 'string'},
+                  },
+                  'required': ['a'],
+                },
+                {
+                  'title': 'twin',
+                  'type': 'object',
+                  'properties': {
+                    'b': {'type': 'string'},
+                  },
+                  'required': ['b'],
+                },
+              ],
+            },
+          },
+        },
+      });
+      final v0 = JsonPointer.parse('#/components/schemas/Twins/oneOf/0');
+      final v1 = JsonPointer.parse('#/components/schemas/Twins/oneOf/1');
+      // The shared title `twin` collides — both fall back to the
+      // parser-synthesized form.
+      expect(names[v0], 'TwinsOneOf0');
+      expect(names[v1], 'TwinsOneOf1');
+    });
   });
 
   group('NameAllocator', () {
