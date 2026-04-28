@@ -35,3 +35,5 @@ words:
   - elif
   - fixpoint
   - prefs
+  - camelization
+  - basenames
