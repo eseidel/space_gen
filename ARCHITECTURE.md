@@ -10,20 +10,27 @@ current design questions — especially around external `$ref`s.
   specUrl
      │
      ▼
-┌─────────────┐   Map<Uri,Json>?  ┌──────────┐   OpenApi   ┌──────────┐   ResolvedSpec   ┌──────────┐   Dart files
-│  Load       │ ────────────────▶ │  Parse   │ ──────────▶ │  Resolve │ ───────────────▶ │  Render  │ ───────────▶
-│ (I/O)       │                   │  (pure)  │             │  (pure)  │                  │  (pure)  │
-└─────────────┘                   └──────────┘             └──────────┘                  └──────────┘
-     │                                                          │
-     │                                                          ▼
-     │                                                    ┌──────────┐
-     └───── reads cache (today: only the root) ──────────▶│ Registry │
-                                                          └──────────┘
+┌────────┐   ┌────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   Dart files
+│ Load   │──▶│ Parse  │──▶│ Resolve  │──▶│ Dispatch │──▶│ Render   │──▶
+│ (I/O)  │   │ (pure) │   │ (pure)   │   │ (pure)   │   │ (pure)   │
+└────────┘   └────────┘   └──────────┘   └──────────┘   └──────────┘
+                              │                 ▲
+                              ▼                 │
+                          ┌──────────┐    sidecar lookup
+                          │ Registry │
+                          └──────────┘
 ```
 
 Only **Load** does I/O. Everything downstream is a pure function of its
 input — *in principle*. In practice, external `$ref` support has pushed
 a bit of I/O up into the phase orchestration (see "Open questions").
+
+The original three downstream phases (Parse / Resolve / Render) are
+gradually being split: dispatch decisions and (planned) name
+assignment are getting their own phases between Resolve and Render so
+they can be made *globally*, with the full set of named entities in
+view. The current state lives a single dispatch pass; the naming pass
+is on the way (see "Planned phases" below).
 
 ## Phase 1 — Load
 
@@ -81,26 +88,101 @@ keyed by absolute URI. Populated by `RegistryBuilder`
 `specUrl.resolveUri(ref.uri)` — i.e., the registry key is the absolute
 URI you get by resolving the ref against the root spec URL.
 
-## Phase 4 — Render
+## Phase 4 — Dispatch
+
+**Purpose:** decide how each polymorphic schema (`oneOf` / `anyOf`)
+will route its `fromJson` at runtime. Pure structural — operates on
+the resolved tree only, knows nothing about Dart names or per-variant
+Dart-string production.
+**Lives in:** `lib/src/dispatch.dart`.
+**Entry point:** `decideDispatch(ResolvedSchemaCollection)
+→ DispatchDecision`.
+
+**Output types:** sealed `DispatchDecision` family — `Discriminator
+Dispatch`, `ShapeDispatch`, `HybridDispatch`, `PredicateDispatch`,
+`NoDispatch`. Each carries the structural facts the renderer needs
+(predicate per arm, shape key per arm, declaration order, etc.) but
+references variants as `ResolvedSchema`s rather than by Dart name.
+
+**Why a separate phase:** the dispatch decision determines *which*
+wrapper subclasses get emitted for a given oneOf. A future global
+naming pass needs to know that wrapper set up front so it can hand
+each wrapper a name. Decision-making had to leave the renderer for
+that to be possible.
+
+**`Predicate` IR.** Each variant's "is this me?" test is a value:
+`KeyExists(prop)`, `ArrayElementHasKey(prop)`, `Always` (the
+unguarded fallback). Adding a new way to distinguish variants — e.g.
+peeking deeper than one level into JSON — is a new `Predicate`
+subtype, not a new dispatch mode.
+
+**Note:** dispatch is consumed only by `RenderOneOf`'s template-
+context production today. The renderer still owns Dart-string
+production (`wrapperTypeName`, per-variant `fromJson`/`toJson`
+expressions); it asks dispatch what the structural decision was and
+splices the strings around it.
+
+## Phase 5 — Render
 
 Renders split into two sub-phases:
 
-**4a. ResolvedSpec → RenderSpec.** `SpecResolver.toRenderSpec()` in
+**5a. ResolvedSpec → RenderSpec.** `SpecResolver.toRenderSpec()` in
 `lib/src/render/render_tree.dart`. `RenderSpec` is a rendering-friendly
 view: it adds computed fields (`endpoints`, `apis`, `tags`), groups
 operations by tag, computes import sets, etc. `ResolvedSpec` is
 semantic; `RenderSpec` is layout-aware.
 
-**4b. RenderSpec → Dart files.** `FileRenderer.render(RenderSpec)` in
+**5b. RenderSpec → Dart files.** `FileRenderer.render(RenderSpec)` in
 `lib/src/render/file_renderer.dart`. Walks the render tree, picks a
 file path for each schema (`modelPath`, `testPath`), runs Mustache
 templates from `lib/templates/`, and writes. `dart format` and `dart
 fix` run via an injected `runProcess`.
 
+**Linkage to dispatch.** `RenderOneOf` carries a back-reference to
+the source `ResolvedSchemaCollection` it was built from. When a
+oneOf renders, it calls `decideDispatch(source)` to retrieve the
+structural decision and then translates it into mustache context
+using its own render-side helpers (`wrapperTypeName`, `_planVariant`,
+etc.). The resolved → render variant mapping uses index parity:
+`source.schemas[i]` corresponds to the parallel `RenderOneOf.schemas[i]`.
+
+## Planned phases
+
+### Naming pass (between Dispatch and Render)
+
+Today, Dart class names are decided in three different layers — the
+parser synthesizes inline-schema names, the resolver resolves naming
+collisions with `_1` suffixes, and the renderer composes wrapper
+class names per oneOf. Each layer makes a local decision with only
+partial information, so we get artifacts like
+`ProjectsCreateCardRequestProjectsCreateCardRequestOneOf0` (parser
+named the variant by parent, renderer wrapped with parent again,
+neither knew the other did) and `RepositoryRulesetConditions1` (an
+inline schema collides with a top-level one, gets a numeric suffix).
+
+The plan: a `lib/src/naming.dart` pass that runs after Dispatch and
+before Render. It walks the resolved tree + dispatch decisions,
+enumerates every named entity (top-level schemas, inline schemas
+that produce types, wrapper subclasses, operation message types),
+and assigns each a Dart class name using a shortest-unique-with-
+fallback algorithm. Output is a sidecar `Map<NameId, String>` —
+not a mutated tree — keyed by JSON pointer for spec-rooted entities
+and by `(parentPointer, kind, index)` for synthesized ones.
+
+The renderer then *looks up* names instead of computing them. The
+collision-resolution code in the resolver and the `wrapperTypeName`
+/ `typeName` logic in `RenderOneOf` get gutted in favor of the
+single map.
+
+The resolver intentionally stays Dart-blind: it carries `snakeName`
+(a parser-level identifier) but no Dart class name. Naming sits
+between resolve and render so the resolver can be reused for any
+future non-Dart consumer.
+
 ## Top-level orchestration
 
 `loadAndRenderSpec(GeneratorConfig)` in `lib/src/render.dart` is the
-only entrypoint. It is a linear sequence of the four phases:
+only entrypoint. It is a linear sequence of the phases:
 
 ```dart
 final cache = Cache(fs);
@@ -108,8 +190,11 @@ final specJson = await cache.load(config.specUrl);         // Load
 final spec = parseOpenApi(specJson, baseUri: ...);         // Parse
 // ... build registry, resolve external refs ...
 final resolved = resolveSpec(spec, specUrl, refRegistry);  // Resolve
-final renderSpec = SpecResolver(quirks).toRenderSpec(...); // Render 4a
-fileRenderer.render(renderSpec);                           // Render 4b
+// Dispatch is currently called per-oneOf inside RenderOneOf.toTemplateContext
+// — it operates on the resolved source via the back-reference. A future
+// pre-pass will hoist these calls into the orchestrator.
+final renderSpec = SpecResolver(quirks).toRenderSpec(...); // Render 5a
+fileRenderer.render(renderSpec);                           // Render 5b
 ```
 
 The CLI (`bin/space_gen.dart`) just wires `argResults` to a

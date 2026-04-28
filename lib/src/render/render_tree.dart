@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
+import 'package:space_gen/src/dispatch.dart';
 import 'package:space_gen/src/parse/spec.dart' show StatusCodeRange;
 import 'package:space_gen/src/quirks.dart';
 // Any code that depends on SchemaRenderer probably should be moved out
@@ -449,6 +450,7 @@ class SpecResolver {
           common: schema.common,
           schemas: renderSchemas,
           discriminator: renderDiscriminator,
+          source: schema,
         );
       case ResolvedAllOf():
         // Generate a synthetic object type for allOf. A property is
@@ -482,6 +484,7 @@ class SpecResolver {
           common: schema.common,
           schemas: schema.schemas.map(toRenderSchema).toList(),
           discriminator: null,
+          source: schema,
         );
       case ResolvedMap():
         final keyEnum = schema.keySchema;
@@ -610,6 +613,10 @@ class SpecResolver {
         ),
         schemas: distinctSchemas.toList(),
         discriminator: null,
+        // Synthesized — no resolved oneOf. Renders as the legacy
+        // `UnimplementedError` stub via the null-source `NoDispatch`
+        // path; closing this gap is a follow-up.
+        source: null,
       ),
     );
   }
@@ -3749,6 +3756,7 @@ class RenderOneOf extends RenderNewType {
     required super.common,
     required this.schemas,
     required this.discriminator,
+    required this.source,
   });
 
   /// The schemas of the resolved schema.
@@ -3760,6 +3768,20 @@ class RenderOneOf extends RenderNewType {
   /// right variant. When absent, today's renderer falls back to the
   /// UnimplementedError stub — a gap to close in a follow-up.
   final RenderDiscriminator? discriminator;
+
+  /// The source resolved oneOf/anyOf this RenderOneOf was built from,
+  /// when there is one. Carried so [toTemplateContext] can call
+  /// [decideDispatch] on the resolved tree (where dispatch belongs —
+  /// pure spec, no Dart names) and then translate the decision into
+  /// mustache context using render-side names + per-variant Dart
+  /// conversions. The variants of `source.schemas` and [schemas] are
+  /// parallel: index `i` is the resolved/render pair.
+  ///
+  /// Null for synthesized RenderOneOfs that don't correspond to a
+  /// resolved oneOf — e.g. the placeholder built for range-mixed
+  /// multi-status responses. These always render as [NoDispatch] /
+  /// the legacy `UnimplementedError` stub.
+  final ResolvedSchemaCollection? source;
 
   /// We could do something smarter here, to determine if the oneOf has a
   /// const constructor, but it's not worth the complexity for now.
@@ -3854,333 +3876,14 @@ class RenderOneOf extends RenderNewType {
     );
   }
 
-  /// The discriminator we'll dispatch on: the spec's explicit one when
-  /// present, otherwise an implicit one synthesized from variants that
-  /// each tag themselves with a single-value enum property (see
-  /// [_implicitDiscriminator]). Explicit always wins.
-  RenderDiscriminator? get _effectiveDiscriminator =>
-      discriminator ?? _implicitDiscriminator;
-
-  /// Discriminator-driven dispatch: every variant must be an object-
-  /// shaped newtype with a `fromJson` factory.
-  bool get _hasDiscriminatorDispatch =>
-      _effectiveDiscriminator != null &&
-      schemas.every((s) => s is RenderObject);
-
-  /// Synthesized discriminator for object-only oneOfs whose variants
-  /// each tag themselves with a single-value enum property — github's
-  /// `repository-rule` shape. The spec doesn't declare a
-  /// `discriminator`, but every variant has, e.g.,
-  /// `type: { enum: ['creation'] }` with that property required. The
-  /// values are pairwise distinct, so the parent's `fromJson` can
-  /// switch on `json[<that property>]` and pick a variant.
-  ///
-  /// Conservative on purpose: requires the tag property to be in
-  /// every variant's `requiredProperties` (an absent field would
-  /// crash dispatch) and that the single-enum values be unique
-  /// across variants (otherwise dispatch is ambiguous). Returns null
-  /// if no property qualifies; the caller falls through to shape /
-  /// required-field dispatch as usual.
-  RenderDiscriminator? get _implicitDiscriminator {
-    if (schemas.isEmpty) return null;
-    if (!schemas.every((s) => s is RenderObject)) return null;
-    final objects = schemas.cast<RenderObject>();
-    // A property qualifies as an implicit discriminator iff every
-    // variant has it as a required, single-value enum. Walk the first
-    // variant's properties to seed candidates; for each, gather the
-    // per-variant tag value while validating the others. Recording
-    // values here avoids a second lookup later.
-    final candidates = <(String, List<String>)>[];
-    for (final entry in objects.first.properties.entries) {
-      final propName = entry.key;
-      if (!objects.first.requiredProperties.contains(propName)) continue;
-      final firstType = entry.value;
-      if (firstType is! RenderEnum || firstType.values.length != 1) {
-        continue;
-      }
-      final values = [firstType.values.first];
-      var allMatch = true;
-      for (var i = 1; i < objects.length; i++) {
-        final other = objects[i];
-        if (!other.requiredProperties.contains(propName)) {
-          allMatch = false;
-          break;
-        }
-        final otherType = other.properties[propName];
-        if (otherType is! RenderEnum || otherType.values.length != 1) {
-          allMatch = false;
-          break;
-        }
-        values.add(otherType.values.first);
-      }
-      if (allMatch) candidates.add((propName, values));
-    }
-    if (candidates.isEmpty) return null;
-    // Stable pick: lexicographically-first candidate property whose
-    // values are unique. Sorting first means small spec edits don't
-    // shuffle the chosen discriminator.
-    candidates.sort((a, b) => a.$1.compareTo(b.$1));
-    for (final (propName, values) in candidates) {
-      if (values.toSet().length != values.length) continue;
-      return RenderDiscriminator(
-        propertyName: propName,
-        mapping: {
-          for (var i = 0; i < objects.length; i++) values[i]: objects[i],
-        },
-      );
-    }
-    return null;
+  /// Whether any dispatch strategy will fire — drives whether the
+  /// `@immutable` wrapper-class import is needed. Calls [decideDispatch]
+  /// on the resolved source; cheap and pure.
+  bool get _hasDispatch {
+    final src = source;
+    if (src == null) return false;
+    return decideDispatch(src) is! NoDispatch;
   }
-
-  /// True iff every variant has a known shape key AND all keys are
-  /// pairwise distinct. Context-free so [additionalImports] and
-  /// [_hasDispatch] can answer the can-we-dispatch question without a
-  /// [SchemaRenderer]; the context-taking [_shapeDispatchPlans] adds
-  /// the items' fromJson/toJson expressions when arrays are involved.
-  bool get _canShapeDispatch {
-    final keys = <String>{};
-    for (final v in schemas) {
-      final k = v.jsonShapeKey;
-      if (k == null) return false;
-      if (!keys.add(k)) return false;
-    }
-    return true;
-  }
-
-  /// Shape-driven dispatch (runtime-type switch). Falls through from
-  /// the discriminator path when the discriminator can't be honored
-  /// (e.g. non-object variants under a discriminator) — shape is a
-  /// strict fallback rather than a competitor.
-  List<_VariantPlan>? _shapeDispatchPlans(SchemaRenderer context) {
-    if (!_canShapeDispatch) return null;
-    final plans = <_VariantPlan>[];
-    for (final v in schemas) {
-      final plan = _planVariant(v, context);
-      if (plan == null) return null;
-      plans.add(plan);
-    }
-    return plans;
-  }
-
-  /// Property-presence dispatch on object-shaped variants: each
-  /// variant is keyed off the presence of a property unique to it
-  /// across the oneOf. "Unique" means *not present in any sibling's
-  /// property set* — required or optional. A required-unique tag is
-  /// always emitted in valid JSON for that variant (safe); an
-  /// optional-unique tag is best-effort but still works for typical
-  /// real-world responses where servers emit the distinguishing
-  /// optional (e.g. github's `validation-error` reliably emits
-  /// `errors`, `repository-rule-violation-error` reliably emits
-  /// `metadata`). A variant with no unique props at all is the
-  /// dispatch's fallback; at most one is allowed.
-  ///
-  /// Useful for (object, object) oneOfs without a discriminator —
-  /// github has ~9 such sites with disjoint required-sets (e.g.
-  /// `simple-user` requires `login`, `enterprise` requires `slug`),
-  /// a handful where one variant is empty (`commit.author` is
-  /// `[simple-user, empty-object]`, the `interactions` 200 responses
-  /// are `[interaction-limit-response, <empty>]`), plus
-  /// `environment.protection_rules.items` (three variants share
-  /// `[id, node_id, type]` as required and differ by unique
-  /// optionals) and `git/create-blob` 422
-  /// (`[validation-error, repository-rule-violation-error]`,
-  /// distinguished by `errors` vs `metadata`).
-  ///
-  /// Returns one [_RequiredFieldArm] per variant in [schemas] order,
-  /// or null if the dispatch can't be made unambiguous — in which
-  /// case dispatch falls through to the legacy stub.
-  List<_RequiredFieldArm>? get _requiredFieldDispatchArms =>
-      _requiredFieldArmsFor(schemas);
-
-  /// Same algorithm as [_requiredFieldDispatchArms] but operating on
-  /// an arbitrary subset of variants — used by the hybrid path below
-  /// to dispatch the Map-shaped variants when the shape arm sees a
-  /// `Map<String, dynamic>` collision.
-  ///
-  /// [looseRequiredUniqueness] relaxes the required-tag uniqueness
-  /// check to "no sibling *requires* it" instead of "no sibling
-  /// lists it as a property at all". The looser check lets the
-  /// hybrid path dispatch when a sibling spuriously lists the tag
-  /// as optional (github's `repos/get-content` shape — `content-file`
-  /// declares `target` and `submodule_git_url` optional even though
-  /// the server never emits them for files). It's NOT safe for the
-  /// pure required-field path: a real-world example is
-  /// `git/create-blob` 422, where every error variant emits
-  /// `documentation_url` even though only the validation error
-  /// requires it — loose would tag validation on `documentation_url`
-  /// and misclassify rule-violation responses. Strict is the default;
-  /// the hybrid caller opts in.
-  static List<_RequiredFieldArm>? _requiredFieldArmsFor(
-    List<RenderSchema> variants, {
-    bool looseRequiredUniqueness = false,
-  }) {
-    // Object-shaped variants only (RenderObject for normal objects,
-    // RenderEmptyObject for `{}`-shaped fallbacks).
-    if (!variants.every((s) => s is RenderObject || s is RenderEmptyObject)) {
-      return null;
-    }
-    final objects = variants.cast<RenderNewType>();
-    Set<String> requiredOf(RenderNewType o) =>
-        o is RenderObject ? o.requiredProperties.toSet() : const <String>{};
-    Set<String> propsOf(RenderNewType o) =>
-        o is RenderObject ? o.properties.keys.toSet() : const <String>{};
-    final allRequired = objects.map(requiredOf).toList();
-    final allProps = objects.map(propsOf).toList();
-    final arms = <_RequiredFieldArm>[];
-    var fallbackCount = 0;
-    for (var i = 0; i < objects.length; i++) {
-      final mineReq = allRequired[i];
-      final mineProps = allProps[i];
-      final othersReq = <String>{};
-      final othersProps = <String>{};
-      for (var j = 0; j < allRequired.length; j++) {
-        if (i == j) continue;
-        othersReq.addAll(allRequired[j]);
-        othersProps.addAll(allProps[j]);
-      }
-      // Required-unique: STRICT by default — fields no sibling
-      // lists at all (so no risk that a sibling's optional copy
-      // crosses with the tag). Hybrid callers flip to LOOSE
-      // (`mineReq - othersReq`) to accept benign optional-overlap
-      // cases like `repos/get-content` — see the doc on this
-      // function. Optional-unique always uses STRICT: an optional
-      // tag might or might not be emitted, so we want zero risk
-      // of cross-match.
-      final uniqueRequired = mineReq.difference(
-        looseRequiredUniqueness ? othersReq : othersProps,
-      );
-      final uniqueProps = mineProps.difference(othersProps);
-      final candidates = uniqueRequired.isNotEmpty
-          ? uniqueRequired
-          : uniqueProps;
-      if (candidates.isEmpty) {
-        // No unique anything — this variant is the fallback. At most
-        // one fallback per dispatch; with two the dispatch would be
-        // ambiguous.
-        fallbackCount++;
-        if (fallbackCount > 1) return null;
-        arms.add(
-          _RequiredFieldArm(variant: objects[i], predicate: const _Always()),
-        );
-        continue;
-      }
-      // Lex-first for stable output.
-      final tag = (candidates.toList()..sort()).first;
-      arms.add(
-        _RequiredFieldArm(variant: objects[i], predicate: _KeyExists(tag)),
-      );
-    }
-    return arms;
-  }
-
-  /// Hybrid dispatch when the variant set mixes shapes (e.g. an array
-  /// alongside several objects). Pure shape dispatch fails because the
-  /// objects collide on `Map<String, dynamic>`; pure required-field
-  /// fails because not every variant is an object. Hybrid: shape-arm
-  /// each non-Map variant, then required-field-dispatch the Map
-  /// variants in a single nested arm.
-  ///
-  /// Github's only current site is `repos/get-content` 200 — `[content-
-  /// directory (array), content-file, content-symlink, content-
-  /// submodule]` (3 objects with disjoint required properties).
-  ///
-  /// Returns null when any other dispatch (discriminator, pure shape,
-  /// pure required-field) already covers the case, when there are no
-  /// Map collisions to disambiguate, when a non-Map shape collides
-  /// (e.g. two arrays — the array sub-dispatch is a separate gap),
-  /// or when the Map variants themselves are not required-field
-  /// dispatchable.
-  _HybridDispatchPlan? _hybridDispatchPlan(SchemaRenderer context) {
-    final eligibility = _hybridEligibility();
-    if (eligibility == null) return null;
-    final mapArms = _requiredFieldArmsFor(
-      eligibility.mapVariants,
-      looseRequiredUniqueness: true,
-    );
-    if (mapArms == null) return null;
-
-    // Walk variants in [schemas] order — that's the order sealed
-    // subclasses get declared in the generated file. Each variant is
-    // either a Map arm (already keyed in [mapArms]) or a non-Map
-    // shape arm (we build the plan here). Building both arm lists
-    // and the parallel [variantContexts] in a single pass keeps the
-    // routing explicit; pulling them apart later would need lookup
-    // tables and bang-asserts.
-    final mapArmByVariant = {for (final a in mapArms) a.variant: a};
-    final shapeArms = <_VariantPlan>[];
-    final variantContexts = <Map<String, dynamic>>[];
-    for (final variant in schemas) {
-      final mapArm = mapArmByVariant[variant];
-      if (mapArm != null) {
-        variantContexts.add(objectWrapperContext(mapArm.variant));
-        continue;
-      }
-      final plan = _planVariant(variant, context);
-      if (plan == null) return null;
-      shapeArms.add(plan);
-      variantContexts.add(_shapeWrapperContext(plan));
-    }
-    return _HybridDispatchPlan(
-      shapeArms: shapeArms,
-      mapArms: mapArms,
-      variantContexts: variantContexts,
-    );
-  }
-
-  /// Shared eligibility gate for [_hybridDispatchPlan]: every
-  /// variant has a shape key, there's at least one Map variant
-  /// collision, at least one non-Map sibling, and no non-Map shape
-  /// collides with itself (e.g. two arrays — that's its own gap).
-  /// Returns the shape and Map partitions on success, null when the
-  /// hybrid path doesn't apply.
-  ///
-  /// [_hasDispatch] and [additionalImports] also use the eligibility
-  /// check directly — they need to know whether hybrid will fire but
-  /// run before a SchemaRenderer is available, so they can't invoke
-  /// [_planVariant] or the Map sub-dispatch. A false positive there
-  /// only adds a stray `package:meta/meta.dart` import that
-  /// `dart fix` strips.
-  _HybridEligibility? _hybridEligibility() {
-    final byShape = <String, List<RenderSchema>>{};
-    for (final v in schemas) {
-      final k = v.jsonShapeKey;
-      if (k == null) return null;
-      byShape.putIfAbsent(k, () => []).add(v);
-    }
-    final mapVariants = byShape[_mapShapeKey];
-    // Pure shape dispatch handles a no-Map-collision case; pure
-    // required-field handles an all-Map case.
-    if (mapVariants == null || mapVariants.length < 2) return null;
-    if (byShape.length < 2) return null;
-    final shapeVariants = <RenderSchema>[];
-    for (final entry in byShape.entries) {
-      if (entry.key == _mapShapeKey) continue;
-      // A non-Map shape collision (e.g. two arrays) is its own gap;
-      // bail rather than dispatching half the cases.
-      if (entry.value.length > 1) return null;
-      shapeVariants.add(entry.value.single);
-    }
-    return _HybridEligibility(
-      shapeVariants: shapeVariants,
-      mapVariants: mapVariants,
-    );
-  }
-
-  /// Context-free eligibility check for [_pickArrayElementMode] —
-  /// used by [_hasDispatch] (and through it, [additionalImports])
-  /// which run before a [SchemaRenderer] is available.
-  bool get _isArrayElementEligible {
-    if (!schemas.every((s) => s is RenderArray)) return false;
-    final arrays = schemas.cast<RenderArray>();
-    return _requiredFieldArmsFor(arrays.map((a) => a.items).toList()) != null;
-  }
-
-  bool get _hasDispatch =>
-      _hasDiscriminatorDispatch ||
-      _canShapeDispatch ||
-      _hybridEligibility() != null ||
-      _requiredFieldDispatchArms != null ||
-      _isArrayElementEligible;
 
   @override
   Iterable<Import> get additionalImports => [
@@ -4201,198 +3904,195 @@ class RenderOneOf extends RenderNewType {
     return ctx;
   }
 
-  /// Picks the dispatch mode for this oneOf in priority order:
-  /// discriminator → pure shape → hybrid → required-field →
-  /// array-element → none. Array-element is last among the typed
-  /// modes because it requires every variant to be `array<object>` —
-  /// strict enough that earlier modes have already claimed any
-  /// dispatch they can.
-  _DispatchMode _pickDispatchMode(SchemaRenderer context) =>
-      _pickDiscriminatorMode() ??
-      _pickShapeMode(context) ??
-      _pickHybridMode(context) ??
-      _pickRequiredFieldMode() ??
-      _pickArrayElementMode(context) ??
-      const _NoDispatchMode();
-
-  _DiscriminatorMode? _pickDiscriminatorMode() {
-    final disc = _effectiveDiscriminator;
-    if (disc == null || !_hasDiscriminatorDispatch) return null;
-    return _DiscriminatorMode(
-      discriminatorProperty: disc.propertyName,
-      dispatch: [
-        for (final entry in disc.mapping.entries)
-          {
-            'value': entry.key,
-            'wrapperTypeName': wrapperTypeName(entry.value),
-            'valueType': entry.value.typeName,
-          },
-      ],
-      variants: schemas.map(objectWrapperContext).toList(),
-    );
+  /// Picks the dispatch mode for this oneOf. Decision-making (the
+  /// structural "which strategy fits this oneOf") is delegated to
+  /// [decideDispatch], which operates on the resolved tree without
+  /// any Dart-name knowledge. This method is the render-side
+  /// translator: it converts the abstract [DispatchDecision] back
+  /// into the render-coupled [_DispatchMode] template-context bag,
+  /// using [wrapperTypeName] / [_planVariant] / [_VariantConversion]
+  /// to splice in Dart-name and per-variant conversion strings.
+  _DispatchMode _pickDispatchMode(SchemaRenderer context) {
+    final src = source;
+    if (src == null) return const _NoDispatchMode();
+    return _decisionToMode(decideDispatch(src), context);
   }
 
-  _ShapeMode? _pickShapeMode(SchemaRenderer context) {
-    final plans = _shapeDispatchPlans(context);
-    if (plans == null) return null;
-    return _ShapeMode(variants: plans.map(_shapeWrapperContext).toList());
+  /// Translates a structural [DispatchDecision] into a [_DispatchMode].
+  /// The resolved → render variant mapping uses index parity:
+  /// `source.schemas[i]` corresponds to [schemas]`[i]` (preserved by
+  /// [SpecResolver.toRenderSchema]).
+  _DispatchMode _decisionToMode(
+    DispatchDecision decision,
+    SchemaRenderer context,
+  ) {
+    // [_pickDispatchMode] short-circuits to NoDispatchMode when source
+    // is null, so any decision other than NoDispatch came from a real
+    // resolved oneOf — `source!` is sound here.
+    final src = source!;
+    RenderSchema renderOf(ResolvedSchema resolved) {
+      final i = src.schemas.indexWhere((s) => identical(s, resolved));
+      if (i == -1) {
+        throw StateError(
+          'Decision references variant not in source.schemas: $resolved',
+        );
+      }
+      return schemas[i];
+    }
+
+    return switch (decision) {
+      DiscriminatorDispatch(
+        :final propertyName,
+        :final mapping,
+        :final variants,
+      ) =>
+        _DiscriminatorMode(
+          discriminatorProperty: propertyName,
+          dispatch: [
+            for (final entry in mapping)
+              {
+                'value': entry.value,
+                'wrapperTypeName': wrapperTypeName(renderOf(entry.variant)),
+                'valueType': renderOf(entry.variant).typeName,
+              },
+          ],
+          variants: [
+            for (final v in variants) objectWrapperContext(renderOf(v)),
+          ],
+        ),
+      ShapeDispatch(:final arms) => _ShapeMode(
+        variants: [
+          for (final arm in arms)
+            _shapeWrapperContext(_planVariant(renderOf(arm.variant), context)!),
+        ],
+      ),
+      HybridDispatch(
+        :final shapeArms,
+        :final mapArms,
+        :final mapFallback,
+        :final declarationOrder,
+      ) =>
+        _HybridMode(
+          shapeArms: [
+            for (final arm in shapeArms)
+              _shapeWrapperContext(
+                _planVariant(renderOf(arm.variant), context)!,
+              ),
+          ],
+          mapArms: [
+            for (final arm in mapArms)
+              {
+                'predicateTest': arm.predicate.dartIfTest('v'),
+                'wrapperTypeName': wrapperTypeName(renderOf(arm.variant)),
+                'valueType': renderOf(arm.variant).typeName,
+              },
+          ],
+          mapFallback: mapFallback == null
+              ? null
+              : {
+                  'wrapperTypeName': wrapperTypeName(renderOf(mapFallback)),
+                  'valueType': renderOf(mapFallback).typeName,
+                },
+          variants: [
+            for (final v in declarationOrder)
+              if (mapArms.any((a) => identical(a.variant, v)) ||
+                  identical(v, mapFallback))
+                objectWrapperContext(renderOf(v))
+              else
+                _shapeWrapperContext(_planVariant(renderOf(v), context)!),
+          ],
+        ),
+      PredicateDispatch(:final kind, :final arms) => _buildPredicateMode(
+        kind,
+        arms,
+        renderOf,
+        context,
+      ),
+      NoDispatch() => const _NoDispatchMode(),
+    };
   }
 
-  _HybridMode? _pickHybridMode(SchemaRenderer context) {
-    final hybrid = _hybridDispatchPlan(context);
-    if (hybrid == null) return null;
-    // Map sub-dispatch arms split into checked (`when
-    // v.containsKey(tag)`) and the optional fallback (no `when`,
-    // catches everything else). The hybrid template's switch binds
-    // the matched JSON to `v`, so the predicate's if-test is rooted
-    // on `v` rather than `json`.
-    final checked = hybrid.mapArms.where((a) => !a.isFallback);
-    final fallback = hybrid.mapArms.where((a) => a.isFallback).firstOrNull;
-    return _HybridMode(
-      shapeArms: hybrid.shapeArms.map(_shapeWrapperContext).toList(),
-      mapArms: checked.map((a) => _taggedArmContext(a, jsonVar: 'v')).toList(),
-      mapFallback: fallback == null ? null : _fallbackArmContext(fallback),
-      variants: hybrid.variantContexts,
-    );
-  }
-
-  _PredicateDispatchMode? _pickRequiredFieldMode() {
-    final arms = _requiredFieldDispatchArms;
-    if (arms == null) return null;
-    // Pure required-field: factory takes the Map directly; predicates
-    // are rooted on `json`; wrappers wrap the Map back unchanged.
-    final checked = arms.where((a) => !a.isFallback);
-    final fallback = arms.where((a) => a.isFallback).firstOrNull;
-    String constructionFor(RenderNewType variant) =>
-        '${variant.typeName}.fromJson(json)';
-    return _PredicateDispatchMode(
-      dispatch: [
-        for (final arm in checked)
-          {
-            'predicateTest': arm.predicate.dartIfTest('json'),
-            'wrapperTypeName': wrapperTypeName(arm.variant),
-            'construction': constructionFor(arm.variant),
-          },
-      ],
-      fallback: fallback == null
-          ? null
-          : {
-              'wrapperTypeName': wrapperTypeName(fallback.variant),
-              'construction': constructionFor(fallback.variant),
-            },
-      variants: arms.map((a) => objectWrapperContext(a.variant)).toList(),
-      factoryParamType: 'Map<String, dynamic>',
-      preamble: false,
-      throwMessage:
-          'No variant of $typeName matched json keys: '
-          r'${json.keys.toList()}',
-      toJsonReturnType: 'Map<String, dynamic>',
-    );
-  }
-
-  /// Array-element dispatch fires when every variant is `array<object>`
-  /// and the *element* types have unique required-or-optional fields.
-  /// Same algorithm as required-field, but one level deeper through
-  /// [_requiredFieldArmsFor] applied to each array's `items`. Each
-  /// inner `_KeyExists(tag)` becomes an outer `_ArrayElementHasKey(tag)`
-  /// rooted on the cast list local (`v`).
-  _PredicateDispatchMode? _pickArrayElementMode(SchemaRenderer context) {
-    if (!schemas.every((s) => s is RenderArray)) return null;
-    final arrays = schemas.cast<RenderArray>();
-    final innerArms = _requiredFieldArmsFor(
-      arrays.map((a) => a.items).toList(),
-    );
-    if (innerArms == null) return null;
+  _PredicateDispatchMode _buildPredicateMode(
+    PredicateDispatchKind kind,
+    List<PredicateArm> arms,
+    RenderSchema Function(ResolvedSchema) renderOf,
+    SchemaRenderer context,
+  ) {
     final dispatch = <Map<String, dynamic>>[];
     Map<String, dynamic>? fallback;
     final variants = <Map<String, dynamic>>[];
-    for (var i = 0; i < arrays.length; i++) {
-      final plan = _planVariant(arrays[i], context);
-      // Every array variant has a known shape key (`List<dynamic>`)
-      // and a [_VariantConversion], so [_planVariant] never returns
-      // null here — but guarding keeps the picker honest if a future
-      // RenderSchema type weakens that guarantee.
-      if (plan == null) return null;
-      // [_planVariant] would name every array `<Parent>List` (the
-      // shared `wrapperTag = 'List'`), so the sibling array variants
-      // would collide. Splice in the items type to keep wrapper class
-      // names unique: `<Parent><ItemType>List`.
-      final wrapperName = '$typeName${arrays[i].items.typeName}List';
-      variants.add({
-        'wrapperTypeName': wrapperName,
-        'valueType': plan.valueType,
-        'jsonTestType': plan.jsonTestType,
-        'fromJson': plan.fromJson,
-        'toJsonBody': plan.toJson,
-        'toJsonReturnType': 'dynamic',
-        'positionalBoolIgnore': plan.positionalBoolIgnore,
-      });
-      final innerPredicate = innerArms[i].predicate;
-      // Translate the inner predicate (operating on the items'
-      // Map representation) to the outer one (operating on the
-      // List local, peeking [0]). _Always passes through unchanged —
-      // a fallback-eligible items schema produces a fallback-eligible
-      // array variant.
-      final outerPredicate = switch (innerPredicate) {
-        _KeyExists(:final propertyName) => _ArrayElementHasKey(propertyName),
-        _Always() => const _Always(),
-        // Composing _ArrayElementHasKey with itself would mean
-        // `array<array<object>>` element-of-element dispatch — a
-        // generalization we haven't needed.
-        _ArrayElementHasKey() => throw StateError(
-          'Unexpected nested array-element predicate from inner arms',
-        ),
-      };
-      final arm = <String, dynamic>{
-        'wrapperTypeName': wrapperName,
-        // Per-arm construction differs across siblings — each array
-        // wraps a `List<X>` of its own element type, so the conversion
-        // expression varies (`v.map<X>((e) => X.fromJson(e)).toList()`).
-        'construction': plan.fromJson,
-      };
-      if (outerPredicate is _Always) {
-        fallback = arm;
+    for (final arm in arms) {
+      final renderVariant = renderOf(arm.variant);
+      final Map<String, dynamic> armCtx;
+      switch (kind) {
+        case PredicateDispatchKind.requiredField:
+          // Wrappers wrap the Map back as `value.toJson()`; per-arm
+          // construction is `<typeName>.fromJson(json)`.
+          armCtx = {
+            'wrapperTypeName': wrapperTypeName(renderVariant),
+            'construction': '${renderVariant.typeName}.fromJson(json)',
+          };
+          variants.add(objectWrapperContext(renderVariant));
+        case PredicateDispatchKind.arrayElement:
+          // Each array variant wraps `List<X>` and serializes via
+          // the items' own conversion. Wrapper class name splices
+          // the items type so sibling array variants don't collide
+          // on the shared `wrapperTag = 'List'`. The items'
+          // RenderSchema is on the parallel render array (the
+          // resolved items aren't a direct member of source.schemas
+          // and so can't go through renderOf).
+          final renderArray = renderVariant as RenderArray;
+          final innerTypeName = renderArray.items.typeName;
+          final wrapperName = '$typeName${innerTypeName}List';
+          final plan = _planVariant(renderVariant, context)!;
+          armCtx = {
+            'wrapperTypeName': wrapperName,
+            'construction': plan.fromJson,
+          };
+          variants.add({
+            'wrapperTypeName': wrapperName,
+            'valueType': plan.valueType,
+            'jsonTestType': plan.jsonTestType,
+            'fromJson': plan.fromJson,
+            'toJsonBody': plan.toJson,
+            'toJsonReturnType': 'dynamic',
+            'positionalBoolIgnore': plan.positionalBoolIgnore,
+          });
+      }
+      if (arm.isFallback) {
+        fallback = armCtx;
       } else {
-        arm['predicateTest'] = outerPredicate.dartIfTest('v');
-        dispatch.add(arm);
+        armCtx['predicateTest'] = arm.predicate.dartIfTest(
+          kind == PredicateDispatchKind.arrayElement ? 'v' : 'json',
+        );
+        dispatch.add(armCtx);
       }
     }
+    final factoryParamType = kind == PredicateDispatchKind.arrayElement
+        ? 'dynamic'
+        : 'Map<String, dynamic>';
+    final preamble = kind == PredicateDispatchKind.arrayElement
+        ? const [
+            {'line': 'final v = json as List;'},
+          ]
+        : false;
+    final throwMessage = kind == PredicateDispatchKind.arrayElement
+        ? 'No variant of $typeName matched first array element'
+        : 'No variant of $typeName matched json keys: '
+              r'${json.keys.toList()}';
+    final toJsonReturnType = kind == PredicateDispatchKind.arrayElement
+        ? 'dynamic'
+        : 'Map<String, dynamic>';
     return _PredicateDispatchMode(
       dispatch: dispatch,
       fallback: fallback,
       variants: variants,
-      factoryParamType: 'dynamic',
-      preamble: const [
-        {'line': 'final v = json as List;'},
-      ],
-      throwMessage: 'No variant of $typeName matched first array element',
-      toJsonReturnType: 'dynamic',
+      factoryParamType: factoryParamType,
+      preamble: preamble,
+      throwMessage: throwMessage,
+      toJsonReturnType: toJsonReturnType,
     );
   }
-
-  /// Template-context shape for a checked required-field arm —
-  /// used by both the pure required-field path and the hybrid Map
-  /// sub-dispatch. The mustache template emits the `if (...)` guard
-  /// from the `predicateTest` field verbatim, so each predicate kind
-  /// owns its own test syntax (containsKey today; array-element peek
-  /// later). [jsonVar] names the in-scope JSON value the predicate
-  /// tests against — `json` for the pure required-field factory
-  /// parameter, `v` for the hybrid template's switch-bound variable.
-  Map<String, dynamic> _taggedArmContext(
-    _RequiredFieldArm arm, {
-    required String jsonVar,
-  }) => {
-    'predicateTest': arm.predicate.dartIfTest(jsonVar),
-    'wrapperTypeName': wrapperTypeName(arm.variant),
-    'valueType': arm.variant.typeName,
-  };
-
-  /// Template-context shape for the unguarded fallback arm of a
-  /// required-field or hybrid-Map dispatch.
-  Map<String, dynamic> _fallbackArmContext(_RequiredFieldArm arm) => {
-    'wrapperTypeName': wrapperTypeName(arm.variant),
-    'valueType': arm.variant.typeName,
-  };
 
   @override
   String fromJsonExpression(
@@ -4547,54 +4247,6 @@ Map<String, dynamic> _shapeWrapperContext(_VariantPlan p) => {
   'toJsonReturnType': 'dynamic',
   'positionalBoolIgnore': p.positionalBoolIgnore,
 };
-
-/// Eligibility result for [RenderOneOf._hybridEligibility]: which
-/// variants land in shape arms vs which collide on the Map shape and
-/// need a required-field sub-dispatch.
-@immutable
-class _HybridEligibility {
-  const _HybridEligibility({
-    required this.shapeVariants,
-    required this.mapVariants,
-  });
-
-  /// Variants whose shape key is unique within the oneOf — each
-  /// becomes a single shape arm in the dispatch.
-  final List<RenderSchema> shapeVariants;
-
-  /// Variants that share the `Map<String, dynamic>` shape — get
-  /// required-field-dispatched together inside the Map arm.
-  final List<RenderSchema> mapVariants;
-}
-
-/// Plan for a hybrid dispatch — non-Map variants land in shape arms,
-/// then the Map-shaped variants are sub-dispatched via required-field
-/// (so multiple objects can coexist alongside e.g. an array).
-@immutable
-class _HybridDispatchPlan {
-  const _HybridDispatchPlan({
-    required this.shapeArms,
-    required this.mapArms,
-    required this.variantContexts,
-  });
-
-  /// Per-shape arms for non-Map variants (e.g. array, string). Each
-  /// arm corresponds to exactly one variant. Order is the order
-  /// non-Map variants appear in [RenderOneOf.schemas].
-  final List<_VariantPlan> shapeArms;
-
-  /// Required-field arms for the Map-shaped variants — checked-then-
-  /// (optional)-fallback, same shape as a pure required-field
-  /// dispatch.
-  final List<_RequiredFieldArm> mapArms;
-
-  /// Wrapper-class template contexts in [RenderOneOf.schemas] order,
-  /// so the sealed subclass declarations match the spec's variant
-  /// order. Each context is either a [_shapeWrapperContext] (for
-  /// non-Map variants) or an `objectWrapperContext` (for Map
-  /// variants).
-  final List<Map<String, dynamic>> variantContexts;
-}
 
 /// Which dispatch mode a [RenderOneOf] picks for its `fromJson`
 /// body. Subtypes are mutually exclusive — exactly one is
@@ -4784,89 +4436,6 @@ void _applyDispatchMode(_DispatchMode mode, Map<String, dynamic> ctx) {
     case _NoDispatchMode():
       ctx['no_dispatch'] = true;
   }
-}
-
-/// Boolean test that picks one variant of a oneOf at runtime.
-///
-/// The dispatch picker collects one [_Predicate] per variant. Each
-/// kind knows how to emit its own Dart `if (...)` test, so adding a
-/// new way to distinguish variants (e.g. peeking at an array's first
-/// element) is a new subtype here rather than a new dispatch mode.
-///
-/// Today only the if-chain branches (pure required-field and the
-/// Map sub-dispatch of hybrid) consume predicates — the discriminator
-/// and shape branches stay specialized because their generated form
-/// (`switch` with literal/type patterns) is more idiomatic than an
-/// if-chain for those cases.
-sealed class _Predicate {
-  const _Predicate();
-
-  /// Dart boolean expression that's true iff [jsonVar] matches this
-  /// variant. [jsonVar] is the name of the in-scope JSON value
-  /// (typically `json`).
-  String dartIfTest(String jsonVar);
-}
-
-/// `jsonVar.containsKey('propertyName')` — picks variants by the
-/// presence of a unique property (required or optional).
-@immutable
-class _KeyExists extends _Predicate {
-  const _KeyExists(this.propertyName);
-
-  final String propertyName;
-
-  @override
-  String dartIfTest(String jsonVar) => "$jsonVar.containsKey('$propertyName')";
-}
-
-/// `(jsonVar.first as Map<String, dynamic>).containsKey('propertyName')` —
-/// peeks the first element of a List local for a unique property. Used
-/// by array-element dispatch to distinguish `array<object>` variants
-/// whose outer `List<dynamic>` shape collides but whose elements differ.
-/// Caller is responsible for binding `jsonVar` to a non-null `List`;
-/// the predicate short-circuits on `.isNotEmpty` so empty lists fall
-/// through to the next arm (or the unguarded fallback) without throwing.
-@immutable
-class _ArrayElementHasKey extends _Predicate {
-  const _ArrayElementHasKey(this.propertyName);
-
-  final String propertyName;
-
-  @override
-  String dartIfTest(String jsonVar) {
-    final cast = '($jsonVar.first as Map<String, dynamic>)';
-    return "$jsonVar.isNotEmpty && $cast.containsKey('$propertyName')";
-  }
-}
-
-/// Catch-all predicate — used by the dispatch's optional fallback
-/// variant. Never emits an `if` test; the template treats it as the
-/// unconditional `return Wrapper(...)` at the end of the chain.
-@immutable
-class _Always extends _Predicate {
-  const _Always();
-
-  @override
-  String dartIfTest(String jsonVar) =>
-      throw StateError('_Always has no if-test — emit it as the fallback.');
-}
-
-/// One arm of the required-field (a.k.a. property-presence) dispatch:
-/// an object-shaped variant (RenderObject or RenderEmptyObject) paired
-/// with the predicate that picks it. [predicate] is [_Always] for the
-/// fallback variant — at most one per dispatch — and [_KeyExists] for
-/// every checked arm. RenderEmptyObject is always a fallback since
-/// it requires nothing.
-@immutable
-class _RequiredFieldArm {
-  const _RequiredFieldArm({required this.variant, required this.predicate});
-
-  final RenderNewType variant;
-  final _Predicate predicate;
-
-  /// True when this arm is the unconditional fallback at the end of
-  /// the if-chain (no `if` guard emitted).
-  bool get isFallback => predicate is _Always;
 }
 
 /// The schema-specific bits of a shape-dispatch wrapper: how the
