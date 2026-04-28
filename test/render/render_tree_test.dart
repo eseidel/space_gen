@@ -794,6 +794,7 @@ void main() {
         pointer: JsonPointer.empty(),
       ),
       targetPointer: JsonPointer.empty(),
+      assignedName: 'Node',
     );
 
     test('is a newtype but does not render its own file', () {
@@ -1041,6 +1042,7 @@ void main() {
         values: const ['a', 'b'],
         names: const ['a', 'b'],
         descriptions: null,
+        assignedName: 'Foo',
       );
       final map = RenderMap(
         common: common,
@@ -1064,6 +1066,10 @@ void main() {
       ),
       type: type,
       createsNewType: createsNewType,
+      // Pass an assigned name only for newtype cases (typeName falls
+      // back to the Dart primitive otherwise). Mirrors what the
+      // naming pass would produce: `camelFromSnake('foo_bar')`.
+      assignedName: createsNewType ? 'FooBar' : null,
     );
 
     test('typeName is the class name when a newtype, else the Dart type', () {
@@ -1244,6 +1250,7 @@ void main() {
         type: PodType.boolean,
         createsNewType: true,
         defaultValue: true,
+        assignedName: 'Flag',
       );
       expect(newtypeBool.defaultValueString(context), 'Flag(true)');
 

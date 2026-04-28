@@ -321,12 +321,19 @@ class SpecResolver {
 
   final Quirks quirks;
 
-  /// The naming-pass output for the spec currently being rendered.
-  /// Populated at the start of [toRenderSpec]; consulted by
-  /// [toRenderSchema] when constructing each [RenderSchema] so its
-  /// `typeName` can read the assigned name instead of computing one
-  /// from `snakeName`.
+  /// The naming-pass output for the tree currently being rendered.
+  /// Populated at the start of [toRenderSpec] for full-spec renders;
+  /// callers that render a partial tree (a single schema or
+  /// operation, e.g. test helpers) must set [names] themselves
+  /// before calling [toRenderSchema] / [toRenderOperation].
   AssignedNames _names = AssignedNames.empty;
+
+  /// Sets the assigned-name lookup. Test helpers that render a
+  /// single schema or operation outside a spec call this with
+  /// `assignNamesForSchema(...)` / `assignNamesForOperation(...)`
+  /// before invoking the renderer.
+  // ignore: avoid_setters_without_getters
+  set names(AssignedNames names) => _names = names;
 
   /// Looks up the assigned Dart class name for a resolved schema's
   /// pointer, or null if the naming pass didn't enumerate it (e.g.
@@ -645,8 +652,12 @@ class SpecResolver {
         discriminator: null,
         // Synthesized — no resolved oneOf. Renders as the legacy
         // `UnimplementedError` stub via the null-source `NoDispatch`
-        // path; closing this gap is a follow-up.
+        // path; closing that gap is a follow-up. The naming pass
+        // enumerates this entity under the operation's pointer
+        // (no schema claims that pointer) so its Dart name comes
+        // through the same lookup as everything else.
         source: null,
+        assignedName: _nameFor(operation.pointer),
       ),
     );
   }
@@ -1976,18 +1987,36 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   final CommonProperties common;
 
   /// Dart class name assigned by the naming pass. Populated by
-  /// [SpecResolver.toRenderSchema] for `createsNewType: true` schemas
-  /// (and for [RenderRecursiveRef] whose target is named); null
-  /// otherwise.
+  /// [SpecResolver.toRenderSchema] for every `createsNewType: true`
+  /// schema (and for [RenderRecursiveRef], which looks up its
+  /// target's name).
   ///
-  /// Subclass `typeName` getters consult this as an override of the
-  /// snake-derived computation. Today the override and the
-  /// computation produce the same string (the naming pass uses
-  /// `camelFromSnake(snakeName)` itself); future PRs swap the
-  /// algorithm to shortest-unique-with-fallback, at which point this
-  /// field becomes the source of truth and the snake-derived
-  /// fallback goes away.
+  /// Optional in the constructor only because tests sometimes build
+  /// `RenderSchema`s directly without going through `SpecResolver`;
+  /// in production every newtype's name is non-null. Subclass
+  /// `typeName` getters call [_requireAssignedName] to fail loudly
+  /// if a newtype-shaped schema slips through unnamed — that turns
+  /// "the lookup silently regressed" into a clear stack trace
+  /// pointing at whichever construction site forgot to pass it.
   final String? assignedName;
+
+  /// Returns [assignedName], or throws if it's null. Use from
+  /// `typeName` getters on `createsNewType: true` paths so unnamed
+  /// schemas crash loudly at the use site instead of falling back
+  /// to a stale snake-derived name.
+  String _requireAssignedName() {
+    final name = assignedName;
+    if (name == null) {
+      throw StateError(
+        'Naming pass did not assign a name to $runtimeType '
+        '(snakeName: $snakeName, pointer: $pointer). Either the '
+        'schema was constructed without going through SpecResolver '
+        '(test bug — pass `assignedName: …` explicitly) or the '
+        'naming-pass walker missed this entity (naming.dart bug).',
+      );
+    }
+    return name;
+  }
 
   /// The snake name of the resolved schema.
   String get snakeName => common.snakeName;
@@ -2260,8 +2289,7 @@ class RenderPod extends RenderSchema {
   };
 
   @override
-  String get typeName =>
-      createsNewType ? (assignedName ?? camelFromSnake(snakeName)) : dartType;
+  String get typeName => createsNewType ? _requireAssignedName() : dartType;
 
   // Boolean is the only PodType with a `is bool` test that's distinct
   // from the other JSON storage types (the date/uri/uuid/etc. all
@@ -2479,7 +2507,7 @@ abstract class RenderNewType extends RenderSchema {
   /// naming-pass-assigned name when present; falls back to the
   /// snake-derived computation when not (e.g. tests that build
   /// schemas directly without going through [SpecResolver]).
-  String get className => assignedName ?? camelFromSnake(snakeName);
+  String get className => _requireAssignedName();
 
   @override
   String get typeName => className;
@@ -2525,8 +2553,7 @@ class RenderString extends RenderSchema {
   List<Object?> get props => [super.props, defaultValue, maxLength, minLength];
 
   @override
-  String get typeName =>
-      createsNewType ? (assignedName ?? camelFromSnake(snakeName)) : 'String';
+  String get typeName => createsNewType ? _requireAssignedName() : 'String';
 
   /// The default value of this schema as a string.
   @override
@@ -2804,8 +2831,7 @@ class RenderNumber extends RenderNumeric<double> {
   });
 
   @override
-  String get typeName =>
-      createsNewType ? (assignedName ?? camelFromSnake(snakeName)) : 'double';
+  String get typeName => createsNewType ? _requireAssignedName() : 'double';
 
   @override
   String? get wrapperTag => createsNewType ? null : 'Num';
@@ -2851,8 +2877,7 @@ class RenderInteger extends RenderNumeric<int> {
   });
 
   @override
-  String get typeName =>
-      createsNewType ? (assignedName ?? camelFromSnake(snakeName)) : 'int';
+  String get typeName => createsNewType ? _requireAssignedName() : 'int';
 
   @override
   String? get wrapperTag => createsNewType ? null : 'Int';
@@ -4920,7 +4945,7 @@ class RenderRecursiveRef extends RenderSchema {
   bool get shouldCallToJson => true;
 
   @override
-  String get typeName => assignedName ?? camelFromSnake(snakeName);
+  String get typeName => _requireAssignedName();
 
   @override
   String jsonStorageType({required bool isNullable}) =>
