@@ -121,8 +121,8 @@ class _NameAssigner {
         for (final prop in schema.properties.values) {
           _visitSchema(prop);
         }
-        final addl = schema.additionalProperties;
-        if (addl != null) _visitSchema(addl);
+        final extraProps = schema.additionalProperties;
+        if (extraProps != null) _visitSchema(extraProps);
       case ResolvedArray():
         _visitSchema(schema.items);
       case ResolvedMap():
