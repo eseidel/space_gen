@@ -117,6 +117,218 @@ void main() {
       }
     });
 
+    test('AssignedNames.[] throws for unassigned pointers', () {
+      const names = AssignedNames.empty;
+      expect(
+        () => names[JsonPointer.parse('#/components/schemas/missing')],
+        throwsStateError,
+      );
+      expect(
+        names.maybeGet(JsonPointer.parse('#/components/schemas/missing')),
+        isNull,
+      );
+    });
+
+    test('entries iterates assigned (pointer, name) pairs', () {
+      final names = namesFor({
+        'openapi': '3.1.0',
+        'info': {'title': 'X', 'version': '1.0'},
+        'servers': [
+          {'url': 'https://x'},
+        ],
+        'paths': {
+          '/u': {
+            'get': {
+              'summary': 'Get user',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/User'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'User': {
+              'type': 'object',
+              'properties': {
+                'login': {'type': 'string'},
+              },
+            },
+          },
+        },
+      });
+      final list = names.entries.toList();
+      expect(list, isNotEmpty);
+      final userEntry = list.firstWhere(
+        (e) => e.key.toString() == '#/components/schemas/User',
+      );
+      expect(userEntry.value, 'User');
+    });
+
+    test('walks anyOf and allOf variants', () {
+      final names = namesFor({
+        'openapi': '3.1.0',
+        'info': {'title': 'X', 'version': '1.0'},
+        'servers': [
+          {'url': 'https://x'},
+        ],
+        'paths': {
+          '/u': {
+            'get': {
+              'summary': 'Get',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Outer'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Outer': {
+              'anyOf': [
+                {r'$ref': '#/components/schemas/Inner'},
+                {
+                  'allOf': [
+                    {r'$ref': '#/components/schemas/Inner'},
+                  ],
+                },
+              ],
+            },
+            'Inner': {
+              'type': 'object',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+            },
+          },
+        },
+      });
+      // Both top-level component schemas reachable through the
+      // anyOf/allOf walker get assigned names.
+      expect(names[JsonPointer.parse('#/components/schemas/Outer')], 'Outer');
+      expect(names[JsonPointer.parse('#/components/schemas/Inner')], 'Inner');
+    });
+
+    test('walks additionalProperties when an object has both named '
+        'properties and a value schema', () {
+      // An object with named properties + `additionalProperties: $ref`
+      // resolves as `ResolvedObject` (not `ResolvedMap`); the walker
+      // recurses into its `additionalProperties` so a newtype reachable
+      // only through that slot still gets a name.
+      final names = namesFor({
+        'openapi': '3.1.0',
+        'info': {'title': 'X', 'version': '1.0'},
+        'servers': [
+          {'url': 'https://x'},
+        ],
+        'paths': {
+          '/u': {
+            'get': {
+              'summary': 'Get',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Open'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Open': {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+              },
+              'additionalProperties': {
+                r'$ref': '#/components/schemas/Extra',
+              },
+            },
+            'Extra': {
+              'type': 'object',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+            },
+          },
+        },
+      });
+      expect(names[JsonPointer.parse('#/components/schemas/Open')], 'Open');
+      expect(names[JsonPointer.parse('#/components/schemas/Extra')], 'Extra');
+    });
+
+    test('walks map valueSchema and keySchema', () {
+      final names = namesFor({
+        'openapi': '3.1.0',
+        'info': {'title': 'X', 'version': '1.0'},
+        'servers': [
+          {'url': 'https://x'},
+        ],
+        'paths': {
+          '/u': {
+            'get': {
+              'summary': 'Get',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'additionalProperties': {
+                          r'$ref': '#/components/schemas/Item',
+                        },
+                        'propertyNames': {
+                          r'$ref': '#/components/schemas/Key',
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Item': {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+              },
+            },
+            'Key': {
+              'type': 'string',
+              'enum': ['a', 'b'],
+            },
+          },
+        },
+      });
+      // Both the map's valueSchema (Item, an object newtype) and the
+      // keySchema (Key, an enum newtype) get assigned names.
+      expect(names[JsonPointer.parse('#/components/schemas/Item')], 'Item');
+      expect(names[JsonPointer.parse('#/components/schemas/Key')], 'Key');
+    });
+
     test('non-newtype schemas are not named (List<X>, primitives, etc.)', () {
       final names = namesFor({
         'openapi': '3.1.0',
