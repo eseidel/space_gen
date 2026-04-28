@@ -729,7 +729,12 @@ class FileRenderer {
   }
 
   bool rendersToSeparateFile(RenderSchema schema) =>
-      schema.createsNewType && schema is! RenderRecursiveRef;
+      schema.createsNewType &&
+      schema is! RenderRecursiveRef &&
+      // Smooshed variants are emitted inline in their sealed
+      // parent's file (Dart's `sealed` modifier requires direct
+      // subclasses to live in the same library) — no separate file.
+      !(schema is RenderObject && schema.parentSealedSnakeName != null);
 
   @visibleForTesting
   Iterable<Import> importsForApi(Api api, ApiUsage usage) {
@@ -747,8 +752,15 @@ class FileRenderer {
     final apiSchemas = collectSchemasUnderApi(api);
     final inlineSchemas = apiSchemas.where((s) => !s.createsNewType);
     // Every newtype (including RenderRecursiveRef, which points at one)
-    // lives in its own file and needs an import at the use site.
-    final importedSchemas = apiSchemas.where((s) => s.createsNewType);
+    // lives in its own file and needs an import at the use site —
+    // except smooshed variants, which are emitted inline in their
+    // sealed parent's file. The sealed parent is itself imported
+    // here, so the variant's class name resolves through that import.
+    final importedSchemas = apiSchemas
+        .where((s) => s.createsNewType)
+        .where(
+          (s) => !(s is RenderObject && s.parentSealedSnakeName != null),
+        );
     final apiImports = importedSchemas
         .map((s) => Import(modelPackageImport(this, s)))
         .toList();
@@ -811,9 +823,14 @@ class FileRenderer {
     final localSchemas = referencedSchemas.where(
       (s) => !s.createsNewType,
     );
-    // Every newtype (including RenderRecursiveRef) imports the target's file.
+    // Every newtype (including RenderRecursiveRef) imports the target's
+    // file — except smooshed variants, which the sealed parent emits
+    // inline (same library, no separate file to import).
     final importedSchemas = referencedSchemas
         .where((s) => s.createsNewType)
+        .where(
+          (s) => !(s is RenderObject && s.parentSealedSnakeName != null),
+        )
         .toSet();
     final referencedImports = importedSchemas
         .map((s) => Import(modelPackageImport(this, s)))

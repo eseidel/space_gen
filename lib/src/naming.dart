@@ -49,9 +49,26 @@ import 'package:space_gen/src/string.dart';
 /// read.
 @immutable
 class AssignedNames {
-  const AssignedNames(this._snakeByPointer);
+  const AssignedNames(
+    this._snakeByPointer, {
+    this.smooshedParentSnakeByPointer = const {},
+  });
 
   final Map<JsonPointer, String> _snakeByPointer;
+
+  /// For variants the naming pass marked smooshable (today: inline
+  /// `ResolvedObject` variants under predicate-required dispatch),
+  /// maps the variant's pointer to the snake name of the sealed
+  /// parent it should extend. The render layer reads this to decide
+  /// whether to emit a separate wrapper subclass or have the variant
+  /// class extend the sealed parent directly.
+  final Map<JsonPointer, String> smooshedParentSnakeByPointer;
+
+  /// Snake name of the sealed parent that [pointer]'s variant
+  /// class should extend, or null when this variant isn't
+  /// smooshed (the wrapper subclass is emitted normally).
+  String? parentSealedSnakeFor(JsonPointer pointer) =>
+      smooshedParentSnakeByPointer[pointer];
 
   /// Looks up the snake-case name for [pointer]. Used as a file
   /// basename. Returns null when the entity at [pointer] doesn't
@@ -102,6 +119,13 @@ class AssignedNames {
         (e) => MapEntry(e.key, camelFromSnake(e.value)),
       );
 
+  /// All assigned (pointer, snake-name) pairs. Same iteration order
+  /// as [entries], but exposes the underlying snake form. Used by
+  /// test helpers that need to reconstruct an [AssignedNames] across
+  /// multiple resolved schemas without losing the snake key.
+  Iterable<MapEntry<JsonPointer, String>> get snakeEntries =>
+      _snakeByPointer.entries;
+
   /// Returns an unmodifiable view of the camel-name map. Test-only.
   Map<JsonPointer, String> toMap() => Map.unmodifiable({
     for (final e in _snakeByPointer.entries) e.key: camelFromSnake(e.value),
@@ -136,6 +160,12 @@ class _NameAssigner {
   // Schema collections seen in phase 1, processed in phase 2 once
   // their variants' Dart names have been resolved.
   final List<ResolvedSchemaCollection> _collectionsForWrappers = [];
+  // Variant pointer → parent's snake name, populated during phase 2
+  // for inline-exclusive object variants whose dispatch lets the
+  // variant class extend the sealed parent directly (smoosh). Render
+  // reads this through [AssignedNames.parentSealedSnakeFor] and emits
+  // the variant with `extends <Parent>` instead of a wrapper subclass.
+  final Map<JsonPointer, String> _smooshedParentSnake = {};
 
   /// Run the allocator over both phases and return the final
   /// pointer → Dart name map. The assigner is single-use; calling
@@ -144,7 +174,10 @@ class _NameAssigner {
   AssignedNames finalize() {
     _resolvePhase1();
     _resolvePhase2();
-    return AssignedNames(_allocator.snapshot());
+    return AssignedNames(
+      _allocator.snapshot(),
+      smooshedParentSnakeByPointer: Map.unmodifiable(_smooshedParentSnake),
+    );
   }
 
   /// Phase 1: schema names + the synthesized op-response name. These
@@ -211,6 +244,14 @@ class _NameAssigner {
   /// names produced by phase 1 and submits one claim per dispatch-
   /// emitted wrapper. Variant identity is by index in
   /// [collection]`.schemas` — matches `AssignedNames.wrapperPointer`.
+  ///
+  /// Smooshable variants (inline `ResolvedObject` under a
+  /// dispatch where the variant class can extend the sealed parent
+  /// directly — predicate-required for now) skip the wrapper claim
+  /// entirely. Render reads the parent's snake name from
+  /// [_smooshedParentSnake] and emits the variant class with
+  /// `extends <Parent>` instead of generating a separate wrapper
+  /// subclass + `value:` indirection.
   void _claimWrapperNames(ResolvedSchemaCollection collection) {
     final decision = decideDispatch(collection);
     if (decision is NoDispatch) return;
@@ -218,6 +259,10 @@ class _NameAssigner {
     if (parentName == null) return;
     for (var i = 0; i < collection.schemas.length; i++) {
       final variant = collection.schemas[i];
+      if (_isSmooshable(variant, decision)) {
+        _smooshedParentSnake[variant.common.pointer] = parentName;
+        continue;
+      }
       final wrapperName = _wrapperNameFor(parentName, variant, decision, i);
       if (wrapperName == null) continue;
       _allocator.claim(AssignedNames.wrapperPointer(collection.pointer, i), [
@@ -225,6 +270,31 @@ class _NameAssigner {
       ]);
     }
   }
+
+  /// True when [variant] should be rendered as a direct subclass of
+  /// its sealed parent (no separate wrapper class + `value:` shim).
+  /// Two parts: structural eligibility and render-layer support.
+  bool _isSmooshable(ResolvedSchema variant, DispatchDecision decision) =>
+      _isStructurallySmooshable(variant) && _dispatchEmitsSmooshed(decision);
+
+  /// Whether [variant] *could* be a direct subclass of a sealed
+  /// parent in idiomatic Dart. Holds when it's an inline (so
+  /// exclusive to one parent by construction) `ResolvedObject` (so
+  /// it has a class body to extend with). Independent of any
+  /// dispatch — purely a structural property of the variant.
+  bool _isStructurallySmooshable(ResolvedSchema variant) =>
+      variant is ResolvedObject && _isInlineCollectionVariant(variant);
+
+  /// Whether [decision]'s render-layer template can emit a smooshed
+  /// variant — i.e. skip the wrapper subclass and emit
+  /// `case … => Variant.fromJson(…)` directly. Other dispatch kinds
+  /// fall through to today's wrapper-based rendering until their
+  /// templates are taught to smoosh too. Expanding this is the
+  /// smoosh PR train: predicate-required first (this PR), then
+  /// discriminator, shape, hybrid Map sub-arms.
+  bool _dispatchEmitsSmooshed(DispatchDecision decision) =>
+      decision is PredicateDispatch &&
+      decision.kind == PredicateDispatchKind.requiredField;
 
   /// Computes the snake-case wrapper-subclass name for one variant.
   /// Mirrors the render-side `wrapperTypeName` / array-element logic

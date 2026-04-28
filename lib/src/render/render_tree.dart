@@ -392,6 +392,7 @@ class SpecResolver {
           ),
           additionalProperties: maybeRenderSchema(schema.additionalProperties),
           requiredProperties: schema.requiredProperties,
+          parentSealedSnakeName: _names.parentSealedSnakeFor(schema.pointer),
           assignedName: _nameFor(schema.pointer),
           assignedSnakeName: _snakeFor(schema.pointer),
         );
@@ -2966,6 +2967,7 @@ class RenderObject extends RenderNewType {
     required this.properties,
     this.additionalProperties,
     this.requiredProperties = const [],
+    this.parentSealedSnakeName,
     super.assignedName,
     super.assignedSnakeName,
   });
@@ -2978,6 +2980,20 @@ class RenderObject extends RenderNewType {
 
   /// The required properties of the resolved schema.
   final List<String> requiredProperties;
+
+  /// Snake name of the sealed parent class this object should extend,
+  /// or null when the object stands alone. Set by the naming pass for
+  /// inline `ResolvedObject` variants of a oneOf/anyOf whose dispatch
+  /// supports smoosh — the variant class itself becomes the sealed-
+  /// parent's subclass, replacing the separate wrapper-subclass +
+  /// `value:` indirection. Drives both the `final class X extends Y`
+  /// declaration and the `import` to the parent's file.
+  final String? parentSealedSnakeName;
+
+  /// Camel form of [parentSealedSnakeName] — null when not smooshed.
+  String? get parentSealedTypeName => parentSealedSnakeName == null
+      ? null
+      : camelFromSnake(parentSealedSnakeName!);
 
   @override
   String? get wrapperTag => typeName;
@@ -3265,6 +3281,10 @@ class RenderObject extends RenderNewType {
       'castFromJsonArg': context.quirks.dynamicJson,
       'mutableModels': context.quirks.mutableModels,
       'isDeprecated': isDeprecated,
+      // When non-null, the template emits `final class X extends Y`
+      // and an `@override` on `toJson()`. Set by the naming pass for
+      // smooshable inline variants — see [parentSealedSnakeName].
+      'parentSealedTypeName': parentSealedTypeName,
     };
   }
 
@@ -4193,30 +4213,48 @@ class RenderOneOf extends RenderNewType {
     final dispatch = <Map<String, dynamic>>[];
     Map<String, dynamic>? fallback;
     final variants = <Map<String, dynamic>>[];
+    final smooshedVariants = <Map<String, dynamic>>[];
     for (final arm in arms) {
       final renderVariant = renderOf(arm.variant);
+      // Smooshed variants (today: only inline-object variants under
+      // required-field dispatch) are emitted as direct subclasses of
+      // the sealed parent, *inline* in the parent's file — Dart's
+      // `sealed` modifier requires direct subclasses to live in the
+      // same library. The dispatch case arm constructs the variant
+      // itself (no outer wrap call); the wrapper-subclass form is
+      // skipped entirely. Non-smooshed variants keep the wrapper
+      // form and continue to render to their own file.
+      final isSmooshed =
+          renderVariant is RenderObject &&
+          renderVariant.parentSealedSnakeName != null;
       final Map<String, dynamic> armCtx;
       switch (kind) {
         case PredicateDispatchKind.requiredField:
-          // Wrappers wrap the Map back as `value.toJson()`; per-arm
-          // construction is `<typeName>.fromJson(json)`.
+          final fromJson = '${renderVariant.typeName}.fromJson(json)';
           armCtx = {
-            'wrapperTypeName': wrapperTypeName(renderVariant),
-            'construction': '${renderVariant.typeName}.fromJson(json)',
+            'caseExpression': isSmooshed
+                ? fromJson
+                : '${wrapperTypeName(renderVariant)}($fromJson)',
           };
-          variants.add(objectWrapperContext(renderVariant));
+          if (isSmooshed) {
+            smooshedVariants.add(renderVariant.toTemplateContext(context));
+          } else {
+            variants.add(objectWrapperContext(renderVariant));
+          }
         case PredicateDispatchKind.arrayElement:
           // Each array variant wraps `List<X>` and serializes via
           // the items' own conversion. Wrapper class names splice
           // the items type so sibling array variants don't collide
           // on the shared `wrapperTag = 'List'`; the naming pass
           // composed the splice when it enumerated wrappers, and we
-          // read it back here through the standard lookup.
+          // read it back here through the standard lookup. Array-
+          // element variants are never smoosh-eligible (the variant
+          // is a list, not an object), so this path always emits a
+          // wrapper.
           final wrapperName = wrapperTypeName(renderVariant);
           final plan = _planVariant(renderVariant, context)!;
           armCtx = {
-            'wrapperTypeName': wrapperName,
-            'construction': plan.fromJson,
+            'caseExpression': '$wrapperName(${plan.fromJson})',
           };
           variants.add({
             'wrapperTypeName': wrapperName,
@@ -4256,6 +4294,7 @@ class RenderOneOf extends RenderNewType {
       dispatch: dispatch,
       fallback: fallback,
       variants: variants,
+      smooshedVariants: smooshedVariants,
       factoryParamType: factoryParamType,
       preamble: preamble,
       throwMessage: throwMessage,
@@ -4494,14 +4533,18 @@ class _PredicateDispatchMode extends _DispatchMode {
     required this.dispatch,
     required this.fallback,
     required this.variants,
+    required this.smooshedVariants,
     required this.factoryParamType,
     required this.preamble,
     required this.throwMessage,
     required this.toJsonReturnType,
   });
 
-  /// Per-arm contexts for each checked branch. Each entry has
-  /// `predicateTest`, `wrapperTypeName`, and `construction` keys.
+  /// Per-arm contexts for each checked branch. Each entry has a
+  /// `predicateTest` key and a `caseExpression` key (the full Dart
+  /// expression to `return` — already includes the wrapper-class
+  /// call when the variant has a wrapper, or just the variant's
+  /// `fromJson(json)` when the variant is smooshed).
   final List<Map<String, dynamic>> dispatch;
 
   /// Unguarded fallback at the end of the if-chain (no `if`).
@@ -4510,6 +4553,15 @@ class _PredicateDispatchMode extends _DispatchMode {
 
   /// Wrapper subclass declarations, in declaration order.
   final List<Map<String, dynamic>> variants;
+
+  /// Smooshed variants (today: only inline `RenderObject` variants
+  /// under required-field dispatch) — emitted *inline in the parent
+  /// file* as direct subclasses of the sealed class, with no wrapper
+  /// shim. Each entry is the variant's full `toTemplateContext` so
+  /// the schema_object partial can render the class body unchanged.
+  /// Sealed subclasses must live in the same library, which is why
+  /// these can't be separate files like non-smooshed variants are.
+  final List<Map<String, dynamic>> smooshedVariants;
 
   /// Type of the `fromJson(... json)` parameter — `Map<String, dynamic>`
   /// for object-shaped dispatches, `dynamic` for ones whose preamble
@@ -4583,6 +4635,7 @@ void _applyDispatchMode(_DispatchMode mode, Map<String, dynamic> ctx) {
       :final dispatch,
       :final fallback,
       :final variants,
+      :final smooshedVariants,
       :final factoryParamType,
       :final preamble,
       :final throwMessage,
@@ -4592,6 +4645,7 @@ void _applyDispatchMode(_DispatchMode mode, Map<String, dynamic> ctx) {
       ctx['dispatch'] = dispatch;
       ctx['fallback'] = fallback ?? false;
       ctx['variants'] = variants;
+      ctx['smooshedVariants'] = smooshedVariants;
       ctx['factoryParamType'] = factoryParamType;
       ctx['preamble'] = preamble;
       ctx['throwMessage'] = throwMessage;

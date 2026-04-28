@@ -1454,15 +1454,49 @@ void main() {
     });
 
     test('wrapper subclass uses position-based name when the variant '
-        'tag would double the parent prefix', () {
+        'tag would double the parent prefix (non-smooshed path)', () {
       // Inline oneOf variants get parser-synthesized names that already
       // contain the parent (`<Parent>OneOf<i>`). Composing the wrapper
       // as `<Parent><variantTypeName>` would then double the prefix
-      // (e.g. `RequestRequestOneOf0`). The naming pass detects this and
-      // falls back to a position-based name — `RequestVariant0` —
-      // keeping the wrapper readable. Top-level `$ref` variants (whose
-      // names never start with the parent) are unaffected; see the Pet
-      // test above.
+      // (e.g. `TestTestOneOf0`). The naming pass detects this and
+      // falls back to a position-based wrapper name (`TestVariant0`).
+      //
+      // Predicate-required dispatch with inline objects would smoosh
+      // (no wrapper at all) — see the smoosh test below. To exercise
+      // the doubling-fallback path on its own, this test uses shape
+      // dispatch (a string variant + an inline object variant). Shape
+      // dispatch isn't yet smoosh-aware, so the inline object's
+      // wrapper is still emitted and the fallback name applies.
+      final result = renderTestSchema({
+        'oneOf': [
+          {'type': 'string'},
+          {
+            'type': 'object',
+            'properties': {
+              'note': {'type': 'string'},
+            },
+          },
+        ],
+      });
+      // The string variant gets the structural `TestString` wrapper.
+      expect(result, contains('final class TestString extends Test'));
+      // The inline object's wrapper would be `TestTestOneOf1` if we
+      // composed naively; the naming pass falls back to `TestVariant1`.
+      expect(result, contains('final class TestVariant1 extends Test'));
+      expect(result, contains('final TestOneOf1 value;'));
+      expect(result, isNot(contains('TestTestOneOf')));
+    });
+
+    test('predicate-required dispatch smooshes inline-object variants: '
+        'no wrapper class, case arm calls variant directly', () {
+      // Inline object variants of a oneOf that uses predicate-required
+      // dispatch are smooshed: no wrapper subclass is emitted in the
+      // sealed parent's file, and dispatch case arms construct the
+      // variant directly instead of wrapping it. The variant data
+      // class itself becomes the sealed subclass — that side of the
+      // change is rendered into a separate variant file and
+      // verified by the github regen integration check (and by file_
+      // renderer-level tests for the variant's `extends` clause).
       final result = renderTestSchema({
         'oneOf': [
           {
@@ -1481,13 +1515,28 @@ void main() {
           },
         ],
       });
-      expect(result, contains('final class TestVariant0 extends Test'));
-      expect(result, contains('final class TestVariant1 extends Test'));
-      // Variant data classes still use their parser-synthesized names.
-      expect(result, contains('final TestOneOf0 value;'));
-      expect(result, contains('final TestOneOf1 value;'));
-      // No doubled prefix anywhere.
-      expect(result, isNot(contains('TestTestOneOf')));
+      // Case arms call the variant data class directly — no outer
+      // wrapper-class call.
+      expect(
+        result,
+        contains(
+          "if (json.containsKey('note')) {\n            "
+          'return TestOneOf0.fromJson(json);',
+        ),
+      );
+      expect(
+        result,
+        contains(
+          "if (json.containsKey('content_id')) {\n            "
+          'return TestOneOf1.fromJson(json);',
+        ),
+      );
+      // No wrapper subclasses survive in the parent file: there's no
+      // `<Parent>Variant<i>`, and no `final <VariantClass> value;`
+      // (which would be the wrapper's `value` field).
+      expect(result, isNot(contains('class TestVariant0')));
+      expect(result, isNot(contains('TestOneOf0 value')));
+      expect(result, isNot(contains('TestOneOf1 value')));
     });
 
     test('property-presence dispatch falls back to legacy when one '
