@@ -10,15 +10,15 @@ current design questions — especially around external `$ref`s.
   specUrl
      │
      ▼
-┌────────┐   ┌────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   Dart files
-│ Load   │──▶│ Parse  │──▶│ Resolve  │──▶│ Dispatch │──▶│ Render   │──▶
-│ (I/O)  │   │ (pure) │   │ (pure)   │   │ (pure)   │   │ (pure)   │
-└────────┘   └────────┘   └──────────┘   └──────────┘   └──────────┘
-                              │                 ▲
-                              ▼                 │
-                          ┌──────────┐    sidecar lookup
-                          │ Registry │
-                          └──────────┘
+┌────────┐ ┌────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ ┌──────────┐  Dart files
+│ Load   │▶│ Parse  │▶│ Resolve  │▶│ Dispatch │▶│ Naming │▶│ Render   │▶
+│ (I/O)  │ │ (pure) │ │ (pure)   │ │ (pure)   │ │ (pure) │ │ (pure)   │
+└────────┘ └────────┘ └──────────┘ └──────────┘ └────────┘ └──────────┘
+                          │                ▲          ▲
+                          ▼                │          │
+                      ┌──────────┐    sidecar lookups (Decisions, Names)
+                      │ Registry │
+                      └──────────┘
 ```
 
 Only **Load** does I/O. Everything downstream is a pure function of its
@@ -146,36 +146,57 @@ using its own render-side helpers (`wrapperTypeName`, `_planVariant`,
 etc.). The resolved → render variant mapping uses index parity:
 `source.schemas[i]` corresponds to the parallel `RenderOneOf.schemas[i]`.
 
-## Planned phases
+## Phase 4.5 — Naming (in progress)
 
-### Naming pass (between Dispatch and Render)
+**Purpose:** assign a single Dart class name to every named entity
+in the resolved tree, in one pass with the full set of names in
+view.
+**Lives in:** `lib/src/naming.dart`.
+**Entry point:** `assignNames(ResolvedSpec) → AssignedNames`
+(a `Map<JsonPointer, String>` sidecar).
 
-Today, Dart class names are decided in three different layers — the
-parser synthesizes inline-schema names, the resolver resolves naming
-collisions with `_1` suffixes, and the renderer composes wrapper
-class names per oneOf. Each layer makes a local decision with only
-partial information, so we get artifacts like
-`ProjectsCreateCardRequestProjectsCreateCardRequestOneOf0` (parser
-named the variant by parent, renderer wrapped with parent again,
-neither knew the other did) and `RepositoryRulesetConditions1` (an
-inline schema collides with a top-level one, gets a numeric suffix).
+**Why a separate phase.** Today, Dart class names are decided in
+three different layers — the parser synthesizes inline-schema
+snake names, the resolver suffixes collisions with `_1`, and the
+renderer composes wrapper class names per oneOf. Each layer makes
+a local decision with only partial information, so we get
+artifacts like
+`ProjectsCreateCardRequestProjectsCreateCardRequestOneOf0`
+(parser named the variant by parent, renderer wrapped with parent
+again, neither knew the other did) and
+`RepositoryRulesetConditions1` (an inline schema collides with a
+top-level one and gets a numeric suffix). A pass with the global
+view can pick shorter, less-collision-prone names.
 
-The plan: a `lib/src/naming.dart` pass that runs after Dispatch and
-before Render. It walks the resolved tree + dispatch decisions,
-enumerates every named entity (top-level schemas, inline schemas
-that produce types, wrapper subclasses, operation message types),
-and assigns each a Dart class name using a shortest-unique-with-
-fallback algorithm. Output is a sidecar `Map<NameId, String>` —
-not a mutated tree — keyed by JSON pointer for spec-rooted entities
-and by `(parentPointer, kind, index)` for synthesized ones.
+**Current state.** This pass exists with today's algorithm baked
+in: for each `createsNewType: true` schema, the assigned name is
+`camelFromSnake(common.snakeName)` — same answer the renderer's
+existing `typeName` getters compute on their own. `SpecResolver`
+runs `assignNames` at the start of `toRenderSpec`, looks up each
+schema's name when constructing the corresponding `RenderSchema`,
+and stashes it on the schema's `assignedName` field. Every newtype
+`typeName` getter is now `assignedName ?? camelFromSnake(snakeName)`
+— the fallback is what tests and direct constructions use;
+production always populates `assignedName`. github regen is byte-
+identical to before the lift (verified).
 
-The renderer then *looks up* names instead of computing them. The
-collision-resolution code in the resolver and the `wrapperTypeName`
-/ `typeName` logic in `RenderOneOf` get gutted in favor of the
-single map.
+**Planned next steps:**
 
-The resolver intentionally stays Dart-blind: it carries `snakeName`
-(a parser-level identifier) but no Dart class name. Naming sits
+- Bring wrapper subclasses (the `<Parent><wrapperTag>` names from
+  `RenderOneOf.wrapperTypeName`) under the pass — the dispatch
+  decision already enumerates them.
+- Bring operation message types (request bodies, multi-status
+  return wrappers) under the pass.
+- Switch the algorithm to shortest-unique-with-fallback. Candidate
+  list per entity: bare name → context-prefixed → fully-qualified
+  → numeric suffix; greedy assignment in stable order. This is the
+  PR with the visible quality wins (96 double-prefix wrappers
+  renamed; 8 `_1` suffixes mostly gone). Once the algorithm has one
+  source of truth, the snake-derived fallback in `typeName` getters
+  can go away too.
+
+**The resolver stays Dart-blind.** It carries `snakeName` (a
+parser-level identifier) but no Dart class name; naming sits
 between resolve and render so the resolver can be reused for any
 future non-Dart consumer.
 
