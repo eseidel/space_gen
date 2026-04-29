@@ -14,7 +14,7 @@ description: |
   any spec-driven follow-up.
 ---
 
-# State as of 2026-04-29
+# State as of 2026-04-28
 
 ## What this is
 
@@ -44,13 +44,36 @@ A "gap" can be any of:
   `prefer_single_quotes`, `lines_longer_than_80_chars`).
 - A real-spec author hits a snag and reports it.
 
-**Current status:** **7 stubs remain** on github (unchanged — same
-hard cases as before). The naming + smoosh series has shipped: 96
-double-prefix wrappers fixed, ~25 wrapper subclasses eliminated
-entirely (variant data class IS the sealed subclass now), and 3
-inline variants flipped to title-derived names. The next leverage
-is the conceptual shift to **exclusive-by-use** smoosh — see "Open
-gaps" below.
+**Current status:** `dart analyze` clean on the github regen.
+**7 stubs remain** (unchanged — same hard cases as before). The
+naming + smoosh series has shipped: ~47 double-prefix wrappers
+fixed (down from 96 to 49 still-emitted), ~25 wrapper subclasses
+eliminated entirely (variant data class IS the sealed subclass
+now), and inline variants flip to title-derived names when one is
+present.
+
+**The picture beyond stubs and visible-output ugliness.** A `-v`
+regen surfaces a *much* larger set of gaps than this skill
+historically tracked. The github 2026-04-28 baseline:
+
+| Count | Category | What |
+|------:|---|---|
+| 246 | `Ignoring: format=int64 (String)` | int64 transmitted as JSON string for precision; we emit plain `String` |
+| 81 | `Unused: readOnly=true` | response-only fields not marked as such |
+| 72 | `Unused: oneOf` (in property) | inline property `oneOf` (e.g. `milestone: oneOf<string,integer>`) silently dropped to `Object?` |
+| 49 | `<Parent>OneOf<i>` wrappers | naming gap — variants the title/exclusive-use heuristics don't catch |
+| 43 | `Ignoring: example` | `example:` strings not threaded into doc comments |
+| 7 | stub-emitting oneOfs | the long-tail dispatch gaps documented below |
+| 3 | `Unused: required` | `required` in wrong place (requestBody root, etc.) |
+| 1 | `Unused: anyOf` | `anyOf` in `additionalProperties` |
+| 1 | `Unused: webhooks` | OpenAPI 3.1 webhooks section |
+| various | unknown formats | `repo.nwo`, `timestamp`, etc. |
+
+Gen one of these and you'll likely find more than one PR's worth
+of work. **Mine the verbose log first** — see "Discovery" below
+under "Open gaps". The next leverage is no longer obviously the
+naming/smoosh extension; "feature-completeness against `-v`" is a
+parallel track with comparable real-spec impact.
 
 ## Architecture
 
@@ -202,7 +225,86 @@ in the github regen.
 
 ## Open gaps (pick from here)
 
-### Next: smoosh by exclusive-use (the big remaining lever)
+### Discovery: don't pick from this list blind — regen first
+
+Before assuming the gaps below are the right gaps, run a `-v`
+regen against github and tally the warnings:
+
+```sh
+rm -rf /tmp/github_out_v && \
+  dart run space_gen -v -i ~/Documents/GitHub/personal/gen_tests/api.github.com.json \
+    -o /tmp/github_out_v 2>&1 | tee /tmp/github_v.log >/dev/null
+
+grep -E "^(Ignoring|Unused|Skipping)" /tmp/github_v.log \
+  | sed -E 's/ in #.*//; s/=[^[:space:]]+ /=… /; s/dynamic/…/; s/\([A-Za-z]+\)/(…)/' \
+  | sort | uniq -c | sort -rn
+```
+
+The categories at the top of the tally (currently `format=int64`,
+`readOnly=true`, `oneOf` in properties) are dropping spec
+semantics on the floor. Pick from this *or* from the list below
+— don't assume the visible-output gaps are always the highest-
+leverage ones.
+
+Warnings come from `_warnUnused` / `_warnIgnored` in
+`lib/src/parser.dart`. To see what fields a parser visit *handles*
+vs ignores, search there.
+
+### Feature-completeness gaps (from `-v` regen, 2026-04-28)
+
+These are the highest-volume warning categories. Each one is a
+PR-sized investigation; some compose with each other.
+
+- **`Ignoring: format=int64 (String)` × 246**. OpenAPI pattern:
+  large integers transmitted as JSON strings to dodge JSON's
+  `2^53` precision limit. Today we emit `String`; users get
+  string IDs back from `simple-user.id`, `hook-delivery-item.id`,
+  `installation_id`, etc. They have to call `int.parse` themselves
+  *and* know which fields need it (it's not in the type). Should
+  emit `int` (or `BigInt` — needs decision) with serialization
+  that quotes/unquotes. Affects every github user/repo/installation
+  ID return value — high real-world impact, but a typing change
+  with downstream ripple. Worth a design pass before coding.
+
+- **`Unused: readOnly=true` × 81**. Response-only fields. Today
+  the generated class makes them required in constructors,
+  forcing test code to pass values for fields it shouldn't have to
+  invent. `Unused: readOnly=false` (×8) is just spec noise — drop
+  silently. The `Unused: readOnly=… allOf` (×3) cases are
+  `readOnly` outside a property slot — special handling.
+
+- **`Unused: oneOf` × 72** in properties. Inline property `oneOf`
+  like `milestone: oneOf<string, integer>` — we drop the oneOf
+  and the property becomes `Object?`. github examples:
+  `issues.post`'s `milestone` and `title`, `webhook-*.pushed_at`
+  (string-or-integer epoch). The render layer already handles
+  inline oneOfs at the *type* slot (request body, response, param
+  schema); extending to *property* slot likely needs to synthesize
+  a sealed-class type at the property's pointer. Composes with
+  smoosh — these would all be tiny inline sealed classes living
+  in the parent's file.
+
+- **`Ignoring: example` × 43** + **`Ignoring: example=…` × 6** +
+  **`Ignoring: examples` × 2**. Spec authors wrote example values
+  that we drop. Could be threaded into doc comments
+  (`/// Example: …`). Low complexity, low-medium value (helps
+  IDE tooltip without changing types).
+
+- **Smaller signal gaps** worth one PR each:
+  - `Unused: required` × 3 — `required` declared at requestBody
+    root or on an array property where it doesn't apply.
+  - `Unused: additionalProperties=true` × 1 — explicit `true`
+    when the default is also true; probably silent-drop.
+  - `Unused: maxProperties` × 3, `minItems` × 1 — validation
+    bounds dropped. Might be right to skip (we don't validate)
+    but worth a deliberate decision.
+  - `Unused: anyOf` × 1 in `metadata.additionalProperties`.
+  - `Unused: webhooks` × 1, `Unused: externalDocs` × 1 — top-
+    level OpenAPI 3.1 sections.
+  - Unknown formats: `repo.nwo`, `timestamp`. Could surface as
+    typedef hints in doc comments.
+
+### Next (visible-output track): smoosh by exclusive-use
 
 Today's smoosh predicate is *structural* — variant is inline
 (pointer is `<parent>/oneOf/<i>`). That misses github's biggest
@@ -474,6 +576,16 @@ From the project's CLAUDE.md and saved memory:
 ## Helpful one-shots
 
 ```sh
+# Discovery: tally what `-v` regen says we're dropping. Run this
+# first when picking the next gap — categories at the top of the
+# tally are usually higher-leverage than visible-output ugliness.
+grep -E "^(Ignoring|Unused|Skipping)" /tmp/github_v.log \
+  | sed -E 's/ in #.*//; s/=[^[:space:]]+ /=… /; s/dynamic/…/; s/\([A-Za-z]+\)/(…)/' \
+  | sort | uniq -c | sort -rn
+
+# Drill into one category — see the actual sites
+grep "Unused: oneOf" /tmp/github_v.log | head -20
+
 # Are we still emitting stubs?
 grep -l "throw UnimplementedError" /tmp/github_out/lib -r | wc -l
 
