@@ -41,3 +41,6 @@ words:
   - prefs
   - camelization
   - basenames
+  - spdx
+  - sbom
+  - varnames

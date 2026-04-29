@@ -121,6 +121,16 @@ Never _unimplemented(ParseContext json, String message) {
   throw UnimplementedError('$message not supported in $json');
 }
 
+/// Mark [key] as used and detail-log it as ignored.
+///
+/// `_ignored` is the explicit form: the parser is choosing to drop a
+/// field it has already (or will already) read. The log fires
+/// whenever the value is non-null, even if another code path already
+/// consumed the key. Use when you want the user to see that the field
+/// was acknowledged-but-not-acted-on.
+///
+/// For the catch-all case — "consume any straggler, but only complain
+/// if nothing else has touched it" — see [_ignoreIfUnused].
 void _ignored<T>(MapContext parent, String key, {bool warn = false}) {
   final value = parent[key];
   if (value != null) {
@@ -133,6 +143,18 @@ void _ignored<T>(MapContext parent, String key, {bool warn = false}) {
   }
 }
 
+/// Catch-all variant of [_ignored]: detail-logs only when [key] was
+/// unused at call time. Safe to call at the end of a parse function
+/// to mop up keys placed where the chosen schema shape doesn't act on
+/// them (e.g. `minItems` on a non-array, `additionalProperties` on a
+/// non-object) without double-logging the keys that were legitimately
+/// consumed earlier.
+void _ignoreIfUnused<T>(MapContext parent, String key) {
+  if (parent.unusedKeys.contains(key)) {
+    _ignored<T>(parent, key);
+  }
+}
+
 void _warn(ParseContext context, String message) {
   logger.warn('$message in ${context.pointer}');
 }
@@ -142,6 +164,15 @@ Never _error(ParseContext context, String message) {
 }
 
 void _warnUnused(MapContext context) {
+  // OpenAPI 3.x reserves the `x-` prefix for vendor extensions; per
+  // the spec, processors that don't recognize them should ignore
+  // them — but that means "don't fail," not "suppress all log
+  // output." Unhandled `x-*` keys flow through here as `Unused:`
+  // entries at -v so the verbose-log mining workflow can spot
+  // extensions worth adding support for (e.g. `x-enum-varnames`,
+  // `x-internal`). When we do add support, the read marks the key
+  // used and removes it from this tally automatically.
+  // https://spec.openapis.org/oas/v3.1.0#specification-extensions
   final unusedKeys = context.unusedKeys;
   if (unusedKeys.isNotEmpty) {
     final keys = unusedKeys
@@ -796,6 +827,26 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     examples: _optional<List<dynamic>>(json, 'examples'),
   );
 
+  // An explicit `oneOf`/`anyOf` wins over the multi-type type-array
+  // expansion below. When a schema declares both — `type: [a, b]`
+  // alongside an `oneOf: [...]` — the explicit union is strictly
+  // more specific: it can carry per-variant `format`, `description`,
+  // `items`, `enum`, etc., and OpenAPI semantics treat the type-array
+  // as shorthand for a structurally-equivalent union. If the type-
+  // array path wins, the explicit union is silently dropped along
+  // with all its per-variant detail.
+  //
+  // `allOf` is intentionally not short-circuited here: it's AND, not
+  // OR, so it doesn't substitute for a multi-type union the way
+  // `oneOf`/`anyOf` do. The fallback below still routes it through
+  // `_handleCollectionTypes`.
+  if (json.containsKey('oneOf') || json.containsKey('anyOf')) {
+    final union = _handleCollectionTypes(json, common: common);
+    if (union != null) {
+      return union;
+    }
+  }
+
   if (typeAndFormat.types != null) {
     // Multiple types are treated as a oneOf schema, just parsing the same
     // root scheme object multiple times.
@@ -820,6 +871,12 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     );
   }
 
+  // Fallback handling for the rare allOf-only / oneOf-with-no-result
+  // shapes that didn't take the early branch above. The early gate
+  // covers the common case (oneOf/anyOf at any slot, with or without
+  // a parallel `type:` array); this catches allOf, plus the
+  // constraint-only oneOf/anyOf shapes that return null and fall
+  // through to plain object parsing.
   final collectionType = _handleCollectionTypes(json, common: common);
   if (collectionType != null) {
     return collectionType;
@@ -873,6 +930,13 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
         json.fakeChildAsMap(snakeName: 'items', value: {});
     const innerName = 'inner'; // Matching OpenAPI.
     final itemSchema = parseSchemaOrRef(items.addSnakeName(innerName));
+    // `required` is an object-level keyword in JSON Schema / OpenAPI.
+    // On an array schema it's spec-legal but meaningless; spec authors
+    // occasionally misplace it (seen in github's
+    // `dependency-graph-spdx-sbom.sbom.{packages,relationships}`).
+    // Detail-log so the verbose-log mining workflow surfaces the
+    // misplacement to anyone curious; no behavior to act on.
+    _ignored<List<dynamic>>(json, 'required');
     return SchemaArray(
       common: common,
       defaultValue: defaultValue,
@@ -884,6 +948,12 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   }
 
   final additionalPropertiesSchema = _handleAdditionalProperties(json);
+
+  // Object-size validation we don't enforce. Detail-log so the
+  // verbose-log mining workflow can find specs that lean on these
+  // constraints; no behavior to act on.
+  _ignored<int>(json, 'maxProperties');
+  _ignored<int>(json, 'minProperties');
 
   final propertiesJson = _optionalMap(json, 'properties');
   if (propertiesJson == null) {
@@ -944,6 +1014,21 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
 Schema parseSchema(MapContext json) {
   _refNotExpected(json);
   final schema = _createCorrectSchemaSubtype(json);
+  // Catch-all for keys placed where the chosen schema shape doesn't
+  // act on them. `_ignoreIfUnused` no-ops when an earlier code path
+  // already consumed the key (e.g. `additionalProperties` on an
+  // object → `_handleAdditionalProperties` consumed it; this is a
+  // no-op). It detail-logs only when the key really is misplaced
+  // (e.g. `additionalProperties` on a string).
+  //   - `minItems`/`maxItems` inside an items schema (these belong on
+  //     the parent array, not the items schema; seen in github's
+  //     `webhook-meta-deleted.hook.events.items`).
+  //   - `additionalProperties: true` on a non-object (seen in
+  //     github's `hook-delivery.response.payload` with
+  //     `type: [string, null]`).
+  _ignoreIfUnused<int>(json, 'minItems');
+  _ignoreIfUnused<int>(json, 'maxItems');
+  _ignoreIfUnused<dynamic>(json, 'additionalProperties');
   _warnUnused(json);
   return schema;
 }
@@ -1466,6 +1551,12 @@ OpenApi parseOpenApi(Map<String, dynamic> openapiJson) {
     'security',
     (child, _) => parseSecurityRequirement(child),
   );
+  // OpenAPI 3.1 top-level sections we don't (yet) generate from.
+  // `webhooks` is the 3.1 webhook-event registry; `externalDocs`
+  // points at out-of-band human docs. Consume so they don't surface
+  // as `Unused` noise in the verbose log.
+  _ignored<dynamic>(json, 'webhooks');
+  _ignored<dynamic>(json, 'externalDocs');
   _warnUnused(json);
   return OpenApi(
     serverUrl: Uri.parse(serverUrl),
