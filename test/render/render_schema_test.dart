@@ -1477,6 +1477,11 @@ void main() {
       // multi-member `allOf` qualifies. The structural smoosh
       // predicate excludes `ResolvedAllOf`, so the wrapper still
       // gets emitted and trips the doubling check.
+      //
+      // Two members are deliberate: the resolver collapses a
+      // single-member `allOf` to its inner schema (eliding the
+      // allOf), which would defeat the test setup. Two members
+      // forces the `allOf` to survive resolution as `ResolvedAllOf`.
       final results = renderTestSchemas(
         {
           'Test': {

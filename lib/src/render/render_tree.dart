@@ -2072,6 +2072,17 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// over the parser-synthesized form on `common`.
   String get snakeName => assignedSnakeName ?? common.snakeName;
 
+  /// True when this schema is a smooshed inline-object variant of a
+  /// sealed parent — i.e. it'll be rendered as `final class X
+  /// extends Y` inline in the parent's file, with no wrapper
+  /// subclass. Subclasses other than [RenderObject] always return
+  /// false (only objects can extend a sealed class). Used by the
+  /// dispatch-mode builders (`_buildPredicateMode`,
+  /// `_buildDiscriminatorMode`, `_buildShapeMode`,
+  /// `_buildHybridMode`) and `file_renderer` to decide whether to
+  /// emit a wrapper / a separate file / a wrapping case-arm call.
+  bool get isSmooshed => false;
+
   /// The pointer of the resolved schema.
   JsonPointer get pointer => common.pointer;
 
@@ -2990,6 +3001,9 @@ class RenderObject extends RenderNewType {
   /// drives the `final class X extends Y` declaration in the schema
   /// template and the "skip my own file" gates in `file_renderer`.
   final String? parentSealedTypeName;
+
+  @override
+  bool get isSmooshed => parentSealedTypeName != null;
 
   @override
   String? get wrapperTag => typeName;
@@ -4182,13 +4196,10 @@ class RenderOneOf extends RenderNewType {
     final dispatch = <Map<String, dynamic>>[];
     for (final entry in mapping) {
       final renderVariant = renderOf(entry.variant);
-      final isSmooshed =
-          renderVariant is RenderObject &&
-          renderVariant.parentSealedTypeName != null;
       final fromJson = '${renderVariant.typeName}.fromJson(json)';
       dispatch.add({
         'value': entry.value,
-        'caseExpression': isSmooshed
+        'caseExpression': renderVariant.isSmooshed
             ? fromJson
             : '${wrapperTypeName(renderVariant)}($fromJson)',
       });
@@ -4197,8 +4208,7 @@ class RenderOneOf extends RenderNewType {
     final smooshedVariants = <Map<String, dynamic>>[];
     for (final v in declarationOrder) {
       final renderVariant = renderOf(v);
-      if (renderVariant is RenderObject &&
-          renderVariant.parentSealedTypeName != null) {
+      if (renderVariant.isSmooshed) {
         smooshedVariants.add(renderVariant.toTemplateContext(context));
       } else {
         variants.add(objectWrapperContext(renderVariant));
@@ -4227,10 +4237,7 @@ class RenderOneOf extends RenderNewType {
     final smooshedVariants = <Map<String, dynamic>>[];
     for (final arm in arms) {
       final renderVariant = renderOf(arm.variant);
-      final isSmooshed =
-          renderVariant is RenderObject &&
-          renderVariant.parentSealedTypeName != null;
-      if (isSmooshed) {
+      if (renderVariant.isSmooshed) {
         // Smooshed object variants are always Map-shaped; the case
         // arm constructs the variant directly. The wrapper subclass
         // is gone, the variant data class is inlined into the parent
@@ -4279,40 +4286,30 @@ class RenderOneOf extends RenderNewType {
     final variants = <Map<String, dynamic>>[];
     final smooshedVariants = <Map<String, dynamic>>[];
 
-    bool isSmooshedVariant(RenderSchema variant) =>
-        variant is RenderObject && variant.parentSealedTypeName != null;
+    String mapCaseExpression(RenderSchema variant) {
+      final fromJson = '${variant.typeName}.fromJson(v)';
+      return variant.isSmooshed
+          ? fromJson
+          : '${wrapperTypeName(variant)}($fromJson)';
+    }
 
-    String mapCaseExpression(RenderSchema variant) => isSmooshedVariant(variant)
-        ? '${variant.typeName}.fromJson(v)'
-        : '${wrapperTypeName(variant)}(${variant.typeName}.fromJson(v))';
-
+    // Non-Map shape arms always carry non-object variants today (the
+    // dispatcher routes Map-shaped objects to `mapArms`), so this
+    // path never sees a smooshable variant. `_planVariant` is fine.
     final renderedShapeArms = <Map<String, dynamic>>[];
     for (final arm in shapeArms) {
-      final renderVariant = renderOf(arm.variant);
-      if (isSmooshedVariant(renderVariant)) {
-        // Inline-object on a non-Map shape arm is unusual but
-        // possible (e.g. a future RenderObject whose jsonShapeKey
-        // isn't Map). Today Map-shaped objects always land in
-        // mapArms, but treating shapeArms uniformly future-proofs.
-        renderedShapeArms.add({
-          'jsonTestType': renderVariant.jsonShapeKey,
-          'caseExpression': '${renderVariant.typeName}.fromJson(v)',
-        });
-      } else {
-        final plan = _planVariant(renderVariant, context)!;
-        renderedShapeArms.add({
-          'jsonTestType': plan.jsonTestType,
-          'caseExpression': '${plan.wrapperTypeName}(${plan.fromJson})',
-        });
-      }
+      final plan = _planVariant(renderOf(arm.variant), context)!;
+      renderedShapeArms.add({
+        'jsonTestType': plan.jsonTestType,
+        'caseExpression': '${plan.wrapperTypeName}(${plan.fromJson})',
+      });
     }
 
     final renderedMapArms = <Map<String, dynamic>>[];
     for (final arm in mapArms) {
-      final renderVariant = renderOf(arm.variant);
       renderedMapArms.add({
         'predicateTest': arm.predicate.dartIfTest('v'),
-        'caseExpression': mapCaseExpression(renderVariant),
+        'caseExpression': mapCaseExpression(renderOf(arm.variant)),
       });
     }
 
@@ -4322,7 +4319,7 @@ class RenderOneOf extends RenderNewType {
 
     for (final v in declarationOrder) {
       final renderVariant = renderOf(v);
-      if (isSmooshedVariant(renderVariant)) {
+      if (renderVariant.isSmooshed) {
         smooshedVariants.add(renderVariant.toTemplateContext(context));
       } else if (mapArms.any((a) => identical(a.variant, v)) ||
           identical(v, mapFallback)) {
@@ -4361,19 +4358,16 @@ class RenderOneOf extends RenderNewType {
       // itself (no outer wrap call); the wrapper-subclass form is
       // skipped entirely. Non-smooshed variants keep the wrapper
       // form and continue to render to their own file.
-      final isSmooshed =
-          renderVariant is RenderObject &&
-          renderVariant.parentSealedTypeName != null;
       final Map<String, dynamic> armCtx;
       switch (kind) {
         case PredicateDispatchKind.requiredField:
           final fromJson = '${renderVariant.typeName}.fromJson(json)';
           armCtx = {
-            'caseExpression': isSmooshed
+            'caseExpression': renderVariant.isSmooshed
                 ? fromJson
                 : '${wrapperTypeName(renderVariant)}($fromJson)',
           };
-          if (isSmooshed) {
+          if (renderVariant.isSmooshed) {
             smooshedVariants.add(renderVariant.toTemplateContext(context));
           } else {
             variants.add(objectWrapperContext(renderVariant));
