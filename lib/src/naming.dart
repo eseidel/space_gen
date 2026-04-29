@@ -290,18 +290,27 @@ class _NameAssigner {
 
   /// Whether [decision]'s render-layer template can emit a smooshed
   /// variant — i.e. skip the wrapper subclass and emit
-  /// `case … => Variant.fromJson(…)` directly. Other dispatch kinds
-  /// fall through to today's wrapper-based rendering until their
-  /// templates are taught to smoosh too. Expanding this is the
-  /// smoosh PR train: predicate-required and discriminator (today),
-  /// then shape, then hybrid Map sub-arms.
+  /// `case … => Variant.fromJson(…)` directly. Every dispatch kind
+  /// whose variants can be `ResolvedObject`s supports smoosh today;
+  /// the dispatch gate exists alongside [_isStructurallySmooshable]
+  /// as a defensive guardrail. Adding a new [DispatchDecision]
+  /// subtype is a compile-time prompt (sealed-switch exhaustiveness)
+  /// to decide whether its template knows how to skip the wrapper
+  /// shim before its variants get marked smooshable.
+  ///
+  /// Array-element predicate dispatch's variants are arrays so it's
+  /// never reached via the structural check; [NoDispatch] doesn't
+  /// claim wrappers at all. Both are excluded here for the
+  /// guardrail's sake.
   bool _dispatchEmitsSmooshed(DispatchDecision decision) {
-    if (decision is DiscriminatorDispatch) return true;
-    if (decision is PredicateDispatch &&
-        decision.kind == PredicateDispatchKind.requiredField) {
-      return true;
-    }
-    return false;
+    return switch (decision) {
+      DiscriminatorDispatch() => true,
+      ShapeDispatch() => true,
+      HybridDispatch() => true,
+      PredicateDispatch(kind: PredicateDispatchKind.requiredField) => true,
+      PredicateDispatch(kind: PredicateDispatchKind.arrayElement) => false,
+      NoDispatch() => false,
+    };
   }
 
   /// Computes the snake-case wrapper-subclass name for one variant.

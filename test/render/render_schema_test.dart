@@ -812,8 +812,16 @@ void main() {
         ],
       };
       final result = renderTestSchema(schema);
+      // Number variant keeps its primitive wrapper.
       expect(result, contains('num v => TestNum(v)'));
-      expect(result, contains('Map<String, dynamic> v => TestVariant1'));
+      // The inline-object variant smooshes — case arm constructs the
+      // variant directly, no wrapper-class call. Variant data class
+      // is inlined into the parent's file as a sealed subclass.
+      expect(
+        result,
+        contains('Map<String, dynamic> v => TestOneOf1.fromJson(v)'),
+      );
+      expect(result, contains('final class TestOneOf1 extends Test'));
       expect(result, isNot(contains('throw UnimplementedError')));
     });
 
@@ -1455,36 +1463,65 @@ void main() {
 
     test('wrapper subclass uses position-based name when the variant '
         'tag would double the parent prefix (non-smooshed path)', () {
-      // Inline oneOf variants get parser-synthesized names that already
-      // contain the parent (`<Parent>OneOf<i>`). Composing the wrapper
-      // as `<Parent><variantTypeName>` would then double the prefix
-      // (e.g. `TestTestOneOf0`). The naming pass detects this and
-      // falls back to a position-based wrapper name (`TestVariant0`).
+      // Inline oneOf variants get parser-synthesized names that
+      // already contain the parent (`<Parent>OneOf<i>`). Composing
+      // the wrapper as `<Parent><variantTypeName>` would then double
+      // the prefix (e.g. `TestTestOneOf1`). The naming pass detects
+      // this and falls back to a position-based wrapper name
+      // (`TestVariant1`).
       //
-      // Predicate-required dispatch with inline objects would smoosh
-      // (no wrapper at all) — see the smoosh test below. To exercise
-      // the doubling-fallback path on its own, this test uses shape
-      // dispatch (a string variant + an inline object variant). Shape
-      // dispatch isn't yet smoosh-aware, so the inline object's
-      // wrapper is still emitted and the fallback name applies.
-      final result = renderTestSchema({
-        'oneOf': [
-          {'type': 'string'},
-          {
+      // Every dispatch kind now smooshes inline `ResolvedObject`
+      // variants, so the doubling-fallback never fires for plain
+      // inline objects anymore. To exercise the fallback we need an
+      // inline variant that *isn't* `ResolvedObject` — an inline
+      // multi-member `allOf` qualifies. The structural smoosh
+      // predicate excludes `ResolvedAllOf`, so the wrapper still
+      // gets emitted and trips the doubling check.
+      //
+      // Two members are deliberate: the resolver collapses a
+      // single-member `allOf` to its inner schema (eliding the
+      // allOf), which would defeat the test setup. Two members
+      // forces the `allOf` to survive resolution as `ResolvedAllOf`.
+      final results = renderTestSchemas(
+        {
+          'Test': {
+            'oneOf': [
+              {'type': 'string'},
+              {
+                'allOf': [
+                  {r'$ref': '#/components/schemas/A'},
+                  {r'$ref': '#/components/schemas/B'},
+                ],
+              },
+            ],
+          },
+          'A': {
             'type': 'object',
+            'required': ['a'],
             'properties': {
-              'note': {'type': 'string'},
+              'a': {'type': 'string'},
             },
           },
-        ],
-      });
+          'B': {
+            'type': 'object',
+            'required': ['b'],
+            'properties': {
+              'b': {'type': 'string'},
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final test = results['Test']!;
       // The string variant gets the structural `TestString` wrapper.
-      expect(result, contains('final class TestString extends Test'));
-      // The inline object's wrapper would be `TestTestOneOf1` if we
-      // composed naively; the naming pass falls back to `TestVariant1`.
-      expect(result, contains('final class TestVariant1 extends Test'));
-      expect(result, contains('final TestOneOf1 value;'));
-      expect(result, isNot(contains('TestTestOneOf')));
+      expect(test, contains('final class TestString extends Test'));
+      // The inline allOf variant's parser-synthesized name starts
+      // with the parent (`TestOneOf1`), so naive composition would
+      // give `TestTestOneOf1`; the fallback collapses to
+      // `TestVariant1`.
+      expect(test, contains('final class TestVariant1 extends Test'));
+      expect(test, contains('final TestOneOf1 value;'));
+      expect(test, isNot(contains('TestTestOneOf')));
     });
 
     test('predicate-required dispatch smooshes inline-object variants: '
@@ -1544,6 +1581,99 @@ void main() {
       expect(result, isNot(contains('class TestVariant0')));
       expect(result, isNot(contains('TestOneOf0 value')));
       expect(result, isNot(contains('TestOneOf1 value')));
+    });
+
+    test('shape dispatch smooshes the inline-object variant: case arm '
+        'calls variant directly, primitive variants keep wrappers', () {
+      // Mixed-shape `oneOf` where one variant is an inline object
+      // and the other is a primitive (e.g. github's
+      // `repos_*_team_access_restrictions_request`: object-or-array
+      // shape). The object variant is inline and exclusive — smoosh
+      // eligible; the primitive can't extend a sealed class so it
+      // keeps its wrapper. The mixed result demonstrates the per-arm
+      // smoosh decision.
+      final result = renderTestSchema({
+        'oneOf': [
+          {'type': 'string'},
+          {
+            'type': 'object',
+            'properties': {
+              'name': {'type': 'string'},
+            },
+          },
+        ],
+      });
+      // String variant keeps the structural wrapper.
+      expect(result, contains('final class TestString extends Test'));
+      expect(result, contains('String v => TestString(v)'));
+      // Inline-object variant smooshes — case arm constructs it
+      // directly, no wrapper-class call. Variant data class is the
+      // sealed subclass.
+      expect(
+        result,
+        contains('Map<String, dynamic> v => TestOneOf1.fromJson(v)'),
+      );
+      expect(result, contains('final class TestOneOf1 extends Test'));
+      expect(result, contains('@override'));
+      // No wrapper subclass for the smooshed variant.
+      expect(result, isNot(contains('class TestVariant1')));
+      expect(result, isNot(contains('TestOneOf1 value')));
+    });
+
+    test('hybrid dispatch smooshes inline-object Map sub-arms: each '
+        'variant extends the sealed parent directly', () {
+      // String + 2 inline-object variants — hybrid dispatch (string
+      // shape arm + property-presence sub-dispatch on the Maps). Both
+      // map variants are inline-exclusive `ResolvedObject`s, so they
+      // smoosh: the Map case arms call the variant directly, the
+      // wrapper subclasses are gone, and the variant data classes
+      // are inlined into the parent's file.
+      final result = renderTestSchema({
+        'oneOf': [
+          {'type': 'string'},
+          {
+            'type': 'object',
+            'required': ['tag_a'],
+            'properties': {
+              'tag_a': {'type': 'string'},
+            },
+          },
+          {
+            'type': 'object',
+            'required': ['tag_b'],
+            'properties': {
+              'tag_b': {'type': 'string'},
+            },
+          },
+        ],
+      });
+      // String shape-arm keeps its wrapper (primitives can't extend
+      // a sealed class).
+      expect(result, contains('final class TestString extends Test'));
+      // Map sub-arms call the variant directly — no wrapper-class
+      // outer call.
+      expect(
+        result,
+        contains(
+          "final Map<String, dynamic> v when v.containsKey('tag_a') "
+          '=> TestOneOf1.fromJson(v)',
+        ),
+      );
+      expect(
+        result,
+        contains(
+          "final Map<String, dynamic> v when v.containsKey('tag_b') "
+          '=> TestOneOf2.fromJson(v)',
+        ),
+      );
+      // Variant data classes are sealed subclasses, inlined.
+      expect(result, contains('final class TestOneOf1 extends Test'));
+      expect(result, contains('final class TestOneOf2 extends Test'));
+      // No legacy `<Parent>Variant<i>` wrappers.
+      expect(result, isNot(contains('class TestVariant1')));
+      expect(result, isNot(contains('class TestVariant2')));
+      expect(result, isNot(contains('TestOneOf1 value')));
+      expect(result, isNot(contains('TestOneOf2 value')));
     });
 
     test('property-presence dispatch falls back to legacy when one '
@@ -1690,15 +1820,23 @@ void main() {
       );
       // No legacy stub.
       expect(result, isNot(contains('throw UnimplementedError')));
-      // Sealed subclass declarations land in spec order: array first,
-      // then the three objects. The List wrapper holds the parsed
-      // List<itemType>; the object wrappers delegate to the variant
-      // class's own fromJson/toJson.
+      // The List variant keeps its primitive wrapper. The three
+      // inline-object variants smoosh — they extend the sealed
+      // parent directly, no `<Parent>Variant<i>` wrapper, no
+      // `value:` indirection. Map case arms call the variant's
+      // `fromJson` directly.
       expect(result, contains('final class TestList extends Test'));
       expect(result, contains('final List<String> value;'));
-      expect(result, contains('final class TestVariant1 extends Test'));
-      expect(result, contains('final class TestVariant2 extends Test'));
-      expect(result, contains('final class TestVariant3 extends Test'));
+      expect(result, contains('final class TestOneOf1 extends Test'));
+      expect(result, contains('final class TestOneOf2 extends Test'));
+      expect(result, contains('final class TestOneOf3 extends Test'));
+      expect(
+        result,
+        contains(
+          "final Map<String, dynamic> v when v.containsKey('content') "
+          '=> TestOneOf1.fromJson(v)',
+        ),
+      );
     });
 
     test('hybrid dispatch: Map sub-arms include a fallback when one '
