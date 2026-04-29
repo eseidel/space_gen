@@ -2042,6 +2042,57 @@ void main() {
       expect(rule, isNot(contains('UnimplementedError')));
     });
 
+    test('discriminator dispatch smooshes inline-object variants: case '
+        'arms call the variant directly, no wrapper class', () {
+      // Same shape as the implicit-discriminator test above, but
+      // variants are *inline* under the parent's oneOf rather than
+      // top-level `$ref`s. Inline variants are exclusive to one
+      // parent by construction (their pointer is `<parent>/oneOf/<i>`),
+      // so they smoosh: the variant data class itself extends the
+      // sealed parent, eliminating the wrapper-class shim and the
+      // `value:` indirection. Top-level `$ref` variants (the existing
+      // test above) continue to use wrappers because they could be
+      // referenced from multiple parents.
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'string',
+                'enum': ['creation'],
+              },
+            },
+            'required': ['type'],
+          },
+          {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'string',
+                'enum': ['deletion'],
+              },
+            },
+            'required': ['type'],
+          },
+        ],
+      });
+      // Discriminator dispatch with case arms calling the variant
+      // directly — no `<Wrapper>(<Variant>.fromJson(...))` outer call.
+      expect(result, contains("final discriminator = json['type']"));
+      expect(result, contains("'creation' => TestOneOf0.fromJson(json)"));
+      expect(result, contains("'deletion' => TestOneOf1.fromJson(json)"));
+      // Variant data classes are inlined into the parent's file as
+      // direct sealed subclasses with `@override` on `toJson`.
+      expect(result, contains('final class TestOneOf0 extends Test'));
+      expect(result, contains('final class TestOneOf1 extends Test'));
+      expect(result, contains('@override'));
+      // No wrapper subclasses survive in the parent file.
+      expect(result, isNot(contains('class TestVariant0')));
+      expect(result, isNot(contains('TestOneOf0 value')));
+      expect(result, isNot(contains('TestOneOf1 value')));
+    });
+
     test('implicit-discriminator dispatch falls back when the single-enum '
         'values collide across variants', () {
       // Both variants tag themselves `type: 'creation'` — no unique
