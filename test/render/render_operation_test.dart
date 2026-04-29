@@ -44,11 +44,12 @@ void main() {
           serverUrl: Uri.parse('https://example.com'),
         ),
       );
-      verify(
-        () => logger.detail(
-          'Ignoring: format=int64 (String) in #/parameters/0/schema',
-        ),
-      ).called(1);
+      // `format: int64` on `type: integer` is recognized — Dart's `int`
+      // is 64-bit on the VM and is the correct base type, so we don't
+      // warn or detail-log it (used to log "Ignoring: format=int64").
+      verifyNever(
+        () => logger.detail(any(that: contains('format=int64'))),
+      );
       expect(
         result,
         '/// Test API\n'

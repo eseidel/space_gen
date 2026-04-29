@@ -611,6 +611,19 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
     if (format == null) {
       return null;
     }
+    // Formats we recognize as valid for a given base type. Some map to a
+    // richer `PodType` below (`date-time` → `DateTime`); the numeric
+    // formats (`int32`, `int64`, `float`, `double`) don't, because
+    // Dart's native `int` is 64-bit on the VM and `double` is IEEE 754
+    // double-precision — the same widths as the OpenAPI formats. There
+    // is no win to a `PodType.int64` that just maps back to `int`.
+    //
+    // Web/dart2js caveat: `int` becomes a JS Number above 2^53. JSON
+    // parsers on the web have the same limit before our types matter,
+    // so the type choice doesn't fix it. Real-world int64 IDs (github
+    // user/repo IDs, etc.) sit ~6 orders of magnitude below 2^53; if a
+    // user ever needs true 64-bit precision on the web, that's an opt-
+    // in `BigInt` flag, not a today-default.
     final expectedFormats = {
       'string': {
         'binary',
@@ -622,29 +635,21 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
         'date',
         'time',
       },
+      'integer': {'int32', 'int64'},
+      'number': {'float', 'double'},
     };
     final expected = expectedFormats[type];
     if (expected == null || !expected.contains(format)) {
-      final ignoredFormats = {
-        // We don't explicitly support any number formats yet.
-        'number': {'float', 'double'},
-        'integer': {'int32', 'int64'},
-      };
-      final ignored = ignoredFormats[type];
-      if (ignored != null && ignored.contains(format)) {
-        _ignored<String>(json, 'format');
-      } else {
-        // Unknown format on a recognized base type — generated code
-        // falls back to the plain Dart type (`int`/`String`/...) which
-        // is correct for almost every real-world non-standard format
-        // (`timestamp`, `repo.nwo`, ...). Log as detail rather than
-        // warn: there's nothing the user can act on, and surfacing
-        // every spec-author idiosyncrasy at WARN level buries the
-        // diagnostics that actually matter.
-        logger.detail(
-          'Ignoring unknown $type format: $format in ${json.pointer}',
-        );
-      }
+      // Unknown format on a recognized base type — generated code
+      // falls back to the plain Dart type (`int`/`String`/...) which
+      // is correct for almost every real-world non-standard format
+      // (`timestamp`, `repo.nwo`, ...). Log as detail rather than
+      // warn: there's nothing the user can act on, and surfacing
+      // every spec-author idiosyncrasy at WARN level buries the
+      // diagnostics that actually matter.
+      logger.detail(
+        'Ignoring unknown $type format: $format in ${json.pointer}',
+      );
     }
     return format;
   }

@@ -46,7 +46,19 @@ void main() {
         () => logger.detail('Ignoring unknown string format: foo in #/'),
       ).called(1);
       expect(parse('number'), isNull);
+      // Numeric formats are recognized as valid (no warn-log) but don't
+      // map to a richer PodType — Dart's `int` is 64-bit on the VM and
+      // `double` is IEEE 754, the same widths as the OpenAPI formats.
+      expect(parse('number', format: 'float'), isNull);
+      expect(parse('number', format: 'double'), isNull);
       expect(parse('integer'), isNull);
+      expect(parse('integer', format: 'int32'), isNull);
+      expect(parse('integer', format: 'int64'), isNull);
+      // Unknown integer/number formats still log at detail level.
+      expect(parse('integer', format: 'bogus', expectLogs: true), isNull);
+      verify(
+        () => logger.detail('Ignoring unknown integer format: bogus in #/'),
+      ).called(1);
       expect(parse('boolean'), PodType.boolean);
       expect(parse('array'), isNull);
       expect(parse('object'), isNull);
