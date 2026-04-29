@@ -1014,7 +1014,8 @@ void main() {
       expect(result, isNot(contains('throw UnimplementedError')));
     });
 
-    test('oneOf with discriminator + mapping renders sealed dispatch', () {
+    test('oneOf with discriminator + mapping renders sealed dispatch '
+        'with exclusive-use top-level variants smooshed', () {
       final results = renderTestSchemas(
         {
           'Pet': {
@@ -1054,16 +1055,25 @@ void main() {
       expect(pet, contains('sealed class Pet'));
       expect(pet, contains('factory Pet.fromJson(Map<String, dynamic> json)'));
       expect(pet, contains("final discriminator = json['pet_type']"));
-      expect(pet, contains("'cat' => PetCat(Cat.fromJson(json))"));
-      expect(pet, contains("'dog' => PetDog(Dog.fromJson(json))"));
+      // `Cat` and `Dog` are top-level component schemas referenced
+      // only as variants of `Pet` (no other property / param /
+      // response slot uses them). They're exclusive-by-use, so they
+      // smoosh: the case arms construct each variant directly (no
+      // `PetCat` / `PetDog` wrapper) and the variant data classes
+      // themselves are rendered inline in `pet.dart` as direct
+      // sealed subclasses.
+      expect(pet, contains("'cat' => Cat.fromJson(json)"));
+      expect(pet, contains("'dog' => Dog.fromJson(json)"));
       expect(pet, contains(r"Unknown pet_type '$discriminator' for Pet"));
-      // Wrapper subclasses with @immutable + structural equality.
-      expect(pet, contains('@immutable'));
-      expect(pet, contains('final class PetCat extends Pet'));
-      expect(pet, contains('final Cat value;'));
-      expect(pet, contains('final class PetDog extends Pet'));
-      expect(pet, contains('final Dog value;'));
-      expect(pet, contains('Map<String, dynamic> toJson() => value.toJson()'));
+      // Variant data classes inlined as direct sealed subclasses.
+      expect(pet, contains('final class Cat extends Pet'));
+      expect(pet, contains('final class Dog extends Pet'));
+      expect(pet, contains('@override'));
+      // No wrapper subclasses (`PetCat`/`PetDog`) survive.
+      expect(pet, isNot(contains('class PetCat ')));
+      expect(pet, isNot(contains('class PetDog ')));
+      expect(pet, isNot(contains('final Cat value;')));
+      expect(pet, isNot(contains('final Dog value;')));
     });
 
     test(
@@ -1097,10 +1107,17 @@ void main() {
         );
         final mixed = results['Mixed'];
         expect(mixed, isNotNull);
-        // Distinct shapes (Map vs String) → shape dispatch.
+        // Distinct shapes (Map vs String) → shape dispatch. `Cat` is
+        // exclusive-by-use (only referenced as a variant of `Mixed`),
+        // so it smooshes — the Map arm constructs `Cat` directly, no
+        // `MixedCat` wrapper. The non-object string variant keeps its
+        // `MixedString` wrapper (primitives can't extend a sealed
+        // class).
         expect(mixed, contains('factory Mixed.fromJson(dynamic json)'));
-        expect(mixed, contains('Map<String, dynamic> v => MixedCat'));
+        expect(mixed, contains('Map<String, dynamic> v => Cat.fromJson(v)'));
         expect(mixed, contains('String v => MixedString'));
+        expect(mixed, contains('final class Cat extends Mixed'));
+        expect(mixed, isNot(contains('class MixedCat ')));
         expect(mixed, isNot(contains('UnimplementedError')));
       },
     );
@@ -1344,6 +1361,218 @@ void main() {
       expect(result, contains("throw UnimplementedError('Test.fromJson')"));
     });
 
+    test('property-array-item-shape dispatch separates twins whose '
+        'top-level keys are identical but whose shared array property '
+        'items have distinct JSON shape (object vs string)', () {
+      // Real-world site: github's `oneOf<validation-error,
+      // validation-error-simple>` (the orgs/update 422 and projects/
+      // create-card 422 responses). Both have the same required keys
+      // [message, documentation_url] and the same optional `errors`
+      // array; the only structural difference is the shape of items
+      // inside `errors` — object for `Detailed`, string for `Simple`.
+      final results = renderTestSchemas(
+        {
+          'Resp': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Detailed'},
+              {r'$ref': '#/components/schemas/Simple'},
+            ],
+          },
+          'Detailed': {
+            'type': 'object',
+            'required': ['message', 'documentation_url'],
+            'properties': {
+              'message': {'type': 'string'},
+              'documentation_url': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {
+                  'type': 'object',
+                  'required': ['code'],
+                  'properties': {
+                    'code': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+          'Simple': {
+            'type': 'object',
+            'required': ['message', 'documentation_url'],
+            'properties': {
+              'message': {'type': 'string'},
+              'documentation_url': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final result = results['Resp'];
+      expect(result, isNotNull);
+      // Object-shaped variants → factory takes Map (no `dynamic` cast
+      // preamble like the array-element kind).
+      expect(
+        result,
+        contains('factory Resp.fromJson(Map<String, dynamic> json)'),
+      );
+      expect(result, isNot(contains('final v = json as List;')));
+      // Detailed arm: errors[].items is object → first is Map.
+      expect(
+        result,
+        contains(
+          "if (json['errors'] is List && "
+          "(json['errors'] as List).isNotEmpty && "
+          "(json['errors'] as List).first is Map<String, dynamic>)",
+        ),
+      );
+      // Simple arm: last variant → unguarded `Always` fallback. No
+      // `if (... first is String)` guard: when the discriminator
+      // property is absent or empty (spec-legal — github lists
+      // `errors` as optional on both variants), the response routes
+      // to the simpler form rather than throwing.
+      expect(
+        result,
+        isNot(
+          contains(
+            "if (json['errors'] is List && "
+            "(json['errors'] as List).isNotEmpty && "
+            "(json['errors'] as List).first is String)",
+          ),
+        ),
+      );
+      // `Detailed` and `Simple` are top-level `$ref` variants
+      // referenced only by `Resp`, with no other typed-reference
+      // uses → exclusive-by-use → smooshed: variant data classes
+      // extend `Resp` directly, no `RespDetailed`/`RespSimple`
+      // wrapper classes survive.
+      expect(result, contains('final class Detailed extends Resp'));
+      expect(result, contains('final class Simple extends Resp'));
+      expect(result, isNot(contains('class RespDetailed ')));
+      expect(result, isNot(contains('class RespSimple ')));
+      // No FormatException-on-fall-through: the Always fallback means
+      // any input shape gets routed to a variant.
+      expect(result, isNot(contains('throw UnimplementedError')));
+      expect(result, isNot(contains('throw FormatException')));
+    });
+
+    test('property-array-item-shape dispatch routes missing/empty '
+        'discriminator property to the unguarded last variant', () {
+      // github's `validation-error.errors` and
+      // `validation-error-simple.errors` are both *optional*. A 422
+      // response with no `errors` is spec-legal — the dispatch must
+      // not throw on it. Verifying the rendered factory does not emit
+      // a fall-through `throw FormatException` for the no-match case.
+      final results = renderTestSchemas(
+        {
+          'Resp': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Detailed'},
+              {r'$ref': '#/components/schemas/Simple'},
+            ],
+          },
+          'Detailed': {
+            'type': 'object',
+            'required': ['message'],
+            'properties': {
+              'message': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {
+                  'type': 'object',
+                  'properties': {
+                    'code': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+          'Simple': {
+            'type': 'object',
+            'required': ['message'],
+            'properties': {
+              'message': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final result = results['Resp'];
+      // The last arm is the unguarded fallback — no FormatException
+      // for the no-match case.
+      expect(result, isNot(contains('throw FormatException')));
+      // The Detailed arm still has its shape guard.
+      expect(
+        result,
+        contains(
+          "if (json['errors'] is List && "
+          "(json['errors'] as List).isNotEmpty && "
+          "(json['errors'] as List).first is Map<String, dynamic>)",
+        ),
+      );
+    });
+
+    test('property-array-item-shape dispatch bails when the shared array '
+        'property items collide on JSON shape', () {
+      // Both variants put objects inside `errors` — shape-peeking can't
+      // distinguish them, so the picker falls through to the legacy
+      // stub.
+      final results = renderTestSchemas(
+        {
+          'Resp': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/A'},
+              {r'$ref': '#/components/schemas/B'},
+            ],
+          },
+          'A': {
+            'type': 'object',
+            'required': ['message'],
+            'properties': {
+              'message': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {
+                  'type': 'object',
+                  'properties': {
+                    'code': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+          'B': {
+            'type': 'object',
+            'required': ['message'],
+            'properties': {
+              'message': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {
+                  'type': 'object',
+                  'properties': {
+                    'reason': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      expect(
+        results['Resp'],
+        contains("throw UnimplementedError('Resp.fromJson')"),
+      );
+    });
+
     test('non-discriminator oneOf shape-dispatch with an enum variant '
         '(distinct from a Map<String, dynamic> object variant)', () {
       // The enum's JSON storage type is `String` — same as RenderString,
@@ -1374,11 +1603,17 @@ void main() {
       final result = results['Result'];
       expect(result, isNotNull);
       expect(result, contains('factory Result.fromJson(dynamic json)'));
+      // `Status` is an enum (can't extend a sealed class) so it keeps
+      // its `ResultStatus` wrapper. `Detail` is exclusive-by-use and
+      // smooshes — the Map arm constructs `Detail` directly, no
+      // wrapper.
       expect(result, contains('String v => ResultStatus(Status.fromJson(v))'));
       expect(
         result,
-        contains('Map<String, dynamic> v => ResultDetail(Detail.fromJson(v))'),
+        contains('Map<String, dynamic> v => Detail.fromJson(v)'),
       );
+      expect(result, contains('final class Detail extends Result'));
+      expect(result, isNot(contains('class ResultDetail ')));
       expect(result, contains('final Status value;'));
       expect(result, contains('value.toJson()'));
     });
@@ -1452,13 +1687,19 @@ void main() {
       final pet = results['Pet'];
       expect(pet, isNotNull);
       expect(pet, contains('factory Pet.fromJson(Map<String, dynamic> json)'));
+      // `Cat`/`Dog` are exclusive-by-use top-level variants → smooshed.
+      // The if-arms construct each variant directly; the variant data
+      // classes are inlined into `pet.dart` as direct sealed
+      // subclasses (no `PetCat`/`PetDog` wrappers).
       expect(pet, contains("if (json.containsKey('meow'))"));
-      expect(pet, contains('return PetCat(Cat.fromJson(json))'));
+      expect(pet, contains('return Cat.fromJson(json)'));
       expect(pet, contains("if (json.containsKey('bark'))"));
-      expect(pet, contains('return PetDog(Dog.fromJson(json))'));
+      expect(pet, contains('return Dog.fromJson(json)'));
       expect(pet, contains('No variant of Pet matched json keys'));
-      expect(pet, contains('final class PetCat extends Pet'));
-      expect(pet, contains('final class PetDog extends Pet'));
+      expect(pet, contains('final class Cat extends Pet'));
+      expect(pet, contains('final class Dog extends Pet'));
+      expect(pet, isNot(contains('class PetCat ')));
+      expect(pet, isNot(contains('class PetDog ')));
     });
 
     test('wrapper subclass uses position-based name when the variant '
@@ -1745,16 +1986,21 @@ void main() {
       );
       final author = results['Author'];
       expect(author, isNotNull);
-      // Checked arm fires when the unique required field is present.
+      // `SimpleUser` is `ResolvedObject` and exclusive-by-use →
+      // smooshed; the checked arm constructs it directly.
+      // `EmptyAuthor` (no properties) parses as `SchemaEmptyObject`
+      // → `ResolvedEmptyObject`, which the smoosh predicate excludes
+      // (only `ResolvedObject` has a class body to extend). It keeps
+      // its `AuthorEmptyAuthor` wrapper as the fallback arm.
       expect(author, contains("if (json.containsKey('id'))"));
-      expect(author, contains('return AuthorSimpleUser(SimpleUser.fromJson'));
-      // Fallback arm has no `containsKey` guard — emitted as a
-      // bare `return …`.
+      expect(author, contains('return SimpleUser.fromJson(json)'));
+      expect(author, contains('final class SimpleUser extends Author'));
+      expect(author, isNot(contains('class AuthorSimpleUser ')));
       expect(
         author,
         contains('return AuthorEmptyAuthor(EmptyAuthor.fromJson(json));'),
       );
-      // No throw — the fallback always matches.
+      expect(author, contains('final class AuthorEmptyAuthor extends Author'));
       expect(author, isNot(contains('throw FormatException')));
       expect(author, isNot(contains('throw UnimplementedError')));
     });
@@ -1984,14 +2230,18 @@ void main() {
       );
       final rule = results['Rule'];
       expect(rule, isNotNull);
+      // All three variants are exclusive-by-use top-level → smooshed.
       expect(rule, contains("if (json.containsKey('wait_timer'))"));
-      expect(rule, contains('return RuleWaitTimer(WaitTimer.fromJson'));
+      expect(rule, contains('return WaitTimer.fromJson(json)'));
       expect(rule, contains("if (json.containsKey('reviewers'))"));
-      expect(rule, contains('return RuleReviewersRule(ReviewersRule.fromJson'));
-      expect(
-        rule,
-        contains('return RuleBranchPolicy(BranchPolicy.fromJson(json));'),
-      );
+      expect(rule, contains('return ReviewersRule.fromJson(json)'));
+      expect(rule, contains('return BranchPolicy.fromJson(json);'));
+      expect(rule, contains('final class WaitTimer extends Rule'));
+      expect(rule, contains('final class ReviewersRule extends Rule'));
+      expect(rule, contains('final class BranchPolicy extends Rule'));
+      expect(rule, isNot(contains('class RuleWaitTimer ')));
+      expect(rule, isNot(contains('class RuleReviewersRule ')));
+      expect(rule, isNot(contains('class RuleBranchPolicy ')));
       expect(rule, isNot(contains('throw UnimplementedError')));
       expect(rule, isNot(contains('throw FormatException')));
     });
@@ -2117,7 +2367,11 @@ void main() {
       );
       final pet = results['Pet'];
       expect(pet, contains('factory Pet.fromJson(dynamic json)'));
-      expect(pet, contains('Map<String, dynamic> v => PetCat'));
+      // `Cat` is exclusive-by-use → smooshed; the Map case arm
+      // constructs `Cat` directly, no `PetCat` wrapper.
+      expect(pet, contains('Map<String, dynamic> v => Cat.fromJson(v)'));
+      expect(pet, contains('final class Cat extends Pet'));
+      expect(pet, isNot(contains('class PetCat ')));
       expect(pet, isNot(contains('UnimplementedError')));
     });
 
@@ -2167,16 +2421,15 @@ void main() {
         contains('factory Rule.fromJson(Map<String, dynamic> json)'),
       );
       expect(rule, contains("final discriminator = json['type']"));
-      expect(
-        rule,
-        contains("'creation' => RuleCreation(Creation.fromJson(json))"),
-      );
-      expect(
-        rule,
-        contains("'deletion' => RuleDeletion(Deletion.fromJson(json))"),
-      );
-      expect(rule, contains('final class RuleCreation extends Rule'));
-      expect(rule, contains('final class RuleDeletion extends Rule'));
+      // `Creation` and `Deletion` are exclusive-by-use top-level
+      // variants — they smoosh into `Rule` (no wrapper class, case
+      // arms construct each variant directly).
+      expect(rule, contains("'creation' => Creation.fromJson(json)"));
+      expect(rule, contains("'deletion' => Deletion.fromJson(json)"));
+      expect(rule, contains('final class Creation extends Rule'));
+      expect(rule, contains('final class Deletion extends Rule'));
+      expect(rule, isNot(contains('class RuleCreation ')));
+      expect(rule, isNot(contains('class RuleDeletion ')));
       expect(rule, isNot(contains('UnimplementedError')));
     });
 
@@ -2188,9 +2441,10 @@ void main() {
       // parent by construction (their pointer is `<parent>/oneOf/<i>`),
       // so they smoosh: the variant data class itself extends the
       // sealed parent, eliminating the wrapper-class shim and the
-      // `value:` indirection. Top-level `$ref` variants (the existing
-      // test above) continue to use wrappers because they could be
-      // referenced from multiple parents.
+      // `value:` indirection. Top-level `$ref` variants smoosh too
+      // when they're "exclusive-by-use" (referenced as a variant of
+      // exactly one parent and from no other slot) — covered by the
+      // implicit-discriminator test above.
       final result = renderTestSchema({
         'oneOf': [
           {
@@ -3403,9 +3657,9 @@ void main() {
           renderTestSchema(json, asComponent: true),
           '/// Title\n'
           '/// Description\n'
-          "/// example: `'example'`\n"
-          "/// example: `'example1'`\n"
-          "/// example: `'example2'`\n"
+          "/// Example: `'example'`\n"
+          "/// Example: `'example1'`\n"
+          "/// Example: `'example2'`\n"
           'extension type const Test._(String value) {\n'
           '    const Test(this.value);\n'
           '\n'
@@ -3469,9 +3723,9 @@ void main() {
           renderTestSchema(json, asComponent: true),
           '/// Title\n'
           '/// Description\n'
-          '/// example: `1.2`\n'
-          '/// example: `1.2`\n'
-          '/// example: `1.3`\n'
+          '/// Example: `1.2`\n'
+          '/// Example: `1.2`\n'
+          '/// Example: `1.3`\n'
           'extension type const Test._(double value) {\n'
           '    const Test(this.value);\n'
           '\n'
@@ -3511,9 +3765,27 @@ void main() {
           '/// Title\n'
           '/// Description\n'
           '/// {@endtemplate}\n'
-          '/// example: `{a: example, b: example}`\n'
-          '/// example: `{a: example1, b: example1}`\n'
-          '/// example: `{a: example2, b: example2}`\n'
+          '/// Example:\n'
+          '/// ```json\n'
+          '/// {\n'
+          '///   "a": "example",\n'
+          '///   "b": "example"\n'
+          '/// }\n'
+          '/// ```\n'
+          '/// Example:\n'
+          '/// ```json\n'
+          '/// {\n'
+          '///   "a": "example1",\n'
+          '///   "b": "example1"\n'
+          '/// }\n'
+          '/// ```\n'
+          '/// Example:\n'
+          '/// ```json\n'
+          '/// {\n'
+          '///   "a": "example2",\n'
+          '///   "b": "example2"\n'
+          '/// }\n'
+          '/// ```\n'
           '@immutable\n'
           'class Test {\n'
           '    /// {@macro test}\n'

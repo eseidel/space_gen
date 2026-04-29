@@ -26,6 +26,7 @@ words:
   - unioned
   - watchcrunch
   - dedup
+  - dedups
   - enumless
   - worktree
   - worktrees
@@ -41,3 +42,6 @@ words:
   - prefs
   - camelization
   - basenames
+  - spdx
+  - sbom
+  - varnames

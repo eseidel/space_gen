@@ -464,6 +464,154 @@ void main() {
       expect(schema, isA<SchemaOneOf>());
     });
 
+    group('spec-author quirks', () {
+      // These specs are technically valid OpenAPI but place a key
+      // somewhere the parser's chosen schema shape can't act on it.
+      // We don't enforce the constraint anyway. Vendor extensions
+      // (`x-*`) are silently dropped per the OpenAPI spec; everything
+      // else is detail-logged so the verbose-log mining workflow can
+      // surface the misplacement.
+
+      test('vendor extensions (x-*) flow through Unused: at -v', () {
+        // Per OpenAPI 3.x, `x-` prefixed keys are vendor extensions:
+        // generators that don't recognize them ignore them ("don't
+        // fail"), but they still surface in the unused tally at -v
+        // so the verbose-log mining workflow can spot extensions
+        // worth adding support for. We already act on
+        // `x-enum-descriptions`; future candidates include
+        // `x-enum-varnames` and `x-internal`.
+        final json = {
+          'type': 'string',
+          'x-github': {'foo': 'bar'},
+          'x-multi-segment': true,
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaString>());
+        verify(
+          () => logger.detail(any(that: contains('Unused: x-github'))),
+        ).called(1);
+        verifyNever(() => logger.warn(any()));
+      });
+
+      test('required on an array property is detail-logged', () {
+        // github's `dependency-graph-spdx-sbom.sbom.{packages,
+        // relationships}` put `required: [...]` on an array schema.
+        // `required` is an object-level keyword; on an array it does
+        // nothing. Detail-log so a curious `-v` reader can find it.
+        final json = {
+          'type': 'array',
+          'items': {'type': 'string'},
+          'required': ['name'],
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaArray>());
+        verify(
+          () => logger.detail(any(that: contains('Ignoring: required'))),
+        ).called(1);
+      });
+
+      test('maxProperties on an object/map is detail-logged', () {
+        // github's `metadata` and `dispatches.inputs` set
+        // `maxProperties: N`. We don't validate object size.
+        final json = {
+          'type': 'object',
+          'maxProperties': 10,
+          'additionalProperties': true,
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaMap>());
+        verify(
+          () => logger.detail(
+            any(that: contains('Ignoring: maxProperties=10')),
+          ),
+        ).called(1);
+      });
+
+      test('minItems inside an items schema is detail-logged', () {
+        // github's `webhook-meta-deleted.hook.events.items` has
+        // `minItems: 1` on the string-enum items schema. `minItems`
+        // belongs on the parent array; on the items schema it does
+        // nothing.
+        final json = {
+          'type': 'array',
+          'items': {
+            'type': 'string',
+            'enum': ['a', 'b'],
+            'minItems': 1,
+          },
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaArray>());
+        verify(
+          () => logger.detail(any(that: contains('Ignoring: minItems=1'))),
+        ).called(1);
+      });
+
+      test(
+        'additionalProperties: true on a non-object is detail-logged',
+        () {
+          // github's `hook-delivery.response.payload` sets
+          // `additionalProperties: true` on a `type: [string, null]`
+          // schema. The flag is meaningless on a string.
+          final json = {
+            'type': ['string', 'null'],
+            'additionalProperties': true,
+          };
+          final logger = _MockLogger();
+          final schema = runWithLogger(logger, () => parseTestSchema(json));
+          // type: [string, null] becomes a nullable string.
+          expect(schema, isA<SchemaString>());
+          verify(
+            () => logger.detail(
+              any(that: contains('Ignoring: additionalProperties=true')),
+            ),
+          ).called(1);
+        },
+      );
+
+      test('top-level webhooks and externalDocs are consumed', () {
+        // OpenAPI 3.1 top-level sections we don't generate from.
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'x', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/x': {
+              'get': {
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+          'webhooks': {
+            'foo': {
+              'post': {
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+          'externalDocs': {'url': 'https://example.com/docs'},
+        };
+        final logger = _MockLogger();
+        final spec = runWithLogger(logger, () => parseOpenApi(json));
+        expect(spec.serverUrl, Uri.parse('https://example.com'));
+        // We don't surface as `Unused: webhooks, externalDocs` — they
+        // are explicitly `_ignored` (visible at -v as `Ignoring:`).
+        verifyNever(
+          () => logger.detail(any(that: contains('Unused'))),
+        );
+      });
+    });
+
     test('components schemas as ref not supported', () {
       // Refs are generally fine.
       final json = {
@@ -964,6 +1112,54 @@ void main() {
           ),
         ).called(1);
       });
+
+      test('parameter `example` is captured and `examples` map flattened', () {
+        // OpenAPI 3.x lets a parameter declare `example: <scalar>` *or*
+        // `examples: { name: { value: <scalar> } }` (the second form is
+        // a map of full Example objects). Both should land on the
+        // parsed Parameter so render can surface them in the endpoint
+        // doc comment instead of dropping them as `Ignoring: example`.
+        final logger = _MockLogger();
+        final spec = runWithLogger(
+          logger,
+          () => parseOpenApi(
+            specWithQueryParam({
+              'example': 'foo',
+              'examples': {
+                'first': {'value': 'one', 'summary': 'first example'},
+                'second': {'value': 'two'},
+              },
+            }),
+          ),
+        );
+        final operation = spec.paths['/users'].operations[Method.get];
+        if (operation == null) fail('expected /users get operation');
+        final parameter = operation.parameters.single.object;
+        if (parameter == null) fail('expected inline parameter');
+        expect(parameter.example, 'foo');
+        expect(parameter.examples, ['one', 'two']);
+        verifyNever(() => logger.warn(any()));
+      });
+
+      test(
+        'header `example` and `examples` map are captured (silent — headers '
+        'do not yet flow to render but the parser must not warn)',
+        () {
+          final logger = _MockLogger();
+          runWithLogger(
+            logger,
+            () => parseOpenApi(
+              specWithHeader({
+                'example': 'https://example.com/x',
+                'examples': {
+                  'redirect': {'value': 'https://example.com/y'},
+                },
+              }),
+            ),
+          );
+          verifyNever(() => logger.warn(any()));
+        },
+      );
 
       test('allowReserved=true on query warns', () {
         final logger = _MockLogger();
@@ -1748,6 +1944,114 @@ void main() {
         expect(oneOf.schemas[0].object, isA<SchemaString>());
         expect(oneOf.schemas[1].object, isA<SchemaNumber>());
         expect(oneOf.common.nullable, isTrue);
+      });
+
+      test('explicit oneOf wins over multi-type', () {
+        // Github writes both `type: [null, string, integer]` AND
+        // `oneOf: [{string}, {integer with description}]` on the
+        // same property. The explicit `oneOf` carries strictly more
+        // info (the integer variant's description, formats, items)
+        // and should win — otherwise it gets logged as `Unused:
+        // oneOf` and dropped on the floor.
+        final json = {
+          'type': ['null', 'string', 'integer'],
+          'oneOf': [
+            {'type': 'string'},
+            {'type': 'integer', 'description': 'milestone number'},
+          ],
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaOneOf) {
+          fail('Expected SchemaOneOf, got ${schema.runtimeType}');
+        }
+        expect(schema.schemas.length, 2);
+        expect(schema.schemas[0].object, isA<SchemaString>());
+        final intVariant = schema.schemas[1].object;
+        if (intVariant is! SchemaInteger) {
+          fail('Expected SchemaInteger, got ${intVariant.runtimeType}');
+        }
+        // Description from the explicit oneOf variant survives.
+        expect(intVariant.common.description, 'milestone number');
+        // The parent's `type: [null, ...]` still propagates the
+        // nullable bit through `common`.
+        expect(schema.common.nullable, isTrue);
+      });
+
+      test('explicit anyOf wins over multi-type', () {
+        // Same gap as oneOf above; github uses `anyOf` in a few
+        // property slots too (e.g. `metadata.additionalProperties`
+        // in webhooks).
+        final json = {
+          'type': ['null', 'string', 'integer'],
+          'anyOf': [
+            {'type': 'string', 'format': 'date-time'},
+            {'type': 'integer'},
+          ],
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaAnyOf) {
+          fail('Expected SchemaAnyOf, got ${schema.runtimeType}');
+        }
+        expect(schema.schemas.length, 2);
+        // The string variant carries `format: date-time` from the
+        // explicit anyOf, which the type-array expansion would drop.
+        final strVariant = schema.schemas[0].object;
+        if (strVariant is! SchemaPod) {
+          fail('Expected SchemaPod, got ${strVariant.runtimeType}');
+        }
+        expect(strVariant.type, PodType.dateTime);
+        expect(schema.common.nullable, isTrue);
+      });
+
+      test('property-slot oneOf without parallel type also parses', () {
+        // The slot-coverage check: schemas with only `oneOf` (no
+        // `type:` array sibling) keep working as before — this case
+        // already worked, we just want a regression guard.
+        final json = {
+          'type': 'object',
+          'properties': {
+            'value': {
+              'oneOf': [
+                {'type': 'string'},
+                {'type': 'integer'},
+              ],
+            },
+          },
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaObject) {
+          fail('Expected SchemaObject, got ${schema.runtimeType}');
+        }
+        expect(schema.properties['value']?.object, isA<SchemaOneOf>());
+      });
+
+      test('property-slot oneOf with parallel type', () {
+        // End-to-end shape mirroring github's `issues.post.milestone`
+        // — oneOf at a property slot with the redundant multi-type
+        // sibling. The property's schema is parsed as an explicit
+        // oneOf, not a type-array-derived synthetic one.
+        final json = {
+          'type': 'object',
+          'properties': {
+            'milestone': {
+              'type': ['null', 'string', 'integer'],
+              'oneOf': [
+                {'type': 'string'},
+                {'type': 'integer'},
+              ],
+            },
+          },
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaObject) {
+          fail('Expected SchemaObject, got ${schema.runtimeType}');
+        }
+        final milestone = schema.properties['milestone']?.object;
+        if (milestone is! SchemaOneOf) {
+          fail('Expected SchemaOneOf, got ${milestone.runtimeType}');
+        }
+        expect(milestone.schemas.length, 2);
+        expect(milestone.common.nullable, isTrue);
       });
     });
 

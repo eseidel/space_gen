@@ -172,11 +172,15 @@ void main() {
       expect(userEntry.value, 'User');
     });
 
-    test('oneOf with discriminator gets one wrapper name per variant '
-        'under the synthesized wrapper pointer', () {
-      // Discriminator dispatch emits a `<Parent><Variant>` wrapper
-      // per variant. Naming pass stores each under
-      // `AssignedNames.wrapperPointer(parent, i)`.
+    test(r'oneOf with discriminator: top-level $ref variants used '
+        'exclusively by one parent smoosh into the sealed parent', () {
+      // `Cat` and `Dog` are top-level component schemas referenced
+      // only as variants of `Pet` (no other property / param /
+      // response uses them). That makes them exclusive-by-use, so
+      // the smoosh predicate flips on: no wrapper subclass is
+      // claimed for either, and each variant pointer maps to
+      // `Pet`'s snake name (so render emits `class Cat extends Pet`
+      // inline in pet.dart).
       final names = namesFor({
         'openapi': '3.1.0',
         'info': {'title': 'X', 'version': '1.0'},
@@ -239,13 +243,372 @@ void main() {
         },
       });
       final pet = JsonPointer.parse('#/components/schemas/Pet');
+      // No wrapper subclass for either variant — both smoosh.
+      expect(names.maybeGet(AssignedNames.wrapperPointer(pet, 0)), isNull);
+      expect(names.maybeGet(AssignedNames.wrapperPointer(pet, 1)), isNull);
+      // Variant pointers carry the parent's sealed class name.
       expect(
-        names[AssignedNames.wrapperPointer(pet, 0)],
-        'PetCat',
+        names.parentSealedTypeFor(
+          JsonPointer.parse('#/components/schemas/Cat'),
+        ),
+        'Pet',
       );
       expect(
-        names[AssignedNames.wrapperPointer(pet, 1)],
-        'PetDog',
+        names.parentSealedTypeFor(
+          JsonPointer.parse('#/components/schemas/Dog'),
+        ),
+        'Pet',
+      );
+    });
+
+    test('top-level variant referenced by one oneOf parent + one '
+        'property keeps its wrapper (not exclusive-use)', () {
+      // `Cat` is a variant of `Pet` AND a property type on
+      // `Owner.favorite`. Two typed-reference uses → not
+      // exclusive-use → wrapper subclass survives, no smoosh.
+      final names = namesFor({
+        'openapi': '3.1.0',
+        'info': {'title': 'X', 'version': '1.0'},
+        'servers': [
+          {'url': 'https://x'},
+        ],
+        'paths': {
+          '/u': {
+            'get': {
+              'summary': 'Get',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Owner'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Owner': {
+              'type': 'object',
+              'required': ['pet', 'favorite'],
+              'properties': {
+                'pet': {r'$ref': '#/components/schemas/Pet'},
+                'favorite': {r'$ref': '#/components/schemas/Cat'},
+              },
+            },
+            'Pet': {
+              'oneOf': [
+                {r'$ref': '#/components/schemas/Cat'},
+                {r'$ref': '#/components/schemas/Dog'},
+              ],
+              'discriminator': {
+                'propertyName': 'kind',
+                'mapping': {
+                  'cat': '#/components/schemas/Cat',
+                  'dog': '#/components/schemas/Dog',
+                },
+              },
+            },
+            'Cat': {
+              'type': 'object',
+              'required': ['kind'],
+              'properties': {
+                'kind': {
+                  'type': 'string',
+                  'enum': ['cat'],
+                },
+              },
+            },
+            'Dog': {
+              'type': 'object',
+              'required': ['kind'],
+              'properties': {
+                'kind': {
+                  'type': 'string',
+                  'enum': ['dog'],
+                },
+              },
+            },
+          },
+        },
+      });
+      final pet = JsonPointer.parse('#/components/schemas/Pet');
+      // `Cat` keeps its wrapper because it's also a property type.
+      expect(names[AssignedNames.wrapperPointer(pet, 0)], 'PetCat');
+      expect(
+        names.parentSealedTypeFor(
+          JsonPointer.parse('#/components/schemas/Cat'),
+        ),
+        isNull,
+      );
+      // `Dog` is exclusive-use, so it still smooshes.
+      expect(names.maybeGet(AssignedNames.wrapperPointer(pet, 1)), isNull);
+      expect(
+        names.parentSealedTypeFor(
+          JsonPointer.parse('#/components/schemas/Dog'),
+        ),
+        'Pet',
+      );
+    });
+
+    test('top-level variant referenced by two oneOf parents keeps '
+        'its wrapper (variant_count > 1)', () {
+      // `Cat` is a variant of both `Pet1` and `Pet2`. Two variant
+      // references → not exclusive-use → wrapper subclasses survive
+      // in both parents, no smoosh.
+      final names = namesFor({
+        'openapi': '3.1.0',
+        'info': {'title': 'X', 'version': '1.0'},
+        'servers': [
+          {'url': 'https://x'},
+        ],
+        'paths': {
+          '/p1': {
+            'get': {
+              'summary': 'Get pet1',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Pet1'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '/p2': {
+            'get': {
+              'summary': 'Get pet2',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Pet2'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Pet1': {
+              'oneOf': [
+                {r'$ref': '#/components/schemas/Cat'},
+                {r'$ref': '#/components/schemas/Dog'},
+              ],
+              'discriminator': {
+                'propertyName': 'kind',
+                'mapping': {
+                  'cat': '#/components/schemas/Cat',
+                  'dog': '#/components/schemas/Dog',
+                },
+              },
+            },
+            'Pet2': {
+              'oneOf': [
+                {r'$ref': '#/components/schemas/Cat'},
+                {r'$ref': '#/components/schemas/Bird'},
+              ],
+              'discriminator': {
+                'propertyName': 'kind',
+                'mapping': {
+                  'cat': '#/components/schemas/Cat',
+                  'bird': '#/components/schemas/Bird',
+                },
+              },
+            },
+            'Cat': {
+              'type': 'object',
+              'required': ['kind'],
+              'properties': {
+                'kind': {
+                  'type': 'string',
+                  'enum': ['cat'],
+                },
+              },
+            },
+            'Dog': {
+              'type': 'object',
+              'required': ['kind'],
+              'properties': {
+                'kind': {
+                  'type': 'string',
+                  'enum': ['dog'],
+                },
+              },
+            },
+            'Bird': {
+              'type': 'object',
+              'required': ['kind'],
+              'properties': {
+                'kind': {
+                  'type': 'string',
+                  'enum': ['bird'],
+                },
+              },
+            },
+          },
+        },
+      });
+      final pet1 = JsonPointer.parse('#/components/schemas/Pet1');
+      final pet2 = JsonPointer.parse('#/components/schemas/Pet2');
+      // `Cat` keeps its wrapper in both parents.
+      expect(names[AssignedNames.wrapperPointer(pet1, 0)], 'Pet1Cat');
+      expect(names[AssignedNames.wrapperPointer(pet2, 0)], 'Pet2Cat');
+      // `Cat` doesn't smoosh — would conflict (which parent?).
+      expect(
+        names.parentSealedTypeFor(
+          JsonPointer.parse('#/components/schemas/Cat'),
+        ),
+        isNull,
+      );
+      // `Dog` and `Bird` each have exactly one variant ref →
+      // exclusive-use, smooshed into their respective parents.
+      expect(names.maybeGet(AssignedNames.wrapperPointer(pet1, 1)), isNull);
+      expect(
+        names.parentSealedTypeFor(
+          JsonPointer.parse('#/components/schemas/Dog'),
+        ),
+        'Pet1',
+      );
+      expect(names.maybeGet(AssignedNames.wrapperPointer(pet2, 1)), isNull);
+      expect(
+        names.parentSealedTypeFor(
+          JsonPointer.parse('#/components/schemas/Bird'),
+        ),
+        'Pet2',
+      );
+    });
+
+    test('top-level variant referenced by one oneOf parent and '
+        'inside an allOf member smooshes (allOf is structural-only)', () {
+      // `Cat` is a variant of `Pet` and is also embedded in an
+      // `allOf` member of `PetDetailed`'s oneOf. The allOf-member
+      // use isn't a typed Dart reference (the merged class doesn't
+      // emit `Cat`'s name) — so `Cat` stays exclusive-by-use and
+      // smooshes into `Pet`. Mirrors the github `RepositoryRule` /
+      // `RepositoryRuleDetailed` family.
+      final names = namesFor({
+        'openapi': '3.1.0',
+        'info': {'title': 'X', 'version': '1.0'},
+        'servers': [
+          {'url': 'https://x'},
+        ],
+        'paths': {
+          '/p': {
+            'get': {
+              'summary': 'Get pet',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Pet'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '/d': {
+            'get': {
+              'summary': 'Get detailed pet',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        r'$ref': '#/components/schemas/PetDetailed',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Pet': {
+              'oneOf': [
+                {r'$ref': '#/components/schemas/Cat'},
+                {r'$ref': '#/components/schemas/Dog'},
+              ],
+              'discriminator': {
+                'propertyName': 'kind',
+                'mapping': {
+                  'cat': '#/components/schemas/Cat',
+                  'dog': '#/components/schemas/Dog',
+                },
+              },
+            },
+            'PetDetailed': {
+              'oneOf': [
+                {
+                  'allOf': [
+                    {r'$ref': '#/components/schemas/Cat'},
+                    {r'$ref': '#/components/schemas/PetMeta'},
+                  ],
+                },
+                {
+                  'allOf': [
+                    {r'$ref': '#/components/schemas/Dog'},
+                    {r'$ref': '#/components/schemas/PetMeta'},
+                  ],
+                },
+              ],
+            },
+            'Cat': {
+              'type': 'object',
+              'required': ['kind'],
+              'properties': {
+                'kind': {
+                  'type': 'string',
+                  'enum': ['cat'],
+                },
+              },
+            },
+            'Dog': {
+              'type': 'object',
+              'required': ['kind'],
+              'properties': {
+                'kind': {
+                  'type': 'string',
+                  'enum': ['dog'],
+                },
+              },
+            },
+            'PetMeta': {
+              'type': 'object',
+              'required': ['updated_at'],
+              'properties': {
+                'updated_at': {'type': 'string'},
+              },
+            },
+          },
+        },
+      });
+      // `Cat` and `Dog` smoosh into `Pet` despite the allOf re-use.
+      expect(
+        names.parentSealedTypeFor(
+          JsonPointer.parse('#/components/schemas/Cat'),
+        ),
+        'Pet',
+      );
+      expect(
+        names.parentSealedTypeFor(
+          JsonPointer.parse('#/components/schemas/Dog'),
+        ),
+        'Pet',
       );
     });
 
