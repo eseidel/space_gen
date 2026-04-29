@@ -757,19 +757,18 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     examples: _optional<List<dynamic>>(json, 'examples'),
   );
 
-  // An explicit oneOf/anyOf wins over the multi-type type-array
-  // expansion below. Real specs (notably github) write *both* on the
-  // same property — `type: [null, string, integer]` alongside an
-  // `oneOf: [{type:string}, {type:integer, description:...}]` — and
-  // the explicit union carries strictly more semantic info (per-
-  // variant `format`, `description`, `items`, `enum`, ...). If the
-  // type-array expansion wins, the explicit union is dropped as
-  // `Unused: oneOf` and details like `format: date-time` on a
-  // `pushed_at` variant get flattened to plain `String`.
+  // An explicit `oneOf`/`anyOf` wins over the multi-type type-array
+  // expansion below. When a schema declares both — `type: [a, b]`
+  // alongside an `oneOf: [...]` — the explicit union is strictly
+  // more specific: it can carry per-variant `format`, `description`,
+  // `items`, `enum`, etc., and OpenAPI semantics treat the type-array
+  // as shorthand for a structurally-equivalent union. If the type-
+  // array path wins, the explicit union is silently dropped along
+  // with all its per-variant detail.
   //
-  // allOf is intentionally not short-circuited here. It's AND, not
-  // OR, so it doesn't compose with the multi-type union the same
-  // way; the existing fallback below still routes it through
+  // `allOf` is intentionally not short-circuited here: it's AND, not
+  // OR, so it doesn't substitute for a multi-type union the way
+  // `oneOf`/`anyOf` do. The fallback below still routes it through
   // `_handleCollectionTypes`.
   if (json.containsKey('oneOf') || json.containsKey('anyOf')) {
     final union = _handleCollectionTypes(json, common: common);
