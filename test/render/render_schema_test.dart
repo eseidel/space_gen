@@ -1444,9 +1444,15 @@ void main() {
           ),
         ),
       );
-      // Wrappers, not smooshed (top-level $ref variants).
-      expect(result, contains('class RespDetailed extends Resp'));
-      expect(result, contains('class RespSimple extends Resp'));
+      // `Detailed` and `Simple` are top-level `$ref` variants
+      // referenced only by `Resp`, with no other typed-reference
+      // uses → exclusive-by-use → smooshed: variant data classes
+      // extend `Resp` directly, no `RespDetailed`/`RespSimple`
+      // wrapper classes survive.
+      expect(result, contains('final class Detailed extends Resp'));
+      expect(result, contains('final class Simple extends Resp'));
+      expect(result, isNot(contains('class RespDetailed ')));
+      expect(result, isNot(contains('class RespSimple ')));
       // No FormatException-on-fall-through: the Always fallback means
       // any input shape gets routed to a variant.
       expect(result, isNot(contains('throw UnimplementedError')));
