@@ -1531,6 +1531,13 @@ void main() {
           'return TestOneOf1.fromJson(json);',
         ),
       );
+      // Variant data classes are inlined into the parent's file as
+      // direct sealed subclasses (Dart's `sealed` modifier requires
+      // them in the same library). Their `toJson` is an `@override`
+      // of the sealed parent's abstract method.
+      expect(result, contains('final class TestOneOf0 extends Test'));
+      expect(result, contains('final class TestOneOf1 extends Test'));
+      expect(result, contains('@override'));
       // No wrapper subclasses survive in the parent file: there's no
       // `<Parent>Variant<i>`, and no `final <VariantClass> value;`
       // (which would be the wrapper's `value` field).

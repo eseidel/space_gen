@@ -59,16 +59,19 @@ class AssignedNames {
   /// For variants the naming pass marked smooshable (today: inline
   /// `ResolvedObject` variants under predicate-required dispatch),
   /// maps the variant's pointer to the snake name of the sealed
-  /// parent it should extend. The render layer reads this to decide
-  /// whether to emit a separate wrapper subclass or have the variant
-  /// class extend the sealed parent directly.
+  /// parent it should extend. Snake-keyed for symmetry with the
+  /// rest of the allocator's storage; readers that want a Dart class
+  /// name should call [parentSealedTypeFor] which derives the camel
+  /// form on read.
   final Map<JsonPointer, String> smooshedParentSnakeByPointer;
 
-  /// Snake name of the sealed parent that [pointer]'s variant
-  /// class should extend, or null when this variant isn't
+  /// Camel-case Dart class name of the sealed parent that [pointer]'s
+  /// variant class should extend, or null when this variant isn't
   /// smooshed (the wrapper subclass is emitted normally).
-  String? parentSealedSnakeFor(JsonPointer pointer) =>
-      smooshedParentSnakeByPointer[pointer];
+  String? parentSealedTypeFor(JsonPointer pointer) {
+    final snake = smooshedParentSnakeByPointer[pointer];
+    return snake == null ? null : camelFromSnake(snake);
+  }
 
   /// Looks up the snake-case name for [pointer]. Used as a file
   /// basename. Returns null when the entity at [pointer] doesn't
@@ -163,7 +166,7 @@ class _NameAssigner {
   // Variant pointer → parent's snake name, populated during phase 2
   // for inline-exclusive object variants whose dispatch lets the
   // variant class extend the sealed parent directly (smoosh). Render
-  // reads this through [AssignedNames.parentSealedSnakeFor] and emits
+  // reads this through [AssignedNames.parentSealedTypeFor] and emits
   // the variant with `extends <Parent>` instead of a wrapper subclass.
   final Map<JsonPointer, String> _smooshedParentSnake = {};
 

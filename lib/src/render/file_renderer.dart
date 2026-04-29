@@ -734,7 +734,7 @@ class FileRenderer {
       // Smooshed variants are emitted inline in their sealed
       // parent's file (Dart's `sealed` modifier requires direct
       // subclasses to live in the same library) — no separate file.
-      !(schema is RenderObject && schema.parentSealedSnakeName != null);
+      !(schema is RenderObject && schema.parentSealedTypeName != null);
 
   @visibleForTesting
   Iterable<Import> importsForApi(Api api, ApiUsage usage) {
@@ -759,7 +759,7 @@ class FileRenderer {
     final importedSchemas = apiSchemas
         .where((s) => s.createsNewType)
         .where(
-          (s) => !(s is RenderObject && s.parentSealedSnakeName != null),
+          (s) => !(s is RenderObject && s.parentSealedTypeName != null),
         );
     final apiImports = importedSchemas
         .map((s) => Import(modelPackageImport(this, s)))
@@ -829,7 +829,7 @@ class FileRenderer {
     final importedSchemas = referencedSchemas
         .where((s) => s.createsNewType)
         .where(
-          (s) => !(s is RenderObject && s.parentSealedSnakeName != null),
+          (s) => !(s is RenderObject && s.parentSealedTypeName != null),
         )
         .toSet();
     final referencedImports = importedSchemas

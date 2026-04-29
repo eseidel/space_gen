@@ -392,7 +392,7 @@ class SpecResolver {
           ),
           additionalProperties: maybeRenderSchema(schema.additionalProperties),
           requiredProperties: schema.requiredProperties,
-          parentSealedSnakeName: _names.parentSealedSnakeFor(schema.pointer),
+          parentSealedTypeName: _names.parentSealedTypeFor(schema.pointer),
           assignedName: _nameFor(schema.pointer),
           assignedSnakeName: _snakeFor(schema.pointer),
         );
@@ -2967,7 +2967,7 @@ class RenderObject extends RenderNewType {
     required this.properties,
     this.additionalProperties,
     this.requiredProperties = const [],
-    this.parentSealedSnakeName,
+    this.parentSealedTypeName,
     super.assignedName,
     super.assignedSnakeName,
   });
@@ -2981,19 +2981,15 @@ class RenderObject extends RenderNewType {
   /// The required properties of the resolved schema.
   final List<String> requiredProperties;
 
-  /// Snake name of the sealed parent class this object should extend,
-  /// or null when the object stands alone. Set by the naming pass for
-  /// inline `ResolvedObject` variants of a oneOf/anyOf whose dispatch
-  /// supports smoosh — the variant class itself becomes the sealed-
-  /// parent's subclass, replacing the separate wrapper-subclass +
-  /// `value:` indirection. Drives both the `final class X extends Y`
-  /// declaration and the `import` to the parent's file.
-  final String? parentSealedSnakeName;
-
-  /// Camel form of [parentSealedSnakeName] — null when not smooshed.
-  String? get parentSealedTypeName => parentSealedSnakeName == null
-      ? null
-      : camelFromSnake(parentSealedSnakeName!);
+  /// Camel-case Dart class name of the sealed parent this object
+  /// should extend, or null when the object stands alone. Set by the
+  /// naming pass for inline `ResolvedObject` variants of a oneOf/anyOf
+  /// whose dispatch supports smoosh — the variant class itself
+  /// becomes the sealed-parent's subclass, replacing the separate
+  /// wrapper-subclass + `value:` indirection. The non-null state
+  /// drives the `final class X extends Y` declaration in the schema
+  /// template and the "skip my own file" gates in `file_renderer`.
+  final String? parentSealedTypeName;
 
   @override
   String? get wrapperTag => typeName;
@@ -3283,7 +3279,7 @@ class RenderObject extends RenderNewType {
       'isDeprecated': isDeprecated,
       // When non-null, the template emits `final class X extends Y`
       // and an `@override` on `toJson()`. Set by the naming pass for
-      // smooshable inline variants — see [parentSealedSnakeName].
+      // smooshable inline variants — see [parentSealedTypeName].
       'parentSealedTypeName': parentSealedTypeName,
     };
   }
@@ -4226,7 +4222,7 @@ class RenderOneOf extends RenderNewType {
       // form and continue to render to their own file.
       final isSmooshed =
           renderVariant is RenderObject &&
-          renderVariant.parentSealedSnakeName != null;
+          renderVariant.parentSealedTypeName != null;
       final Map<String, dynamic> armCtx;
       switch (kind) {
         case PredicateDispatchKind.requiredField:
@@ -4551,7 +4547,10 @@ class _PredicateDispatchMode extends _DispatchMode {
   /// Same per-arm shape as [dispatch] entries.
   final Map<String, dynamic>? fallback;
 
-  /// Wrapper subclass declarations, in declaration order.
+  /// Non-smooshed variants — wrapper subclass declarations, in
+  /// declaration order. Smooshed variants (those whose data class
+  /// extends the sealed parent directly) are in [smooshedVariants];
+  /// the union of the two preserves declaration order.
   final List<Map<String, dynamic>> variants;
 
   /// Smooshed variants (today: only inline `RenderObject` variants
