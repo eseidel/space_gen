@@ -2260,11 +2260,13 @@ void main() {
       expect(result, contains('throw UnimplementedError'));
     });
 
-    test('hybrid dispatch bails when a non-Map shape collides', () {
-      // Two array variants alongside an object variant. Pure shape
-      // can't pick between the two arrays (both `List<dynamic>`).
-      // Hybrid only knows how to disambiguate Map collisions, so it
-      // also bails — array-of-X vs array-of-Y is a separate gap.
+    test('hybrid dispatch sub-dispatches multiple array variants by '
+        'first-element shape', () {
+      // Two array variants (array<string> vs array<int>) alongside a
+      // single object variant. The two arrays collide on
+      // `List<dynamic>` shape; hybrid sub-dispatches them by peeking
+      // the first element's runtime type. The lone object variant is
+      // a single shape arm (no sub-dispatch needed).
       final result = renderTestSchema({
         'oneOf': [
           {
@@ -2284,7 +2286,252 @@ void main() {
           },
         ],
       });
+      // Single-Map-variant shape arm (the object is smooshed but its
+      // case-arm still matches `Map<String, dynamic>`).
+      expect(result, contains('final Map<String, dynamic> v =>'));
+      // List sub-dispatch arms — peek the first element's type.
+      expect(
+        result,
+        contains(
+          'final List<dynamic> v when v.isNotEmpty && v.first is String',
+        ),
+      );
+      expect(
+        result,
+        contains('final List<dynamic> v when v.isNotEmpty && v.first is int'),
+      );
+      // Sub-dispatch falls through to a List-specific throw, not the
+      // outer "Unsupported shape" throw.
+      expect(
+        result,
+        contains('No variant of Test matched first list element'),
+      );
+      // No legacy stub.
+      expect(result, isNot(contains('throw UnimplementedError')));
+    });
+
+    test('hybrid multi-array sub-dispatch picks an unguarded '
+        'fallback when one variant has open-shape items', () {
+      // Two list variants: `array<string>` (pinnable to `String`)
+      // and `array<DateTime>` (string-format-date-time — pinnable
+      // to nothing in particular, since DateTime serializes back
+      // to a JSON string and would collide with the bare-string
+      // arm). Plus an object variant. The DateTime-items array
+      // gets the unguarded fallback at the end of the list sub-
+      // dispatch; the string-items array is guarded by `first is
+      // String`.
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+          {
+            'type': 'array',
+            'items': {'type': 'string', 'format': 'date-time'},
+          },
+          {
+            'type': 'object',
+            'required': ['note'],
+            'properties': {
+              'note': {'type': 'string'},
+            },
+          },
+        ],
+      });
+      // String-items arm guarded.
+      expect(
+        result,
+        contains(
+          'final List<dynamic> v when v.isNotEmpty && v.first is String',
+        ),
+      );
+      // DateTime-items arm is the unguarded fallback (no `when`
+      // clause — bare `final List<dynamic> v => ...`).
+      expect(
+        result,
+        contains('final List<dynamic> v => '),
+      );
+      expect(result, isNot(contains('throw UnimplementedError')));
+    });
+
+    test('property-array-element-shape dispatch picks object variants '
+        'that differ only in an array property element type', () {
+      // Github's `issues/add-labels` request body: two object variants
+      // with the same property set, both having only optional
+      // `labels` of array type but with different element types
+      // (`array<string>` vs `array<object>`). Required-field dispatch
+      // can't tell them apart (both are fallbacks); the property-
+      // array-element-shape predicate peeks `labels[0]` runtime type.
+      // Last variant is the unguarded fallback when `labels` is
+      // missing or empty (since the property is optional).
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'labels': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+          {
+            'type': 'object',
+            'properties': {
+              'labels': {
+                'type': 'array',
+                'items': {
+                  'type': 'object',
+                  'properties': {
+                    'name': {'type': 'string'},
+                  },
+                  'required': ['name'],
+                },
+              },
+            },
+          },
+        ],
+      });
+      // First variant guarded by `labels[0] is String`. Uses the
+      // `PropertyArrayItemShape` predicate (shared with the
+      // validation-error twins case from #177).
+      expect(
+        result,
+        contains(
+          "if (json['labels'] is List && "
+          "(json['labels'] as List).isNotEmpty && "
+          "(json['labels'] as List).first is String)",
+        ),
+      );
+      // Second variant is the unguarded fallback (last `return ...;`
+      // with no `if` since `labels` is optional).
+      expect(result, isNot(contains('throw UnimplementedError')));
+      expect(result, isNot(contains('throw FormatException')));
+    });
+
+    test('property-array-element-shape dispatch bails when the only '
+        'array-typed property has the same items shape across variants', () {
+      // Both variants have `labels: array<string>`. Same shape →
+      // not a discriminator. Other properties also identical
+      // (empty). No way to dispatch; bail.
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'labels': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+          {
+            'type': 'object',
+            'properties': {
+              'labels': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+        ],
+      });
       expect(result, contains('throw UnimplementedError'));
+    });
+
+    test('hybrid dispatch combines multi-array sub-dispatch and '
+        'property-array-element-shape Map sub-dispatch (github labels '
+        'case)', () {
+      // Github's `issues/add-labels` request body: 5 variants —
+      // {labels?: array<string>}, array<string>, {labels?:
+      // array<object>}, array<object>, string. Two non-collision
+      // shapes (string only). Two Map variants distinguishable only
+      // by `labels[0]` element type. Two List variants distinguishable
+      // only by `[0]` element type. Hybrid handles both sub-dispatches
+      // simultaneously.
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'labels': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+          {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+          {
+            'type': 'object',
+            'properties': {
+              'labels': {
+                'type': 'array',
+                'items': {
+                  'type': 'object',
+                  'properties': {
+                    'name': {'type': 'string'},
+                  },
+                  'required': ['name'],
+                },
+              },
+            },
+          },
+          {
+            'type': 'array',
+            'items': {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+              },
+              'required': ['name'],
+            },
+          },
+          {'type': 'string'},
+        ],
+      });
+      // No legacy stub.
+      expect(result, isNot(contains('throw UnimplementedError')));
+      // String shape arm.
+      expect(result, contains('final String v =>'));
+      // Map sub-dispatch — first variant guarded by `labels[0] is
+      // String`, second is the fallback (unguarded `Map<String, …> v
+      // =>`).
+      expect(
+        result,
+        contains(
+          'final Map<String, dynamic> v when '
+          "v['labels'] is List && "
+          "(v['labels'] as List).isNotEmpty && "
+          "(v['labels'] as List).first is String "
+          '=> TestOneOf0.fromJson(v)',
+        ),
+      );
+      expect(
+        result,
+        contains('final Map<String, dynamic> v => TestOneOf2.fromJson(v)'),
+      );
+      // List sub-dispatch — peek `[0]` type.
+      expect(
+        result,
+        contains(
+          'final List<dynamic> v when v.isNotEmpty && v.first is String',
+        ),
+      );
+      expect(
+        result,
+        contains(
+          'when v.isNotEmpty && v.first is Map<String, dynamic>',
+        ),
+      );
+      // List sub-dispatch fallback throw.
+      expect(
+        result,
+        contains('No variant of Test matched first list element'),
+      );
     });
 
     test('property-presence dispatch falls back to optional-unique tags '
