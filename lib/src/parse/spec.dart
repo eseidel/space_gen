@@ -26,6 +26,8 @@ class Parameter extends Equatable implements HasPointer, Parseable {
     required this.inLocation,
     required this.isDeprecated,
     required this.pointer,
+    required this.example,
+    required this.examples,
   });
 
   /// The name of the parameter.
@@ -47,6 +49,16 @@ class Parameter extends Equatable implements HasPointer, Parseable {
   /// The type of the parameter.
   final SchemaRef type;
 
+  /// A single example value for this parameter, taken from the OpenAPI
+  /// `example` keyword. Surfaced in the endpoint's doc comment.
+  final dynamic example;
+
+  /// Multiple example values for this parameter, taken from the OpenAPI
+  /// `examples` keyword (a map of `Example` objects). Each entry's
+  /// `value` field is extracted into this list, in declaration order.
+  /// Surfaced in the endpoint's doc comment.
+  final List<dynamic>? examples;
+
   /// Where this parameter is located in the spec.
   @override
   final JsonPointer pointer;
@@ -59,6 +71,8 @@ class Parameter extends Equatable implements HasPointer, Parseable {
     inLocation,
     type,
     pointer,
+    example,
+    examples,
   ];
 }
 
@@ -68,6 +82,8 @@ class Header extends Equatable implements HasPointer, Parseable {
     required this.description,
     required this.schema,
     required this.pointer,
+    required this.example,
+    required this.examples,
   });
 
   /// The description of the header.
@@ -76,12 +92,30 @@ class Header extends Equatable implements HasPointer, Parseable {
   /// The type of the header.
   final SchemaRef? schema;
 
+  /// A single example value for this header, taken from the OpenAPI
+  /// `example` keyword. Captured at parse time but not yet surfaced —
+  /// response Header objects do not currently flow through to render.
+  final dynamic example;
+
+  /// Multiple example values for this header, taken from the OpenAPI
+  /// `examples` keyword (a map of `Example` objects). Each entry's
+  /// `value` field is extracted into this list, in declaration order.
+  /// Captured at parse time but not yet surfaced — response Header
+  /// objects do not currently flow through to render.
+  final List<dynamic>? examples;
+
   /// Where this header is located in the spec.
   @override
   final JsonPointer pointer;
 
   @override
-  List<Object?> get props => [description, schema, pointer];
+  List<Object?> get props => [
+    description,
+    schema,
+    pointer,
+    example,
+    examples,
+  ];
 }
 
 abstract class Parseable {}

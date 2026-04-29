@@ -77,6 +77,8 @@ void main() {
         isRequired: true,
         isDeprecated: false,
         inLocation: ParameterLocation.query,
+        example: null,
+        examples: null,
       );
       expect(parameter.dartParameterName(quirks), 'aB');
     });
@@ -99,6 +101,8 @@ void main() {
         isRequired: false,
         isDeprecated: false,
         inLocation: ParameterLocation.header,
+        example: null,
+        examples: null,
       );
       expect(parameter.dartParameterName(quirks), 'apiKey');
     });
@@ -134,6 +138,8 @@ void main() {
         isRequired: true,
         isDeprecated: false,
         inLocation: ParameterLocation.query,
+        example: null,
+        examples: null,
       );
       // The Dart-visible identifier gets `_` appended so it compiles;
       // the spec-side name and its bracketed form keep the original
@@ -207,6 +213,96 @@ void main() {
           reason: 'unbalanced backticks in line: $line',
         );
       }
+    });
+
+    test(r'parameter examples render as `[name] example: \`value\`` lines', () {
+      expect(
+        createDocCommentFromParts(
+          body: 'List the things.',
+          parameterExamples: const [
+            ParameterExampleDoc(
+              dartName: 'ref',
+              examples: <dynamic>['heads/feature-a'],
+            ),
+            ParameterExampleDoc(
+              dartName: 'installationId',
+              examples: <dynamic>[1],
+            ),
+          ],
+          indent: 4,
+        ),
+        '/// List the things.\n'
+        "    /// [ref] example: `'heads/feature-a'`\n"
+        '    /// [installationId] example: `1`\n'
+        '    ',
+      );
+    });
+  });
+
+  group('exampleDocCommentLines', () {
+    test('string scalar renders inline with Dart-source quoting', () {
+      expect(exampleDocCommentLines('hello'), const ["/// Example: `'hello'`"]);
+    });
+
+    test('numeric and boolean scalars render bare in backticks', () {
+      expect(exampleDocCommentLines(42), const ['/// Example: `42`']);
+      expect(exampleDocCommentLines(true), const ['/// Example: `true`']);
+    });
+
+    test('null is dropped (caller can pass `example` unconditionally)', () {
+      expect(exampleDocCommentLines(null), isEmpty);
+    });
+
+    test('Map values render as a fenced JSON block', () {
+      expect(exampleDocCommentLines(<String, dynamic>{'a': 1, 'b': 'two'}), [
+        '/// Example:',
+        '/// ```json',
+        '/// {',
+        '///   "a": 1,',
+        '///   "b": "two"',
+        '/// }',
+        '/// ```',
+      ]);
+    });
+
+    test('List values render as a fenced JSON block', () {
+      expect(exampleDocCommentLines(<dynamic>['a', 'b']), const [
+        '/// Example:',
+        '/// ```json',
+        '/// [',
+        '///   "a",',
+        '///   "b"',
+        '/// ]',
+        '/// ```',
+      ]);
+    });
+
+    test('nested complex values pretty-print with two-space indent', () {
+      expect(
+        exampleDocCommentLines(<String, dynamic>{
+          'name': 'octocat',
+          'tags': <dynamic>['admin', 'user'],
+        }),
+        const [
+          '/// Example:',
+          '/// ```json',
+          '/// {',
+          '///   "name": "octocat",',
+          '///   "tags": [',
+          '///     "admin",',
+          '///     "user"',
+          '///   ]',
+          '/// }',
+          '/// ```',
+        ],
+      );
+    });
+
+    test('custom prefix scopes the example to a parameter', () {
+      expect(
+        exampleDocCommentLines('a', prefix: '[ref] example'),
+        const ["/// [ref] example: `'a'`"],
+      );
     });
   });
 

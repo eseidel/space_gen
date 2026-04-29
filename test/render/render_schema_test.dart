@@ -3609,9 +3609,9 @@ void main() {
           renderTestSchema(json, asComponent: true),
           '/// Title\n'
           '/// Description\n'
-          "/// example: `'example'`\n"
-          "/// example: `'example1'`\n"
-          "/// example: `'example2'`\n"
+          "/// Example: `'example'`\n"
+          "/// Example: `'example1'`\n"
+          "/// Example: `'example2'`\n"
           'extension type const Test._(String value) {\n'
           '    const Test(this.value);\n'
           '\n'
@@ -3675,9 +3675,9 @@ void main() {
           renderTestSchema(json, asComponent: true),
           '/// Title\n'
           '/// Description\n'
-          '/// example: `1.2`\n'
-          '/// example: `1.2`\n'
-          '/// example: `1.3`\n'
+          '/// Example: `1.2`\n'
+          '/// Example: `1.2`\n'
+          '/// Example: `1.3`\n'
           'extension type const Test._(double value) {\n'
           '    const Test(this.value);\n'
           '\n'
@@ -3717,9 +3717,27 @@ void main() {
           '/// Title\n'
           '/// Description\n'
           '/// {@endtemplate}\n'
-          '/// example: `{a: example, b: example}`\n'
-          '/// example: `{a: example1, b: example1}`\n'
-          '/// example: `{a: example2, b: example2}`\n'
+          '/// Example:\n'
+          '/// ```json\n'
+          '/// {\n'
+          '///   "a": "example",\n'
+          '///   "b": "example"\n'
+          '/// }\n'
+          '/// ```\n'
+          '/// Example:\n'
+          '/// ```json\n'
+          '/// {\n'
+          '///   "a": "example1",\n'
+          '///   "b": "example1"\n'
+          '/// }\n'
+          '/// ```\n'
+          '/// Example:\n'
+          '/// ```json\n'
+          '/// {\n'
+          '///   "a": "example2",\n'
+          '///   "b": "example2"\n'
+          '/// }\n'
+          '/// ```\n'
           '@immutable\n'
           'class Test {\n'
           '    /// {@macro test}\n'
