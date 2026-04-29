@@ -1417,6 +1417,7 @@ void main() {
               type: PodType.boolean,
             ),
           ],
+          discriminator: null,
         );
         final schema2 = ResolvedAnyOf(
           common: CommonProperties.test(
@@ -1435,6 +1436,7 @@ void main() {
               type: PodType.boolean,
             ),
           ],
+          discriminator: null,
         );
         expect(schema1, equals(schema1));
         // Same schemas.
@@ -1563,6 +1565,7 @@ void main() {
               type: PodType.boolean,
             ),
           ],
+          discriminator: null,
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.schemas, equals(schema.schemas));

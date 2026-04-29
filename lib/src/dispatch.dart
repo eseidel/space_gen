@@ -379,8 +379,13 @@ DiscriminatorDispatch? _pickDiscriminator(
   // an implicit synthesis when the explicit one has no `mapping`
   // (github's check-runs POST: spec declares `propertyName: status`
   // but no mapping; each variant carries an enum on `status` whose
-  // values together name the discriminated cases).
-  var disc = collection is ResolvedOneOf ? collection.discriminator : null;
+  // values together name the discriminated cases). OpenAPI permits
+  // `discriminator` on both `oneOf` and `anyOf`.
+  var disc = switch (collection) {
+    ResolvedOneOf() => collection.discriminator,
+    ResolvedAnyOf() => collection.discriminator,
+    _ => null,
+  };
   if (disc != null && disc.mapping == null) {
     disc = _implicitDiscriminatorForProperty(variants, disc.propertyName);
   }

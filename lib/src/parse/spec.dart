@@ -367,7 +367,19 @@ abstract class SchemaCombiner extends SchemaObjectBase {
 }
 
 class SchemaAnyOf extends SchemaCombiner {
-  const SchemaAnyOf({required super.common, required super.schemas});
+  const SchemaAnyOf({
+    required super.common,
+    required super.schemas,
+    required this.discriminator,
+  });
+
+  /// The OpenAPI discriminator object, if any. OpenAPI permits
+  /// `discriminator` on both `oneOf` and `anyOf`; the runtime
+  /// dispatch (read a property, route to a variant) is identical.
+  final SchemaDiscriminator? discriminator;
+
+  @override
+  List<Object?> get props => [super.props, discriminator];
 }
 
 class SchemaAllOf extends SchemaCombiner {

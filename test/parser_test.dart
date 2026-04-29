@@ -781,6 +781,184 @@ void main() {
       },
     );
 
+    test('merge bails when a variant declares a non-object type', () {
+      // A variant with `type: string` is a real alternative type, not
+      // a refinement of the parent object. Fall through to today's
+      // behavior — the variants get parsed individually and the
+      // parent's properties end up dropped (visible at -v as
+      // `Unused: properties`).
+      final json = {
+        'type': 'object',
+        'properties': {
+          'name': {'type': 'string'},
+        },
+        'oneOf': [
+          {'type': 'string'},
+          {
+            'properties': {
+              'name': {'type': 'string'},
+            },
+          },
+        ],
+      };
+      final schema = parseTestSchema(json);
+      expect(schema, isA<SchemaOneOf>());
+      final oneOf = schema as SchemaOneOf;
+      // Variant 0 stays a string (no merge happened).
+      expect(oneOf.schemas[0].object, isA<SchemaString>());
+    });
+
+    test('merge bails when a variant declares its own oneOf', () {
+      // Real polymorphism inside polymorphism — merging would lose
+      // the inner branch structure. Fall through.
+      final json = {
+        'type': 'object',
+        'properties': {
+          'name': {'type': 'string'},
+        },
+        'oneOf': [
+          {
+            'oneOf': [
+              {'type': 'object'},
+            ],
+          },
+        ],
+      };
+      final schema = parseTestSchema(json);
+      // The inner oneOf survives — variant 0 is itself a oneOf.
+      expect(schema, isA<SchemaOneOf>());
+      final outer = schema as SchemaOneOf;
+      expect(outer.schemas[0].object, isA<SchemaOneOf>());
+    });
+
+    test('merge bails when a variant has neither properties nor required', () {
+      // An empty variant `{}` carries no refinement — falling through
+      // to today's behavior surfaces it in the verbose log instead of
+      // silently producing a duplicate of the parent.
+      final json = {
+        'type': 'object',
+        'properties': {
+          'name': {'type': 'string'},
+        },
+        'oneOf': [
+          <String, dynamic>{},
+        ],
+      };
+      final schema = parseTestSchema(json);
+      expect(schema, isA<SchemaOneOf>());
+      final oneOf = schema as SchemaOneOf;
+      // Variant 0 has no properties of its own — empty object.
+      final variant0 = oneOf.schemas[0].object;
+      expect(
+        variant0,
+        anyOf(isA<SchemaEmptyObject>(), isA<SchemaUnknown>()),
+      );
+    });
+
+    test(
+      'merge carries the parent `additionalProperties` onto each variant',
+      () {
+        // When the parent declares `additionalProperties`, every
+        // merged variant should inherit it (variants can still
+        // override). This locks in the parent's schema's open-or-
+        // closed shape across the dispatch.
+        final json = {
+          'type': 'object',
+          'additionalProperties': true,
+          'properties': {
+            'name': {'type': 'string'},
+          },
+          'oneOf': [
+            {
+              'properties': {
+                'name': {'type': 'string'},
+              },
+            },
+            {
+              'properties': {
+                'name': {'type': 'string'},
+              },
+            },
+          ],
+        };
+        final schema = parseTestSchema(json);
+        expect(schema, isA<SchemaOneOf>());
+        final oneOf = schema as SchemaOneOf;
+        // Both variants got the parent's additionalProperties (the
+        // SchemaObject's `additionalProperties` field is non-null).
+        for (final ref in oneOf.schemas) {
+          final variant = ref.object! as SchemaObject;
+          expect(variant.additionalProperties, isNotNull);
+        }
+      },
+    );
+
+    test('merge bails when the parent has no `properties` map', () {
+      // Without parent properties to overlay, there's nothing to
+      // merge — the oneOf is a normal polymorphic union.
+      final json = {
+        'type': 'object',
+        'oneOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'a': {'type': 'string'},
+            },
+          },
+          {
+            'type': 'object',
+            'properties': {
+              'b': {'type': 'integer'},
+            },
+          },
+        ],
+      };
+      final schema = parseTestSchema(json);
+      expect(schema, isA<SchemaOneOf>());
+      final oneOf = schema as SchemaOneOf;
+      // Variants get their own properties only; no parent-merged
+      // fields would have been added.
+      final variant0 = oneOf.schemas[0].object! as SchemaObject;
+      expect(variant0.properties.keys, ['a']);
+    });
+
+    test('anyOf with explicit discriminator + mapping survives parsing', () {
+      // OpenAPI permits `discriminator` on `anyOf`, not just `oneOf`.
+      // The parser plumbs it through `SchemaAnyOf.discriminator` so
+      // downstream stages (resolver, dispatch picker) can use it the
+      // same way as on a oneOf.
+      final json = {
+        'anyOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'kind': {'type': 'string'},
+            },
+          },
+          {
+            'type': 'object',
+            'properties': {
+              'kind': {'type': 'string'},
+            },
+          },
+        ],
+        'discriminator': {
+          'propertyName': 'kind',
+          'mapping': {
+            'cat': '#/components/schemas/Cat',
+            'dog': '#/components/schemas/Dog',
+          },
+        },
+      };
+      final schema = parseTestSchema(json);
+      expect(schema, isA<SchemaAnyOf>());
+      final anyOf = schema as SchemaAnyOf;
+      expect(anyOf.discriminator, isNotNull);
+      expect(anyOf.discriminator!.propertyName, 'kind');
+      expect(anyOf.discriminator!.mapping, isNotNull);
+      expect(anyOf.discriminator!.mapping!.length, 2);
+    });
+
     test('components schemas as ref not supported', () {
       // Refs are generally fine.
       final json = {

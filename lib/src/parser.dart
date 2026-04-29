@@ -479,8 +479,13 @@ Schema? _handleCollectionTypes(
       return null;
     }
     final mergedVariants = _maybeMergeParentIntoVariants(json, 'anyOf');
+    final discriminator = _parseDiscriminator(json);
     if (mergedVariants != null) {
-      return SchemaAnyOf(common: common, schemas: mergedVariants);
+      return SchemaAnyOf(
+        common: common,
+        schemas: mergedVariants,
+        discriminator: discriminator,
+      );
     }
     final anyOf = json.childAsList('anyOf');
     final schemas = <SchemaRef>[];
@@ -489,7 +494,11 @@ Schema? _handleCollectionTypes(
         parseSchemaOrRef(anyOf.indexAsMap(i).addSnakeName('any_of_$i')),
       );
     }
-    return SchemaAnyOf(common: common, schemas: schemas);
+    return SchemaAnyOf(
+      common: common,
+      schemas: schemas,
+      discriminator: discriminator,
+    );
   }
   return null;
 }
@@ -649,15 +658,15 @@ List<SchemaRef>? _maybeMergeParentIntoVariants(
 
     // Mirror the pointer / snake-name chain the regular variant
     // path builds: pointer is `<parent>/<collectionKey>/<i>` and
-    // the snake stack gets `<collectionKey>_<i>` appended. Built
+    // the snake stack gets `<one|any>_of_<i>` appended. Built
     // directly because there's no real list context in the spec
-    // here — the merged variant is a parser-side synthesis.
+    // here — the merged variant is a parser-side synthesis. The
+    // caller of this function only ever passes 'oneOf' or 'anyOf';
+    // 'allOf' has its own non-merging code path.
+    final stem = collectionKey == 'oneOf' ? 'one_of' : 'any_of';
     final variantContext = MapContext(
       pointerParts: [...json.pointerParts, collectionKey, '$i'],
-      snakeNameStack: [
-        ...json.snakeNameStack,
-        '${_collectionSnakeStem(collectionKey)}_$i',
-      ],
+      snakeNameStack: [...json.snakeNameStack, '${stem}_$i'],
       json: mergedJson,
     );
     merged.add(parseSchemaOrRef(variantContext));
@@ -665,38 +674,14 @@ List<SchemaRef>? _maybeMergeParentIntoVariants(
 
   // Mark the remaining parent keys as consumed so `_warnUnused`
   // doesn't fire on them. `type` / `properties` / `[collectionKey]`
-  // are already marked by the early lookups above; the remaining
-  // keys need an explicit touch. `MapContext.operator []` records
-  // the key as a side effect; the underscore-bound result is
-  // intentionally discarded.
-  if (json.containsKey('required')) {
-    final _ = json['required'];
-  }
+  // are already marked by the early lookups above. The caller
+  // consumes `discriminator` via `_parseDiscriminator` (now called
+  // for both the oneOf and anyOf branches).
+  if (json.containsKey('required')) json.markUsed('required');
   if (json.containsKey('additionalProperties')) {
-    final _ = json['additionalProperties'];
-  }
-  // `discriminator` is consumed in the caller via
-  // `_parseDiscriminator` for the oneOf path; for anyOf there is no
-  // such handling, so mark it here.
-  if (collectionKey == 'anyOf' && json.containsKey('discriminator')) {
-    final _ = json['discriminator'];
+    json.markUsed('additionalProperties');
   }
   return merged;
-}
-
-/// Returns the snake-case stem used for naming inline variants of
-/// the given collection key. Mirrors the constants in
-/// `_handleCollectionTypes`.
-String _collectionSnakeStem(String collectionKey) {
-  switch (collectionKey) {
-    case 'oneOf':
-      return 'one_of';
-    case 'anyOf':
-      return 'any_of';
-    case 'allOf':
-      return 'all_of';
-  }
-  throw ArgumentError.value(collectionKey, 'collectionKey');
 }
 
 SchemaRef? _handleAdditionalProperties(MapContext parent) {
@@ -1824,7 +1809,7 @@ class MapContext extends ParseContext {
       throw StateError('Key not found: $key in $pointer');
     }
     final child = _expectType<Map<String, dynamic>>(this, key, value);
-    _markUsed(key);
+    markUsed(key);
     return MapContext.fromParent(parent: this, json: child, key: key);
   }
 
@@ -1841,7 +1826,7 @@ class MapContext extends ParseContext {
       throw StateError('Key not found: $key in $pointer');
     }
     final child = _expectType<List<dynamic>>(this, key, value);
-    _markUsed(key);
+    markUsed(key);
     return ListContext.fromParent(parent: this, json: child, key: key);
   }
 
@@ -1855,7 +1840,7 @@ class MapContext extends ParseContext {
   bool get isNotEmpty => json.isNotEmpty;
 
   dynamic operator [](String key) {
-    _markUsed(key);
+    markUsed(key);
     return json[key];
   }
 
@@ -1873,7 +1858,11 @@ class MapContext extends ParseContext {
   @visibleForTesting
   final Set<String> usedKeys;
 
-  void _markUsed(String key) => usedKeys.add(key);
+  /// Mark [key] as read without retrieving the value. Useful for
+  /// callers that want to suppress a `_warnUnused` entry on a key
+  /// they've inspected via the underlying [json] map directly (or
+  /// that they're consuming for side-effect only).
+  void markUsed(String key) => usedKeys.add(key);
 
   Set<String> get unusedKeys =>
       Set<String>.from(json.keys).difference(usedKeys);
