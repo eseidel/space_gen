@@ -164,11 +164,30 @@ class _NameAssigner {
   // their variants' Dart names have been resolved.
   final List<ResolvedSchemaCollection> _collectionsForWrappers = [];
   // Variant pointer → parent's snake name, populated during phase 2
-  // for inline-exclusive object variants whose dispatch lets the
-  // variant class extend the sealed parent directly (smoosh). Render
-  // reads this through [AssignedNames.parentSealedTypeFor] and emits
-  // the variant with `extends <Parent>` instead of a wrapper subclass.
+  // for object variants whose dispatch lets the variant class extend
+  // the sealed parent directly (smoosh). Two paths feed in: inline
+  // variants (`<parent>/oneOf/<i>`) and exclusive-by-use top-level
+  // schemas (a top-level component referenced by exactly one
+  // oneOf/anyOf variant slot and from nowhere else). Render reads
+  // this through [AssignedNames.parentSealedTypeFor] and emits the
+  // variant with `extends <Parent>` instead of a wrapper subclass.
   final Map<JsonPointer, String> _smooshedParentSnake = {};
+  // How many times each schema pointer is referenced as a oneOf/anyOf
+  // variant slot during the walk. AllOf members do *not* count —
+  // `ResolvedAllOf` collapses to a synthesized merged `RenderObject`
+  // at render time, so a $ref inside an allOf contributes structurally
+  // (its fields merge in) without emitting a typed Dart reference to
+  // the source class. Counts are total occurrences (not deduped on
+  // pointer); recursion is still deduped via [_visited].
+  final Map<JsonPointer, int> _variantUseCounts = {};
+  // How many times each schema pointer is referenced from a slot that
+  // emits a typed Dart reference to it: object property types,
+  // additionalProperties, array items, map values, parameter / request
+  // body / response schemas. AllOf-member uses don't count (see
+  // [_variantUseCounts]). Used together with [_variantUseCounts] to
+  // detect "exclusive-use" top-level schemas — a top-level component
+  // whose only typed reference site is one oneOf/anyOf variant slot.
+  final Map<JsonPointer, int> _otherUseCounts = {};
 
   /// Run the allocator over both phases and return the final
   /// pointer → Dart name map. The assigner is single-use; calling
@@ -241,20 +260,29 @@ class _NameAssigner {
     _allocator.claim(op.pointer, ['${op.snakeName}_response']);
   }
 
-  void visitSchema(ResolvedSchema schema) => _visitSchema(schema);
+  /// Visit a schema reached from a slot that emits a typed Dart
+  /// reference to it (operation parameter / request / response,
+  /// object property, additionalProperties, array items, map value).
+  /// Variant-slot visits dispatch through `_visitSchema` directly
+  /// with `_SlotKind.variant`; this entry point is for the "other"
+  /// (non-variant) slots so per-pointer use counters can distinguish
+  /// the two.
+  void visitSchema(ResolvedSchema schema) =>
+      _visitSchema(schema, _SlotKind.other);
 
   /// Phase-2 wrapper-subclass name claims. Reads the resolved variant
   /// names produced by phase 1 and submits one claim per dispatch-
   /// emitted wrapper. Variant identity is by index in
   /// [collection]`.schemas` — matches `AssignedNames.wrapperPointer`.
   ///
-  /// Smooshable variants (inline `ResolvedObject` under a
-  /// dispatch where the variant class can extend the sealed parent
-  /// directly — predicate-required for now) skip the wrapper claim
-  /// entirely. Render reads the parent's snake name from
-  /// [_smooshedParentSnake] and emits the variant class with
-  /// `extends <Parent>` instead of generating a separate wrapper
-  /// subclass + `value:` indirection.
+  /// Smooshable variants (inline `ResolvedObject` or exclusive-by-use
+  /// top-level `ResolvedObject`, under a dispatch whose template
+  /// knows how to skip the wrapper) skip the wrapper claim entirely
+  /// and instead record the parent's snake name in
+  /// [_smooshedParentSnake]. Render reads it through
+  /// [AssignedNames.parentSealedTypeFor] and emits the variant with
+  /// `extends <Parent>` directly, eliminating the wrapper subclass
+  /// + `value:` indirection.
   void _claimWrapperNames(ResolvedSchemaCollection collection) {
     final decision = decideDispatch(collection);
     if (decision is NoDispatch) return;
@@ -281,12 +309,37 @@ class _NameAssigner {
       _isStructurallySmooshable(variant) && _dispatchEmitsSmooshed(decision);
 
   /// Whether [variant] *could* be a direct subclass of a sealed
-  /// parent in idiomatic Dart. Holds when it's an inline (so
-  /// exclusive to one parent by construction) `ResolvedObject` (so
-  /// it has a class body to extend with). Independent of any
-  /// dispatch — purely a structural property of the variant.
-  bool _isStructurallySmooshable(ResolvedSchema variant) =>
-      variant is ResolvedObject && _isInlineCollectionVariant(variant);
+  /// parent in idiomatic Dart. Two paths:
+  ///
+  /// - Inline `ResolvedObject` variant — the variant lives at
+  ///   `<parent>/oneOf/<i>` (or `/anyOf/<i>`), so it's exclusive to
+  ///   one parent by construction.
+  /// - Top-level `ResolvedObject` referenced by exactly one
+  ///   oneOf/anyOf variant slot, with no other typed-reference uses
+  ///   — "exclusive-by-use." `ResolvedAllOf` member uses don't
+  ///   count (they don't emit a typed Dart reference to the source
+  ///   class), which lets `RepositoryRule`-style families fold even
+  ///   when their detailed twin re-uses the same components inside
+  ///   an allOf.
+  ///
+  /// Independent of any dispatch — purely a structural / reachability
+  /// property of the variant.
+  bool _isStructurallySmooshable(ResolvedSchema variant) {
+    if (variant is! ResolvedObject) return false;
+    if (_isInlineCollectionVariant(variant)) return true;
+    return _isExclusiveUseTopLevel(variant);
+  }
+
+  /// True when [variant] is a top-level component schema referenced
+  /// from exactly one oneOf/anyOf variant slot and from no other
+  /// typed-reference slot. Reads the per-pointer counters tabulated
+  /// during the phase-1 walk; safe to call once that walk is done
+  /// (i.e. from phase 2's [_claimWrapperNames]).
+  bool _isExclusiveUseTopLevel(ResolvedSchema variant) {
+    final variantUses = _variantUseCounts[variant.pointer] ?? 0;
+    final otherUses = _otherUseCounts[variant.pointer] ?? 0;
+    return variantUses == 1 && otherUses == 0;
+  }
 
   /// Whether [decision]'s render-layer template can emit a smooshed
   /// variant — i.e. skip the wrapper subclass and emit
@@ -437,7 +490,31 @@ class _NameAssigner {
     return secondToLast == 'oneOf' || secondToLast == 'anyOf';
   }
 
-  void _visitSchema(ResolvedSchema schema) {
+  void _visitSchema(ResolvedSchema schema, _SlotKind slot) {
+    // Tally every encounter (not just first-visit) so the use counters
+    // reflect total references. Recursion below still dedups via
+    // [_visited], so the tree walk is bounded.
+    switch (slot) {
+      case _SlotKind.variant:
+        _variantUseCounts.update(
+          schema.pointer,
+          (n) => n + 1,
+          ifAbsent: () => 1,
+        );
+      case _SlotKind.other:
+        _otherUseCounts.update(
+          schema.pointer,
+          (n) => n + 1,
+          ifAbsent: () => 1,
+        );
+      case _SlotKind.allOfMember:
+        // AllOf members aren't typed Dart references — `ResolvedAllOf`
+        // collapses into a synthesized merged `RenderObject` whose
+        // fields come from each member, but no member's class name is
+        // emitted at the use site. Skip the counters; we still recurse
+        // below for nested newtypes inside the member.
+        break;
+    }
     if (!_visited.add(schema.pointer)) return;
     if (schema.createsNewType) {
       _allocator.claim(schema.pointer, _preferencesFor(schema));
@@ -446,29 +523,34 @@ class _NameAssigner {
     switch (schema) {
       case ResolvedObject():
         for (final prop in schema.properties.values) {
-          _visitSchema(prop);
+          _visitSchema(prop, _SlotKind.other);
         }
         final extraProps = schema.additionalProperties;
-        if (extraProps != null) _visitSchema(extraProps);
+        if (extraProps != null) _visitSchema(extraProps, _SlotKind.other);
       case ResolvedArray():
-        _visitSchema(schema.items);
+        _visitSchema(schema.items, _SlotKind.other);
       case ResolvedMap():
-        _visitSchema(schema.valueSchema);
+        _visitSchema(schema.valueSchema, _SlotKind.other);
         final keyEnum = schema.keySchema;
-        if (keyEnum != null) _visitSchema(keyEnum);
+        if (keyEnum != null) _visitSchema(keyEnum, _SlotKind.other);
       case ResolvedOneOf():
       case ResolvedAnyOf():
-      case ResolvedAllOf():
         final collection = schema as ResolvedSchemaCollection;
         for (final variant in collection.schemas) {
-          _visitSchema(variant);
+          _visitSchema(variant, _SlotKind.variant);
         }
         // Defer wrapper-name claims to phase 2 — they need the
-        // resolved variant names. AllOf gets `NoDispatch` from
-        // [decideDispatch] (it collapses to a synthetic object), so
-        // no wrappers will actually be claimed for it; queueing it
-        // is harmless and keeps the gate in one place.
+        // resolved variant names.
         _collectionsForWrappers.add(collection);
+      case ResolvedAllOf():
+        for (final member in schema.schemas) {
+          _visitSchema(member, _SlotKind.allOfMember);
+        }
+        // AllOf gets `NoDispatch` from [decideDispatch] (it collapses
+        // to a synthetic object), so no wrappers are actually claimed.
+        // We still queue it for symmetry with the other collection
+        // kinds so the gate lives in one place.
+        _collectionsForWrappers.add(schema);
       case ResolvedString():
       case ResolvedInteger():
       case ResolvedNumber():
@@ -484,6 +566,28 @@ class _NameAssigner {
         break;
     }
   }
+}
+
+/// What kind of slot a [ResolvedSchema] was reached from. Drives the
+/// per-pointer use counters in [_NameAssigner] that detect "exclusive-
+/// use" top-level schemas — top-level components whose only typed
+/// reference site is one oneOf/anyOf variant slot, making them
+/// candidates to smoosh into the parent's sealed class.
+enum _SlotKind {
+  /// Reached as a oneOf/anyOf variant.
+  variant,
+
+  /// Reached as a typed reference: object property, additional
+  /// property, array items, map value, or operation parameter /
+  /// request body / response.
+  other,
+
+  /// Reached as a member of an `allOf`. `ResolvedAllOf` collapses to
+  /// a synthesized merged `RenderObject` at render time, so members
+  /// contribute fields without emitting a typed reference to the
+  /// source class — these don't count as "uses" for the smoosh
+  /// eligibility check.
+  allOfMember,
 }
 
 /// Collision-aware Dart name allocator. Each entity submits a
