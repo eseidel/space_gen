@@ -1235,6 +1235,308 @@ void main() {
         },
       );
     });
+
+    group('structural dedup of inline collections', () {
+      // Two paths whose 200 response schema is the same inline
+      // `oneOf<Cat, Dog>` (with the same discriminator) — github's
+      // `/user`, `/user/{account_id}`, `/users/{username}` are real-
+      // world examples of this pattern. Without dedup we'd resolve to
+      // two structurally-equal but distinct ResolvedOneOf instances,
+      // and the renderer would emit two byte-identical sealed classes.
+      Map<String, dynamic> twoPathsWithSchema(
+        Map<String, dynamic> schema, {
+        Map<String, dynamic>? schemaB,
+      }) {
+        return {
+          'openapi': '3.1.0',
+          'info': {'title': 'Pets', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.example.com'},
+          ],
+          'paths': {
+            '/a': {
+              'get': {
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {'schema': schema},
+                    },
+                  },
+                },
+              },
+            },
+            '/b': {
+              'get': {
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {'schema': schemaB ?? schema},
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'components': {
+            'schemas': {
+              'Cat': {
+                'type': 'object',
+                'properties': {
+                  'kind': {'type': 'string'},
+                },
+                'required': ['kind'],
+              },
+              'Dog': {
+                'type': 'object',
+                'properties': {
+                  'kind': {'type': 'string'},
+                },
+                'required': ['kind'],
+              },
+              'Fish': {
+                'type': 'object',
+                'properties': {
+                  'kind': {'type': 'string'},
+                },
+                'required': ['kind'],
+              },
+            },
+          },
+        };
+      }
+
+      ResolvedSchema responseSchemaForPath(ResolvedSpec spec, String path) {
+        final p = spec.paths.firstWhere((e) => e.path == path);
+        return p.operations.first.responses.first.content;
+      }
+
+      test('two identical inline oneOfs share one ResolvedSchema', () {
+        final json = twoPathsWithSchema({
+          'oneOf': [
+            {r'$ref': '#/components/schemas/Cat'},
+            {r'$ref': '#/components/schemas/Dog'},
+          ],
+          'discriminator': {
+            'propertyName': 'kind',
+            'mapping': {
+              'cat': '#/components/schemas/Cat',
+              'dog': '#/components/schemas/Dog',
+            },
+          },
+        });
+        final logger = _MockLogger();
+        final spec = runWithLogger(logger, () => parseAndResolveTestSpec(json));
+        final a = responseSchemaForPath(spec, '/a');
+        final b = responseSchemaForPath(spec, '/b');
+        expect(a, isA<ResolvedOneOf>());
+        // Identity, not just value equality — the renderer's name lookup
+        // is keyed on pointer, so two equal-but-distinct instances would
+        // each get their own Dart class name and emit duplicate files.
+        expect(identical(a, b), isTrue);
+      });
+
+      test(
+        'oneOfs with the same variants but different discriminator do '
+        'not share',
+        () {
+          final json = twoPathsWithSchema(
+            {
+              'oneOf': [
+                {r'$ref': '#/components/schemas/Cat'},
+                {r'$ref': '#/components/schemas/Dog'},
+              ],
+              'discriminator': {
+                'propertyName': 'kind',
+                'mapping': {
+                  'cat': '#/components/schemas/Cat',
+                  'dog': '#/components/schemas/Dog',
+                },
+              },
+            },
+            schemaB: {
+              'oneOf': [
+                {r'$ref': '#/components/schemas/Cat'},
+                {r'$ref': '#/components/schemas/Dog'},
+              ],
+              'discriminator': {
+                'propertyName': 'species',
+                'mapping': {
+                  'cat': '#/components/schemas/Cat',
+                  'dog': '#/components/schemas/Dog',
+                },
+              },
+            },
+          );
+          final logger = _MockLogger();
+          final spec = runWithLogger(
+            logger,
+            () => parseAndResolveTestSpec(json),
+          );
+          final a = responseSchemaForPath(spec, '/a');
+          final b = responseSchemaForPath(spec, '/b');
+          expect(identical(a, b), isFalse);
+        },
+      );
+
+      test('oneOfs with one different variant do not share', () {
+        final json = twoPathsWithSchema(
+          {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Cat'},
+              {r'$ref': '#/components/schemas/Dog'},
+            ],
+          },
+          schemaB: {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Cat'},
+              {r'$ref': '#/components/schemas/Fish'},
+            ],
+          },
+        );
+        final logger = _MockLogger();
+        final spec = runWithLogger(logger, () => parseAndResolveTestSpec(json));
+        final a = responseSchemaForPath(spec, '/a');
+        final b = responseSchemaForPath(spec, '/b');
+        expect(identical(a, b), isFalse);
+      });
+
+      test('anyOf is also deduped', () {
+        final json = twoPathsWithSchema({
+          'anyOf': [
+            {r'$ref': '#/components/schemas/Cat'},
+            {r'$ref': '#/components/schemas/Dog'},
+          ],
+        });
+        final logger = _MockLogger();
+        final spec = runWithLogger(logger, () => parseAndResolveTestSpec(json));
+        final a = responseSchemaForPath(spec, '/a');
+        final b = responseSchemaForPath(spec, '/b');
+        expect(a, isA<ResolvedAnyOf>());
+        expect(identical(a, b), isTrue);
+      });
+
+      test('oneOf and anyOf with the same variants do not share', () {
+        // One is `oneOf<Cat,Dog>`, the other is `anyOf<Cat,Dog>` —
+        // they render with different `fromJson` semantics (single-match
+        // vs at-least-one-match) and so must remain distinct types.
+        final json = twoPathsWithSchema(
+          {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Cat'},
+              {r'$ref': '#/components/schemas/Dog'},
+            ],
+          },
+          schemaB: {
+            'anyOf': [
+              {r'$ref': '#/components/schemas/Cat'},
+              {r'$ref': '#/components/schemas/Dog'},
+            ],
+          },
+        );
+        final logger = _MockLogger();
+        final spec = runWithLogger(logger, () => parseAndResolveTestSpec(json));
+        final a = responseSchemaForPath(spec, '/a');
+        final b = responseSchemaForPath(spec, '/b');
+        expect(identical(a, b), isFalse);
+      });
+
+      test(
+        'top-level component schemas with structurally-equal bodies are '
+        'NOT shared',
+        () {
+          // Top-level components have intentional names assigned by the
+          // spec author; two identically-shaped components are still
+          // meant to be distinct types.
+          final json = {
+            'openapi': '3.1.0',
+            'info': {'title': 'Pets', 'version': '1.0.0'},
+            'servers': [
+              {'url': 'https://api.example.com'},
+            ],
+            'paths': {
+              '/a': {
+                'get': {
+                  'responses': {
+                    '200': {
+                      'description': 'OK',
+                      'content': {
+                        'application/json': {
+                          'schema': {r'$ref': '#/components/schemas/CatOrDog'},
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              '/b': {
+                'get': {
+                  'responses': {
+                    '200': {
+                      'description': 'OK',
+                      'content': {
+                        'application/json': {
+                          'schema': {
+                            r'$ref': '#/components/schemas/CatOrDogAlias',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            'components': {
+              'schemas': {
+                'CatOrDog': {
+                  'oneOf': [
+                    {r'$ref': '#/components/schemas/Cat'},
+                    {r'$ref': '#/components/schemas/Dog'},
+                  ],
+                },
+                'CatOrDogAlias': {
+                  'oneOf': [
+                    {r'$ref': '#/components/schemas/Cat'},
+                    {r'$ref': '#/components/schemas/Dog'},
+                  ],
+                },
+                'Cat': {'type': 'object'},
+                'Dog': {'type': 'object'},
+              },
+            },
+          };
+          final logger = _MockLogger();
+          final spec = runWithLogger(
+            logger,
+            () => parseAndResolveTestSpec(json),
+          );
+          final a = responseSchemaForPath(spec, '/a');
+          final b = responseSchemaForPath(spec, '/b');
+          expect(identical(a, b), isFalse);
+          expect((a as ResolvedOneOf).snakeName, 'cat_or_dog');
+          expect((b as ResolvedOneOf).snakeName, 'cat_or_dog_alias');
+        },
+      );
+
+      test('inline oneOfs with no variants are not shared', () {
+        // A `oneOf: []` (or one whose variants the parser dropped, e.g.
+        // github's `allOf: [...] + type: [null]` shape) renders as an
+        // empty sealed-class stub. Sharing those across sites would
+        // silently merge unrelated property slots into one type.
+        final json = twoPathsWithSchema(
+          {'oneOf': <dynamic>[]},
+          schemaB: {'oneOf': <dynamic>[]},
+        );
+        final logger = _MockLogger();
+        final spec = runWithLogger(logger, () => parseAndResolveTestSpec(json));
+        final a = responseSchemaForPath(spec, '/a');
+        final b = responseSchemaForPath(spec, '/b');
+        expect(a, isA<ResolvedOneOf>());
+        expect(b, isA<ResolvedOneOf>());
+        expect(identical(a, b), isFalse);
+      });
+    });
   });
 
   group('ResolvedSchema', () {
