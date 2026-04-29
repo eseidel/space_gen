@@ -535,8 +535,11 @@ PredicateDispatch? _pickArrayElement(List<ResolvedSchema> variants) {
 /// string). The emitted dispatch tests `json['errors']` is a non-empty
 /// list and peeks the first element's shape.
 ///
-/// Caveat: relies on the server emitting the property as a non-empty
-/// list. Empty / missing arrays match no arm — the factory throws.
+/// The last variant becomes an unguarded [Always] fallback: when the
+/// shape-discriminator property is absent or empty (spec-legal — both
+/// github variants list `errors` as optional), the last variant
+/// catches the response. Without this, a 422 with no `errors` would
+/// throw `FormatException` even though the JSON is valid per the spec.
 PredicateDispatch? _pickPropertyArrayItemShape(List<ResolvedSchema> variants) {
   if (variants.length < 2) return null;
   if (!variants.every(_isObjectLike)) return null;
@@ -570,8 +573,13 @@ PredicateDispatch? _pickPropertyArrayItemShape(List<ResolvedSchema> variants) {
     }
     if (!ok) continue;
     if (shapes.toSet().length != shapes.length) continue;
-    final arms = [
-      for (var i = 0; i < variants.length; i++)
+    // All but the last variant get a shape-checking predicate; the
+    // last variant is the unguarded fallback (catches absent / empty
+    // discriminator-property cases that are spec-legal but match no
+    // shape arm).
+    final arms = <PredicateArm>[];
+    for (var i = 0; i < variants.length - 1; i++) {
+      arms.add(
         PredicateArm(
           variant: variants[i],
           predicate: PropertyArrayItemShape(
@@ -579,7 +587,11 @@ PredicateDispatch? _pickPropertyArrayItemShape(List<ResolvedSchema> variants) {
             shapeKey: shapes[i],
           ),
         ),
-    ];
+      );
+    }
+    arms.add(
+      PredicateArm(variant: variants.last, predicate: const Always()),
+    );
     return PredicateDispatch(
       kind: PredicateDispatchKind.requiredField,
       arms: arms,
