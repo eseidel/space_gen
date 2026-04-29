@@ -293,10 +293,11 @@ class _NameAssigner {
   /// `case … => Variant.fromJson(…)` directly. Other dispatch kinds
   /// fall through to today's wrapper-based rendering until their
   /// templates are taught to smoosh too. Expanding this is the
-  /// smoosh PR train: predicate-required and discriminator (today),
-  /// then shape, then hybrid Map sub-arms.
+  /// smoosh PR train: predicate-required, discriminator, and shape
+  /// (today), then hybrid Map sub-arms.
   bool _dispatchEmitsSmooshed(DispatchDecision decision) {
     if (decision is DiscriminatorDispatch) return true;
+    if (decision is ShapeDispatch) return true;
     if (decision is PredicateDispatch &&
         decision.kind == PredicateDispatchKind.requiredField) {
       return true;

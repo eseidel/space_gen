@@ -4141,12 +4141,7 @@ class RenderOneOf extends RenderNewType {
           renderOf,
           context,
         ),
-      ShapeDispatch(:final arms) => _ShapeMode(
-        variants: [
-          for (final arm in arms)
-            _shapeWrapperContext(_planVariant(renderOf(arm.variant), context)!),
-        ],
-      ),
+      ShapeDispatch(:final arms) => _buildShapeMode(arms, renderOf, context),
       HybridDispatch(
         :final shapeArms,
         :final mapArms,
@@ -4233,6 +4228,53 @@ class RenderOneOf extends RenderNewType {
     }
     return _DiscriminatorMode(
       discriminatorProperty: propertyName,
+      dispatch: dispatch,
+      variants: variants,
+      smooshedVariants: smooshedVariants,
+    );
+  }
+
+  /// Build a [_ShapeMode], splitting variants into smooshed (the
+  /// variant data class extends the sealed parent directly, inlined
+  /// in the parent's file) and non-smooshed (today's wrapper-subclass
+  /// + `value:` indirection). Each `dispatch` entry's `caseExpression`
+  /// is the full Dart expression to `return` from its switch arm.
+  _ShapeMode _buildShapeMode(
+    List<ShapeArm> arms,
+    RenderSchema Function(ResolvedSchema) renderOf,
+    SchemaRenderer context,
+  ) {
+    final dispatch = <Map<String, dynamic>>[];
+    final variants = <Map<String, dynamic>>[];
+    final smooshedVariants = <Map<String, dynamic>>[];
+    for (final arm in arms) {
+      final renderVariant = renderOf(arm.variant);
+      final isSmooshed =
+          renderVariant is RenderObject &&
+          renderVariant.parentSealedTypeName != null;
+      if (isSmooshed) {
+        // Smooshed object variants are always Map-shaped; the case
+        // arm constructs the variant directly. The wrapper subclass
+        // is gone, the variant data class is inlined into the parent
+        // file as a direct sealed subclass. We skip `_planVariant`
+        // here because its `wrapperTypeName(variant)` lookup would
+        // throw — the naming pass intentionally skipped the wrapper
+        // claim for smooshable variants.
+        dispatch.add({
+          'jsonTestType': _mapShapeKey,
+          'caseExpression': '${renderVariant.typeName}.fromJson(v)',
+        });
+        smooshedVariants.add(renderVariant.toTemplateContext(context));
+      } else {
+        final plan = _planVariant(renderVariant, context)!;
+        dispatch.add({
+          'jsonTestType': plan.jsonTestType,
+          'caseExpression': '${plan.wrapperTypeName}(${plan.fromJson})',
+        });
+        variants.add(_shapeWrapperContext(plan));
+      }
+    }
+    return _ShapeMode(
       dispatch: dispatch,
       variants: variants,
       smooshedVariants: smooshedVariants,
@@ -4535,11 +4577,32 @@ class _DiscriminatorMode extends _DispatchMode {
   final List<Map<String, dynamic>> smooshedVariants;
 }
 
-/// Pure shape dispatch — `switch (json) { final T v => ... }`.
+/// Pure shape dispatch — `switch (json) { T v => ... }`.
 class _ShapeMode extends _DispatchMode {
-  const _ShapeMode({required this.variants});
+  const _ShapeMode({
+    required this.dispatch,
+    required this.variants,
+    required this.smooshedVariants,
+  });
 
+  /// Per-arm contexts: each entry has `jsonTestType` (the case
+  /// pattern type, e.g. `int`, `Map<String, dynamic>`) and
+  /// `caseExpression` (the full Dart expression to `return` —
+  /// includes the wrapper-class call when the variant has a wrapper,
+  /// or just `Variant.fromJson(v)` when smooshed).
+  final List<Map<String, dynamic>> dispatch;
+
+  /// Non-smooshed variants — wrapper subclass declarations, in
+  /// declaration order. Smooshed variants (those whose data class
+  /// extends the sealed parent directly) are in [smooshedVariants];
+  /// the union of the two preserves declaration order.
   final List<Map<String, dynamic>> variants;
+
+  /// Smooshed variants — emitted *inline in the parent's file* as
+  /// direct sealed subclasses, no wrapper shim. Each entry is the
+  /// variant's full `toTemplateContext` so the schema_object partial
+  /// can render the class body unchanged.
+  final List<Map<String, dynamic>> smooshedVariants;
 }
 
 /// Hybrid dispatch — non-Map shape arms followed by a Map sub-
@@ -4675,9 +4738,11 @@ void _applyDispatchMode(_DispatchMode mode, Map<String, dynamic> ctx) {
       ctx['variants'] = variants;
       ctx['smooshedVariants'] = smooshedVariants;
       ctx['maybeFromJsonParamType'] = 'Map<String, dynamic>?';
-    case _ShapeMode(:final variants):
+    case _ShapeMode(:final dispatch, :final variants, :final smooshedVariants):
       ctx['has_shape_dispatch'] = true;
+      ctx['dispatch'] = dispatch;
       ctx['variants'] = variants;
+      ctx['smooshedVariants'] = smooshedVariants;
     case _HybridMode(
       :final shapeArms,
       :final mapArms,
