@@ -47,3 +47,5 @@ words:
   - varnames
   - pinnable
   - unpinnable
+  - codegen
+  - disambiguator
