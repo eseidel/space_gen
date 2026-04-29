@@ -4277,12 +4277,16 @@ class RenderOneOf extends RenderNewType {
         :final shapeArms,
         :final mapArms,
         :final mapFallback,
+        :final listArms,
+        :final listFallback,
         :final declarationOrder,
       ) =>
         _buildHybridMode(
           shapeArms,
           mapArms,
           mapFallback,
+          listArms,
+          listFallback,
           declarationOrder,
           renderOf,
           context,
@@ -4384,18 +4388,20 @@ class RenderOneOf extends RenderNewType {
   }
 
   /// Build a [_HybridMode], splitting variants by smooshed/not.
-  /// Hybrid has three arm flavors — non-Map shape arms, predicate-
-  /// guarded Map arms, and an optional unguarded Map fallback —
-  /// each of which composes the same `caseExpression`: a direct
-  /// `<Variant>.fromJson(v)` for smooshed variants and the
+  /// Hybrid has up to five arm flavors — non-collision shape arms,
+  /// predicate-guarded Map arms, an optional unguarded Map fallback,
+  /// predicate-guarded List arms, and an optional unguarded List
+  /// fallback — each of which composes the same `caseExpression`: a
+  /// direct `<Variant>.fromJson(v)` for smooshed variants and the
   /// wrapper-class call for the rest. Variants that get a wrapper
-  /// land in `variants`; smooshed ones in `smooshedVariants` and
-  /// are inlined into the parent's file by the schema_object
-  /// partial.
+  /// land in `variants`; smooshed ones in `smooshedVariants` and are
+  /// inlined into the parent's file by the schema_object partial.
   _HybridMode _buildHybridMode(
     List<ShapeArm> shapeArms,
     List<PredicateArm> mapArms,
     ResolvedSchema? mapFallback,
+    List<PredicateArm> listArms,
+    ResolvedSchema? listFallback,
     List<ResolvedSchema> declarationOrder,
     RenderSchema Function(ResolvedSchema) renderOf,
     SchemaRenderer context,
@@ -4410,15 +4416,33 @@ class RenderOneOf extends RenderNewType {
           : '${wrapperTypeName(variant)}($fromJson)';
     }
 
-    // Non-Map shape arms always carry non-object variants today (the
-    // dispatcher routes Map-shaped objects to `mapArms`), so this
-    // path never sees a smooshable variant. `_planVariant` is fine.
+    // List sub-arms wrap an array variant — the variant always has a
+    // wrapper subclass (Array variants aren't smoosh-eligible today),
+    // so `_planVariant` returns the standard List<X> shape plan.
+    String listCaseExpression(RenderSchema variant) {
+      final plan = _planVariant(variant, context)!;
+      return '${plan.wrapperTypeName}(${plan.fromJson})';
+    }
+
+    // Non-collision shape arms can be Map-shaped now (when a single
+    // Map variant sits alongside multi-variant List collisions, the
+    // picker routes it here as a single arm). Use the same case-
+    // expression helper so smooshed Map variants are handled.
     final renderedShapeArms = <Map<String, dynamic>>[];
     for (final arm in shapeArms) {
-      final plan = _planVariant(renderOf(arm.variant), context)!;
+      final renderVariant = renderOf(arm.variant);
+      final String caseExpression;
+      if (arm.shapeKey == _mapShapeKey) {
+        caseExpression = mapCaseExpression(renderVariant);
+      } else if (arm.shapeKey == _listShapeKey) {
+        caseExpression = listCaseExpression(renderVariant);
+      } else {
+        final plan = _planVariant(renderVariant, context)!;
+        caseExpression = '${plan.wrapperTypeName}(${plan.fromJson})';
+      }
       renderedShapeArms.add({
-        'jsonTestType': plan.jsonTestType,
-        'caseExpression': '${plan.wrapperTypeName}(${plan.fromJson})',
+        'jsonTestType': arm.shapeKey,
+        'caseExpression': caseExpression,
       });
     }
 
@@ -4434,12 +4458,35 @@ class RenderOneOf extends RenderNewType {
         ? null
         : {'caseExpression': mapCaseExpression(renderOf(mapFallback))};
 
+    final renderedListArms = <Map<String, dynamic>>[];
+    for (final arm in listArms) {
+      renderedListArms.add({
+        'predicateTest': arm.predicate.dartIfTest('v'),
+        'caseExpression': listCaseExpression(renderOf(arm.variant)),
+      });
+    }
+
+    final renderedListFallback = listFallback == null
+        ? null
+        : {'caseExpression': listCaseExpression(renderOf(listFallback))};
+
+    // A variant lands in one of three buckets, in priority order:
+    //   1. Smooshed → `smooshedVariants` (variant data class extends
+    //      the sealed parent directly, inlined into the parent file).
+    //   2. Map-shaped → `objectWrapperContext` (wrapper's
+    //      `toJson` delegates to `value.toJson()`, returning
+    //      `Map<String, dynamic>`). Includes both Map sub-dispatch
+    //      arms (`mapArms`/`mapFallback`) and the single-Map shape
+    //      arm case where one Map variant sits beside multi-variant
+    //      List collisions.
+    //   3. Otherwise (string, int, list) → `_shapeWrapperContext`
+    //      (wrapper's `toJson` returns `dynamic` and stores the
+    //      JSON-typed value verbatim).
     for (final v in declarationOrder) {
       final renderVariant = renderOf(v);
       if (renderVariant.isSmooshed) {
         smooshedVariants.add(renderVariant.toTemplateContext(context));
-      } else if (mapArms.any((a) => identical(a.variant, v)) ||
-          identical(v, mapFallback)) {
+      } else if (renderVariant.jsonShapeKey == _mapShapeKey) {
         variants.add(objectWrapperContext(renderVariant));
       } else {
         final plan = _planVariant(renderVariant, context)!;
@@ -4450,6 +4497,8 @@ class RenderOneOf extends RenderNewType {
       shapeArms: renderedShapeArms,
       mapArms: renderedMapArms,
       mapFallback: renderedMapFallback,
+      listArms: renderedListArms,
+      listFallback: renderedListFallback,
       variants: variants,
       smooshedVariants: smooshedVariants,
     );
@@ -4689,6 +4738,12 @@ final class _MultiStatusContext {
 /// authoritative spelling.
 const String _mapShapeKey = 'Map<String, dynamic>';
 
+/// Dart pattern type for the List-shape arm of dispatch — matches
+/// any JSON-decoded list. Mirrors [_mapShapeKey]; centralized so the
+/// hybrid dispatch's "List collision" detection has a single
+/// authoritative spelling.
+const String _listShapeKey = 'List<dynamic>';
+
 /// Wrapper-variant context for the shape-dispatch paths (pure shape
 /// and the non-Map arms of hybrid). The wrapper stores the matched
 /// JSON value verbatim and `toJson()` returns it — for primitive
@@ -4776,33 +4831,48 @@ class _ShapeMode extends _DispatchMode {
   final List<Map<String, dynamic>> smooshedVariants;
 }
 
-/// Hybrid dispatch — non-Map shape arms followed by a Map sub-
-/// dispatch (checked-then-fallback). Used when an array (or other
-/// non-Map) variant coexists with multiple objects.
+/// Hybrid dispatch — single-variant shape arms followed by Map and
+/// List sub-dispatches (each checked-then-fallback). Used when 2+
+/// variants collide on `Map<String, dynamic>`, `List<dynamic>`, or
+/// both. Single-variant shapes (string, int, single Map, single List)
+/// pass through unchanged in [shapeArms].
 class _HybridMode extends _DispatchMode {
   const _HybridMode({
     required this.shapeArms,
     required this.mapArms,
     required this.mapFallback,
+    required this.listArms,
+    required this.listFallback,
     required this.variants,
     required this.smooshedVariants,
   });
 
-  /// Per-arm contexts for non-Map shape arms. Each entry has
-  /// `jsonTestType` and `caseExpression` (the full Dart expression
-  /// to `return`).
+  /// Per-arm contexts for single-variant shape arms (no collision).
+  /// Each entry has `jsonTestType` and `caseExpression` (the full
+  /// Dart expression to `return`).
   final List<Map<String, dynamic>> shapeArms;
 
   /// Per-arm contexts for predicate-guarded Map arms. Each entry has
   /// `predicateTest` (the `v.containsKey('foo')` check) and
-  /// `caseExpression`.
+  /// `caseExpression`. Empty when at most one Map variant exists.
   final List<Map<String, dynamic>> mapArms;
 
   /// `null` when no fallback applies (the Map sub-dispatch ends in a
-  /// throw). Otherwise has just `caseExpression`. Projects to `false`
-  /// at the template boundary; the mustache inverted section fires
-  /// on null/false alike.
+  /// throw, or there's no Map sub-dispatch at all). Otherwise has
+  /// just `caseExpression`. Projects to `false` at the template
+  /// boundary; the mustache inverted section fires on null/false
+  /// alike.
   final Map<String, dynamic>? mapFallback;
+
+  /// Per-arm contexts for predicate-guarded List arms. Each entry
+  /// has `predicateTest` (the `v.first is X` check) and
+  /// `caseExpression`. Empty when at most one List variant exists.
+  final List<Map<String, dynamic>> listArms;
+
+  /// `null` when no fallback applies (the List sub-dispatch ends in
+  /// a throw, or there's no List sub-dispatch at all). Same shape as
+  /// [mapFallback].
+  final Map<String, dynamic>? listFallback;
 
   /// Non-smooshed variants — wrapper subclass declarations, in
   /// declaration order. Smooshed variants (those whose data class
@@ -4938,6 +5008,8 @@ void _applyDispatchMode(_DispatchMode mode, Map<String, dynamic> ctx) {
       :final shapeArms,
       :final mapArms,
       :final mapFallback,
+      :final listArms,
+      :final listFallback,
       :final variants,
       :final smooshedVariants,
     ):
@@ -4945,6 +5017,10 @@ void _applyDispatchMode(_DispatchMode mode, Map<String, dynamic> ctx) {
       ctx['shapeArms'] = shapeArms;
       ctx['mapArms'] = mapArms;
       ctx['mapFallback'] = mapFallback ?? false;
+      ctx['hasMapSubDispatch'] = mapArms.isNotEmpty || mapFallback != null;
+      ctx['listArms'] = listArms;
+      ctx['listFallback'] = listFallback ?? false;
+      ctx['hasListSubDispatch'] = listArms.isNotEmpty || listFallback != null;
       ctx['variants'] = variants;
       ctx['smooshedVariants'] = smooshedVariants;
     case _PredicateDispatchMode(

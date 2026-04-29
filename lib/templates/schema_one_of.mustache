@@ -64,6 +64,7 @@
 {{#shapeArms}}
             final {{{ jsonTestType }}} v => {{{ caseExpression }}},
 {{/shapeArms}}
+{{#hasMapSubDispatch}}
 {{#mapArms}}
             final Map<String, dynamic> v when {{{ predicateTest }}} => {{{ caseExpression }}},
 {{/mapArms}}
@@ -75,6 +76,20 @@
                 'No variant of {{ typeName }} matched json keys: ${v.keys.toList()}',
             ),
 {{/mapFallback}}
+{{/hasMapSubDispatch}}
+{{#hasListSubDispatch}}
+{{#listArms}}
+            final List<dynamic> v when {{{ predicateTest }}} => {{{ caseExpression }}},
+{{/listArms}}
+{{#listFallback}}
+            final List<dynamic> v => {{{ caseExpression }}},
+{{/listFallback}}
+{{^listFallback}}
+            List<dynamic> _ => throw const FormatException(
+                'No variant of {{ typeName }} matched first list element',
+            ),
+{{/listFallback}}
+{{/hasListSubDispatch}}
             _ => throw FormatException(
                 'Unsupported shape for {{ typeName }}: ${json.runtimeType}',
             ),

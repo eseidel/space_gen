@@ -45,3 +45,5 @@ words:
   - spdx
   - sbom
   - varnames
+  - pinnable
+  - unpinnable

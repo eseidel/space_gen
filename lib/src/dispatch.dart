@@ -10,6 +10,7 @@
 /// set is determined entirely by these decisions.
 library;
 
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:space_gen/src/resolver.dart';
 import 'package:space_gen/src/types.dart' show PodType;
@@ -60,16 +61,19 @@ class ArrayElementHasKey extends Predicate {
 /// `jsonVar['propertyName'] is List && (...).first is <shapeKey>` — picks
 /// variants whose required keys are identical at the top level but whose
 /// shared array property has items of distinguishably different JSON shape
-/// across variants. Real-world site: github's `validation-error` (errors
-/// items are objects) vs `validation-error-simple` (errors items are
-/// strings) — both have the same `[message, documentation_url]` required
-/// keys, so neither [KeyExists] nor [ArrayElementHasKey] alone separates
-/// them.
+/// across variants. Real-world sites:
+///
+/// - github's `validation-error` (errors items are objects) vs
+///   `validation-error-simple` (errors items are strings) — same top-
+///   level keys, distinguished by `errors[0]`'s shape.
+/// - github's `issues/add-labels` request body — the object-shaped
+///   variants share an `array<string>` vs `array<object>` `labels`
+///   property and dispatch on it.
 ///
 /// The test short-circuits on `is List` (non-list / null fall through)
 /// and on `.isNotEmpty` (empty lists fall through). A missing or empty
-/// `errors` value won't match any shape arm — the caller is responsible
-/// for either an [Always] fallback variant or accepting a runtime throw.
+/// property won't match any shape arm — the caller is responsible for
+/// either an [Always] fallback variant or accepting a runtime throw.
 @immutable
 class PropertyArrayItemShape extends Predicate {
   const PropertyArrayItemShape({
@@ -93,6 +97,28 @@ class PropertyArrayItemShape extends Predicate {
         '($access as List).isNotEmpty && '
         '($access as List).first is $shapeKey';
   }
+}
+
+/// `jsonVar.isNotEmpty && jsonVar.first is <typeName>` — peeks the
+/// first element of a List local and tests its Dart runtime type.
+/// Used to disambiguate sibling array variants whose element types
+/// have distinct JSON shapes (e.g. `array<string>` vs
+/// `array<object>` — `String` vs `Map<String, dynamic>`). Caller is
+/// responsible for binding `jsonVar` to a non-null `List`; the
+/// `isNotEmpty` short-circuit lets empty lists fall through to the
+/// next arm without throwing.
+@immutable
+class ArrayElementIsType extends Predicate {
+  const ArrayElementIsType(this.typeName);
+
+  /// Dart type name to test against — the same string [_jsonShapeKey]
+  /// returns for the items' resolved schema (`'String'`, `'int'`,
+  /// `'num'`, `'bool'`, `'Map<String, dynamic>'`, …).
+  final String typeName;
+
+  @override
+  String dartIfTest(String jsonVar) =>
+      '$jsonVar.isNotEmpty && $jsonVar.first is $typeName';
 }
 
 /// Catch-all predicate — the dispatch's optional unguarded fallback.
@@ -184,27 +210,36 @@ class ShapeDispatch extends DispatchDecision {
   final List<ShapeArm> arms;
 }
 
-/// Mixed-shape dispatch: some variants pick by JSON shape, the
-/// remaining (Map-shaped) collide and need a property-presence
-/// sub-dispatch in a single nested arm.
+/// Mixed-shape dispatch: some variants pick by unique JSON shape, the
+/// remaining variants collide on `Map<String, dynamic>` and/or
+/// `List<dynamic>` and need a per-shape sub-dispatch in nested arms.
+///
+/// Up to two sub-dispatches can be active simultaneously: Map (by
+/// `containsKey`) and List (by `v.first is <Type>`). Each
+/// sub-dispatch can have an optional unguarded fallback. Single-
+/// variant non-collision shapes go to [shapeArms] unchanged.
 @immutable
 class HybridDispatch extends DispatchDecision {
   const HybridDispatch({
     required this.shapeArms,
     required this.mapArms,
     required this.mapFallback,
+    required this.listArms,
+    required this.listFallback,
     required this.declarationOrder,
   });
 
-  /// Non-Map variants — one per unique shape, dispatched by runtime
-  /// type pattern.
+  /// Non-collision-shape variants — one per unique shape, dispatched
+  /// by runtime type pattern. Excludes any shape that has 2+ variants;
+  /// those go to [mapArms] / [listArms] for sub-dispatch.
   final List<ShapeArm> shapeArms;
 
   /// Map-shaped variants — dispatched by `containsKey` on the
   /// switch-bound `v` local. Each arm is a [PredicateArm] whose
   /// predicate is [KeyExists] (or, for the implicit fallback,
   /// [Always] — but the fallback is broken out separately as
-  /// [mapFallback]).
+  /// [mapFallback]). Empty when at most one Map variant exists (it
+  /// goes to [shapeArms] instead).
   final List<PredicateArm> mapArms;
 
   /// Optional unguarded fallback among the Map-shaped variants —
@@ -213,8 +248,20 @@ class HybridDispatch extends DispatchDecision {
   /// eligible (the sub-dispatch ends in a throw).
   final ResolvedSchema? mapFallback;
 
-  /// All variants in spec declaration order, including both
-  /// shape arms and Map arms. Drives the order of subclass
+  /// List-shaped variants — dispatched by peeking
+  /// `v.first is <typeName>` on the switch-bound `v` local. Each arm
+  /// is a [PredicateArm] whose predicate is [ArrayElementIsType] (or
+  /// [Always] for an implicit fallback, broken out as [listFallback]).
+  /// Empty when at most one List variant exists.
+  final List<PredicateArm> listArms;
+
+  /// Optional unguarded fallback among the List-shaped variants —
+  /// renders as `final List<dynamic> v => Wrapper(…)` after every
+  /// checked List arm. Null when the sub-dispatch ends in a throw.
+  final ResolvedSchema? listFallback;
+
+  /// All variants in spec declaration order, including shape arms,
+  /// Map arms, and List arms. Drives the order of subclass
   /// declarations.
   final List<ResolvedSchema> declarationOrder;
 }
@@ -305,7 +352,7 @@ String? _jsonShapeKey(ResolvedSchema schema) {
     // strategy. Boolean is `bool`-shaped and unambiguous.
     ResolvedPod() =>
       !schema.createsNewType && schema.type == PodType.boolean ? 'bool' : null,
-    ResolvedArray() => 'List<dynamic>',
+    ResolvedArray() => _listShapeKey,
     ResolvedObject() => _mapShapeKey,
     // allOf is rendered as a synthesized RenderObject (member-wise
     // merge of properties + required), so for shape-dispatch purposes
@@ -360,6 +407,7 @@ bool _isObjectLike(ResolvedSchema schema) =>
     schema is ResolvedAllOf;
 
 const String _mapShapeKey = 'Map<String, dynamic>';
+const String _listShapeKey = 'List<dynamic>';
 
 DiscriminatorDispatch? _pickDiscriminator(
   ResolvedSchemaCollection collection,
@@ -527,63 +575,259 @@ ShapeDispatch? _pickShape(List<ResolvedSchema> variants) {
 }
 
 HybridDispatch? _pickHybrid(List<ResolvedSchema> variants) {
-  // Eligibility: every variant has a shape key, at least two
-  // collide on Map, and no other shape collides with itself.
+  // Eligibility: every variant has a shape key, and at least one
+  // shape has 2+ variants colliding (so a sub-dispatch is needed).
+  // We can sub-dispatch Map collisions by required-field and List
+  // collisions by element-type peek; any other shape collision (e.g.
+  // two `String` variants) bails.
   final byShape = <String, List<ResolvedSchema>>{};
   for (final v in variants) {
     final k = _jsonShapeKey(v);
     if (k == null) return null;
     byShape.putIfAbsent(k, () => []).add(v);
   }
-  final mapVariants = byShape[_mapShapeKey];
-  if (mapVariants == null || mapVariants.length < 2) return null;
+  final mapVariants = byShape[_mapShapeKey] ?? const <ResolvedSchema>[];
+  final listVariants = byShape[_listShapeKey] ?? const <ResolvedSchema>[];
+  // Need at least one sub-dispatch — otherwise the picker would be
+  // straight `_pickShape`.
+  if (mapVariants.length < 2 && listVariants.length < 2) return null;
+  // If only one sub-dispatch is active, every other shape must be
+  // single-variant. Two single-shape arms aren't strictly necessary
+  // (a sub-dispatch alone could be its own mode), but we require at
+  // least one non-collision arm to keep hybrid distinct from a pure
+  // sub-dispatch — the pure-sub-dispatch case is handled by
+  // [_pickRequiredField] / [_pickArrayElement].
   if (byShape.length < 2) return null;
   final shapeArms = <ShapeArm>[];
   for (final entry in byShape.entries) {
-    if (entry.key == _mapShapeKey) continue;
+    if (entry.key == _mapShapeKey || entry.key == _listShapeKey) continue;
     if (entry.value.length > 1) return null;
     shapeArms.add(ShapeArm(variant: entry.value.single, shapeKey: entry.key));
   }
   // Sub-dispatch the Map variants by required-field (loose mode —
-  // see [_requiredFieldArmsFor]).
-  final mapArms = _requiredFieldArmsFor(
-    mapVariants,
-    looseRequiredUniqueness: true,
-  );
-  if (mapArms == null) return null;
+  // see [_requiredFieldArmsFor]). When that fails (variants share
+  // both required and optional sets, e.g. github's `add-labels`
+  // request body where two object variants only differ in an
+  // optional array property's element type), retry with the
+  // property-array-element-shape strategy. 0/1 Map variant: the
+  // single Map variant (if any) acts as a single shape arm.
+  final List<PredicateArm> checkedMapArms;
+  ResolvedSchema? mapFallback;
+  if (mapVariants.length >= 2) {
+    final mapArms =
+        _requiredFieldArmsFor(mapVariants, looseRequiredUniqueness: true) ??
+        _propertyArrayElementShapeArmsFor(mapVariants);
+    if (mapArms == null) return null;
+    checkedMapArms = [];
+    for (final arm in mapArms) {
+      if (arm.isFallback) {
+        mapFallback = arm.variant;
+      } else {
+        checkedMapArms.add(arm);
+      }
+    }
+  } else {
+    checkedMapArms = const [];
+    if (mapVariants.length == 1) {
+      shapeArms.add(
+        ShapeArm(variant: mapVariants.single, shapeKey: _mapShapeKey),
+      );
+    }
+  }
+  // Sub-dispatch the List variants by element-type peek. 0/1 List
+  // variant: same single-shape-arm fallthrough as Map.
+  final List<PredicateArm> checkedListArms;
+  ResolvedSchema? listFallback;
+  if (listVariants.length >= 2) {
+    final listArms = _arrayElementShapeArmsFor(listVariants);
+    if (listArms == null) return null;
+    checkedListArms = [];
+    for (final arm in listArms) {
+      if (arm.isFallback) {
+        listFallback = arm.variant;
+      } else {
+        checkedListArms.add(arm);
+      }
+    }
+  } else {
+    checkedListArms = const [];
+    if (listVariants.length == 1) {
+      shapeArms.add(
+        ShapeArm(variant: listVariants.single, shapeKey: _listShapeKey),
+      );
+    }
+  }
   // Re-derive shape arms in spec declaration order so subclass
-  // declarations match the variant ordering.
+  // declarations match the variant ordering. Skip variants that went
+  // to a sub-dispatch (their shape has multiple collisions).
   final declarationOrder = variants;
   final shapeArmsInOrder = <ShapeArm>[];
   for (final v in declarationOrder) {
-    if (_jsonShapeKey(v) == _mapShapeKey) continue;
+    final k = _jsonShapeKey(v);
+    if (k == _mapShapeKey && mapVariants.length >= 2) continue;
+    if (k == _listShapeKey && listVariants.length >= 2) continue;
     shapeArmsInOrder.add(shapeArms.firstWhere((a) => a.variant == v));
-  }
-  ResolvedSchema? mapFallback;
-  final checkedMapArms = <PredicateArm>[];
-  for (final arm in mapArms) {
-    if (arm.isFallback) {
-      mapFallback = arm.variant;
-    } else {
-      checkedMapArms.add(arm);
-    }
   }
   return HybridDispatch(
     shapeArms: shapeArmsInOrder,
     mapArms: checkedMapArms,
     mapFallback: mapFallback,
+    listArms: checkedListArms,
+    listFallback: listFallback,
     declarationOrder: declarationOrder,
   );
+}
+
+/// Sub-dispatch arms for a list of List-shaped variants — picks each
+/// by the Dart runtime type of its first element. Returns null if
+/// any two variants share an element shape key (no way to tell their
+/// first elements apart). At most one variant may be the fallback (an
+/// items schema with no fixed shape, e.g. an open union); a second
+/// fallback bails.
+List<PredicateArm>? _arrayElementShapeArmsFor(
+  List<ResolvedSchema> arrayVariants,
+) {
+  final arms = <PredicateArm>[];
+  final usedTypes = <String>{};
+  var fallbackCount = 0;
+  for (final v in arrayVariants) {
+    if (v is! ResolvedArray) return null;
+    final itemKey = _jsonShapeKey(v.items);
+    if (itemKey == null) {
+      fallbackCount++;
+      if (fallbackCount > 1) return null;
+      arms.add(PredicateArm(variant: v, predicate: const Always()));
+      continue;
+    }
+    if (!usedTypes.add(itemKey)) return null;
+    arms.add(PredicateArm(variant: v, predicate: ArrayElementIsType(itemKey)));
+  }
+  return arms;
+}
+
+/// Sub-dispatch arms for object-like variants whose property sets are
+/// identical *modulo* one array-typed property's element shape.
+/// Picks each by peeking that property's first element type (the
+/// github `issues/add-labels` request body shape: two object variants
+/// `{labels?: array<string>}` and `{labels?: array<object>}`, neither
+/// distinguishable by `containsKey` alone).
+///
+/// Returns null when the variants don't fit this exact shape — same
+/// property names across all variants, exactly one such property is
+/// array-typed with element-shape-distinguishable items across at
+/// least two variants, the rest of the properties are identical
+/// resolved schemas, and no two variants share the array-element
+/// shape. The variant whose array-element shape isn't pinnable (open
+/// union, etc.) becomes the fallback; at most one fallback allowed.
+List<PredicateArm>? _propertyArrayElementShapeArmsFor(
+  List<ResolvedSchema> variants,
+) {
+  if (variants.length < 2) return null;
+  if (!variants.every((v) => v is ResolvedObject)) return null;
+  final objects = variants.cast<ResolvedObject>();
+  // Same property name set across variants. (Same required set too —
+  // a difference in required-ness would have been picked up by
+  // `_requiredFieldArmsFor` upstream.)
+  final firstPropNames = objects.first.properties.keys.toSet();
+  for (final o in objects.skip(1)) {
+    if (!const SetEquality<String>().equals(
+      o.properties.keys.toSet(),
+      firstPropNames,
+    )) {
+      return null;
+    }
+    if (!const SetEquality<String>().equals(
+      o.requiredProperties.toSet(),
+      objects.first.requiredProperties.toSet(),
+    )) {
+      return null;
+    }
+  }
+  // Find the single array-typed property whose items' shape key
+  // differs across variants. Other properties must be structurally
+  // identical (resolved-schema equality) to keep the dispatch sound.
+  String? discriminatorProp;
+  for (final propName in firstPropNames) {
+    // Property names are confirmed identical across variants above,
+    // so each lookup hits — null-check to bind a non-nullable local
+    // and stay off the bang operator.
+    final perVariant = <ResolvedSchema>[];
+    for (final o in objects) {
+      final p = o.properties[propName];
+      if (p == null) return null;
+      perVariant.add(p);
+    }
+    if (perVariant.every((p) => p is ResolvedArray)) {
+      final itemKeys = perVariant
+          .cast<ResolvedArray>()
+          .map((a) => _jsonShapeKey(a.items))
+          .toList();
+      // At least two distinct shape keys across variants (counting
+      // `null` as its own bucket — those become the fallback).
+      final distinctKeys = <String?>{...itemKeys};
+      if (distinctKeys.length >= 2) {
+        if (discriminatorProp != null) return null;
+        discriminatorProp = propName;
+        continue;
+      }
+    }
+    // Non-discriminator property — must be identical across variants.
+    if (!perVariant.every((p) => p == perVariant.first)) return null;
+  }
+  if (discriminatorProp == null) return null;
+  // When the discriminator property is optional in every variant
+  // (the github labels case: `labels` has no `required:`), the
+  // property-array predicates can all miss at runtime — `{}` matches
+  // none of them. In that case, keep the last variant as an
+  // unguarded fallback so a missing/empty array still picks
+  // *something* (matches the spec author's intent that any of the
+  // two object shapes accepts an empty payload). When the property
+  // is required, every match must be predicate-tagged so a payload
+  // missing the discriminator is a hard error.
+  final discriminatorRequired = objects.every(
+    (o) => o.requiredProperties.contains(discriminatorProp),
+  );
+  final fallbackIndex = discriminatorRequired ? -1 : objects.length - 1;
+  final arms = <PredicateArm>[];
+  final usedTypes = <String>{};
+  var fallbackCount = 0;
+  for (var i = 0; i < objects.length; i++) {
+    final o = objects[i];
+    final prop = o.properties[discriminatorProp];
+    if (prop is! ResolvedArray) return null;
+    final itemKey = _jsonShapeKey(prop.items);
+    final isUnpinnable =
+        itemKey == null || usedTypes.contains(itemKey) || i == fallbackIndex;
+    if (isUnpinnable) {
+      fallbackCount++;
+      if (fallbackCount > 1) return null;
+      arms.add(PredicateArm(variant: o, predicate: const Always()));
+      continue;
+    }
+    usedTypes.add(itemKey);
+    arms.add(
+      PredicateArm(
+        variant: o,
+        predicate: PropertyArrayItemShape(
+          propertyName: discriminatorProp,
+          shapeKey: itemKey,
+        ),
+      ),
+    );
+  }
+  return arms;
 }
 
 PredicateDispatch? _pickRequiredField(
   List<ResolvedSchema> variants, {
   bool looseRequiredUniqueness = false,
 }) {
-  final arms = _requiredFieldArmsFor(
-    variants,
-    looseRequiredUniqueness: looseRequiredUniqueness,
-  );
+  final arms =
+      _requiredFieldArmsFor(
+        variants,
+        looseRequiredUniqueness: looseRequiredUniqueness,
+      ) ??
+      _propertyArrayElementShapeArmsFor(variants);
   if (arms == null) return null;
   return PredicateDispatch(
     kind: PredicateDispatchKind.requiredField,
@@ -604,11 +848,10 @@ PredicateDispatch? _pickArrayElement(List<ResolvedSchema> variants) {
     final outer = switch (inner) {
       KeyExists(:final propertyName) => ArrayElementHasKey(propertyName),
       Always() => const Always(),
-      ArrayElementHasKey() => throw StateError(
-        'Unexpected nested array-element predicate from inner arms',
-      ),
+      ArrayElementHasKey() ||
+      ArrayElementIsType() ||
       PropertyArrayItemShape() => throw StateError(
-        'Unexpected nested property-array-item-shape predicate from '
+        'Unexpected nested array-element/property-array predicate from '
         'inner arms — _requiredFieldArmsFor only emits KeyExists/Always',
       ),
     };
