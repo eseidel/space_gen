@@ -3500,16 +3500,14 @@ class RenderObject extends RenderNewType {
 
   /// Empty map: any required property will fail its type cast inside
   /// `parseFromJson`, which rewraps the TypeError as FormatException.
-  /// When there are no required properties — or every name listed in
-  /// `required` is unknown to `properties` (a buggy spec like
-  /// github's `package-version-metadata-docker`, which lists
-  /// `required: [tags]` for a property called `tag`) — `{}` parses
-  /// successfully and we have no guaranteed-invalid input.
+  /// When there are no required properties, `{}` is a valid instance
+  /// and we have no guaranteed-invalid input. The parser drops names
+  /// listed in `required` that don't match a real property (with a
+  /// warn-log), so [requiredProperties] only ever contains names
+  /// that will actually fail the cast.
   @override
-  String? invalidJsonExample(SchemaRenderer context) {
-    final actuallyRequired = requiredProperties.where(properties.containsKey);
-    return actuallyRequired.isEmpty ? null : '<String, dynamic>{}';
-  }
+  String? invalidJsonExample(SchemaRenderer context) =>
+      requiredProperties.isEmpty ? null : '<String, dynamic>{}';
 }
 
 class RenderArray extends RenderSchema {

@@ -1164,12 +1164,31 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   _ignored<dynamic>(json, 'xml');
   _ignored<dynamic>(json, 'externalDocs');
 
-  final requiredProperties = _optionalList<String>(json, 'required') ?? [];
+  final declaredRequired = _optionalList<String>(json, 'required') ?? [];
+  // OpenAPI lets `required` name any string, but the only meaningful
+  // names are properties this object actually declares. Spec-author
+  // typos sneak in (github's `package-version-metadata-docker` lists
+  // `required: [tags]` for a property called `tag`); silently
+  // honoring those produces a class whose constructor demands a
+  // field that doesn't exist in the schema, plus broken downstream
+  // tests. Drop unknown names and warn — the spec author can fix
+  // the typo.
+  final requiredProperties = <String>[];
+  for (final name in declaredRequired) {
+    if (properties.containsKey(name)) {
+      requiredProperties.add(name);
+    } else {
+      _warn(
+        json,
+        "'required' lists '$name' but no such property is declared",
+      );
+    }
+  }
 
   return SchemaObject(
     common: common,
     properties: properties,
-    requiredProperties: requiredProperties.cast<String>(),
+    requiredProperties: requiredProperties,
     additionalProperties: additionalPropertiesSchema,
     defaultValue: defaultValue,
   );
