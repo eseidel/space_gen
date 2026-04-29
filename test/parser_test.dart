@@ -1749,6 +1749,114 @@ void main() {
         expect(oneOf.schemas[1].object, isA<SchemaNumber>());
         expect(oneOf.common.nullable, isTrue);
       });
+
+      test('explicit oneOf wins over multi-type', () {
+        // Github writes both `type: [null, string, integer]` AND
+        // `oneOf: [{string}, {integer with description}]` on the
+        // same property. The explicit `oneOf` carries strictly more
+        // info (the integer variant's description, formats, items)
+        // and should win — otherwise it gets logged as `Unused:
+        // oneOf` and dropped on the floor.
+        final json = {
+          'type': ['null', 'string', 'integer'],
+          'oneOf': [
+            {'type': 'string'},
+            {'type': 'integer', 'description': 'milestone number'},
+          ],
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaOneOf) {
+          fail('Expected SchemaOneOf, got ${schema.runtimeType}');
+        }
+        expect(schema.schemas.length, 2);
+        expect(schema.schemas[0].object, isA<SchemaString>());
+        final intVariant = schema.schemas[1].object;
+        if (intVariant is! SchemaInteger) {
+          fail('Expected SchemaInteger, got ${intVariant.runtimeType}');
+        }
+        // Description from the explicit oneOf variant survives.
+        expect(intVariant.common.description, 'milestone number');
+        // The parent's `type: [null, ...]` still propagates the
+        // nullable bit through `common`.
+        expect(schema.common.nullable, isTrue);
+      });
+
+      test('explicit anyOf wins over multi-type', () {
+        // Same gap as oneOf above; github uses `anyOf` in a few
+        // property slots too (e.g. `metadata.additionalProperties`
+        // in webhooks).
+        final json = {
+          'type': ['null', 'string', 'integer'],
+          'anyOf': [
+            {'type': 'string', 'format': 'date-time'},
+            {'type': 'integer'},
+          ],
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaAnyOf) {
+          fail('Expected SchemaAnyOf, got ${schema.runtimeType}');
+        }
+        expect(schema.schemas.length, 2);
+        // The string variant carries `format: date-time` from the
+        // explicit anyOf, which the type-array expansion would drop.
+        final strVariant = schema.schemas[0].object;
+        if (strVariant is! SchemaPod) {
+          fail('Expected SchemaPod, got ${strVariant.runtimeType}');
+        }
+        expect(strVariant.type, PodType.dateTime);
+        expect(schema.common.nullable, isTrue);
+      });
+
+      test('property-slot oneOf without parallel type also parses', () {
+        // The slot-coverage check: schemas with only `oneOf` (no
+        // `type:` array sibling) keep working as before — this case
+        // already worked, we just want a regression guard.
+        final json = {
+          'type': 'object',
+          'properties': {
+            'value': {
+              'oneOf': [
+                {'type': 'string'},
+                {'type': 'integer'},
+              ],
+            },
+          },
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaObject) {
+          fail('Expected SchemaObject, got ${schema.runtimeType}');
+        }
+        expect(schema.properties['value']?.object, isA<SchemaOneOf>());
+      });
+
+      test('property-slot oneOf with parallel type', () {
+        // End-to-end shape mirroring github's `issues.post.milestone`
+        // — oneOf at a property slot with the redundant multi-type
+        // sibling. The property's schema is parsed as an explicit
+        // oneOf, not a type-array-derived synthetic one.
+        final json = {
+          'type': 'object',
+          'properties': {
+            'milestone': {
+              'type': ['null', 'string', 'integer'],
+              'oneOf': [
+                {'type': 'string'},
+                {'type': 'integer'},
+              ],
+            },
+          },
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaObject) {
+          fail('Expected SchemaObject, got ${schema.runtimeType}');
+        }
+        final milestone = schema.properties['milestone']?.object;
+        if (milestone is! SchemaOneOf) {
+          fail('Expected SchemaOneOf, got ${milestone.runtimeType}');
+        }
+        expect(milestone.schemas.length, 2);
+        expect(milestone.common.nullable, isTrue);
+      });
     });
 
     group('security requirements', () {

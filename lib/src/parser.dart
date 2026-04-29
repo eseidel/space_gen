@@ -757,6 +757,26 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     examples: _optional<List<dynamic>>(json, 'examples'),
   );
 
+  // An explicit `oneOf`/`anyOf` wins over the multi-type type-array
+  // expansion below. When a schema declares both — `type: [a, b]`
+  // alongside an `oneOf: [...]` — the explicit union is strictly
+  // more specific: it can carry per-variant `format`, `description`,
+  // `items`, `enum`, etc., and OpenAPI semantics treat the type-array
+  // as shorthand for a structurally-equivalent union. If the type-
+  // array path wins, the explicit union is silently dropped along
+  // with all its per-variant detail.
+  //
+  // `allOf` is intentionally not short-circuited here: it's AND, not
+  // OR, so it doesn't substitute for a multi-type union the way
+  // `oneOf`/`anyOf` do. The fallback below still routes it through
+  // `_handleCollectionTypes`.
+  if (json.containsKey('oneOf') || json.containsKey('anyOf')) {
+    final union = _handleCollectionTypes(json, common: common);
+    if (union != null) {
+      return union;
+    }
+  }
+
   if (typeAndFormat.types != null) {
     // Multiple types are treated as a oneOf schema, just parsing the same
     // root scheme object multiple times.
@@ -781,6 +801,12 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     );
   }
 
+  // Fallback handling for the rare allOf-only / oneOf-with-no-result
+  // shapes that didn't take the early branch above. The early gate
+  // covers the common case (oneOf/anyOf at any slot, with or without
+  // a parallel `type:` array); this catches allOf, plus the
+  // constraint-only oneOf/anyOf shapes that return null and fall
+  // through to plain object parsing.
   final collectionType = _handleCollectionTypes(json, common: common);
   if (collectionType != null) {
     return collectionType;
