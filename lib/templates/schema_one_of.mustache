@@ -95,11 +95,11 @@
 {{/preamble}}
 {{#dispatch}}
         if ({{{ predicateTest }}}) {
-            return {{{ wrapperTypeName }}}({{{ construction }}});
+            return {{{ caseExpression }}};
         }
 {{/dispatch}}
 {{#fallback}}
-        return {{{ wrapperTypeName }}}({{{ construction }}});
+        return {{{ caseExpression }}};
 {{/fallback}}
 {{^fallback}}
         throw FormatException(
@@ -117,6 +117,9 @@
 {{#variants}}
 {{> _one_of_wrapper}}
 {{/variants}}
+{{#smooshedVariants}}
+{{> schema_object}}
+{{/smooshedVariants}}
 {{/has_predicate_dispatch}}
 {{#no_dispatch}}
 {{{ doc_comment }}}sealed class {{ typeName }} {

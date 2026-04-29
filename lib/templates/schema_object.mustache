@@ -1,5 +1,5 @@
 {{{ doc_comment }}}{{^mutableModels}}@immutable{{/mutableModels}}
-class {{ typeName }} {
+{{#parentSealedTypeName}}final {{/parentSealedTypeName}}class {{ typeName }}{{#parentSealedTypeName}} extends {{ parentSealedTypeName }}{{/parentSealedTypeName}} {
     {{{ constructor_doc_comment }}}{{ typeName }}(
         {{#hasProperties}}
         { {{#properties}}{{{ argumentLine }}}, {{/properties}}
@@ -60,7 +60,8 @@ class {{ typeName }} {
     {{{ valueSchema }}}? operator [](String key) => {{additionalPropertiesName}}[key];
     {{/hasAdditionalProperties}}
 
-    {{{ to_json_doc_comment }}}Map<String, dynamic> toJson() {
+    {{{ to_json_doc_comment }}}{{#parentSealedTypeName}}@override
+    {{/parentSealedTypeName}}Map<String, dynamic> toJson() {
     {{#hasNoJsonProperty}}
         throw UnsupportedError(
           'Cannot encode {{ typeName }} as JSON (binary field present).',

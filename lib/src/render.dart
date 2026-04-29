@@ -354,14 +354,24 @@ Map<String, String> renderTestSchemas(
     );
   });
   // Aggregate names across every resolved schema in the set so a
-  // ref from one to another resolves correctly.
-  final names = <JsonPointer, String>{};
+  // ref from one to another resolves correctly. Also carry the
+  // smooshed-parent map across schemas — its data lives on the
+  // returned [AssignedNames] beside the snake-name map and would
+  // otherwise be dropped by a naive merge.
+  final snakeNames = <JsonPointer, String>{};
+  final smooshedParents = <JsonPointer, String>{};
   for (final s in resolvedSchemas.values) {
-    for (final entry in assignNamesForSchema(s).entries) {
-      names[entry.key] = entry.value;
+    final names = assignNamesForSchema(s);
+    for (final entry in names.snakeEntries) {
+      snakeNames[entry.key] = entry.value;
     }
+    smooshedParents.addAll(names.smooshedParentSnakeByPointer);
   }
-  final resolver = SpecResolver(quirks)..names = AssignedNames(names);
+  final resolver = SpecResolver(quirks)
+    ..names = AssignedNames(
+      snakeNames,
+      smooshedParentSnakeByPointer: smooshedParents,
+    );
   final templates = TemplateProvider.defaultLocation();
 
   final renderSchemas = resolvedSchemas.map((key, value) {
