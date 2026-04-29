@@ -74,6 +74,47 @@ class ResolveContext {
   /// resolver emits a [ResolvedRecursiveRef] instead of recursing.
   final Set<JsonPointer> resolvingStack;
 
+  /// Cache of inline-synthesized [ResolvedSchemaCollection]s
+  /// (`oneOf`/`anyOf`) keyed by structural content so structurally-
+  /// identical collections at different sites in the spec resolve to
+  /// the same [ResolvedSchema] instance.
+  ///
+  /// Why: github's `/user`, `/user/{account_id}`, and `/users/{username}`
+  /// all return `oneOf<private-user, public-user>` with the same
+  /// discriminator. Without sharing, the resolver produces three
+  /// equal-but-distinct [ResolvedOneOf]s, the naming pass assigns each
+  /// its own Dart class name, and we emit three byte-identical sealed
+  /// classes (`UsersGetAuthenticated200Response`,
+  /// `UsersGetById200Response`, `UsersGetByUsername200Response`).
+  /// Sharing collapses them to one.
+  ///
+  /// Top-level component schemas (e.g. `#/components/schemas/Foo`) are
+  /// excluded — those have intentional names from the spec author and
+  /// consumers refer to them by name, so two structurally-identical
+  /// component schemas are still meant to be distinct types.
+  final Map<_CollectionStructure, ResolvedSchemaCollection> _collectionCache =
+      {};
+
+  /// Returns a cached [ResolvedSchemaCollection] structurally equal to
+  /// [collection], or caches and returns [collection] itself when no
+  /// match exists. See [_collectionCache] for why we share.
+  ResolvedSchemaCollection shareCollection(
+    ResolvedSchemaCollection collection,
+  ) {
+    if (isTopLevelComponent(collection.pointer)) return collection;
+    // A collection with no variants is a degenerate stub — render
+    // emits an empty sealed class that always throws on parse.
+    // Sharing those across sites would silently merge unrelated
+    // property slots whose schemas the parser failed to capture
+    // (e.g. github's `allOf + type: [null]` shape, which warns
+    // "Unused: …, allOf" and produces an empty oneOf) into one type.
+    // The type system can't tell them apart afterward, so each
+    // broken site stays distinct and individually nameable.
+    if (collection.schemas.isEmpty) return collection;
+    final key = _CollectionStructure.from(collection);
+    return _collectionCache.putIfAbsent(key, () => collection);
+  }
+
   CommonProperties resolveCommonProperties(CommonProperties common) {
     final resolvedName = getResolvedName(common.pointer, common.snakeName);
     if (resolvedName != common.snakeName) {
@@ -314,10 +355,12 @@ ResolvedSchema _resolveSchemaFully(
       resolvedSchemas,
       oneOf.pointer,
     );
-    return ResolvedOneOf(
-      common: resolvedCommon,
-      schemas: resolvedSchemas,
-      discriminator: discriminator,
+    return context.shareCollection(
+      ResolvedOneOf(
+        common: resolvedCommon,
+        schemas: resolvedSchemas,
+        discriminator: discriminator,
+      ),
     );
   }
   if (schema is SchemaAllOf) {
@@ -379,10 +422,12 @@ ResolvedSchema _resolveSchemaFully(
       schemas,
       anyOf.pointer,
     );
-    return ResolvedAnyOf(
-      common: resolvedCommon,
-      schemas: schemas,
-      discriminator: discriminator,
+    return context.shareCollection(
+      ResolvedAnyOf(
+        common: resolvedCommon,
+        schemas: schemas,
+        discriminator: discriminator,
+      ),
     );
   }
   if (schema is SchemaNull) {
@@ -748,6 +793,46 @@ class RegistryBuilder extends Visitor {
 
 ResolvedTag _resolvedTag(Tag tag) {
   return ResolvedTag(name: tag.name, description: tag.description);
+}
+
+/// Structural identity key for [ResolveContext.shareCollection] cache —
+/// covers everything that distinguishes one [ResolvedSchemaCollection]
+/// from another *except* the collection's own pointer/snake name.
+/// Two [ResolvedOneOf]s with the same variants and discriminator are
+/// the same Dart sealed class even when they sit at different
+/// operation pointers; this key makes that the cache hit.
+@immutable
+class _CollectionStructure extends Equatable {
+  const _CollectionStructure({
+    required this.kind,
+    required this.schemas,
+    required this.discriminator,
+  });
+
+  factory _CollectionStructure.from(ResolvedSchemaCollection collection) {
+    return _CollectionStructure(
+      kind: collection.runtimeType,
+      schemas: collection.schemas,
+      discriminator: collection is ResolvedOneOf
+          ? collection.discriminator
+          : null,
+    );
+  }
+
+  /// `oneOf` and `anyOf` collections never share — they render
+  /// differently. Keying on `runtimeType` rather than a separate enum
+  /// keeps the dispatch implicit.
+  final Type kind;
+
+  final List<ResolvedSchema> schemas;
+
+  /// Only meaningful for `ResolvedOneOf`. Two oneOfs with identical
+  /// variants but different discriminators must NOT share — the
+  /// discriminator drives the rendered `fromJson`'s switch property.
+  final ResolvedDiscriminator? discriminator;
+
+  @override
+  List<Object?> get props => [kind, schemas, discriminator];
 }
 
 bool isTopLevelComponent(JsonPointer pointer) {
