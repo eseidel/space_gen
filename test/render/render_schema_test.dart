@@ -1344,6 +1344,212 @@ void main() {
       expect(result, contains("throw UnimplementedError('Test.fromJson')"));
     });
 
+    test('property-array-item-shape dispatch separates twins whose '
+        'top-level keys are identical but whose shared array property '
+        'items have distinct JSON shape (object vs string)', () {
+      // Real-world site: github's `oneOf<validation-error,
+      // validation-error-simple>` (the orgs/update 422 and projects/
+      // create-card 422 responses). Both have the same required keys
+      // [message, documentation_url] and the same optional `errors`
+      // array; the only structural difference is the shape of items
+      // inside `errors` — object for `Detailed`, string for `Simple`.
+      final results = renderTestSchemas(
+        {
+          'Resp': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Detailed'},
+              {r'$ref': '#/components/schemas/Simple'},
+            ],
+          },
+          'Detailed': {
+            'type': 'object',
+            'required': ['message', 'documentation_url'],
+            'properties': {
+              'message': {'type': 'string'},
+              'documentation_url': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {
+                  'type': 'object',
+                  'required': ['code'],
+                  'properties': {
+                    'code': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+          'Simple': {
+            'type': 'object',
+            'required': ['message', 'documentation_url'],
+            'properties': {
+              'message': {'type': 'string'},
+              'documentation_url': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final result = results['Resp'];
+      expect(result, isNotNull);
+      // Object-shaped variants → factory takes Map (no `dynamic` cast
+      // preamble like the array-element kind).
+      expect(
+        result,
+        contains('factory Resp.fromJson(Map<String, dynamic> json)'),
+      );
+      expect(result, isNot(contains('final v = json as List;')));
+      // Detailed arm: errors[].items is object → first is Map.
+      expect(
+        result,
+        contains(
+          "if (json['errors'] is List && "
+          "(json['errors'] as List).isNotEmpty && "
+          "(json['errors'] as List).first is Map<String, dynamic>)",
+        ),
+      );
+      // Simple arm: last variant → unguarded `Always` fallback. No
+      // `if (... first is String)` guard: when the discriminator
+      // property is absent or empty (spec-legal — github lists
+      // `errors` as optional on both variants), the response routes
+      // to the simpler form rather than throwing.
+      expect(
+        result,
+        isNot(
+          contains(
+            "if (json['errors'] is List && "
+            "(json['errors'] as List).isNotEmpty && "
+            "(json['errors'] as List).first is String)",
+          ),
+        ),
+      );
+      // Wrappers, not smooshed (top-level $ref variants).
+      expect(result, contains('class RespDetailed extends Resp'));
+      expect(result, contains('class RespSimple extends Resp'));
+      // No FormatException-on-fall-through: the Always fallback means
+      // any input shape gets routed to a variant.
+      expect(result, isNot(contains('throw UnimplementedError')));
+      expect(result, isNot(contains('throw FormatException')));
+    });
+
+    test('property-array-item-shape dispatch routes missing/empty '
+        'discriminator property to the unguarded last variant', () {
+      // github's `validation-error.errors` and
+      // `validation-error-simple.errors` are both *optional*. A 422
+      // response with no `errors` is spec-legal — the dispatch must
+      // not throw on it. Verifying the rendered factory does not emit
+      // a fall-through `throw FormatException` for the no-match case.
+      final results = renderTestSchemas(
+        {
+          'Resp': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Detailed'},
+              {r'$ref': '#/components/schemas/Simple'},
+            ],
+          },
+          'Detailed': {
+            'type': 'object',
+            'required': ['message'],
+            'properties': {
+              'message': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {
+                  'type': 'object',
+                  'properties': {
+                    'code': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+          'Simple': {
+            'type': 'object',
+            'required': ['message'],
+            'properties': {
+              'message': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final result = results['Resp'];
+      // The last arm is the unguarded fallback — no FormatException
+      // for the no-match case.
+      expect(result, isNot(contains('throw FormatException')));
+      // The Detailed arm still has its shape guard.
+      expect(
+        result,
+        contains(
+          "if (json['errors'] is List && "
+          "(json['errors'] as List).isNotEmpty && "
+          "(json['errors'] as List).first is Map<String, dynamic>)",
+        ),
+      );
+    });
+
+    test('property-array-item-shape dispatch bails when the shared array '
+        'property items collide on JSON shape', () {
+      // Both variants put objects inside `errors` — shape-peeking can't
+      // distinguish them, so the picker falls through to the legacy
+      // stub.
+      final results = renderTestSchemas(
+        {
+          'Resp': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/A'},
+              {r'$ref': '#/components/schemas/B'},
+            ],
+          },
+          'A': {
+            'type': 'object',
+            'required': ['message'],
+            'properties': {
+              'message': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {
+                  'type': 'object',
+                  'properties': {
+                    'code': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+          'B': {
+            'type': 'object',
+            'required': ['message'],
+            'properties': {
+              'message': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {
+                  'type': 'object',
+                  'properties': {
+                    'reason': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      expect(
+        results['Resp'],
+        contains("throw UnimplementedError('Resp.fromJson')"),
+      );
+    });
+
     test('non-discriminator oneOf shape-dispatch with an enum variant '
         '(distinct from a Map<String, dynamic> object variant)', () {
       // The enum's JSON storage type is `String` — same as RenderString,
