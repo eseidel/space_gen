@@ -101,7 +101,16 @@ class ResolveContext {
   ResolvedSchemaCollection shareCollection(
     ResolvedSchemaCollection collection,
   ) {
-    if (isTopLevelComponent(collection.pointer)) return collection;
+    // Anywhere inside `#/components/schemas/...` is opt-out of the
+    // dedup. Top-level components are excluded because the spec
+    // author named them; their nested contents are excluded because
+    // the synthesized snake name embeds the parent component's name
+    // (e.g. `installation_account` from
+    // `#/components/schemas/installation/properties/account`),
+    // which carries spec-author context that "first arrival wins"
+    // would erase. Operation-synthesized names (under
+    // `#/paths/...`) are arbitrary and dedup is a pure win.
+    if (_isUnderComponentSchema(collection.pointer)) return collection;
     // A collection with no variants is a degenerate stub — render
     // emits an empty sealed class that always throws on parse.
     // Sharing those across sites would silently merge unrelated
@@ -114,6 +123,15 @@ class ResolveContext {
     final key = _CollectionStructure.from(collection);
     return _collectionCache.putIfAbsent(key, () => collection);
   }
+
+  /// True when [pointer] sits inside (or at) a top-level component
+  /// schema definition — i.e. `#/components/schemas/<name>` or any
+  /// path beneath. Spec-author-named territory; we leave naming
+  /// alone there.
+  static bool _isUnderComponentSchema(JsonPointer pointer) =>
+      pointer.parts.length >= 3 &&
+      pointer.parts[0] == 'components' &&
+      pointer.parts[1] == 'schemas';
 
   CommonProperties resolveCommonProperties(CommonProperties common) {
     final resolvedName = getResolvedName(common.pointer, common.snakeName);
