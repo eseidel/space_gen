@@ -1,0 +1,20 @@
+// GENERATED — do not hand-edit.
+import 'package:{{{ packageName }}}/{{{ barrelImportPath }}}';
+import 'package:test/test.dart';
+
+void main() {
+  group('{{{ typeName }}}', () {
+{{#variants}}
+    test('{{{ variantTypeName }}} round-trips via maybeFromJson/toJson', () {
+      final instance = {{{ exampleValue }}};
+      final parsed = {{{ variantTypeName }}}.maybeFromJson(instance.toJson())!;
+      expect(parsed, equals(instance));
+      expect(parsed.hashCode, equals(instance.hashCode));
+    });
+
+{{/variants}}
+    test('maybeFromJson returns null on null input', () {
+      expect({{{ typeName }}}.maybeFromJson(null), isNull);
+    });
+  });
+}

@@ -527,6 +527,100 @@ void main() {
     });
 
     test(
+      'oneOf with smooshed inline-object variants gets a parent test '
+      'file with one round-trip per variant',
+      () async {
+        // Pre-smoosh, each inline variant rendered to its own `.dart`
+        // file and got its own auto-generated round-trip test. The
+        // smoosh series moved the variants inline into the parent's
+        // file, which dropped those tests on the floor — the variant
+        // classes still exist (and their `fromJson`/`toJson` are
+        // unchanged) but nothing exercised them anymore. This test
+        // pins the recovery: the parent's test file now carries a
+        // per-variant round-trip for every smooshed inline object.
+        final fs = MemoryFileSystem.test();
+        final spec = {
+          'openapi': '3.1.0',
+          'info': {'title': 'SmooshTest', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/cards': {
+              'post': {
+                'operationId': 'createCard',
+                'requestBody': {
+                  'required': true,
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'oneOf': [
+                          {
+                            'type': 'object',
+                            'required': ['note'],
+                            'properties': {
+                              'note': {'type': 'string'},
+                            },
+                          },
+                          {
+                            'type': 'object',
+                            'required': ['contentId'],
+                            'properties': {
+                              'contentId': {'type': 'integer'},
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  },
+                },
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+        };
+        final out = fs.directory('out');
+        await renderToDirectory(spec: spec, outDir: out);
+        final testFile = out.childFile(
+          'test/messages/create_card_request_test.dart',
+        );
+        expect(testFile.existsSync(), isTrue);
+        final body = testFile.readAsStringSync();
+        // Group is named after the parent oneOf type.
+        expect(body, contains("group('CreateCardRequest'"));
+        // One test per smooshed variant.
+        expect(
+          body,
+          contains(
+            'CreateCardRequestOneOf0 round-trips via maybeFromJson/toJson',
+          ),
+        );
+        expect(
+          body,
+          contains(
+            'CreateCardRequestOneOf1 round-trips via maybeFromJson/toJson',
+          ),
+        );
+        // Each variant round-trips through its own factory (not the
+        // parent's), so the test exercises the variant's conversion
+        // even when the parent's dispatch keys off properties absent
+        // from the example value.
+        expect(
+          body,
+          contains('CreateCardRequestOneOf0.maybeFromJson('),
+        );
+        expect(
+          body,
+          contains('CreateCardRequestOneOf1.maybeFromJson('),
+        );
+        // Parent maybeFromJson(null) check still appears once.
+        expect(body, contains('CreateCardRequest.maybeFromJson(null)'));
+      },
+    );
+
+    test(
       'api.dart barrel re-exports third-party packages used by models',
       () async {
         // A model with a `format: uri-template` field uses `UriTemplate`

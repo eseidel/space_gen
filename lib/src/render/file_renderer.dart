@@ -872,6 +872,14 @@ class FileRenderer {
   /// example value. Skips schemas for which [testPath] returns null,
   /// or for which [RenderSchema.exampleValue] returns null (recursive
   /// types, no-JSON types).
+  ///
+  /// `RenderOneOf` parents take a separate path
+  /// ([_renderOneOfTest]): they don't have a single example value
+  /// (the sealed type isn't directly constructible), but each
+  /// smooshed inline-object variant does. Those variants used to
+  /// render to their own files (and got their own round-trip tests
+  /// per file); since smoosh inlined them into the parent's file, the
+  /// parent's test file now owns their coverage.
   void renderModelTests(Iterable<RenderSchema> schemas) {
     final schemaContext = schemaRenderer;
     for (final schema in schemas) {
@@ -879,6 +887,10 @@ class FileRenderer {
       final layoutContext = _contextFor(schema);
       final outPath = testPath(layoutContext);
       if (outPath == null) continue;
+      if (schema is RenderOneOf) {
+        _renderOneOfTest(schema, outPath: outPath, context: schemaContext);
+        continue;
+      }
       final example = schema.exampleValue(schemaContext);
       if (example == null) continue;
       final invalidJson = schema.invalidJsonExample(schemaContext);
@@ -895,6 +907,60 @@ class FileRenderer {
         },
       );
     }
+  }
+
+  /// Emit a round-trip test for [schema]'s smooshed variants — one
+  /// `test()` per variant — into the parent's test file. Each test
+  /// builds the variant directly, then round-trips it through the
+  /// variant's own `maybeFromJson` / `toJson`. We don't dispatch
+  /// through the parent's `fromJson` here for two reasons: (a) the
+  /// variant's example value is sometimes built from non-required
+  /// properties only, and the parent's predicate dispatch keys off
+  /// fields that may be absent from the example; (b) the variant's
+  /// own conversion is the unit under test.
+  ///
+  /// Skipped (no file emitted) when the oneOf has no smooshed
+  /// variants, or when no smooshed variant produces a usable
+  /// `exampleValue`. Non-smooshed wrapper subclasses (string/int/list
+  /// variants) aren't covered here — they live in the parent's file
+  /// too, but they predate smoosh and never had their own tests, so
+  /// adding coverage for them is out of scope for this pass.
+  ///
+  /// Variants whose object has `additionalProperties` are also
+  /// skipped: their example value carries an `entries: <String, …>{}`
+  /// map field, and Dart's `Map ==` is reference equality, so the
+  /// round-trip's equality assertion would fail spuriously. The same
+  /// pre-existing equality bug already affects the standard
+  /// per-schema round-trip test for top-level objects with
+  /// `additionalProperties`; this skip prevents the smoosh test pass
+  /// from regressing the github regen's pass count by the same
+  /// underlying issue.
+  void _renderOneOfTest(
+    RenderOneOf schema, {
+    required String outPath,
+    required SchemaRenderer context,
+  }) {
+    final variants = <Map<String, dynamic>>[];
+    for (final variant in schema.smooshedVariants) {
+      if (variant.additionalProperties != null) continue;
+      final example = variant.exampleValue(context);
+      if (example == null) continue;
+      variants.add({
+        'variantTypeName': variant.typeName,
+        'exampleValue': example,
+      });
+    }
+    if (variants.isEmpty) return;
+    _renderTemplate(
+      template: 'schema_oneof_round_trip_test',
+      outPath: outPath,
+      context: {
+        'packageName': packageName,
+        'barrelImportPath': testBarrelImport(),
+        'typeName': schema.typeName,
+        'variants': variants,
+      },
+    );
   }
 
   /// Render the entire spec.

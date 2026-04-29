@@ -3975,6 +3975,17 @@ class RenderOneOf extends RenderNewType {
   /// (no wrappers emitted). [wrapperTypeName] looks up by index.
   final List<String?> wrapperNames;
 
+  /// The smooshed inline-object variants of this oneOf — variant
+  /// classes that are emitted as `final class X extends Y` inline in
+  /// this oneOf's `.dart` file (rather than getting their own file).
+  /// Used by the test renderer to synthesize per-variant round-trip
+  /// tests in the parent's test file: with smoosh, the variants no
+  /// longer have their own `.dart` file and so no longer pick up an
+  /// auto-generated test file from the per-schema path. The parent
+  /// owns their coverage.
+  List<RenderObject> get smooshedVariants =>
+      schemas.whereType<RenderObject>().where((v) => v.isSmooshed).toList();
+
   /// We could do something smarter here, to determine if the oneOf has a
   /// const constructor, but it's not worth the complexity for now.
   @override
