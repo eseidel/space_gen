@@ -464,6 +464,154 @@ void main() {
       expect(schema, isA<SchemaOneOf>());
     });
 
+    group('spec-author quirks', () {
+      // These specs are technically valid OpenAPI but place a key
+      // somewhere the parser's chosen schema shape can't act on it.
+      // We don't enforce the constraint anyway. Vendor extensions
+      // (`x-*`) are silently dropped per the OpenAPI spec; everything
+      // else is detail-logged so the verbose-log mining workflow can
+      // surface the misplacement.
+
+      test('vendor extensions (x-*) flow through Unused: at -v', () {
+        // Per OpenAPI 3.x, `x-` prefixed keys are vendor extensions:
+        // generators that don't recognize them ignore them ("don't
+        // fail"), but they still surface in the unused tally at -v
+        // so the verbose-log mining workflow can spot extensions
+        // worth adding support for. We already act on
+        // `x-enum-descriptions`; future candidates include
+        // `x-enum-varnames` and `x-internal`.
+        final json = {
+          'type': 'string',
+          'x-github': {'foo': 'bar'},
+          'x-multi-segment': true,
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaString>());
+        verify(
+          () => logger.detail(any(that: contains('Unused: x-github'))),
+        ).called(1);
+        verifyNever(() => logger.warn(any()));
+      });
+
+      test('required on an array property is detail-logged', () {
+        // github's `dependency-graph-spdx-sbom.sbom.{packages,
+        // relationships}` put `required: [...]` on an array schema.
+        // `required` is an object-level keyword; on an array it does
+        // nothing. Detail-log so a curious `-v` reader can find it.
+        final json = {
+          'type': 'array',
+          'items': {'type': 'string'},
+          'required': ['name'],
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaArray>());
+        verify(
+          () => logger.detail(any(that: contains('Ignoring: required'))),
+        ).called(1);
+      });
+
+      test('maxProperties on an object/map is detail-logged', () {
+        // github's `metadata` and `dispatches.inputs` set
+        // `maxProperties: N`. We don't validate object size.
+        final json = {
+          'type': 'object',
+          'maxProperties': 10,
+          'additionalProperties': true,
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaMap>());
+        verify(
+          () => logger.detail(
+            any(that: contains('Ignoring: maxProperties=10')),
+          ),
+        ).called(1);
+      });
+
+      test('minItems inside an items schema is detail-logged', () {
+        // github's `webhook-meta-deleted.hook.events.items` has
+        // `minItems: 1` on the string-enum items schema. `minItems`
+        // belongs on the parent array; on the items schema it does
+        // nothing.
+        final json = {
+          'type': 'array',
+          'items': {
+            'type': 'string',
+            'enum': ['a', 'b'],
+            'minItems': 1,
+          },
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaArray>());
+        verify(
+          () => logger.detail(any(that: contains('Ignoring: minItems=1'))),
+        ).called(1);
+      });
+
+      test(
+        'additionalProperties: true on a non-object is detail-logged',
+        () {
+          // github's `hook-delivery.response.payload` sets
+          // `additionalProperties: true` on a `type: [string, null]`
+          // schema. The flag is meaningless on a string.
+          final json = {
+            'type': ['string', 'null'],
+            'additionalProperties': true,
+          };
+          final logger = _MockLogger();
+          final schema = runWithLogger(logger, () => parseTestSchema(json));
+          // type: [string, null] becomes a nullable string.
+          expect(schema, isA<SchemaString>());
+          verify(
+            () => logger.detail(
+              any(that: contains('Ignoring: additionalProperties=true')),
+            ),
+          ).called(1);
+        },
+      );
+
+      test('top-level webhooks and externalDocs are consumed', () {
+        // OpenAPI 3.1 top-level sections we don't generate from.
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'x', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/x': {
+              'get': {
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+          'webhooks': {
+            'foo': {
+              'post': {
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+          'externalDocs': {'url': 'https://example.com/docs'},
+        };
+        final logger = _MockLogger();
+        final spec = runWithLogger(logger, () => parseOpenApi(json));
+        expect(spec.serverUrl, Uri.parse('https://example.com'));
+        // We don't surface as `Unused: webhooks, externalDocs` — they
+        // are explicitly `_ignored` (visible at -v as `Ignoring:`).
+        verifyNever(
+          () => logger.detail(any(that: contains('Unused'))),
+        );
+      });
+    });
+
     test('components schemas as ref not supported', () {
       // Refs are generally fine.
       final json = {
