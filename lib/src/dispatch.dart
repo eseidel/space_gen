@@ -57,6 +57,44 @@ class ArrayElementHasKey extends Predicate {
   }
 }
 
+/// `jsonVar['propertyName'] is List && (...).first is <shapeKey>` — picks
+/// variants whose required keys are identical at the top level but whose
+/// shared array property has items of distinguishably different JSON shape
+/// across variants. Real-world site: github's `validation-error` (errors
+/// items are objects) vs `validation-error-simple` (errors items are
+/// strings) — both have the same `[message, documentation_url]` required
+/// keys, so neither [KeyExists] nor [ArrayElementHasKey] alone separates
+/// them.
+///
+/// The test short-circuits on `is List` (non-list / null fall through)
+/// and on `.isNotEmpty` (empty lists fall through). A missing or empty
+/// `errors` value won't match any shape arm — the caller is responsible
+/// for either an [Always] fallback variant or accepting a runtime throw.
+@immutable
+class PropertyArrayItemShape extends Predicate {
+  const PropertyArrayItemShape({
+    required this.propertyName,
+    required this.shapeKey,
+  });
+
+  /// JSON property name to navigate into (must be a List in the
+  /// matching variant).
+  final String propertyName;
+
+  /// Dart `is`-test type for the first element — matches the values
+  /// returned by the dispatch picker's shape classifier (e.g.
+  /// `'String'`, `'Map<String, dynamic>'`, `'int'`, `'List<dynamic>'`).
+  final String shapeKey;
+
+  @override
+  String dartIfTest(String jsonVar) {
+    final access = "$jsonVar['$propertyName']";
+    return '$access is List && '
+        '($access as List).isNotEmpty && '
+        '($access as List).first is $shapeKey';
+  }
+}
+
 /// Catch-all predicate — the dispatch's optional unguarded fallback.
 /// Never emits an `if` test; the template treats it as the
 /// unconditional `return Wrapper(...)` at the end of the chain.
@@ -231,6 +269,7 @@ DispatchDecision decideDispatch(ResolvedSchemaCollection collection) {
       _pickHybrid(variants) ??
       _pickRequiredField(variants) ??
       _pickArrayElement(variants) ??
+      _pickPropertyArrayItemShape(variants) ??
       const NoDispatch();
 }
 
@@ -471,6 +510,10 @@ PredicateDispatch? _pickArrayElement(List<ResolvedSchema> variants) {
       ArrayElementHasKey() => throw StateError(
         'Unexpected nested array-element predicate from inner arms',
       ),
+      PropertyArrayItemShape() => throw StateError(
+        'Unexpected nested property-array-item-shape predicate from '
+        'inner arms — _requiredFieldArmsFor only emits KeyExists/Always',
+      ),
     };
     outerArms.add(PredicateArm(variant: arrays[i], predicate: outer));
   }
@@ -478,6 +521,71 @@ PredicateDispatch? _pickArrayElement(List<ResolvedSchema> variants) {
     kind: PredicateDispatchKind.arrayElement,
     arms: outerArms,
   );
+}
+
+/// Last-resort picker for object-shaped variants whose top-level keys
+/// are *identical* (so neither [_pickRequiredField] nor [_pickHybrid]
+/// can separate them) but that share an array property whose items have
+/// pairwise-distinct JSON shapes across variants.
+///
+/// Real-world site: github's `oneOf<validation-error,
+/// validation-error-simple>`. Both have the same required keys
+/// `[message, documentation_url]` and the same optional `errors` key;
+/// the only structural difference is `errors[].items` (object vs
+/// string). The emitted dispatch tests `json['errors']` is a non-empty
+/// list and peeks the first element's shape.
+///
+/// Caveat: relies on the server emitting the property as a non-empty
+/// list. Empty / missing arrays match no arm — the factory throws.
+PredicateDispatch? _pickPropertyArrayItemShape(List<ResolvedSchema> variants) {
+  if (variants.length < 2) return null;
+  if (!variants.every(_isObjectLike)) return null;
+  // Walk every property name common to *all* variants where the
+  // property's value is a ResolvedArray. For each, classify the items'
+  // JSON shape per variant and accept the first property whose shapes
+  // are pairwise distinct.
+  final perVariantProps = variants.map(_flattenedProperties).toList();
+  final commonNames = perVariantProps.first.keys.toSet();
+  for (var i = 1; i < perVariantProps.length; i++) {
+    commonNames.retainAll(perVariantProps[i].keys);
+  }
+  // Deterministic order so the picker's choice doesn't depend on Map
+  // iteration order.
+  final sorted = commonNames.toList()..sort();
+  for (final propName in sorted) {
+    final shapes = <String>[];
+    var ok = true;
+    for (final props in perVariantProps) {
+      final value = props[propName];
+      if (value is! ResolvedArray) {
+        ok = false;
+        break;
+      }
+      final shape = _jsonShapeKey(value.items);
+      if (shape == null) {
+        ok = false;
+        break;
+      }
+      shapes.add(shape);
+    }
+    if (!ok) continue;
+    if (shapes.toSet().length != shapes.length) continue;
+    final arms = [
+      for (var i = 0; i < variants.length; i++)
+        PredicateArm(
+          variant: variants[i],
+          predicate: PropertyArrayItemShape(
+            propertyName: propName,
+            shapeKey: shapes[i],
+          ),
+        ),
+    ];
+    return PredicateDispatch(
+      kind: PredicateDispatchKind.requiredField,
+      arms: arms,
+    );
+  }
+  return null;
 }
 
 /// Property-presence dispatch on object-shaped variants. Each variant

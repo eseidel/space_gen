@@ -1344,6 +1344,143 @@ void main() {
       expect(result, contains("throw UnimplementedError('Test.fromJson')"));
     });
 
+    test('property-array-item-shape dispatch separates twins whose '
+        'top-level keys are identical but whose shared array property '
+        'items have distinct JSON shape (object vs string)', () {
+      // Real-world site: github's `oneOf<validation-error,
+      // validation-error-simple>` (the orgs/update 422 and projects/
+      // create-card 422 responses). Both have the same required keys
+      // [message, documentation_url] and the same optional `errors`
+      // array; the only structural difference is the shape of items
+      // inside `errors` — object for `Detailed`, string for `Simple`.
+      final results = renderTestSchemas(
+        {
+          'Resp': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/Detailed'},
+              {r'$ref': '#/components/schemas/Simple'},
+            ],
+          },
+          'Detailed': {
+            'type': 'object',
+            'required': ['message', 'documentation_url'],
+            'properties': {
+              'message': {'type': 'string'},
+              'documentation_url': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {
+                  'type': 'object',
+                  'required': ['code'],
+                  'properties': {
+                    'code': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+          'Simple': {
+            'type': 'object',
+            'required': ['message', 'documentation_url'],
+            'properties': {
+              'message': {'type': 'string'},
+              'documentation_url': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final result = results['Resp'];
+      expect(result, isNotNull);
+      // Object-shaped variants → factory takes Map (no `dynamic` cast
+      // preamble like the array-element kind).
+      expect(
+        result,
+        contains('factory Resp.fromJson(Map<String, dynamic> json)'),
+      );
+      expect(result, isNot(contains('final v = json as List;')));
+      // Detailed arm: errors[].items is object → first is Map.
+      expect(
+        result,
+        contains(
+          "if (json['errors'] is List && "
+          "(json['errors'] as List).isNotEmpty && "
+          "(json['errors'] as List).first is Map<String, dynamic>)",
+        ),
+      );
+      // Simple arm: errors[].items is string → first is String.
+      expect(
+        result,
+        contains(
+          "if (json['errors'] is List && "
+          "(json['errors'] as List).isNotEmpty && "
+          "(json['errors'] as List).first is String)",
+        ),
+      );
+      // Wrappers, not smooshed (top-level $ref variants).
+      expect(result, contains('class RespDetailed extends Resp'));
+      expect(result, contains('class RespSimple extends Resp'));
+      expect(result, isNot(contains('throw UnimplementedError')));
+    });
+
+    test('property-array-item-shape dispatch bails when the shared array '
+        'property items collide on JSON shape', () {
+      // Both variants put objects inside `errors` — shape-peeking can't
+      // distinguish them, so the picker falls through to the legacy
+      // stub.
+      final results = renderTestSchemas(
+        {
+          'Resp': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/A'},
+              {r'$ref': '#/components/schemas/B'},
+            ],
+          },
+          'A': {
+            'type': 'object',
+            'required': ['message'],
+            'properties': {
+              'message': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {
+                  'type': 'object',
+                  'properties': {
+                    'code': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+          'B': {
+            'type': 'object',
+            'required': ['message'],
+            'properties': {
+              'message': {'type': 'string'},
+              'errors': {
+                'type': 'array',
+                'items': {
+                  'type': 'object',
+                  'properties': {
+                    'reason': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      expect(
+        results['Resp'],
+        contains("throw UnimplementedError('Resp.fromJson')"),
+      );
+    });
+
     test('non-discriminator oneOf shape-dispatch with an enum variant '
         '(distinct from a Map<String, dynamic> object variant)', () {
       // The enum's JSON storage type is `String` — same as RenderString,
