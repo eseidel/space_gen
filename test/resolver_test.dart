@@ -1251,6 +1251,7 @@ void main() {
           properties: const {},
           additionalProperties: null,
           requiredProperties: const [],
+          readOnlyProperties: const {},
         );
         final schema2 = ResolvedObject(
           common: CommonProperties.test(
@@ -1263,6 +1264,7 @@ void main() {
           properties: const {},
           additionalProperties: null,
           requiredProperties: const [],
+          readOnlyProperties: const {},
         );
         expect(schema1, equals(schema1));
         // Different pointer.
@@ -1531,6 +1533,7 @@ void main() {
           properties: const {},
           additionalProperties: null,
           requiredProperties: const [],
+          readOnlyProperties: const {},
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.properties, equals(schema.properties));
@@ -1539,6 +1542,7 @@ void main() {
             equals(schema.additionalProperties),
           );
           expect(copy.requiredProperties, equals(schema.requiredProperties));
+          expect(copy.readOnlyProperties, equals(schema.readOnlyProperties));
         });
       });
       test('ResolvedEnum', () {

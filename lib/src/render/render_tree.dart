@@ -176,6 +176,7 @@ String? createDocComment({
   required CommonProperties common,
   int indent = 0,
   String? templateName,
+  bool readOnly = false,
 }) {
   final title = common.title;
   final body = common.description;
@@ -188,8 +189,16 @@ String? createDocComment({
     examples: examples,
     indent: indent,
     templateName: templateName,
+    readOnly: readOnly,
   );
 }
+
+/// Marker line appended to a property's doc comment when the spec
+/// marked it `readOnly: true`. Constructor / request-vs-response
+/// separation is a separate design call; today we only surface the
+/// signal so consumers can see it in the IDE.
+@visibleForTesting
+const readOnlyDocLine = 'Read-only: server-assigned.';
 
 String? createDocCommentFromParts({
   String? title,
@@ -198,8 +207,13 @@ String? createDocCommentFromParts({
   List<dynamic>? examples,
   int indent = 0,
   String? templateName,
+  bool readOnly = false,
 }) {
-  if (title == null && body == null && example == null && examples == null) {
+  if (title == null &&
+      body == null &&
+      example == null &&
+      examples == null &&
+      !readOnly) {
     return null;
   }
   String quoteIfNeeded(dynamic value) {
@@ -212,6 +226,8 @@ String? createDocCommentFromParts({
   final indentStr = ' ' * indent;
   final hasTemplateContent = title != null || body != null;
   final wrapWithTemplate = templateName != null && hasTemplateContent;
+  final hasPriorContent =
+      title != null || body != null || example != null || examples != null;
   final lines = <String>[
     if (wrapWithTemplate) '$indentStr/// {@template $templateName}',
     if (title != null) ...wrapDocComment(title, indent: indent),
@@ -223,6 +239,12 @@ String? createDocCommentFromParts({
       ...examples.expand(
         (e) => wrapDocComment('example: `${quoteIfNeeded(e)}`', indent: indent),
       ),
+    if (readOnly) ...[
+      // Blank dartdoc line acts as a paragraph break in dartdoc when
+      // there's prior prose; when standalone, just emit the marker.
+      if (hasPriorContent) '$indentStr///',
+      ...wrapDocComment(readOnlyDocLine, indent: indent),
+    ],
   ];
   if (lines.isEmpty) {
     return null;
@@ -392,6 +414,7 @@ class SpecResolver {
           ),
           additionalProperties: maybeRenderSchema(schema.additionalProperties),
           requiredProperties: schema.requiredProperties,
+          readOnlyProperties: schema.readOnlyProperties,
           parentSealedTypeName: _names.parentSealedTypeFor(schema.pointer),
           assignedName: _nameFor(schema.pointer),
           assignedSnakeName: _snakeFor(schema.pointer),
@@ -519,17 +542,20 @@ class SpecResolver {
         // dispatch detection (allOf-shaped variants).
         final properties = <String, RenderSchema>{};
         final requiredProperties = <String>{};
+        final readOnlyProperties = <String>{};
         for (final schema in schema.schemas) {
           final renderSchema = toRenderSchema(schema);
           if (renderSchema is RenderObject) {
             properties.addAll(renderSchema.properties);
             requiredProperties.addAll(renderSchema.requiredProperties);
+            readOnlyProperties.addAll(renderSchema.readOnlyProperties);
           }
         }
         return RenderObject(
           common: schema.common,
           properties: properties,
           requiredProperties: requiredProperties.toList(),
+          readOnlyProperties: readOnlyProperties,
           assignedName: _nameFor(schema.pointer),
           assignedSnakeName: _snakeFor(schema.pointer),
         );
@@ -2978,6 +3004,7 @@ class RenderObject extends RenderNewType {
     required this.properties,
     this.additionalProperties,
     this.requiredProperties = const [],
+    this.readOnlyProperties = const {},
     this.parentSealedTypeName,
     super.assignedName,
     super.assignedSnakeName,
@@ -2991,6 +3018,12 @@ class RenderObject extends RenderNewType {
 
   /// The required properties of the resolved schema.
   final List<String> requiredProperties;
+
+  /// Names of properties marked `readOnly: true` in the spec —
+  /// server-set fields. Used to surface a doc-comment marker on the
+  /// property field. Matches the `readOnlyProperties` carried by the
+  /// upstream parse and resolve types.
+  final Set<String> readOnlyProperties;
 
   /// Camel-case Dart class name of the sealed parent this object
   /// should extend, or null when the object stands alone. Set by the
@@ -3021,6 +3054,7 @@ class RenderObject extends RenderNewType {
     properties,
     additionalProperties,
     requiredProperties,
+    readOnlyProperties,
   ];
 
   @override
@@ -3159,6 +3193,7 @@ class RenderObject extends RenderNewType {
       'property_doc_comment': createDocComment(
         common: property.common,
         indent: 4,
+        readOnly: readOnlyProperties.contains(jsonName),
       ),
       'argumentLine': argumentLine(
         jsonName,

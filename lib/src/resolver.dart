@@ -230,6 +230,7 @@ ResolvedSchema _resolveSchemaFully(
         context,
       ),
       requiredProperties: schema.requiredProperties,
+      readOnlyProperties: schema.readOnlyProperties,
     );
   }
   if (schema is SchemaEnum) {
@@ -1393,6 +1394,7 @@ class ResolvedObject extends ResolvedSchema {
     required this.properties,
     required this.additionalProperties,
     required this.requiredProperties,
+    required this.readOnlyProperties,
   }) : super(createsNewType: true);
 
   /// The properties of the resolved schema.
@@ -1405,6 +1407,10 @@ class ResolvedObject extends ResolvedSchema {
   /// The required properties of the resolved schema.
   final List<String> requiredProperties;
 
+  /// Names of properties marked `readOnly: true` in the spec.
+  /// See [SchemaObject.readOnlyProperties] for semantics.
+  final Set<String> readOnlyProperties;
+
   @override
   ResolvedObject copyWith({CommonProperties? common}) {
     return ResolvedObject(
@@ -1412,6 +1418,7 @@ class ResolvedObject extends ResolvedSchema {
       properties: properties,
       additionalProperties: additionalProperties,
       requiredProperties: requiredProperties,
+      readOnlyProperties: readOnlyProperties,
     );
   }
 
@@ -1421,6 +1428,7 @@ class ResolvedObject extends ResolvedSchema {
     properties,
     additionalProperties,
     requiredProperties,
+    readOnlyProperties,
   ];
 }
 

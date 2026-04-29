@@ -108,6 +108,56 @@ void main() {
       );
     });
 
+    test('readOnly: true on a property emits a doc-comment marker', () {
+      // OpenAPI marks server-set fields with `readOnly: true` on the
+      // property slot. We surface this as a dartdoc paragraph so the
+      // signal is visible to consumers — the constructor / request-vs-
+      // response separation is a separate (larger) design call.
+      // Indent of the `///` lines themselves is supplied by the
+      // template + post-render `dart format`; the raw template output
+      // checked here only enforces the relative structure.
+      final schema = {
+        'type': 'object',
+        'required': ['id'],
+        'properties': {
+          'id': {
+            'type': 'string',
+            'description': 'The advisory ID.',
+            'readOnly': true,
+          },
+          'name': {'type': 'string', 'readOnly': true},
+          'count': {'type': 'integer'},
+        },
+      };
+      final result = renderTestSchema(schema);
+      // With prior prose, marker is separated by a paragraph break
+      // (`///` empty line) before the marker line.
+      expect(
+        result,
+        contains(
+          '/// The advisory ID.\n'
+          '    ///\n'
+          '    /// Read-only: server-assigned.\n'
+          '    final String id;',
+        ),
+      );
+      // Without prior prose, marker stands alone (no leading blank).
+      expect(
+        result,
+        contains(
+          '/// Read-only: server-assigned.\n'
+          '    final String? name;',
+        ),
+      );
+      // Properties without `readOnly` get no marker — the marker line
+      // does not appear directly before `count`'s declaration.
+      expect(result, contains('final int? count;'));
+      expect(
+        result,
+        isNot(contains('Read-only: server-assigned.\nfinal int? count;')),
+      );
+    });
+
     test('long property description wraps to 80 cols at 4-space indent', () {
       final schema = {
         'type': 'object',

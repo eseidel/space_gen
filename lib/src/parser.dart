@@ -875,11 +875,22 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   }
 
   final properties = <String, SchemaRef>{};
+  final readOnlyProperties = <String>{};
   for (final name in propertiesJson.json.keys) {
     final snakeName = snakeFromCamel(name);
     final childContext = propertiesJson
         .childAsMap(name)
         .addSnakeName(snakeName);
+    // Per OpenAPI 3.x, `readOnly: true` on a property means the field
+    // is server-set: present in responses, omitted from requests.
+    // Capture it from the property's json (this also marks the key
+    // used so it doesn't surface as `Unused: readOnly=true`). Only
+    // honored at a property slot — `readOnly` at a schema root falls
+    // through to the existing `_ignored` call below.
+    final isReadOnly = _optional<bool>(childContext, 'readOnly') ?? false;
+    if (isReadOnly) {
+      readOnlyProperties.add(name);
+    }
     properties[name] = parseSchemaOrRef(childContext);
   }
 
@@ -896,6 +907,7 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     common: common,
     properties: properties,
     requiredProperties: requiredProperties.cast<String>(),
+    readOnlyProperties: readOnlyProperties,
     additionalProperties: additionalPropertiesSchema,
     defaultValue: defaultValue,
   );

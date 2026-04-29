@@ -389,6 +389,7 @@ class SchemaObject extends SchemaObjectBase {
     required super.common,
     required this.properties,
     required this.requiredProperties,
+    required this.readOnlyProperties,
     required this.additionalProperties,
     required this.defaultValue,
   }) {
@@ -407,6 +408,14 @@ class SchemaObject extends SchemaObjectBase {
   /// The required properties of this schema.
   final List<String> requiredProperties;
 
+  /// Properties marked `readOnly: true` in the spec — server-set
+  /// fields that are returned in responses but not accepted in
+  /// requests. Today we surface these as a doc-comment marker on the
+  /// field so spec authors / consumers can see the signal; we do not
+  /// (yet) split request/response classes or omit the field from the
+  /// constructor.
+  final Set<String> readOnlyProperties;
+
   /// The additional properties of this schema.
   /// Used for specifying T for Map\<String, T\>.
   final SchemaRef? additionalProperties;
@@ -419,6 +428,7 @@ class SchemaObject extends SchemaObjectBase {
     super.props,
     properties,
     requiredProperties,
+    readOnlyProperties,
     additionalProperties,
     defaultValue,
   ];

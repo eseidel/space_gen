@@ -440,6 +440,34 @@ void main() {
       expect(obj.requiredProperties, ['a']);
     });
 
+    test('readOnly: true on a property is captured', () {
+      // OpenAPI marks server-set fields with `readOnly: true` on the
+      // *property* slot. The parser should capture it on
+      // `SchemaObject.readOnlyProperties` so the render layer can
+      // surface it. Properties without `readOnly` stay out of the set;
+      // `readOnly: false` (just spec noise) also stays out. Capturing
+      // on the property side also kills `Unused: readOnly=true`
+      // warnings — readOnly is not consumed by the property's own
+      // schema parse (e.g. on a string property).
+      final json = {
+        'type': 'object',
+        'required': ['id'],
+        'properties': {
+          'id': {
+            'type': 'string',
+            'description': 'The advisory ID.',
+            'readOnly': true,
+          },
+          'name': {'type': 'string'},
+          'count': {'type': 'integer', 'readOnly': false},
+        },
+      };
+      final schema = parseTestSchema(json);
+      expect(schema, isA<SchemaObject>());
+      final obj = schema as SchemaObject;
+      expect(obj.readOnlyProperties, {'id'});
+    });
+
     test('oneOf with a real polymorphic variant stays a oneOf', () {
       // A oneOf where any variant brings its own shape (here, a
       // `type: string` variant) is a real polymorphic schema — the
