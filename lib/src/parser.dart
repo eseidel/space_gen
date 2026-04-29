@@ -164,11 +164,16 @@ Never _error(ParseContext context, String message) {
 }
 
 void _warnUnused(MapContext context) {
-  // OpenAPI 3.x reserves the `x-` prefix for vendor extensions: the
-  // generator MUST ignore them. Drop them from the unused tally so
-  // they don't bury real signal in the verbose log.
+  // OpenAPI 3.x reserves the `x-` prefix for vendor extensions; per
+  // the spec, processors that don't recognize them should ignore
+  // them — but that means "don't fail," not "suppress all log
+  // output." Unhandled `x-*` keys flow through here as `Unused:`
+  // entries at -v so the verbose-log mining workflow can spot
+  // extensions worth adding support for (e.g. `x-enum-varnames`,
+  // `x-internal`). When we do add support, the read marks the key
+  // used and removes it from this tally automatically.
   // https://spec.openapis.org/oas/v3.1.0#specification-extensions
-  final unusedKeys = context.unusedKeys.where((k) => !k.startsWith('x-'));
+  final unusedKeys = context.unusedKeys;
   if (unusedKeys.isNotEmpty) {
     final keys = unusedKeys
         .map((k) {

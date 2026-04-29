@@ -472,11 +472,14 @@ void main() {
       // else is detail-logged so the verbose-log mining workflow can
       // surface the misplacement.
 
-      test('vendor extensions (x-*) are silently dropped', () {
-        // Per OpenAPI 3.x, `x-` prefixed keys are vendor extensions
-        // that the generator MUST ignore. github sprinkles
-        // `x-multi-segment` on path parameters and `x-github` on
-        // various properties; neither is something we generate from.
+      test('vendor extensions (x-*) flow through Unused: at -v', () {
+        // Per OpenAPI 3.x, `x-` prefixed keys are vendor extensions:
+        // generators that don't recognize them ignore them ("don't
+        // fail"), but they still surface in the unused tally at -v
+        // so the verbose-log mining workflow can spot extensions
+        // worth adding support for. We already act on
+        // `x-enum-descriptions`; future candidates include
+        // `x-enum-varnames` and `x-internal`.
         final json = {
           'type': 'string',
           'x-github': {'foo': 'bar'},
@@ -485,7 +488,9 @@ void main() {
         final logger = _MockLogger();
         final schema = runWithLogger(logger, () => parseTestSchema(json));
         expect(schema, isA<SchemaString>());
-        verifyNever(() => logger.detail(any()));
+        verify(
+          () => logger.detail(any(that: contains('Unused: x-github'))),
+        ).called(1);
         verifyNever(() => logger.warn(any()));
       });
 
