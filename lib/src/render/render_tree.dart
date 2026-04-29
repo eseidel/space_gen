@@ -3382,17 +3382,29 @@ class RenderObject extends RenderNewType {
       'assignmentsLine': assignmentsLine,
       'additionalPropertiesName': 'entries', // Matching OpenAPI.
       'valueSchema': valueSchema?.typeName,
-      'valueToJson': valueSchema?.toJsonExpression(
-        'value',
+      // Per-entry to/from JSON expressions used in the additional-
+      // properties for-loop (key/value extracted via `entry.key` /
+      // `entry.value`). The for-loop filters out keys that belong to
+      // the named properties so a round-trip doesn't accidentally
+      // sweep them into `entries`.
+      'entryValueToJson': valueSchema?.toJsonExpression(
+        'entry.value',
         context,
         dartIsNullable: isNullable,
       ),
-      'valueFromJson': valueSchema?.fromJsonExpression(
-        'value',
+      'entryValueFromJson': valueSchema?.fromJsonExpression(
+        'entry.value',
         context,
         jsonIsNullable: isNullable,
         dartIsNullable: isNullable,
       ),
+      // The set of named-property JSON keys to exclude from
+      // `entries` on round-trip. A `const <String>{...}` literal —
+      // empty when there are no named properties (always-false
+      // contains).
+      'namedPropertyKeysSet': properties.isEmpty
+          ? 'const <String>{}'
+          : 'const {${properties.keys.map(quoteString).join(', ')}}',
       'fromJsonJsonType': context.fromJsonJsonType,
       'castFromJsonArg': context.quirks.dynamicJson,
       'mutableModels': context.quirks.mutableModels,
@@ -3489,7 +3501,10 @@ class RenderObject extends RenderNewType {
   /// Empty map: any required property will fail its type cast inside
   /// `parseFromJson`, which rewraps the TypeError as FormatException.
   /// When there are no required properties, `{}` is a valid instance
-  /// and we have no guaranteed-invalid input.
+  /// and we have no guaranteed-invalid input. The parser drops names
+  /// listed in `required` that don't match a real property (with a
+  /// warn-log), so [requiredProperties] only ever contains names
+  /// that will actually fail the cast.
   @override
   String? invalidJsonExample(SchemaRenderer context) =>
       requiredProperties.isEmpty ? null : '<String, dynamic>{}';
@@ -4124,7 +4139,7 @@ class RenderOneOf extends RenderNewType {
     if (schemas.any((s) => s is RenderPod)) {
       return 'dynamic';
     }
-    return 'Map<String, dynamic>';
+    return isNullable ? 'Map<String, dynamic>?' : 'Map<String, dynamic>';
   }
 
   /// Looks up the wrapper subclass class name assigned by the naming
@@ -5388,14 +5403,15 @@ class RenderEmptyObject extends RenderNewType {
       _newtypeConversion(typeName);
 
   @override
-  String jsonStorageType({required bool isNullable}) => 'Map<String, dynamic>';
+  String jsonStorageType({required bool isNullable}) =>
+      isNullable ? 'Map<String, dynamic>?' : 'Map<String, dynamic>';
 
   @override
   String toJsonExpression(
     String dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
-  }) => 'const <String, dynamic>{}';
+  }) => dartIsNullable ? '$dartName?.toJson()' : '$dartName.toJson()';
 
   @override
   String fromJsonExpression(
@@ -5403,7 +5419,11 @@ class RenderEmptyObject extends RenderNewType {
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
-  }) => 'const $className()';
+  }) {
+    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
+    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
+    return '$className.$jsonMethod($jsonValue as $jsonType)';
+  }
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {

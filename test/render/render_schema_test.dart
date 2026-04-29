@@ -3415,7 +3415,7 @@ void main() {
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
         "        return parseFromJson('Test', json, () => Test(\n"
-        '            a: const TestA(),\n'
+        "            a: TestA.maybeFromJson(json['a'] as Map<String, dynamic>?),\n"
         '        ));\n'
         '    }\n'
         '\n'
@@ -3433,7 +3433,7 @@ void main() {
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            'a': const <String, dynamic>{},\n"
+        "            'a': a?.toJson(),\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -3451,6 +3451,91 @@ void main() {
         '}\n',
       );
     });
+
+    test(
+      'empty-object property round-trips through fromJson/toJson',
+      () {
+        // Regression: nullable EmptyObject properties used to hard-code
+        // `const TestA()` on read and `const <String, dynamic>{}` on
+        // write, ignoring the actual field. Now they delegate to the
+        // generated class's `fromJson`/`toJson` like every other
+        // newtype.
+        final schema = {
+          'type': 'object',
+          'properties': {
+            'a': {'type': 'object', 'properties': <String, dynamic>{}},
+          },
+        };
+        final result = renderTestSchema(schema);
+        expect(
+          result,
+          contains(
+            "a: TestA.maybeFromJson(json['a'] as Map<String, dynamic>?),",
+          ),
+        );
+        expect(result, contains("'a': a?.toJson(),"));
+        expect(result, isNot(contains('const TestA()')));
+        expect(result, isNot(contains('const <String, dynamic>{}')));
+      },
+    );
+
+    test(
+      'nullable oneOf property casts JSON to nullable Map',
+      () {
+        // Regression: `RenderOneOf.jsonStorageType` ignored its
+        // `isNullable` parameter, so a nullable oneOf property emitted
+        // `as Map<String, dynamic>` (non-nullable). Round-tripping a
+        // class whose only value for that field was `null` then crashed
+        // in `fromJson` with `Null is not a subtype of Map<String,
+        // dynamic>`. The cast must be `Map<String, dynamic>?` for
+        // nullable property reads.
+        final json = {
+          'type': 'object',
+          'properties': {
+            'a': {
+              'type': ['string', 'number'],
+            },
+          },
+        };
+        expect(
+          renderTestSchema(json),
+          contains(
+            "a: TestA.maybeFromJson(json['a'] as Map<String, dynamic>?),",
+          ),
+        );
+      },
+    );
+
+    test(
+      'additionalProperties round-trip excludes named property keys',
+      () {
+        // Regression: the additionalProperties for-loop used to call
+        // `json.map(MapEntry.new)` on read and
+        // `entries.map(MapEntry.new)` on write, sweeping the named-
+        // property JSON keys into the catch-all `entries` field on
+        // round-trip. github's `copilot_*` and `webhook_config` round-
+        // trips all crashed (or saw structurally-different `entries`
+        // on the parsed instance) because of this. The for-loop now
+        // filters by a `const <String>{...}` of named-property JSON
+        // names.
+        final schema = {
+          'type': 'object',
+          'properties': {
+            'a': {'type': 'string'},
+            'b': {'type': 'integer'},
+          },
+          'additionalProperties': {'type': 'string'},
+        };
+        final result = renderTestSchema(schema);
+        expect(result, contains("const {'a', 'b'}.contains(entry.key)"));
+        // Keyed `entries` value cast uses the additionalProperties
+        // value type (`String` here, not `dynamic`).
+        expect(result, contains('entry.value as String'));
+        // hashCode uses `mapHash(entries)` so two structurally-equal
+        // instances hash the same.
+        expect(result, contains('mapHash(entries)'));
+      },
+    );
 
     test('array with default value', () {
       final schema = {
@@ -4376,7 +4461,7 @@ void main() {
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           "        return parseFromJson('Test', json, () => Test(\n"
-          "            a: TestA.maybeFromJson(json['a'] as Map<String, dynamic>),\n"
+          "            a: TestA.maybeFromJson(json['a'] as Map<String, dynamic>?),\n"
           '        ));\n'
           '    }\n'
           '\n'

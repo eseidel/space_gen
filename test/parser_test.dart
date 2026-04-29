@@ -610,6 +610,37 @@ void main() {
           () => logger.detail(any(that: contains('Unused'))),
         );
       });
+
+      test(
+        'required entries that name no real property are dropped + warned',
+        () {
+          // github's `package-version-metadata-docker` schema lists
+          // `required: [tags]` for a property called `tag` (no s).
+          // Honoring the typo would generate a class whose constructor
+          // demands a non-existent field. Drop the unknown name from
+          // [SchemaObject.requiredProperties] and warn so the spec
+          // author can fix the typo.
+          final json = {
+            'type': 'object',
+            'properties': {
+              'tag': {'type': 'string'},
+            },
+            'required': ['tags', 'tag'],
+          };
+          final logger = _MockLogger();
+          final schema = runWithLogger(logger, () => parseTestSchema(json));
+          if (schema is! SchemaObject) {
+            fail('Expected SchemaObject, got ${schema.runtimeType}');
+          }
+          // `tag` survives, `tags` is dropped.
+          expect(schema.requiredProperties, ['tag']);
+          verify(
+            () => logger.warn(
+              any(that: contains("'required' lists 'tags'")),
+            ),
+          ).called(1);
+        },
+      );
     });
 
     test(
