@@ -464,13 +464,15 @@ void main() {
       expect(schema, isA<SchemaOneOf>());
     });
 
-    group('spec-author quirks are silently consumed', () {
+    group('spec-author quirks', () {
       // These specs are technically valid OpenAPI but place a key
       // somewhere the parser's chosen schema shape can't act on it.
-      // We don't enforce the constraint anyway; surfacing an `Unused`
-      // warning is pure log noise that buries real signal.
+      // We don't enforce the constraint anyway. Vendor extensions
+      // (`x-*`) are silently dropped per the OpenAPI spec; everything
+      // else is detail-logged so the verbose-log mining workflow can
+      // surface the misplacement.
 
-      test('vendor extensions (x-*) are not warned as unused', () {
+      test('vendor extensions (x-*) are silently dropped', () {
         // Per OpenAPI 3.x, `x-` prefixed keys are vendor extensions
         // that the generator MUST ignore. github sprinkles
         // `x-multi-segment` on path parameters and `x-github` on
@@ -487,11 +489,11 @@ void main() {
         verifyNever(() => logger.warn(any()));
       });
 
-      test('required on an array property is silently consumed', () {
+      test('required on an array property is detail-logged', () {
         // github's `dependency-graph-spdx-sbom.sbom.{packages,
         // relationships}` put `required: [...]` on an array schema.
-        // `required` is an object-level constraint; on an array it
-        // does nothing, so we silently consume.
+        // `required` is an object-level keyword; on an array it does
+        // nothing. Detail-log so a curious `-v` reader can find it.
         final json = {
           'type': 'array',
           'items': {'type': 'string'},
@@ -500,13 +502,14 @@ void main() {
         final logger = _MockLogger();
         final schema = runWithLogger(logger, () => parseTestSchema(json));
         expect(schema, isA<SchemaArray>());
-        verifyNever(() => logger.detail(any()));
+        verify(
+          () => logger.detail(any(that: contains('Ignoring: required'))),
+        ).called(1);
       });
 
-      test('maxProperties on an object/map is silently consumed', () {
+      test('maxProperties on an object/map is detail-logged', () {
         // github's `metadata` and `dispatches.inputs` set
-        // `maxProperties: N`. We don't validate object size; consume
-        // silently rather than spam every regen log.
+        // `maxProperties: N`. We don't validate object size.
         final json = {
           'type': 'object',
           'maxProperties': 10,
@@ -515,10 +518,14 @@ void main() {
         final logger = _MockLogger();
         final schema = runWithLogger(logger, () => parseTestSchema(json));
         expect(schema, isA<SchemaMap>());
-        verifyNever(() => logger.detail(any()));
+        verify(
+          () => logger.detail(
+            any(that: contains('Ignoring: maxProperties=10')),
+          ),
+        ).called(1);
       });
 
-      test('minItems inside an items schema is silently consumed', () {
+      test('minItems inside an items schema is detail-logged', () {
         // github's `webhook-meta-deleted.hook.events.items` has
         // `minItems: 1` on the string-enum items schema. `minItems`
         // belongs on the parent array; on the items schema it does
@@ -534,15 +541,17 @@ void main() {
         final logger = _MockLogger();
         final schema = runWithLogger(logger, () => parseTestSchema(json));
         expect(schema, isA<SchemaArray>());
-        verifyNever(() => logger.detail(any()));
+        verify(
+          () => logger.detail(any(that: contains('Ignoring: minItems=1'))),
+        ).called(1);
       });
 
       test(
-        'additionalProperties: true on a non-object is silently consumed',
+        'additionalProperties: true on a non-object is detail-logged',
         () {
           // github's `hook-delivery.response.payload` sets
           // `additionalProperties: true` on a `type: [string, null]`
-          // schema. The flag is meaningless on a string; consume.
+          // schema. The flag is meaningless on a string.
           final json = {
             'type': ['string', 'null'],
             'additionalProperties': true,
@@ -551,7 +560,11 @@ void main() {
           final schema = runWithLogger(logger, () => parseTestSchema(json));
           // type: [string, null] becomes a nullable string.
           expect(schema, isA<SchemaString>());
-          verifyNever(() => logger.detail(any()));
+          verify(
+            () => logger.detail(
+              any(that: contains('Ignoring: additionalProperties=true')),
+            ),
+          ).called(1);
         },
       );
 

@@ -121,6 +121,16 @@ Never _unimplemented(ParseContext json, String message) {
   throw UnimplementedError('$message not supported in $json');
 }
 
+/// Mark [key] as used and detail-log it as ignored.
+///
+/// `_ignored` is the explicit form: the parser is choosing to drop a
+/// field it has already (or will already) read. The log fires
+/// whenever the value is non-null, even if another code path already
+/// consumed the key. Use when you want the user to see that the field
+/// was acknowledged-but-not-acted-on.
+///
+/// For the catch-all case — "consume any straggler, but only complain
+/// if nothing else has touched it" — see [_ignoreIfUnused].
 void _ignored<T>(MapContext parent, String key, {bool warn = false}) {
   final value = parent[key];
   if (value != null) {
@@ -133,16 +143,16 @@ void _ignored<T>(MapContext parent, String key, {bool warn = false}) {
   }
 }
 
-/// Silently mark [key] as used so it doesn't surface in `_warnUnused`.
-/// Use this for spec-author quirks (a key placed where it has no effect:
-/// `required` on an array property, `additionalProperties: true` on a
-/// string, etc.) where there's nothing for the user to act on and the
-/// warning is pure log noise.
-///
-/// Calling `parent[key]` is what marks the key as used; the wildcard
-/// binding discards the value while satisfying `unnecessary_statements`.
-void _silentlyConsume(MapContext parent, String key) {
-  final _ = parent[key];
+/// Catch-all variant of [_ignored]: detail-logs only when [key] was
+/// unused at call time. Safe to call at the end of a parse function
+/// to mop up keys placed where the chosen schema shape doesn't act on
+/// them (e.g. `minItems` on a non-array, `additionalProperties` on a
+/// non-object) without double-logging the keys that were legitimately
+/// consumed earlier.
+void _ignoreIfUnused<T>(MapContext parent, String key) {
+  if (parent.unusedKeys.contains(key)) {
+    _ignored<T>(parent, key);
+  }
 }
 
 void _warn(ParseContext context, String message) {
@@ -876,12 +886,13 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
         json.fakeChildAsMap(snakeName: 'items', value: {});
     const innerName = 'inner'; // Matching OpenAPI.
     final itemSchema = parseSchemaOrRef(items.addSnakeName(innerName));
-    // `required` is an object-level constraint; spec authors sometimes
-    // misplace it on an array property to mean "this array property
-    // must be present" — that's the parent object's responsibility,
-    // not ours. github's `dependency-graph-spdx-sbom` does this on
-    // `packages` and `relationships`. Consume to silence noise.
-    _silentlyConsume(json, 'required');
+    // `required` is an object-level keyword in JSON Schema / OpenAPI.
+    // On an array schema it's spec-legal but meaningless; spec authors
+    // occasionally misplace it (seen in github's
+    // `dependency-graph-spdx-sbom.sbom.{packages,relationships}`).
+    // Detail-log so the verbose-log mining workflow surfaces the
+    // misplacement to anyone curious; no behavior to act on.
+    _ignored<List<dynamic>>(json, 'required');
     return SchemaArray(
       common: common,
       defaultValue: defaultValue,
@@ -894,11 +905,11 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
 
   final additionalPropertiesSchema = _handleAdditionalProperties(json);
 
-  // Object-size validation we don't enforce. Consume on every
-  // object-shaped branch (object/map/empty) so it doesn't surface as
-  // `Unused` noise.
-  _silentlyConsume(json, 'maxProperties');
-  _silentlyConsume(json, 'minProperties');
+  // Object-size validation we don't enforce. Detail-log so the
+  // verbose-log mining workflow can find specs that lean on these
+  // constraints; no behavior to act on.
+  _ignored<int>(json, 'maxProperties');
+  _ignored<int>(json, 'minProperties');
 
   final propertiesJson = _optionalMap(json, 'properties');
   if (propertiesJson == null) {
@@ -959,18 +970,21 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
 Schema parseSchema(MapContext json) {
   _refNotExpected(json);
   final schema = _createCorrectSchemaSubtype(json);
-  // Spec-author quirks: keys placed where the chosen schema shape
-  // doesn't act on them. Consume any stragglers so they don't surface
-  // as `Unused` noise in the verbose log.
-  //   - `minItems`/`maxItems` inside an items schema (github's
-  //     `webhook-meta-deleted.hook.events.items` has `minItems: 1` on
-  //     a string enum, which belongs on the parent array).
-  //   - `additionalProperties: true` on a non-object schema (github's
-  //     `hook-delivery.response.payload` has it on
+  // Catch-all for keys placed where the chosen schema shape doesn't
+  // act on them. `_ignoreIfUnused` no-ops when an earlier code path
+  // already consumed the key (e.g. `additionalProperties` on an
+  // object → `_handleAdditionalProperties` consumed it; this is a
+  // no-op). It detail-logs only when the key really is misplaced
+  // (e.g. `additionalProperties` on a string).
+  //   - `minItems`/`maxItems` inside an items schema (these belong on
+  //     the parent array, not the items schema; seen in github's
+  //     `webhook-meta-deleted.hook.events.items`).
+  //   - `additionalProperties: true` on a non-object (seen in
+  //     github's `hook-delivery.response.payload` with
   //     `type: [string, null]`).
-  _silentlyConsume(json, 'minItems');
-  _silentlyConsume(json, 'maxItems');
-  _silentlyConsume(json, 'additionalProperties');
+  _ignoreIfUnused<int>(json, 'minItems');
+  _ignoreIfUnused<int>(json, 'maxItems');
+  _ignoreIfUnused<dynamic>(json, 'additionalProperties');
   _warnUnused(json);
   return schema;
 }
