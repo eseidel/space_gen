@@ -14,7 +14,7 @@ description: |
   any spec-driven follow-up.
 ---
 
-# State as of 2026-04-28
+# State as of 2026-04-29
 
 ## What this is
 
@@ -45,35 +45,39 @@ A "gap" can be any of:
 - A real-spec author hits a snag and reports it.
 
 **Current status:** `dart analyze` clean on the github regen.
-**7 stubs remain** (unchanged — same hard cases as before). The
-naming + smoosh series has shipped: ~47 double-prefix wrappers
-fixed (down from 96 to 49 still-emitted), ~25 wrapper subclasses
-eliminated entirely (variant data class IS the sealed subclass
-now), and inline variants flip to title-derived names when one is
-present.
+**3 stubs remain** (Group C only — the enumless anyOfs the skill
+suggests skipping). Stub Groups A (validation-error twins) and B
+(labels requestBody) closed in PRs #177 and #183. Generated test
+suite: 6146 tests, all passing — 41 round-trip-correctness bugs
+fixed in #184. 4 dispatch / smoosh / dedup features landed across
+PRs #179 (exclusive-by-use smoosh), #180 (structural dedup of
+operation-synthesized oneOfs), #182 (properties+oneOf composition
++ multi-value-enum implicit discriminator + anyOf+discriminator),
+#183 (multi-array hybrid + property-array-element-shape).
 
 **The picture beyond stubs and visible-output ugliness.** A `-v`
-regen surfaces a *much* larger set of gaps than this skill
-historically tracked. The github 2026-04-28 baseline:
+regen surfaces feature gaps the skill historically didn't track.
+The github 2026-04-29 baseline:
 
-| Count | Category | What |
-|------:|---|---|
-| 246 | `Ignoring: format=int64 (String)` | int64 transmitted as JSON string for precision; we emit plain `String` |
-| 81 | `Unused: readOnly=true` | response-only fields not marked as such |
-| 72 | `Unused: oneOf` (in property) | inline property `oneOf` (e.g. `milestone: oneOf<string,integer>`) silently dropped to `Object?` |
-| 49 | `<Parent>OneOf<i>` wrappers | naming gap — variants the title/exclusive-use heuristics don't catch |
-| 43 | `Ignoring: example` | `example:` strings not threaded into doc comments |
-| 7 | stub-emitting oneOfs | the long-tail dispatch gaps documented below |
-| 3 | `Unused: required` | `required` in wrong place (requestBody root, etc.) |
-| 1 | `Unused: anyOf` | `anyOf` in `additionalProperties` |
-| 1 | `Unused: webhooks` | OpenAPI 3.1 webhooks section |
-| various | unknown formats | `repo.nwo`, `timestamp`, etc. |
+| Count | Category | What | Status |
+|------:|---|---|---|
+| 246 | `Ignoring: format=int64 (String)` | int64 transmitted as JSON string for precision | tracked in **issue #185** (web-aware codegen — needs design) |
+| 81 | `Unused: readOnly=true` | response-only fields not marked as such | tracked in **issue #186** (request/response split) |
+| 19 | `Unused: x-multi-segment=true` | github vendor extension (path-segment hint) | known; `-v` log only — no action needed |
+| 12 | `Ignoring: readOnly=…` (non-property slots) | readOnly outside a property — composes with #186 | tracked in **issue #186** |
+| 8 | `Unused: readOnly=false` | spec noise — explicit `false` matches default | acceptable noise |
+| 57 | `<Parent>OneOf<i>` wrappers in regen | naming gap — variants the heuristics don't catch | open (low priority — see "Naming polish") |
+| 6 | `_1` collision suffixes | snake-name collision resolution | open (low priority) |
+| 3 | enumless-anyOf stubs | Group C — skill says skip (try-each is order-dependent) | parked |
+| 2 | `Ignoring: required (List<…>)` | parser drops `required: [foo]` when `foo` isn't a real property | landed in #184; the warn-log is the feature |
+| various | unknown formats | `repo.nwo`, `timestamp` | open (low value) |
 
 Gen one of these and you'll likely find more than one PR's worth
 of work. **Mine the verbose log first** — see "Discovery" below
-under "Open gaps". The next leverage is no longer obviously the
-naming/smoosh extension; "feature-completeness against `-v`" is a
-parallel track with comparable real-spec impact.
+under "Open gaps". The naming/smoosh/dispatch arc has settled;
+the next high-leverage tracks are issue #185 (web-aware codegen)
+and issue #186 (readOnly request/response split) — both need
+design passes before code.
 
 ## Architecture
 
@@ -203,25 +207,51 @@ splices it. Smooshed: `<Variant>.fromJson(<arg>)`. Non-smooshed:
 
 ## Recent PRs
 
+The 2026-04-28/29 fan-out (12 PRs in one night, 11 landed):
+
 | PR | What |
 |---|---|
-| #157 | Lift dispatch-mode bools into a sealed `_DispatchMode` |
-| #158 | `_Predicate` IR for if-chain dispatch arms |
-| #159 | Array-element dispatch via consolidated `_PredicateDispatchMode` |
-| #160 | Lift dispatch picking into `decideDispatch` phase |
-| #161 | Introduce naming pass and wire it through render |
-| #162 | Make `assignedName` strict — `typeName` throws if missed |
-| #163 | Bring oneOf wrapper subclass names under the naming pass |
-| #165 | Stop doubling the parent prefix in inline oneOf wrapper names |
-| #166 | Collision-aware naming via `NameAllocator` (multi-tier prefs + fixpoint) |
-| #167 | Title-derived names for inline oneOf/anyOf variants; allocator stores snake |
-| #168 | Smoosh inline-object variants under predicate dispatch (~13 sites) |
-| #169 | Smoosh under discriminator dispatch (platform; github uses top-level refs) |
-| #170 | Smoosh under shape + hybrid dispatch (~12 sites; structural matrix complete) |
+| #173 | _closed — replaced by issue #185._ Initial framing of `format=int64` was github-specific (assumed `int` was correct on VM, glossed over dart2js precision loss). |
+| #174 | Handle inline `oneOf`/`anyOf` at property schema slots (precedence fix: explicit `oneOf` wins over multi-type-array expansion) |
+| #175 | _closed — replaced by issues #186, #187._ readOnly doc-comment marker was a half-measure; real fix needs request/response split (#186), and the Equatable plumbing it added is the start of cleanup #187. |
+| #176 | Detail-log spec-author quirks (`required` on array, `maxProperties`, etc.); drop the silent vendor-extension filter (`x-*` shows in `-v` for discoverability) |
+| #177 | Dispatch validation-error twins via new `PropertyArrayItemShape` predicate; closes 2 stubs |
+| #178 | Surface spec `example:` values in generated doc comments (51 sites) |
+| #179 | Smoosh top-level `$ref` variants used by exactly one parent (RepositoryRule family + others; 25 fewer model files) |
+| #180 | Dedup structurally-identical operation-synthesized oneOf trees (`/user` × 3 → 1; component-internal collections preserved) |
+| #181 | Synthesize round-trip tests for smooshed oneOf variants |
+| #182 | Don't drop `properties`/`required` when `oneOf` is a sibling (parse-time merge) + multi-value-enum implicit discriminator + propertyName-without-mapping synthesis + anyOf+discriminator plumb |
+| #183 | Dispatch labels-requestBody (multi-array hybrid sub-dispatch + `_pickPropertyArrayElementShape` picker); closes 2 stubs |
+| #184 | Round-trip correctness: nullable oneOf null-cast, EmptyObject delegation, additionalProperties named-key collision (`mapHash` for hashCode), parser drops `required` entries naming nonexistent properties — 41 → 0 generated test failures |
 
-Stub count remained at 7 throughout. Smoosh net: ~25 inline-object
-variants flipped from wrapper-subclass to direct sealed subclass
-in the github regen.
+The earlier dispatch + naming + smoosh arc (#157–#170, #172):
+
+| PR | What |
+|---|---|
+| #157–#160 | Dispatch mode → IR + sealed `DispatchDecision` family |
+| #161–#163, #165–#167 | Naming pass introduced + multi-tier preferences + title-derived names |
+| #168–#170 | Smoosh series — variant data class extends sealed parent directly under predicate / discriminator / shape+hybrid dispatch |
+| #172 | Refresh skill: surface verbose-log mining as primary discovery channel |
+
+**Stub count: 7 → 3** across the night (Groups A and B closed;
+Group C parked). **Wrapper count: 49 → 57** (the 8 increase is
+new variants from #182's parse-time merge — `checks_create_request`
+now generates typed variant classes that previously didn't exist
+as a stub). **Generated test suite: 41 broken → all 6146 pass.**
+
+Open issues filed during the night that should drive next iteration:
+
+- **#185** — strategy needed for web/dart2js-aware codegen
+  (`format=int64` is the immediate trigger). Needs a validation-target
+  spec with near-2^63 IDs (Stripe / Discord / Twitter) before coding.
+- **#186** — split request/response classes when properties are
+  marked `readOnly: true`. Correctness issue (servers can reject
+  requests with readOnly fields), not just ergonomics.
+- **#187** — remove unused Equatable `props` from `RenderSchema`
+  (and audit `SchemaObject`/`ResolvedObject`). The codebase uses
+  `equalsIgnoringName` for semantic comparison; the auto-generated
+  `==`/`hashCode` from `props` is dead infrastructure. Surfaced
+  during PR #175's coverage failure.
 
 ## Open gaps (pick from here)
 
@@ -250,163 +280,82 @@ Warnings come from `_warnUnused` / `_warnIgnored` in
 `lib/src/parser.dart`. To see what fields a parser visit *handles*
 vs ignores, search there.
 
-### Feature-completeness gaps (from `-v` regen, 2026-04-28)
+### Tracking issues (the high-leverage tracks)
 
-These are the highest-volume warning categories. Each one is a
-PR-sized investigation; some compose with each other.
+Filed during the 2026-04-29 review pass. Each represents a
+significant chunk of work that should be its own iteration:
 
-- **`Ignoring: format=int64 (String)` × 246**. OpenAPI pattern:
-  large integers transmitted as JSON strings to dodge JSON's
-  `2^53` precision limit. Today we emit `String`; users get
-  string IDs back from `simple-user.id`, `hook-delivery-item.id`,
-  `installation_id`, etc. They have to call `int.parse` themselves
-  *and* know which fields need it (it's not in the type). Should
-  emit `int` (or `BigInt` — needs decision) with serialization
-  that quotes/unquotes. Affects every github user/repo/installation
-  ID return value — high real-world impact, but a typing change
-  with downstream ripple. Worth a design pass before coding.
+- **#185** — Strategy needed for web/dart2js-aware code generation.
+  Trigger: `format=int64` (246 sites in github) silently produces
+  broken code on dart2js for specs with near-2^63 IDs. Spec
+  authors using int64 commonly: Stripe, Discord, Twitter,
+  Snowflake. Pre-coding: pick a validation-target spec, decide on
+  strategy (opt-in flag vs conditional imports vs typedef vs
+  doc-comment marker). Don't ship a github-specific decision.
 
-- **`Unused: readOnly=true` × 81**. Response-only fields. Today
-  the generated class makes them required in constructors,
-  forcing test code to pass values for fields it shouldn't have to
-  invent. `Unused: readOnly=false` (×8) is just spec noise — drop
-  silently. The `Unused: readOnly=… allOf` (×3) cases are
-  `readOnly` outside a property slot — special handling.
+- **#186** — Split request/response classes when properties are
+  `readOnly: true`. Correctness issue: servers can reject requests
+  that include readOnly fields, and our current code forces users
+  to pass values for them. 81 sites in github. Open design call:
+  per-class duplication vs. dual-constructor on one class. Should
+  also handle `writeOnly: true` symmetrically. The closed PR #175
+  laid the parser-side foundation (captures
+  `SchemaObject.readOnlyProperties`); this issue is the real fix.
 
-- **`Unused: oneOf` × 72** in properties. Inline property `oneOf`
-  like `milestone: oneOf<string, integer>` — we drop the oneOf
-  and the property becomes `Object?`. github examples:
-  `issues.post`'s `milestone` and `title`, `webhook-*.pushed_at`
-  (string-or-integer epoch). The render layer already handles
-  inline oneOfs at the *type* slot (request body, response, param
-  schema); extending to *property* slot likely needs to synthesize
-  a sealed-class type at the property's pointer. Composes with
-  smoosh — these would all be tiny inline sealed classes living
-  in the parent's file.
+- **#187** — Remove unused Equatable `props` from `RenderSchema`
+  (and audit `SchemaObject`/`ResolvedObject`). The codebase
+  semantic-comparison goes through `equalsIgnoringName` (manual);
+  the auto-generated `==`/`hashCode` from `props` is dead
+  infrastructure. Removing shrinks every future schema-field PR's
+  diff. Mostly a deletion patch but needs investigation of
+  `Set<RenderSchema>` in `_ModelCollector` first.
 
-- **`Ignoring: example` × 43** + **`Ignoring: example=…` × 6** +
-  **`Ignoring: examples` × 2**. Spec authors wrote example values
-  that we drop. Could be threaded into doc comments
-  (`/// Example: …`). Low complexity, low-medium value (helps
-  IDE tooltip without changing types).
+### Smaller open gaps
 
-- **Smaller signal gaps** worth one PR each:
-  - `Unused: required` × 3 — `required` declared at requestBody
-    root or on an array property where it doesn't apply.
-  - `Unused: additionalProperties=true` × 1 — explicit `true`
-    when the default is also true; probably silent-drop.
-  - `Unused: maxProperties` × 3, `minItems` × 1 — validation
-    bounds dropped. Might be right to skip (we don't validate)
-    but worth a deliberate decision.
-  - `Unused: anyOf` × 1 in `metadata.additionalProperties`.
-  - `Unused: webhooks` × 1, `Unused: externalDocs` × 1 — top-
-    level OpenAPI 3.1 sections.
-  - Unknown formats: `repo.nwo`, `timestamp`. Could surface as
-    typedef hints in doc comments.
+- **57 `<Parent>OneOf<i>` wrappers** still in the github regen.
+  Most are array-variant or multi-parent reference cases that
+  smoosh's structural eligibility + exclusive-by-use predicate
+  don't catch (correctly — array variants can't extend a sealed
+  class; multi-parent variants can't smoosh into one parent).
+  Some may be naming-quality wins still on the table — investigate
+  before committing.
 
-### Next (visible-output track): smoosh by exclusive-use
+- **6 `_1` collision suffixes** (`metadata_1`, `repository_rule_1`,
+  etc.). The resolver's snake-name collision handling appends
+  `_1` mechanically; the naming pass could pick a more
+  descriptive disambiguator (parent-context-derived).
 
-Today's smoosh predicate is *structural* — variant is inline
-(pointer is `<parent>/oneOf/<i>`). That misses github's biggest
-wrapper-subclass families because they use **top-level `$ref`
-variants** referenced by exactly one parent:
-
-- `RepositoryRule` family (~20 wrappers): `RepositoryRuleCreation`,
-  `RepositoryRuleDeletion`, etc. Each top-level schema is a
-  variant of `RepositoryRule` and (the more detailed)
-  `RepositoryRuleDetailed`. Likely also referenced from nowhere
-  else.
-- `/user` × 3 sites (`oneOf<private-user, public-user>`):
-  cross-cuts with the **structural-dedup** gap below — the three
-  endpoints generate three structurally-identical sealed classes.
-- `repos/get-content` 200 response (hybrid dispatch with
-  `ContentFile`/`ContentSymlink`/`ContentSubmodule`): top-level
-  refs.
-
-Extending smoosh-eligibility to "top-level schema referenced as a
-variant of exactly one parent, nowhere else" would catch all of
-these. The check is real reachability analysis on the resolved
-tree:
-
-1. Walk the spec, count how many oneOf/anyOf collections include
-   each top-level schema as a variant.
-2. Walk again, count references *outside* of variant slots
-   (property types, parameter types, request/response bodies).
-3. A schema is exclusive-use iff it has exactly one variant
-   reference and zero other references.
-
-Implementation note: top-level `$ref`s resolve to the same
-`ResolvedSchema` instance (via the resolver's ref cache), so
-identity comparison works. Refs from one resolved schema to
-another are recorded; the count is a tree walk.
-
-The smoosh mechanism (RenderObject extends parent, inlined in
-parent's file, case arm calls Variant directly) is fully built —
-this PR is "widen the eligibility predicate + plumb the parent
-relationship through to top-level schemas." Probably bigger than
-one PR; could be:
-1. Reachability analysis + `_isStructurallySmooshable` extension.
-2. `parentSealedTypeName` plumbing for top-level smooshed schemas.
-3. Same-library inlining (top-level schemas would move *into* the
-   parent's file, eliminating their own files).
-
-Each step has a real github-regen impact.
-
-### Long-tail stubs (lower leverage)
-
-7 stubs split into three groups:
-
-**Group A — validation-error twins** (2 sites: `orgs/update` 422,
-`projects/create-card` 422). `oneOf<validation-error, validation-
-error-simple>` — identical at top level, distinguishable only by
-`errors[].type` (object vs string). Needs a new predicate kind
-that navigates into a property's array first-element type.
-
-**Group B — labels requestBody mess** (2 sites: `issues/add-labels`,
-`issues/set-labels`). 5 variants: 2× literal-duplicate
-`{labels?}` object, `array<string>`, `array<object>`, `string`.
-Needs upstream structural dedup + hybrid composition extending to
-"array-element sub-dispatch when the outer hybrid has multiple
-List variants."
-
-**Group C — big enumless anyOfs** (3 sites: `timeline-issue-events`
-22 variants, `issue-event-for-issue` 15, `repository-ruleset-
-conditions-1`). All variants share an `event: string` field but no
-`enum` to dispatch on. Probably right to skip — try-each is
-order-dependent.
-
-### Quality wins (mid-priority)
-
-- **Structural dedup of identical oneOfs**. Three github `/user`
-  endpoints all return `oneOf: [private-user, public-user]` with
-  the same discriminator, generating 3 structurally-equal sealed
-  classes (`UsersGetAuthenticated200Response`, etc.). Dedup → one
-  shared `User` type. Composes with exclusive-use smoosh.
-
-- **Per-variant round-trip test coverage for smooshed variants.**
-  Smoosh removed 25 separate variant `.dart` files — and with them,
-  25 round-trip test files. The variant classes still exist
-  (inlined in parent), and their `fromJson`/`toJson` are unchanged,
-  but no test exercises them now. Could synthesize a per-variant
-  round-trip in the parent's test file.
-
-### Tangentially related
+- **3 enumless-anyOf stubs (Group C)**: `timeline-issue-events`
+  (22 variants), `issue-event-for-issue` (15), `repository-
+  ruleset-conditions-1`. All variants share an `event: string`
+  field but no `enum` to dispatch on. **Skill says skip** —
+  try-each is order-dependent and inferring values from variant
+  titles is fragile.
 
 - **Synthesized typeName collisions.** `<op>_response` could
   collide with a schema named that way in the spec. The naming
-  pass enumerates both now; multi-tier preferences + the allocator
-  would let the synthesized name fall back to `<op>_response_2`
-  on collision, but no caller currently passes that fallback list.
-  Tiny widening of the op-response claim list.
+  pass enumerates both; multi-tier preferences would let the
+  synthesized name fall back to `<op>_response_2` on collision,
+  but no caller currently passes that fallback list. Tiny
+  widening of the op-response claim list.
 
 - **Error-status response unions.** Multi-status dispatch only
   kicks in for 2xx variation. 4xx/5xx with structurally-different
   bodies still falls back to untyped `ApiException<Object?>`.
 
-- **Range-mixed multi-status fallback.** When 2XX range mixes with
-  explicit 2xx codes, render synthesizes a `RenderOneOf` with
-  `source: null` that always emits the legacy stub. Closing this
-  needs the synthesized oneOf to participate in dispatch.
+- **Range-mixed multi-status fallback.** When 2XX range mixes
+  with explicit 2xx codes, render synthesizes a `RenderOneOf`
+  with `source: null` that always emits the legacy stub. Closing
+  this needs the synthesized oneOf to participate in dispatch.
+
+- **anyOf+`additionalProperties` with `anyOf` body**. github's
+  `metadata` schema. PR #174 may have already covered it via the
+  precedence fix at the additionalProperties slot — verify with
+  a `-v` regen check before opening a PR.
+
+- **Unknown formats** like `repo.nwo` and `timestamp`. Low value
+  to handle directly; could surface as typedef hints in doc
+  comments. Probably skip until a real user asks.
 
 ## Conventions
 
@@ -480,6 +429,38 @@ From the project's CLAUDE.md and saved memory:
   (forgot to branch fresh), the cleanest recovery is to combine
   related work into one PR and update the title/description rather
   than try to untangle the git history.
+- **Inline small follow-ups in the same PR — don't file separate
+  issues for them.** Human review time is the expensive resource;
+  every separate PR is another full review cycle. When self-
+  review surfaces a small refactor or cleanup, do it now in the
+  same PR. Examples folded inline during the 2026-04-29 review:
+  `markUsed` API rename + four call-site updates (#182), dropping
+  the dead `_collectionSnakeStem('allOf')` branch (#182), splitting
+  `_pickPropertyArrayElementShape` into its own picker (#183),
+  refactoring all four `_buildXMode` builders to take their
+  dispatch object directly (#183), filing the parser-side `required`-
+  references-unknown-property warn instead of the render-side
+  `invalidJsonExample` band-aid (#184). Each was small enough to
+  fit; collectively they kept the PRs at proper checkpoints.
+- **Each PR is a measurable checkpoint.** Some changes legitimately
+  span multiple PRs, but each one should land at a meaningful
+  state, not "halfway through a refactor." If review surfaces "we're
+  just a few little bits away from the checkpoint," pull those
+  bits in.
+- **Don't dodge symptoms with band-aids when the real fix is
+  upstream.** PR #184 originally filtered `invalidJsonExample` to
+  silence an asserted-throw test for github's
+  `package-version-metadata-docker` typo (`required: [tags]` for a
+  property called `tag`). Real fix: parser detects the unknown
+  name, drops it from `requiredProperties`, and warns. Downstream
+  stages then only see real names — no per-stage workarounds
+  needed. Apply this everywhere: a render-time filter compensating
+  for a parser-time miss is a smell.
+- **Verbose-log-mining is the primary discovery channel.** The
+  `-v` regen surfaces gaps that visible-output-only review misses.
+  Run the tally one-shot before assuming the previously-tracked
+  gap list is current — it's typically out of date by 1-2
+  iterations of the project.
 
 ## Working rhythm
 
@@ -572,6 +553,21 @@ From the project's CLAUDE.md and saved memory:
   speculative branch in #170 self-review — it would silently mis-
   render if ever reached. Better to crash on missing-case than
   silently produce wrong output.
+- Don't ship "swap on better arrival" mutation in immutable caches.
+  Tried this for #180's name selection: kept the cache, swapped
+  the entry when a more-canonical pointer arrived. Doesn't work
+  — the FIRST caller already holds the loser instance, so
+  callers end up with two distinct instances and dedup silently
+  fails. Either fix at parse-order time or accept first-arrival
+  semantics (#180 ended up with a narrower scope rule instead).
+- Don't dispatch fan-out subagents without telling them to stay
+  in their assigned worktree. CLAUDE.md absolute paths can mislead
+  subagents into editing the parent worktree. One agent during the
+  fan-out caught itself before pushing — only because nothing else
+  had uncommitted changes. Every fan-out prompt should explicitly
+  say: "Edit and commit ONLY in the directory you start in (`pwd`
+  to confirm). Do NOT touch the parent worktree." See memory file
+  `feedback_subagent_worktree_isolation.md`.
 
 ## Helpful one-shots
 
@@ -602,10 +598,12 @@ grep -E "^final class \w+ extends \w+" /tmp/github_out/lib/messages/*.dart | wc 
 # Wrappers still using the post-#165 `Variant<i>` doubling fallback
 grep -rE "class \w+Variant[0-9]+ extends \w+" /tmp/github_out/lib | wc -l
 
-# Top-level `$ref` variant wrappers (the next-PR target — these are
-# what exclusive-by-use smoosh would catch)
-grep -rE "^final class \w+(Creation|Deletion|Update|...) extends Repository" \
-  /tmp/github_out/lib/models/ | wc -l
+# Generated test suite — sanity check after a render-layer change
+(cd /tmp/github_out && dart pub get && dart test 2>&1 | tail -3)
+
+# Coverage for a specific file (after running ./coverage.sh)
+awk '/^SF:.*\/parser.dart$/,/^end_of_record$/' coverage/lcov.info \
+  | grep "DA:.*,0$"
 ```
 
 ```sh
