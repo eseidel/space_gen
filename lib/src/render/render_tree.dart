@@ -4260,43 +4260,14 @@ class RenderOneOf extends RenderNewType {
     }
 
     return switch (decision) {
-      DiscriminatorDispatch(
-        :final propertyName,
-        :final mapping,
-        :final variants,
-      ) =>
-        _buildDiscriminatorMode(
-          propertyName,
-          mapping,
-          variants,
-          renderOf,
-          context,
-        ),
-      ShapeDispatch(:final arms) => _buildShapeMode(arms, renderOf, context),
-      HybridDispatch(
-        :final shapeArms,
-        :final mapArms,
-        :final mapFallback,
-        :final listArms,
-        :final listFallback,
-        :final declarationOrder,
-      ) =>
-        _buildHybridMode(
-          shapeArms,
-          mapArms,
-          mapFallback,
-          listArms,
-          listFallback,
-          declarationOrder,
-          renderOf,
-          context,
-        ),
-      PredicateDispatch(:final kind, :final arms) => _buildPredicateMode(
-        kind,
-        arms,
+      final DiscriminatorDispatch d => _buildDiscriminatorMode(
+        d,
         renderOf,
         context,
       ),
+      final ShapeDispatch d => _buildShapeMode(d, renderOf, context),
+      final HybridDispatch d => _buildHybridMode(d, renderOf, context),
+      final PredicateDispatch d => _buildPredicateMode(d, renderOf, context),
       NoDispatch() => const _NoDispatchMode(),
     };
   }
@@ -4308,17 +4279,15 @@ class RenderOneOf extends RenderNewType {
   /// `caseExpression` already contains the full Dart expression to
   /// `return`, so the template emits it directly.
   _DiscriminatorMode _buildDiscriminatorMode(
-    String propertyName,
-    List<({String value, ResolvedSchema variant})> mapping,
-    List<ResolvedSchema> declarationOrder,
+    DiscriminatorDispatch dispatch,
     RenderSchema Function(ResolvedSchema) renderOf,
     SchemaRenderer context,
   ) {
-    final dispatch = <Map<String, dynamic>>[];
-    for (final entry in mapping) {
+    final cases = <Map<String, dynamic>>[];
+    for (final entry in dispatch.mapping) {
       final renderVariant = renderOf(entry.variant);
       final fromJson = '${renderVariant.typeName}.fromJson(json)';
-      dispatch.add({
+      cases.add({
         'value': entry.value,
         'caseExpression': renderVariant.isSmooshed
             ? fromJson
@@ -4327,7 +4296,7 @@ class RenderOneOf extends RenderNewType {
     }
     final variants = <Map<String, dynamic>>[];
     final smooshedVariants = <Map<String, dynamic>>[];
-    for (final v in declarationOrder) {
+    for (final v in dispatch.variants) {
       final renderVariant = renderOf(v);
       if (renderVariant.isSmooshed) {
         smooshedVariants.add(renderVariant.toTemplateContext(context));
@@ -4336,8 +4305,8 @@ class RenderOneOf extends RenderNewType {
       }
     }
     return _DiscriminatorMode(
-      discriminatorProperty: propertyName,
-      dispatch: dispatch,
+      discriminatorProperty: dispatch.propertyName,
+      dispatch: cases,
       variants: variants,
       smooshedVariants: smooshedVariants,
     );
@@ -4349,14 +4318,14 @@ class RenderOneOf extends RenderNewType {
   /// + `value:` indirection). Each `dispatch` entry's `caseExpression`
   /// is the full Dart expression to `return` from its switch arm.
   _ShapeMode _buildShapeMode(
-    List<ShapeArm> arms,
+    ShapeDispatch shapeDispatch,
     RenderSchema Function(ResolvedSchema) renderOf,
     SchemaRenderer context,
   ) {
     final dispatch = <Map<String, dynamic>>[];
     final variants = <Map<String, dynamic>>[];
     final smooshedVariants = <Map<String, dynamic>>[];
-    for (final arm in arms) {
+    for (final arm in shapeDispatch.arms) {
       final renderVariant = renderOf(arm.variant);
       if (renderVariant.isSmooshed) {
         // Smooshed object variants are always Map-shaped; the case
@@ -4397,18 +4366,16 @@ class RenderOneOf extends RenderNewType {
   /// land in `variants`; smooshed ones in `smooshedVariants` and are
   /// inlined into the parent's file by the schema_object partial.
   _HybridMode _buildHybridMode(
-    List<ShapeArm> shapeArms,
-    List<PredicateArm> mapArms,
-    ResolvedSchema? mapFallback,
-    List<PredicateArm> listArms,
-    ResolvedSchema? listFallback,
-    List<ResolvedSchema> declarationOrder,
+    HybridDispatch dispatch,
     RenderSchema Function(ResolvedSchema) renderOf,
     SchemaRenderer context,
   ) {
     final variants = <Map<String, dynamic>>[];
     final smooshedVariants = <Map<String, dynamic>>[];
 
+    // Smoosh-aware case expression for a Map-shaped variant:
+    // smooshed → bare `<Variant>.fromJson(v)`; otherwise wrap in
+    // the variant's wrapper subclass.
     String mapCaseExpression(RenderSchema variant) {
       final fromJson = '${variant.typeName}.fromJson(v)';
       return variant.isSmooshed
@@ -4416,59 +4383,62 @@ class RenderOneOf extends RenderNewType {
           : '${wrapperTypeName(variant)}($fromJson)';
     }
 
-    // List sub-arms wrap an array variant — the variant always has a
-    // wrapper subclass (Array variants aren't smoosh-eligible today),
-    // so `_planVariant` returns the standard List<X> shape plan.
-    String listCaseExpression(RenderSchema variant) {
+    // Wrapped case expression for any non-Map variant (List, primitive).
+    // None of these are smoosh-eligible: array variants are excluded
+    // structurally, and primitives can't extend a sealed class.
+    String wrappedCaseExpression(RenderSchema variant) {
       final plan = _planVariant(variant, context)!;
       return '${plan.wrapperTypeName}(${plan.fromJson})';
     }
 
-    // Non-collision shape arms can be Map-shaped now (when a single
-    // Map variant sits alongside multi-variant List collisions, the
-    // picker routes it here as a single arm). Use the same case-
-    // expression helper so smooshed Map variants are handled.
+    // Pick the right case-expression form based on the arm's shape
+    // key. Map-shaped arms take the smoosh-aware path; everything
+    // else (List + primitives) goes through the wrapped form.
+    String shapeArmCaseExpression(RenderSchema variant, String shapeKey) =>
+        shapeKey == _mapShapeKey
+        ? mapCaseExpression(variant)
+        : wrappedCaseExpression(variant);
+
     final renderedShapeArms = <Map<String, dynamic>>[];
-    for (final arm in shapeArms) {
+    for (final arm in dispatch.shapeArms) {
       final renderVariant = renderOf(arm.variant);
-      final String caseExpression;
-      if (arm.shapeKey == _mapShapeKey) {
-        caseExpression = mapCaseExpression(renderVariant);
-      } else if (arm.shapeKey == _listShapeKey) {
-        caseExpression = listCaseExpression(renderVariant);
-      } else {
-        final plan = _planVariant(renderVariant, context)!;
-        caseExpression = '${plan.wrapperTypeName}(${plan.fromJson})';
-      }
       renderedShapeArms.add({
         'jsonTestType': arm.shapeKey,
-        'caseExpression': caseExpression,
+        'caseExpression': shapeArmCaseExpression(renderVariant, arm.shapeKey),
       });
     }
 
     final renderedMapArms = <Map<String, dynamic>>[];
-    for (final arm in mapArms) {
+    for (final arm in dispatch.mapArms) {
       renderedMapArms.add({
         'predicateTest': arm.predicate.dartIfTest('v'),
         'caseExpression': mapCaseExpression(renderOf(arm.variant)),
       });
     }
 
-    final renderedMapFallback = mapFallback == null
+    final renderedMapFallback = dispatch.mapFallback == null
         ? null
-        : {'caseExpression': mapCaseExpression(renderOf(mapFallback))};
+        : {
+            'caseExpression': mapCaseExpression(
+              renderOf(dispatch.mapFallback!),
+            ),
+          };
 
     final renderedListArms = <Map<String, dynamic>>[];
-    for (final arm in listArms) {
+    for (final arm in dispatch.listArms) {
       renderedListArms.add({
         'predicateTest': arm.predicate.dartIfTest('v'),
-        'caseExpression': listCaseExpression(renderOf(arm.variant)),
+        'caseExpression': wrappedCaseExpression(renderOf(arm.variant)),
       });
     }
 
-    final renderedListFallback = listFallback == null
+    final renderedListFallback = dispatch.listFallback == null
         ? null
-        : {'caseExpression': listCaseExpression(renderOf(listFallback))};
+        : {
+            'caseExpression': wrappedCaseExpression(
+              renderOf(dispatch.listFallback!),
+            ),
+          };
 
     // A variant lands in one of three buckets, in priority order:
     //   1. Smooshed → `smooshedVariants` (variant data class extends
@@ -4482,7 +4452,7 @@ class RenderOneOf extends RenderNewType {
     //   3. Otherwise (string, int, list) → `_shapeWrapperContext`
     //      (wrapper's `toJson` returns `dynamic` and stores the
     //      JSON-typed value verbatim).
-    for (final v in declarationOrder) {
+    for (final v in dispatch.declarationOrder) {
       final renderVariant = renderOf(v);
       if (renderVariant.isSmooshed) {
         smooshedVariants.add(renderVariant.toTemplateContext(context));
@@ -4505,16 +4475,16 @@ class RenderOneOf extends RenderNewType {
   }
 
   _PredicateDispatchMode _buildPredicateMode(
-    PredicateDispatchKind kind,
-    List<PredicateArm> arms,
+    PredicateDispatch predicateDispatch,
     RenderSchema Function(ResolvedSchema) renderOf,
     SchemaRenderer context,
   ) {
+    final kind = predicateDispatch.kind;
     final dispatch = <Map<String, dynamic>>[];
     Map<String, dynamic>? fallback;
     final variants = <Map<String, dynamic>>[];
     final smooshedVariants = <Map<String, dynamic>>[];
-    for (final arm in arms) {
+    for (final arm in predicateDispatch.arms) {
       final renderVariant = renderOf(arm.variant);
       // Smooshed variants (today: only inline-object variants under
       // required-field dispatch) are emitted as direct subclasses of
@@ -4737,12 +4707,6 @@ final class _MultiStatusContext {
 /// the hybrid dispatch's "Map collision" detection has a single
 /// authoritative spelling.
 const String _mapShapeKey = 'Map<String, dynamic>';
-
-/// Dart pattern type for the List-shape arm of dispatch — matches
-/// any JSON-decoded list. Mirrors [_mapShapeKey]; centralized so the
-/// hybrid dispatch's "List collision" detection has a single
-/// authoritative spelling.
-const String _listShapeKey = 'List<dynamic>';
 
 /// Wrapper-variant context for the shape-dispatch paths (pure shape
 /// and the non-Map arms of hybrid). The wrapper stores the matched
