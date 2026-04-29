@@ -2310,6 +2310,51 @@ void main() {
       expect(result, isNot(contains('throw UnimplementedError')));
     });
 
+    test('hybrid multi-array sub-dispatch picks an unguarded '
+        'fallback when one variant has open-shape items', () {
+      // Two list variants: `array<string>` (pinnable to `String`)
+      // and `array<DateTime>` (string-format-date-time — pinnable
+      // to nothing in particular, since DateTime serializes back
+      // to a JSON string and would collide with the bare-string
+      // arm). Plus an object variant. The DateTime-items array
+      // gets the unguarded fallback at the end of the list sub-
+      // dispatch; the string-items array is guarded by `first is
+      // String`.
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+          {
+            'type': 'array',
+            'items': {'type': 'string', 'format': 'date-time'},
+          },
+          {
+            'type': 'object',
+            'required': ['note'],
+            'properties': {
+              'note': {'type': 'string'},
+            },
+          },
+        ],
+      });
+      // String-items arm guarded.
+      expect(
+        result,
+        contains(
+          'final List<dynamic> v when v.isNotEmpty && v.first is String',
+        ),
+      );
+      // DateTime-items arm is the unguarded fallback (no `when`
+      // clause — bare `final List<dynamic> v => ...`).
+      expect(
+        result,
+        contains('final List<dynamic> v => '),
+      );
+      expect(result, isNot(contains('throw UnimplementedError')));
+    });
+
     test('property-array-element-shape dispatch picks object variants '
         'that differ only in an array property element type', () {
       // Github's `issues/add-labels` request body: two object variants
@@ -2348,12 +2393,15 @@ void main() {
           },
         ],
       });
-      // First variant guarded by `labels[0] is String`.
+      // First variant guarded by `labels[0] is String`. Uses the
+      // `PropertyArrayItemShape` predicate (shared with the
+      // validation-error twins case from #177).
       expect(
         result,
         contains(
-          "if ((json['labels'] as List?)?.isNotEmpty == true && "
-          "(json['labels']! as List).first is String)",
+          "if (json['labels'] is List && "
+          "(json['labels'] as List).isNotEmpty && "
+          "(json['labels'] as List).first is String)",
         ),
       );
       // Second variant is the unguarded fallback (last `return ...;`
@@ -2426,8 +2474,10 @@ void main() {
         result,
         contains(
           'final Map<String, dynamic> v when '
-          "(v['labels'] as List?)?.isNotEmpty == true && "
-          "(v['labels']! as List).first is String => TestOneOf0.fromJson(v)",
+          "v['labels'] is List && "
+          "(v['labels'] as List).isNotEmpty && "
+          "(v['labels'] as List).first is String "
+          '=> TestOneOf0.fromJson(v)',
         ),
       );
       expect(
