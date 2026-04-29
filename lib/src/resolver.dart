@@ -488,6 +488,8 @@ List<ResolvedParameter> _resolveParameters(
         isRequired: resolved.isRequired,
         isDeprecated: resolved.isDeprecated,
         schema: type,
+        example: resolved.example,
+        examples: resolved.examples,
       );
     });
   }).toList();
@@ -938,6 +940,8 @@ class ResolvedParameter {
     required this.isRequired,
     required this.isDeprecated,
     required this.schema,
+    required this.example,
+    required this.examples,
   });
 
   /// The name of the resolved parameter.
@@ -957,6 +961,12 @@ class ResolvedParameter {
 
   /// The schema of the resolved parameter.
   final ResolvedSchema schema;
+
+  /// A single example value, from the spec's `example` keyword.
+  final dynamic example;
+
+  /// Multiple example values, from the spec's `examples` keyword.
+  final List<dynamic>? examples;
 }
 
 class ResolvedRequestBody {

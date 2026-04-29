@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
@@ -196,19 +198,17 @@ String? createDocCommentFromParts({
   String? body,
   dynamic example,
   List<dynamic>? examples,
+  List<ParameterExampleDoc> parameterExamples = const [],
   int indent = 0,
   String? templateName,
 }) {
-  if (title == null && body == null && example == null && examples == null) {
+  if (title == null &&
+      body == null &&
+      example == null &&
+      examples == null &&
+      parameterExamples.isEmpty) {
     return null;
   }
-  String quoteIfNeeded(dynamic value) {
-    if (value is String) {
-      return quoteString(value);
-    }
-    return value.toString();
-  }
-
   final indentStr = ' ' * indent;
   final hasTemplateContent = title != null || body != null;
   final wrapWithTemplate = templateName != null && hasTemplateContent;
@@ -217,11 +217,16 @@ String? createDocCommentFromParts({
     if (title != null) ...wrapDocComment(title, indent: indent),
     if (body != null) ...wrapDocComment(body, indent: indent),
     if (wrapWithTemplate) '$indentStr/// {@endtemplate}',
-    if (example != null)
-      ...wrapDocComment('example: `${quoteIfNeeded(example)}`', indent: indent),
+    if (example != null) ...exampleDocCommentLines(example, indent: indent),
     if (examples != null)
-      ...examples.expand(
-        (e) => wrapDocComment('example: `${quoteIfNeeded(e)}`', indent: indent),
+      ...examples.expand((e) => exampleDocCommentLines(e, indent: indent)),
+    for (final p in parameterExamples)
+      ...p.examples.expand(
+        (value) => exampleDocCommentLines(
+          value,
+          indent: indent,
+          prefix: '[${p.dartName}] example',
+        ),
       ),
   ];
   if (lines.isEmpty) {
@@ -232,6 +237,85 @@ String? createDocCommentFromParts({
   lines[0] = lines[0].trimLeft();
   // Re-indent the next line after the comment.
   return '${lines.join('\n')}\n${' ' * indent}';
+}
+
+/// Per-parameter example bundle threaded into an endpoint's doc
+/// comment. The Dart-side parameter name (rather than the wire name) is
+/// used so dartdoc renders the surrounding `[name]` as a cross-link to
+/// the method's parameter, not as a broken reference.
+class ParameterExampleDoc {
+  const ParameterExampleDoc({required this.dartName, required this.examples});
+
+  /// The Dart-side parameter name (camelCased, reserved-word-safe).
+  final String dartName;
+
+  /// All example values declared on the parameter, scalar or complex.
+  final List<dynamic> examples;
+}
+
+/// Renders an example [value] as one or more dartdoc lines, fully
+/// indented and prefixed with `///`, ready to be joined into a doc
+/// comment.
+///
+/// Scalars (String, num, bool) render inline as `` /// <prefix>: `<v>` ``.
+/// String values use Dart-source quoting so the rendered backtick span
+/// matches the shape callers would type in real code.
+///
+/// Complex values (Map / List) render as a fenced JSON code block —
+/// `/// <prefix>:`, then `/// ```json`, the pretty-printed payload split
+/// across lines, then a closing `/// ```. This keeps the doc comment
+/// readable even when the example is a multi-line object, and lets
+/// dartdoc/IDEs syntax-highlight the body.
+///
+/// [prefix] defaults to `Example`; pass e.g. `[paramName] example` to
+/// scope the example to a specific parameter.
+@visibleForTesting
+Iterable<String> exampleDocCommentLines(
+  dynamic value, {
+  int indent = 0,
+  String prefix = 'Example',
+}) {
+  if (value == null) return const [];
+  final indentStr = ' ' * indent;
+  if (value is Map || value is List) {
+    final pretty = _prettyPrintJson(value);
+    return <String>[
+      '$indentStr/// $prefix:',
+      '$indentStr/// ```json',
+      ...pretty.split('\n').map((line) => '$indentStr/// $line'),
+      '$indentStr/// ```',
+    ];
+  }
+  final formatted = value is String ? quoteString(value) : value.toString();
+  return wrapDocComment('$prefix: `$formatted`', indent: indent);
+}
+
+/// Pretty-print a JSON-shaped value with 2-space indentation. Coerces
+/// any non-JSON-encodable element (DateTime, class instance, etc.) to
+/// its `toString()` form before encoding so the encode never throws —
+/// doc-comment generation must always produce *something*, even if a
+/// spec author dropped a non-JSON value into an `example:` field.
+String _prettyPrintJson(dynamic value) {
+  const encoder = JsonEncoder.withIndent('  ');
+  return encoder.convert(_coerceToJson(value));
+}
+
+/// Walk [value] turning anything `jsonEncode` would reject into its
+/// `toString()` form. Maps and Lists are recursed into; JSON scalars
+/// (null, num, bool, String) pass through unchanged.
+dynamic _coerceToJson(dynamic value) {
+  if (value == null || value is num || value is bool || value is String) {
+    return value;
+  }
+  if (value is Map) {
+    return value.map<String, dynamic>(
+      (key, v) => MapEntry(key.toString(), _coerceToJson(v)),
+    );
+  }
+  if (value is List) {
+    return value.map(_coerceToJson).toList();
+  }
+  return value.toString();
 }
 
 /// Returns a dartdoc `/// {@macro <templateName>}` line, matching the
@@ -576,6 +660,8 @@ class SpecResolver {
       isRequired: parameter.isRequired,
       isDeprecated: parameter.isDeprecated,
       type: toRenderSchema(parameter.schema),
+      example: parameter.example,
+      examples: parameter.examples,
     );
   }
 
@@ -919,6 +1005,25 @@ class Endpoint implements ToTemplateContext {
       }
     }
     return statements;
+  }
+
+  /// Per-parameter example doc lines for this endpoint, ready to be
+  /// appended after the summary/description. Each entry refers to the
+  /// parameter by its Dart-side name in `[brackets]` so dartdoc renders
+  /// it as a cross-reference into the method signature.
+  List<ParameterExampleDoc> _parameterExampleLines(Quirks quirks) {
+    final out = <ParameterExampleDoc>[];
+    for (final parameter in parameters) {
+      final examples = parameter.allExamples.toList();
+      if (examples.isEmpty) continue;
+      out.add(
+        ParameterExampleDoc(
+          dartName: parameter.dartParameterName(quirks),
+          examples: examples,
+        ),
+      );
+    }
+    return out;
   }
 
   /// Turn the SecurityRequirements into AuthRequest subclasses to be
@@ -1440,6 +1545,7 @@ class Endpoint implements ToTemplateContext {
       'endpoint_doc_comment': createDocCommentFromParts(
         title: summary,
         body: description,
+        parameterExamples: _parameterExampleLines(context.quirks),
         indent: 4,
       ),
       'methodName': methodName,
@@ -4982,6 +5088,8 @@ class RenderParameter implements CanBeParameter {
     required this.isRequired,
     required this.isDeprecated,
     required this.inLocation,
+    required this.example,
+    required this.examples,
   });
 
   /// The name of the parameter.
@@ -5005,6 +5113,23 @@ class RenderParameter implements CanBeParameter {
 
   /// Whether the parameter is deprecated.
   final bool isDeprecated;
+
+  /// A single example value for this parameter, from the spec's
+  /// `example` keyword. Surfaced in the endpoint's doc comment.
+  final dynamic example;
+
+  /// Multiple example values for this parameter, from the spec's
+  /// `examples` keyword. Surfaced in the endpoint's doc comment.
+  final List<dynamic>? examples;
+
+  /// All example values declared for this parameter, in the order they
+  /// will be surfaced in the endpoint's doc comment. Combines the
+  /// singular [example] (if any) with each entry of [examples].
+  Iterable<dynamic> get allExamples sync* {
+    if (example != null) yield example;
+    final examples = this.examples;
+    if (examples != null) yield* examples;
+  }
 
   /// Whether the Dart storage for this parameter is nullable — the
   /// inverse of [isRequired]. Named for the use site rather than the

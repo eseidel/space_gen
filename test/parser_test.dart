@@ -965,6 +965,54 @@ void main() {
         ).called(1);
       });
 
+      test('parameter `example` is captured and `examples` map flattened', () {
+        // OpenAPI 3.x lets a parameter declare `example: <scalar>` *or*
+        // `examples: { name: { value: <scalar> } }` (the second form is
+        // a map of full Example objects). Both should land on the
+        // parsed Parameter so render can surface them in the endpoint
+        // doc comment instead of dropping them as `Ignoring: example`.
+        final logger = _MockLogger();
+        final spec = runWithLogger(
+          logger,
+          () => parseOpenApi(
+            specWithQueryParam({
+              'example': 'foo',
+              'examples': {
+                'first': {'value': 'one', 'summary': 'first example'},
+                'second': {'value': 'two'},
+              },
+            }),
+          ),
+        );
+        final operation = spec.paths['/users'].operations[Method.get];
+        if (operation == null) fail('expected /users get operation');
+        final parameter = operation.parameters.single.object;
+        if (parameter == null) fail('expected inline parameter');
+        expect(parameter.example, 'foo');
+        expect(parameter.examples, ['one', 'two']);
+        verifyNever(() => logger.warn(any()));
+      });
+
+      test(
+        'header `example` and `examples` map are captured (silent — headers '
+        'do not yet flow to render but the parser must not warn)',
+        () {
+          final logger = _MockLogger();
+          runWithLogger(
+            logger,
+            () => parseOpenApi(
+              specWithHeader({
+                'example': 'https://example.com/x',
+                'examples': {
+                  'redirect': {'value': 'https://example.com/y'},
+                },
+              }),
+            ),
+          );
+          verifyNever(() => logger.warn(any()));
+        },
+      );
+
       test('allowReserved=true on query warns', () {
         final logger = _MockLogger();
         runWithLogger(

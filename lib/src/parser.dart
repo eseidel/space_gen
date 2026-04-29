@@ -261,12 +261,14 @@ Parameter parseParameter(MapContext json) {
   _ignored<bool>(json, 'allowEmptyValue');
 
   final SchemaRef type;
+  dynamic example;
+  List<dynamic>? examples;
   if (hasSchema && !hasContent) {
     // Schema fields.
     type = parseSchemaOrRef(schema);
     _warnUnsupportedSerialization(json, inLocation);
-    _ignored<dynamic>(json, 'example');
-    _ignored<dynamic>(json, 'examples');
+    example = _optional<dynamic>(json, 'example');
+    examples = _parseExamplesMap(json);
   } else if (!hasSchema && hasContent) {
     // Content values (Map<String, MediaType>) are not supported.
     _unimplemented(json, "'content'");
@@ -293,6 +295,8 @@ Parameter parseParameter(MapContext json) {
     isDeprecated: deprecated,
     inLocation: inLocation,
     type: type,
+    example: example,
+    examples: examples,
   );
 }
 
@@ -310,8 +314,8 @@ Header parseHeader(MapContext json) {
   _ignored<bool>(json, 'deprecated');
   _ignored<bool>(json, 'allowEmptyValue');
   _warnUnsupportedSerialization(json, ParameterLocation.header);
-  _ignored<dynamic>(json, 'example');
-  _ignored<Map<String, dynamic>>(json, 'examples');
+  final example = _optional<dynamic>(json, 'example');
+  final examples = _parseExamplesMap(json);
 
   final schema = _maybeSchemaOrRef(_optionalMap(json, 'schema'));
   _warnUnused(json);
@@ -319,7 +323,42 @@ Header parseHeader(MapContext json) {
     pointer: json.pointer,
     description: description,
     schema: schema,
+    example: example,
+    examples: examples,
   );
+}
+
+/// Parse an OpenAPI `examples` map (used on parameters and headers) into
+/// a flat list of example values, in declaration order. Each entry in
+/// the map is an Example object whose `value` field carries the actual
+/// example payload; sibling fields like `summary`/`description`/
+/// `externalValue` are not yet surfaced.
+///
+/// Returns null when no `examples` key is present so the absence is
+/// preserved through the pipeline (vs. an empty list, which would
+/// suggest the spec author wrote `examples: {}`).
+List<dynamic>? _parseExamplesMap(MapContext json) {
+  final examples = _optionalMap(json, 'examples');
+  if (examples == null) {
+    return null;
+  }
+  final values = <dynamic>[];
+  for (final key in examples.keys) {
+    final entry = examples.childAsMap(key);
+    final value = _optional<dynamic>(entry, 'value');
+    // The Example object has optional `summary`, `description`,
+    // `externalValue` siblings — consume them quietly so `_warnUnused`
+    // doesn't fire for spec-legal fields the generator just doesn't
+    // surface in doc comments yet.
+    _ignored<String>(entry, 'summary');
+    _ignored<String>(entry, 'description');
+    _ignored<String>(entry, 'externalValue');
+    _warnUnused(entry);
+    if (value != null) {
+      values.add(value);
+    }
+  }
+  return values;
 }
 
 RefOr<Header> parseHeaderOrRef(MapContext json) {

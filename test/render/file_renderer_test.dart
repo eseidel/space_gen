@@ -2660,6 +2660,8 @@ void main() {
                   isRequired: true,
                   isDeprecated: false,
                   inLocation: ParameterLocation.query,
+                  example: null,
+                  examples: null,
                 ),
               ],
               requestBody: null,

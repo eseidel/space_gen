@@ -842,6 +842,74 @@ void main() {
   });
 
   group('parameters', () {
+    test('parameter `example` surfaces in the endpoint doc comment', () {
+      // Real-world driver: github's `git-ref-only` parameter declares
+      // `example: 'heads/feature-a'`. Before, that was dropped on the
+      // floor (`Ignoring: example`); now it should land in the
+      // endpoint's doc comment, scoped to the parameter via `[name]`.
+      final json = {
+        'summary': 'Get a ref',
+        'parameters': [
+          {
+            'name': 'ref',
+            'in': 'query',
+            'required': true,
+            'schema': {'type': 'string'},
+            'example': 'heads/feature-a',
+          },
+        ],
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/refs',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(result, contains('/// Get a ref'));
+      expect(result, contains("/// [ref] example: `'heads/feature-a'`"));
+    });
+
+    test(
+      'parameter `examples` (OAS 3 plural map) surfaces every value in the '
+      'endpoint doc comment',
+      () {
+        // OpenAPI 3 `examples` is a map of named Example objects; each
+        // entry has its own `value`. We surface every one, in
+        // declaration order, so the doc is faithful to the spec.
+        // Sibling `summary`/`description`/`externalValue` fields go
+        // through `_ignored`, which needs a logger scope.
+        final json = {
+          'parameters': [
+            {
+              'name': 'installation_id',
+              'in': 'query',
+              'required': true,
+              'schema': {'type': 'integer'},
+              'examples': {
+                'first': {'value': 1, 'summary': 'first'},
+                'second': {'value': 42},
+              },
+            },
+          ],
+          'responses': {
+            '200': {'description': 'OK'},
+          },
+        };
+        final result = runWithLogger(
+          _MockLogger(),
+          () => renderTestOperation(
+            path: '/installs',
+            operationJson: json,
+            serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+          ),
+        );
+        expect(result, contains('/// [installationId] example: `1`'));
+        expect(result, contains('/// [installationId] example: `42`'));
+      },
+    );
+
     test('string with default', () {
       final json = {
         'summary': 'Get user',
