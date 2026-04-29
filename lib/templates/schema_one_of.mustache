@@ -33,9 +33,9 @@
 
     factory {{ typeName }}.fromJson(dynamic json) {
         return switch (json) {
-{{#variants}}
-            {{{ jsonTestType }}} v => {{{ wrapperTypeName }}}({{{ fromJson }}}),
-{{/variants}}
+{{#dispatch}}
+            {{{ jsonTestType }}} v => {{{ caseExpression }}},
+{{/dispatch}}
             _ => throw FormatException(
                 'Unsupported shape for {{ typeName }}: ${json.runtimeType}',
             ),
@@ -51,6 +51,9 @@
 {{#variants}}
 {{> _one_of_wrapper}}
 {{/variants}}
+{{#smooshedVariants}}
+{{> schema_object}}
+{{/smooshedVariants}}
 {{/has_shape_dispatch}}
 {{#has_hybrid_dispatch}}
 {{{ doc_comment }}}sealed class {{ typeName }} {
@@ -59,13 +62,13 @@
     factory {{ typeName }}.fromJson(dynamic json) {
         return switch (json) {
 {{#shapeArms}}
-            final {{{ jsonTestType }}} v => {{{ wrapperTypeName }}}({{{ fromJson }}}),
+            final {{{ jsonTestType }}} v => {{{ caseExpression }}},
 {{/shapeArms}}
 {{#mapArms}}
-            final Map<String, dynamic> v when {{{ predicateTest }}} => {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(v)),
+            final Map<String, dynamic> v when {{{ predicateTest }}} => {{{ caseExpression }}},
 {{/mapArms}}
 {{#mapFallback}}
-            final Map<String, dynamic> v => {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(v)),
+            final Map<String, dynamic> v => {{{ caseExpression }}},
 {{/mapFallback}}
 {{^mapFallback}}
             final Map<String, dynamic> v => throw FormatException(
@@ -87,6 +90,9 @@
 {{#variants}}
 {{> _one_of_wrapper}}
 {{/variants}}
+{{#smooshedVariants}}
+{{> schema_object}}
+{{/smooshedVariants}}
 {{/has_hybrid_dispatch}}
 {{#has_predicate_dispatch}}
 {{{ doc_comment }}}sealed class {{ typeName }} {
