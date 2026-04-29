@@ -172,22 +172,23 @@ class _NameAssigner {
   // this through [AssignedNames.parentSealedTypeFor] and emits the
   // variant with `extends <Parent>` instead of a wrapper subclass.
   final Map<JsonPointer, String> _smooshedParentSnake = {};
-  // How many times each schema pointer is referenced as a oneOf/anyOf
-  // variant slot during the walk. AllOf members do *not* count —
-  // `ResolvedAllOf` collapses to a synthesized merged `RenderObject`
-  // at render time, so a $ref inside an allOf contributes structurally
-  // (its fields merge in) without emitting a typed Dart reference to
-  // the source class. Counts are total occurrences (not deduped on
-  // pointer); recursion is still deduped via [_visited].
-  final Map<JsonPointer, int> _variantUseCounts = {};
-  // How many times each schema pointer is referenced from a slot that
-  // emits a typed Dart reference to it: object property types,
-  // additionalProperties, array items, map values, parameter / request
-  // body / response schemas. AllOf-member uses don't count (see
-  // [_variantUseCounts]). Used together with [_variantUseCounts] to
-  // detect "exclusive-use" top-level schemas — a top-level component
-  // whose only typed reference site is one oneOf/anyOf variant slot.
-  final Map<JsonPointer, int> _otherUseCounts = {};
+  // Pointers seen at least once as a oneOf/anyOf variant. The
+  // smoosh predicate also needs to know "more than once", which
+  // [_seenAsVariantAgain] tracks separately so the on-encounter
+  // logic is a single set-`add` test instead of a counter compare.
+  // AllOf members are deliberately excluded — `ResolvedAllOf`
+  // collapses to a synthesized merged `RenderObject` at render
+  // time, so an `$ref` inside an allOf contributes structurally
+  // (its fields merge in) without emitting a typed Dart reference
+  // to the source class.
+  final Set<JsonPointer> _seenAsVariant = {};
+  final Set<JsonPointer> _seenAsVariantAgain = {};
+  // Pointers reached from at least one slot that emits a typed Dart
+  // reference: object properties, additionalProperties, array items,
+  // map values, parameter / request body / response schemas. The
+  // exact count doesn't matter — we only need to know whether *any*
+  // such use exists. AllOf members don't count (see [_seenAsVariant]).
+  final Set<JsonPointer> _hasOtherUse = {};
 
   /// Run the allocator over both phases and return the final
   /// pointer → Dart name map. The assigner is single-use; calling
@@ -332,13 +333,14 @@ class _NameAssigner {
 
   /// True when [variant] is a top-level component schema referenced
   /// from exactly one oneOf/anyOf variant slot and from no other
-  /// typed-reference slot. Reads the per-pointer counters tabulated
-  /// during the phase-1 walk; safe to call once that walk is done
-  /// (i.e. from phase 2's [_claimWrapperNames]).
+  /// typed-reference slot. Reads the per-pointer presence sets
+  /// populated during the phase-1 walk; safe to call once that walk
+  /// is done (i.e. from phase 2's [_claimWrapperNames]).
   bool _isExclusiveUseTopLevel(ResolvedSchema variant) {
-    final variantUses = _variantUseCounts[variant.pointer] ?? 0;
-    final otherUses = _otherUseCounts[variant.pointer] ?? 0;
-    return variantUses == 1 && otherUses == 0;
+    final p = variant.pointer;
+    return _seenAsVariant.contains(p) &&
+        !_seenAsVariantAgain.contains(p) &&
+        !_hasOtherUse.contains(p);
   }
 
   /// Whether [decision]'s render-layer template can emit a smooshed
@@ -491,22 +493,19 @@ class _NameAssigner {
   }
 
   void _visitSchema(ResolvedSchema schema, _SlotKind slot) {
-    // Tally every encounter (not just first-visit) so the use counters
-    // reflect total references. Recursion below still dedups via
-    // [_visited], so the tree walk is bounded.
+    // Record the encounter (not just first-visit) so the presence
+    // sets reflect total references. Recursion below still dedups
+    // via [_visited], so the tree walk is bounded.
     switch (slot) {
       case _SlotKind.variant:
-        _variantUseCounts.update(
-          schema.pointer,
-          (n) => n + 1,
-          ifAbsent: () => 1,
-        );
+        // First variant encounter goes into [_seenAsVariant];
+        // subsequent encounters spill into [_seenAsVariantAgain],
+        // which the smoosh predicate uses to reject "exactly once".
+        if (!_seenAsVariant.add(schema.pointer)) {
+          _seenAsVariantAgain.add(schema.pointer);
+        }
       case _SlotKind.other:
-        _otherUseCounts.update(
-          schema.pointer,
-          (n) => n + 1,
-          ifAbsent: () => 1,
-        );
+        _hasOtherUse.add(schema.pointer);
       case _SlotKind.allOfMember:
         // AllOf members aren't typed Dart references — `ResolvedAllOf`
         // collapses into a synthesized merged `RenderObject` whose
