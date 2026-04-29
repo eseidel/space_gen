@@ -133,6 +133,18 @@ void _ignored<T>(MapContext parent, String key, {bool warn = false}) {
   }
 }
 
+/// Silently mark [key] as used so it doesn't surface in `_warnUnused`.
+/// Use this for spec-author quirks (a key placed where it has no effect:
+/// `required` on an array property, `additionalProperties: true` on a
+/// string, etc.) where there's nothing for the user to act on and the
+/// warning is pure log noise.
+///
+/// Calling `parent[key]` is what marks the key as used; the wildcard
+/// binding discards the value while satisfying `unnecessary_statements`.
+void _silentlyConsume(MapContext parent, String key) {
+  final _ = parent[key];
+}
+
 void _warn(ParseContext context, String message) {
   logger.warn('$message in ${context.pointer}');
 }
@@ -142,7 +154,11 @@ Never _error(ParseContext context, String message) {
 }
 
 void _warnUnused(MapContext context) {
-  final unusedKeys = context.unusedKeys;
+  // OpenAPI 3.x reserves the `x-` prefix for vendor extensions: the
+  // generator MUST ignore them. Drop them from the unused tally so
+  // they don't bury real signal in the verbose log.
+  // https://spec.openapis.org/oas/v3.1.0#specification-extensions
+  final unusedKeys = context.unusedKeys.where((k) => !k.startsWith('x-'));
   if (unusedKeys.isNotEmpty) {
     final keys = unusedKeys
         .map((k) {
@@ -860,6 +876,12 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
         json.fakeChildAsMap(snakeName: 'items', value: {});
     const innerName = 'inner'; // Matching OpenAPI.
     final itemSchema = parseSchemaOrRef(items.addSnakeName(innerName));
+    // `required` is an object-level constraint; spec authors sometimes
+    // misplace it on an array property to mean "this array property
+    // must be present" — that's the parent object's responsibility,
+    // not ours. github's `dependency-graph-spdx-sbom` does this on
+    // `packages` and `relationships`. Consume to silence noise.
+    _silentlyConsume(json, 'required');
     return SchemaArray(
       common: common,
       defaultValue: defaultValue,
@@ -871,6 +893,12 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   }
 
   final additionalPropertiesSchema = _handleAdditionalProperties(json);
+
+  // Object-size validation we don't enforce. Consume on every
+  // object-shaped branch (object/map/empty) so it doesn't surface as
+  // `Unused` noise.
+  _silentlyConsume(json, 'maxProperties');
+  _silentlyConsume(json, 'minProperties');
 
   final propertiesJson = _optionalMap(json, 'properties');
   if (propertiesJson == null) {
@@ -931,6 +959,18 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
 Schema parseSchema(MapContext json) {
   _refNotExpected(json);
   final schema = _createCorrectSchemaSubtype(json);
+  // Spec-author quirks: keys placed where the chosen schema shape
+  // doesn't act on them. Consume any stragglers so they don't surface
+  // as `Unused` noise in the verbose log.
+  //   - `minItems`/`maxItems` inside an items schema (github's
+  //     `webhook-meta-deleted.hook.events.items` has `minItems: 1` on
+  //     a string enum, which belongs on the parent array).
+  //   - `additionalProperties: true` on a non-object schema (github's
+  //     `hook-delivery.response.payload` has it on
+  //     `type: [string, null]`).
+  _silentlyConsume(json, 'minItems');
+  _silentlyConsume(json, 'maxItems');
+  _silentlyConsume(json, 'additionalProperties');
   _warnUnused(json);
   return schema;
 }
@@ -1453,6 +1493,12 @@ OpenApi parseOpenApi(Map<String, dynamic> openapiJson) {
     'security',
     (child, _) => parseSecurityRequirement(child),
   );
+  // OpenAPI 3.1 top-level sections we don't (yet) generate from.
+  // `webhooks` is the 3.1 webhook-event registry; `externalDocs`
+  // points at out-of-band human docs. Consume so they don't surface
+  // as `Unused` noise in the verbose log.
+  _ignored<dynamic>(json, 'webhooks');
+  _ignored<dynamic>(json, 'externalDocs');
   _warnUnused(json);
   return OpenApi(
     serverUrl: Uri.parse(serverUrl),

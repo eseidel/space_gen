@@ -464,6 +464,136 @@ void main() {
       expect(schema, isA<SchemaOneOf>());
     });
 
+    group('spec-author quirks are silently consumed', () {
+      // These specs are technically valid OpenAPI but place a key
+      // somewhere the parser's chosen schema shape can't act on it.
+      // We don't enforce the constraint anyway; surfacing an `Unused`
+      // warning is pure log noise that buries real signal.
+
+      test('vendor extensions (x-*) are not warned as unused', () {
+        // Per OpenAPI 3.x, `x-` prefixed keys are vendor extensions
+        // that the generator MUST ignore. github sprinkles
+        // `x-multi-segment` on path parameters and `x-github` on
+        // various properties; neither is something we generate from.
+        final json = {
+          'type': 'string',
+          'x-github': {'foo': 'bar'},
+          'x-multi-segment': true,
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaString>());
+        verifyNever(() => logger.detail(any()));
+        verifyNever(() => logger.warn(any()));
+      });
+
+      test('required on an array property is silently consumed', () {
+        // github's `dependency-graph-spdx-sbom.sbom.{packages,
+        // relationships}` put `required: [...]` on an array schema.
+        // `required` is an object-level constraint; on an array it
+        // does nothing, so we silently consume.
+        final json = {
+          'type': 'array',
+          'items': {'type': 'string'},
+          'required': ['name'],
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaArray>());
+        verifyNever(() => logger.detail(any()));
+      });
+
+      test('maxProperties on an object/map is silently consumed', () {
+        // github's `metadata` and `dispatches.inputs` set
+        // `maxProperties: N`. We don't validate object size; consume
+        // silently rather than spam every regen log.
+        final json = {
+          'type': 'object',
+          'maxProperties': 10,
+          'additionalProperties': true,
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaMap>());
+        verifyNever(() => logger.detail(any()));
+      });
+
+      test('minItems inside an items schema is silently consumed', () {
+        // github's `webhook-meta-deleted.hook.events.items` has
+        // `minItems: 1` on the string-enum items schema. `minItems`
+        // belongs on the parent array; on the items schema it does
+        // nothing.
+        final json = {
+          'type': 'array',
+          'items': {
+            'type': 'string',
+            'enum': ['a', 'b'],
+            'minItems': 1,
+          },
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaArray>());
+        verifyNever(() => logger.detail(any()));
+      });
+
+      test(
+        'additionalProperties: true on a non-object is silently consumed',
+        () {
+          // github's `hook-delivery.response.payload` sets
+          // `additionalProperties: true` on a `type: [string, null]`
+          // schema. The flag is meaningless on a string; consume.
+          final json = {
+            'type': ['string', 'null'],
+            'additionalProperties': true,
+          };
+          final logger = _MockLogger();
+          final schema = runWithLogger(logger, () => parseTestSchema(json));
+          // type: [string, null] becomes a nullable string.
+          expect(schema, isA<SchemaString>());
+          verifyNever(() => logger.detail(any()));
+        },
+      );
+
+      test('top-level webhooks and externalDocs are consumed', () {
+        // OpenAPI 3.1 top-level sections we don't generate from.
+        final json = {
+          'openapi': '3.1.0',
+          'info': {'title': 'x', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/x': {
+              'get': {
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+          'webhooks': {
+            'foo': {
+              'post': {
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+          'externalDocs': {'url': 'https://example.com/docs'},
+        };
+        final logger = _MockLogger();
+        final spec = runWithLogger(logger, () => parseOpenApi(json));
+        expect(spec.serverUrl, Uri.parse('https://example.com'));
+        // We don't surface as `Unused: webhooks, externalDocs` — they
+        // are explicitly `_ignored` (visible at -v as `Ignoring:`).
+        verifyNever(
+          () => logger.detail(any(that: contains('Unused'))),
+        );
+      });
+    });
+
     test('components schemas as ref not supported', () {
       // Refs are generally fine.
       final json = {
