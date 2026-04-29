@@ -612,6 +612,175 @@ void main() {
       });
     });
 
+    test(
+      'oneOf with sibling properties merges parent fields into '
+      'each variant',
+      () {
+        // github `repos/{owner}/{repo}/check-runs` POST shape: the
+        // parent declares the full set of fields and the oneOf
+        // variants only refine `status` (and conditionally require
+        // `conclusion`). Each merged variant needs the parent's
+        // `properties` and `required` so the typed surface isn't
+        // missing `name`/`head_sha`/etc.
+        final json = {
+          'type': 'object',
+          'required': ['name', 'head_sha'],
+          'properties': {
+            'name': {'type': 'string'},
+            'head_sha': {'type': 'string'},
+            'status': {
+              'type': 'string',
+              'enum': ['queued', 'completed'],
+            },
+            'conclusion': {
+              'type': 'string',
+              'enum': ['success', 'failure'],
+            },
+          },
+          'discriminator': {'propertyName': 'status'},
+          'oneOf': [
+            {
+              'properties': {
+                'status': {
+                  'enum': ['completed'],
+                },
+              },
+              'required': ['status', 'conclusion'],
+              'additionalProperties': true,
+            },
+            {
+              'properties': {
+                'status': {
+                  'enum': ['queued'],
+                },
+              },
+              'additionalProperties': true,
+            },
+          ],
+        };
+        final schema = parseTestSchema(json);
+        expect(schema, isA<SchemaOneOf>());
+        final oneOf = schema as SchemaOneOf;
+        expect(oneOf.schemas, hasLength(2));
+        // Discriminator preserved.
+        expect(oneOf.discriminator?.propertyName, 'status');
+
+        final variant0 = oneOf.schemas[0].object! as SchemaObject;
+        expect(
+          variant0.properties.keys,
+          containsAll(<String>['name', 'head_sha', 'status', 'conclusion']),
+        );
+        // Parent + variant required, deduped, parent first.
+        expect(variant0.requiredProperties, [
+          'name',
+          'head_sha',
+          'status',
+          'conclusion',
+        ]);
+
+        final variant1 = oneOf.schemas[1].object! as SchemaObject;
+        expect(
+          variant1.properties.keys,
+          containsAll(<String>['name', 'head_sha', 'status']),
+        );
+        // Variant 1 only inherits the parent's required set.
+        expect(variant1.requiredProperties, ['name', 'head_sha']);
+      },
+    );
+
+    test(
+      'anyOf with sibling properties also merges parent fields into '
+      'each variant',
+      () {
+        // github `repos/{owner}/{repo}/check-runs/{check_run_id}`
+        // PATCH shape: `anyOf` instead of `oneOf`, no
+        // `discriminator`, but otherwise same parent+refinement
+        // pattern as the POST.
+        final json = {
+          'type': 'object',
+          'properties': {
+            'name': {'type': 'string'},
+            'status': {
+              'type': 'string',
+              'enum': ['queued', 'completed'],
+            },
+            'conclusion': {
+              'type': 'string',
+              'enum': ['success', 'failure'],
+            },
+          },
+          'anyOf': [
+            {
+              'properties': {
+                'status': {
+                  'enum': ['completed'],
+                },
+              },
+              'required': ['conclusion'],
+              'additionalProperties': true,
+            },
+            {
+              'properties': {
+                'status': {
+                  'enum': ['queued'],
+                },
+              },
+              'additionalProperties': true,
+            },
+          ],
+        };
+        final schema = parseTestSchema(json);
+        expect(schema, isA<SchemaAnyOf>());
+        final anyOf = schema as SchemaAnyOf;
+        expect(anyOf.schemas, hasLength(2));
+
+        final variant0 = anyOf.schemas[0].object! as SchemaObject;
+        expect(
+          variant0.properties.keys,
+          containsAll(<String>['name', 'status', 'conclusion']),
+        );
+        expect(variant0.requiredProperties, ['conclusion']);
+
+        final variant1 = anyOf.schemas[1].object! as SchemaObject;
+        expect(
+          variant1.properties.keys,
+          containsAll(<String>['name', 'status']),
+        );
+        expect(variant1.requiredProperties, isEmpty);
+      },
+    );
+
+    test(
+      r'oneOf with a $ref variant does not merge — refs may live in '
+      'another schema and are not resolvable at parse time',
+      () {
+        // A real polymorphic oneOf where one variant is a ref. The
+        // merge-into-variants pass leaves this alone (returns null)
+        // and the caller falls back to today's behavior.
+        final json = {
+          'type': 'object',
+          'properties': {
+            'x': {'type': 'string'},
+          },
+          'oneOf': [
+            {r'$ref': '#/components/schemas/Other'},
+          ],
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(
+          logger,
+          () => parseTestSchemas({
+            'Test': json,
+            'Other': {'type': 'object'},
+          }),
+        );
+        expect(schema['Test']!.object, isA<SchemaOneOf>());
+        final oneOf = schema['Test']!.object! as SchemaOneOf;
+        // The $ref variant survives unchanged — no merge happened.
+        expect(oneOf.schemas.first.ref, isNotNull);
+      },
+    );
+
     test('components schemas as ref not supported', () {
       // Refs are generally fine.
       final json = {

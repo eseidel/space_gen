@@ -773,6 +773,116 @@ void main() {
       expect(result, isNot(contains('throw UnimplementedError')));
     });
 
+    test(
+      'oneOf with sibling properties + explicit discriminator '
+      'without mapping synthesizes the dispatch from variant enums',
+      () {
+        // github `repos/{owner}/{repo}/check-runs` POST shape: parent
+        // declares the full property set, oneOf variants only refine
+        // `status`'s enum and conditionally require `conclusion`. The
+        // spec's `discriminator: {propertyName: status}` has no
+        // `mapping` — we synthesize one by walking each variant's
+        // `status` enum.
+        final schema = {
+          'type': 'object',
+          'required': ['name', 'head_sha'],
+          'properties': {
+            'name': {'type': 'string'},
+            'head_sha': {'type': 'string'},
+            'status': {
+              'type': 'string',
+              'enum': ['queued', 'in_progress', 'completed'],
+            },
+            'conclusion': {
+              'type': 'string',
+              'enum': ['success', 'failure'],
+            },
+          },
+          'discriminator': {'propertyName': 'status'},
+          'oneOf': [
+            {
+              'properties': {
+                'status': {
+                  'enum': ['completed'],
+                },
+              },
+              'required': ['status', 'conclusion'],
+              'additionalProperties': true,
+            },
+            {
+              'properties': {
+                'status': {
+                  'enum': ['queued', 'in_progress'],
+                },
+              },
+              'additionalProperties': true,
+            },
+          ],
+        };
+        final result = renderTestSchema(schema);
+        // Discriminator dispatch on `status`.
+        expect(result, contains("final discriminator = json['status']"));
+        expect(result, contains("'completed' =>"));
+        // Multi-value enum on the second variant produces multiple
+        // case arms, all routing to the same variant.
+        expect(result, contains("'queued' =>"));
+        expect(result, contains("'in_progress' =>"));
+        // No stub.
+        expect(result, isNot(contains('throw UnimplementedError')));
+      },
+    );
+
+    test(
+      'anyOf with sibling properties dispatches via the loose '
+      'required-field picker (no stub)',
+      () {
+        // github `repos/{owner}/{repo}/check-runs/{check_run_id}`
+        // PATCH: anyOf, no discriminator. After parse-time merge of
+        // parent properties, both variants share most properties;
+        // only variant 0 *requires* `conclusion`. Loose required-
+        // field uniqueness (anyOf-only) lets that be the dispatch
+        // tag.
+        final schema = {
+          'type': 'object',
+          'properties': {
+            'name': {'type': 'string'},
+            'status': {
+              'type': 'string',
+              'enum': ['queued', 'completed'],
+            },
+            'conclusion': {
+              'type': 'string',
+              'enum': ['success', 'failure'],
+            },
+          },
+          'anyOf': [
+            {
+              'properties': {
+                'status': {
+                  'enum': ['completed'],
+                },
+              },
+              'required': ['conclusion'],
+              'additionalProperties': true,
+            },
+            {
+              'properties': {
+                'status': {
+                  'enum': ['queued'],
+                },
+              },
+              'additionalProperties': true,
+            },
+          ],
+        };
+        final result = renderTestSchema(schema);
+        // No stub: the loose-mode required-field picker fires for
+        // anyOf and dispatches via `containsKey('conclusion')`.
+        expect(result, isNot(contains('throw UnimplementedError')));
+        expect(result, contains("json.containsKey('conclusion')"));
+      },
+    );
+
     test('oneOf with [string, number] uses shape dispatch', () {
       // RenderNumber's shape key is `num` (matching jsonStorageType),
       // distinct from RenderString's `String`. Github's

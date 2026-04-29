@@ -440,6 +440,15 @@ Schema? _handleCollectionTypes(
     if (_isConstraintOnlyCollection(json, 'oneOf')) {
       return null;
     }
+    final mergedVariants = _maybeMergeParentIntoVariants(json, 'oneOf');
+    final discriminator = _parseDiscriminator(json);
+    if (mergedVariants != null) {
+      return SchemaOneOf(
+        common: common,
+        schemas: mergedVariants,
+        discriminator: discriminator,
+      );
+    }
     final oneOf = json.childAsList('oneOf');
     final schemas = <SchemaRef>[];
     for (var i = 0; i < oneOf.length; i++) {
@@ -447,7 +456,6 @@ Schema? _handleCollectionTypes(
         parseSchemaOrRef(oneOf.indexAsMap(i).addSnakeName('one_of_$i')),
       );
     }
-    final discriminator = _parseDiscriminator(json);
     return SchemaOneOf(
       common: common,
       schemas: schemas,
@@ -469,6 +477,10 @@ Schema? _handleCollectionTypes(
   if (json.containsKey('anyOf')) {
     if (_isConstraintOnlyCollection(json, 'anyOf')) {
       return null;
+    }
+    final mergedVariants = _maybeMergeParentIntoVariants(json, 'anyOf');
+    if (mergedVariants != null) {
+      return SchemaAnyOf(common: common, schemas: mergedVariants);
     }
     final anyOf = json.childAsList('anyOf');
     final schemas = <SchemaRef>[];
@@ -517,6 +529,175 @@ bool _isConstraintOnlyCollection(MapContext json, String collectionKey) {
     if (variant.length != 1 || !variant.containsKey('required')) return false;
   }
   return true;
+}
+
+/// Returns merged variant schemas when [json] declares a base object
+/// shape (`type: object` + `properties`) AND every entry of the
+/// [collectionKey] (oneOf/anyOf) is itself a partial inline object
+/// that *refines* that shape — adds a property override, an extra
+/// required field, etc. — rather than introducing a wholly different
+/// type.
+///
+/// This is the github `repos/{owner}/{repo}/check-runs` POST pattern:
+/// the parent declares all the fields (`name`, `head_sha`, …) and
+/// the oneOf says "additionally, when `status: completed`,
+/// `conclusion` is required." Today's parser drops the parent's
+/// `properties`/`required` on the floor when it sees the oneOf,
+/// emitting variant classes that lack the base fields entirely.
+///
+/// The fix here is parse-time: synthesize one merged variant per
+/// branch by overlaying the parent's `properties`/`required` with
+/// the variant's. Each merged variant goes through normal object
+/// parsing, and the resulting `SchemaOneOf`/`SchemaAnyOf` dispatches
+/// over full-shape variants — typically via the parent's
+/// discriminator. Returns `null` (caller falls back to today's
+/// behavior) when the pattern doesn't match — including:
+///
+///   - The parent has no `properties` / no `type: object` shape.
+///   - Any variant is a `$ref` (we can't merge into another file's
+///     schema at parse time without resolving it first).
+///   - Any variant declares its own `oneOf`/`anyOf`/`allOf` (real
+///     polymorphism inside polymorphism — punt).
+///   - Any variant declares a non-object `type` (it's a real
+///     alternative type, not a refinement).
+List<SchemaRef>? _maybeMergeParentIntoVariants(
+  MapContext json,
+  String collectionKey,
+) {
+  // Parent must declare `type: object` and a non-empty `properties`
+  // map. Without `type` we'd be guessing whether the variants are
+  // refinements or alternatives.
+  final type = json['type'];
+  final hasObjectType =
+      type == 'object' || (type is List && type.contains('object'));
+  if (!hasObjectType) return null;
+  final parentProperties = json['properties'];
+  if (parentProperties is! Map<String, dynamic> ||
+      parentProperties.isEmpty) {
+    return null;
+  }
+  final list = json[collectionKey];
+  if (list is! List || list.isEmpty) return null;
+
+  // Every variant must be a refinement-shaped inline object.
+  for (final variant in list) {
+    if (variant is! Map<String, dynamic>) return null;
+    if (variant.containsKey(r'$ref')) return null;
+    if (variant.containsKey('oneOf') ||
+        variant.containsKey('anyOf') ||
+        variant.containsKey('allOf')) {
+      return null;
+    }
+    final variantType = variant['type'];
+    if (variantType != null && variantType != 'object') return null;
+    // A variant with no `properties` and no `required` is just empty
+    // noise — fall through to today's behavior so it surfaces in the
+    // verbose log.
+    if (!variant.containsKey('properties') &&
+        !variant.containsKey('required')) {
+      return null;
+    }
+  }
+
+  // Read `required` via the underlying json (no `_markRead`) so an
+  // early null-return below doesn't accidentally consume the key.
+  // Only when we successfully build merged variants do we mark it
+  // as used (via the explicit lookup at the end of the function).
+  final parentRequired = json.json['required'];
+  if (parentRequired != null && parentRequired is! List) return null;
+  final parentRequiredList =
+      (parentRequired as List?)?.cast<String>() ?? const <String>[];
+
+  // Build the merged variants. Each gets its own MapContext with
+  // the pointer / snake-name chain matching a real variant parse,
+  // so the resolver and naming layers see indistinguishable
+  // schemas.
+  final merged = <SchemaRef>[];
+  for (var i = 0; i < list.length; i++) {
+    final variant = list[i] as Map<String, dynamic>;
+
+    final mergedProperties = <String, dynamic>{
+      ...parentProperties,
+    };
+    final variantProperties = variant['properties'];
+    if (variantProperties is Map<String, dynamic>) {
+      // Variant overrides parent on field-name collision (the github
+      // pattern is to narrow `status`'s enum per branch).
+      mergedProperties.addAll(variantProperties);
+    }
+
+    final variantRequired = variant['required'];
+    final variantRequiredList = variantRequired is List
+        ? variantRequired.cast<String>()
+        : const <String>[];
+    final mergedRequired = <String>[
+      ...parentRequiredList,
+      for (final name in variantRequiredList)
+        if (!parentRequiredList.contains(name)) name,
+    ];
+
+    final mergedJson = <String, dynamic>{
+      'type': 'object',
+      // Carry the parent's `additionalProperties` first so a variant
+      // can still override it (variant values win because they're
+      // spread after).
+      if (json.json.containsKey('additionalProperties'))
+        'additionalProperties': json.json['additionalProperties'],
+      ...variant,
+      'properties': mergedProperties,
+      if (mergedRequired.isNotEmpty) 'required': mergedRequired,
+    };
+
+    // Mirror the pointer / snake-name chain the regular variant
+    // path builds: pointer is `<parent>/<collectionKey>/<i>` and
+    // the snake stack gets `<collectionKey>_<i>` appended. Built
+    // directly because there's no real list context in the spec
+    // here — the merged variant is a parser-side synthesis.
+    final variantContext = MapContext(
+      pointerParts: [...json.pointerParts, collectionKey, '$i'],
+      snakeNameStack: [
+        ...json.snakeNameStack,
+        '${_collectionSnakeStem(collectionKey)}_$i',
+      ],
+      json: mergedJson,
+    );
+    merged.add(parseSchemaOrRef(variantContext));
+  }
+
+  // Mark the remaining parent keys as consumed so `_warnUnused`
+  // doesn't fire on them. `type` / `properties` / `[collectionKey]`
+  // are already marked by the early lookups above; the remaining
+  // keys need an explicit touch. `MapContext.operator []` records
+  // the key as a side effect; the underscore-bound result is
+  // intentionally discarded.
+  if (json.containsKey('required')) {
+    final _ = json['required'];
+  }
+  if (json.containsKey('additionalProperties')) {
+    final _ = json['additionalProperties'];
+  }
+  // `discriminator` is consumed in the caller via
+  // `_parseDiscriminator` for the oneOf path; for anyOf there is no
+  // such handling, so mark it here.
+  if (collectionKey == 'anyOf' && json.containsKey('discriminator')) {
+    final _ = json['discriminator'];
+  }
+  return merged;
+}
+
+/// Returns the snake-case stem used for naming inline variants of
+/// the given collection key. Mirrors the constants in
+/// `_handleCollectionTypes`.
+String _collectionSnakeStem(String collectionKey) {
+  switch (collectionKey) {
+    case 'oneOf':
+      return 'one_of';
+    case 'anyOf':
+      return 'any_of';
+    case 'allOf':
+      return 'all_of';
+  }
+  throw ArgumentError.value(collectionKey, 'collectionKey');
 }
 
 SchemaRef? _handleAdditionalProperties(MapContext parent) {
