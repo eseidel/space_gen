@@ -26,6 +26,7 @@ words:
   - unioned
   - watchcrunch
   - dedup
+  - dedups
   - enumless
   - worktree
   - worktrees
