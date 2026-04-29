@@ -572,8 +572,7 @@ List<SchemaRef>? _maybeMergeParentIntoVariants(
       type == 'object' || (type is List && type.contains('object'));
   if (!hasObjectType) return null;
   final parentProperties = json['properties'];
-  if (parentProperties is! Map<String, dynamic> ||
-      parentProperties.isEmpty) {
+  if (parentProperties is! Map<String, dynamic> || parentProperties.isEmpty) {
     return null;
   }
   final list = json[collectionKey];
