@@ -37,7 +37,11 @@
             {{ dartName }}: {{{ fromJson }}},
             {{/properties}}
             {{#hasAdditionalProperties}}
-            {{additionalPropertiesName}}: json.map((key, value) => MapEntry(key, {{{ valueFromJson }}})),
+            {{additionalPropertiesName}}: <String, {{{ valueSchema }}}>{
+                for (final entry in json.entries)
+                    if (!{{{namedPropertyKeysSet}}}.contains(entry.key))
+                        entry.key: {{{ entryValueFromJson }}},
+            },
             {{/hasAdditionalProperties}}
         ));
     {{/hasNoJsonProperty}}
@@ -73,7 +77,9 @@
             {{{ jsonName }}}: {{{ toJson }}},
             {{/properties}}
             {{#hasAdditionalProperties}}
-            ...{{additionalPropertiesName}}.map((key, value) => MapEntry(key, {{{ valueToJson }}})),
+            for (final entry in {{additionalPropertiesName}}.entries)
+                if (!{{{namedPropertyKeysSet}}}.contains(entry.key))
+                    entry.key: {{{ entryValueToJson }}},
             {{/hasAdditionalProperties}}
         };
     {{/hasNoJsonProperty}}
@@ -86,7 +92,7 @@
           {{{ hashCode }}}.hashCode;
           {{/properties}}
           {{#hasAdditionalProperties}}
-          {{additionalPropertiesName}}.hashCode;
+          mapHash({{additionalPropertiesName}});
           {{/hasAdditionalProperties}}
         {{/hasOneProperty}}
         {{^hasOneProperty}}
@@ -95,7 +101,7 @@
           {{{ hashCode }}},
           {{/properties}}
           {{#hasAdditionalProperties}}
-          {{additionalPropertiesName}},
+          mapHash({{additionalPropertiesName}}),
           {{/hasAdditionalProperties}}
         ]);
         {{/hasOneProperty}}
