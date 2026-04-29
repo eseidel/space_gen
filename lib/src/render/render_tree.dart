@@ -4148,35 +4148,13 @@ class RenderOneOf extends RenderNewType {
         :final mapFallback,
         :final declarationOrder,
       ) =>
-        _HybridMode(
-          shapeArms: [
-            for (final arm in shapeArms)
-              _shapeWrapperContext(
-                _planVariant(renderOf(arm.variant), context)!,
-              ),
-          ],
-          mapArms: [
-            for (final arm in mapArms)
-              {
-                'predicateTest': arm.predicate.dartIfTest('v'),
-                'wrapperTypeName': wrapperTypeName(renderOf(arm.variant)),
-                'valueType': renderOf(arm.variant).typeName,
-              },
-          ],
-          mapFallback: mapFallback == null
-              ? null
-              : {
-                  'wrapperTypeName': wrapperTypeName(renderOf(mapFallback)),
-                  'valueType': renderOf(mapFallback).typeName,
-                },
-          variants: [
-            for (final v in declarationOrder)
-              if (mapArms.any((a) => identical(a.variant, v)) ||
-                  identical(v, mapFallback))
-                objectWrapperContext(renderOf(v))
-              else
-                _shapeWrapperContext(_planVariant(renderOf(v), context)!),
-          ],
+        _buildHybridMode(
+          shapeArms,
+          mapArms,
+          mapFallback,
+          declarationOrder,
+          renderOf,
+          context,
         ),
       PredicateDispatch(:final kind, :final arms) => _buildPredicateMode(
         kind,
@@ -4276,6 +4254,88 @@ class RenderOneOf extends RenderNewType {
     }
     return _ShapeMode(
       dispatch: dispatch,
+      variants: variants,
+      smooshedVariants: smooshedVariants,
+    );
+  }
+
+  /// Build a [_HybridMode], splitting variants by smooshed/not.
+  /// Hybrid has three arm flavors — non-Map shape arms, predicate-
+  /// guarded Map arms, and an optional unguarded Map fallback —
+  /// each of which composes the same `caseExpression`: a direct
+  /// `<Variant>.fromJson(v)` for smooshed variants and the
+  /// wrapper-class call for the rest. Variants that get a wrapper
+  /// land in `variants`; smooshed ones in `smooshedVariants` and
+  /// are inlined into the parent's file by the schema_object
+  /// partial.
+  _HybridMode _buildHybridMode(
+    List<ShapeArm> shapeArms,
+    List<PredicateArm> mapArms,
+    ResolvedSchema? mapFallback,
+    List<ResolvedSchema> declarationOrder,
+    RenderSchema Function(ResolvedSchema) renderOf,
+    SchemaRenderer context,
+  ) {
+    final variants = <Map<String, dynamic>>[];
+    final smooshedVariants = <Map<String, dynamic>>[];
+
+    bool isSmooshedVariant(RenderSchema variant) =>
+        variant is RenderObject && variant.parentSealedTypeName != null;
+
+    String mapCaseExpression(RenderSchema variant) => isSmooshedVariant(variant)
+        ? '${variant.typeName}.fromJson(v)'
+        : '${wrapperTypeName(variant)}(${variant.typeName}.fromJson(v))';
+
+    final renderedShapeArms = <Map<String, dynamic>>[];
+    for (final arm in shapeArms) {
+      final renderVariant = renderOf(arm.variant);
+      if (isSmooshedVariant(renderVariant)) {
+        // Inline-object on a non-Map shape arm is unusual but
+        // possible (e.g. a future RenderObject whose jsonShapeKey
+        // isn't Map). Today Map-shaped objects always land in
+        // mapArms, but treating shapeArms uniformly future-proofs.
+        renderedShapeArms.add({
+          'jsonTestType': renderVariant.jsonShapeKey,
+          'caseExpression': '${renderVariant.typeName}.fromJson(v)',
+        });
+      } else {
+        final plan = _planVariant(renderVariant, context)!;
+        renderedShapeArms.add({
+          'jsonTestType': plan.jsonTestType,
+          'caseExpression': '${plan.wrapperTypeName}(${plan.fromJson})',
+        });
+      }
+    }
+
+    final renderedMapArms = <Map<String, dynamic>>[];
+    for (final arm in mapArms) {
+      final renderVariant = renderOf(arm.variant);
+      renderedMapArms.add({
+        'predicateTest': arm.predicate.dartIfTest('v'),
+        'caseExpression': mapCaseExpression(renderVariant),
+      });
+    }
+
+    final renderedMapFallback = mapFallback == null
+        ? null
+        : {'caseExpression': mapCaseExpression(renderOf(mapFallback))};
+
+    for (final v in declarationOrder) {
+      final renderVariant = renderOf(v);
+      if (isSmooshedVariant(renderVariant)) {
+        smooshedVariants.add(renderVariant.toTemplateContext(context));
+      } else if (mapArms.any((a) => identical(a.variant, v)) ||
+          identical(v, mapFallback)) {
+        variants.add(objectWrapperContext(renderVariant));
+      } else {
+        final plan = _planVariant(renderVariant, context)!;
+        variants.add(_shapeWrapperContext(plan));
+      }
+    }
+    return _HybridMode(
+      shapeArms: renderedShapeArms,
+      mapArms: renderedMapArms,
+      mapFallback: renderedMapFallback,
       variants: variants,
       smooshedVariants: smooshedVariants,
     );
@@ -4614,16 +4674,36 @@ class _HybridMode extends _DispatchMode {
     required this.mapArms,
     required this.mapFallback,
     required this.variants,
+    required this.smooshedVariants,
   });
 
+  /// Per-arm contexts for non-Map shape arms. Each entry has
+  /// `jsonTestType` and `caseExpression` (the full Dart expression
+  /// to `return`).
   final List<Map<String, dynamic>> shapeArms;
+
+  /// Per-arm contexts for predicate-guarded Map arms. Each entry has
+  /// `predicateTest` (the `v.containsKey('foo')` check) and
+  /// `caseExpression`.
   final List<Map<String, dynamic>> mapArms;
 
   /// `null` when no fallback applies (the Map sub-dispatch ends in a
-  /// throw). Projects to `false` at the template boundary; the
-  /// mustache inverted section fires on null/false alike.
+  /// throw). Otherwise has just `caseExpression`. Projects to `false`
+  /// at the template boundary; the mustache inverted section fires
+  /// on null/false alike.
   final Map<String, dynamic>? mapFallback;
+
+  /// Non-smooshed variants — wrapper subclass declarations, in
+  /// declaration order. Smooshed variants (those whose data class
+  /// extends the sealed parent directly) are in [smooshedVariants];
+  /// the union of the two preserves declaration order.
   final List<Map<String, dynamic>> variants;
+
+  /// Smooshed variants — emitted *inline in the parent's file* as
+  /// direct sealed subclasses, no wrapper shim. Each entry is the
+  /// variant's full `toTemplateContext` so the schema_object partial
+  /// can render the class body unchanged.
+  final List<Map<String, dynamic>> smooshedVariants;
 }
 
 /// Predicate-driven if-chain dispatch — covers every mode whose
@@ -4748,12 +4828,14 @@ void _applyDispatchMode(_DispatchMode mode, Map<String, dynamic> ctx) {
       :final mapArms,
       :final mapFallback,
       :final variants,
+      :final smooshedVariants,
     ):
       ctx['has_hybrid_dispatch'] = true;
       ctx['shapeArms'] = shapeArms;
       ctx['mapArms'] = mapArms;
       ctx['mapFallback'] = mapFallback ?? false;
       ctx['variants'] = variants;
+      ctx['smooshedVariants'] = smooshedVariants;
     case _PredicateDispatchMode(
       :final dispatch,
       :final fallback,
