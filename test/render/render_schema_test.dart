@@ -2410,6 +2410,36 @@ void main() {
       expect(result, isNot(contains('throw FormatException')));
     });
 
+    test('property-array-element-shape dispatch bails when the only '
+        'array-typed property has the same items shape across variants', () {
+      // Both variants have `labels: array<string>`. Same shape →
+      // not a discriminator. Other properties also identical
+      // (empty). No way to dispatch; bail.
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'labels': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+          {
+            'type': 'object',
+            'properties': {
+              'labels': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+          },
+        ],
+      });
+      expect(result, contains('throw UnimplementedError'));
+    });
+
     test('hybrid dispatch combines multi-array sub-dispatch and '
         'property-array-element-shape Map sub-dispatch (github labels '
         'case)', () {

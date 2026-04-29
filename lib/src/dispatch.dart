@@ -327,6 +327,7 @@ DispatchDecision decideDispatch(ResolvedSchemaCollection collection) {
       _pickShape(variants) ??
       _pickHybrid(variants) ??
       _pickRequiredField(variants, looseRequiredUniqueness: isAnyOf) ??
+      _pickPropertyArrayElementShape(variants) ??
       _pickArrayElement(variants) ??
       _pickPropertyArrayItemShape(variants) ??
       const NoDispatch();
@@ -822,12 +823,26 @@ PredicateDispatch? _pickRequiredField(
   List<ResolvedSchema> variants, {
   bool looseRequiredUniqueness = false,
 }) {
-  final arms =
-      _requiredFieldArmsFor(
-        variants,
-        looseRequiredUniqueness: looseRequiredUniqueness,
-      ) ??
-      _propertyArrayElementShapeArmsFor(variants);
+  final arms = _requiredFieldArmsFor(
+    variants,
+    looseRequiredUniqueness: looseRequiredUniqueness,
+  );
+  if (arms == null) return null;
+  return PredicateDispatch(
+    kind: PredicateDispatchKind.requiredField,
+    arms: arms,
+  );
+}
+
+/// Object-variant dispatch by an array property's element shape.
+/// See [_propertyArrayElementShapeArmsFor] for the shape contract.
+/// Runs after [_pickRequiredField] in the picker chain — only when
+/// `containsKey`-style dispatch can't separate the variants do we
+/// peek into an array property's first element.
+PredicateDispatch? _pickPropertyArrayElementShape(
+  List<ResolvedSchema> variants,
+) {
+  final arms = _propertyArrayElementShapeArmsFor(variants);
   if (arms == null) return null;
   return PredicateDispatch(
     kind: PredicateDispatchKind.requiredField,
