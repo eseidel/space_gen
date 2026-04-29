@@ -146,8 +146,12 @@ sealed class DispatchDecision {
 
 /// `switch (json[propertyName]) { 'value' => Wrapper(...), ... }` —
 /// either an explicit `discriminator` from the spec or an implicit
-/// one synthesized from variants whose required single-value enum
-/// property tags them uniquely.
+/// one synthesized from variants whose enum property tags them
+/// uniquely. A variant's enum may have one value (the classic
+/// single-value tag) or multiple — what matters is that the value
+/// sets are pairwise disjoint across variants. The mapping carries
+/// one entry per enum value, multiple of which may point at the
+/// same variant.
 @immutable
 class DiscriminatorDispatch extends DispatchDecision {
   const DiscriminatorDispatch({
@@ -264,10 +268,18 @@ DispatchDecision decideDispatch(ResolvedSchemaCollection collection) {
   // result, and AllOf produces none).
   if (collection is ResolvedAllOf) return const NoDispatch();
   final variants = collection.schemas;
+  // anyOf is weaker than oneOf — overlap between variants is
+  // permitted at the spec level. The loose required-field picker
+  // (which only requires the dispatch property to not be *required*
+  // by another variant) is safe under that semantic, where strict
+  // would be unsafe under oneOf. github's check-runs PATCH is the
+  // canonical case: anyOf variants share most properties with
+  // benign optional-overlap and dispatch via `containsKey`.
+  final isAnyOf = collection is ResolvedAnyOf;
   return _pickDiscriminator(collection, variants) ??
       _pickShape(variants) ??
       _pickHybrid(variants) ??
-      _pickRequiredField(variants) ??
+      _pickRequiredField(variants, looseRequiredUniqueness: isAnyOf) ??
       _pickArrayElement(variants) ??
       _pickPropertyArrayItemShape(variants) ??
       const NoDispatch();
@@ -353,13 +365,32 @@ DiscriminatorDispatch? _pickDiscriminator(
   ResolvedSchemaCollection collection,
   List<ResolvedSchema> variants,
 ) {
-  if (collection is! ResolvedOneOf) return null;
-  final disc = collection.discriminator ?? _implicitDiscriminator(variants);
-  if (disc == null) return null;
+  // AllOf is composition, not dispatch — handled in `decideDispatch`.
+  // OneOf and AnyOf are both dispatchable via discriminator: at the
+  // JSON-decode site we read a property and route to a variant; the
+  // oneOf-vs-anyOf semantic difference (mutual-exclusion vs
+  // at-least-one) doesn't affect the runtime decision.
+  if (collection is ResolvedAllOf) return null;
   // Discriminator dispatch only works when every variant is
   // object-shaped (i.e. has a `fromJson(Map<String, dynamic>)`).
   // Includes allOf which renders as a synthesized object.
   if (!variants.every(_isObjectLike)) return null;
+  // Prefer the explicit discriminator + its mapping. Fall through to
+  // an implicit synthesis when the explicit one has no `mapping`
+  // (github's check-runs POST: spec declares `propertyName: status`
+  // but no mapping; each variant carries an enum on `status` whose
+  // values together name the discriminated cases). OpenAPI permits
+  // `discriminator` on both `oneOf` and `anyOf`.
+  var disc = switch (collection) {
+    ResolvedOneOf() => collection.discriminator,
+    ResolvedAnyOf() => collection.discriminator,
+    _ => null,
+  };
+  if (disc != null && disc.mapping == null) {
+    disc = _implicitDiscriminatorForProperty(variants, disc.propertyName);
+  }
+  disc ??= _implicitDiscriminator(variants);
+  if (disc == null) return null;
   final mapping = disc.mapping;
   if (mapping == null) return null;
   return DiscriminatorDispatch(
@@ -372,12 +403,57 @@ DiscriminatorDispatch? _pickDiscriminator(
   );
 }
 
-/// Synthesized discriminator for object-only oneOfs whose variants
-/// each tag themselves with a single-value enum property — github's
-/// `repository-rule` shape. The spec doesn't declare a `discriminator`,
-/// but every variant has, e.g., `type: { enum: ['creation'] }` with
-/// that property required. The values are pairwise distinct, so the
-/// parent's `fromJson` can switch on `json[<that property>]`.
+/// Like [_implicitDiscriminator] but constrained to a specific
+/// [propertyName] declared by the spec's explicit discriminator.
+/// Used to fill in a missing `mapping` when the spec says
+/// "discriminate on `status`" but doesn't enumerate which value
+/// routes where — we read each variant's enum on `status` and
+/// build the mapping from there.
+///
+/// The property is not required to be `required` here (unlike
+/// [_implicitDiscriminator]'s implicit-detection mode): the spec
+/// author's explicit `discriminator:` declaration is the signal
+/// that runtime dispatch on this property is intended. Variants
+/// where the JSON omits the field will throw the
+/// `FormatException` already emitted by the discriminator switch's
+/// default arm — matching the failure mode of today's stub.
+ResolvedDiscriminator? _implicitDiscriminatorForProperty(
+  List<ResolvedSchema> variants,
+  String propertyName,
+) {
+  if (variants.isEmpty) return null;
+  if (!variants.every(_isObjectLike)) return null;
+  final flatProps = variants.map(_flattenedProperties).toList();
+  final perVariantValues = <List<String>>[];
+  for (var i = 0; i < variants.length; i++) {
+    final type = flatProps[i][propertyName];
+    if (type is! ResolvedEnum || type.values.isEmpty) return null;
+    perVariantValues.add(List.of(type.values));
+  }
+  final seen = <String>{};
+  for (final values in perVariantValues) {
+    for (final v in values) {
+      if (!seen.add(v)) return null;
+    }
+  }
+  return ResolvedDiscriminator(
+    propertyName: propertyName,
+    mapping: {
+      for (var i = 0; i < variants.length; i++)
+        for (final v in perVariantValues[i]) v: variants[i],
+    },
+  );
+}
+
+/// Synthesized discriminator for object-only oneOf/anyOf collections
+/// whose variants each tag themselves with an enum property. The
+/// classic case (github's `repository-rule` shape) is single-value
+/// enums: every variant declares, e.g., `type: { enum: ['creation'] }`,
+/// required. We also accept multi-value enums per variant (github's
+/// check-runs POST: variant 0 has `status: enum [completed]`, variant
+/// 1 has `status: enum [queued, in_progress, ...]`) — as long as the
+/// value sets are pairwise disjoint, each enum value routes to exactly
+/// one variant.
 ///
 /// Variants may be [ResolvedObject] OR [ResolvedAllOf] — the latter
 /// flattens its members the same way `toRenderSchema` synthesizes a
@@ -387,13 +463,13 @@ ResolvedDiscriminator? _implicitDiscriminator(List<ResolvedSchema> variants) {
   if (!variants.every(_isObjectLike)) return null;
   final flatRequired = variants.map(_flattenedRequiredProperties).toList();
   final flatProps = variants.map(_flattenedProperties).toList();
-  final candidates = <(String, List<String>)>[];
+  final candidates = <(String, List<List<String>>)>[];
   for (final entry in flatProps.first.entries) {
     final propName = entry.key;
     if (!flatRequired.first.contains(propName)) continue;
     final firstType = entry.value;
-    if (firstType is! ResolvedEnum || firstType.values.length != 1) continue;
-    final values = [firstType.values.first];
+    if (firstType is! ResolvedEnum || firstType.values.isEmpty) continue;
+    final perVariantValues = <List<String>>[List.of(firstType.values)];
     var allMatch = true;
     for (var i = 1; i < variants.length; i++) {
       if (!flatRequired[i].contains(propName)) {
@@ -401,22 +477,37 @@ ResolvedDiscriminator? _implicitDiscriminator(List<ResolvedSchema> variants) {
         break;
       }
       final otherType = flatProps[i][propName];
-      if (otherType is! ResolvedEnum || otherType.values.length != 1) {
+      if (otherType is! ResolvedEnum || otherType.values.isEmpty) {
         allMatch = false;
         break;
       }
-      values.add(otherType.values.first);
+      perVariantValues.add(List.of(otherType.values));
     }
-    if (allMatch) candidates.add((propName, values));
+    if (allMatch) candidates.add((propName, perVariantValues));
   }
   if (candidates.isEmpty) return null;
   candidates.sort((a, b) => a.$1.compareTo(b.$1));
-  for (final (propName, values) in candidates) {
-    if (values.toSet().length != values.length) continue;
+  for (final (propName, perVariantValues) in candidates) {
+    // Pairwise-disjoint check on the union of each variant's enum
+    // values. A duplicate value would route to two variants — not a
+    // valid discriminator.
+    final seen = <String>{};
+    var disjoint = true;
+    for (final values in perVariantValues) {
+      for (final v in values) {
+        if (!seen.add(v)) {
+          disjoint = false;
+          break;
+        }
+      }
+      if (!disjoint) break;
+    }
+    if (!disjoint) continue;
     return ResolvedDiscriminator(
       propertyName: propName,
       mapping: {
-        for (var i = 0; i < variants.length; i++) values[i]: variants[i],
+        for (var i = 0; i < variants.length; i++)
+          for (final v in perVariantValues[i]) v: variants[i],
       },
     );
   }
@@ -485,8 +576,14 @@ HybridDispatch? _pickHybrid(List<ResolvedSchema> variants) {
   );
 }
 
-PredicateDispatch? _pickRequiredField(List<ResolvedSchema> variants) {
-  final arms = _requiredFieldArmsFor(variants);
+PredicateDispatch? _pickRequiredField(
+  List<ResolvedSchema> variants, {
+  bool looseRequiredUniqueness = false,
+}) {
+  final arms = _requiredFieldArmsFor(
+    variants,
+    looseRequiredUniqueness: looseRequiredUniqueness,
+  );
   if (arms == null) return null;
   return PredicateDispatch(
     kind: PredicateDispatchKind.requiredField,

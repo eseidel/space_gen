@@ -374,7 +374,16 @@ ResolvedSchema _resolveSchemaFully(
         return second;
       }
     }
-    return ResolvedAnyOf(common: resolvedCommon, schemas: schemas);
+    final discriminator = _resolveDiscriminator(
+      anyOf.discriminator,
+      schemas,
+      anyOf.pointer,
+    );
+    return ResolvedAnyOf(
+      common: resolvedCommon,
+      schemas: schemas,
+      discriminator: discriminator,
+    );
   }
   if (schema is SchemaNull) {
     assert(!createsNewType, 'SchemaNull should not create a new type');
@@ -1503,12 +1512,28 @@ class ResolvedDiscriminator extends Equatable {
 }
 
 class ResolvedAnyOf extends ResolvedSchemaCollection {
-  const ResolvedAnyOf({required super.schemas, required super.common})
-    : super(createsNewType: true);
+  const ResolvedAnyOf({
+    required super.schemas,
+    required super.common,
+    required this.discriminator,
+  }) : super(createsNewType: true);
+
+  /// The resolved discriminator, if any. Same shape as
+  /// [ResolvedOneOf.discriminator] — each
+  /// [ResolvedDiscriminator.mapping] value points at one of [schemas]
+  /// (same instance), so callers can do identity lookups.
+  final ResolvedDiscriminator? discriminator;
+
+  @override
+  List<Object?> get props => [super.props, discriminator];
 
   @override
   ResolvedAnyOf copyWith({CommonProperties? common}) {
-    return ResolvedAnyOf(common: common ?? this.common, schemas: schemas);
+    return ResolvedAnyOf(
+      common: common ?? this.common,
+      schemas: schemas,
+      discriminator: discriminator,
+    );
   }
 }
 
