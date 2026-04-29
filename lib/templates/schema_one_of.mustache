@@ -6,7 +6,7 @@
         final discriminator = json['{{ discriminatorProperty }}'];
         return switch (discriminator) {
 {{#dispatch}}
-            '{{ value }}' => {{{ wrapperTypeName }}}({{{ valueType }}}.fromJson(json)),
+            '{{ value }}' => {{{ caseExpression }}},
 {{/dispatch}}
             _ => throw FormatException(
                 "Unknown {{ discriminatorProperty }} '$discriminator' for {{ typeName }}",
@@ -23,6 +23,9 @@
 {{#variants}}
 {{> _one_of_wrapper}}
 {{/variants}}
+{{#smooshedVariants}}
+{{> schema_object}}
+{{/smooshedVariants}}
 {{/has_discriminator_dispatch}}
 {{#has_shape_dispatch}}
 {{{ doc_comment }}}sealed class {{ typeName }} {
