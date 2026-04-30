@@ -440,6 +440,18 @@ Schema? _handleCollectionTypes(
     if (_isConstraintOnlyCollection(json, 'oneOf')) {
       return null;
     }
+    // OpenAPI 3.1 / JSON Schema 2020-12 spec authors sometimes spell
+    // an enum as a oneOf of single-value `const:` variants — Discord
+    // does this for 84 typed enums (e.g. `MessageComponentTypes` with
+    // 20 `{title: ACTION_ROW, const: 1}` variants). Without collapse,
+    // each parent renders as a sealed class with an
+    // `UnimplementedError` `fromJson` (no discriminator to pick a
+    // variant). Collapse to `SchemaIntEnum` / `SchemaStringEnum` so
+    // they generate clean enum types instead.
+    final collapsed = _maybeCollapseOneOfOfConsts(json, common: common);
+    if (collapsed != null) {
+      return collapsed;
+    }
     final mergedVariants = _maybeMergeParentIntoVariants(json, 'oneOf');
     final discriminator = _parseDiscriminator(json);
     if (mergedVariants != null) {
@@ -538,6 +550,75 @@ bool _isConstraintOnlyCollection(MapContext json, String collectionKey) {
     if (variant.length != 1 || !variant.containsKey('required')) return false;
   }
   return true;
+}
+
+/// Detects the "oneOf-of-consts" enum pattern: a oneOf where every
+/// variant is `{const: X}` (optionally with `title:` and
+/// `description:`). Discord uses this for typed enums like
+/// `MessageComponentTypes`: `{type: integer, oneOf: [{title: 'ACTION_ROW',
+/// const: 1}, {title: 'BUTTON', const: 2}, ...]}`.
+///
+/// Returns the collapsed `SchemaIntEnum` / `SchemaStringEnum` when
+/// the pattern matches, or null to fall through to the regular
+/// oneOf-parse path. Parent `type:` is read for type-shape validation
+/// but isn't required (the const literal types determine the result).
+Schema? _maybeCollapseOneOfOfConsts(
+  MapContext json, {
+  required CommonProperties common,
+}) {
+  final list = json['oneOf'];
+  if (list is! List || list.isEmpty) return null;
+  // Every variant must be a const-only map (with optional title and
+  // description metadata). Anything else means a real polymorphic
+  // branch — fall through.
+  const allowedKeys = {'const', 'title', 'description'};
+  for (final variant in list) {
+    if (variant is! Map) return null;
+    if (!variant.containsKey('const')) return null;
+    if (variant.keys.any((k) => !allowedKeys.contains(k))) return null;
+  }
+  // Walk the variants once to collect values + descriptions. Titles
+  // aren't preserved yet — `RenderEnum.variableNamesFor` derives Dart
+  // names from the values — but the underlying enum type is correct
+  // and dispatches cleanly.
+  final values = <dynamic>[];
+  final descriptions = <String?>[];
+  for (final variant in list.cast<Map<dynamic, dynamic>>()) {
+    values.add(variant['const']);
+    descriptions.add(variant['description'] as String?);
+  }
+  // Mixed-type consts — fall through to the regular oneOf path
+  // before consuming any keys, so downstream parsing sees the
+  // original shape.
+  final isAllInt = values.every((v) => v is int);
+  final isAllString = values.every((v) => v is String);
+  if (!isAllInt && !isAllString) return null;
+  // Mark `oneOf` consumed so it doesn't show as unused. Same for
+  // `type:` (informational on the parent) and `format:` (Discord
+  // puts `format: int32` on integer-enum parents).
+  json
+    ..markUsed('oneOf')
+    ..markUsed('type')
+    ..markUsed('format');
+  // If any variant declared a description, plumb the parallel list
+  // through `enumDescriptions`. If none did, leave it null.
+  final descriptionsToPlumb = descriptions.any((d) => d != null)
+      ? descriptions.map((d) => d ?? '').toList()
+      : null;
+  if (isAllInt) {
+    return SchemaIntEnum(
+      common: common,
+      defaultValue: null,
+      enumValues: values.cast<int>(),
+      enumDescriptions: descriptionsToPlumb,
+    );
+  }
+  return SchemaStringEnum(
+    common: common,
+    defaultValue: null,
+    enumValues: values.cast<String>(),
+    enumDescriptions: descriptionsToPlumb,
+  );
 }
 
 /// Returns merged variant schemas when [json] declares a base object
