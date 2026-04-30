@@ -237,7 +237,16 @@ class SchemaBinary extends Schema {
   const SchemaBinary({required super.common});
 }
 
-class SchemaEnum extends Schema {
+/// An enum schema. OpenAPI most commonly uses string enums, but
+/// `type: integer` enums also occur — Discord uses single-value int
+/// enums (`enum: [1]`) as oneOf discriminator markers, the same role
+/// github plays with single-value string enums. The two cases share
+/// the parser and resolver shape, but differ in element type for
+/// [enumValues] and [defaultValue] and in how render emits Dart
+/// (string literal vs int literal). Mirrors the [SchemaNumeric] /
+/// [SchemaInteger] / [SchemaNumber] pattern: parameterized abstract
+/// base with two concrete subclasses pinning [T].
+abstract class SchemaEnum<T extends Object> extends Schema {
   const SchemaEnum({
     required super.common,
     required this.defaultValue,
@@ -245,16 +254,34 @@ class SchemaEnum extends Schema {
     required this.enumDescriptions,
   });
 
-  /// The default value of the enum.
-  final String? defaultValue;
+  /// The default value of the enum, if any.
+  final T? defaultValue;
 
-  // Only string enums are supported for now.
-  final List<String> enumValues;
+  /// All enum values.
+  final List<T> enumValues;
 
   /// Optional per-value dartdoc descriptions, parallel to [enumValues].
   /// Populated from the OpenAPI vendor extension `x-enum-descriptions`
   /// when present.
   final List<String>? enumDescriptions;
+}
+
+class SchemaStringEnum extends SchemaEnum<String> {
+  const SchemaStringEnum({
+    required super.common,
+    required super.defaultValue,
+    required super.enumValues,
+    required super.enumDescriptions,
+  });
+}
+
+class SchemaIntEnum extends SchemaEnum<int> {
+  const SchemaIntEnum({
+    required super.common,
+    required super.defaultValue,
+    required super.enumValues,
+    required super.enumDescriptions,
+  });
 }
 
 class SchemaNull extends Schema {

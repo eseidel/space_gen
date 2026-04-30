@@ -6,7 +6,7 @@
         final discriminator = json['{{ discriminatorProperty }}'];
         return switch (discriminator) {
 {{#dispatch}}
-            '{{ value }}' => {{{ caseExpression }}},
+            {{{ caseLiteral }}} => {{{ caseExpression }}},
 {{/dispatch}}
             _ => throw FormatException(
                 "Unknown {{ discriminatorProperty }} '$discriminator' for {{ typeName }}",

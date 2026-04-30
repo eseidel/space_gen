@@ -191,7 +191,11 @@ class DiscriminatorDispatch extends DispatchDecision {
 
   /// Each entry is a `(value, variant)` pair. Order is the order
   /// `mapping` keys appear; the renderer's `case` arms follow it.
-  final List<({String value, ResolvedSchema variant})> mapping;
+  /// Values are typically `String` but `int` for integer-typed
+  /// discriminators; the [propertyName] property's enum on each
+  /// variant pins this — the picker rejects collections whose
+  /// variants disagree on value type.
+  final List<({Object value, ResolvedSchema variant})> mapping;
 
   /// All variants in declaration order (matches the spec's `oneOf`
   /// ordering). Drives the order subclasses are declared.
@@ -361,10 +365,14 @@ String? _jsonShapeKey(ResolvedSchema schema) {
     ResolvedAllOf() => _mapShapeKey,
     ResolvedMap() => _mapShapeKey,
     ResolvedEmptyObject() => _mapShapeKey,
-    // Enums always serialize as `String`; the wrapper class is the
-    // enum type itself. Shape-dispatchable as long as no sibling
-    // variant collides on the `String` key.
-    ResolvedEnum() => 'String',
+    // Enums serialize as their value type — `String` or `int`.
+    // Shape-dispatchable as long as no sibling variant collides on
+    // the same key. Must agree with [RenderEnum.jsonShapeKey] (the
+    // render side splices the same string into the `case <type> v =>`
+    // arm), and with [RenderInteger.jsonShapeKey] / [RenderString]'s
+    // non-newtype keys for cross-shape collisions.
+    ResolvedStringEnum() => 'String',
+    ResolvedIntEnum() => 'int',
     // RecursiveRef points at a top-level (always object today). Treat
     // as Map for shape collision purposes; render handles the actual
     // construction via the target's name.
@@ -473,13 +481,13 @@ ResolvedDiscriminator? _implicitDiscriminatorForProperty(
   if (variants.isEmpty) return null;
   if (!variants.every(_isObjectLike)) return null;
   final flatProps = variants.map(_flattenedProperties).toList();
-  final perVariantValues = <List<String>>[];
+  final perVariantValues = <List<Object>>[];
   for (var i = 0; i < variants.length; i++) {
     final type = flatProps[i][propertyName];
     if (type is! ResolvedEnum || type.values.isEmpty) return null;
     perVariantValues.add(List.of(type.values));
   }
-  final seen = <String>{};
+  final seen = <Object>{};
   for (final values in perVariantValues) {
     for (final v in values) {
       if (!seen.add(v)) return null;
@@ -512,13 +520,13 @@ ResolvedDiscriminator? _implicitDiscriminator(List<ResolvedSchema> variants) {
   if (!variants.every(_isObjectLike)) return null;
   final flatRequired = variants.map(_flattenedRequiredProperties).toList();
   final flatProps = variants.map(_flattenedProperties).toList();
-  final candidates = <(String, List<List<String>>)>[];
+  final candidates = <(String, List<List<Object>>)>[];
   for (final entry in flatProps.first.entries) {
     final propName = entry.key;
     if (!flatRequired.first.contains(propName)) continue;
     final firstType = entry.value;
     if (firstType is! ResolvedEnum || firstType.values.isEmpty) continue;
-    final perVariantValues = <List<String>>[List.of(firstType.values)];
+    final perVariantValues = <List<Object>>[List.of(firstType.values)];
     var allMatch = true;
     for (var i = 1; i < variants.length; i++) {
       if (!flatRequired[i].contains(propName)) {
@@ -527,6 +535,13 @@ ResolvedDiscriminator? _implicitDiscriminator(List<ResolvedSchema> variants) {
       }
       final otherType = flatProps[i][propName];
       if (otherType is! ResolvedEnum || otherType.values.isEmpty) {
+        allMatch = false;
+        break;
+      }
+      // All variants' tag enums must agree on the value type — mixing
+      // string and integer tags within one discriminator would force
+      // a runtime check we don't want to emit.
+      if (otherType.runtimeType != firstType.runtimeType) {
         allMatch = false;
         break;
       }
@@ -540,7 +555,7 @@ ResolvedDiscriminator? _implicitDiscriminator(List<ResolvedSchema> variants) {
     // Pairwise-disjoint check on the union of each variant's enum
     // values. A duplicate value would route to two variants — not a
     // valid discriminator.
-    final seen = <String>{};
+    final seen = <Object>{};
     var disjoint = true;
     for (final values in perVariantValues) {
       for (final v in values) {

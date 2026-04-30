@@ -1670,7 +1670,7 @@ void main() {
       });
 
       test('ResolvedEnum', () {
-        final schema1 = ResolvedEnum(
+        final schema1 = ResolvedStringEnum(
           common: CommonProperties.test(
             snakeName: 'Foo',
             pointer: JsonPointer.parse(
@@ -1682,7 +1682,7 @@ void main() {
           defaultValue: null,
           descriptions: null,
         );
-        final schema2 = ResolvedEnum(
+        final schema2 = ResolvedStringEnum(
           common: CommonProperties.test(
             snakeName: 'Foo',
             pointer: JsonPointer.parse(
@@ -1846,10 +1846,22 @@ void main() {
         });
       });
       test('ResolvedEnum', () {
-        final schema = ResolvedEnum(
+        final schema = ResolvedStringEnum(
           common: beforeCommon,
           values: const ['bar', 'baz'],
           defaultValue: null,
+          descriptions: null,
+        );
+        testCopyWith(schema, (schema, copy) {
+          expect(copy.values, equals(schema.values));
+          expect(copy.defaultValue, equals(schema.defaultValue));
+        });
+      });
+      test('ResolvedIntEnum', () {
+        final schema = ResolvedIntEnum(
+          common: beforeCommon,
+          values: const [1, 11, 100],
+          defaultValue: 1,
           descriptions: null,
         );
         testCopyWith(schema, (schema, copy) {

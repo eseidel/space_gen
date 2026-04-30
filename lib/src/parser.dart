@@ -709,7 +709,7 @@ SchemaRef? _handleAdditionalProperties(MapContext parent) {
   _error(parent, 'additionalProperties must be a boolean or a map');
 }
 
-SchemaEnum? _handleEnum({
+SchemaEnum<Object>? _handleEnum({
   required MapContext json,
   required TypeAndFormat typeAndFormat,
   required dynamic defaultValue,
@@ -722,18 +722,64 @@ SchemaEnum? _handleEnum({
   if (enumValues == null) {
     return null;
   }
-  // We will infer the type from the enum values if not provided.
-  if (type != null && type != 'string') {
-    // boolean enums are valid but not yet supported (or particularly
-    // consequential to ignore). GitHub uses one for fork=true.
-    if (podType == PodType.boolean) {
-      _ignored<String>(json, 'type');
-      return null;
-    }
+  // String is the default when `type` is omitted (matches the most
+  // common OpenAPI 3.0/3.1 pattern). Integer enums show up in specs
+  // that use them as single-value discriminator tags (Discord's
+  // component types). Boolean enums (e.g. github's `fork: true`)
+  // parse as a non-enum boolean — there's nothing to dispatch on.
+  final bool isInt;
+  if (type == null || type == 'string') {
+    isInt = false;
+  } else if (type == 'integer') {
+    isInt = true;
+  } else if (podType == PodType.boolean) {
+    _ignored<String>(json, 'type');
+    return null;
+  } else {
     _unimplemented(json, 'enumValues for type=$type');
   }
   // TODO(eseidel): null should only be valid when enum is nullable.
   final nonNullValues = enumValues.where((e) => e != null).toList();
+  final xEnumDescriptions = _optionalList<dynamic>(json, 'x-enum-descriptions');
+  List<String>? enumDescriptions;
+  if (xEnumDescriptions != null) {
+    if (xEnumDescriptions.length != nonNullValues.length) {
+      _error(
+        json,
+        'x-enum-descriptions length (${xEnumDescriptions.length}) must '
+        'match enum length (${nonNullValues.length})',
+      );
+    }
+    if (xEnumDescriptions.any((e) => e is! String)) {
+      _error(
+        json,
+        'x-enum-descriptions must be a list of strings: $xEnumDescriptions',
+      );
+    }
+    enumDescriptions = xEnumDescriptions.cast<String>();
+  }
+  if (isInt) {
+    if (nonNullValues.any((e) => e is! int)) {
+      _error(json, 'enumValues must be a list of integers: $enumValues');
+    }
+    final typedEnumValues = nonNullValues.cast<int>();
+    int? typedDefaultValue;
+    if (defaultValue != null) {
+      if (!nonNullValues.contains(defaultValue)) {
+        _error(
+          json,
+          'defaultValue must be one of the enum values: $defaultValue',
+        );
+      }
+      typedDefaultValue = defaultValue as int;
+    }
+    return SchemaIntEnum(
+      common: common,
+      defaultValue: typedDefaultValue,
+      enumValues: typedEnumValues,
+      enumDescriptions: enumDescriptions,
+    );
+  }
   if (nonNullValues.any((e) => e is! String)) {
     _error(json, 'enumValues must be a list of strings: $enumValues');
   }
@@ -756,25 +802,7 @@ SchemaEnum? _handleEnum({
       typedDefaultValue = defaultValue as String?;
     }
   }
-  final xEnumDescriptions = _optionalList<dynamic>(json, 'x-enum-descriptions');
-  List<String>? enumDescriptions;
-  if (xEnumDescriptions != null) {
-    if (xEnumDescriptions.length != typedEnumValues.length) {
-      _error(
-        json,
-        'x-enum-descriptions length (${xEnumDescriptions.length}) must '
-        'match enum length (${typedEnumValues.length})',
-      );
-    }
-    if (xEnumDescriptions.any((e) => e is! String)) {
-      _error(
-        json,
-        'x-enum-descriptions must be a list of strings: $xEnumDescriptions',
-      );
-    }
-    enumDescriptions = xEnumDescriptions.cast<String>();
-  }
-  return SchemaEnum(
+  return SchemaStringEnum(
     common: common,
     defaultValue: typedDefaultValue,
     enumValues: typedEnumValues,

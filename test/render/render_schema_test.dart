@@ -2816,6 +2816,69 @@ void main() {
       expect(result, isNot(contains('TestOneOf1 value')));
     });
 
+    test('shape dispatch picks oneOf<int-enum, object> with int + Map '
+        'arms', () {
+      // Integer enums report `int` as their shape key (matches
+      // RenderInteger's non-newtype convention). A oneOf with an
+      // int-enum and an object variant shape-dispatches on those
+      // distinct keys.
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'integer',
+            'enum': [1, 2, 3],
+          },
+          {
+            'type': 'object',
+            'properties': {
+              'name': {'type': 'string'},
+            },
+          },
+        ],
+      });
+      expect(result, contains('int v => '));
+      expect(result, contains('Map<String, dynamic> v =>'));
+      expect(result, isNot(contains('throw UnimplementedError')));
+    });
+
+    test('discriminator dispatch with integer-typed tags emits int '
+        'case arms, not string', () {
+      // Mirrors Discord's component-type pattern: each variant tags
+      // itself with `type: { type: integer, enum: [N] }` for distinct
+      // N. The generated switch must use raw int literals (`case 1:`)
+      // not strings (`case '1':`); the lookup is `json['type']`.
+      final result = renderTestSchema({
+        'oneOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'integer',
+                'enum': [1],
+              },
+            },
+            'required': ['type'],
+          },
+          {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'integer',
+                'enum': [11],
+              },
+            },
+            'required': ['type'],
+          },
+        ],
+      });
+      expect(result, contains("final discriminator = json['type']"));
+      expect(result, contains('1 => TestOneOf0.fromJson(json)'));
+      expect(result, contains('11 => TestOneOf1.fromJson(json)'));
+      // No quoted-int case keys.
+      expect(result, isNot(contains("'1' =>")));
+      expect(result, isNot(contains("'11' =>")));
+    });
+
     test('discriminator dispatch smooshes inline-allOf variants: the '
         'merged class extends the sealed parent directly', () {
       // github's `repository-rule-detailed` shape: each oneOf variant
@@ -3664,7 +3727,7 @@ void main() {
         '\n'
         '    const Test._(this.value);\n'
         '\n'
-        '    /// Creates a Test from a json string.\n'
+        '    /// Creates a Test from a json value.\n'
         '    factory Test.fromJson(String json) {\n'
         '        return Test.values.firstWhere(\n'
         '            (value) => value.value == json,\n'
@@ -3673,7 +3736,7 @@ void main() {
         '        );\n'
         '    }\n'
         '\n'
-        '    /// Convenience to create a nullable type from a nullable json object.\n'
+        '    /// Convenience to create a nullable type from a nullable json value.\n'
         '    /// Useful when parsing optional fields.\n'
         '    static Test? maybeFromJson(String? json) {\n'
         '        if (json == null) {\n'
@@ -3682,18 +3745,57 @@ void main() {
         '        return Test.fromJson(json);\n'
         '    }\n'
         '\n'
-        '    /// The value of the enum, as a string.  This is the exact value\n'
+        '    /// The value of the enum.  This is the exact value\n'
         '    /// from the OpenAPI spec and will be used for network transport.\n'
         '    final String value;\n'
         '\n'
-        '    /// Converts the enum to a json string.\n'
+        '    /// Converts the enum to its json value.\n'
         '    String toJson() => value;\n'
         '\n'
-        '    /// Returns the string value of the enum.\n'
+        '    /// Returns the string form of the enum.\n'
         '    @override\n'
-        '    String toString() => value;\n'
+        '    String toString() => value.toString();\n'
         '}\n',
       );
+    });
+
+    test('integer enum renders as a Dart enum with int-typed value', () {
+      // Discord uses single-value `type: integer, enum: [N]` enums as
+      // oneOf discriminator markers (component types). Verify the
+      // generated Dart enum stores the value as `int`, the
+      // factory/maybeFromJson accept `int`/`int?`, and `toJson()`
+      // returns `int`.
+      final json = {
+        'type': 'integer',
+        'enum': [1, 2, 11],
+      };
+      final result = renderTestSchema(json);
+      // Variants get name `value<N>` since int values aren't valid
+      // Dart identifiers on their own.
+      expect(result, contains('value1._(1)'));
+      expect(result, contains('value2._(2)'));
+      expect(result, contains('value11._(11)'));
+      // JSON wire types are `int`, not `String`.
+      expect(result, contains('factory Test.fromJson(int json)'));
+      expect(result, contains('static Test? maybeFromJson(int? json)'));
+      expect(result, contains('final int value;'));
+      expect(result, contains('int toJson() => value;'));
+      // No String-typed survivors anywhere in the body.
+      expect(result, isNot(contains('final String value;')));
+      expect(result, isNot(contains('factory Test.fromJson(String')));
+    });
+
+    test('integer enum with negative values uses safe variable names', () {
+      final json = {
+        'type': 'integer',
+        'enum': [-1, 0, 1],
+      };
+      final result = renderTestSchema(json);
+      // Negative values would be invalid Dart identifiers (`value-1`);
+      // generator falls back to `valueNeg<abs>`.
+      expect(result, contains('valueNeg1._(-1)'));
+      expect(result, contains('value0._(0)'));
+      expect(result, contains('value1._(1)'));
     });
 
     test('properties with invalid names', () {
