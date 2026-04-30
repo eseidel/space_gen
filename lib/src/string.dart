@@ -155,7 +155,21 @@ bool isReservedWord(String word) {
 }
 
 String quoteString(String string) {
-  return "'${string.replaceAll("'", r"\'")}'";
+  // Escape `\` first so we don't double-escape the backslashes added
+  // by the `'`, `$`, `\n`, `\r` escapes below. `$` needs escaping
+  // because Dart single-quoted strings interpolate on `$` (regex
+  // patterns like `^(0|[1-9][0-9]*)$` would otherwise be a syntax
+  // error). Newlines need escaping because Dart single-quoted strings
+  // can't span multiple lines (some spec examples contain literal
+  // `\n`s — github's `codeowners-errors.errors[].message` is a
+  // formatted multi-line string).
+  final escaped = string
+      .replaceAll(r'\', r'\\')
+      .replaceAll("'", r"\'")
+      .replaceAll(r'$', r'\$')
+      .replaceAll('\n', r'\n')
+      .replaceAll('\r', r'\r');
+  return "'$escaped'";
 }
 
 extension CapitalizeString on String {

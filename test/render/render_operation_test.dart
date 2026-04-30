@@ -1136,7 +1136,7 @@ void main() {
         '    ) async {\n'
         '        foo?.validateMaximumLength(10);\n'
         '        foo?.validateMinimumLength(1);\n'
-        "        foo?.validatePattern('^[a-z]+\$');\n"
+        "        foo?.validatePattern('^[a-z]+\\\$');\n"
         '        bar?.validateMaximum(10);\n'
         '        bar?.validateMinimum(1);\n'
         '        bar?.validateExclusiveMaximum(10);\n'

@@ -13,6 +13,7 @@ import 'package:space_gen/src/render/templates.dart';
 class SchemaUsage {
   const SchemaUsage({
     this.usesMetaAnnotations = false,
+    this.usesValidationExtensions = false,
     this.modelHelpers = const {},
   });
 
@@ -20,6 +21,7 @@ class SchemaUsage {
   factory SchemaUsage.fromBody(String body) {
     return SchemaUsage(
       usesMetaAnnotations: body.contains('@immutable'),
+      usesValidationExtensions: _validationCallPattern.hasMatch(body),
       modelHelpers: {
         for (final h in ModelHelpers.all)
           if (body.contains(h)) h,
@@ -27,7 +29,21 @@ class SchemaUsage {
     );
   }
 
+  /// Matches any `validateXxx` extension-method call. The
+  /// `api_exception.dart` file declares them as extensions on
+  /// `String` / `num` / `List<T>`; a body that calls one needs to
+  /// import that file.
+  static final _validationCallPattern = RegExp(
+    r'\.validate(Maximum|Minimum|MaximumLength|MinimumLength|Pattern|'
+    'ExclusiveMaximum|ExclusiveMinimum|MultipleOf|MaximumItems|'
+    'MinimumItems|UniqueItems)' r'\b',
+  );
+
   final bool usesMetaAnnotations;
+
+  /// True when the body calls any `validateXxx` extension method.
+  /// Drives the `api_exception.dart` import.
+  final bool usesValidationExtensions;
 
   /// The set of `model_helpers.dart` identifiers referenced by the
   /// rendered body. A subset of [ModelHelpers.all].
@@ -41,6 +57,9 @@ class SchemaUsage {
     if (usesMetaAnnotations) yield const Import('package:meta/meta.dart');
     if (usesModelHelpers) {
       yield Import('package:$packageName/model_helpers.dart');
+    }
+    if (usesValidationExtensions) {
+      yield Import('package:$packageName/api_exception.dart');
     }
   }
 }
