@@ -2251,6 +2251,44 @@ void main() {
         expect(schema, isA<SchemaString>());
         expect(schema.common.nullable, isTrue);
       });
+      test('contentEncoding=base64 parses as a SchemaString', () {
+        // Discord's `avatar` / `image` properties: a base64-encoded
+        // binary in the JSON wire format. The string IS the wire
+        // value, so we keep `SchemaString`; the keyword is consumed
+        // (logged at -v as `Ignoring`) instead of flagged as unused.
+        final json = {'type': 'string', 'contentEncoding': 'base64'};
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaString>());
+        verify(
+          () => logger.detail(
+            any(that: contains('Ignoring: contentEncoding=base64')),
+          ),
+        ).called(1);
+      });
+      test('contentEncoding=binary parses as a SchemaString', () {
+        // OpenAPI 3.1 successor to `format: binary` on a JSON-shaped
+        // string property. Same handling as base64.
+        final json = {'type': 'string', 'contentEncoding': 'binary'};
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaString>());
+      });
+      test('contentMediaType is consumed alongside contentEncoding', () {
+        final json = {
+          'type': 'string',
+          'contentEncoding': 'base64',
+          'contentMediaType': 'image/png',
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaString>());
+        verify(
+          () => logger.detail(
+            any(that: contains('Ignoring: contentMediaType=image/png')),
+          ),
+        ).called(1);
+      });
     });
 
     group('multiple types', () {

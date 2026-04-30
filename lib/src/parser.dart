@@ -1083,6 +1083,16 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     if (typeAndFormat.format == 'binary') {
       return SchemaBinary(common: common);
     }
+    // JSON Schema 2020-12 / OpenAPI 3.1 successors to `format: byte`
+    // and `format: binary`. The wire value is still a JSON string —
+    // a base64 string for `contentEncoding: base64`, raw octets (when
+    // the surrounding `contentMediaType` is non-JSON) for `binary`.
+    // We acknowledge them so they aren't flagged as unused; auto-
+    // decoding to `Uint8List` would change the API surface and is a
+    // separate UX call. Discord uses `contentEncoding: base64` on
+    // 26 properties (`avatar`, `image`) and `binary` on 46 more.
+    _ignored<String>(json, 'contentEncoding');
+    _ignored<String>(json, 'contentMediaType');
   }
 
   final defaultValue = _optional<dynamic>(json, 'default');
