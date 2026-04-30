@@ -785,11 +785,27 @@ class SpecResolver {
     // `Foo201`), and a range can't be enumerated. Range-mixed cases
     // fall through to the legacy oneOf path for now.
     if (successfulRange.isEmpty) {
+      // Naming pass claims `<op>_response` on the operation's pointer
+      // in phase 1 (see `_NameAssigner.visitOperation`); the allocator
+      // suffixes if a same-named top-level schema also claimed it.
+      // Without this lookup the wrapper would emit the bare
+      // `<op>Response`, shadowing the imported schema in the api file
+      // (and re-exporting it ambiguously from `api.dart`).
+      final wrapperTypeName = _nameFor(operation.pointer);
+      if (wrapperTypeName == null) {
+        throw StateError(
+          'Naming pass did not assign a name to operation '
+          '${operation.snakeName} (pointer: ${operation.pointer}). '
+          'Multi-status dispatch needs the synthesized `<op>_response` '
+          'name claimed by `_NameAssigner.visitOperation`.',
+        );
+      }
       return MultiStatusReturn(
         responses: {
           for (final response in explicit2xx)
             response.statusCode: toRenderResponse(response),
         },
+        wrapperTypeName: wrapperTypeName,
       );
     }
     return SingleSchemaReturn(
@@ -1426,22 +1442,18 @@ class Endpoint implements ToTemplateContext {
   }
 
   /// Build the per-status sealed-class context for a multi-status
-  /// operation. The synthesized class name follows the same
-  /// `<snake>_response` convention (where `<snake>` is the operation's
-  /// snake name) that the legacy oneOf path used, so existing
-  /// regenerated output only shows the dispatch change, not a rename.
+  /// operation. The synthesized class name comes from the naming pass
+  /// (see `MultiStatusReturn.wrapperTypeName`), so a top-level schema
+  /// that already claimed `<op>Response` keeps the bare name and the
+  /// wrapper picks up a `_2`-style suffix.
   ///
   /// Sorting on the status code guarantees `200` ahead of `204` in
   /// the emitted switch regardless of spec ordering.
-  ///
-  /// Synthesized typeName can collide with a schema in the spec named
-  /// `<op>_response`. Not handled here — that's the job of a future
-  /// resolve-stage collision pass that accounts for generated names.
   _MultiStatusContext _buildMultiStatusContext(
     MultiStatusReturn multiStatus,
     SchemaRenderer context,
   ) {
-    final typeName = camelFromSnake('${operation.snakeName}_response');
+    final typeName = multiStatus.wrapperTypeName;
     final sortedEntries = multiStatus.responses.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
     final statuses = [
@@ -1795,13 +1807,24 @@ final class SingleSchemaReturn extends OperationReturn {
 /// right subclass.
 @immutable
 final class MultiStatusReturn extends OperationReturn {
-  const MultiStatusReturn({required this.responses});
+  const MultiStatusReturn({
+    required this.responses,
+    required this.wrapperTypeName,
+  });
 
   /// Status code → response. Carries content-type per status so each
   /// switch arm can pick the right decode (`jsonDecode` vs raw
   /// `response.body`); a `RenderVoid` content signals no body and
   /// produces a value-less wrapper subclass.
   final Map<int, RenderResponse> responses;
+
+  /// Camel-case Dart name for the synthesized sealed class. Pre-resolved
+  /// via the naming pass on the operation's pointer so a top-level
+  /// component schema sharing the un-suffixed `<op>Response` name
+  /// (which Dart-imports into the api file) doesn't shadow itself.
+  /// Per-status subclasses are this name with the status-code suffix
+  /// (`<wrapper>200`, `<wrapper>201`, …).
+  final String wrapperTypeName;
 }
 
 /// Sealed so the endpoint arg-builder can pattern-match exhaustively on
