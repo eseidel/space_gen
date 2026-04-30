@@ -1,3 +1,15 @@
+## 1.2.1
+
+### Chores
+
+- Replace the README's stale TODO list (most items shipped in 1.2.0)
+  with a **Tested specs** section that records the real-world specs
+  space_gen iterates against (GitHub, Discord, SpaceTraders, Train
+  Travel, Petstore) and their current status. Add a "Powered by
+  Shorebird" badge. Promote the OpenApi Quirks subsection to a
+  top-level section. Still-real items from the old TODO that didn't
+  already have tracking issues were filed as #204–#207.
+
 ## 1.2.0
 
 ### Features
