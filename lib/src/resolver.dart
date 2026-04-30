@@ -315,6 +315,12 @@ ResolvedSchema _resolveSchemaFully(
       createsNewType: createsNewType,
     );
   }
+  if (schema is SchemaBase64Bytes) {
+    return ResolvedBase64Bytes(
+      common: resolvedCommon,
+      createsNewType: createsNewType,
+    );
+  }
   if (schema is SchemaPod) {
     return ResolvedPod(
       common: resolvedCommon,
@@ -881,6 +887,7 @@ bool shouldCreateNewType(Schema schema) {
     case SchemaUnknown():
     case SchemaPod():
     case SchemaBinary():
+    case SchemaBase64Bytes():
     case SchemaNumeric():
       // OpenApi creates a new file for each top level component, even
       // if it's a simple type.  Matching this behavior for now.
@@ -1708,6 +1715,23 @@ class ResolvedBinary extends ResolvedSchema {
   @override
   ResolvedBinary copyWith({CommonProperties? common}) {
     return ResolvedBinary(
+      common: common ?? this.common,
+      createsNewType: createsNewType,
+    );
+  }
+}
+
+/// Resolved counterpart to [SchemaBase64Bytes]. Renders as `Uint8List`
+/// with `base64.encode`/`base64.decode` at the JSON boundary.
+class ResolvedBase64Bytes extends ResolvedSchema {
+  const ResolvedBase64Bytes({
+    required super.common,
+    required super.createsNewType,
+  });
+
+  @override
+  ResolvedBase64Bytes copyWith({CommonProperties? common}) {
+    return ResolvedBase64Bytes(
       common: common ?? this.common,
       createsNewType: createsNewType,
     );

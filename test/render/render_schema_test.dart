@@ -192,6 +192,43 @@ void main() {
       );
     });
 
+    test(
+      'contentEncoding=base64 property renders as Uint8List with '
+      'base64 codec',
+      () {
+        // Discord's `avatar`/`image` upload fields. The wire is a JSON
+        // string; the Dart-side type is `Uint8List` with auto-encode in
+        // `toJson` and auto-decode in `fromJson`. The required path
+        // calls `base64.decode` / `base64.encode` directly; the nullable
+        // path goes through `maybeBase64Decode` / `maybeBase64Encode`
+        // helpers (so a public-property `Uint8List?` doesn't need to
+        // promote inside a ternary).
+        final schema = {
+          'type': 'object',
+          'required': ['image'],
+          'properties': {
+            'image': {'type': 'string', 'contentEncoding': 'base64'},
+            'avatar': {'type': 'string', 'contentEncoding': 'base64'},
+          },
+        };
+        final result = renderTestSchema(schema);
+        expect(result, contains('final Uint8List image;'));
+        expect(result, contains('final Uint8List? avatar;'));
+        // Required: direct calls.
+        expect(
+          result,
+          contains("image: base64.decode(json['image'] as String)"),
+        );
+        expect(result, contains("'image': base64.encode(image)"));
+        // Nullable: via the model_helpers wrappers.
+        expect(
+          result,
+          contains("avatar: maybeBase64Decode(json['avatar'] as String?)"),
+        );
+        expect(result, contains("'avatar': maybeBase64Encode(avatar)"));
+      },
+    );
+
     test('x-enum-descriptions emits dartdoc per enum case', () {
       final schema = {
         'type': 'string',
