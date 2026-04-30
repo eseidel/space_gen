@@ -1,3 +1,206 @@
+## 1.2.0
+
+### Features
+
+- **`oneOf` / `anyOf` dispatch — full sealed-class generation.** Previously
+  every `oneOf` body emitted `throw UnimplementedError` from the synthesized
+  parent's `fromJson`. The renderer now picks one of five strategies and
+  emits real Dart 3 pattern-matched dispatch:
+  - **Discriminator dispatch** — explicit `discriminator: {propertyName,
+    mapping}` switches on `json[propertyName]` (#143).
+  - **Implicit-discriminator dispatch** — when each variant tags itself with
+    a required single-value enum/const property (or per-variant
+    pairwise-disjoint enum value sets), dispatch on it as if a
+    discriminator were declared (#149, #182).
+  - **Shape dispatch** — variants of distinct JSON shapes
+    (`int`/`String`/`bool`/`Map`/`List`/`num`) switch on the runtime type;
+    extends through `RenderArray`, `RenderNumber`, and `RenderMap` variants
+    (#145, #147, #151, #152).
+  - **Required-field / property-presence dispatch** — object variants with
+    a uniquely-required (or uniquely-optional) field generate an if-chain
+    over `containsKey`. A variant with no required fields can act as the
+    catch-all fallback (#146, #153, #154).
+  - **Hybrid dispatch** — mixed-shape `oneOf`s combine an outer shape
+    switch with required-field sub-arms inside `Map<String, dynamic>`,
+    plus array-element shape sub-arms inside `List<dynamic>` (#156, #183).
+  - **Array-element dispatch** — `anyOf<array<X>, array<Y>>` peeks the
+    first list element to pick a variant (#159).
+  - **Array-element-property shape dispatch** — for object-variant twins
+    that share required keys but differ in the items shape of an array
+    property (validation-error / validation-error-simple) (#177).
+- **Smoosh: variant data classes inline directly into the sealed parent.**
+  Previously each `oneOf` emitted a per-variant data class plus a wrapper
+  subclass holding `final value: <DataClass>`. When a variant's pointer is
+  exclusive to one parent, the variant data class itself becomes the sealed
+  subclass, inlined in the parent's `.dart` file — no wrapper, no `value`
+  indirection, pattern matching destructures the variant's fields directly.
+  Covers predicate-required, discriminator, shape, hybrid, and inline
+  `allOf` variants; also extends to top-level `$ref` variants used by
+  exactly one parent (#168, #169, #170, #179, #189). Round-trip tests are
+  synthesized for each smooshed variant (#181). Structurally-identical
+  `oneOf` trees synthesized under operation paths share one resolved
+  schema — one Dart class instead of multiple byte-identical sealed
+  classes (#180).
+- **HTTP-status dispatch on operations with multiple successful responses.**
+  Operations declaring e.g. `200: User, 202: AcceptedJob` (or `201: Empty,
+  204: ø`) used to coalesce into a discriminator-less `RenderOneOf` and
+  throw `UnimplementedError`. Now emit a sealed parent with one `final`
+  wrapper per status code; the api method body switches on
+  `response.statusCode`. Empty-body and empty-schema 204s render as
+  value-less / `dynamic`-valued wrappers respectively (#148).
+- **Naming pass.** A single global pass owns every Dart class name the
+  generator emits, including wrapper subclasses. Each entity submits a
+  preference list (best/shortest first, longest/safest last); the new
+  `NameAllocator` runs an order-independent fixpoint and disambiguates
+  remaining collisions with numeric suffixes. Title-derived names land
+  for inline `oneOf`/`anyOf` variants whose spec carries a unique
+  `title:`. Wrappers no longer double-prefix
+  (`ProjectsCreateCardRequestProjectsCreateCardRequestOneOf0` →
+  `ProjectsCreateCardRequestVariant0`) (#161, #162, #163, #165, #166,
+  #167).
+- **Integer enums** (`type: integer, enum: [...]`) parse and render as
+  typed `enum` classes with `valueN` variant names (`value1`, `valueNeg1`)
+  via a new `SchemaEnum<T>` family pinning `T` to `String` or `int` (#192).
+- **OpenAPI 3.1 `const`** parses as a single-value enum, equivalent to
+  `enum: [X]`. Untyped `const` infers `integer` vs `string` from the
+  value (#198). A `oneOf` whose every variant is a single-value `const`
+  collapses to one typed enum class — eliminates 80 stub `UnimplementedError`
+  factories on Discord-shaped specs (#200).
+- **Newtype validation moves into the constructor.** A newtype with
+  `pattern` / `minimum` / `maxLength` etc. is always valid by
+  construction; `extension type const Foo._(String value)` gains a
+  public constructor body that runs the validators. The synthesized
+  round-trip test's example value is now schema-aware (regex-tested
+  candidates, `minLength`/`maxLength`-resized) so it satisfies the
+  schema's own rules. Per-call `validatePattern(...)` at API call sites
+  is dropped for newtype params — 327 broken call sites in Discord's
+  `default_api.dart` cleared (#194).
+- **`contentEncoding: base64`** on a `type: string` property renders as
+  `Uint8List` with `base64.encode` / `base64.decode` applied automatically
+  at the JSON boundary; nullable cases route through new
+  `maybeBase64Encode` / `maybeBase64Decode` helpers (#201).
+- **`example:` and `examples:` on parameters and headers** thread through
+  parse → resolve → render and surface in generated dartdoc as
+  `/// [paramName] example: \`value\`` (scalars in backticks; Map/List
+  in fenced ` ```json ` blocks). Schema examples use the same emission
+  point (#178).
+- **Inline `oneOf` / `anyOf` at property schema slots** are honored even
+  when the property also declares `type: [null, string, integer]` — the
+  explicit collection takes precedence over the multi-type expansion,
+  preserving per-variant detail like `format: date-time` (#174).
+- **Object schemas with required-only `oneOf` / `anyOf`** (every variant
+  is `{required: [...]}` with no shape of its own) parse as a plain object
+  with all properties optional; the xor constraint becomes a runtime
+  concern (#155).
+- **Pass-through bearer auth for `oauth2` and `openIdConnect`.** Both
+  deliver opaque bearer tokens at the wire level; route them through
+  `HttpSecurityScheme(scheme: 'bearer')` and reuse the existing bearer
+  plumbing. Token acquisition (grants, OIDC discovery, refresh) stays
+  the caller's responsibility via `ApiClient(readSecret: …)` (#126).
+- **Non-JSON success responses** (`text/plain`, `text/html`,
+  `application/octocat-stream`, …) return `response.body` directly
+  instead of crashing in `jsonDecode`. JSON responses are unchanged
+  (#127).
+- **CLI auto-sanitizes invalid Dart package names.** `space_gen -i
+  api.github.com.json -o /tmp/api.github.com` now succeeds; the package
+  name lands as `api_github_com` and the CLI logs the substitution.
+  Programmatic callers building `GeneratorConfig` directly still trip
+  the `validatePackageName` safety net (#123).
+- `space_gen` declares its `executables:` so `dart pub global activate
+  space_gen` puts a `space_gen` command on PATH (#118).
+- `example/` directory with a minimal petstore spec and CLI walkthrough,
+  for pub.dev's package-scoring `example/` check (#117).
+- Auto-publish to pub.dev on tag push via the canonical `dart-lang/setup-dart`
+  reusable workflow with OIDC auth (#116).
+
+### Bug fixes
+
+- **Round-trip correctness for nullable `oneOf`, `EmptyObject`, and
+  `additionalProperties`.** A nullable `oneOf` property emitted
+  `as Map<String, dynamic>` (non-nullable) and crashed on null round-trip;
+  `RenderEmptyObject` hard-coded `const $className()` on read and
+  `const <String, dynamic>{}` on write, dropping inner state; the
+  `additionalProperties` for-loop swept named-property keys into the
+  catch-all `entries` field. Closes 41 pre-existing failing round-trip
+  tests on the github regen (#184).
+- **Required-and-nullable keys** (OpenAPI 3.1 `type: [T, "null"]` plus
+  the property in `required`) now route through a new `checkedKey` helper
+  that verifies `containsKey` before reading. Previously the generated
+  `fromJson` silently accepted a missing key as null, contradicting the
+  generated round-trip test (#121).
+- **`allOf` synthesis merges required properties.** The
+  `ResolvedAllOf → RenderObject` synthesis dropped each member's
+  `requiredProperties` lists, silently making required fields nullable
+  in the constructor and hiding required-property tags from `oneOf`
+  dispatch detection (#150).
+- **Don't drop properties / required when `oneOf` is a sibling.** A
+  `type: object` schema with both `properties` / `required` AND
+  `oneOf` / `anyOf` siblings used to flip into oneOf-mode and lose the
+  parent's fields; now merges them into each variant at parse time when
+  every variant inline-refines the parent (#182).
+- **Multi-status sealed wrapper name collision.** When a top-level
+  schema and a multi-status operation's synthesized response wrapper
+  shared a name (e.g. `ThreadSearchResponse`), the renderer hard-computed
+  the wrapper class name without going through the naming pass — the
+  allocator's collision suffix wasn't applied. Wrapper names now consult
+  the allocator (#196).
+- **Array query / header parameters** serialize per OpenAPI defaults:
+  query (`style=form, explode=true`) emits `?key=v1&key=v2`; headers
+  (`style=simple, explode=false`) comma-join into one value. Previously
+  every array param shipped `List.toString()` URL-encoded as
+  `?tags=%5Ba%2C+b%5D` (#134). Non-default `style` / `explode` /
+  `allowReserved` now warn instead of silently producing wrong output
+  (#141).
+- **Trailing `?` on URLs without query params** is dropped (`Uri.replace`
+  always appends `?` even when the merged map is empty) (#140).
+- **Schema defaults** are substituted in `fromJson` for nullable
+  const-default fields. Previously `Foo.fromJson({}).isFavorited == null`
+  even though the spec declared `default: false`. Also fixes a latent
+  `WaitTimer(null)` crash in `RenderNumber.defaultValueString` (#128).
+- **Bool newtypes** suppress `avoid_positional_boolean_parameters` via a
+  per-file `// ignore_for_file:` directive — the type name is the
+  disambiguation. Directive carries its own justification block to
+  satisfy `document_ignores` (#124, #129).
+- **`comment_references` in generated dartdoc** is suppressed via a
+  per-file directive when a `///` line contains `[<token>]` not followed
+  by `(` (legitimate `[Foo](url)` markdown links left alone). Decision
+  happens at emit time, not as a post-walk readback (#130, #138).
+- **Backtick code spans** stay on one line when wrapping doc comments —
+  `wrapLines` now tracks backtick parity per line and refuses to break
+  inside an open span. Closes `unintended_html_in_doc_comment` hits
+  caused by long backticked descriptions like `` `heads/<branch name>` ``
+  (#125).
+- **Dotted schema names** (`.App.Features.Marketplace.Order.Foo` from
+  .NET / NSwag-style specs) collapse to underscores in `toSnakeCase`,
+  not pass through verbatim — fixes a hard-fail on real specs (#119).
+- **Non-enum identifiers** always camelCase under
+  `quirks.screamingCapsEnums`. The quirk's gate previously also covered
+  property and parameter names, so snake_case spec-side identifiers
+  like petstore's `api_key` survived into Dart variables and tripped
+  `non_constant_identifier_names`. Enum SCREAMING_CAPS preservation is
+  unaffected (#122).
+- **Required-param validators cascade.** A required (non-nullable)
+  parameter with multiple validators emits a `..` cascade chain
+  (`id..validateMaximum(10)..validateMinimum(1)`) instead of duplicated
+  receiver statements, silencing `cascade_invocations` (#197).
+- **`model_helpers.dart`** is no longer a single source of "noisy"
+  warnings: `unknown format` warnings demote to detail logs (#131); a
+  cluster of spurious "unused" warnings on misplaced spec fields
+  (vendor `x-*`, `maxProperties`, misplaced `required`, `webhooks`,
+  `externalDocs`) is silenced (#176).
+
+### Refactoring
+
+- The `oneOf` dispatch picker lifts off of the render tree and into a
+  dedicated `dispatch.dart` phase that operates on the resolved tree.
+  Dispatch decisions are a sealed `DispatchDecision` family
+  (`DiscriminatorDispatch`, `ShapeDispatch`, `HybridDispatch`,
+  `PredicateDispatch`, `NoDispatch`); the if-chain tag-field is a
+  sealed `Predicate` IR (`KeyExists`, `ArrayElementHasKey`,
+  `PropertyArrayFirstIsType`, `PropertyArrayItemShape`, `Always`); the
+  per-mode template-context shape is a sealed `_DispatchMode` so the
+  type system enforces "exactly one mode active" (#157, #158, #160).
+
 ## 1.1.0
 
 ### Features
