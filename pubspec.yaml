@@ -12,6 +12,7 @@ executables:
 dependencies:
   args: ^2.4.2
   collection: ^1.19.1
+  dart_style: ^3.0.0
   equatable: ^2.0.7
   file: ^7.0.0
   http: ^1.4.0
@@ -19,6 +20,7 @@ dependencies:
   meta: ^1.10.0
   mustache_template: ^2.0.0
   path: ^1.8.3
+  pub_semver: ^2.1.4
   scoped_deps: ^0.1.0+2
   version: ^3.0.2
   yaml: ^3.1.3

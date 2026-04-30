@@ -6,18 +6,15 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/quirks.dart';
+import 'package:space_gen/src/render/formatting.dart';
 import 'package:space_gen/src/render/render_tree.dart';
 import 'package:space_gen/src/render/schema_renderer.dart';
 import 'package:space_gen/src/render/templates.dart';
 import 'package:space_gen/src/render/tree_visitor.dart';
 import 'package:space_gen/src/string.dart';
 
-typedef RunProcess =
-    ProcessResult Function(
-      String executable,
-      List<String> arguments, {
-      String? workingDirectory,
-    });
+export 'package:space_gen/src/render/formatting.dart'
+    show Formatter, RunProcess;
 
 class _ModelCollector extends RenderTreeVisitor {
   final Set<RenderSchema> schemas = {};
@@ -72,137 +69,6 @@ void logNameCollisions(Iterable<RenderSchema> schemas) {
       }
     }
   }
-}
-
-/// Block prepended to generated `.dart` files that still contain a
-/// line over 80 cols after `dart format` / `dart fix`. The preceding
-/// comment satisfies the `document_ignores` lint from
-/// `very_good_analysis`. Exposed for tests.
-@visibleForTesting
-const longLineIgnoreBlock =
-    '// Some OpenAPI specs flatten inline schemas into class names long\n'
-    "// enough that `dart format` can't keep imports and call sites under\n"
-    '// 80 cols as bare identifiers.\n'
-    '// ignore_for_file: lines_longer_than_80_chars';
-
-/// Returns [content] with [longLineIgnoreBlock] prepended if any line
-/// outside the analyzer's existing carve-outs (URI imports/exports,
-/// `///` dartdoc) exceeds 80 cols. Threaded through
-/// [maybeAddIgnoreDirectives] at file-emit time on every
-/// space_gen-emitted file — hand-written templates skip the call so a
-/// directive isn't smuggled into files space_gen doesn't own.
-///
-/// Emit-time decision matches `maybeAddCommentReferencesIgnore`'s
-/// shape and avoids the previous post-walk pass that scanned every
-/// `.dart` in the output directory — including hand-written ones a
-/// subclass `FileRenderer` was deliberately preserving by overriding
-/// `renderClient` / `renderPublicApi` to no-ops. Skipping
-/// `import`/`export` lines mirrors the analyzer's own behavior:
-/// `lines_longer_than_80_chars` ignores URIs, so a long `import` was
-/// never going to fire the lint and shouldn't trigger the directive
-/// either (the unused directive in turn trips `unnecessary_ignore`).
-///
-/// `dart format` runs after this, so the check is on pre-format
-/// content. Format only reflows long lines shorter when wrapping
-/// points exist — it can't stretch a short line to >80 nor split a
-/// bare identifier — so pre-format detection is a safe overestimate
-/// for the files this generator emits.
-@visibleForTesting
-String maybeAddLongLineIgnore(String content) {
-  const marker = '// ignore_for_file: lines_longer_than_80_chars';
-  if (content.contains(marker)) return content;
-  final hasFlaggableLongLine = content.split('\n').any((line) {
-    if (line.length <= 80) return false;
-    final trimmed = line.trimLeft();
-    if (trimmed.startsWith('import ')) return false;
-    if (trimmed.startsWith('export ')) return false;
-    if (trimmed.startsWith('///')) return false;
-    return true;
-  });
-  if (!hasFlaggableLongLine) return content;
-  return '$longLineIgnoreBlock\n$content';
-}
-
-/// Block prepended to generated `.dart` files whose dartdoc contains
-/// `[…]` patterns that don't resolve (e.g. github's code-of-conduct
-/// description literally has the form "contacting the project team
-/// at \[EMAIL\]", and the MIT license template carries \[year\] and
-/// \[fullname\] placeholders). Exposed for tests.
-@visibleForTesting
-const commentReferencesIgnoreBlock =
-    '// Spec descriptions copy prose verbatim into dartdoc, where `[x]`\n'
-    '// inside a sentence (placeholder text, ALL_CAPS tokens, license\n'
-    '// templates) is parsed as a symbol reference even when no such\n'
-    '// symbol exists. Suppress file-locally so the lint stays live\n'
-    '// elsewhere; spec authors do not always escape brackets.\n'
-    '// ignore_for_file: comment_references';
-
-/// Returns [content] with [commentReferencesIgnoreBlock] prepended if
-/// any `///` doc comment carries a bracketed token that wouldn't
-/// resolve in scope. Threaded through [maybeAddIgnoreDirectives] at
-/// file-emit time on every space_gen-emitted file — hand-written
-/// templates skip the call so a spurious `[FormatException]`
-/// reference in their docs doesn't get silently suppressed when it
-/// should be fixed at the source.
-///
-/// "In scope" today means *declared as a top-level type in the same
-/// file* (class / enum / extension type / mixin). Imported names
-/// aren't tracked yet — see #142 — so a `[Foo]` ref to an imported
-/// type still triggers the directive even when it would resolve.
-/// Harmless: extra suppression doesn't break anything, just adds a
-/// 6-line preamble. The same-file check alone removes the bulk of
-/// false positives, where every dartdoc ref is a self-mention of the
-/// class the file declares.
-@visibleForTesting
-String maybeAddCommentReferencesIgnore(String content) {
-  final tokens = _bracketedDartdocTokens(content);
-  if (tokens.isEmpty) return content;
-  final declared = _topLevelDeclarations(content);
-  // For a member-style ref like `[Foo.fromJson]`, the analyzer resolves
-  // it iff the head (`Foo`) does — so check against the head, not the
-  // full token. Doesn't catch refs to inherited members reached without
-  // a qualifier (`[fromJson]`); those still trip the directive, which
-  // is fine.
-  bool resolvesLocally(String t) => declared.contains(t.split('.').first);
-  if (tokens.every(resolvesLocally)) return content;
-  return '$commentReferencesIgnoreBlock\n$content';
-}
-
-/// Composes the per-file emit-time suppression helpers applied by
-/// `_renderSpecTemplate`. Adding a new gen-time suppression to the
-/// pipeline is a single edit here; call sites stay unchanged.
-/// Hand-written templates use `_renderTemplate` instead and bypass
-/// this entirely (see #138's design rationale).
-@visibleForTesting
-String maybeAddIgnoreDirectives(String content) =>
-    maybeAddLongLineIgnore(maybeAddCommentReferencesIgnore(content));
-
-/// Collects every `[token]` bracketed reference inside a `///` doc
-/// comment, ignoring `[Foo](url)` markdown links (the `(?!\()` guard).
-Set<String> _bracketedDartdocTokens(String content) {
-  final tokenRe = RegExp(r'\[([^\]\s]+)\](?!\()');
-  final tokens = <String>{};
-  for (final line in content.split('\n')) {
-    final stripped = line.trimLeft();
-    if (!stripped.startsWith('///')) continue;
-    for (final m in tokenRe.allMatches(stripped)) {
-      tokens.add(m.group(1)!);
-    }
-  }
-  return tokens;
-}
-
-/// Collects the names of top-level type declarations the file emits.
-/// Covers the kinds the renderer actually produces: `class`, `enum`,
-/// `mixin`, and `extension type [const] Foo._(...)`. Names follow Dart
-/// style (start with uppercase). Imported names — and inherited
-/// members reached through `[fooMethod]` refs — aren't tracked.
-Set<String> _topLevelDeclarations(String content) {
-  final declRe = RegExp(
-    r'(?:class|enum|mixin|extension type(?:\s+const)?)\s+'
-    '([A-Z][A-Za-z0-9_]*)',
-  );
-  return declRe.allMatches(content).map((m) => m.group(1)!).toSet();
 }
 
 @visibleForTesting
@@ -267,51 +133,6 @@ class SpellChecker {
         .map((w) => w.toLowerCase())
         .toSet()
         .sorted();
-  }
-}
-
-class Formatter {
-  Formatter({RunProcess? runProcess})
-    : runProcess = runProcess ?? Process.runSync;
-
-  /// The function to run a process. Allows for mocking in tests.
-  final RunProcess runProcess;
-
-  /// Run a dart command.
-  void _runDart(List<String> args, {required String workingDirectory}) {
-    final command = 'dart ${args.join(' ')}';
-    logger
-      ..info('Running $command')
-      ..detail('$command in $workingDirectory');
-    final stopwatch = Stopwatch()..start();
-    final result = runProcess(
-      Platform.executable,
-      args,
-      workingDirectory: workingDirectory,
-    );
-    if (result.exitCode != 0) {
-      logger.info(result.stderr as String);
-      throw Exception('Failed to run dart ${args.join(' ')}');
-    }
-    final ms = stopwatch.elapsed.inMilliseconds;
-    logger
-      ..detail(result.stdout as String)
-      ..info('$command took $ms ms');
-  }
-
-  void formatAndFix({required String pkgDir}) {
-    // `pub get` (not `--offline`) so generation doesn't silently depend on
-    // whatever happens to be in the machine-global pub cache. On a warm
-    // cache the network round-trip is marginal; on a cold one (e.g. CI),
-    // `--offline` fails with a confusing "package X not in cache" error
-    // whenever a template dep isn't coincidentally also a space_gen dep.
-    _runDart(['pub', 'get'], workingDirectory: pkgDir);
-    // Run format first to add missing commas.
-    _runDart(['format', '.'], workingDirectory: pkgDir);
-    // Then run fix to clean up various other things.
-    _runDart(['fix', '.', '--apply'], workingDirectory: pkgDir);
-    // Run format again to fix wrapping of lines.
-    _runDart(['format', '.'], workingDirectory: pkgDir);
   }
 }
 
@@ -528,29 +349,24 @@ class FileRenderer {
   String modelPackageImport(FileRenderer context, RenderSchema schema) =>
       'package:${context.packageName}/${context.modelPackagePath(schema)}';
 
+  /// Lazily-constructed in-process Dart formatter, configured from
+  /// the consuming package's `pubspec` + `analysis_options.yaml`.
+  /// Reused across every `.dart` write.
+  late final _dartFormatter = DartFileFormatter(
+    fs: fileWriter.fs,
+    outDir: fileWriter.outDir,
+  );
+
   /// Render a hand-written template — pubspec, analysis_options,
   /// `auth.dart`, the `client.dart` facade, etc. The output is the
   /// template verbatim with no spec-derived class names spliced in,
-  /// so the gen-time lint suppressions don't apply. See
-  /// [_renderSpecTemplate] for the path that emits spec-derived
-  /// content.
+  /// so the gen-time lint suppressions don't apply. `.dart` outputs
+  /// are formatted in-process so the file lands on disk in canonical
+  /// shape; the global `dart format` step becomes a near no-op for
+  /// files we wrote (planned removal once every emit path is on this
+  /// contract). See [_renderSpecTemplate] for the path that emits
+  /// spec-derived content.
   void _renderTemplate({
-    required String template,
-    required String outPath,
-    Map<String, dynamic> context = const {},
-  }) {
-    final output = templates.loadTemplate(template).renderString(context);
-    fileWriter.writeFile(path: outPath, content: output);
-  }
-
-  /// Render a template that emits content shaped by the spec — model
-  /// files, api files, generated round-trip tests. The output is run
-  /// through [maybeAddIgnoreDirectives] before it lands on disk, which
-  /// adds the standard `// ignore_for_file:` block(s) for any lint
-  /// the gen-time content provably triggers. Adding a new gen-time
-  /// suppression is one edit inside [maybeAddIgnoreDirectives]; call
-  /// sites stay unchanged.
-  void _renderSpecTemplate({
     required String template,
     required String outPath,
     Map<String, dynamic> context = const {},
@@ -558,7 +374,27 @@ class FileRenderer {
     final output = templates.loadTemplate(template).renderString(context);
     fileWriter.writeFile(
       path: outPath,
-      content: maybeAddIgnoreDirectives(output),
+      content: _dartFormatter.formatIfDart(outPath, output),
+    );
+  }
+
+  /// Render a template that emits content shaped by the spec — model
+  /// files, api files, generated round-trip tests. The output is
+  /// formatted in-process (so the long-line check sees the same lines
+  /// the analyzer will), then run through [maybeAddIgnoreDirectives]
+  /// to add any necessary `// ignore_for_file:` block. Adding a new
+  /// gen-time suppression is one edit inside
+  /// [maybeAddIgnoreDirectives]; call sites stay unchanged.
+  void _renderSpecTemplate({
+    required String template,
+    required String outPath,
+    Map<String, dynamic> context = const {},
+  }) {
+    final output = templates.loadTemplate(template).renderString(context);
+    final formatted = _dartFormatter.formatIfDart(outPath, output);
+    fileWriter.writeFile(
+      path: outPath,
+      content: maybeAddIgnoreDirectives(formatted),
     );
   }
 
