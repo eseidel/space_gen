@@ -83,15 +83,12 @@ space_gen is iterated against a rotation of real-world OpenAPI specs.
 For each, the regenerated client is expected to `dart analyze` clean
 and its synthesized round-trip tests are expected to pass.
 
-- **GitHub REST API** (~1000 operations, OpenAPI 3.0) — `dart analyze`
-  clean; 6100+ generated round-trip tests pass. The bar we hold the
-  rest to.
-- **Discord API** (~511 schemas, ~141 paths, OpenAPI 3.1) — regenerates
-  end-to-end; remaining gaps surface as iteration topics, not blockers.
-- **SpaceTraders** — `dart analyze` clean.
-- **Train Travel API** (YAML, OpenAPI 3.1) — `dart analyze` clean.
-- **Petstore** (the OpenAPI canonical example) — `dart analyze` clean;
-  shipped under [`example/`](example/).
+- **GitHub REST API** (~1000 operations, OpenAPI 3.0) — Complete.
+- **Discord API** (~511 schemas, ~141 paths, OpenAPI 3.1) — In progress.
+- **SpaceTraders** — Complete.
+- **Train Travel API** (YAML, OpenAPI 3.1) — Complete.
+- **Petstore** (the OpenAPI canonical example) — Complete; shipped
+  under [`example/`](example/).
 
 If you try space_gen against a public spec and the output isn't
 clean, please [file an issue](https://github.com/eseidel/space_gen/issues).
