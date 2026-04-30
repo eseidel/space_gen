@@ -1496,7 +1496,7 @@ void main() {
     });
 
     test('null pattern pads "example" to minLength using last char', () {
-      expect(synthesizeStringSatisfying(minLength: 10), 'exampleeee');
+      expect(synthesizeStringSatisfying(minLength: 10), "example${'e' * 3}");
     });
 
     test('null pattern truncates "example" to maxLength', () {
@@ -1506,7 +1506,7 @@ void main() {
     test('invalid regex falls back to padded "example"', () {
       expect(
         synthesizeStringSatisfying(pattern: '(', minLength: 10),
-        'exampleeee',
+        "example${'e' * 3}",
       );
     });
 
@@ -1559,7 +1559,7 @@ void main() {
       // arm which returns `resize('example')`.
       expect(
         synthesizeStringSatisfying(pattern: r'^Z+$', minLength: 10),
-        'exampleeee',
+        "example${'e' * 3}",
       );
     });
   });
