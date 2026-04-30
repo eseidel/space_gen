@@ -1,4 +1,5 @@
 [![codecov](https://codecov.io/gh/eseidel/space_gen/graph/badge.svg?token=nOnPSYpPXi)](https://codecov.io/gh/eseidel/space_gen)
+[![Powered by Shorebird](https://img.shields.io/endpoint?url=https://tinyurl.com/shorebirddev)](https://shorebird.dev)
 
 # space_gen
 
