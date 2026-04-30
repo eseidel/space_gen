@@ -5,6 +5,7 @@ import 'package:dart_style/dart_style.dart';
 import 'package:file/file.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
+import 'package:pub_semver/pub_semver.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/quirks.dart';
 import 'package:space_gen/src/render/render_tree.dart';
@@ -12,6 +13,29 @@ import 'package:space_gen/src/render/schema_renderer.dart';
 import 'package:space_gen/src/render/templates.dart';
 import 'package:space_gen/src/render/tree_visitor.dart';
 import 'package:space_gen/src/string.dart';
+import 'package:yaml/yaml.dart';
+
+/// The settings [FileRenderer._formatIfDart] passes to
+/// [DartFormatter] for files in the consuming package.
+class _FormatContext {
+  const _FormatContext({
+    required this.languageVersion,
+    required this.pageWidth,
+    required this.trailingCommas,
+  });
+
+  final Version languageVersion;
+  final int? pageWidth;
+  final TrailingCommas? trailingCommas;
+}
+
+/// The subset of `analysis_options.yaml`'s `formatter:` section that
+/// [DartFormatter] can consume directly.
+class _FormatterConfig {
+  const _FormatterConfig({this.pageWidth, this.trailingCommas});
+  final int? pageWidth;
+  final TrailingCommas? trailingCommas;
+}
 
 typedef RunProcess =
     ProcessResult Function(
@@ -572,19 +596,164 @@ class FileRenderer {
   /// Format [content] with `package:dart_style`'s [DartFormatter] iff
   /// [outPath] is a `.dart` file. Non-Dart outputs (`pubspec.yaml`,
   /// `.gitignore`, `analysis_options.yaml`, `cspell.config.yaml`)
-  /// pass through unchanged. Formatting at write time means the line
-  /// counts the suppression helpers see match what the analyzer will
-  /// see, eliminating the over-trigger that the previous post-walk
-  /// pass had vs. pre-format content. The global `formatAndFix` step
-  /// still runs after all files are written; it remains useful for
-  /// `dart fix --apply` (auto-fixes that aren't pure formatting),
-  /// while the redundant `dart format` calls there will be removed
-  /// once every emit path is on this contract.
+  /// pass through unchanged.
+  ///
+  /// The formatter is configured to match what `dart format` would
+  /// produce in the consuming package — language version from the
+  /// nearest `pubspec.lock`/`pubspec.yaml`, `pageWidth` and
+  /// `trailingCommas` from the nearest `analysis_options.yaml`'s
+  /// `formatter:` section. This matters: a project running short
+  /// style (SDK < 3.7) or one that opts into `trailing_commas:
+  /// preserve` would otherwise see the formatter collapse multi-line
+  /// argument lists when our default tall-style formatter decides
+  /// they fit, and the trailing commas would not come back when the
+  /// global `dart format` runs against the consumer's actual style.
   String _formatIfDart(String outPath, String content) {
     if (!outPath.endsWith('.dart')) return content;
+    final ctx = _formatContext ??= _resolveFormatContext();
     return DartFormatter(
-      languageVersion: DartFormatter.latestLanguageVersion,
+      languageVersion: ctx.languageVersion,
+      pageWidth: ctx.pageWidth,
+      trailingCommas: ctx.trailingCommas,
     ).format(content);
+  }
+
+  /// Cached per-output-package formatter config. Resolved on the first
+  /// `.dart` write and reused for every subsequent file.
+  _FormatContext? _formatContext;
+
+  /// Walk up from [`fileWriter.outDir`] collecting the SDK constraint
+  /// (for language version) and any `formatter:` config from
+  /// `analysis_options.yaml`. Mirrors what `dart format` does when
+  /// invoked on a package — including respecting workspace setups
+  /// where the package's own `analysis_options.yaml` only `include:`s
+  /// a parent file at the workspace root.
+  ///
+  /// Resolution order at each directory:
+  /// - `pubspec.lock` → `sdks.dart` lower bound (most authoritative,
+  ///   set by the most recent `pub get`).
+  /// - `pubspec.yaml` → `environment.sdk` lower bound (fallback before
+  ///   any `pub get`).
+  /// - `analysis_options.yaml` → `formatter:` page width and trailing
+  ///   commas. Follows simple relative-path `include:` directives;
+  ///   `package:` includes are skipped (resolving them would require
+  ///   running pub).
+  ///
+  /// Falls back to [DartFormatter.latestLanguageVersion] and `dart_style`
+  /// defaults when nothing is found.
+  _FormatContext _resolveFormatContext() {
+    Version? languageVersion;
+    int? pageWidth;
+    TrailingCommas? trailingCommas;
+    var dir = fileWriter.outDir;
+    while (true) {
+      languageVersion ??= _readSdkLowerBound(dir);
+      final analysisOptsPath = p.join(dir.path, 'analysis_options.yaml');
+      final analysisOpts = fileWriter.fs.file(analysisOptsPath);
+      if (analysisOpts.existsSync()) {
+        final formatter = _readFormatterConfig(analysisOpts);
+        pageWidth ??= formatter.pageWidth;
+        trailingCommas ??= formatter.trailingCommas;
+      }
+      if (languageVersion != null &&
+          pageWidth != null &&
+          trailingCommas != null) {
+        break;
+      }
+      final parent = dir.parent;
+      if (parent.path == dir.path) break;
+      dir = parent;
+    }
+    return _FormatContext(
+      languageVersion: languageVersion ?? DartFormatter.latestLanguageVersion,
+      pageWidth: pageWidth,
+      trailingCommas: trailingCommas,
+    );
+  }
+
+  /// Read the SDK constraint's lower bound from [dir]'s `pubspec.lock`
+  /// (preferred — reflects the resolved SDK from the most recent `pub
+  /// get`) or `pubspec.yaml` (fallback). Returns null if neither file
+  /// exists in [dir] or neither carries a parsable Dart constraint.
+  Version? _readSdkLowerBound(Directory dir) {
+    Version? fromConstraintString(String? constraint) {
+      if (constraint == null) return null;
+      try {
+        final parsed = VersionConstraint.parse(constraint);
+        return parsed is VersionRange ? parsed.min : null;
+      } on FormatException {
+        return null;
+      }
+    }
+
+    final lock = fileWriter.fs.file(p.join(dir.path, 'pubspec.lock'));
+    if (lock.existsSync()) {
+      try {
+        final yaml = loadYaml(lock.readAsStringSync());
+        if (yaml is Map) {
+          final sdks = yaml['sdks'];
+          if (sdks is Map) {
+            final v = fromConstraintString(sdks['dart'] as String?);
+            if (v != null) return v;
+          }
+        }
+      } on YamlException {
+        // Fall through to pubspec.yaml.
+      }
+    }
+    final spec = fileWriter.fs.file(p.join(dir.path, 'pubspec.yaml'));
+    if (spec.existsSync()) {
+      try {
+        final yaml = loadYaml(spec.readAsStringSync());
+        if (yaml is Map) {
+          final env = yaml['environment'];
+          if (env is Map) {
+            return fromConstraintString(env['sdk'] as String?);
+          }
+        }
+      } on YamlException {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /// Read `formatter:` settings out of [analysisOpts], following a
+  /// single relative-path `include:` if the local file doesn't carry
+  /// the section itself. Workspaces commonly have a package-level
+  /// `analysis_options.yaml` that only `include:`s the workspace
+  /// root's. `package:`-scheme includes are not followed (we'd need
+  /// to resolve the package URI through pub).
+  _FormatterConfig _readFormatterConfig(File analysisOpts) {
+    try {
+      final yaml = loadYaml(analysisOpts.readAsStringSync());
+      if (yaml is! Map) return const _FormatterConfig();
+      final formatter = yaml['formatter'];
+      if (formatter is Map) {
+        final pageWidth = formatter['page_width'];
+        final trailingCommasStr = formatter['trailing_commas'];
+        final trailingCommas = switch (trailingCommasStr) {
+          'preserve' => TrailingCommas.preserve,
+          'automate' => TrailingCommas.automate,
+          _ => null,
+        };
+        return _FormatterConfig(
+          pageWidth: pageWidth is int ? pageWidth : null,
+          trailingCommas: trailingCommas,
+        );
+      }
+      // No formatter: section here — try a single include if present.
+      final include = yaml['include'];
+      if (include is String && !include.startsWith('package:')) {
+        final resolved = fileWriter.fs.file(
+          p.normalize(p.join(analysisOpts.parent.path, include)),
+        );
+        if (resolved.existsSync()) return _readFormatterConfig(resolved);
+      }
+      return const _FormatterConfig();
+    } on YamlException {
+      return const _FormatterConfig();
+    }
   }
 
   /// Set up the package directory (creates [fileWriter]'s outDir and
