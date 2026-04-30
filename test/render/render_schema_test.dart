@@ -1821,58 +1821,32 @@ void main() {
       // this and falls back to a position-based wrapper name
       // (`TestVariant1`).
       //
-      // Every dispatch kind now smooshes inline `ResolvedObject`
-      // variants, so the doubling-fallback never fires for plain
-      // inline objects anymore. To exercise the fallback we need an
-      // inline variant that *isn't* `ResolvedObject` — an inline
-      // multi-member `allOf` qualifies. The structural smoosh
-      // predicate excludes `ResolvedAllOf`, so the wrapper still
-      // gets emitted and trips the doubling check.
-      //
-      // Two members are deliberate: the resolver collapses a
-      // single-member `allOf` to its inner schema (eliding the
-      // allOf), which would defeat the test setup. Two members
-      // forces the `allOf` to survive resolution as `ResolvedAllOf`.
-      final results = renderTestSchemas(
-        {
-          'Test': {
-            'oneOf': [
-              {'type': 'string'},
-              {
-                'allOf': [
-                  {r'$ref': '#/components/schemas/A'},
-                  {r'$ref': '#/components/schemas/B'},
-                ],
-              },
-            ],
+      // Every dispatch kind now smooshes inline `ResolvedObject` and
+      // `ResolvedAllOf` variants, so the doubling-fallback never
+      // fires for those anymore. To exercise the fallback we need an
+      // inline variant that's neither — an inline `ResolvedEnum`
+      // qualifies. The structural smoosh predicate excludes enums,
+      // so the wrapper still gets emitted and trips the doubling
+      // check. (This mirrors github's `gists_create_request_public`,
+      // which has `oneOf: [boolean, string-enum]`.)
+      final result = renderTestSchema({
+        'oneOf': [
+          {'type': 'boolean'},
+          {
+            'type': 'string',
+            'enum': ['true', 'false'],
           },
-          'A': {
-            'type': 'object',
-            'required': ['a'],
-            'properties': {
-              'a': {'type': 'string'},
-            },
-          },
-          'B': {
-            'type': 'object',
-            'required': ['b'],
-            'properties': {
-              'b': {'type': 'string'},
-            },
-          },
-        },
-        specUrl: Uri.parse('file:///spec.yaml'),
-      );
-      final test = results['Test']!;
-      // The string variant gets the structural `TestString` wrapper.
-      expect(test, contains('final class TestString extends Test'));
-      // The inline allOf variant's parser-synthesized name starts
+        ],
+      });
+      // The boolean variant gets the structural `TestBool` wrapper.
+      expect(result, contains('final class TestBool extends Test'));
+      // The inline enum variant's parser-synthesized name starts
       // with the parent (`TestOneOf1`), so naive composition would
       // give `TestTestOneOf1`; the fallback collapses to
       // `TestVariant1`.
-      expect(test, contains('final class TestVariant1 extends Test'));
-      expect(test, contains('final TestOneOf1 value;'));
-      expect(test, isNot(contains('TestTestOneOf')));
+      expect(result, contains('final class TestVariant1 extends Test'));
+      expect(result, contains('final TestOneOf1 value;'));
+      expect(result, isNot(contains('TestTestOneOf')));
     });
 
     test('predicate-required dispatch smooshes inline-object variants: '
@@ -2840,6 +2814,81 @@ void main() {
       expect(result, isNot(contains('class TestVariant0')));
       expect(result, isNot(contains('TestOneOf0 value')));
       expect(result, isNot(contains('TestOneOf1 value')));
+    });
+
+    test('discriminator dispatch smooshes inline-allOf variants: the '
+        'merged class extends the sealed parent directly', () {
+      // github's `repository-rule-detailed` shape: each oneOf variant
+      // is `allOf: [<rule-X>, <ruleset-info>]`, where the rule-X
+      // member carries the discriminator (`type` is a single-value
+      // enum). The synthesized merged class smooshes — extends the
+      // sealed parent, no separate wrapper, dispatch case arms call
+      // it directly.
+      final results = renderTestSchemas(
+        {
+          'Rule': {
+            'oneOf': [
+              {
+                'allOf': [
+                  {r'$ref': '#/components/schemas/Creation'},
+                  {r'$ref': '#/components/schemas/Meta'},
+                ],
+              },
+              {
+                'allOf': [
+                  {r'$ref': '#/components/schemas/Deletion'},
+                  {r'$ref': '#/components/schemas/Meta'},
+                ],
+              },
+            ],
+          },
+          'Creation': {
+            'type': 'object',
+            'required': ['type'],
+            'properties': {
+              'type': {
+                'type': 'string',
+                'enum': ['creation'],
+              },
+            },
+          },
+          'Deletion': {
+            'type': 'object',
+            'required': ['type'],
+            'properties': {
+              'type': {
+                'type': 'string',
+                'enum': ['deletion'],
+              },
+            },
+          },
+          'Meta': {
+            'type': 'object',
+            'required': ['ruleset_id'],
+            'properties': {
+              'ruleset_id': {'type': 'integer'},
+            },
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final rule = results['Rule']!;
+      // Discriminator dispatch on `type` calls the merged class
+      // directly — no `<Wrapper>(<Merged>.fromJson(...))` outer call.
+      expect(rule, contains("final discriminator = json['type']"));
+      expect(rule, contains("'creation' => RuleOneOf0.fromJson(json)"));
+      expect(rule, contains("'deletion' => RuleOneOf1.fromJson(json)"));
+      // Each merged class is inlined into the parent's file as a
+      // direct sealed subclass.
+      expect(rule, contains('final class RuleOneOf0 extends Rule'));
+      expect(rule, contains('final class RuleOneOf1 extends Rule'));
+      // Merged properties from both allOf members are present in the
+      // smooshed class.
+      expect(rule, contains('this.rulesetId'));
+      // No wrapper subclasses survive in the parent file.
+      expect(rule, isNot(contains('class RuleVariant0')));
+      expect(rule, isNot(contains('RuleOneOf0 value')));
+      expect(rule, isNot(contains('RuleOneOf1 value')));
     });
 
     test('implicit-discriminator dispatch falls back when the single-enum '

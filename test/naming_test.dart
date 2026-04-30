@@ -610,6 +610,28 @@ void main() {
         ),
         'Pet',
       );
+      // The inline `allOf` variants of `PetDetailed` *also* smoosh:
+      // the synthesized merged class extends `PetDetailed` directly,
+      // no wrapper subclass is claimed for either slot.
+      final petDetailed = JsonPointer.parse(
+        '#/components/schemas/PetDetailed',
+      );
+      expect(
+        names.parentSealedTypeFor(petDetailed.add('oneOf').add('0')),
+        'PetDetailed',
+      );
+      expect(
+        names.parentSealedTypeFor(petDetailed.add('oneOf').add('1')),
+        'PetDetailed',
+      );
+      expect(
+        names.maybeGet(AssignedNames.wrapperPointer(petDetailed, 0)),
+        isNull,
+      );
+      expect(
+        names.maybeGet(AssignedNames.wrapperPointer(petDetailed, 1)),
+        isNull,
+      );
     });
 
     test('array-element dispatch wraps per-variant items with '

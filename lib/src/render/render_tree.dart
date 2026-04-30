@@ -614,6 +614,7 @@ class SpecResolver {
           common: schema.common,
           properties: properties,
           requiredProperties: requiredProperties.toList(),
+          parentSealedTypeName: _names.parentSealedTypeFor(schema.pointer),
           assignedName: _nameFor(schema.pointer),
           assignedSnakeName: _snakeFor(schema.pointer),
         );
