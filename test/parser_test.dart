@@ -2140,6 +2140,39 @@ void main() {
         final schema = parseTestSchema(json);
         expect(schema, isA<SchemaOneOf>());
       });
+      test('oneOf-of-consts with a pod format does NOT collapse', () {
+        // Parent declares `format: date-time`, which would render as
+        // a `DateTime` newtype. Collapsing to `SchemaStringEnum` here
+        // would silently downgrade the typed pod to a String enum —
+        // bail and let the regular oneOf path handle the spec.
+        final json = {
+          'type': 'string',
+          'format': 'date-time',
+          'oneOf': [
+            {'const': '2024-01-01T00:00:00Z'},
+            {'const': '2024-12-31T23:59:59Z'},
+          ],
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaOneOf>());
+      });
+      test('oneOf-of-consts type/value mismatch does NOT collapse', () {
+        // Parent says `type: integer` but the consts are strings —
+        // an internally-inconsistent spec. Bail rather than silently
+        // pick a coercion direction; the regular oneOf path's warnings
+        // are more honest.
+        final json = {
+          'type': 'integer',
+          'oneOf': [
+            {'const': 'one'},
+            {'const': 'two'},
+          ],
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaOneOf>());
+      });
       test('oneOf-of-consts with mixed value types does NOT collapse', () {
         // If consts mix int and string types (unusual but spec-legal),
         // we can't pick one Dart enum value type — fall through to

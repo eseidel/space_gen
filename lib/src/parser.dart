@@ -435,6 +435,7 @@ SchemaDiscriminator? _parseDiscriminator(MapContext json) {
 Schema? _handleCollectionTypes(
   MapContext json, {
   required CommonProperties common,
+  required TypeAndFormat typeAndFormat,
 }) {
   if (json.containsKey('oneOf')) {
     if (_isConstraintOnlyCollection(json, 'oneOf')) {
@@ -448,7 +449,11 @@ Schema? _handleCollectionTypes(
     // `UnimplementedError` `fromJson` (no discriminator to pick a
     // variant). Collapse to `SchemaIntEnum` / `SchemaStringEnum` so
     // they generate clean enum types instead.
-    final collapsed = _maybeCollapseOneOfOfConsts(json, common: common);
+    final collapsed = _maybeCollapseOneOfOfConsts(
+      json,
+      common: common,
+      typeAndFormat: typeAndFormat,
+    );
     if (collapsed != null) {
       return collapsed;
     }
@@ -558,14 +563,27 @@ bool _isConstraintOnlyCollection(MapContext json, String collectionKey) {
 /// `MessageComponentTypes`: `{type: integer, oneOf: [{title: 'ACTION_ROW',
 /// const: 1}, {title: 'BUTTON', const: 2}, ...]}`.
 ///
-/// Returns the collapsed `SchemaIntEnum` / `SchemaStringEnum` when
-/// the pattern matches, or null to fall through to the regular
-/// oneOf-parse path. Parent `type:` is read for type-shape validation
-/// but isn't required (the const literal types determine the result).
+/// Trusts the parent's `type:` / `format:` the same way `_handleEnum`
+/// does. Bails (returns null) when the parent has a `format:` that
+/// would produce a `SchemaPod` (date, date-time, uri, email, uuid,
+/// boolean), since collapsing to `SchemaStringEnum` / `SchemaIntEnum`
+/// would silently drop the pod typing — the spec author asked for a
+/// `DateTime` (or similar) and we'd give them a `String` enum. Also
+/// bails on cross-type mismatches (declared `type: integer` but
+/// string-shaped consts, etc.).
+///
+/// Returns the collapsed enum schema when it cleanly fits, or null to
+/// fall through to the regular oneOf-parse path.
 Schema? _maybeCollapseOneOfOfConsts(
   MapContext json, {
   required CommonProperties common,
+  required TypeAndFormat typeAndFormat,
 }) {
+  // Pod formats (date-time, uri, email, uuid, etc.) name a typed Dart
+  // representation that a `String`/`int` enum couldn't carry. Don't
+  // collapse — let the regular oneOf path handle it (and surface any
+  // gaps as warnings).
+  if (typeAndFormat.podType != null) return null;
   final list = json['oneOf'];
   if (list is! List || list.isEmpty) return null;
   // Every variant must be a const-only map (with optional title and
@@ -587,25 +605,40 @@ Schema? _maybeCollapseOneOfOfConsts(
     values.add(variant['const']);
     descriptions.add(variant['description'] as String?);
   }
-  // Mixed-type consts — fall through to the regular oneOf path
-  // before consuming any keys, so downstream parsing sees the
-  // original shape.
-  final isAllInt = values.every((v) => v is int);
-  final isAllString = values.every((v) => v is String);
-  if (!isAllInt && !isAllString) return null;
-  // Mark `oneOf` consumed so it doesn't show as unused. Same for
-  // `type:` (informational on the parent) and `format:` (Discord
-  // puts `format: int32` on integer-enum parents).
-  json
-    ..markUsed('oneOf')
-    ..markUsed('type')
-    ..markUsed('format');
+  // Pick string vs int from the parent's declared `type:`, falling
+  // back to value-shape inference when `type:` is absent (matches the
+  // pattern in `_handleEnum`). When the declared type and the values
+  // disagree, bail — the spec is internally inconsistent and the
+  // regular oneOf path's warnings are more honest than a silent
+  // type-coercion.
+  final declaredType = typeAndFormat.type;
+  final bool isInt;
+  if (declaredType == 'integer') {
+    if (!values.every((v) => v is int)) return null;
+    isInt = true;
+  } else if (declaredType == 'string') {
+    if (!values.every((v) => v is String)) return null;
+    isInt = false;
+  } else if (declaredType == null) {
+    final allInt = values.every((v) => v is int);
+    final allString = values.every((v) => v is String);
+    if (!allInt && !allString) return null;
+    isInt = allInt;
+  } else {
+    // Other types (boolean, array, object) don't have a clean enum
+    // collapse — fall through.
+    return null;
+  }
+  // `type:` and `format:` on the parent were already consumed by
+  // `parseTypeAndFormat` upstream; `oneOf` was consumed by the
+  // `json['oneOf']` read above. No extra `markUsed` needed.
+  //
   // If any variant declared a description, plumb the parallel list
   // through `enumDescriptions`. If none did, leave it null.
   final descriptionsToPlumb = descriptions.any((d) => d != null)
       ? descriptions.map((d) => d ?? '').toList()
       : null;
-  if (isAllInt) {
+  if (isInt) {
     return SchemaIntEnum(
       common: common,
       defaultValue: null,
@@ -1115,7 +1148,11 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   // `oneOf`/`anyOf` do. The fallback below still routes it through
   // `_handleCollectionTypes`.
   if (json.containsKey('oneOf') || json.containsKey('anyOf')) {
-    final union = _handleCollectionTypes(json, common: common);
+    final union = _handleCollectionTypes(
+      json,
+      common: common,
+      typeAndFormat: typeAndFormat,
+    );
     if (union != null) {
       return union;
     }
@@ -1151,7 +1188,11 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   // a parallel `type:` array); this catches allOf, plus the
   // constraint-only oneOf/anyOf shapes that return null and fall
   // through to plain object parsing.
-  final collectionType = _handleCollectionTypes(json, common: common);
+  final collectionType = _handleCollectionTypes(
+    json,
+    common: common,
+    typeAndFormat: typeAndFormat,
+  );
   if (collectionType != null) {
     return collectionType;
   }
