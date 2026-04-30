@@ -14,7 +14,7 @@ description: |
   any spec-driven follow-up.
 ---
 
-# State as of 2026-04-29 (Discord added to rotation)
+# State as of 2026-04-30 (Discord blockers cleared)
 
 ## What this is
 
@@ -35,9 +35,12 @@ parallel to the repo, not checked in):
 - **Discord** — `discord.json`, ~511 schemas / 141 paths. OpenAPI
   3.1. Snowflake IDs are `type: string` with a numeric pattern (so
   no int64 wire-format trap), but exposes patterns github doesn't:
-  bitfield-style integer enums (132 sites), `type: string` newtype
-  schemas with regex patterns (327 `validatePattern` call sites).
-  Currently does NOT regen cleanly — see "Discord status" below.
+  bitfield-style integer enums (132 sites, closed by #192), and
+  `type: string` newtype schemas with regex patterns (327
+  `validatePattern` call sites, closed by #194). Both blockers
+  cleared as of 2026-04-30 — Discord regen progresses well past
+  the parser-throw and the validation-call-site bug. Remaining
+  failures are different gaps surfaced by the now-deeper traversal.
 - **petstore** — `petstore.json`, the OpenAPI canonical example.
   Smoke test for the basics.
 - **spacetraders** — `spacetraders.json`. Smaller real spec.
@@ -71,28 +74,28 @@ top-level $refs), #189 (inline allOf — `RepositoryRuleDetailed`'s
 arcs settled; structural dedup of operation-synthesized oneOfs
 landed in #180.
 
-**Discord status:** Does NOT yet regen cleanly. Two pre-existing
-blockers Discord surfaced that github didn't:
+**Discord status:** Both pre-existing parser/render blockers are
+now closed:
 
-- **Integer enums (132 sites)** — parser hard-throws on
-  `type: integer, enum: [...]`. Most are single-value tags
-  (`enum: [1]`) used as oneOf discriminators, same role github
-  uses string tags for. `_handleEnum` in `lib/src/parser.dart`
-  only accepts `type: string` today. Fixing this likely also
-  generalizes `SchemaEnum.enumValues: List<String>` to support
-  ints — and probably composes with the multi-value-enum implicit
-  discriminator picker from #182.
-- **Pattern validation on newtype Strings (327 call sites in
-  `default_api.dart` alone)** — generates uncompilable Dart like
-  `applicationId.validatePattern('^...$')` where `applicationId:
-  SnowflakeType` is an `extension type` around `String`.
-  `validatePattern` is on the underlying `String`, not the
-  extension type. Either move the regex into the newtype's
-  constructor (validate once at construction) or splice
-  `.value.validatePattern(...)` at the call site.
+- **Integer enums (132 sites)** — closed by **#192**. Generalized
+  `SchemaEnum.enumValues` from `List<String>` to a typed family
+  (`SchemaStringEnum` / `SchemaIntegerEnum`) mirroring the existing
+  `SchemaNumeric<T>` split. Composes with the multi-value-enum
+  implicit discriminator picker from #182.
+- **Pattern validation on newtype Strings (327 call sites)** —
+  closed by **#194**, taking the principled route. Validation now
+  lives in the newtype's own constructor (validate once at
+  construction) rather than at every API call site. Required
+  making synthesized example values actually satisfy their schema
+  (regex-aware candidate testing for strings, range/multipleOf-
+  aware for numerics) so the auto-generated round-trip tests
+  don't throw `ArgumentError` from `const Foo('example')` against
+  a regex newtype.
 
-Once both are fixed, expect more downstream gaps to surface — the
-parser hard-throw blocks visibility of everything past it.
+The next thing to do with Discord is **regen and assess** — the
+deeper traversal will surface gaps that the parser-throw was
+masking. Run a `-v` regen and tally the warnings (see "Discovery"
+below).
 
 Discord notably does NOT motivate the int64/web design call from
 issue #185: their snowflake IDs are JSON strings with a numeric
@@ -275,6 +278,9 @@ Follow-on PRs landed since (after the 2026-04-29 wave):
 |---|---|
 | #189 | Smoosh inline allOf variants — `RepositoryRuleDetailed`'s 21 inline `allOf` oneOf variants fold into the sealed parent; structural smoosh predicate now accepts `ResolvedAllOf` for inline cases |
 | #190 | Strip dead Equatable from 18 parse-tree types (`Schema` family, `Operation`, `OpenApi`, etc.); resolver/render Equatable kept (load-bearing for `_collectionCache` and `_ModelCollector`); coverage tests added pinning the load-bearing usages |
+| #191 | Reframe spec-iteration skill from github-primary to a rotation across all gen_tests specs; add Discord with its blockers documented |
+| #192 | Parse and render integer enums (`type: integer, enum: [...]`); typed `SchemaStringEnum` / `SchemaIntegerEnum` family. Closes Discord's first blocker |
+| #194 | Synthesize valid example values + move newtype validation into the newtype's constructor (regex-aware string synthesizer; range/multipleOf-aware numeric synthesizer). Closes Discord's second blocker |
 
 The earlier dispatch + naming + smoosh arc (#157–#170, #172):
 
@@ -342,33 +348,13 @@ Warnings come from `_warnUnused` / `_warnIgnored` in
 `lib/src/parser.dart`. To see what fields a parser visit *handles*
 vs ignores, search there.
 
-### Discord blockers (immediate next iteration)
+### Discord — what's next
 
-Surfaced when Discord's spec was added to the rotation. Each
-unblocks more visibility — fix the parser-throw first, then
-re-regen and assess from the new baseline.
-
-- **Integer enums** — 132 sites in Discord, 0 in github. Parser
-  hard-throws at `_handleEnum` in `lib/src/parser.dart` when
-  `type: integer` is paired with `enum: [...]`. Most uses are
-  single-value tags (`enum: [1]`) used as oneOf discriminators —
-  same role github uses string tags for. The fix likely
-  generalizes `SchemaEnum.enumValues: List<String>` to support
-  ints, plumbs through resolve/render, and composes with the
-  multi-value-enum implicit discriminator picker from #182. Would
-  unblock Discord parsing and probably Stripe / many other specs.
-
-- **Pattern validation on newtype Strings** — 327 call sites in
-  Discord's `default_api.dart`, 0 affected in github (github
-  doesn't use top-level `type: string` newtypes with patterns).
-  Generated code calls `applicationId.validatePattern('^...$')`
-  where `applicationId: SnowflakeType` is an `extension type`
-  around `String`; `validatePattern` is on the underlying String,
-  not the extension type. Two design options: (a) move the regex
-  into the newtype's constructor (validate once at construction,
-  matches how `validateMaximumLength` etc. could also fold in),
-  (b) splice `.value.validatePattern(...)` at the call site
-  (preserves current "validate at every use" semantics).
+Both pre-existing blockers are closed (#192 + #194). The next
+useful step is: regen Discord with `-v`, tally the warnings (see
+"Discovery" command above), and pick from there. Whatever now
+surfaces past the deeper traversal is a feature gap that wasn't
+visible while the parser was throwing.
 
 ### Tracking issues (the high-leverage tracks, partially open)
 
