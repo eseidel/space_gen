@@ -151,109 +151,6 @@ void main() {
     });
   });
 
-  group('Schema equality', () {
-    test('OpenApi equals', () {
-      final jsonOne = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {
-              'summary': 'Get user',
-              'parameters': [
-                {
-                  'name': 'foo',
-                  'in': 'query',
-                  'required': true,
-                  'schema': {'type': 'string'},
-                },
-              ],
-              'responses': {
-                '200': {
-                  'description': 'OK',
-                  'content': {
-                    'application/json': {
-                      'schema': {'type': 'object'},
-                    },
-                  },
-                  'headers': {
-                    'X-Foo': {
-                      'description': 'Foo',
-                      'schema': {'type': 'string'},
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        'components': {
-          'schemas': {
-            'Foo': {'type': 'object'},
-            'Bar': {
-              'anyOf': [
-                {'type': 'boolean'},
-                {'type': 'string'},
-              ],
-            },
-            'Baz': {
-              'allOf': [
-                {'type': 'boolean'},
-                {'type': 'string'},
-              ],
-            },
-            'Qux': {
-              'oneOf': [
-                {'type': 'boolean'},
-                {'type': 'string'},
-              ],
-            },
-            'Map': {
-              'type': 'object',
-              'additionalProperties': {'type': 'string'},
-            },
-            'Enum': {
-              'type': 'string',
-              'enum': ['foo', 'bar', 'baz'],
-            },
-            'Array': {
-              'type': 'array',
-              'items': {'type': 'string'},
-            },
-          },
-        },
-      };
-      final jsonTwo = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': {
-          '/users': {
-            'get': {
-              'summary': 'Get user',
-              'responses': {
-                '200': {'description': 'OK'},
-              },
-            },
-          },
-        },
-      };
-      final logger = _MockLogger();
-      final specOne = runWithLogger(logger, () => parseOpenApi(jsonOne));
-      final specTwo = runWithLogger(logger, () => parseOpenApi(jsonOne));
-      final specThree = runWithLogger(logger, () => parseOpenApi(jsonTwo));
-      expect(specOne, specTwo);
-      expect(specOne, isNot(specThree));
-      expect(specOne.hashCode, specTwo.hashCode);
-      expect(specOne.hashCode, isNot(specThree.hashCode));
-    });
-  });
-
   group('parser', () {
     Map<String, SchemaRef> parseTestSchemas(Map<String, dynamic> schemasJson) {
       final specJson = {
@@ -2463,17 +2360,11 @@ void main() {
         };
         final spec = parseOpenApi(json);
         expect(spec.securityRequirements.length, 1);
-        expect(
-          spec.securityRequirements[0],
-          equals(
-            SecurityRequirement(
-              conditions: const {
-                'apiKey': ['scope1', 'scope2'],
-              },
-              pointer: JsonPointer.parse('#/security/0'),
-            ),
-          ),
-        );
+        final req = spec.securityRequirements[0];
+        expect(req.conditions, {
+          'apiKey': ['scope1', 'scope2'],
+        });
+        expect(req.pointer, JsonPointer.parse('#/security/0'));
         expect(spec.components.securitySchemes.length, 1);
         expect(
           spec.components.securitySchemes[0],

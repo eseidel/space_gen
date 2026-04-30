@@ -1009,6 +1009,85 @@ void main() {
     });
   });
 
+  group('RenderSchema equality (load-bearing)', () {
+    // _ModelCollector in file_renderer.dart accumulates a
+    // `Set<RenderSchema>` while walking the render tree and relies on
+    // `==` / `hashCode` to dedup duplicate-pointer instances.
+    // `toRenderSchema` produces a fresh instance per `$ref` site (no
+    // instance caching), so without dedup we'd try to emit the same
+    // `lib/models/<name>.dart` file twice and `writeFile` would throw.
+    // These tests document that invariant — if someone removes the
+    // equality contract from `RenderSchema`, the github regen will
+    // crash with "File already written" and these tests will surface
+    // the cause earlier.
+
+    test('two RenderObject instances with the same pointer compare equal', () {
+      const a = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'user',
+          pointer: JsonPointer.empty(),
+        ),
+        properties: <String, RenderSchema>{},
+        assignedName: 'User',
+        assignedSnakeName: 'user',
+      );
+      const b = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'user',
+          pointer: JsonPointer.empty(),
+        ),
+        properties: <String, RenderSchema>{},
+        assignedName: 'User',
+        assignedSnakeName: 'user',
+      );
+      expect(a, equals(b));
+      expect(a.hashCode, equals(b.hashCode));
+    });
+
+    test('two RenderObjects with different pointers do NOT compare equal', () {
+      const a = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'user',
+          pointer: JsonPointer.empty(),
+        ),
+        properties: <String, RenderSchema>{},
+        assignedName: 'User',
+        assignedSnakeName: 'user',
+      );
+      final b = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'user',
+          pointer: JsonPointer.parse('#/components/schemas/User'),
+        ),
+        properties: const <String, RenderSchema>{},
+        assignedName: 'User',
+        assignedSnakeName: 'user',
+      );
+      expect(a, isNot(equals(b)));
+    });
+  });
+
+  group('Import equality (load-bearing)', () {
+    // _ImportCollector in file_renderer.dart accumulates a
+    // `Set<Import>` from each schema's `additionalImports`. Equality
+    // dedup keeps the rendered import list minimal — without it,
+    // every primitive that imports `package:meta/meta.dart` would
+    // emit a duplicate import line.
+
+    test('imports with identical fields compare equal', () {
+      const a = Import('package:meta/meta.dart');
+      const b = Import('package:meta/meta.dart');
+      expect(a, equals(b));
+      expect(a.hashCode, equals(b.hashCode));
+    });
+
+    test('imports with different shown lists do NOT compare equal', () {
+      const a = Import('package:uri/uri.dart', shown: ['UriTemplate']);
+      const b = Import('package:uri/uri.dart');
+      expect(a, isNot(equals(b)));
+    });
+  });
+
   group('exampleValue', () {
     final context = SchemaRenderer(
       templates: TemplateProvider.defaultLocation(),

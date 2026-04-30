@@ -1766,7 +1766,7 @@ class RefRegistry {
       throw FormatException('$T not found: $uri');
     }
     if (object is! T) {
-      throw FormatException('Expected $T, got $object');
+      throw FormatException('Expected $T, got ${object.runtimeType}');
     }
     return object;
   }
