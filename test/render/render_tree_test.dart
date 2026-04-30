@@ -662,7 +662,7 @@ void main() {
     });
 
     test('RenderEnum', () {
-      final a = RenderEnum(
+      final a = RenderStringEnum(
         common: const CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
@@ -674,7 +674,7 @@ void main() {
       );
       expect(a.equalsIgnoringName(a), isTrue);
 
-      final b = RenderEnum(
+      final b = RenderStringEnum(
         common: const CommonProperties.test(
           snakeName: 'b',
           pointer: JsonPointer.empty(),
@@ -686,7 +686,7 @@ void main() {
       );
       expect(a.equalsIgnoringName(b), isTrue);
 
-      final c = RenderEnum(
+      final c = RenderStringEnum(
         common: const CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
@@ -697,6 +697,57 @@ void main() {
         descriptions: null,
       );
       expect(a.equalsIgnoringName(c), isFalse);
+    });
+
+    test('RenderStringEnum and RenderIntEnum with same shape do not '
+        'compare equal (different concrete subtypes)', () {
+      // The runtime-type guard in RenderEnum.equalsIgnoringName keeps
+      // a String-valued enum from being treated as semantically equal
+      // to an Int-valued one even when the names happen to coincide.
+      const common = CommonProperties.test(
+        snakeName: 'foo',
+        pointer: JsonPointer.empty(),
+      );
+      final stringEnum = RenderStringEnum(
+        common: common,
+        names: const ['a'],
+        values: const ['a'],
+        descriptions: null,
+      );
+      final intEnum = RenderIntEnum(
+        common: common,
+        names: const ['a'],
+        values: const [1],
+        descriptions: null,
+      );
+      expect(stringEnum.equalsIgnoringName(intEnum), isFalse);
+    });
+
+    test('RenderIntEnum.invalidJsonExample picks an out-of-range int', () {
+      // The default fallback is `-1` since most spec int enums use
+      // small non-negative values (bitfield flags, component types).
+      // When -1 is somehow in the value set, we step further out.
+      const common = CommonProperties.test(
+        snakeName: 'foo',
+        pointer: JsonPointer.empty(),
+      );
+      final context = SchemaRenderer(
+        templates: TemplateProvider.defaultLocation(),
+      );
+      final ordinary = RenderIntEnum(
+        common: common,
+        names: const ['value1', 'value2'],
+        values: const [1, 2],
+        descriptions: null,
+      );
+      expect(ordinary.invalidJsonExample(context), '-1');
+      final includesNegOne = RenderIntEnum(
+        common: common,
+        names: const ['valueNeg1', 'value0', 'value1'],
+        values: const [-1, 0, 1],
+        descriptions: null,
+      );
+      expect(includesNegOne.invalidJsonExample(context), '-999999');
     });
 
     test('RenderOneOf', () {
@@ -786,7 +837,7 @@ void main() {
         type: PodType.boolean,
         createsNewType: false,
       );
-      final enumKey = RenderEnum(
+      final enumKey = RenderStringEnum(
         common: const CommonProperties.test(
           snakeName: 'platform',
           pointer: JsonPointer.empty(),
@@ -1212,7 +1263,7 @@ void main() {
         minLength: null,
         pattern: null,
       );
-      final keySchema = RenderEnum(
+      final keySchema = RenderStringEnum(
         common: common,
         values: const ['a', 'b'],
         names: const ['a', 'b'],

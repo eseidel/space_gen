@@ -2026,7 +2026,65 @@ void main() {
           'enum': ['foo', 'bar', 'baz'],
         };
         final schema = parseTestSchema(json);
-        expect(schema, isA<SchemaEnum>());
+        expect(schema, isA<SchemaStringEnum>());
+      });
+      test('integer enum parses to SchemaIntEnum', () {
+        // Discord uses single-value `type: integer, enum: [N]` enums
+        // as oneOf discriminator markers (component types).
+        final json = {
+          'type': 'integer',
+          'enum': [1, 2, 11],
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaIntEnum) {
+          fail('Expected SchemaIntEnum, got ${schema.runtimeType}');
+        }
+        expect(schema.enumValues, equals([1, 2, 11]));
+      });
+      test('integer enum with non-int values is a spec error', () {
+        final json = {
+          'type': 'integer',
+          'enum': [1, 'foo'],
+        };
+        expect(
+          () => parseTestSchema(json),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              contains('enumValues must be a list of integers'),
+            ),
+          ),
+        );
+      });
+      test('integer enum with valid default value parses', () {
+        final json = {
+          'type': 'integer',
+          'enum': [1, 2, 11],
+          'default': 11,
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaIntEnum) {
+          fail('Expected SchemaIntEnum, got ${schema.runtimeType}');
+        }
+        expect(schema.defaultValue, equals(11));
+      });
+      test('integer enum default value not in enum is a spec error', () {
+        final json = {
+          'type': 'integer',
+          'enum': [1, 2, 11],
+          'default': 99,
+        };
+        expect(
+          () => parseTestSchema(json),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              contains('defaultValue must be one of the enum values: 99'),
+            ),
+          ),
+        );
       });
       test('ignore boolean enums', () {
         final json = {

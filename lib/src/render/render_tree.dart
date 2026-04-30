@@ -459,12 +459,23 @@ class SpecResolver {
           assignedName: _nameFor(schema.targetPointer),
           assignedSnakeName: _snakeFor(schema.targetPointer),
         );
-      case ResolvedEnum():
-        return RenderEnum(
+      case ResolvedStringEnum():
+        return RenderStringEnum(
           common: schema.common,
           values: schema.values,
           names: RenderEnum.variableNamesFor(quirks, schema.values),
           descriptions: schema.descriptions,
+          defaultValue: schema.defaultValue,
+          assignedName: _nameFor(schema.pointer),
+          assignedSnakeName: _snakeFor(schema.pointer),
+        );
+      case ResolvedIntEnum():
+        return RenderIntEnum(
+          common: schema.common,
+          values: schema.values,
+          names: RenderEnum.variableNamesForInts(schema.values),
+          descriptions: schema.descriptions,
+          defaultValue: schema.defaultValue,
           assignedName: _nameFor(schema.pointer),
           assignedSnakeName: _snakeFor(schema.pointer),
         );
@@ -565,7 +576,7 @@ class SpecResolver {
             // For each ResolvedSchema in the resolver-side mapping, find
             // its index in schema.schemas (identity match, established by
             // the resolver) and use the corresponding rendered variant.
-            final renderMapping = <String, RenderSchema>{};
+            final renderMapping = <Object, RenderSchema>{};
             for (final entry in rawMapping.entries) {
               final i = schema.schemas.indexWhere(
                 (s) => identical(s, entry.value),
@@ -3898,7 +3909,12 @@ class RenderMap extends RenderSchema {
   }
 }
 
-class RenderEnum extends RenderNewType {
+/// Render-tree counterpart to [ResolvedEnum]. Same generic-with-typed-
+/// subclasses pattern: parameterized abstract base, [RenderStringEnum]
+/// and [RenderIntEnum] pin [T]. Branch points where Dart-emission
+/// differs (literal form, JSON storage type, invalid-JSON sentinel)
+/// become abstract methods on the parent.
+abstract class RenderEnum<T extends Object> extends RenderNewType {
   const RenderEnum({
     required super.common,
     required this.values,
@@ -3938,26 +3954,46 @@ class RenderEnum extends RenderNewType {
     return values.map(toShortVariableName).toList();
   }
 
+  /// Variable names for an int-valued enum. Defaults to `value<N>`
+  /// (e.g. `value1`, `value11`) — not great for multi-value enums in
+  /// principle, but in the common case (single-value discriminator
+  /// tags) this is unambiguous and the variant is rarely referenced
+  /// by name in user code anyway.
+  @visibleForTesting
+  static List<String> variableNamesForInts(List<int> values) {
+    return values.map((v) => v >= 0 ? 'value$v' : 'valueNeg${-v}').toList();
+  }
+
   @override
-  final dynamic defaultValue;
+  final T? defaultValue;
 
   @override
   bool get defaultCanConstConstruct => true;
 
-  /// The values of the resolved schema.
-  final List<String> values;
+  /// The enum values.
+  final List<T> values;
 
-  /// The names of the resolved schema.
+  /// The Dart variable names of [values], parallel.
   final List<String> names;
 
   /// Optional per-value dartdoc descriptions, parallel to [values].
   final List<String>? descriptions;
 
+  /// Dart literal for one enum value as it appears after `._(` in the
+  /// generated enum declaration. For string enums this quotes; for
+  /// int enums it's the int's bare numeric form.
+  String enumValueLiteral(T value);
+
+  /// The bare Dart type name of the enum's underlying value (e.g.
+  /// `String`, `int`). Drives the template's `final <type> value`
+  /// declaration and `<type> toJson()` return type.
+  String get valueDartType;
+
   @override
   String? get wrapperTag => typeName;
 
   @override
-  String? get jsonShapeKey => 'String';
+  String? get jsonShapeKey => valueDartType;
 
   @override
   _VariantConversion? _variantConversion(SchemaRenderer context) =>
@@ -3974,7 +4010,7 @@ class RenderEnum extends RenderNewType {
 
   @override
   String jsonStorageType({required bool isNullable}) {
-    return isNullable ? 'String?' : 'String';
+    return isNullable ? '$valueDartType?' : valueDartType;
   }
 
   /// Template context for an enum schema.
@@ -3985,7 +4021,7 @@ class RenderEnum extends RenderNewType {
       final description = descriptions?[index];
       return {
         'enumValueName': variableNameFor(value),
-        'enumValue': quoteString(value),
+        'enumValue': enumValueLiteral(value),
         'enum_value_doc_comment': createDocCommentFromParts(
           body: description,
           indent: 4,
@@ -3997,6 +4033,7 @@ class RenderEnum extends RenderNewType {
       'doc_comment': createDocComment(common: common),
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
+      'valueDartType': valueDartType,
       'enumValues': [
         for (var i = 0; i < values.length; i++) enumValueToTemplateContext(i),
       ],
@@ -4006,12 +4043,9 @@ class RenderEnum extends RenderNewType {
   /// The default value of this schema as a string.
   @override
   String? defaultValueString(SchemaRenderer context) {
-    // If the type of this schema is an object we need to convert the default
-    // value to that object type.
-    if (defaultValue is String) {
-      return '$className.${variableNameFor(defaultValue as String)}';
-    }
-    return defaultValue?.toString();
+    final value = defaultValue;
+    if (value == null) return null;
+    return '$className.${variableNameFor(value)}';
   }
 
   @override
@@ -4031,14 +4065,15 @@ class RenderEnum extends RenderNewType {
     return '$className.$jsonMethod($jsonValue as $jsonType)$orDefault';
   }
 
-  String variableNameFor(String value) => names[values.indexOf(value)];
+  String variableNameFor(T value) => names[values.indexOf(value)];
 
   @override
   bool equalsIgnoringName(RenderSchema other) {
     if (other is! RenderEnum) {
       return false;
     }
-    if (!const ListEquality<String>().equals(values, other.values)) {
+    if (other.runtimeType != runtimeType) return false;
+    if (!const ListEquality<Object>().equals(values, other.values)) {
       return false;
     }
     if (!const ListEquality<String>().equals(names, other.names)) {
@@ -4049,10 +4084,56 @@ class RenderEnum extends RenderNewType {
 
   @override
   String? exampleValue(SchemaRenderer context) => '$typeName.values.first';
+}
+
+class RenderStringEnum extends RenderEnum<String> {
+  const RenderStringEnum({
+    required super.common,
+    required super.values,
+    required super.names,
+    required super.descriptions,
+    super.defaultValue,
+    super.assignedName,
+    super.assignedSnakeName,
+  });
+
+  @override
+  String enumValueLiteral(String value) => quoteString(value);
+
+  @override
+  String get valueDartType => 'String';
 
   @override
   String? invalidJsonExample(SchemaRenderer context) =>
       "'__invalid_enum_value__'";
+}
+
+class RenderIntEnum extends RenderEnum<int> {
+  const RenderIntEnum({
+    required super.common,
+    required super.values,
+    required super.names,
+    required super.descriptions,
+    super.defaultValue,
+    super.assignedName,
+    super.assignedSnakeName,
+  });
+
+  @override
+  String enumValueLiteral(int value) => value.toString();
+
+  @override
+  String get valueDartType => 'int';
+
+  @override
+  String? invalidJsonExample(SchemaRenderer context) {
+    // Pick a value outside the spec'd range. -1 works for almost every
+    // real spec (most int enums use small non-negative values like
+    // bitfield flags or component-type tags). Falls back to a
+    // distinctly-large negative if -1 is somehow in the value set.
+    if (!values.contains(-1)) return '-1';
+    return '-999999';
+  }
 }
 
 class RenderOneOf extends RenderNewType {
@@ -4288,6 +4369,16 @@ class RenderOneOf extends RenderNewType {
     };
   }
 
+  /// Format a discriminator value as the Dart literal that goes into a
+  /// `switch (json[propertyName])` case key. String values are quoted
+  /// (`'creation'`); int values are emitted raw (`1`). Generated as a
+  /// pre-formatted string at render time so the template can splice
+  /// it without further quoting.
+  String _discriminatorCaseLiteral(Object value) {
+    if (value is String) return quoteString(value);
+    return value.toString();
+  }
+
   /// Build a [_DiscriminatorMode], splitting variants into smooshed
   /// (the variant data class extends the sealed parent directly,
   /// inlined in the parent's file) and non-smooshed (today's wrapper-
@@ -4304,7 +4395,7 @@ class RenderOneOf extends RenderNewType {
       final renderVariant = renderOf(entry.variant);
       final fromJson = '${renderVariant.typeName}.fromJson(json)';
       cases.add({
-        'value': entry.value,
+        'caseLiteral': _discriminatorCaseLiteral(entry.value),
         'caseExpression': renderVariant.isSmooshed
             ? fromJson
             : '${wrapperTypeName(renderVariant)}($fromJson)',
@@ -5141,7 +5232,7 @@ class RenderDiscriminator extends Equatable {
   });
 
   final String propertyName;
-  final Map<String, RenderSchema> mapping;
+  final Map<Object, RenderSchema> mapping;
 
   @override
   List<Object?> get props => [propertyName, mapping];

@@ -291,9 +291,18 @@ ResolvedSchema _resolveSchemaFully(
       requiredProperties: schema.requiredProperties,
     );
   }
-  if (schema is SchemaEnum) {
+  if (schema is SchemaStringEnum) {
     assert(createsNewType, 'SchemaEnum should create a new type');
-    return ResolvedEnum(
+    return ResolvedStringEnum(
+      common: resolvedCommon,
+      defaultValue: schema.defaultValue,
+      values: schema.enumValues,
+      descriptions: schema.enumDescriptions,
+    );
+  }
+  if (schema is SchemaIntEnum) {
+    assert(createsNewType, 'SchemaEnum should create a new type');
+    return ResolvedIntEnum(
       common: resolvedCommon,
       defaultValue: schema.defaultValue,
       values: schema.enumValues,
@@ -1476,7 +1485,10 @@ class ResolvedArray extends ResolvedSchema {
   ];
 }
 
-class ResolvedEnum extends ResolvedSchema {
+/// Resolved counterpart to [SchemaEnum]. Same generic-with-typed-
+/// subclasses pattern: parameterized abstract base, concrete
+/// [ResolvedStringEnum] and [ResolvedIntEnum] pin [T].
+abstract class ResolvedEnum<T extends Object> extends ResolvedSchema {
   const ResolvedEnum({
     required super.common,
     required this.defaultValue,
@@ -1485,28 +1497,54 @@ class ResolvedEnum extends ResolvedSchema {
   }) : super(createsNewType: true);
 
   /// The values of the resolved schema.
-  // If we support non-string, non-integer enums, we will need to fix path
-  // parameter validation to only allow string and integer enum types.
-  final List<String> values;
+  final List<T> values;
 
   /// The default value of the enum type.
-  final dynamic defaultValue;
+  final T? defaultValue;
 
   /// Optional per-value dartdoc descriptions, parallel to [values].
   final List<String>? descriptions;
 
   @override
-  ResolvedEnum copyWith({CommonProperties? common}) {
-    return ResolvedEnum(
+  List<Object?> get props => [super.props, values, defaultValue, descriptions];
+}
+
+class ResolvedStringEnum extends ResolvedEnum<String> {
+  const ResolvedStringEnum({
+    required super.common,
+    required super.defaultValue,
+    required super.values,
+    required super.descriptions,
+  });
+
+  @override
+  ResolvedStringEnum copyWith({CommonProperties? common}) {
+    return ResolvedStringEnum(
       common: common ?? this.common,
       defaultValue: defaultValue,
       values: values,
       descriptions: descriptions,
     );
   }
+}
+
+class ResolvedIntEnum extends ResolvedEnum<int> {
+  const ResolvedIntEnum({
+    required super.common,
+    required super.defaultValue,
+    required super.values,
+    required super.descriptions,
+  });
 
   @override
-  List<Object?> get props => [super.props, values, defaultValue, descriptions];
+  ResolvedIntEnum copyWith({CommonProperties? common}) {
+    return ResolvedIntEnum(
+      common: common ?? this.common,
+      defaultValue: defaultValue,
+      values: values,
+      descriptions: descriptions,
+    );
+  }
 }
 
 class ResolvedObject extends ResolvedSchema {
@@ -1600,6 +1638,11 @@ class ResolvedOneOf extends ResolvedSchemaCollection {
 
 /// Resolved form of [SchemaDiscriminator]. Each [mapping] value is one
 /// of the [ResolvedOneOf.schemas] entries, identified by pointer match.
+/// The map key is the discriminator value as it appears on the wire —
+/// typically `String`, but `int` for integer-typed discriminator
+/// fields (Discord's component types). Keys within one mapping are
+/// always uniform in runtime type; the implicit-discriminator picker
+/// rejects variants whose tag enums disagree on value type.
 @immutable
 class ResolvedDiscriminator extends Equatable {
   const ResolvedDiscriminator({
@@ -1608,7 +1651,7 @@ class ResolvedDiscriminator extends Equatable {
   });
 
   final String propertyName;
-  final Map<String, ResolvedSchema>? mapping;
+  final Map<Object, ResolvedSchema>? mapping;
 
   @override
   List<Object?> get props => [propertyName, mapping];
