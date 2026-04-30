@@ -87,8 +87,7 @@ and its synthesized round-trip tests are expected to pass.
 - **Discord API** (~511 schemas, ~141 paths, OpenAPI 3.1) — In progress.
 - **SpaceTraders** — Complete.
 - **Train Travel API** (YAML, OpenAPI 3.1) — Complete.
-- **Petstore** (the OpenAPI canonical example) — Complete; shipped
-  under [`example/`](example/).
+- **Petstore** (the OpenAPI canonical example) — Complete.
 
 If you try space_gen against a public spec and the output isn't
 clean, please [file an issue](https://github.com/eseidel/space_gen/issues).
