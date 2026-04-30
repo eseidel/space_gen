@@ -36,7 +36,8 @@ class SchemaUsage {
   static final _validationCallPattern = RegExp(
     r'\.validate(Maximum|Minimum|MaximumLength|MinimumLength|Pattern|'
     'ExclusiveMaximum|ExclusiveMinimum|MultipleOf|MaximumItems|'
-    'MinimumItems|UniqueItems)' r'\b',
+    'MinimumItems|UniqueItems)'
+    r'\b',
   );
 
   final bool usesMetaAnnotations;
