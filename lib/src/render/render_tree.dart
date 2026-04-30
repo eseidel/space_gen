@@ -2885,7 +2885,7 @@ class RenderString extends RenderSchema {
   String validStringExample() {
     final fromSpec = _firstStringExample(common);
     if (fromSpec != null) return fromSpec;
-    return _synthesizeStringSatisfying(
+    return synthesizeStringSatisfying(
       pattern: pattern,
       minLength: minLength,
       maxLength: maxLength,
@@ -2924,7 +2924,8 @@ String? _firstStringExample(CommonProperties common) {
 /// padded `'example'` when no candidate matches — callers should still
 /// surface this to the user (it's better than silently emitting a
 /// constructor call that throws at synthesized-test time).
-String _synthesizeStringSatisfying({
+@visibleForTesting
+String synthesizeStringSatisfying({
   String? pattern,
   int? minLength,
   int? maxLength,
@@ -2934,7 +2935,7 @@ String _synthesizeStringSatisfying({
     final maxL = maxLength;
     var out = s;
     if (out.length < minL) {
-      final padChar = out.isEmpty ? 'x' : out[out.length - 1];
+      final padChar = out[out.length - 1];
       out = out + padChar * (minL - out.length);
     }
     if (maxL != null && out.length > maxL) {

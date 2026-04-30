@@ -2722,7 +2722,9 @@ void main() {
       expect(usage.usesValidationExtensions, isFalse);
       expect(
         usage.importsFor('spacetraders'),
-        isNot(contains(const Import('package:spacetraders/api_exception.dart'))),
+        isNot(
+          contains(const Import('package:spacetraders/api_exception.dart')),
+        ),
       );
     });
 

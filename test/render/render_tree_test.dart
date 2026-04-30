@@ -1490,6 +1490,80 @@ void main() {
     });
   });
 
+  group('synthesizeStringSatisfying', () {
+    test('null pattern returns "example" verbatim with no length bounds', () {
+      expect(synthesizeStringSatisfying(), 'example');
+    });
+
+    test('null pattern pads "example" to minLength using last char', () {
+      expect(synthesizeStringSatisfying(minLength: 10), 'exampleeee');
+    });
+
+    test('null pattern truncates "example" to maxLength', () {
+      expect(synthesizeStringSatisfying(maxLength: 4), 'exam');
+    });
+
+    test('invalid regex falls back to padded "example"', () {
+      expect(
+        synthesizeStringSatisfying(pattern: '(', minLength: 10),
+        'exampleeee',
+      );
+    });
+
+    test("'a' candidate matches first for [0-9a-fA-F]+", () {
+      expect(
+        synthesizeStringSatisfying(
+          pattern: r'^[0-9a-fA-F]+$',
+          minLength: 6,
+          maxLength: 6,
+        ),
+        'aaaaaa',
+      );
+    });
+
+    test("'0' candidate matches alternation when 'a' does not", () {
+      // `^(0|[1-9][0-9]*)$`: 'a' fails, '0' matches.
+      expect(
+        synthesizeStringSatisfying(pattern: r'^(0|[1-9][0-9]*)$'),
+        '0',
+      );
+    });
+
+    test("'1' candidate matches when 'a' and '0' do not", () {
+      // `^[1-9][0-9]*$`: 'a' fails, '0' fails (leading zero forbidden),
+      // '1' matches with the rest filled in by repeating the digit.
+      expect(
+        synthesizeStringSatisfying(pattern: r'^[1-9][0-9]*$', minLength: 3),
+        '111',
+      );
+    });
+
+    test("'example' candidate matches when single-char repeats do not", () {
+      // `^example$` only matches the literal — none of `'a'`, `'0'`, `'1'`
+      // (length 1) match; `'example'` does.
+      expect(synthesizeStringSatisfying(pattern: r'^example$'), 'example');
+    });
+
+    test('matched candidate is post-resized to fit length bounds', () {
+      // Pattern matches `'a'*N` for any N >= 1; with minLength 5,
+      // targetLen is 5, so `'a' * 5` is tried, matches, returned as-is.
+      expect(
+        synthesizeStringSatisfying(pattern: r'^a+$', minLength: 5),
+        'aaaaa',
+      );
+    });
+
+    test('no candidate matches falls back to padded "example"', () {
+      // `^Z+$`: none of `'a'`, `'0'`, `'1'`, `'example'`, or
+      // `resize('example')` match. Falls through to the literal-fallback
+      // arm which returns `resize('example')`.
+      expect(
+        synthesizeStringSatisfying(pattern: r'^Z+$', minLength: 10),
+        'exampleeee',
+      );
+    });
+  });
+
   group('RenderPod newtype', () {
     final context = SchemaRenderer(
       templates: TemplateProvider.defaultLocation(),
