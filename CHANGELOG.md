@@ -1,3 +1,53 @@
+## 1.2.2
+
+### Bug fixes
+
+- **`lines_longer_than_80_chars` suppression now scopes to files
+  space_gen actually emits and matches the analyzer's own carve-outs.**
+  The previous post-walk pass scanned every `.dart` file in the output
+  directory — including hand-written templates a `FileRenderer`
+  subclass was deliberately preserving via `renderClient` /
+  `renderPublicApi` no-op overrides. It also counted raw line length
+  without the analyzer's URI exclusion, so files whose only over-80
+  lines were `import` / `export` statements got the directive added,
+  then `dart fix --apply` stripped it as `unnecessary_ignore`.
+  Replaced with a per-file emit-time helper threaded through the same
+  `_renderTemplate` pattern PR #138 settled on for
+  `comment_references`. Skips `import` / `export` lines when measuring
+  (#209).
+- **Format generated content in-process at write time so directive
+  decisions match what the analyzer sees.** The emit-time check from
+  #209 fired against pre-format content — `dart format` later reflows
+  long lines under 80, `dart fix --apply` strips the now-pointless
+  directive as `unnecessary_ignore`, and the 3-line justification
+  comment is left orphaned (61 such files surfaced on a real-world
+  regen). Add `package:dart_style` as a dep and run `DartFormatter`
+  in-process from `_renderTemplate` / `_renderSpecTemplate` before
+  applying transforms. Format settings come from the consuming
+  package's `pubspec.lock` / `pubspec.yaml` (language version) and
+  `analysis_options.yaml` (`formatter: page_width`,
+  `formatter: trailing_commas`), with relative `include:` directives
+  followed so workspace setups resolve correctly. Without per-consumer
+  settings, hard-pinning to `latestLanguageVersion` would silently flip
+  generated files to tall style and strip trailing commas from
+  packages that opt into `trailing_commas: preserve`. Also drops a
+  bogus `///` carve-out from `maybeAddLongLineIgnore` (the analyzer
+  flags long doc comments) and extends `maybeAddCommentReferencesIgnore`
+  to resolve against same-file field declarations, not just top-level
+  types — fixes the same orphan-justification problem on the
+  `comment_references` directive. The runtime cost is absorbed: clean
+  inputs make `dart fix --apply` slightly faster, and the global
+  `dart format` step becomes a near no-op for files we wrote (#210).
+
+### Refactoring
+
+- The directive-block helpers, `Formatter` (subprocess), and the new
+  in-process `DartFileFormatter` move to a dedicated
+  `lib/src/render/formatting.dart`. `FileRenderer` now holds a
+  `DartFileFormatter` and calls into it; the formatting concerns
+  cluster together rather than threading through the renderer
+  (part of #210).
+
 ## 1.2.1
 
 ### Chores
