@@ -5659,10 +5659,10 @@ class RenderBase64Bytes extends RenderSchema {
   @override
   Iterable<Import> get additionalImports => [
     ...super.additionalImports,
-    // `shown: ['Uint8List']` flags this for re-export from the api.dart
-    // barrel; `dart:convert` stays unshown since `base64` is only used
-    // internally by the encoded fromJson/toJson and never appears in a
-    // public field signature.
+    // `shown: ['Uint8List']` flags this for re-export from the
+    // api.dart barrel. `dart:convert` is imported without a `shown:`
+    // list since `base64` is only used internally by the encoded
+    // fromJson/toJson and never appears in a public field signature.
     const Import('dart:typed_data', shown: ['Uint8List']),
     const Import('dart:convert'),
   ];
