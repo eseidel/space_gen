@@ -2555,6 +2555,37 @@ void main() {
       );
     });
 
+    test('passes through refs to fields declared in the same file', () {
+      // Surfaced by shorebird_code_push_protocol's
+      // `create_patch_artifact_request.dart`: `/// The signature of
+      // the [hash].` refers to a `final String hash;` field. The
+      // analyzer resolves this through the enclosing class scope and
+      // doesn't fire `comment_references`. Without tracking field
+      // declarations, the helper would add a directive that
+      // `dart fix --apply` then strips as `unnecessary_ignore`,
+      // leaving an orphaned 5-line justification comment.
+      const content =
+          '/// The signature of the [hash].\n'
+          'class CreatePatchArtifactRequest {\n'
+          '  final String hash;\n'
+          '}\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
+    });
+
+    test('still prepends for refs that look like fields but are not', () {
+      // MIT license templates use `[year]` and `[fullname]` as
+      // placeholders. They look like field names but no field is
+      // declared with those names, so `comment_references` would
+      // fire and the directive is needed.
+      const content =
+          '/// Copyright (c) [year] [fullname].\n'
+          'class License {}\n';
+      expect(
+        maybeAddCommentReferencesIgnore(content),
+        startsWith('$commentReferencesIgnoreBlock\n'),
+      );
+    });
+
     test('collects multiple refs on a single doc comment line', () {
       // Greedy regexes have a habit of seeing only the first or last
       // bracket on a line. Both refs need to be considered: if any

@@ -216,17 +216,41 @@ Set<String> _bracketedDartdocTokens(String content) {
   return tokens;
 }
 
-/// Collects the names of top-level type declarations the file emits.
-/// Covers the kinds the renderer actually produces: `class`, `enum`,
-/// `mixin`, and `extension type [const] Foo._(...)`. Names follow Dart
-/// style (start with uppercase). Imported names — and inherited
-/// members reached through `[fooMethod]` refs — aren't tracked.
+/// Collects the names of declarations the analyzer would resolve a
+/// `[token]` bracketed dartdoc reference against. Two regexes:
+///
+/// - **Top-level types** the renderer emits — `class`, `enum`,
+///   `mixin`, `extension type [const] Foo._(...)`. Match the
+///   uppercase-leading name.
+/// - **Class members** the renderer emits as `final`/`late final` /
+///   `var` / `const` / `static` fields. Match the identifier after
+///   the type. Catches the common shape spec dartdoc refers to —
+///   e.g. shorebird's `/// The signature of the [hash].` resolves
+///   to a `final String hash;` field, which the analyzer's
+///   `comment_references` lint follows through enclosing class
+///   scope.
+///
+/// Methods and getters / setters aren't tracked (the regex would
+/// over-match too easily). A `[fooMethod]` ref that resolves only
+/// via a method declaration still trips the directive — same
+/// behavior as before this PR. False positive, but harmless: the
+/// directive is per-file and only suppresses `comment_references`.
 Set<String> _topLevelDeclarations(String content) {
   final declRe = RegExp(
     r'(?:class|enum|mixin|extension type(?:\s+const)?)\s+'
     '([A-Z][A-Za-z0-9_]*)',
   );
-  return declRe.allMatches(content).map((m) => m.group(1)!).toSet();
+  final memberRe = RegExp(
+    r'(?:final|late\s+final|const|var|static)\s+\S+\s+([a-zA-Z_]\w*)',
+  );
+  final names = <String>{};
+  for (final m in declRe.allMatches(content)) {
+    names.add(m.group(1)!);
+  }
+  for (final m in memberRe.allMatches(content)) {
+    names.add(m.group(1)!);
+  }
+  return names;
 }
 
 @visibleForTesting
