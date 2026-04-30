@@ -14,23 +14,38 @@ description: |
   any spec-driven follow-up.
 ---
 
-# State as of 2026-04-29
+# State as of 2026-04-29 (Discord added to rotation)
 
 ## What this is
 
 space_gen is iterating toward a "fantastic" Dart OpenAPI generator.
 The methodology: run real-world specs through it, see what breaks
-or reads ugly, fix one thing per PR. Validation targets:
+or reads ugly, fix one thing per PR. Each PR should leave every
+tracked spec at least as good as it was — ideally better.
 
-- **Primary**: `~/Documents/GitHub/personal/gen_tests/api.github.com.json` —
-  github's spec, ~1000 operations, exercises everything (oneOf,
-  discriminators, multi-status responses, big enums, recursion,
-  status code ranges, complex error handling). The bar is `dart
-  analyze` clean on the regen.
-- **Secondary**: watchcrunch (a user-reported spec — Eric's actual
-  product is Shorebird, watchcrunch is a third-party validation
-  target, not his service). Other specs land via gen_tests/
-  fixtures when a feature needs end-to-end coverage.
+**Validation targets** (in `~/Documents/GitHub/personal/gen_tests/`,
+parallel to the repo, not checked in):
+
+- **github** — `api.github.com.json`, ~1000 operations, the primary
+  punching bag. Exercises everything (oneOf, discriminators,
+  multi-status responses, big enums, recursion, status code ranges,
+  complex error handling). Currently `dart analyze` clean on the
+  regen with all 6100+ generated round-trip tests passing — the
+  bar to maintain.
+- **Discord** — `discord.json`, ~511 schemas / 141 paths. OpenAPI
+  3.1. Snowflake IDs are `type: string` with a numeric pattern (so
+  no int64 wire-format trap), but exposes patterns github doesn't:
+  bitfield-style integer enums (132 sites), `type: string` newtype
+  schemas with regex patterns (327 `validatePattern` call sites).
+  Currently does NOT regen cleanly — see "Discord status" below.
+- **petstore** — `petstore.json`, the OpenAPI canonical example.
+  Smoke test for the basics.
+- **spacetraders** — `spacetraders.json`. Smaller real spec.
+- **train-travel** — `train-travel.yaml`. YAML-format coverage.
+
+There's also `private_gen_tests/watchcrunch-api.json` — a user-
+reported spec used as a third-party validation target (not Eric's
+own service).
 
 A "gap" can be any of:
 - `UnimplementedError` stub in generated code (always wrong).
@@ -44,16 +59,46 @@ A "gap" can be any of:
   `prefer_single_quotes`, `lines_longer_than_80_chars`).
 - A real-spec author hits a snag and reports it.
 
-**Current status:** `dart analyze` clean on the github regen.
-**3 stubs remain** (Group C only — the enumless anyOfs the skill
-suggests skipping). Stub Groups A (validation-error twins) and B
-(labels requestBody) closed in PRs #177 and #183. Generated test
-suite: 6146 tests, all passing — 41 round-trip-correctness bugs
-fixed in #184. 4 dispatch / smoosh / dedup features landed across
-PRs #179 (exclusive-by-use smoosh), #180 (structural dedup of
-operation-synthesized oneOfs), #182 (properties+oneOf composition
-+ multi-value-enum implicit discriminator + anyOf+discriminator),
-#183 (multi-array hybrid + property-array-element-shape).
+**Github status:** `dart analyze` clean on the regen. **3 stubs
+remain** (Group C only — the enumless anyOfs the skill suggests
+skipping). Stub Groups A (validation-error twins) and B (labels
+requestBody) closed in PRs #177 and #183. Generated test suite:
+6100+ tests, all passing — 41 round-trip-correctness bugs fixed
+in #184. Smoosh series complete: #168–#170 (predicate /
+discriminator / shape+hybrid dispatch), #179 (exclusive-by-use
+top-level $refs), #189 (inline allOf — `RepositoryRuleDetailed`'s
+21 wrappers folded into the sealed parent). Naming and dispatch
+arcs settled; structural dedup of operation-synthesized oneOfs
+landed in #180.
+
+**Discord status:** Does NOT yet regen cleanly. Two pre-existing
+blockers Discord surfaced that github didn't:
+
+- **Integer enums (132 sites)** — parser hard-throws on
+  `type: integer, enum: [...]`. Most are single-value tags
+  (`enum: [1]`) used as oneOf discriminators, same role github
+  uses string tags for. `_handleEnum` in `lib/src/parser.dart`
+  only accepts `type: string` today. Fixing this likely also
+  generalizes `SchemaEnum.enumValues: List<String>` to support
+  ints — and probably composes with the multi-value-enum implicit
+  discriminator picker from #182.
+- **Pattern validation on newtype Strings (327 call sites in
+  `default_api.dart` alone)** — generates uncompilable Dart like
+  `applicationId.validatePattern('^...$')` where `applicationId:
+  SnowflakeType` is an `extension type` around `String`.
+  `validatePattern` is on the underlying `String`, not the
+  extension type. Either move the regex into the newtype's
+  constructor (validate once at construction) or splice
+  `.value.validatePattern(...)` at the call site.
+
+Once both are fixed, expect more downstream gaps to surface — the
+parser hard-throw blocks visibility of everything past it.
+
+Discord notably does NOT motivate the int64/web design call from
+issue #185: their snowflake IDs are JSON strings with a numeric
+pattern, not `format: int64` — they sidestepped the precision
+problem by design. Only 7 int64 sites in the spec total, and one
+schema is literally named `Int53Type` to acknowledge the JS limit.
 
 **The picture beyond stubs and visible-output ugliness.** A `-v`
 regen surfaces feature gaps the skill historically didn't track.
@@ -224,6 +269,13 @@ The 2026-04-28/29 fan-out (12 PRs in one night, 11 landed):
 | #183 | Dispatch labels-requestBody (multi-array hybrid sub-dispatch + `_pickPropertyArrayElementShape` picker); closes 2 stubs |
 | #184 | Round-trip correctness: nullable oneOf null-cast, EmptyObject delegation, additionalProperties named-key collision (`mapHash` for hashCode), parser drops `required` entries naming nonexistent properties — 41 → 0 generated test failures |
 
+Follow-on PRs landed since (after the 2026-04-29 wave):
+
+| PR | What |
+|---|---|
+| #189 | Smoosh inline allOf variants — `RepositoryRuleDetailed`'s 21 inline `allOf` oneOf variants fold into the sealed parent; structural smoosh predicate now accepts `ResolvedAllOf` for inline cases |
+| #190 | Strip dead Equatable from 18 parse-tree types (`Schema` family, `Operation`, `OpenApi`, etc.); resolver/render Equatable kept (load-bearing for `_collectionCache` and `_ModelCollector`); coverage tests added pinning the load-bearing usages |
+
 The earlier dispatch + naming + smoosh arc (#157–#170, #172):
 
 | PR | What |
@@ -242,36 +294,46 @@ as a stub). **Generated test suite: 41 broken → all 6146 pass.**
 Open issues filed during the night that should drive next iteration:
 
 - **#185** — strategy needed for web/dart2js-aware codegen
-  (`format=int64` is the immediate trigger). Needs a validation-target
-  spec with near-2^63 IDs (Stripe / Discord / Twitter) before coding.
+  (`format=int64` is the immediate trigger). Needs a real
+  validation target with near-2^63 numeric values to motivate.
+  **Discord doesn't qualify** (their snowflakes are JSON strings,
+  not int64). Stripe is the next candidate to pull and check.
+  Until a target lands, stay with current `int` behavior. Eric's
+  preference if/when this ships: `Int64` from `package:fixnum`,
+  no opt-in flag.
 - **#186** — split request/response classes when properties are
   marked `readOnly: true`. Correctness issue (servers can reject
-  requests with readOnly fields), not just ergonomics.
-- **#187** — remove unused Equatable `props` from `RenderSchema`
-  (and audit `SchemaObject`/`ResolvedObject`). The codebase uses
-  `equalsIgnoringName` for semantic comparison; the auto-generated
-  `==`/`hashCode` from `props` is dead infrastructure. Surfaced
-  during PR #175's coverage failure.
+  requests with readOnly fields), not just ergonomics. Eric's
+  preference: per-class duplication (`UserRequest` /
+  `UserResponse`) over dual-constructor.
+- **#187** — remove unused Equatable `props` from tree types.
+  **Partially closed by #190**: the parse-tree (18 classes) was
+  genuinely dead and got stripped. Render-tree and resolver-tree
+  Equatable turned out to be load-bearing (`_collectionCache` for
+  #180 dedup, `_ModelCollector` Set dedup) — kept, with explicit
+  coverage tests added. The skill doc framing of "the auto-
+  generated `==` is dead infrastructure" was wrong about render
+  and resolver.
 
 ## Open gaps (pick from here)
 
 ### Discovery: don't pick from this list blind — regen first
 
 Before assuming the gaps below are the right gaps, run a `-v`
-regen against github and tally the warnings:
+regen against the spec you're targeting and tally the warnings:
 
 ```sh
-rm -rf /tmp/github_out_v && \
-  dart run space_gen -v -i ~/Documents/GitHub/personal/gen_tests/api.github.com.json \
-    -o /tmp/github_out_v 2>&1 | tee /tmp/github_v.log >/dev/null
+spec=api.github.com  # or discord, petstore, spacetraders
+rm -rf /tmp/${spec//./_}_v && \
+  dart run space_gen -v -i ~/Documents/GitHub/personal/gen_tests/${spec}.json \
+    -o /tmp/${spec//./_}_v 2>&1 | tee /tmp/${spec//./_}_v.log >/dev/null
 
-grep -E "^(Ignoring|Unused|Skipping)" /tmp/github_v.log \
+grep -E "^(Ignoring|Unused|Skipping)" /tmp/${spec//./_}_v.log \
   | sed -E 's/ in #.*//; s/=[^[:space:]]+ /=… /; s/dynamic/…/; s/\([A-Za-z]+\)/(…)/' \
   | sort | uniq -c | sort -rn
 ```
 
-The categories at the top of the tally (currently `format=int64`,
-`readOnly=true`, `oneOf` in properties) are dropping spec
+The categories at the top of the tally are dropping spec
 semantics on the floor. Pick from this *or* from the list below
 — don't assume the visible-output gaps are always the highest-
 leverage ones.
@@ -280,50 +342,78 @@ Warnings come from `_warnUnused` / `_warnIgnored` in
 `lib/src/parser.dart`. To see what fields a parser visit *handles*
 vs ignores, search there.
 
-### Tracking issues (the high-leverage tracks)
+### Discord blockers (immediate next iteration)
 
-Filed during the 2026-04-29 review pass. Each represents a
-significant chunk of work that should be its own iteration:
+Surfaced when Discord's spec was added to the rotation. Each
+unblocks more visibility — fix the parser-throw first, then
+re-regen and assess from the new baseline.
+
+- **Integer enums** — 132 sites in Discord, 0 in github. Parser
+  hard-throws at `_handleEnum` in `lib/src/parser.dart` when
+  `type: integer` is paired with `enum: [...]`. Most uses are
+  single-value tags (`enum: [1]`) used as oneOf discriminators —
+  same role github uses string tags for. The fix likely
+  generalizes `SchemaEnum.enumValues: List<String>` to support
+  ints, plumbs through resolve/render, and composes with the
+  multi-value-enum implicit discriminator picker from #182. Would
+  unblock Discord parsing and probably Stripe / many other specs.
+
+- **Pattern validation on newtype Strings** — 327 call sites in
+  Discord's `default_api.dart`, 0 affected in github (github
+  doesn't use top-level `type: string` newtypes with patterns).
+  Generated code calls `applicationId.validatePattern('^...$')`
+  where `applicationId: SnowflakeType` is an `extension type`
+  around `String`; `validatePattern` is on the underlying String,
+  not the extension type. Two design options: (a) move the regex
+  into the newtype's constructor (validate once at construction,
+  matches how `validateMaximumLength` etc. could also fold in),
+  (b) splice `.value.validatePattern(...)` at the call site
+  (preserves current "validate at every use" semantics).
+
+### Tracking issues (the high-leverage tracks, partially open)
 
 - **#185** — Strategy needed for web/dart2js-aware code generation.
   Trigger: `format=int64` (246 sites in github) silently produces
-  broken code on dart2js for specs with near-2^63 IDs. Spec
-  authors using int64 commonly: Stripe, Discord, Twitter,
-  Snowflake. Pre-coding: pick a validation-target spec, decide on
-  strategy (opt-in flag vs conditional imports vs typedef vs
-  doc-comment marker). Don't ship a github-specific decision.
+  broken code on dart2js for specs with near-2^63 IDs. Discord
+  was investigated as a target and didn't qualify (snowflakes are
+  JSON strings, not int64). Stripe is the next candidate — pull
+  the spec, check whether amounts use int64 or string-encoding
+  before coding. Eric's preference if/when this ships: `Int64`
+  from `package:fixnum`, no opt-in flag.
 
 - **#186** — Split request/response classes when properties are
   `readOnly: true`. Correctness issue: servers can reject requests
-  that include readOnly fields, and our current code forces users
-  to pass values for them. 81 sites in github. Open design call:
-  per-class duplication vs. dual-constructor on one class. Should
-  also handle `writeOnly: true` symmetrically. The closed PR #175
-  laid the parser-side foundation (captures
-  `SchemaObject.readOnlyProperties`); this issue is the real fix.
+  that include readOnly fields. 81 sites in github, plus
+  `Unused: readOnly=…` in `allOf` (3 more) and non-property slots
+  (12 more). Eric's preference: per-class duplication
+  (`UserRequest` / `UserResponse`) over dual-constructor. Should
+  also handle `writeOnly: true` symmetrically. PR #175 laid the
+  parser-side foundation (captures `SchemaObject.readOnlyProperties`)
+  before being closed; rebuild on top of that.
 
-- **#187** — Remove unused Equatable `props` from `RenderSchema`
-  (and audit `SchemaObject`/`ResolvedObject`). The codebase
-  semantic-comparison goes through `equalsIgnoringName` (manual);
-  the auto-generated `==`/`hashCode` from `props` is dead
-  infrastructure. Removing shrinks every future schema-field PR's
-  diff. Mostly a deletion patch but needs investigation of
-  `Set<RenderSchema>` in `_ModelCollector` first.
+- **#187** — _Partially closed by #190._ Parse-tree Equatable was
+  stripped (18 classes); render-tree and resolver-tree Equatable
+  are load-bearing (`_collectionCache` for #180 dedup,
+  `_ModelCollector` Set dedup for file-emission dedup) and stay,
+  with explicit coverage tests now pinning them.
 
 ### Smaller open gaps
 
-- **57 `<Parent>OneOf<i>` wrappers** still in the github regen.
-  Most are array-variant or multi-parent reference cases that
-  smoosh's structural eligibility + exclusive-by-use predicate
-  don't catch (correctly — array variants can't extend a sealed
-  class; multi-parent variants can't smoosh into one parent).
-  Some may be naming-quality wins still on the table — investigate
-  before committing.
+- **`<Parent>Variant<i>` doubling-fallback wrapper** — only 1 left
+  in github (`GistsCreateRequestPublicVariant1`, an inline string-
+  enum). Down from 22 before #189. Closing that last one would
+  need smoosh extending to inline `ResolvedEnum` variants too —
+  unclear if worth the complexity for a single site.
 
-- **6 `_1` collision suffixes** (`metadata_1`, `repository_rule_1`,
-  etc.). The resolver's snake-name collision handling appends
-  `_1` mechanically; the naming pass could pick a more
-  descriptive disambiguator (parent-context-derived).
+- **2 `_1` collision suffixes that actually render** — `metadata_1`
+  (the anyOf at `metadata.additionalProperties`, a String/num/Bool
+  union) and `code_scanning_variant_analysis_status_1` (an inline
+  enum that's a subset of the top-level enum with the same name).
+  The resolver's snake-name collision handling appends `_1`
+  mechanically; could pick a more descriptive parent-context
+  disambiguator. Two other `_1` allocations (`codespace_machine_1`,
+  `repository_ruleset_conditions_1` — the Group C stub) don't
+  actually render their own files. Low leverage.
 
 - **3 enumless-anyOf stubs (Group C)**: `timeline-issue-events`
   (22 variants), `issue-event-for-issue` (15), `repository-
@@ -483,13 +573,23 @@ From the project's CLAUDE.md and saved memory:
 6. End-to-end smoke test (when warranted): write a small spec at
    `/tmp/<name>_repro/spec.json`, run `dart run space_gen -i ...
    -o ...`, verify generated code in a Dart test.
-7. Regen against github:
+7. Regen against every tracked spec — github first (the bar to
+   maintain), then the others (which surface different patterns).
+   Don't ship a PR that regresses any spec already at "clean";
+   for specs not yet at "clean" (Discord today), each PR should at
+   least not make things worse:
    ```sh
-   rm -rf /tmp/github_out && \
-     dart run space_gen -i ~/Documents/GitHub/personal/gen_tests/api.github.com.json -o /tmp/github_out && \
-     (cd /tmp/github_out && dart analyze)
+   for spec in api.github.com discord petstore spacetraders; do
+     out=/tmp/${spec//./_}_out
+     rm -rf "$out"
+     dart run space_gen \
+       -i ~/Documents/GitHub/personal/gen_tests/${spec}.json \
+       -o "$out" || echo "FAIL: $spec"
+     (cd "$out" 2>/dev/null && dart analyze 2>&1 | tail -1)
+   done
    ```
-   Should be `No issues found!`.
+   github should be `No issues found!`. Others surface their own
+   gaps — useful signal for picking what to burn down next.
 
    **Add `-v` (`--verbose`) to surface detailed warnings** that
    the default run swallows — unsupported feature usage, name
@@ -572,9 +672,23 @@ From the project's CLAUDE.md and saved memory:
 ## Helpful one-shots
 
 ```sh
+# Burn-down rotation: regen each tracked spec, report analyze
+# status for each. Use this to spot regressions or pick the
+# next target.
+for spec in api.github.com discord petstore spacetraders; do
+  out=/tmp/${spec//./_}_out
+  rm -rf "$out"
+  dart run space_gen \
+    -i ~/Documents/GitHub/personal/gen_tests/${spec}.json \
+    -o "$out" 2>&1 | tail -1
+  echo "$spec: $((cd "$out" 2>/dev/null && dart analyze 2>&1 | tail -1) \
+    || echo 'GEN FAILED')"
+done
+
 # Discovery: tally what `-v` regen says we're dropping. Run this
 # first when picking the next gap — categories at the top of the
 # tally are usually higher-leverage than visible-output ugliness.
+# Substitute `discord_v.log` etc. for other specs.
 grep -E "^(Ignoring|Unused|Skipping)" /tmp/github_v.log \
   | sed -E 's/ in #.*//; s/=[^[:space:]]+ /=… /; s/dynamic/…/; s/\([A-Za-z]+\)/(…)/' \
   | sort | uniq -c | sort -rn
@@ -582,7 +696,7 @@ grep -E "^(Ignoring|Unused|Skipping)" /tmp/github_v.log \
 # Drill into one category — see the actual sites
 grep "Unused: oneOf" /tmp/github_v.log | head -20
 
-# Are we still emitting stubs?
+# Are we still emitting stubs? (works for any spec's regen dir)
 grep -l "throw UnimplementedError" /tmp/github_out/lib -r | wc -l
 
 # Sealed dispatch sites in models/
