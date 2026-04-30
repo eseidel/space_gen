@@ -639,6 +639,10 @@ class FileRenderer {
         'needsUriPackageImport': usedModelHelpers.contains(
           ModelHelpers.maybeParseUriTemplate,
         ),
+        'needsBase64Imports': const {
+          ModelHelpers.maybeBase64Encode,
+          ModelHelpers.maybeBase64Decode,
+        }.any(usedModelHelpers.contains),
       },
     );
   }
@@ -662,7 +666,7 @@ class FileRenderer {
     // from the barrel, narrowed to `show <exact types>` so we only
     // surface the specific names used by public field signatures —
     // not every symbol the third-party package happens to define.
-    final thirdPartyExports = collectThirdPartyExports(schemas);
+    final externalExports = collectExternalBarrelExports(schemas);
     final exportContexts = [
       for (final path in (paths.toList()..sort()))
         {
@@ -670,7 +674,7 @@ class FileRenderer {
           'hasShow': false,
           'shownTypes': '',
         },
-      for (final e in thirdPartyExports)
+      for (final e in externalExports)
         {
           'path': e.path,
           'hasShow': e.shown.isNotEmpty,
@@ -684,25 +688,36 @@ class FileRenderer {
     );
   }
 
-  /// Imports (third-party, non-prefixed) that the public API surface
-  /// references, grouped by package path. Each returned `Import` has a
+  /// Non-local imports (not from the generated package itself) that
+  /// the public API surface references and need re-exporting from
+  /// `lib/api.dart`, grouped by URI. Each returned `Import` has a
   /// non-empty `shown` list (the union of shown types across all
-  /// schema-level usages of that package).
+  /// schema-level usages of that import).
+  ///
+  /// Includes both `package:` imports (e.g. `package:uri/uri.dart`
+  /// for `UriTemplate`) and `dart:` SDK imports that expose a public
+  /// type in field signatures (`dart:typed_data` for `Uint8List`
+  /// from `contentEncoding: base64` fields). Dart's `export`
+  /// directive doesn't chain through `import`, so consumers of the
+  /// barrel — including the generated round-trip tests — need these
+  /// names re-exposed explicitly.
   ///
   /// Only imports with an explicit `shown:` list are candidates — an
   /// unconstrained `Import('package:x/x.dart')` means "the schema
   /// needs the package internally" (e.g. `package:meta/meta.dart`
-  /// for `@immutable`), not "expose every symbol in it to consumers
-  /// of the barrel."
+  /// for `@immutable` or `dart:convert` for the `base64` codec), not
+  /// "expose every symbol in it to consumers of the barrel."
   @visibleForTesting
-  List<Import> collectThirdPartyExports(Iterable<RenderSchema> schemas) {
+  List<Import> collectExternalBarrelExports(Iterable<RenderSchema> schemas) {
     final collector = _ImportCollector();
     for (final schema in schemas) {
       RenderTreeWalker(visitor: collector).walkSchema(schema);
     }
     final byPath = <String, Set<String>>{};
     for (final i in collector.imports) {
-      if (!i.path.startsWith('package:')) continue;
+      final isPkg = i.path.startsWith('package:');
+      final isDart = i.path.startsWith('dart:');
+      if (!isPkg && !isDart) continue;
       if (i.path.startsWith('package:$packageName/')) continue;
       if (i.asName != null) continue;
       if (i.shown.isEmpty) continue;
