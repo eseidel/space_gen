@@ -1057,11 +1057,24 @@ class Endpoint implements ToTemplateContext {
       // boundary because their underlying String / num is the param
       // type itself.
       if (parameter.type.createsNewType) continue;
+      final calls = parameter.validationCalls.toList();
+      if (calls.isEmpty) continue;
       final dartName = parameter.dartParameterName(quirks);
-      final isNullable = !parameter.isRequired;
-      final nameCall = isNullable ? '$dartName?.' : '$dartName.';
-      for (final call in parameter.validationCalls) {
-        statements.add('$nameCall$call;');
+      if (parameter.isRequired && calls.length > 1) {
+        // Required (non-nullable) param with multiple validators: emit
+        // a cascade so `cascade_invocations` doesn't fire on the
+        // duplicated receiver. Discord's `answerId.validateMaximum(10)`
+        // + `.validateMinimum(1)` is the canonical case.
+        statements.add(validationBody(calls, receiver: dartName));
+      } else {
+        // Single call (any nullability) or nullable multi-call: keep
+        // separate `name.call;` / `name?.call;` statements. The lint
+        // only fires on `.` (non-nullable) chains, so nullable cases
+        // stay as-is and github regen is byte-identical.
+        final nameCall = parameter.isRequired ? '$dartName.' : '$dartName?.';
+        for (final call in calls) {
+          statements.add('$nameCall$call;');
+        }
       }
     }
     return statements;
