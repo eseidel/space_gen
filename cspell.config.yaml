@@ -52,3 +52,4 @@ words:
   - bitfield
   - ints
   - fixnum
+  - codeowners

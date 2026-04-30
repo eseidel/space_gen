@@ -2700,6 +2700,32 @@ void main() {
       });
     });
 
+    test('SchemaUsage.fromBody detects validateXxx calls and adds the '
+        'api_exception.dart import', () {
+      // Newtype constructors call `value.validateMaximumLength(40)` etc.
+      // SchemaUsage scans the body string and adds the api_exception
+      // import when any `validateXxx` shows up — the extensions live
+      // there, so the file needs the import.
+      final usage = SchemaUsage.fromBody(
+        r"Foo(this.value) { value.validatePattern('^...$'); }",
+      );
+      expect(usage.usesValidationExtensions, isTrue);
+      expect(
+        usage.importsFor('spacetraders'),
+        contains(const Import('package:spacetraders/api_exception.dart')),
+      );
+    });
+
+    test('SchemaUsage.fromBody does not add api_exception when no '
+        'validateXxx calls are present', () {
+      final usage = SchemaUsage.fromBody('class Foo { final int x; }');
+      expect(usage.usesValidationExtensions, isFalse);
+      expect(
+        usage.importsFor('spacetraders'),
+        isNot(contains(const Import('package:spacetraders/api_exception.dart'))),
+      );
+    });
+
     test('imports for api', () {
       final templates = TemplateProvider.defaultLocation();
       final schemaRenderer = SchemaRenderer(templates: templates);
