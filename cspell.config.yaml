@@ -53,3 +53,6 @@ words:
   - ints
   - fixnum
   - codeowners
+  - backticked
+  - favorited
+  - readback
