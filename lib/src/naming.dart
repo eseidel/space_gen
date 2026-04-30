@@ -310,11 +310,16 @@ class _NameAssigner {
       _isStructurallySmooshable(variant) && _dispatchEmitsSmooshed(decision);
 
   /// Whether [variant] *could* be a direct subclass of a sealed
-  /// parent in idiomatic Dart. Two paths:
+  /// parent in idiomatic Dart. Three paths:
   ///
   /// - Inline `ResolvedObject` variant — the variant lives at
   ///   `<parent>/oneOf/<i>` (or `/anyOf/<i>`), so it's exclusive to
   ///   one parent by construction.
+  /// - Inline `ResolvedAllOf` variant at the same slot. AllOf
+  ///   collapses to a synthesized `RenderObject` at render, so it
+  ///   can extend the sealed parent the same way an inline object
+  ///   can. github's `RepositoryRuleDetailed` (21 inline `allOf`
+  ///   variants) is the motivating case.
   /// - Top-level `ResolvedObject` referenced by exactly one
   ///   oneOf/anyOf variant slot, with no other typed-reference uses
   ///   — "exclusive-by-use." `ResolvedAllOf` member uses don't
@@ -323,12 +328,22 @@ class _NameAssigner {
   ///   when their detailed twin re-uses the same components inside
   ///   an allOf.
   ///
+  /// Top-level `ResolvedAllOf` exclusive-use is a separate gap
+  /// (the presence-counting walk would need to distinguish allOf-
+  /// member uses from typed-reference uses for allOf itself); not
+  /// enabled here.
+  ///
   /// Independent of any dispatch — purely a structural / reachability
   /// property of the variant.
   bool _isStructurallySmooshable(ResolvedSchema variant) {
-    if (variant is! ResolvedObject) return false;
-    if (_isInlineCollectionVariant(variant)) return true;
-    return _isExclusiveUseTopLevel(variant);
+    if (variant is ResolvedObject) {
+      if (_isInlineCollectionVariant(variant)) return true;
+      return _isExclusiveUseTopLevel(variant);
+    }
+    if (variant is ResolvedAllOf) {
+      return _isInlineCollectionVariant(variant);
+    }
+    return false;
   }
 
   /// True when [variant] is a top-level component schema referenced
