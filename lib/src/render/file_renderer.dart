@@ -168,12 +168,11 @@ String maybeAddCommentReferencesIgnore(String content) {
   return '$commentReferencesIgnoreBlock\n$content';
 }
 
-/// Composes the per-file emit-time suppression helpers. Wired through
-/// `_renderTemplate(transform: ...)` at every space_gen-emitted file
-/// so each call site references one entry point — adding a new helper
-/// to the chain is a single-place change here, not a sweep across
-/// every spec-emit call site. Hand-written templates skip the
-/// `transform:` argument entirely (see #138's design rationale).
+/// Composes the per-file emit-time suppression helpers applied by
+/// `_renderSpecTemplate`. Adding a new gen-time suppression to the
+/// pipeline is a single edit here; call sites stay unchanged.
+/// Hand-written templates use `_renderTemplate` instead and bypass
+/// this entirely (see #138's design rationale).
 @visibleForTesting
 String maybeAddIgnoreDirectives(String content) =>
     maybeAddLongLineIgnore(maybeAddCommentReferencesIgnore(content));
@@ -529,19 +528,38 @@ class FileRenderer {
   String modelPackageImport(FileRenderer context, RenderSchema schema) =>
       'package:${context.packageName}/${context.modelPackagePath(schema)}';
 
-  /// Render a template. [transform] runs on the rendered content
-  /// before it lands on disk — used by the schema/operation paths to
-  /// add `// ignore_for_file: comment_references` when the spec's
-  /// description text would trip the lint.
+  /// Render a hand-written template — pubspec, analysis_options,
+  /// `auth.dart`, the `client.dart` facade, etc. The output is the
+  /// template verbatim with no spec-derived class names spliced in,
+  /// so the gen-time lint suppressions don't apply. See
+  /// [_renderSpecTemplate] for the path that emits spec-derived
+  /// content.
   void _renderTemplate({
     required String template,
     required String outPath,
     Map<String, dynamic> context = const {},
-    String Function(String content)? transform,
   }) {
     final output = templates.loadTemplate(template).renderString(context);
-    final finalContent = transform == null ? output : transform(output);
-    fileWriter.writeFile(path: outPath, content: finalContent);
+    fileWriter.writeFile(path: outPath, content: output);
+  }
+
+  /// Render a template that emits content shaped by the spec — model
+  /// files, api files, generated round-trip tests. The output is run
+  /// through [maybeAddIgnoreDirectives] before it lands on disk, which
+  /// adds the standard `// ignore_for_file:` block(s) for any lint
+  /// the gen-time content provably triggers. Adding a new gen-time
+  /// suppression is one edit inside [maybeAddIgnoreDirectives]; call
+  /// sites stay unchanged.
+  void _renderSpecTemplate({
+    required String template,
+    required String outPath,
+    Map<String, dynamic> context = const {},
+  }) {
+    final output = templates.loadTemplate(template).renderString(context);
+    fileWriter.writeFile(
+      path: outPath,
+      content: maybeAddIgnoreDirectives(output),
+    );
   }
 
   /// Set up the package directory (creates [fileWriter]'s outDir and
@@ -822,11 +840,10 @@ class FileRenderer {
           .map((i) => i.toTemplateContext())
           .toList();
       final outPath = apiFilePath(api);
-      _renderTemplate(
+      _renderSpecTemplate(
         template: 'add_imports',
         outPath: outPath,
         context: {'imports': importsContext, 'content': renderedApi.body},
-        transform: maybeAddIgnoreDirectives,
       );
       rendered.add(api);
     }
@@ -894,11 +911,10 @@ class FileRenderer {
           .toList();
 
       final outPath = modelFilePath(schema);
-      _renderTemplate(
+      _renderSpecTemplate(
         template: 'add_imports',
         outPath: outPath,
         context: {'imports': importsContext, 'content': rendered.body},
-        transform: maybeAddIgnoreDirectives,
       );
     }
   }
@@ -929,7 +945,7 @@ class FileRenderer {
       final example = schema.exampleValue(schemaContext);
       if (example == null) continue;
       final invalidJson = schema.invalidJsonExample(schemaContext);
-      _renderTemplate(
+      _renderSpecTemplate(
         template: 'schema_round_trip_test',
         outPath: outPath,
         context: {
@@ -940,7 +956,6 @@ class FileRenderer {
           'invalidJsonExample': invalidJson,
           'isEnum': schema is RenderEnum,
         },
-        transform: maybeAddIgnoreDirectives,
       );
     }
   }
@@ -987,7 +1002,7 @@ class FileRenderer {
       });
     }
     if (variants.isEmpty) return;
-    _renderTemplate(
+    _renderSpecTemplate(
       template: 'schema_oneof_round_trip_test',
       outPath: outPath,
       context: {
@@ -996,7 +1011,6 @@ class FileRenderer {
         'typeName': schema.typeName,
         'variants': variants,
       },
-      transform: maybeAddIgnoreDirectives,
     );
   }
 
