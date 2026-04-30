@@ -87,9 +87,9 @@ const longLineIgnoreBlock =
 
 /// Returns [content] with [longLineIgnoreBlock] prepended if any line
 /// outside the analyzer's existing carve-outs (URI imports/exports,
-/// `///` dartdoc) exceeds 80 cols. Used at file-emit time on the two
-/// render paths that produce structurally-unavoidable long lines
-/// (schemas, operations) — hand-written templates skip the call so a
+/// `///` dartdoc) exceeds 80 cols. Threaded through
+/// [maybeAddIgnoreDirectives] at file-emit time on every
+/// space_gen-emitted file — hand-written templates skip the call so a
 /// directive isn't smuggled into files space_gen doesn't own.
 ///
 /// Emit-time decision matches `maybeAddCommentReferencesIgnore`'s
@@ -139,11 +139,11 @@ const commentReferencesIgnoreBlock =
 
 /// Returns [content] with [commentReferencesIgnoreBlock] prepended if
 /// any `///` doc comment carries a bracketed token that wouldn't
-/// resolve in scope. Used at file-emit time on the two render paths
-/// that splice raw spec descriptions into dartdoc (schemas,
-/// operations) — hand-written templates skip the call so a spurious
-/// `[FormatException]` reference in their docs doesn't get silently
-/// suppressed when it should be fixed at the source.
+/// resolve in scope. Threaded through [maybeAddIgnoreDirectives] at
+/// file-emit time on every space_gen-emitted file — hand-written
+/// templates skip the call so a spurious `[FormatException]`
+/// reference in their docs doesn't get silently suppressed when it
+/// should be fixed at the source.
 ///
 /// "In scope" today means *declared as a top-level type in the same
 /// file* (class / enum / extension type / mixin). Imported names
@@ -167,6 +167,16 @@ String maybeAddCommentReferencesIgnore(String content) {
   if (tokens.every(resolvesLocally)) return content;
   return '$commentReferencesIgnoreBlock\n$content';
 }
+
+/// Composes the per-file emit-time suppression helpers. Wired through
+/// `_renderTemplate(transform: ...)` at every space_gen-emitted file
+/// so each call site references one entry point — adding a new helper
+/// to the chain is a single-place change here, not a sweep across
+/// every spec-emit call site. Hand-written templates skip the
+/// `transform:` argument entirely (see #138's design rationale).
+@visibleForTesting
+String maybeAddIgnoreDirectives(String content) =>
+    maybeAddLongLineIgnore(maybeAddCommentReferencesIgnore(content));
 
 /// Collects every `[token]` bracketed reference inside a `///` doc
 /// comment, ignoring `[Foo](url)` markdown links (the `(?!\()` guard).
@@ -816,8 +826,7 @@ class FileRenderer {
         template: 'add_imports',
         outPath: outPath,
         context: {'imports': importsContext, 'content': renderedApi.body},
-        transform: (s) =>
-            maybeAddLongLineIgnore(maybeAddCommentReferencesIgnore(s)),
+        transform: maybeAddIgnoreDirectives,
       );
       rendered.add(api);
     }
@@ -889,8 +898,7 @@ class FileRenderer {
         template: 'add_imports',
         outPath: outPath,
         context: {'imports': importsContext, 'content': rendered.body},
-        transform: (s) =>
-            maybeAddLongLineIgnore(maybeAddCommentReferencesIgnore(s)),
+        transform: maybeAddIgnoreDirectives,
       );
     }
   }
@@ -932,7 +940,7 @@ class FileRenderer {
           'invalidJsonExample': invalidJson,
           'isEnum': schema is RenderEnum,
         },
-        transform: maybeAddLongLineIgnore,
+        transform: maybeAddIgnoreDirectives,
       );
     }
   }
@@ -988,7 +996,7 @@ class FileRenderer {
         'typeName': schema.typeName,
         'variants': variants,
       },
-      transform: maybeAddLongLineIgnore,
+      transform: maybeAddIgnoreDirectives,
     );
   }
 
