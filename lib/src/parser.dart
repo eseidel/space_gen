@@ -829,26 +829,54 @@ SchemaEnum<Object>? _handleEnum({
   required dynamic defaultValue,
   required CommonProperties common,
 }) {
-  final enumValues = _optional<List<dynamic>>(json, 'enum');
+  // OpenAPI 3.1 / JSON Schema 2020-12: `const: X` is the single-value
+  // form of `enum: [X]`. Discord uses 128+ such sites — most are
+  // single-value tags (`const: 1`) on oneOf variants for implicit
+  // discrimination, the same role github fills with single-value
+  // strings. Treat the two spellings identically before validating.
+  final explicitEnum = _optional<List<dynamic>>(json, 'enum');
+  final constValue = _optional<dynamic>(json, 'const');
+  final List<dynamic>? enumValues;
+  if (explicitEnum != null) {
+    if (constValue != null) {
+      _error(
+        json,
+        "'enum' and 'const' cannot both be set: enum=$explicitEnum, "
+        'const=$constValue',
+      );
+    }
+    enumValues = explicitEnum;
+  } else if (constValue != null) {
+    enumValues = <dynamic>[constValue];
+  } else {
+    enumValues = null;
+  }
   final type = typeAndFormat.type;
   final podType = typeAndFormat.podType;
 
   if (enumValues == null) {
     return null;
   }
-  // String is the default when `type` is omitted (matches the most
-  // common OpenAPI 3.0/3.1 pattern). Integer enums show up in specs
-  // that use them as single-value discriminator tags (Discord's
-  // component types). Boolean enums (e.g. github's `fork: true`)
-  // parse as a non-enum boolean — there's nothing to dispatch on.
+  // Pick string vs int from the declared `type:`, falling back to
+  // value-shape inference when `type:` is absent (Discord's typed-
+  // enum pattern: `type: integer` on the parent + `const: N` on each
+  // oneOf variant, where the variant carries no `type` of its own).
+  // Boolean enums (e.g. github's `fork: true`) have nothing to
+  // dispatch on; bail and let the schema fall through to non-enum
+  // boolean.
   final bool isInt;
-  if (type == null || type == 'string') {
-    isInt = false;
-  } else if (type == 'integer') {
+  if (type == 'integer') {
     isInt = true;
+  } else if (type == 'string') {
+    isInt = false;
   } else if (podType == PodType.boolean) {
     _ignored<String>(json, 'type');
     return null;
+  } else if (type == null) {
+    final nonNullForInference = enumValues.where((e) => e != null);
+    isInt =
+        nonNullForInference.isNotEmpty &&
+        nonNullForInference.every((e) => e is int);
   } else {
     _unimplemented(json, 'enumValues for type=$type');
   }

@@ -4955,5 +4955,89 @@ void main() {
         '}\n',
       );
     });
+
+    test(
+      'multi-status sealed wrapper does not collide with a same-named '
+      'top-level schema',
+      () {
+        // Discord regression: a top-level component schema named e.g.
+        // `ThreadSearchResponse` is the body of an operation's 200
+        // response, and the operation also has a 202 with a different
+        // body — multi-status dispatch synthesizes a sealed wrapper
+        // class. If that wrapper is also named `ThreadSearchResponse`,
+        // the wrapper shadows the imported top-level schema in the
+        // api file (so `ThreadSearchResponse.fromJson(...)` fails to
+        // resolve) and `lib/api.dart` re-exports the same name from
+        // two libraries (`ambiguous_export`).
+        //
+        // The naming pass must claim the synthesized wrapper's name
+        // distinctly from any colliding top-level schema, and the
+        // renderer must read the assigned name back from it (rather
+        // than recompute `<op>Response`).
+        final spec = {
+          'openapi': '3.0.0',
+          'info': {'title': 'Test', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.example.com'},
+          ],
+          'paths': {
+            '/things/search': {
+              'get': {
+                'operationId': 'thingSearch',
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          r'$ref': '#/components/schemas/ThingSearchResponse',
+                        },
+                      },
+                    },
+                  },
+                  '202': {
+                    'description': 'Pending',
+                    'content': {
+                      'application/json': {
+                        'schema': {'type': 'string'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'components': {
+            'schemas': {
+              'ThingSearchResponse': {
+                'type': 'object',
+                'properties': {
+                  'total': {'type': 'integer'},
+                },
+              },
+            },
+          },
+        };
+        final result = renderTestApiFromSpec(
+          specJson: spec,
+          serverUrl: Uri.parse('https://api.example.com'),
+          specUrl: Uri.parse('file:///spec.yaml'),
+        );
+        // The synthesized sealed wrapper must not reuse the top-level
+        // schema's name. It picks up a `_2` suffix from the allocator.
+        expect(result, contains('sealed class ThingSearchResponse2'));
+        expect(result, contains('class ThingSearchResponse2200'));
+        expect(result, contains('class ThingSearchResponse2202'));
+        // The 200 wrapper's `value` is the top-level schema (the
+        // un-suffixed `ThingSearchResponse`), not the local sealed
+        // class. If the names collided, the local class would shadow
+        // the imported one and the field would loop back into itself.
+        expect(result, contains('final ThingSearchResponse value;'));
+        // The synchronous return type and switch-arm fromJson call
+        // also point at the assigned wrapper name.
+        expect(result, contains('Future<ThingSearchResponse2>'));
+        expect(result, contains('ThingSearchResponse.fromJson('));
+      },
+    );
   });
 }

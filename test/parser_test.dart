@@ -2086,6 +2086,52 @@ void main() {
           ),
         );
       });
+      test('integer const parses as a single-value SchemaIntEnum', () {
+        // OpenAPI 3.1 / JSON Schema 2020-12: `const: N` is the single-
+        // value form of `enum: [N]`. Discord uses 128+ such sites as
+        // single-value tags on oneOf variants — same role as
+        // `enum: [N]` in #192.
+        final json = {'type': 'integer', 'const': 7};
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaIntEnum) {
+          fail('Expected SchemaIntEnum, got ${schema.runtimeType}');
+        }
+        expect(schema.enumValues, equals([7]));
+      });
+      test('string const parses as a single-value SchemaStringEnum', () {
+        // Discord's `match_all` discriminator value uses `const`.
+        final json = {'type': 'string', 'const': 'match_all'};
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaStringEnum) {
+          fail('Expected SchemaStringEnum, got ${schema.runtimeType}');
+        }
+        expect(schema.enumValues, equals(['match_all']));
+      });
+      test('const without explicit type infers from the literal', () {
+        // No `type:` declared. The existing inference path (which
+        // already handles `enum: [...]` without explicit type) must
+        // recognize `const` the same way.
+        final json = {'const': 'foo'};
+        final schema = parseTestSchema(json);
+        expect(schema, isA<SchemaStringEnum>());
+      });
+      test('declaring both enum and const is a spec error', () {
+        final json = {
+          'type': 'integer',
+          'enum': [1, 2],
+          'const': 1,
+        };
+        expect(
+          () => parseTestSchema(json),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              contains("'enum' and 'const' cannot both be set"),
+            ),
+          ),
+        );
+      });
       test('oneOf-of-consts (integer) collapses to SchemaIntEnum', () {
         // Discord's `MessageComponentTypes` and 60+ similar typed
         // enums spell themselves as `oneOf: [{const: N, title: ...}]`.
