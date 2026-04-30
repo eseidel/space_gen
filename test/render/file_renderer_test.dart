@@ -2414,75 +2414,71 @@ void main() {
     });
   });
 
-  group('suppressLongLineLintInGeneratedFiles', () {
-    Directory setUpDir(Map<String, String> files) {
-      final fs = MemoryFileSystem.test();
-      final dir = fs.directory('/out')..createSync(recursive: true);
-      for (final entry in files.entries) {
-        dir.childFile(entry.key)
-          ..parent.createSync(recursive: true)
-          ..writeAsStringSync(entry.value);
-      }
-      return dir;
-    }
-
-    test('leaves short-only files untouched', () {
-      final shortContent = List.generate(5, (i) => 'var x$i = $i;').join('\n');
-      final dir = setUpDir({'lib/short.dart': shortContent});
-      suppressLongLineLintInGeneratedFiles(dir);
-      expect(
-        dir.childFile('lib/short.dart').readAsStringSync(),
-        shortContent,
-      );
+  group('maybeAddLongLineIgnore', () {
+    test('passes through short-only content', () {
+      final content = '${List.generate(5, (i) => 'var x$i = $i;').join('\n')}\n';
+      expect(maybeAddLongLineIgnore(content), content);
     });
 
-    test('prepends directive to files with any line > 80 cols', () {
-      final longLine = '// ${'a' * 100}';
-      const shortContent = 'var x = 1;\n';
-      final dir = setUpDir({
-        'lib/long.dart': '$shortContent$longLine\n',
-        'lib/also_short.dart': shortContent,
-      });
-      suppressLongLineLintInGeneratedFiles(dir);
+    test('prepends directive when a non-import line exceeds 80 cols', () {
+      final longLine = 'final x = ${'a' * 80};';
+      final content = 'var x = 1;\n$longLine\n';
       expect(
-        dir.childFile('lib/long.dart').readAsStringSync(),
+        maybeAddLongLineIgnore(content),
         startsWith('$longLineIgnoreBlock\n'),
-      );
-      expect(
-        dir.childFile('lib/also_short.dart').readAsStringSync(),
-        shortContent,
       );
     });
 
     test('is idempotent — does not stack the directive', () {
-      final longLine = '// ${'a' * 100}';
-      final dir = setUpDir({
-        'lib/long.dart': '$longLineIgnoreBlock\n$longLine\n',
-      });
-      suppressLongLineLintInGeneratedFiles(dir);
-      final content = dir.childFile('lib/long.dart').readAsStringSync();
-      // Directive appears exactly once.
+      final longLine = 'final x = ${'a' * 80};';
+      final content = '$longLineIgnoreBlock\n$longLine\n';
+      // Directive present exactly once before and after.
+      expect(longLineIgnoreBlock.allMatches(content).length, 1);
+      final result = maybeAddLongLineIgnore(content);
+      expect(longLineIgnoreBlock.allMatches(result).length, 1);
+    });
+
+    test('passes through when only long lines are imports', () {
+      // Mirrors the analyzer's `lines_longer_than_80_chars` carve-out
+      // for URI imports — flagging these would trip `unnecessary_ignore`
+      // because the underlying lint never fires.
+      final longImport =
+          "import 'package:${'a' * 60}/foo.dart' as ${'b' * 30};";
+      final content = '$longImport\nclass Foo {}\n';
+      expect(longImport.length, greaterThan(80));
+      expect(maybeAddLongLineIgnore(content), content);
+    });
+
+    test('passes through when only long lines are exports', () {
+      final longExport =
+          "export 'package:${'a' * 60}/foo.dart' show ${'b' * 30};";
+      final content = '$longExport\nclass Foo {}\n';
+      expect(longExport.length, greaterThan(80));
+      expect(maybeAddLongLineIgnore(content), content);
+    });
+
+    test('passes through when only long lines are `///` dartdoc', () {
+      final longDoc = '/// ${'a' * 90}';
+      final content = '$longDoc\nclass Foo {}\n';
+      expect(longDoc.length, greaterThan(80));
+      expect(maybeAddLongLineIgnore(content), content);
+    });
+
+    test('still fires when a real long line sits next to a long import', () {
+      final longImport =
+          "import 'package:${'a' * 60}/foo.dart' as ${'b' * 30};";
+      final longCode = 'final x = ${'a' * 80};';
+      final content = '$longImport\n$longCode\n';
       expect(
-        longLineIgnoreBlock.allMatches(content).length,
-        1,
+        maybeAddLongLineIgnore(content),
+        startsWith('$longLineIgnoreBlock\n'),
       );
     });
 
-    test('ignores non-dart files', () {
-      final longLine = 'x' * 100;
-      final dir = setUpDir({'README.md': longLine});
-      suppressLongLineLintInGeneratedFiles(dir);
-      expect(dir.childFile('README.md').readAsStringSync(), longLine);
-    });
-
-    test('ignores a line exactly 80 chars (at the limit, not over)', () {
+    test('treats exactly 80 chars as not over', () {
       final exactly80 = 'x' * 80;
-      final dir = setUpDir({'lib/borderline.dart': '$exactly80\n'});
-      suppressLongLineLintInGeneratedFiles(dir);
-      expect(
-        dir.childFile('lib/borderline.dart').readAsStringSync(),
-        '$exactly80\n',
-      );
+      final content = '$exactly80\n';
+      expect(maybeAddLongLineIgnore(content), content);
     });
   });
 

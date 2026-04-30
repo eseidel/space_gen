@@ -85,32 +85,42 @@ const longLineIgnoreBlock =
     '// 80 cols as bare identifiers.\n'
     '// ignore_for_file: lines_longer_than_80_chars';
 
-/// Walks [dir] and prepends [longLineIgnoreBlock] to any `.dart` file
-/// that still has a line over 80 cols after `dart format`. Some specs
-/// flatten deeply-nested inline schemas into class names long enough
-/// that common call-site patterns (`.map<Name>(`,
-/// `Name.maybeFromJson(`) and import paths overflow as bare
-/// identifiers — cases `dart format` provably cannot fix by
-/// reflowing. Emitting the directive per-file keeps the lint live
-/// everywhere it could still catch a real generator bug, and it
-/// self-documents which files have structurally-unavoidable long
-/// lines.
+/// Returns [content] with [longLineIgnoreBlock] prepended if any line
+/// outside the analyzer's existing carve-outs (URI imports/exports,
+/// `///` dartdoc) exceeds 80 cols. Used at file-emit time on the two
+/// render paths that produce structurally-unavoidable long lines
+/// (schemas, operations) — hand-written templates skip the call so a
+/// directive isn't smuggled into files space_gen doesn't own.
+///
+/// Emit-time decision matches `maybeAddCommentReferencesIgnore`'s
+/// shape and avoids the previous post-walk pass that scanned every
+/// `.dart` in the output directory — including hand-written ones a
+/// subclass `FileRenderer` was deliberately preserving by overriding
+/// `renderClient` / `renderPublicApi` to no-ops. Skipping
+/// `import`/`export` lines mirrors the analyzer's own behavior:
+/// `lines_longer_than_80_chars` ignores URIs, so a long `import` was
+/// never going to fire the lint and shouldn't trigger the directive
+/// either (the unused directive in turn trips `unnecessary_ignore`).
+///
+/// `dart format` runs after this, so the check is on pre-format
+/// content. Format only reflows long lines shorter when wrapping
+/// points exist — it can't stretch a short line to >80 nor split a
+/// bare identifier — so pre-format detection is a safe overestimate
+/// for the files this generator emits.
 @visibleForTesting
-void suppressLongLineLintInGeneratedFiles(Directory dir) {
+String maybeAddLongLineIgnore(String content) {
   const marker = '// ignore_for_file: lines_longer_than_80_chars';
-  final dartFiles = dir
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((f) => f.path.endsWith('.dart'));
-  for (final file in dartFiles) {
-    final content = file.readAsStringSync();
-    // Idempotent — a previous run or handwritten override of the
-    // directive already covers this file.
-    if (content.contains(marker)) continue;
-    final hasLongLine = content.split('\n').any((line) => line.length > 80);
-    if (!hasLongLine) continue;
-    file.writeAsStringSync('$longLineIgnoreBlock\n$content');
-  }
+  if (content.contains(marker)) return content;
+  final hasFlaggableLongLine = content.split('\n').any((line) {
+    if (line.length <= 80) return false;
+    final trimmed = line.trimLeft();
+    if (trimmed.startsWith('import ')) return false;
+    if (trimmed.startsWith('export ')) return false;
+    if (trimmed.startsWith('///')) return false;
+    return true;
+  });
+  if (!hasFlaggableLongLine) return content;
+  return '$longLineIgnoreBlock\n$content';
 }
 
 /// Block prepended to generated `.dart` files whose dartdoc contains
@@ -806,7 +816,8 @@ class FileRenderer {
         template: 'add_imports',
         outPath: outPath,
         context: {'imports': importsContext, 'content': renderedApi.body},
-        transform: maybeAddCommentReferencesIgnore,
+        transform: (s) =>
+            maybeAddLongLineIgnore(maybeAddCommentReferencesIgnore(s)),
       );
       rendered.add(api);
     }
@@ -878,7 +889,8 @@ class FileRenderer {
         template: 'add_imports',
         outPath: outPath,
         context: {'imports': importsContext, 'content': rendered.body},
-        transform: maybeAddCommentReferencesIgnore,
+        transform: (s) =>
+            maybeAddLongLineIgnore(maybeAddCommentReferencesIgnore(s)),
       );
     }
   }
@@ -920,6 +932,7 @@ class FileRenderer {
           'invalidJsonExample': invalidJson,
           'isEnum': schema is RenderEnum,
         },
+        transform: maybeAddLongLineIgnore,
       );
     }
   }
@@ -975,6 +988,7 @@ class FileRenderer {
         'typeName': schema.typeName,
         'variants': variants,
       },
+      transform: maybeAddLongLineIgnore,
     );
   }
 
@@ -1038,7 +1052,6 @@ class FileRenderer {
     // Render the combined api.dart exporting all rendered schemas.
     renderPublicApi(spec.apis, schemas);
     formatter.formatAndFix(pkgDir: fileWriter.outDir.path);
-    suppressLongLineLintInGeneratedFiles(fileWriter.outDir);
 
     final misspellings = spellChecker.collectMisspellings(fileWriter.outDir);
     renderCspellConfig(misspellings);
