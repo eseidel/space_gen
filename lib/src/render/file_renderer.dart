@@ -1,48 +1,20 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
-import 'package:dart_style/dart_style.dart';
 import 'package:file/file.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
-import 'package:pub_semver/pub_semver.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/quirks.dart';
+import 'package:space_gen/src/render/formatting.dart';
 import 'package:space_gen/src/render/render_tree.dart';
 import 'package:space_gen/src/render/schema_renderer.dart';
 import 'package:space_gen/src/render/templates.dart';
 import 'package:space_gen/src/render/tree_visitor.dart';
 import 'package:space_gen/src/string.dart';
-import 'package:yaml/yaml.dart';
 
-/// The settings [FileRenderer._formatIfDart] passes to
-/// [DartFormatter] for files in the consuming package.
-class _FormatContext {
-  const _FormatContext({
-    required this.languageVersion,
-    required this.pageWidth,
-    required this.trailingCommas,
-  });
-
-  final Version languageVersion;
-  final int? pageWidth;
-  final TrailingCommas? trailingCommas;
-}
-
-/// The subset of `analysis_options.yaml`'s `formatter:` section that
-/// [DartFormatter] can consume directly.
-class _FormatterConfig {
-  const _FormatterConfig({this.pageWidth, this.trailingCommas});
-  final int? pageWidth;
-  final TrailingCommas? trailingCommas;
-}
-
-typedef RunProcess =
-    ProcessResult Function(
-      String executable,
-      List<String> arguments, {
-      String? workingDirectory,
-    });
+export 'package:space_gen/src/render/formatting.dart'
+    show Formatter, RunProcess;
 
 class _ModelCollector extends RenderTreeVisitor {
   final Set<RenderSchema> schemas = {};
@@ -97,160 +69,6 @@ void logNameCollisions(Iterable<RenderSchema> schemas) {
       }
     }
   }
-}
-
-/// Block prepended to generated `.dart` files that still contain a
-/// line over 80 cols after `dart format` / `dart fix`. The preceding
-/// comment satisfies the `document_ignores` lint from
-/// `very_good_analysis`. Exposed for tests.
-@visibleForTesting
-const longLineIgnoreBlock =
-    '// Some OpenAPI specs flatten inline schemas into class names long\n'
-    "// enough that `dart format` can't keep imports and call sites under\n"
-    '// 80 cols as bare identifiers.\n'
-    '// ignore_for_file: lines_longer_than_80_chars';
-
-/// Returns [content] with [longLineIgnoreBlock] prepended if any line
-/// outside the analyzer's existing carve-outs (URI imports/exports)
-/// exceeds 80 cols. Threaded through
-/// [maybeAddIgnoreDirectives] at file-emit time on every
-/// space_gen-emitted file — hand-written templates skip the call so a
-/// directive isn't smuggled into files space_gen doesn't own.
-///
-/// Emit-time decision matches `maybeAddCommentReferencesIgnore`'s
-/// shape and avoids the previous post-walk pass that scanned every
-/// `.dart` in the output directory — including hand-written ones a
-/// subclass `FileRenderer` was deliberately preserving by overriding
-/// `renderClient` / `renderPublicApi` to no-ops. Skipping
-/// `import`/`export` lines mirrors the analyzer's own behavior:
-/// `lines_longer_than_80_chars` ignores URIs, so a long `import` was
-/// never going to fire the lint and shouldn't trigger the directive
-/// either (the unused directive in turn trips `unnecessary_ignore`).
-///
-/// `dart format` runs after this, so the check is on pre-format
-/// content. Format only reflows long lines shorter when wrapping
-/// points exist — it can't stretch a short line to >80 nor split a
-/// bare identifier — so pre-format detection is a safe overestimate
-/// for the files this generator emits.
-@visibleForTesting
-String maybeAddLongLineIgnore(String content) {
-  const marker = '// ignore_for_file: lines_longer_than_80_chars';
-  if (content.contains(marker)) return content;
-  final hasFlaggableLongLine = content.split('\n').any((line) {
-    if (line.length <= 80) return false;
-    final trimmed = line.trimLeft();
-    if (trimmed.startsWith('import ')) return false;
-    if (trimmed.startsWith('export ')) return false;
-    return true;
-  });
-  if (!hasFlaggableLongLine) return content;
-  return '$longLineIgnoreBlock\n$content';
-}
-
-/// Block prepended to generated `.dart` files whose dartdoc contains
-/// `[…]` patterns that don't resolve (e.g. github's code-of-conduct
-/// description literally has the form "contacting the project team
-/// at \[EMAIL\]", and the MIT license template carries \[year\] and
-/// \[fullname\] placeholders). Exposed for tests.
-@visibleForTesting
-const commentReferencesIgnoreBlock =
-    '// Spec descriptions copy prose verbatim into dartdoc, where `[x]`\n'
-    '// inside a sentence (placeholder text, ALL_CAPS tokens, license\n'
-    '// templates) is parsed as a symbol reference even when no such\n'
-    '// symbol exists. Suppress file-locally so the lint stays live\n'
-    '// elsewhere; spec authors do not always escape brackets.\n'
-    '// ignore_for_file: comment_references';
-
-/// Returns [content] with [commentReferencesIgnoreBlock] prepended if
-/// any `///` doc comment carries a bracketed token that wouldn't
-/// resolve in scope. Threaded through [maybeAddIgnoreDirectives] at
-/// file-emit time on every space_gen-emitted file — hand-written
-/// templates skip the call so a spurious `[FormatException]`
-/// reference in their docs doesn't get silently suppressed when it
-/// should be fixed at the source.
-///
-/// "In scope" today means *declared as a top-level type in the same
-/// file* (class / enum / extension type / mixin). Imported names
-/// aren't tracked yet — see #142 — so a `[Foo]` ref to an imported
-/// type still triggers the directive even when it would resolve.
-/// Harmless: extra suppression doesn't break anything, just adds a
-/// 6-line preamble. The same-file check alone removes the bulk of
-/// false positives, where every dartdoc ref is a self-mention of the
-/// class the file declares.
-@visibleForTesting
-String maybeAddCommentReferencesIgnore(String content) {
-  final tokens = _bracketedDartdocTokens(content);
-  if (tokens.isEmpty) return content;
-  final declared = _topLevelDeclarations(content);
-  // For a member-style ref like `[Foo.fromJson]`, the analyzer resolves
-  // it iff the head (`Foo`) does — so check against the head, not the
-  // full token. Doesn't catch refs to inherited members reached without
-  // a qualifier (`[fromJson]`); those still trip the directive, which
-  // is fine.
-  bool resolvesLocally(String t) => declared.contains(t.split('.').first);
-  if (tokens.every(resolvesLocally)) return content;
-  return '$commentReferencesIgnoreBlock\n$content';
-}
-
-/// Composes the per-file emit-time suppression helpers applied by
-/// `_renderSpecTemplate`. Adding a new gen-time suppression to the
-/// pipeline is a single edit here; call sites stay unchanged.
-/// Hand-written templates use `_renderTemplate` instead and bypass
-/// this entirely (see #138's design rationale).
-@visibleForTesting
-String maybeAddIgnoreDirectives(String content) =>
-    maybeAddLongLineIgnore(maybeAddCommentReferencesIgnore(content));
-
-/// Collects every `[token]` bracketed reference inside a `///` doc
-/// comment, ignoring `[Foo](url)` markdown links (the `(?!\()` guard).
-Set<String> _bracketedDartdocTokens(String content) {
-  final tokenRe = RegExp(r'\[([^\]\s]+)\](?!\()');
-  final tokens = <String>{};
-  for (final line in content.split('\n')) {
-    final stripped = line.trimLeft();
-    if (!stripped.startsWith('///')) continue;
-    for (final m in tokenRe.allMatches(stripped)) {
-      tokens.add(m.group(1)!);
-    }
-  }
-  return tokens;
-}
-
-/// Collects the names of declarations the analyzer would resolve a
-/// `[token]` bracketed dartdoc reference against. Two regexes:
-///
-/// - **Top-level types** the renderer emits — `class`, `enum`,
-///   `mixin`, `extension type [const] Foo._(...)`. Match the
-///   uppercase-leading name.
-/// - **Class members** the renderer emits as `final`/`late final` /
-///   `var` / `const` / `static` fields. Match the identifier after
-///   the type. Catches the common shape spec dartdoc refers to —
-///   e.g. shorebird's `/// The signature of the [hash].` resolves
-///   to a `final String hash;` field, which the analyzer's
-///   `comment_references` lint follows through enclosing class
-///   scope.
-///
-/// Methods and getters / setters aren't tracked (the regex would
-/// over-match too easily). A `[fooMethod]` ref that resolves only
-/// via a method declaration still trips the directive — same
-/// behavior as before this PR. False positive, but harmless: the
-/// directive is per-file and only suppresses `comment_references`.
-Set<String> _topLevelDeclarations(String content) {
-  final declRe = RegExp(
-    r'(?:class|enum|mixin|extension type(?:\s+const)?)\s+'
-    '([A-Z][A-Za-z0-9_]*)',
-  );
-  final memberRe = RegExp(
-    r'(?:final|late\s+final|const|var|static)\s+\S+\s+([a-zA-Z_]\w*)',
-  );
-  final names = <String>{};
-  for (final m in declRe.allMatches(content)) {
-    names.add(m.group(1)!);
-  }
-  for (final m in memberRe.allMatches(content)) {
-    names.add(m.group(1)!);
-  }
-  return names;
 }
 
 @visibleForTesting
@@ -315,51 +133,6 @@ class SpellChecker {
         .map((w) => w.toLowerCase())
         .toSet()
         .sorted();
-  }
-}
-
-class Formatter {
-  Formatter({RunProcess? runProcess})
-    : runProcess = runProcess ?? Process.runSync;
-
-  /// The function to run a process. Allows for mocking in tests.
-  final RunProcess runProcess;
-
-  /// Run a dart command.
-  void _runDart(List<String> args, {required String workingDirectory}) {
-    final command = 'dart ${args.join(' ')}';
-    logger
-      ..info('Running $command')
-      ..detail('$command in $workingDirectory');
-    final stopwatch = Stopwatch()..start();
-    final result = runProcess(
-      Platform.executable,
-      args,
-      workingDirectory: workingDirectory,
-    );
-    if (result.exitCode != 0) {
-      logger.info(result.stderr as String);
-      throw Exception('Failed to run dart ${args.join(' ')}');
-    }
-    final ms = stopwatch.elapsed.inMilliseconds;
-    logger
-      ..detail(result.stdout as String)
-      ..info('$command took $ms ms');
-  }
-
-  void formatAndFix({required String pkgDir}) {
-    // `pub get` (not `--offline`) so generation doesn't silently depend on
-    // whatever happens to be in the machine-global pub cache. On a warm
-    // cache the network round-trip is marginal; on a cold one (e.g. CI),
-    // `--offline` fails with a confusing "package X not in cache" error
-    // whenever a template dep isn't coincidentally also a space_gen dep.
-    _runDart(['pub', 'get'], workingDirectory: pkgDir);
-    // Run format first to add missing commas.
-    _runDart(['format', '.'], workingDirectory: pkgDir);
-    // Then run fix to clean up various other things.
-    _runDart(['fix', '.', '--apply'], workingDirectory: pkgDir);
-    // Run format again to fix wrapping of lines.
-    _runDart(['format', '.'], workingDirectory: pkgDir);
   }
 }
 
@@ -576,15 +349,23 @@ class FileRenderer {
   String modelPackageImport(FileRenderer context, RenderSchema schema) =>
       'package:${context.packageName}/${context.modelPackagePath(schema)}';
 
+  /// Lazily-constructed in-process Dart formatter, configured from
+  /// the consuming package's `pubspec` + `analysis_options.yaml`.
+  /// Reused across every `.dart` write.
+  late final _dartFormatter = DartFileFormatter(
+    fs: fileWriter.fs,
+    outDir: fileWriter.outDir,
+  );
+
   /// Render a hand-written template — pubspec, analysis_options,
   /// `auth.dart`, the `client.dart` facade, etc. The output is the
   /// template verbatim with no spec-derived class names spliced in,
   /// so the gen-time lint suppressions don't apply. `.dart` outputs
-  /// are formatted in-process via [_formatIfDart] so the file lands
-  /// on disk in canonical shape; the global `dart format` step
-  /// becomes a near no-op for files we wrote (planned removal once
-  /// every emit path is on this contract). See [_renderSpecTemplate]
-  /// for the path that emits spec-derived content.
+  /// are formatted in-process so the file lands on disk in canonical
+  /// shape; the global `dart format` step becomes a near no-op for
+  /// files we wrote (planned removal once every emit path is on this
+  /// contract). See [_renderSpecTemplate] for the path that emits
+  /// spec-derived content.
   void _renderTemplate({
     required String template,
     required String outPath,
@@ -593,7 +374,7 @@ class FileRenderer {
     final output = templates.loadTemplate(template).renderString(context);
     fileWriter.writeFile(
       path: outPath,
-      content: _formatIfDart(outPath, output),
+      content: _dartFormatter.formatIfDart(outPath, output),
     );
   }
 
@@ -610,174 +391,11 @@ class FileRenderer {
     Map<String, dynamic> context = const {},
   }) {
     final output = templates.loadTemplate(template).renderString(context);
-    final formatted = _formatIfDart(outPath, output);
+    final formatted = _dartFormatter.formatIfDart(outPath, output);
     fileWriter.writeFile(
       path: outPath,
       content: maybeAddIgnoreDirectives(formatted),
     );
-  }
-
-  /// Format [content] with `package:dart_style`'s [DartFormatter] iff
-  /// [outPath] is a `.dart` file. Non-Dart outputs (`pubspec.yaml`,
-  /// `.gitignore`, `analysis_options.yaml`, `cspell.config.yaml`)
-  /// pass through unchanged.
-  ///
-  /// The formatter is configured to match what `dart format` would
-  /// produce in the consuming package — language version from the
-  /// nearest `pubspec.lock`/`pubspec.yaml`, `pageWidth` and
-  /// `trailingCommas` from the nearest `analysis_options.yaml`'s
-  /// `formatter:` section. This matters: a project running short
-  /// style (SDK < 3.7) or one that opts into `trailing_commas:
-  /// preserve` would otherwise see the formatter collapse multi-line
-  /// argument lists when our default tall-style formatter decides
-  /// they fit, and the trailing commas would not come back when the
-  /// global `dart format` runs against the consumer's actual style.
-  String _formatIfDart(String outPath, String content) {
-    if (!outPath.endsWith('.dart')) return content;
-    final ctx = _formatContext ??= _resolveFormatContext();
-    return DartFormatter(
-      languageVersion: ctx.languageVersion,
-      pageWidth: ctx.pageWidth,
-      trailingCommas: ctx.trailingCommas,
-    ).format(content);
-  }
-
-  /// Cached per-output-package formatter config. Resolved on the first
-  /// `.dart` write and reused for every subsequent file.
-  _FormatContext? _formatContext;
-
-  /// Walk up from [`fileWriter.outDir`] collecting the SDK constraint
-  /// (for language version) and any `formatter:` config from
-  /// `analysis_options.yaml`. Mirrors what `dart format` does when
-  /// invoked on a package — including respecting workspace setups
-  /// where the package's own `analysis_options.yaml` only `include:`s
-  /// a parent file at the workspace root.
-  ///
-  /// Resolution order at each directory:
-  /// - `pubspec.lock` → `sdks.dart` lower bound (most authoritative,
-  ///   set by the most recent `pub get`).
-  /// - `pubspec.yaml` → `environment.sdk` lower bound (fallback before
-  ///   any `pub get`).
-  /// - `analysis_options.yaml` → `formatter:` page width and trailing
-  ///   commas. Follows simple relative-path `include:` directives;
-  ///   `package:` includes are skipped (resolving them would require
-  ///   running pub).
-  ///
-  /// Falls back to [DartFormatter.latestLanguageVersion] and `dart_style`
-  /// defaults when nothing is found.
-  _FormatContext _resolveFormatContext() {
-    Version? languageVersion;
-    int? pageWidth;
-    TrailingCommas? trailingCommas;
-    var dir = fileWriter.outDir;
-    while (true) {
-      languageVersion ??= _readSdkLowerBound(dir);
-      final analysisOptsPath = p.join(dir.path, 'analysis_options.yaml');
-      final analysisOpts = fileWriter.fs.file(analysisOptsPath);
-      if (analysisOpts.existsSync()) {
-        final formatter = _readFormatterConfig(analysisOpts);
-        pageWidth ??= formatter.pageWidth;
-        trailingCommas ??= formatter.trailingCommas;
-      }
-      if (languageVersion != null &&
-          pageWidth != null &&
-          trailingCommas != null) {
-        break;
-      }
-      final parent = dir.parent;
-      if (parent.path == dir.path) break;
-      dir = parent;
-    }
-    return _FormatContext(
-      languageVersion: languageVersion ?? DartFormatter.latestLanguageVersion,
-      pageWidth: pageWidth,
-      trailingCommas: trailingCommas,
-    );
-  }
-
-  /// Read the SDK constraint's lower bound from [dir]'s `pubspec.lock`
-  /// (preferred — reflects the resolved SDK from the most recent `pub
-  /// get`) or `pubspec.yaml` (fallback). Returns null if neither file
-  /// exists in [dir] or neither carries a parsable Dart constraint.
-  Version? _readSdkLowerBound(Directory dir) {
-    Version? fromConstraintString(String? constraint) {
-      if (constraint == null) return null;
-      try {
-        final parsed = VersionConstraint.parse(constraint);
-        return parsed is VersionRange ? parsed.min : null;
-      } on FormatException {
-        return null;
-      }
-    }
-
-    final lock = fileWriter.fs.file(p.join(dir.path, 'pubspec.lock'));
-    if (lock.existsSync()) {
-      try {
-        final yaml = loadYaml(lock.readAsStringSync());
-        if (yaml is Map) {
-          final sdks = yaml['sdks'];
-          if (sdks is Map) {
-            final v = fromConstraintString(sdks['dart'] as String?);
-            if (v != null) return v;
-          }
-        }
-      } on YamlException {
-        // Fall through to pubspec.yaml.
-      }
-    }
-    final spec = fileWriter.fs.file(p.join(dir.path, 'pubspec.yaml'));
-    if (spec.existsSync()) {
-      try {
-        final yaml = loadYaml(spec.readAsStringSync());
-        if (yaml is Map) {
-          final env = yaml['environment'];
-          if (env is Map) {
-            return fromConstraintString(env['sdk'] as String?);
-          }
-        }
-      } on YamlException {
-        return null;
-      }
-    }
-    return null;
-  }
-
-  /// Read `formatter:` settings out of [analysisOpts], following a
-  /// single relative-path `include:` if the local file doesn't carry
-  /// the section itself. Workspaces commonly have a package-level
-  /// `analysis_options.yaml` that only `include:`s the workspace
-  /// root's. `package:`-scheme includes are not followed (we'd need
-  /// to resolve the package URI through pub).
-  _FormatterConfig _readFormatterConfig(File analysisOpts) {
-    try {
-      final yaml = loadYaml(analysisOpts.readAsStringSync());
-      if (yaml is! Map) return const _FormatterConfig();
-      final formatter = yaml['formatter'];
-      if (formatter is Map) {
-        final pageWidth = formatter['page_width'];
-        final trailingCommasStr = formatter['trailing_commas'];
-        final trailingCommas = switch (trailingCommasStr) {
-          'preserve' => TrailingCommas.preserve,
-          'automate' => TrailingCommas.automate,
-          _ => null,
-        };
-        return _FormatterConfig(
-          pageWidth: pageWidth is int ? pageWidth : null,
-          trailingCommas: trailingCommas,
-        );
-      }
-      // No formatter: section here — try a single include if present.
-      final include = yaml['include'];
-      if (include is String && !include.startsWith('package:')) {
-        final resolved = fileWriter.fs.file(
-          p.normalize(p.join(analysisOpts.parent.path, include)),
-        );
-        if (resolved.existsSync()) return _readFormatterConfig(resolved);
-      }
-      return const _FormatterConfig();
-    } on YamlException {
-      return const _FormatterConfig();
-    }
   }
 
   /// Set up the package directory (creates [fileWriter]'s outDir and
