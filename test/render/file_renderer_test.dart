@@ -2458,11 +2458,18 @@ void main() {
       expect(maybeAddLongLineIgnore(content), content);
     });
 
-    test('passes through when only long lines are `///` dartdoc', () {
+    test('fires when a `///` doc comment exceeds 80 cols', () {
+      // The analyzer's lines_longer_than_80_chars lint flags long
+      // doc comments — only URI imports/exports are exempt. Verified
+      // empirically: github regen surfaced 37 such hits before this
+      // carve-out was removed.
       final longDoc = '/// ${'a' * 90}';
       final content = '$longDoc\nclass Foo {}\n';
       expect(longDoc.length, greaterThan(80));
-      expect(maybeAddLongLineIgnore(content), content);
+      expect(
+        maybeAddLongLineIgnore(content),
+        startsWith('$longLineIgnoreBlock\n'),
+      );
     });
 
     test('still fires when a real long line sits next to a long import', () {

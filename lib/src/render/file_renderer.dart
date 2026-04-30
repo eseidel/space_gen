@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
+import 'package:dart_style/dart_style.dart';
 import 'package:file/file.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
@@ -86,8 +87,8 @@ const longLineIgnoreBlock =
     '// ignore_for_file: lines_longer_than_80_chars';
 
 /// Returns [content] with [longLineIgnoreBlock] prepended if any line
-/// outside the analyzer's existing carve-outs (URI imports/exports,
-/// `///` dartdoc) exceeds 80 cols. Threaded through
+/// outside the analyzer's existing carve-outs (URI imports/exports)
+/// exceeds 80 cols. Threaded through
 /// [maybeAddIgnoreDirectives] at file-emit time on every
 /// space_gen-emitted file — hand-written templates skip the call so a
 /// directive isn't smuggled into files space_gen doesn't own.
@@ -116,7 +117,6 @@ String maybeAddLongLineIgnore(String content) {
     final trimmed = line.trimLeft();
     if (trimmed.startsWith('import ')) return false;
     if (trimmed.startsWith('export ')) return false;
-    if (trimmed.startsWith('///')) return false;
     return true;
   });
   if (!hasFlaggableLongLine) return content;
@@ -531,26 +531,13 @@ class FileRenderer {
   /// Render a hand-written template — pubspec, analysis_options,
   /// `auth.dart`, the `client.dart` facade, etc. The output is the
   /// template verbatim with no spec-derived class names spliced in,
-  /// so the gen-time lint suppressions don't apply. See
-  /// [_renderSpecTemplate] for the path that emits spec-derived
-  /// content.
+  /// so the gen-time lint suppressions don't apply. `.dart` outputs
+  /// are formatted in-process via [_formatIfDart] so the file lands
+  /// on disk in canonical shape; the global `dart format` step
+  /// becomes a near no-op for files we wrote (planned removal once
+  /// every emit path is on this contract). See [_renderSpecTemplate]
+  /// for the path that emits spec-derived content.
   void _renderTemplate({
-    required String template,
-    required String outPath,
-    Map<String, dynamic> context = const {},
-  }) {
-    final output = templates.loadTemplate(template).renderString(context);
-    fileWriter.writeFile(path: outPath, content: output);
-  }
-
-  /// Render a template that emits content shaped by the spec — model
-  /// files, api files, generated round-trip tests. The output is run
-  /// through [maybeAddIgnoreDirectives] before it lands on disk, which
-  /// adds the standard `// ignore_for_file:` block(s) for any lint
-  /// the gen-time content provably triggers. Adding a new gen-time
-  /// suppression is one edit inside [maybeAddIgnoreDirectives]; call
-  /// sites stay unchanged.
-  void _renderSpecTemplate({
     required String template,
     required String outPath,
     Map<String, dynamic> context = const {},
@@ -558,8 +545,46 @@ class FileRenderer {
     final output = templates.loadTemplate(template).renderString(context);
     fileWriter.writeFile(
       path: outPath,
-      content: maybeAddIgnoreDirectives(output),
+      content: _formatIfDart(outPath, output),
     );
+  }
+
+  /// Render a template that emits content shaped by the spec — model
+  /// files, api files, generated round-trip tests. The output is
+  /// formatted in-process (so the long-line check sees the same lines
+  /// the analyzer will), then run through [maybeAddIgnoreDirectives]
+  /// to add any necessary `// ignore_for_file:` block. Adding a new
+  /// gen-time suppression is one edit inside
+  /// [maybeAddIgnoreDirectives]; call sites stay unchanged.
+  void _renderSpecTemplate({
+    required String template,
+    required String outPath,
+    Map<String, dynamic> context = const {},
+  }) {
+    final output = templates.loadTemplate(template).renderString(context);
+    final formatted = _formatIfDart(outPath, output);
+    fileWriter.writeFile(
+      path: outPath,
+      content: maybeAddIgnoreDirectives(formatted),
+    );
+  }
+
+  /// Format [content] with `package:dart_style`'s [DartFormatter] iff
+  /// [outPath] is a `.dart` file. Non-Dart outputs (`pubspec.yaml`,
+  /// `.gitignore`, `analysis_options.yaml`, `cspell.config.yaml`)
+  /// pass through unchanged. Formatting at write time means the line
+  /// counts the suppression helpers see match what the analyzer will
+  /// see, eliminating the over-trigger that the previous post-walk
+  /// pass had vs. pre-format content. The global `formatAndFix` step
+  /// still runs after all files are written; it remains useful for
+  /// `dart fix --apply` (auto-fixes that aren't pure formatting),
+  /// while the redundant `dart format` calls there will be removed
+  /// once every emit path is on this contract.
+  String _formatIfDart(String outPath, String content) {
+    if (!outPath.endsWith('.dart')) return content;
+    return DartFormatter(
+      languageVersion: DartFormatter.latestLanguageVersion,
+    ).format(content);
   }
 
   /// Set up the package directory (creates [fileWriter]'s outDir and
