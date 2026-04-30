@@ -1205,6 +1205,37 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     if (typeAndFormat.format == 'binary') {
       return SchemaBinary(common: common);
     }
+    // JSON Schema 2020-12 / OpenAPI 3.1 successors to `format: byte`
+    // and `format: binary`. The wire is still a JSON string, but the
+    // string value is encoded binary — base64 (most common) or raw
+    // octets (`binary`, only meaningful when the surrounding content
+    // type is non-JSON like multipart). Discord uses
+    // `contentEncoding: base64` on `avatar`/`image` upload fields.
+    final contentEncoding = _optional<String>(json, 'contentEncoding');
+    // `contentMediaType` (e.g. `image/png`) is metadata about the
+    // bytes' MIME type. Not actionable on the Dart side beyond
+    // documentation; consume to suppress the unused-key warning.
+    _ignored<String>(json, 'contentMediaType');
+    if (contentEncoding == 'base64') {
+      return SchemaBase64Bytes(common: common);
+    }
+    // `contentEncoding: binary` is the OpenAPI 3.1 successor to
+    // `format: binary`, but on a non-multipart response body (e.g.
+    // an `image/png` content type) it implies the response method
+    // should return `Uint8List` from `response.bodyBytes`, not
+    // `String` from `response.body`. That's a separate render-path
+    // change; until then, acknowledge the keyword and keep the
+    // wire-shape `String` so the existing non-JSON response handler
+    // continues to compile. `contentEncoding: binary` on a JSON
+    // property is also nonsensical (JSON strings are UTF-8 text);
+    // same fallback covers it.
+    if (contentEncoding != null && contentEncoding != 'base64') {
+      // Mark used; detail-log the value at -v.
+      logger.detail(
+        'Ignoring: contentEncoding=$contentEncoding (String) in '
+        '${json.pointer}',
+      );
+    }
   }
 
   final defaultValue = _optional<dynamic>(json, 'default');

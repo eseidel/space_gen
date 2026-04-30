@@ -403,6 +403,8 @@ abstract final class ModelHelpers {
   static const mapHash = 'mapHash';
   static const parseFromJson = 'parseFromJson';
   static const checkedKey = 'checkedKey';
+  static const maybeBase64Encode = 'maybeBase64Encode';
+  static const maybeBase64Decode = 'maybeBase64Decode';
 
   static const List<String> all = [
     maybeParseDateTime,
@@ -415,6 +417,8 @@ abstract final class ModelHelpers {
     mapHash,
     parseFromJson,
     checkedKey,
+    maybeBase64Encode,
+    maybeBase64Decode,
   ];
 }
 
@@ -584,6 +588,8 @@ class SpecResolver {
         return RenderUnknown(common: schema.common);
       case ResolvedBinary():
         return RenderBinary(common: schema.common);
+      case ResolvedBase64Bytes():
+        return RenderBase64Bytes(common: schema.common);
       case ResolvedOneOf():
         final renderSchemas = schema.schemas.map(toRenderSchema).toList();
         final disc = schema.discriminator;
@@ -5634,6 +5640,88 @@ class RenderBinary extends RenderNoJson {
 
   @override
   bool get defaultCanConstConstruct => false;
+}
+
+/// Base64-encoded binary string. Wire format is a JSON `String`; Dart-
+/// side type is `Uint8List`. `fromJson` runs `base64.decode`, `toJson`
+/// runs `base64.encode`. Inline only — top-level newtype mode is a
+/// follow-up if a real spec needs it.
+class RenderBase64Bytes extends RenderSchema {
+  const RenderBase64Bytes({required super.common})
+    : super(createsNewType: false);
+
+  @override
+  dynamic get defaultValue => null;
+
+  @override
+  bool get defaultCanConstConstruct => false;
+
+  @override
+  Iterable<Import> get additionalImports => [
+    ...super.additionalImports,
+    // `shown: ['Uint8List']` flags this for re-export from the api.dart
+    // barrel; `dart:convert` stays unshown since `base64` is only used
+    // internally by the encoded fromJson/toJson and never appears in a
+    // public field signature.
+    const Import('dart:typed_data', shown: ['Uint8List']),
+    const Import('dart:convert'),
+  ];
+
+  @override
+  String get typeName => 'Uint8List';
+
+  @override
+  bool get shouldCallToJson => false;
+
+  @override
+  String jsonStorageType({required bool isNullable}) =>
+      isNullable ? 'String?' : 'String';
+
+  @override
+  String equalsExpression(String name, SchemaRenderer context) =>
+      '${ModelHelpers.listsEqual}(this.$name, other.$name)';
+
+  @override
+  String hashCodeExpression(String name) => '${ModelHelpers.listHash}($name)';
+
+  @override
+  String fromJsonExpression(
+    String jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) {
+    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
+    if (jsonIsNullable) {
+      // Use the model_helpers wrapper so `Uint8List?` parses cleanly
+      // without forcing the call site to write its own null check (a
+      // ternary on a public-property `Uint8List?` doesn't promote).
+      return '${ModelHelpers.maybeBase64Decode}($jsonValue as $jsonType)';
+    }
+    return 'base64.decode($jsonValue as $jsonType)';
+  }
+
+  @override
+  String toJsonExpression(
+    String dartName,
+    SchemaRenderer context, {
+    required bool dartIsNullable,
+  }) {
+    if (dartIsNullable) {
+      // Same reasoning as `fromJsonExpression`: nullable `Uint8List`
+      // doesn't promote in a ternary at a property access site.
+      return '${ModelHelpers.maybeBase64Encode}($dartName)';
+    }
+    return 'base64.encode($dartName)';
+  }
+
+  @override
+  String? exampleValue(SchemaRenderer context) =>
+      'Uint8List.fromList(<int>[0])';
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
+      throw UnimplementedError('RenderBase64Bytes.toTemplateContext');
 }
 
 class RenderEmptyObject extends RenderNewType {

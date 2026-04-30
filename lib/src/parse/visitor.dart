@@ -147,6 +147,7 @@ class SpecWalker {
       case SchemaString():
       case SchemaNull():
       case SchemaBinary():
+      case SchemaBase64Bytes():
       case SchemaEmptyObject():
         break;
       case SchemaCombiner():

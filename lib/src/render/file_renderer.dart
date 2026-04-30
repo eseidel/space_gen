@@ -639,6 +639,10 @@ class FileRenderer {
         'needsUriPackageImport': usedModelHelpers.contains(
           ModelHelpers.maybeParseUriTemplate,
         ),
+        'needsBase64Imports': const {
+          ModelHelpers.maybeBase64Encode,
+          ModelHelpers.maybeBase64Decode,
+        }.any(usedModelHelpers.contains),
       },
     );
   }
@@ -689,11 +693,16 @@ class FileRenderer {
   /// non-empty `shown` list (the union of shown types across all
   /// schema-level usages of that package).
   ///
+  /// Includes `package:` imports (e.g. `package:uri/uri.dart` for
+  /// `UriTemplate`) and `dart:` SDK imports that expose a public type
+  /// in field signatures (`dart:typed_data` for `Uint8List` from
+  /// `contentEncoding: base64` fields).
+  ///
   /// Only imports with an explicit `shown:` list are candidates — an
   /// unconstrained `Import('package:x/x.dart')` means "the schema
   /// needs the package internally" (e.g. `package:meta/meta.dart`
-  /// for `@immutable`), not "expose every symbol in it to consumers
-  /// of the barrel."
+  /// for `@immutable` or `dart:convert` for the `base64` codec), not
+  /// "expose every symbol in it to consumers of the barrel."
   @visibleForTesting
   List<Import> collectThirdPartyExports(Iterable<RenderSchema> schemas) {
     final collector = _ImportCollector();
@@ -702,7 +711,9 @@ class FileRenderer {
     }
     final byPath = <String, Set<String>>{};
     for (final i in collector.imports) {
-      if (!i.path.startsWith('package:')) continue;
+      final isPkg = i.path.startsWith('package:');
+      final isDart = i.path.startsWith('dart:');
+      if (!isPkg && !isDart) continue;
       if (i.path.startsWith('package:$packageName/')) continue;
       if (i.asName != null) continue;
       if (i.shown.isEmpty) continue;

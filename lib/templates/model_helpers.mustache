@@ -1,3 +1,7 @@
+{{#needsBase64Imports}}
+import 'dart:convert';
+import 'dart:typed_data';
+{{/needsBase64Imports}}
 {{#needsCollectionImport}}
 import 'package:collection/collection.dart';
 {{/needsCollectionImport}}
@@ -45,6 +49,26 @@ UriTemplate? maybeParseUriTemplate(String? value) {
   return UriTemplate(value);
 }
 {{/maybeParseUriTemplate}}
+
+{{#maybeBase64Encode}}
+/// Encodes nullable bytes as a nullable base64 string. Used by
+/// generated `toJson` for `contentEncoding: base64` fields. Takes
+/// `List<int>?` rather than `Uint8List?` so it accepts both the
+/// generator's `Uint8List` type and any subtype the user passes in.
+String? maybeBase64Encode(List<int>? bytes) {
+  if (bytes == null) return null;
+  return base64.encode(bytes);
+}
+{{/maybeBase64Encode}}
+
+{{#maybeBase64Decode}}
+/// Decodes a nullable base64 string into bytes. Used by generated
+/// `fromJson` for `contentEncoding: base64` fields.
+Uint8List? maybeBase64Decode(String? value) {
+  if (value == null) return null;
+  return base64.decode(value);
+}
+{{/maybeBase64Decode}}
 
 {{#parseFromJson}}
 /// Runs [build] to construct a `fromJson`-parsed value of type [T],
