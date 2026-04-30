@@ -1,4 +1,3 @@
-import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
 import 'package:space_gen/src/types.dart';
 import 'package:version/version.dart';
@@ -16,7 +15,7 @@ abstract class HasPointer {
 /// A parameter is a parameter to an endpoint.
 /// https://spec.openapis.org/oas/v3.0.0#parameter-object
 @immutable
-class Parameter extends Equatable implements HasPointer, Parseable {
+class Parameter implements HasPointer, Parseable {
   /// Create a new parameter.
   const Parameter({
     required this.name,
@@ -62,22 +61,10 @@ class Parameter extends Equatable implements HasPointer, Parseable {
   /// Where this parameter is located in the spec.
   @override
   final JsonPointer pointer;
-
-  @override
-  List<Object?> get props => [
-    name,
-    description,
-    isRequired,
-    inLocation,
-    type,
-    pointer,
-    example,
-    examples,
-  ];
 }
 
 @immutable
-class Header extends Equatable implements HasPointer, Parseable {
+class Header implements HasPointer, Parseable {
   const Header({
     required this.description,
     required this.schema,
@@ -107,33 +94,21 @@ class Header extends Equatable implements HasPointer, Parseable {
   /// Where this header is located in the spec.
   @override
   final JsonPointer pointer;
-
-  @override
-  List<Object?> get props => [
-    description,
-    schema,
-    pointer,
-    example,
-    examples,
-  ];
 }
 
 abstract class Parseable {}
 
 @immutable
-class Ref<T extends Parseable> extends Equatable {
+class Ref<T extends Parseable> {
   const Ref(this.uri);
   final Uri uri;
   Type get type => T;
-
-  @override
-  List<Object?> get props => [uri];
 }
 
 /// An object which either holds a schema or a reference to a schema.
 /// https://spec.openapis.org/oas/v3.0.0#schemaObject
 @immutable
-class RefOr<T extends Parseable> extends Equatable {
+class RefOr<T extends Parseable> {
   RefOr.ref(String stringRef, this.pointer)
     : object = null,
       ref = Ref(Uri.parse(stringRef));
@@ -143,14 +118,11 @@ class RefOr<T extends Parseable> extends Equatable {
   final T? object;
 
   final JsonPointer pointer;
-
-  @override
-  List<Object?> get props => [ref, object];
 }
 
 typedef SchemaRef = RefOr<Schema>;
 
-sealed class Schema extends Equatable implements HasPointer, Parseable {
+sealed class Schema implements HasPointer, Parseable {
   const Schema({required this.common});
 
   final CommonProperties common;
@@ -161,9 +133,6 @@ sealed class Schema extends Equatable implements HasPointer, Parseable {
 
   /// The snake name of this schema.
   String get snakeName => common.snakeName;
-
-  @override
-  List<Object?> get props => [common];
 }
 
 /// A schema which is a POD (plain old data) type.
@@ -180,9 +149,6 @@ class SchemaPod extends Schema {
   /// The default value of the data.
   // TODO(eseidel): This should be typed.
   final dynamic defaultValue;
-
-  @override
-  List<Object?> get props => [super.props, type, defaultValue];
 }
 
 class SchemaString extends Schema {
@@ -198,15 +164,6 @@ class SchemaString extends Schema {
   final int? maxLength;
   final int? minLength;
   final String? pattern;
-
-  @override
-  List<Object?> get props => [
-    super.props,
-    defaultValue,
-    maxLength,
-    minLength,
-    pattern,
-  ];
 }
 
 abstract class SchemaNumeric<T extends num> extends Schema {
@@ -274,9 +231,6 @@ class SchemaMap extends Schema {
   /// Dart use a richer key type (currently only string enums) with
   /// automatic encode/decode at the boundary.
   final SchemaRef? keySchema;
-
-  @override
-  List<Object?> get props => [super.props, valueSchema, keySchema];
 }
 
 class SchemaBinary extends Schema {
@@ -301,14 +255,6 @@ class SchemaEnum extends Schema {
   /// Populated from the OpenAPI vendor extension `x-enum-descriptions`
   /// when present.
   final List<String>? enumDescriptions;
-
-  @override
-  List<Object?> get props => [
-    super.props,
-    defaultValue,
-    enumValues,
-    enumDescriptions,
-  ];
 }
 
 class SchemaNull extends Schema {
@@ -335,16 +281,6 @@ class SchemaArray extends Schema {
   // final int? maxContains; // Non-negative.
 
   final dynamic defaultValue;
-
-  @override
-  List<Object?> get props => [
-    super.props,
-    items,
-    defaultValue,
-    maxItems,
-    minItems,
-    uniqueItems,
-  ];
 }
 
 // Renders as dynamic.
@@ -361,9 +297,6 @@ abstract class SchemaCombiner extends SchemaObjectBase {
   const SchemaCombiner({required super.common, required this.schemas});
 
   final List<SchemaRef> schemas;
-
-  @override
-  List<Object?> get props => [super.props, schemas];
 }
 
 class SchemaAnyOf extends SchemaCombiner {
@@ -377,9 +310,6 @@ class SchemaAnyOf extends SchemaCombiner {
   /// `discriminator` on both `oneOf` and `anyOf`; the runtime
   /// dispatch (read a property, route to a variant) is identical.
   final SchemaDiscriminator? discriminator;
-
-  @override
-  List<Object?> get props => [super.props, discriminator];
 }
 
 class SchemaAllOf extends SchemaCombiner {
@@ -395,9 +325,6 @@ class SchemaOneOf extends SchemaCombiner {
 
   /// The OpenAPI discriminator object, if any.
   final SchemaDiscriminator? discriminator;
-
-  @override
-  List<Object?> get props => [super.props, discriminator];
 }
 
 /// An OpenAPI discriminator object.
@@ -408,7 +335,7 @@ class SchemaOneOf extends SchemaCombiner {
 /// values to specific variants; without it, the variant is selected
 /// implicitly by schema name (we don't yet support the implicit form).
 @immutable
-class SchemaDiscriminator extends Equatable {
+class SchemaDiscriminator {
   const SchemaDiscriminator({
     required this.propertyName,
     required this.mapping,
@@ -421,9 +348,6 @@ class SchemaDiscriminator extends Equatable {
   /// `#/components/schemas/<name>` form when the spec used a short name);
   /// the resolver matches them up to entries in the oneOf.
   final Map<String, SchemaRef>? mapping;
-
-  @override
-  List<Object?> get props => [propertyName, mapping];
 }
 
 /// A schema is a json object that describes the shape of a json object.
@@ -461,15 +385,6 @@ class SchemaObject extends SchemaObjectBase {
   final dynamic defaultValue;
 
   @override
-  List<Object?> get props => [
-    super.props,
-    properties,
-    requiredProperties,
-    additionalProperties,
-    defaultValue,
-  ];
-
-  @override
   String toString() {
     return 'Schema(name: $snakeName, pointer: $pointer, '
         'description: ${common.description})';
@@ -479,22 +394,19 @@ class SchemaObject extends SchemaObjectBase {
 /// A media type is a mime type and a schema.
 /// https://spec.openapis.org/oas/v3.0.0#mediaTypeObject
 @immutable
-class MediaType extends Equatable {
+class MediaType {
   /// Create a new media type.
   const MediaType({required this.schema});
 
   /// 3.0.1 seems to allow a ref in MediaType, but 3.1.0 does not.
   final SchemaRef schema;
-
-  @override
-  List<Object?> get props => [schema];
 }
 
 /// Request body is sorta a schema, but it's a bit different.
 /// https://spec.openapis.org/oas/v3.0.0#requestBodyObject
 /// Notably "required" is a boolean, not a list of strings.
 @immutable
-class RequestBody extends Equatable implements HasPointer, Parseable {
+class RequestBody implements HasPointer, Parseable {
   const RequestBody({
     required this.pointer,
     required this.description,
@@ -514,12 +426,9 @@ class RequestBody extends Equatable implements HasPointer, Parseable {
 
   /// Whether the request body is required.
   final bool isRequired;
-
-  @override
-  List<Object?> get props => [pointer, description, content, isRequired];
 }
 
-class Operation extends Equatable implements HasPointer {
+class Operation implements HasPointer {
   const Operation({
     required this.pointer,
     required this.tags,
@@ -570,24 +479,12 @@ class Operation extends Equatable implements HasPointer {
   /// global to "no authentication required" (common for public endpoints
   /// sitting under an otherwise-authenticated API).
   final List<SecurityRequirement>? securityRequirements;
-
-  @override
-  List<Object?> get props => [
-    tags,
-    snakeName,
-    summary,
-    description,
-    responses,
-    parameters,
-    requestBody,
-    deprecated,
-  ];
 }
 
 /// An endpoint is a path with a method.
 /// https://spec.openapis.org/oas/v3.0.0#path-item-object
 @immutable
-class PathItem extends Equatable implements HasPointer {
+class PathItem implements HasPointer {
   /// Create a new endpoint.
   const PathItem({
     required this.pointer,
@@ -618,15 +515,6 @@ class PathItem extends Equatable implements HasPointer {
   /// Operation-level parameters with the same name + location override
   /// these at the operation level.
   final List<RefOr<Parameter>> parameters;
-
-  @override
-  List<Object?> get props => [
-    path,
-    operations,
-    summary,
-    description,
-    parameters,
-  ];
 }
 
 /// An HTTP status code range declared as `NXX` in OpenAPI. Finite
@@ -656,7 +544,7 @@ enum StatusCodeRange {
 /// A map of response codes to responses.
 /// https://spec.openapis.org/oas/v3.1.0#responses-object
 @immutable
-class Responses extends Equatable implements Parseable {
+class Responses implements Parseable {
   /// Create a new responses object.
   const Responses({
     required this.responses,
@@ -680,15 +568,12 @@ class Responses extends Equatable implements Parseable {
       responses.isEmpty && rangeResponses.isEmpty && defaultResponse == null;
 
   RefOr<Response>? operator [](int code) => responses[code];
-
-  @override
-  List<Object?> get props => [responses, rangeResponses, defaultResponse];
 }
 
 /// A response from an endpoint.
 /// https://spec.openapis.org/oas/v3.1.0#response-object
 @immutable
-class Response extends Equatable implements HasPointer, Parseable {
+class Response implements HasPointer, Parseable {
   /// Create a new response.
   const Response({
     required this.pointer,
@@ -709,13 +594,10 @@ class Response extends Equatable implements HasPointer, Parseable {
 
   /// The possible headers for this response.
   final Map<String, RefOr<Header>>? headers;
-
-  @override
-  List<Object?> get props => [pointer, description, content, headers];
 }
 
 @immutable
-class Components extends Equatable {
+class Components {
   const Components({
     this.schemas = const {},
     this.requestBodies = const {},
@@ -735,51 +617,40 @@ class Components extends Equatable {
   // final Map<String, Example> examples;
   // final Map<String, Link> links;
   // final Map<String, Callback> callbacks;
-
-  @override
-  List<Object?> get props => [schemas, requestBodies, parameters];
 }
 
 @immutable
-class Info extends Equatable {
+class Info {
   const Info(this.title, this.version);
   final String title;
   final String version;
-  @override
-  List<Object?> get props => [title, version];
 }
 
 /// A map of paths to path items.
 /// https://spec.openapis.org/oas/v3.1.0#paths-object
 @immutable
-class Paths extends Equatable {
+class Paths {
   const Paths({required this.paths});
 
   final Map<String, PathItem> paths;
 
   Iterable<String> get keys => paths.keys;
   PathItem operator [](String path) => paths[path]!;
-
-  @override
-  List<Object?> get props => [paths];
 }
 
 @immutable
-class Tag extends Equatable {
+class Tag {
   const Tag({required this.name, required this.description});
 
   final String name;
   final String? description;
-
-  @override
-  List<Object?> get props => [name, description];
 }
 
 /// Each requirement is a map of security scheme names to values.
 /// Values are lists of scope or roles, depending on the referenced scheme.
 /// At the parsing stage we just collect the requirements, at the resolve
 /// stage we'll validate that they reference valid security schemes, etc.
-class SecurityRequirement extends Equatable {
+class SecurityRequirement {
   const SecurityRequirement({required this.conditions, required this.pointer});
 
   /// The conditions of the security requirement.
@@ -788,9 +659,6 @@ class SecurityRequirement extends Equatable {
 
   /// The pointer to the security requirement.
   final JsonPointer pointer;
-
-  @override
-  List<Object?> get props => [conditions, pointer];
 }
 
 /// The OpenAPI object.  The root object of a spec.
@@ -798,7 +666,7 @@ class SecurityRequirement extends Equatable {
 /// Objects in this library are not a one-to-one mapping with the spec,
 /// and may include extra information from parsing e.g. snakeCaseName.
 @immutable
-class OpenApi extends Equatable {
+class OpenApi {
   const OpenApi({
     required this.serverUrl,
     required this.version,
@@ -829,14 +697,4 @@ class OpenApi extends Equatable {
 
   /// The tags of the spec.
   final List<Tag> tags;
-
-  @override
-  List<Object?> get props => [
-    serverUrl,
-    info,
-    paths,
-    components,
-    securityRequirements,
-    tags,
-  ];
 }
