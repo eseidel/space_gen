@@ -1,4 +1,5 @@
 [![codecov](https://codecov.io/gh/eseidel/space_gen/graph/badge.svg?token=nOnPSYpPXi)](https://codecov.io/gh/eseidel/space_gen)
+[![Powered by Shorebird](https://img.shields.io/endpoint?url=https://tinyurl.com/shorebirddev)](https://shorebird.dev)
 
 # space_gen
 
@@ -77,34 +78,22 @@ a consensus towards a better Dart generator, so releasing this one.
   off to FileRenderer which uses SchemaRenderer to render api (operation) and
   model (schema) files and imports.
 
-## Todo
+## Tested specs
 
-- Wire up Authentication and sending of bearer header.
-- Generate tests. https://github.com/eseidel/space_gen/issues/1
-- Fix toString hack for queryParameters.
-- Support Parameter.explode.
-- Finish oneOf support.
-- Remove the 'prop' hack for GitHub spec.
-- Split render tree into some sort of "types" library and types -> code gen.
-- Support 'default' for objects.
-- Make RenderPod and RenderEnum typed.
-- Wrap description doc comments to 80c.
-- Recursively validations for properties of named schemas (currently only
-  do top-level const-ready validations).
-- Add (non-const) validation during construction of new-type objects, will
-  require making generator aware that some objects can't be const constructed
-  as well as adding a const-constructor for those objects for default values.
-- Handle 'example' and 'examples' fields.
-- explicitly handle format=int64
-- Handle format=double and format=float
-- Handle deprecated=true in more places (e.g. enums)
-- Map & Array newtype via explicitly named schema?
-- readOnly and writeOnly
-- GitHub: Don't generate workflow_usage_billable_prop_m_a_c_o_s_prop.dart
-- Support multi-level references.
-- Support detecting/stopping reference cycles.
+space_gen is iterated against a rotation of real-world OpenAPI specs.
+For each, the regenerated client is expected to `dart analyze` clean
+and its synthesized round-trip tests are expected to pass.
 
-### OpenApi Quirks
+- **GitHub REST API** (~1000 operations, OpenAPI 3.0) — Complete.
+- **Discord API** (~511 schemas, ~141 paths, OpenAPI 3.1) — In progress.
+- **SpaceTraders** — Complete.
+- **Train Travel API** (YAML, OpenAPI 3.1) — Complete.
+- **Petstore** (the OpenAPI canonical example) — Complete.
+
+If you try space_gen against a public spec and the output isn't
+clean, please [file an issue](https://github.com/eseidel/space_gen/issues).
+
+## OpenApi Quirks
 
 space_gen implements a few OpenAPI quirks to optionally make the generated
 output maximally openapi_generator compatible in case you're transitioning
