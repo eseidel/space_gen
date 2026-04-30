@@ -2132,6 +2132,107 @@ void main() {
           ),
         );
       });
+      test('oneOf-of-consts (integer) collapses to SchemaIntEnum', () {
+        // Discord's `MessageComponentTypes` and 60+ similar typed
+        // enums spell themselves as `oneOf: [{const: N, title: ...}]`.
+        // Without collapse, each renders as a sealed class with an
+        // `UnimplementedError` `fromJson` (no discriminator).
+        final json = {
+          'type': 'integer',
+          'oneOf': [
+            {'title': 'JOIN', 'const': 1, 'description': 'Join activity'},
+            {'title': 'SPECTATE', 'const': 2},
+            {'title': 'LISTEN', 'const': 3},
+          ],
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        if (schema is! SchemaIntEnum) {
+          fail('Expected SchemaIntEnum, got ${schema.runtimeType}');
+        }
+        expect(schema.enumValues, equals([1, 2, 3]));
+        // Descriptions are plumbed when ANY variant declares one;
+        // missing descriptions become empty strings (parallel to
+        // values).
+        expect(schema.enumDescriptions, equals(['Join activity', '', '']));
+      });
+      test('oneOf-of-consts (string) collapses to SchemaStringEnum', () {
+        final json = {
+          'type': 'string',
+          'oneOf': [
+            {'title': 'EVERYONE', 'const': 'everyone'},
+            {'title': 'ROLES', 'const': 'roles'},
+          ],
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        if (schema is! SchemaStringEnum) {
+          fail('Expected SchemaStringEnum, got ${schema.runtimeType}');
+        }
+        expect(schema.enumValues, equals(['everyone', 'roles']));
+        // No variant declared a description: the whole list stays
+        // null rather than a list of empty strings.
+        expect(schema.enumDescriptions, isNull);
+      });
+      test('oneOf with non-const variants does NOT collapse', () {
+        // Real polymorphic oneOf: each variant has its own object
+        // shape. Falls through to `SchemaOneOf`.
+        final json = {
+          'oneOf': [
+            {'type': 'string'},
+            {'type': 'integer'},
+          ],
+        };
+        final schema = parseTestSchema(json);
+        expect(schema, isA<SchemaOneOf>());
+      });
+      test('oneOf-of-consts with a pod format does NOT collapse', () {
+        // Parent declares `format: date-time`, which would render as
+        // a `DateTime` newtype. Collapsing to `SchemaStringEnum` here
+        // would silently downgrade the typed pod to a String enum —
+        // bail and let the regular oneOf path handle the spec.
+        final json = {
+          'type': 'string',
+          'format': 'date-time',
+          'oneOf': [
+            {'const': '2024-01-01T00:00:00Z'},
+            {'const': '2024-12-31T23:59:59Z'},
+          ],
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaOneOf>());
+      });
+      test('oneOf-of-consts type/value mismatch does NOT collapse', () {
+        // Parent says `type: integer` but the consts are strings —
+        // an internally-inconsistent spec. Bail rather than silently
+        // pick a coercion direction; the regular oneOf path's warnings
+        // are more honest.
+        final json = {
+          'type': 'integer',
+          'oneOf': [
+            {'const': 'one'},
+            {'const': 'two'},
+          ],
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaOneOf>());
+      });
+      test('oneOf-of-consts with mixed value types does NOT collapse', () {
+        // If consts mix int and string types (unusual but spec-legal),
+        // we can't pick one Dart enum value type — fall through to
+        // SchemaOneOf.
+        final json = {
+          'oneOf': [
+            {'const': 1},
+            {'const': 'two'},
+          ],
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaOneOf>());
+      });
       test('ignore boolean enums', () {
         final json = {
           'openapi': '3.1.0',
