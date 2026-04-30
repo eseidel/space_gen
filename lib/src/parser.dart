@@ -874,7 +874,8 @@ SchemaEnum<Object>? _handleEnum({
     return null;
   } else if (type == null) {
     final nonNullForInference = enumValues.where((e) => e != null);
-    isInt = nonNullForInference.isNotEmpty &&
+    isInt =
+        nonNullForInference.isNotEmpty &&
         nonNullForInference.every((e) => e is int);
   } else {
     _unimplemented(json, 'enumValues for type=$type');
