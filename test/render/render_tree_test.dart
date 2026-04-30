@@ -1278,6 +1278,290 @@ void main() {
       // Key example is the enum's first value; value is the string example.
       expect(map.exampleValue(context), "{Foo.values.first: 'example'}");
     });
+
+    test('string with spec example uses it verbatim', () {
+      const schema = RenderString(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+          example: 'refs/heads/main',
+        ),
+        defaultValue: null,
+        maxLength: null,
+        minLength: null,
+        pattern: r'^refs/(heads|tags|pull)/.*$',
+        createsNewType: false,
+      );
+      expect(schema.exampleValue(context), "'refs/heads/main'");
+    });
+
+    test('string falls back to first String entry from examples list', () {
+      const schema = RenderString(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+          examples: [42, 'second'],
+        ),
+        defaultValue: null,
+        maxLength: null,
+        minLength: null,
+        pattern: null,
+        createsNewType: false,
+      );
+      expect(schema.exampleValue(context), "'second'");
+    });
+
+    test('string synthesizes a value matching simple character-class '
+        'pattern, padded to minLength', () {
+      // github's `code-scanning-analysis-commit-sha`: no spec example,
+      // pattern is `^[0-9a-fA-F]+\$`, minLength = 40. Synthesizer
+      // tries `'a' * 40` against the regex — `a` is in `[0-9a-fA-F]`,
+      // length matches → pass.
+      const schema = RenderString(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+        ),
+        defaultValue: null,
+        maxLength: 40,
+        minLength: 40,
+        pattern: r'^[0-9a-fA-F]+$',
+        createsNewType: false,
+      );
+      expect(schema.exampleValue(context), "'${'a' * 40}'");
+    });
+
+    test('string synthesizes for an alternation pattern by trying '
+        'numeric candidates', () {
+      // Discord's snowflake pattern.
+      const schema = RenderString(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+        ),
+        defaultValue: null,
+        maxLength: null,
+        minLength: null,
+        pattern: r'^(0|[1-9][0-9]*)$',
+        createsNewType: false,
+      );
+      // `'a'` doesn't match; `'0'` does (the 0 alternative).
+      expect(schema.exampleValue(context), "'0'");
+    });
+
+    test('string truncates a too-long fallback to maxLength', () {
+      const schema = RenderString(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+        ),
+        defaultValue: null,
+        maxLength: 4,
+        minLength: null,
+        pattern: null,
+        createsNewType: false,
+      );
+      expect(schema.exampleValue(context), "'exam'");
+    });
+
+    test('string falls back when no candidate matches the pattern', () {
+      // Pattern requires content the synthesizer's candidate set can't
+      // produce — `^Z+\$` won't match `'a'`, `'0'`, `'1'`, or
+      // `'example'`. Synthesizer surfaces a placeholder rather than
+      // throwing.
+      const schema = RenderString(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+        ),
+        defaultValue: null,
+        maxLength: null,
+        minLength: null,
+        pattern: r'^Z+$',
+        createsNewType: false,
+      );
+      expect(schema.exampleValue(context), "'example'");
+    });
+
+    test('string falls back when the spec pattern is invalid regex', () {
+      // Spec author's pattern doesn't parse as a Dart RegExp. Synthesizer
+      // doesn't crash — returns a padded fallback.
+      const schema = RenderString(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+        ),
+        defaultValue: null,
+        maxLength: null,
+        minLength: null,
+        pattern: '(',
+        createsNewType: false,
+      );
+      expect(schema.exampleValue(context), "'example'");
+    });
+
+    test('integer with spec example uses it', () {
+      const schema = RenderInteger(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+          example: 42,
+        ),
+        defaultValue: null,
+        maximum: 100,
+        minimum: 1,
+        exclusiveMaximum: null,
+        exclusiveMinimum: null,
+        multipleOf: null,
+        createsNewType: false,
+      );
+      expect(schema.exampleValue(context), '42');
+    });
+
+    test('integer with no spec example picks minimum', () {
+      const schema = RenderInteger(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+        ),
+        defaultValue: null,
+        maximum: 100,
+        minimum: 5,
+        exclusiveMaximum: null,
+        exclusiveMinimum: null,
+        multipleOf: null,
+        createsNewType: false,
+      );
+      expect(schema.exampleValue(context), '5');
+    });
+
+    test('integer falls back to first num in examples list when example '
+        'absent', () {
+      const schema = RenderInteger(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+          examples: ['not-a-number', 7, 9],
+        ),
+        defaultValue: null,
+        maximum: null,
+        minimum: null,
+        exclusiveMaximum: null,
+        exclusiveMinimum: null,
+        multipleOf: null,
+        createsNewType: false,
+      );
+      expect(schema.exampleValue(context), '7');
+    });
+
+    test('integer with negative max picks the upper bound when zero is '
+        'out of range', () {
+      const schema = RenderInteger(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+        ),
+        defaultValue: null,
+        maximum: -5,
+        minimum: null,
+        exclusiveMaximum: null,
+        exclusiveMinimum: null,
+        multipleOf: null,
+        createsNewType: false,
+      );
+      expect(schema.exampleValue(context), '-5');
+    });
+
+    test('integer rounds candidate up to the next multipleOf', () {
+      const schema = RenderInteger(
+        common: CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+        ),
+        defaultValue: null,
+        maximum: null,
+        minimum: 7,
+        exclusiveMaximum: null,
+        exclusiveMinimum: null,
+        multipleOf: 5,
+        createsNewType: false,
+      );
+      expect(schema.exampleValue(context), '10');
+    });
+  });
+
+  group('synthesizeStringSatisfying', () {
+    test('null pattern returns "example" verbatim with no length bounds', () {
+      expect(synthesizeStringSatisfying(), 'example');
+    });
+
+    test('null pattern pads "example" to minLength using last char', () {
+      expect(synthesizeStringSatisfying(minLength: 10), "example${'e' * 3}");
+    });
+
+    test('null pattern truncates "example" to maxLength', () {
+      expect(synthesizeStringSatisfying(maxLength: 4), 'exam');
+    });
+
+    test('invalid regex falls back to padded "example"', () {
+      expect(
+        synthesizeStringSatisfying(pattern: '(', minLength: 10),
+        "example${'e' * 3}",
+      );
+    });
+
+    test("'a' candidate matches first for [0-9a-fA-F]+", () {
+      expect(
+        synthesizeStringSatisfying(
+          pattern: r'^[0-9a-fA-F]+$',
+          minLength: 6,
+          maxLength: 6,
+        ),
+        'aaaaaa',
+      );
+    });
+
+    test("'0' candidate matches alternation when 'a' does not", () {
+      // `^(0|[1-9][0-9]*)$`: 'a' fails, '0' matches.
+      expect(
+        synthesizeStringSatisfying(pattern: r'^(0|[1-9][0-9]*)$'),
+        '0',
+      );
+    });
+
+    test("'1' candidate matches when 'a' and '0' do not", () {
+      // `^[1-9][0-9]*$`: 'a' fails, '0' fails (leading zero forbidden),
+      // '1' matches with the rest filled in by repeating the digit.
+      expect(
+        synthesizeStringSatisfying(pattern: r'^[1-9][0-9]*$', minLength: 3),
+        '111',
+      );
+    });
+
+    test("'example' candidate matches when single-char repeats do not", () {
+      // `^example$` only matches the literal — none of `'a'`, `'0'`, `'1'`
+      // (length 1) match; `'example'` does.
+      expect(synthesizeStringSatisfying(pattern: r'^example$'), 'example');
+    });
+
+    test('matched candidate is post-resized to fit length bounds', () {
+      // Pattern matches `'a'*N` for any N >= 1; with minLength 5,
+      // targetLen is 5, so `'a' * 5` is tried, matches, returned as-is.
+      expect(
+        synthesizeStringSatisfying(pattern: r'^a+$', minLength: 5),
+        'aaaaa',
+      );
+    });
+
+    test('no candidate matches falls back to padded "example"', () {
+      // `^Z+$`: none of `'a'`, `'0'`, `'1'`, `'example'`, or
+      // `resize('example')` match. Falls through to the literal-fallback
+      // arm which returns `resize('example')`.
+      expect(
+        synthesizeStringSatisfying(pattern: r'^Z+$', minLength: 10),
+        "example${'e' * 3}",
+      );
+    });
   });
 
   group('RenderPod newtype', () {

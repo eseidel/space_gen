@@ -3925,11 +3925,20 @@ void main() {
           'exclusiveMinimum': 9,
           'exclusiveMaximum': 0,
         };
-        // named schemas get their own class and thus include validations.
+        // Named schemas get their own newtype and validate each rule
+        // in the constructor body via a `value` cascade. `dart format`
+        // re-indents this cleanly in the user-visible regen.
         expect(
           renderTestSchema(json, asComponent: true),
           'extension type const Test._(int value) {\n'
-          '    const Test(this.value);\n'
+          '    Test(this.value) {\n'
+          '        value\n'
+          '      ..validateMaximum(10)\n'
+          '      ..validateMinimum(1)\n'
+          '      ..validateExclusiveMaximum(0)\n'
+          '      ..validateExclusiveMinimum(9)\n'
+          '      ..validateMultipleOf(2);\n'
+          '    }\n'
           '\n'
           '    factory Test.fromJson(int json) => Test(json);\n'
           '\n'
@@ -3972,7 +3981,12 @@ void main() {
         expect(
           renderTestSchema(json, asComponent: true),
           'extension type const Test._(double value) {\n'
-          '    const Test(this.value);\n'
+          '    Test(this.value) {\n'
+          '        value\n'
+          '      ..validateMaximum(10.2)\n'
+          '      ..validateMinimum(1.2)\n'
+          '      ..validateMultipleOf(2.2);\n'
+          '    }\n'
           '\n'
           '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
           '\n'
@@ -3995,7 +4009,9 @@ void main() {
         expect(
           renderTestSchema(json, asComponent: true),
           'extension type const Test._(double value) {\n'
-          '    const Test(this.value);\n'
+          '    Test(this.value) {\n'
+          '        value.validateMaximum(10.2);\n'
+          '    }\n'
           '\n'
           '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
           '\n'
@@ -4075,7 +4091,9 @@ void main() {
         expect(
           renderTestSchema(json, asComponent: true),
           'extension type const Test._(int value) {\n'
-          '    const Test(this.value);\n'
+          '    Test(this.value) {\n'
+          '        value.validateMinimum(0);\n'
+          '    }\n'
           '\n'
           '    factory Test.fromJson(int json) => Test(json);\n'
           '\n'
@@ -4652,17 +4670,25 @@ void main() {
   });
 
   group('string validations', () {
-    test('maxLength and minLength can be const in named string', () {
+    test('maxLength and minLength validate in named string constructor', () {
       final json = {
         'type': 'string',
         'default': 'foo',
         'maxLength': 10,
         'minLength': 1,
       };
+      // Length validations move into the constructor body so the
+      // newtype enforces them once at construction. Multiple calls
+      // emit as a `value` cascade chain to satisfy the
+      // `cascade_invocations` lint.
       expect(
         renderTestSchema(json, asComponent: true),
         'extension type const Test._(String value) {\n'
-        '    const Test(this.value);\n'
+        '    Test(this.value) {\n'
+        '        value\n'
+        '      ..validateMaximumLength(10)\n'
+        '      ..validateMinimumLength(1);\n'
+        '    }\n'
         '\n'
         '    factory Test.fromJson(String json) => Test(json);\n'
         '\n'

@@ -130,6 +130,24 @@ Iterable<String> wrapDocComment(String value, {int indent = 0}) {
   ).map((line) => '$prefix$line');
 }
 
+/// Format a list of `validateXxx(...)` extension-method calls as the
+/// body of a newtype constructor. Single call: `<receiver>.<call>;`.
+/// Multiple calls: a `<receiver>` cascade chain so the
+/// `cascade_invocations` lint doesn't fire on the duplicated receiver.
+@visibleForTesting
+String validationBody(List<String> calls, {required String receiver}) {
+  if (calls.isEmpty) return '';
+  if (calls.length == 1) {
+    return '$receiver.${calls.first};';
+  }
+  final buffer = StringBuffer(receiver);
+  for (final call in calls) {
+    buffer.write('\n      ..$call');
+  }
+  buffer.write(';');
+  return buffer.toString();
+}
+
 /// Renders a two-part class-member doc comment that fits 80 cols
 /// even when long flattened type names would otherwise push the
 /// single-line form past the lint. Emits `/// $single` when the
@@ -1009,6 +1027,15 @@ class Endpoint implements ToTemplateContext {
   List<String> validationStatements(Quirks quirks) {
     final statements = <String>[];
     for (final parameter in parameters) {
+      // Newtype-typed parameters (e.g. github's `WaitTimer extends
+      // int`, Discord's `SnowflakeType extends String`) validate
+      // their wrapped value once in the newtype's own constructor —
+      // emitting per-call validation here would call `validateXxx`
+      // on the extension type, where the extension method doesn't
+      // resolve. Non-newtype params stay validated at the API
+      // boundary because their underlying String / num is the param
+      // type itself.
+      if (parameter.type.createsNewType) continue;
       final dartName = parameter.dartParameterName(quirks);
       final isNullable = !parameter.isRequired;
       final nameCall = isNullable ? '$dartName?.' : '$dartName.';
@@ -2757,11 +2784,16 @@ class RenderString extends RenderSchema {
   }
 
   @override
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
-    'doc_comment': createDocComment(common: common),
-    'typeName': typeName,
-    'nullableTypeName': nullableTypeName(context),
-  };
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
+    final calls = validationCalls.toList();
+    return {
+      'doc_comment': createDocComment(common: common),
+      'typeName': typeName,
+      'nullableTypeName': nullableTypeName(context),
+      'hasValidations': calls.isNotEmpty,
+      'validationBody': validationBody(calls, receiver: 'value'),
+    };
+  }
 
   @override
   String? get wrapperTag => createsNewType ? null : 'String';
@@ -2840,9 +2872,99 @@ class RenderString extends RenderSchema {
       minLength == other.minLength &&
       super.equalsIgnoringName(other);
 
+  /// A literal `String` value that satisfies this schema's
+  /// validations (`pattern`, `minLength`, `maxLength`). Returns `null`
+  /// when synthesis can't produce a value the spec author would
+  /// recognize as legal — callers fall through to a generic
+  /// placeholder. The synthesizer prefers the spec's own `example` or
+  /// first `examples` entry (assumed valid by the author); failing
+  /// that, it tries simple character-class candidates against the
+  /// declared pattern; failing that, returns `'example'` padded /
+  /// truncated to fit the length range.
+  @visibleForTesting
+  String validStringExample() {
+    final fromSpec = _firstStringExample(common);
+    if (fromSpec != null) return fromSpec;
+    return synthesizeStringSatisfying(
+      pattern: pattern,
+      minLength: minLength,
+      maxLength: maxLength,
+    );
+  }
+
   @override
-  String? exampleValue(SchemaRenderer context) =>
-      createsNewType ? "$typeName('example')" : "'example'";
+  String? exampleValue(SchemaRenderer context) {
+    final value = validStringExample();
+    return createsNewType
+        ? '$typeName(${quoteString(value)})'
+        : quoteString(value);
+  }
+}
+
+/// Pick the first `String`-typed entry from `common.example` or
+/// `common.examples`. OpenAPI lets the spec author declare both; we
+/// trust either as a valid representation for the schema's
+/// validations.
+String? _firstStringExample(CommonProperties common) {
+  final ex = common.example;
+  if (ex is String) return ex;
+  final examples = common.examples;
+  if (examples != null) {
+    for (final e in examples) {
+      if (e is String) return e;
+    }
+  }
+  return null;
+}
+
+/// Best-effort string synthesis from validation rules. Uses Dart's
+/// `RegExp` at codegen time to test candidate values; the candidates
+/// cover the patterns we've actually seen in real specs (github's
+/// `^[0-9a-fA-F]+$`, Discord's `^(0|[1-9][0-9]*)$`, etc.). Returns a
+/// padded `'example'` when no candidate matches — callers should still
+/// surface this to the user (it's better than silently emitting a
+/// constructor call that throws at synthesized-test time).
+@visibleForTesting
+String synthesizeStringSatisfying({
+  String? pattern,
+  int? minLength,
+  int? maxLength,
+}) {
+  String resize(String s) {
+    final minL = minLength ?? 0;
+    final maxL = maxLength;
+    var out = s;
+    if (out.length < minL) {
+      final padChar = out[out.length - 1];
+      out = out + padChar * (minL - out.length);
+    }
+    if (maxL != null && out.length > maxL) {
+      out = out.substring(0, maxL);
+    }
+    return out;
+  }
+
+  if (pattern == null) return resize('example');
+  final RegExp regex;
+  try {
+    regex = RegExp(pattern);
+  } on FormatException {
+    // Spec-author-provided regex didn't parse. Fall through.
+    return resize('example');
+  }
+  // Try a small set of common candidates.
+  final targetLen = (minLength ?? 1).clamp(1, 256);
+  final candidates = <String>[
+    'a' * targetLen, // covers `[0-9a-fA-F]+`, `[a-z]+`, etc.
+    '0' * targetLen, // covers `[0-9]+`, `^(0|...)$`.
+    '1' * targetLen, // covers `^[1-9][0-9]*$`-leading patterns.
+    'example', // simple case for unconstrained patterns.
+    resize('example'),
+  ];
+  for (final c in candidates) {
+    if (regex.hasMatch(c)) return resize(c);
+  }
+  return resize('example');
 }
 
 abstract class RenderNumeric<T extends num> extends RenderSchema {
@@ -2924,6 +3046,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
         '$runtimeType.toTemplateContext called for non-new type: $this',
       );
     }
+    final calls = validationCalls.toList();
     return {
       'doc_comment': createDocComment(common: common),
       'typeName': typeName,
@@ -2931,6 +3054,8 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
       'jsonType': jsonStorageType(isNullable: false),
       'nullableTypeName': nullableTypeName(context),
       'jsonToDartCall': jsonToDartCall(jsonIsNullable: false),
+      'hasValidations': calls.isNotEmpty,
+      'validationBody': validationBody(calls, receiver: 'value'),
     };
   }
 
@@ -3046,8 +3171,10 @@ class RenderNumber extends RenderNumeric<double> {
       jsonIsNullable ? '?.toDouble()' : '.toDouble()';
 
   @override
-  String? exampleValue(SchemaRenderer context) =>
-      createsNewType ? '$typeName(0.0)' : '0.0';
+  String? exampleValue(SchemaRenderer context) {
+    final value = _validNumberExample(common, this).toString();
+    return createsNewType ? '$typeName($value)' : value;
+  }
 }
 
 class RenderInteger extends RenderNumeric<int> {
@@ -3086,8 +3213,53 @@ class RenderInteger extends RenderNumeric<int> {
   String jsonToDartCall({required bool jsonIsNullable}) => '';
 
   @override
-  String? exampleValue(SchemaRenderer context) =>
-      createsNewType ? '$typeName(0)' : '0';
+  String? exampleValue(SchemaRenderer context) {
+    final value = _validNumberExample(common, this).toInt().toString();
+    return createsNewType ? '$typeName($value)' : value;
+  }
+}
+
+/// Pick a numeric value satisfying [schema]'s declared bounds. Prefers
+/// the spec's own `example` / `examples` (assumed valid by the
+/// author); otherwise picks `minimum`, then `0` if `0` is in range,
+/// falling back to a value derived from `maximum`. `multipleOf` is
+/// honored as a final adjustment. Used by both
+/// [RenderNumber.exampleValue] and [RenderInteger.exampleValue]
+/// because the rules are uniform across the two — only the literal's
+/// rendered form differs.
+num _validNumberExample(CommonProperties common, RenderNumeric<num> schema) {
+  num? candidateFromSpec() {
+    final ex = common.example;
+    if (ex is num) return ex;
+    final examples = common.examples;
+    if (examples != null) {
+      for (final e in examples) {
+        if (e is num) return e;
+      }
+    }
+    return null;
+  }
+
+  num pick() {
+    final fromSpec = candidateFromSpec();
+    if (fromSpec != null) return fromSpec;
+    // Inclusive bound takes precedence over exclusive when both
+    // appear (rare in practice — they overlap conceptually).
+    final lo = schema.minimum ?? schema.exclusiveMinimum;
+    final hi = schema.maximum ?? schema.exclusiveMaximum;
+    if (lo != null) return lo;
+    if (hi != null && hi < 0) return hi;
+    return 0;
+  }
+
+  var v = pick();
+  final multiple = schema.multipleOf;
+  if (multiple != null && multiple != 0) {
+    // Round to nearest multiple at or above the candidate.
+    final n = (v / multiple).ceil();
+    v = n * multiple;
+  }
+  return v;
 }
 
 class RenderObject extends RenderNewType {

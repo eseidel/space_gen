@@ -1,5 +1,12 @@
 {{{ doc_comment }}}extension type const {{{ typeName }}}._(String value) {
+{{#hasValidations}}
+    {{ typeName }}(this.value) {
+        {{{ validationBody }}}
+    }
+{{/hasValidations}}
+{{^hasValidations}}
     const {{ typeName }}(this.value);
+{{/hasValidations}}
 
     factory {{ typeName }}.fromJson(String json) => {{ typeName }}(json);
 
