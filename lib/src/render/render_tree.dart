@@ -446,6 +446,14 @@ class SpecResolver {
   /// it (e.g. non-newtype schemas like inline arrays/maps).
   String? _nameFor(JsonPointer pointer) => _names.maybeGet(pointer);
 
+  /// Looks up the assigned name for [pointer], asserting the naming
+  /// pass enumerated it. Use at sites where the entity is known to be
+  /// named (e.g. operations always claim `<op>_response`); a `null`
+  /// here means the naming pass missed an entity it should have
+  /// covered. Delegates to [AssignedNames.operator []], which throws
+  /// a `StateError` with the offending pointer.
+  String _requireNameFor(JsonPointer pointer) => _names[pointer];
+
   /// Looks up the assigned snake name for a resolved schema's pointer
   /// — used as a file basename. Paired with [_nameFor]: when one
   /// returns non-null, so does the other.
@@ -791,21 +799,12 @@ class SpecResolver {
       // Without this lookup the wrapper would emit the bare
       // `<op>Response`, shadowing the imported schema in the api file
       // (and re-exporting it ambiguously from `api.dart`).
-      final wrapperTypeName = _nameFor(operation.pointer);
-      if (wrapperTypeName == null) {
-        throw StateError(
-          'Naming pass did not assign a name to operation '
-          '${operation.snakeName} (pointer: ${operation.pointer}). '
-          'Multi-status dispatch needs the synthesized `<op>_response` '
-          'name claimed by `_NameAssigner.visitOperation`.',
-        );
-      }
       return MultiStatusReturn(
         responses: {
           for (final response in explicit2xx)
             response.statusCode: toRenderResponse(response),
         },
-        wrapperTypeName: wrapperTypeName,
+        wrapperTypeName: _requireNameFor(operation.pointer),
       );
     }
     return SingleSchemaReturn(
