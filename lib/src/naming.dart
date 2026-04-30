@@ -574,6 +574,7 @@ class _NameAssigner {
       case ResolvedRecursiveRef():
       case ResolvedVoid():
       case ResolvedBinary():
+      case ResolvedBase64Bytes():
       case ResolvedNull():
       case ResolvedUnknown():
         // Leaf — no inline children to visit.

@@ -2398,6 +2398,46 @@ void main() {
         expect(schema, isA<SchemaString>());
         expect(schema.common.nullable, isTrue);
       });
+      test('contentEncoding=base64 parses as SchemaBase64Bytes', () {
+        // Discord's `avatar` / `image` properties: base64-encoded
+        // binary on the wire, `Uint8List` Dart-side.
+        final json = {'type': 'string', 'contentEncoding': 'base64'};
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaBase64Bytes>());
+      });
+      test('contentEncoding=binary stays a SchemaString (deferred)', () {
+        // Routing `contentEncoding: binary` to `SchemaBinary` (a no-
+        // JSON type) breaks generated response handlers for non-JSON
+        // content types (`image/png` returning `Uint8List` from a
+        // String-shaped path). Until the response-bytes pipeline
+        // lands, acknowledge the keyword via the verbose log and
+        // keep the wire-shape `String`.
+        final json = {'type': 'string', 'contentEncoding': 'binary'};
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaString>());
+        verify(
+          () => logger.detail(
+            any(that: contains('Ignoring: contentEncoding=binary')),
+          ),
+        ).called(1);
+      });
+      test('contentMediaType is consumed alongside contentEncoding', () {
+        final json = {
+          'type': 'string',
+          'contentEncoding': 'base64',
+          'contentMediaType': 'image/png',
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaBase64Bytes>());
+        verify(
+          () => logger.detail(
+            any(that: contains('Ignoring: contentMediaType=image/png')),
+          ),
+        ).called(1);
+      });
     });
 
     group('multiple types', () {

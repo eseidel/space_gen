@@ -237,6 +237,16 @@ class SchemaBinary extends Schema {
   const SchemaBinary({required super.common});
 }
 
+/// A base64-encoded binary string. JSON Schema 2020-12 / OpenAPI 3.1
+/// spell this as `{type: string, contentEncoding: base64}`. The wire
+/// format is a JSON string; the Dart-side type is `Uint8List` with
+/// `base64.encode`/`base64.decode` automatically applied at the JSON
+/// boundary. Discord uses this for fields like `avatar` and `image`
+/// in upload request bodies.
+class SchemaBase64Bytes extends Schema {
+  const SchemaBase64Bytes({required super.common});
+}
+
 /// An enum schema. OpenAPI most commonly uses string enums, but
 /// `type: integer` enums also occur — Discord uses single-value int
 /// enums (`enum: [1]`) as oneOf discriminator markers, the same role
