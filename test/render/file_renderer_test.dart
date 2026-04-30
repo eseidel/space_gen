@@ -2416,7 +2416,8 @@ void main() {
 
   group('maybeAddLongLineIgnore', () {
     test('passes through short-only content', () {
-      final content = '${List.generate(5, (i) => 'var x$i = $i;').join('\n')}\n';
+      final content =
+          '${List.generate(5, (i) => 'var x$i = $i;').join('\n')}\n';
       expect(maybeAddLongLineIgnore(content), content);
     });
 
