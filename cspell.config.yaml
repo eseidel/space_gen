@@ -49,3 +49,6 @@ words:
   - unpinnable
   - codegen
   - disambiguator
+  - bitfield
+  - ints
+  - fixnum
