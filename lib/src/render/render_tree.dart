@@ -1011,7 +1011,17 @@ class Endpoint implements ToTemplateContext {
     for (final parameter in parameters) {
       final dartName = parameter.dartParameterName(quirks);
       final isNullable = !parameter.isRequired;
-      final nameCall = isNullable ? '$dartName?.' : '$dartName.';
+      // Newtype-typed parameters (e.g. github's `WaitTimer extends
+      // int`, Discord's `SnowflakeType extends String`) are extension
+      // types — they don't expose the underlying type's `validateXxx`
+      // helpers, so the call has to navigate through `.value` to
+      // reach the wrapped String/num. Non-newtype params receive
+      // `validateXxx` directly via Dart's extension-on-String /
+      // extension-on-num imports.
+      final accessor = parameter.type.createsNewType ? 'value.' : '';
+      final nameCall = isNullable
+          ? '$dartName?.$accessor'
+          : '$dartName.$accessor';
       for (final call in parameter.validationCalls) {
         statements.add('$nameCall$call;');
       }

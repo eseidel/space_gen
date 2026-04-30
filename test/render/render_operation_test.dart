@@ -1136,7 +1136,7 @@ void main() {
         '    ) async {\n'
         '        foo?.validateMaximumLength(10);\n'
         '        foo?.validateMinimumLength(1);\n'
-        "        foo?.validatePattern('^[a-z]+\$');\n"
+        "        foo?.validatePattern('^[a-z]+\\\$');\n"
         '        bar?.validateMaximum(10);\n'
         '        bar?.validateMinimum(1);\n'
         '        bar?.validateExclusiveMaximum(10);\n'
@@ -1163,6 +1163,69 @@ void main() {
         '        }\n'
         '    }\n'
         '}\n',
+      );
+    });
+
+    test('validation calls on newtype params splice .value', () {
+      // Discord's snowflake IDs are top-level `type: string` schemas
+      // with a regex pattern; they parse as newtypes (extension types
+      // around `String`). The generated `validatePattern` extension
+      // method is on `String`, not the extension type, so the call
+      // has to navigate `.value` to reach the wrapped String. Pre-fix
+      // the generator emitted `applicationId.validatePattern(...)`
+      // which doesn't compile.
+      final spec = {
+        'openapi': '3.0.0',
+        'info': {'title': 'Test', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'summary': 'Get by id',
+              'parameters': [
+                {
+                  'name': 'snowflake',
+                  'in': 'query',
+                  'required': true,
+                  'schema': {r'$ref': '#/components/schemas/Snowflake'},
+                },
+                {
+                  'name': 'maybeSnowflake',
+                  'in': 'query',
+                  'schema': {r'$ref': '#/components/schemas/Snowflake'},
+                },
+              ],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Snowflake': {
+              'type': 'string',
+              'pattern': r'^[0-9]+$',
+            },
+          },
+        },
+      };
+      final result = renderTestApiFromSpec(
+        specJson: spec,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      // Required newtype param: `snowflake.value.validatePattern(...)`.
+      expect(
+        result,
+        contains("snowflake.value.validatePattern('^[0-9]+\\\$');"),
+      );
+      // Nullable newtype param: `maybeSnowflake?.value.validatePattern(...)`.
+      expect(
+        result,
+        contains("maybeSnowflake?.value.validatePattern('^[0-9]+\\\$');"),
       );
     });
 
