@@ -85,32 +85,42 @@ const longLineIgnoreBlock =
     '// 80 cols as bare identifiers.\n'
     '// ignore_for_file: lines_longer_than_80_chars';
 
-/// Walks [dir] and prepends [longLineIgnoreBlock] to any `.dart` file
-/// that still has a line over 80 cols after `dart format`. Some specs
-/// flatten deeply-nested inline schemas into class names long enough
-/// that common call-site patterns (`.map<Name>(`,
-/// `Name.maybeFromJson(`) and import paths overflow as bare
-/// identifiers — cases `dart format` provably cannot fix by
-/// reflowing. Emitting the directive per-file keeps the lint live
-/// everywhere it could still catch a real generator bug, and it
-/// self-documents which files have structurally-unavoidable long
-/// lines.
+/// Returns [content] with [longLineIgnoreBlock] prepended if any line
+/// outside the analyzer's existing carve-outs (URI imports/exports,
+/// `///` dartdoc) exceeds 80 cols. Threaded through
+/// [maybeAddIgnoreDirectives] at file-emit time on every
+/// space_gen-emitted file — hand-written templates skip the call so a
+/// directive isn't smuggled into files space_gen doesn't own.
+///
+/// Emit-time decision matches `maybeAddCommentReferencesIgnore`'s
+/// shape and avoids the previous post-walk pass that scanned every
+/// `.dart` in the output directory — including hand-written ones a
+/// subclass `FileRenderer` was deliberately preserving by overriding
+/// `renderClient` / `renderPublicApi` to no-ops. Skipping
+/// `import`/`export` lines mirrors the analyzer's own behavior:
+/// `lines_longer_than_80_chars` ignores URIs, so a long `import` was
+/// never going to fire the lint and shouldn't trigger the directive
+/// either (the unused directive in turn trips `unnecessary_ignore`).
+///
+/// `dart format` runs after this, so the check is on pre-format
+/// content. Format only reflows long lines shorter when wrapping
+/// points exist — it can't stretch a short line to >80 nor split a
+/// bare identifier — so pre-format detection is a safe overestimate
+/// for the files this generator emits.
 @visibleForTesting
-void suppressLongLineLintInGeneratedFiles(Directory dir) {
+String maybeAddLongLineIgnore(String content) {
   const marker = '// ignore_for_file: lines_longer_than_80_chars';
-  final dartFiles = dir
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((f) => f.path.endsWith('.dart'));
-  for (final file in dartFiles) {
-    final content = file.readAsStringSync();
-    // Idempotent — a previous run or handwritten override of the
-    // directive already covers this file.
-    if (content.contains(marker)) continue;
-    final hasLongLine = content.split('\n').any((line) => line.length > 80);
-    if (!hasLongLine) continue;
-    file.writeAsStringSync('$longLineIgnoreBlock\n$content');
-  }
+  if (content.contains(marker)) return content;
+  final hasFlaggableLongLine = content.split('\n').any((line) {
+    if (line.length <= 80) return false;
+    final trimmed = line.trimLeft();
+    if (trimmed.startsWith('import ')) return false;
+    if (trimmed.startsWith('export ')) return false;
+    if (trimmed.startsWith('///')) return false;
+    return true;
+  });
+  if (!hasFlaggableLongLine) return content;
+  return '$longLineIgnoreBlock\n$content';
 }
 
 /// Block prepended to generated `.dart` files whose dartdoc contains
@@ -129,11 +139,11 @@ const commentReferencesIgnoreBlock =
 
 /// Returns [content] with [commentReferencesIgnoreBlock] prepended if
 /// any `///` doc comment carries a bracketed token that wouldn't
-/// resolve in scope. Used at file-emit time on the two render paths
-/// that splice raw spec descriptions into dartdoc (schemas,
-/// operations) — hand-written templates skip the call so a spurious
-/// `[FormatException]` reference in their docs doesn't get silently
-/// suppressed when it should be fixed at the source.
+/// resolve in scope. Threaded through [maybeAddIgnoreDirectives] at
+/// file-emit time on every space_gen-emitted file — hand-written
+/// templates skip the call so a spurious `[FormatException]`
+/// reference in their docs doesn't get silently suppressed when it
+/// should be fixed at the source.
 ///
 /// "In scope" today means *declared as a top-level type in the same
 /// file* (class / enum / extension type / mixin). Imported names
@@ -157,6 +167,15 @@ String maybeAddCommentReferencesIgnore(String content) {
   if (tokens.every(resolvesLocally)) return content;
   return '$commentReferencesIgnoreBlock\n$content';
 }
+
+/// Composes the per-file emit-time suppression helpers applied by
+/// `_renderSpecTemplate`. Adding a new gen-time suppression to the
+/// pipeline is a single edit here; call sites stay unchanged.
+/// Hand-written templates use `_renderTemplate` instead and bypass
+/// this entirely (see #138's design rationale).
+@visibleForTesting
+String maybeAddIgnoreDirectives(String content) =>
+    maybeAddLongLineIgnore(maybeAddCommentReferencesIgnore(content));
 
 /// Collects every `[token]` bracketed reference inside a `///` doc
 /// comment, ignoring `[Foo](url)` markdown links (the `(?!\()` guard).
@@ -509,19 +528,38 @@ class FileRenderer {
   String modelPackageImport(FileRenderer context, RenderSchema schema) =>
       'package:${context.packageName}/${context.modelPackagePath(schema)}';
 
-  /// Render a template. [transform] runs on the rendered content
-  /// before it lands on disk — used by the schema/operation paths to
-  /// add `// ignore_for_file: comment_references` when the spec's
-  /// description text would trip the lint.
+  /// Render a hand-written template — pubspec, analysis_options,
+  /// `auth.dart`, the `client.dart` facade, etc. The output is the
+  /// template verbatim with no spec-derived class names spliced in,
+  /// so the gen-time lint suppressions don't apply. See
+  /// [_renderSpecTemplate] for the path that emits spec-derived
+  /// content.
   void _renderTemplate({
     required String template,
     required String outPath,
     Map<String, dynamic> context = const {},
-    String Function(String content)? transform,
   }) {
     final output = templates.loadTemplate(template).renderString(context);
-    final finalContent = transform == null ? output : transform(output);
-    fileWriter.writeFile(path: outPath, content: finalContent);
+    fileWriter.writeFile(path: outPath, content: output);
+  }
+
+  /// Render a template that emits content shaped by the spec — model
+  /// files, api files, generated round-trip tests. The output is run
+  /// through [maybeAddIgnoreDirectives] before it lands on disk, which
+  /// adds the standard `// ignore_for_file:` block(s) for any lint
+  /// the gen-time content provably triggers. Adding a new gen-time
+  /// suppression is one edit inside [maybeAddIgnoreDirectives]; call
+  /// sites stay unchanged.
+  void _renderSpecTemplate({
+    required String template,
+    required String outPath,
+    Map<String, dynamic> context = const {},
+  }) {
+    final output = templates.loadTemplate(template).renderString(context);
+    fileWriter.writeFile(
+      path: outPath,
+      content: maybeAddIgnoreDirectives(output),
+    );
   }
 
   /// Set up the package directory (creates [fileWriter]'s outDir and
@@ -802,11 +840,10 @@ class FileRenderer {
           .map((i) => i.toTemplateContext())
           .toList();
       final outPath = apiFilePath(api);
-      _renderTemplate(
+      _renderSpecTemplate(
         template: 'add_imports',
         outPath: outPath,
         context: {'imports': importsContext, 'content': renderedApi.body},
-        transform: maybeAddCommentReferencesIgnore,
       );
       rendered.add(api);
     }
@@ -874,11 +911,10 @@ class FileRenderer {
           .toList();
 
       final outPath = modelFilePath(schema);
-      _renderTemplate(
+      _renderSpecTemplate(
         template: 'add_imports',
         outPath: outPath,
         context: {'imports': importsContext, 'content': rendered.body},
-        transform: maybeAddCommentReferencesIgnore,
       );
     }
   }
@@ -909,7 +945,7 @@ class FileRenderer {
       final example = schema.exampleValue(schemaContext);
       if (example == null) continue;
       final invalidJson = schema.invalidJsonExample(schemaContext);
-      _renderTemplate(
+      _renderSpecTemplate(
         template: 'schema_round_trip_test',
         outPath: outPath,
         context: {
@@ -966,7 +1002,7 @@ class FileRenderer {
       });
     }
     if (variants.isEmpty) return;
-    _renderTemplate(
+    _renderSpecTemplate(
       template: 'schema_oneof_round_trip_test',
       outPath: outPath,
       context: {
@@ -1038,7 +1074,6 @@ class FileRenderer {
     // Render the combined api.dart exporting all rendered schemas.
     renderPublicApi(spec.apis, schemas);
     formatter.formatAndFix(pkgDir: fileWriter.outDir.path);
-    suppressLongLineLintInGeneratedFiles(fileWriter.outDir);
 
     final misspellings = spellChecker.collectMisspellings(fileWriter.outDir);
     renderCspellConfig(misspellings);
