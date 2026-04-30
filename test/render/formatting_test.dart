@@ -259,7 +259,8 @@ void main() {
 
     test('formatIfDart formats Dart content', () {
       final formatter = buildFormatter({
-        '/pkg/pubspec.yaml': 'name: foo\nenvironment:\n  sdk: ">=3.9.0 <4.0.0"\n',
+        '/pkg/pubspec.yaml':
+            'name: foo\nenvironment:\n  sdk: ">=3.9.0 <4.0.0"\n',
       });
       // Unformatted: extra spaces, missing newline.
       const unformatted = 'class Foo  { final int x; Foo(this.x); }';
@@ -274,8 +275,7 @@ void main() {
       // Lock takes precedence over pubspec.yaml — reflects the
       // resolved SDK from the most recent `pub get`.
       final formatter = buildFormatter({
-        '/pkg/pubspec.lock':
-            'sdks:\n  dart: ">=3.6.0 <4.0.0"\n',
+        '/pkg/pubspec.lock': 'sdks:\n  dart: ">=3.6.0 <4.0.0"\n',
         '/pkg/pubspec.yaml':
             'name: foo\nenvironment:\n  sdk: ">=3.9.0 <4.0.0"\n',
       });
@@ -313,8 +313,7 @@ void main() {
       });
       // A 90-char line that would wrap under the default 80 should
       // stay on one line under page_width: 100.
-      final wide =
-          'final foo = SomeFunction(${'a' * 70});\n';
+      final wide = 'final foo = SomeFunction(${'a' * 70});\n';
       final result = formatter.formatIfDart('/pkg/lib/x.dart', wide);
       expect(result.split('\n').first.length, greaterThan(80));
     });
@@ -326,13 +325,10 @@ void main() {
       final formatter = buildFormatter({
         '/pkg/pubspec.yaml':
             'name: foo\nenvironment:\n  sdk: ">=3.9.0 <4.0.0"\n',
-        '/pkg/analysis_options.yaml':
-            'include: ../analysis_options.yaml\n',
-        '/analysis_options.yaml':
-            'formatter:\n  page_width: 100\n',
+        '/pkg/analysis_options.yaml': 'include: ../analysis_options.yaml\n',
+        '/analysis_options.yaml': 'formatter:\n  page_width: 100\n',
       });
-      final wide =
-          'final foo = SomeFunction(${'a' * 70});\n';
+      final wide = 'final foo = SomeFunction(${'a' * 70});\n';
       final result = formatter.formatIfDart('/pkg/lib/x.dart', wide);
       // page_width: 100 from the workspace root file should survive
       // the include hop.
@@ -362,18 +358,21 @@ void main() {
       // analysis_options.yaml live one level up.
       final fs = MemoryFileSystem.test();
       fs.directory('/workspace/packages/inner').createSync(recursive: true);
-      fs.file('/workspace/pubspec.yaml').writeAsStringSync(
-        'name: workspace\nenvironment:\n  sdk: ">=3.9.0 <4.0.0"\n',
-      );
-      fs.file('/workspace/analysis_options.yaml').writeAsStringSync(
-        'formatter:\n  page_width: 100\n',
-      );
+      fs
+          .file('/workspace/pubspec.yaml')
+          .writeAsStringSync(
+            'name: workspace\nenvironment:\n  sdk: ">=3.9.0 <4.0.0"\n',
+          );
+      fs
+          .file('/workspace/analysis_options.yaml')
+          .writeAsStringSync(
+            'formatter:\n  page_width: 100\n',
+          );
       final formatter = DartFileFormatter(
         fs: fs,
         outDir: fs.directory('/workspace/packages/inner'),
       );
-      final wide =
-          'final foo = SomeFunction(${'a' * 70});\n';
+      final wide = 'final foo = SomeFunction(${'a' * 70});\n';
       final result = formatter.formatIfDart(
         '/workspace/packages/inner/lib/x.dart',
         wide,

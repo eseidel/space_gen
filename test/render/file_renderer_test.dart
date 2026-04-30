@@ -2414,7 +2414,6 @@ void main() {
     });
   });
 
-
   // While we still support logging, this should no longer happen since
   // we detect collisions and fix them during resolution.
   test('logNameCollisions', () {
