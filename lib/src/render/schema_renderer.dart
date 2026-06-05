@@ -2,14 +2,42 @@ import 'package:space_gen/src/quirks.dart';
 import 'package:space_gen/src/render/render_tree.dart';
 import 'package:space_gen/src/render/templates.dart';
 
+/// A maximal Dart identifier: `[a-zA-Z_$]` head, `[\w$]*` tail.
+final _identifierPattern = RegExp(r'[a-zA-Z_$][\w$]*');
+
+/// [ModelHelpers.all] as a set, for O(1) membership while scanning.
+final Set<String> _helperNames = ModelHelpers.all.toSet();
+
+/// The subset of [ModelHelpers.all] that [body] references as whole
+/// identifiers.
+///
+/// We tokenize [body] into identifiers in a single pass and match each
+/// token against [_helperNames] by exact equality. A plain
+/// `body.contains(name)` would over-match helper names that are
+/// prefixes of others — `maybeParseDateTime` contains `maybeParseDate`,
+/// `maybeParseUriTemplate` contains `maybeParseUri` — so a body that
+/// calls only the longer helper would drag the shorter, never-called
+/// one into `model_helpers.dart` as a dead function: uncovered lines
+/// that fail the consuming package's coverage gate. Comparing whole
+/// tokens makes that impossible by construction.
+Set<String> _referencedModelHelpers(String body) {
+  final found = <String>{};
+  for (final match in _identifierPattern.allMatches(body)) {
+    final token = match[0]!;
+    if (_helperNames.contains(token)) found.add(token);
+  }
+  return found;
+}
+
 /// Which imports a rendered schema body needs beyond the schemas it
 /// references, plus which `model_helpers.dart` helpers the body calls
 /// (used to prune unused helpers from the shared file).
 ///
-/// Today we derive this from the rendered body via substring checks. The
-/// long-term plan is for the rendering pipeline in render_tree.dart to
-/// populate this directly as it emits helper calls — the [importsFor]
-/// interface will not change.
+/// Today we derive this from the rendered body by scanning its
+/// identifier tokens (see [_referencedModelHelpers]). The long-term
+/// plan is for the rendering pipeline in render_tree.dart to populate
+/// this directly as it emits helper calls — the [importsFor] interface
+/// will not change.
 class SchemaUsage {
   const SchemaUsage({
     this.usesMetaAnnotations = false,
@@ -22,10 +50,7 @@ class SchemaUsage {
     return SchemaUsage(
       usesMetaAnnotations: body.contains('@immutable'),
       usesValidationExtensions: _validationCallPattern.hasMatch(body),
-      modelHelpers: {
-        for (final h in ModelHelpers.all)
-          if (body.contains(h)) h,
-      },
+      modelHelpers: _referencedModelHelpers(body),
     );
   }
 
@@ -75,10 +100,7 @@ class ApiUsage {
 
   factory ApiUsage.fromBody(String body) => ApiUsage(
     usesMetaAnnotations: body.contains('@immutable'),
-    modelHelpers: {
-      for (final h in ModelHelpers.all)
-        if (body.contains(h)) h,
-    },
+    modelHelpers: _referencedModelHelpers(body),
   );
 
   /// True when the body emits `@immutable` (multi-status response

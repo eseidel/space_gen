@@ -1011,6 +1011,61 @@ void main() {
       expect(helpers, isNot(contains("import 'package:uri/uri.dart")));
     });
 
+    test(
+      'model_helpers.dart prunes a prefix helper that is never called',
+      () async {
+        // A nullable date-time field emits `maybeParseDateTime(...)`. The
+        // shorter `maybeParseDate` is a prefix of it but is never called,
+        // so it must not land in model_helpers.dart as dead, uncovered
+        // code.
+        final fs = MemoryFileSystem.test();
+        final spec = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Test API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/thing': {
+              'get': {
+                'operationId': 'get-thing',
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {r'$ref': '#/components/schemas/Thing'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'components': {
+            'schemas': {
+              'Thing': {
+                'type': 'object',
+                'properties': {
+                  // Optional → nullable json → `maybeParseDateTime(...)`.
+                  'updatedAt': {'type': 'string', 'format': 'date-time'},
+                },
+              },
+            },
+          },
+        };
+        final out = fs.directory('out');
+        await renderToDirectory(spec: spec, outDir: out);
+        final helpers = out
+            .childFile('lib/model_helpers.dart')
+            .readAsStringSync();
+        expect(helpers, contains('DateTime? maybeParseDateTime(String'));
+        // Full signature, not the bare name: avoids matching the
+        // `maybeParseDate` substring inside `maybeParseDateTime`.
+        expect(helpers, isNot(contains('DateTime? maybeParseDate(String')));
+      },
+    );
+
     test('model_helpers.dart includes collection helpers for list/map '
         'properties', () async {
       final fs = MemoryFileSystem.test();
@@ -2527,6 +2582,34 @@ void main() {
           contains(const Import('package:spacetraders/api_exception.dart')),
         ),
       );
+    });
+
+    test('SchemaUsage.fromBody matches helper names as whole identifiers', () {
+      // `maybeParseDate`/`maybeParseUri` are prefixes of
+      // `maybeParseDateTime`/`maybeParseUriTemplate`. A substring scan
+      // would pull the shorter, never-called helper into
+      // model_helpers.dart as dead, uncovered code. A call to the longer
+      // helper must match only the longer one; the shorter still matches
+      // when it is the one called.
+      Set<String> usedBy(String helper) => SchemaUsage.fromBody(
+        "x: $helper(json['x'] as String?),",
+      ).modelHelpers;
+
+      expect(usedBy('maybeParseDateTime'), {ModelHelpers.maybeParseDateTime});
+      expect(usedBy('maybeParseUriTemplate'), {
+        ModelHelpers.maybeParseUriTemplate,
+      });
+      expect(usedBy('maybeParseDate'), {ModelHelpers.maybeParseDate});
+      expect(usedBy('maybeParseUri'), {ModelHelpers.maybeParseUri});
+    });
+
+    test('ApiUsage.fromBody uses the same whole-identifier match', () {
+      // ApiUsage derives modelHelpers independently of SchemaUsage; pin
+      // that it doesn't regress to a substring scan on its own.
+      final usage = ApiUsage.fromBody(
+        "x: maybeParseDateTime(json['x'] as String?),",
+      );
+      expect(usage.modelHelpers, {ModelHelpers.maybeParseDateTime});
     });
 
     test('imports for api', () {
