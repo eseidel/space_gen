@@ -17,6 +17,9 @@ class RenderTreeWalker {
   final RenderTreeVisitor visitor;
 
   void walkRoot(RenderSpec spec) {
+    for (final schema in spec.componentSchemas.values) {
+      walkSchema(schema);
+    }
     for (final api in spec.apis) {
       walkApi(api);
     }

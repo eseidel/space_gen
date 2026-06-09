@@ -1,4 +1,5 @@
 import 'package:file/file.dart';
+import 'package:file/local.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:space_gen/src/assemble.dart';
@@ -58,6 +59,25 @@ String describeSpecUrl(Uri url) {
 /// subclass (see `tool/gen_shorebird.dart` in this repo for an
 /// example).
 typedef FileRendererBuilder = FileRenderer Function(FileRendererConfig config);
+
+/// Configuration for loading an OpenAPI document into SpaceGen's render tree
+/// without invoking the built-in file/template renderer.
+class SpecParserConfig {
+  const SpecParserConfig({
+    required this.specUrl,
+    this.quirks = const Quirks(),
+    this.logSchemas = true,
+  });
+
+  /// The location of the OpenAPI spec to read.
+  final Uri specUrl;
+
+  /// Flags that change the shape of the render graph (see [Quirks]).
+  final Quirks quirks;
+
+  /// Whether to log each schema seen during resolution.
+  final bool logSchemas;
+}
 
 /// Top-level configuration for a single [loadAndRenderSpec] run.
 /// Holds every knob that controls the generation: where to read
@@ -128,12 +148,10 @@ class GeneratorConfig {
   final FileRendererBuilder fileRendererBuilder;
 }
 
-Future<void> loadAndRenderSpec(GeneratorConfig config) async {
-  final fs = config.outDir.fileSystem;
-  validatePackageName(config.packageName);
-
-  final templates = TemplateProvider.fromDirectory(config.templatesDir);
-
+Future<RenderSpec> _loadRenderSpec(
+  SpecParserConfig config, {
+  required FileSystem fs,
+}) async {
   final cache = Cache(fs);
   // Assemble the parse tree plus a registry of every component reachable
   // through external `$ref` — has to happen before resolveSpec so refs into
@@ -143,11 +161,34 @@ Future<void> loadAndRenderSpec(GeneratorConfig config) async {
   final resolved = resolveSpec(
     spec,
     specUrl: config.specUrl,
+    logSchemas: config.logSchemas,
     refRegistry: refRegistry,
   );
   final resolver = SpecResolver(config.quirks);
   // Convert the resolved spec into render objects.
-  final renderSpec = resolver.toRenderSpec(resolved);
+  return resolver.toRenderSpec(resolved);
+}
+
+/// Load an OpenAPI document and build SpaceGen's render tree without writing
+/// files or invoking templates.
+Future<RenderSpec> loadRenderSpec(SpecParserConfig config) {
+  return runWithDefaultLogger(
+    () => _loadRenderSpec(config, fs: const LocalFileSystem()),
+  );
+}
+
+Future<void> loadAndRenderSpec(GeneratorConfig config) async {
+  final fs = config.outDir.fileSystem;
+  final parserConfig = SpecParserConfig(
+    specUrl: config.specUrl,
+    quirks: config.quirks,
+    logSchemas: config.logSchemas,
+  );
+
+  validatePackageName(config.packageName);
+  final templates = TemplateProvider.fromDirectory(config.templatesDir);
+  final renderSpec = await _loadRenderSpec(parserConfig, fs: fs);
+
   // SchemaRenderer is responsible for rendering schemas and APIs into strings.
   final schemaRenderer = SchemaRenderer(
     templates: templates,

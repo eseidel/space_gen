@@ -18,11 +18,13 @@ export 'package:space_gen/src/render/formatting.dart'
     show Formatter, RunProcess;
 
 class _ModelCollector extends RenderTreeVisitor {
-  final Set<RenderSchema> schemas = {};
+  final _schemasByPointer = <Object, RenderSchema>{};
+
+  Set<RenderSchema> get schemas => _schemasByPointer.values.toSet();
 
   @override
   void visitSchema(RenderSchema schema) {
-    schemas.add(schema);
+    _schemasByPointer.putIfAbsent(schema.pointer, () => schema);
   }
 }
 
