@@ -105,7 +105,7 @@ const commentReferencesIgnoreBlock =
 const unintendedHtmlInDocCommentIgnoreBlock =
     '// Spec descriptions copy prose verbatim into dartdoc, where `<x>`\n'
     '// is parsed as an HTML tag start even when it is not HTML (e.g.\n'
-    '// entity-ref examples like `location:default/generated-<sha1hex>`).\n'
+    '// placeholder tokens like `<sha1hex>`).\n'
     '// Suppress file-locally so the lint stays live elsewhere; spec\n'
     '// authors do not always escape angle brackets.\n'
     '// ignore_for_file: unintended_html_in_doc_comment';
@@ -141,7 +141,7 @@ String maybeAddUnintendedHtmlIgnore(String content) {
 /// `</foo>` tags both match via the leading `/` arm only when a
 /// letter follows (so `</` followed by whitespace won't match).
 bool _dartdocHasHtmlTag(String content) {
-  final tagRe = RegExp('<(?:[A-Za-z]|/[A-Za-z])');
+  final tagRe = RegExp('</?[A-Za-z]');
   for (final line in content.split('\n')) {
     final stripped = line.trimLeft();
     if (!stripped.startsWith('///')) continue;
