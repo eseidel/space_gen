@@ -409,9 +409,14 @@ ResolvedSchema _resolveSchemaFully(
       return schemas.first;
     }
     for (final schema in schemas) {
-      if (schema is! ResolvedObject) {
-        _error('allOf only supports objects: $schema', allOf.pointer);
-      }
+      // An open empty object (`type: object` with no properties and no closed
+      // `additionalProperties`) intersects trivially — every JSON object
+      // satisfies it — so it is a valid allOf member that contributes no
+      // properties to the merge. The render pass only merges `RenderObject`
+      // members, so `ResolvedEmptyObject` is already a no-op there; this just
+      // stops the resolver rejecting it on the way.
+      if (schema is ResolvedObject || schema is ResolvedEmptyObject) continue;
+      _error('allOf only supports objects: $schema', allOf.pointer);
     }
     return ResolvedAllOf(common: resolvedCommon, schemas: schemas);
   }

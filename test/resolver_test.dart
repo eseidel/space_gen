@@ -365,6 +365,51 @@ void main() {
       );
     });
 
+    test(
+      'allOf admits empty-object members',
+      () {
+        // Mirrors the shape that surfaced this: `allOf: [{$ref: JsonObject},
+        // {type: object, properties: {...}}]` where `JsonObject` is `type:
+        // object, properties: {}, additionalProperties: {}` (an open empty
+        // object). The empty open object intersects trivially, so it should be
+        // admitted as an allOf member (contributing no properties to the
+        // merge) rather than crashing the resolver. Here we use
+        // `additionalProperties: true`, which is semantically identical to `{}`
+        // per JSON Schema 2020-12 and is how the YAML loader surfaces the
+        // shape after parsing such a spec.
+        final json = {
+          'allOf': [
+            {
+              'type': 'object',
+              'properties': <String, dynamic>{},
+              'additionalProperties': true,
+            },
+            {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+              },
+            },
+          ],
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(
+          logger,
+          () => parseAndResolveTestSchema(json),
+        );
+        // The allOf is preserved (not collapsed) so the parent schema keeps its
+        // name; the empty member contributes no properties at render time.
+        expect(
+          schema,
+          isA<ResolvedAllOf>().having(
+            (e) => e.schemas.length,
+            'schemas',
+            equals(2),
+          ),
+        );
+      },
+    );
+
     test('resolve anyOf', () {
       final json = {
         'anyOf': [
