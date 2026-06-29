@@ -10,6 +10,7 @@ class Widget {
   Widget({
     required this.id,
     required this.attributes,
+    required this.labels,
     this.tags = const [],
   });
 
@@ -23,6 +24,9 @@ class Widget {
         id: json['id'] as int,
         tags: (json['tags'] as List).cast<String>(),
         attributes: (json['attributes'] as Map<String, dynamic>).map(
+          (key, value) => MapEntry(key, value as String),
+        ),
+        labels: (json['labels'] as Map<String, dynamic>).map(
           (key, value) => MapEntry(key, value as String),
         ),
       ),
@@ -41,14 +45,11 @@ class Widget {
   int id;
   List<String> tags;
   Map<String, String> attributes;
+  Map<String, String> labels;
 
   /// Converts a [Widget] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'tags': tags,
-      'attributes': attributes,
-    };
+    return {'id': id, 'tags': tags, 'attributes': attributes, 'labels': labels};
   }
 
   @override
@@ -56,6 +57,7 @@ class Widget {
     id,
     listHash(tags),
     mapHash(attributes),
+    mapHash(labels),
   ]);
 
   @override
@@ -64,6 +66,7 @@ class Widget {
     return other is Widget &&
         id == other.id &&
         listsEqual(tags, other.tags) &&
-        mapsEqual(attributes, other.attributes);
+        mapsEqual(attributes, other.attributes) &&
+        mapsEqual(labels, other.labels);
   }
 }

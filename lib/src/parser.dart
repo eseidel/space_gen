@@ -1354,6 +1354,29 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   // empty response.  Those aren't "dynamic" types, but unclear if they need
   // a separate class either.
   if (propertiesJson.keys.isEmpty) {
+    // An explicitly empty `properties: {}` plus a *typed*
+    // `additionalProperties` schema (e.g. `{type: string}`) is a map-typed
+    // schema — no named properties, arbitrary string keys, typed values.
+    // Route it through the map path so the generator emits
+    // `Map<String, V>` inline with entry-wise round-tripping. An untyped
+    // `additionalProperties` (`true` or `{}`) stays an empty object: specs
+    // use that shape for "any object" markers (e.g. a `JsonObject`
+    // component referenced from an `allOf`), and the resolver's `allOf`
+    // check admits `ResolvedEmptyObject` but not `ResolvedMap`.
+    final valueSchema = additionalPropertiesSchema?.object;
+    if (additionalPropertiesSchema != null &&
+        valueSchema != null &&
+        valueSchema is! SchemaUnknown) {
+      final propertyNamesJson = _optionalMap(json, 'propertyNames');
+      final keySchema = propertyNamesJson == null
+          ? null
+          : parseSchemaOrRef(propertyNamesJson);
+      return SchemaMap(
+        common: common,
+        valueSchema: additionalPropertiesSchema,
+        keySchema: keySchema,
+      );
+    }
     return SchemaEmptyObject(common: common);
   }
 

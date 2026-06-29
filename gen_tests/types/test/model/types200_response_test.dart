@@ -14,6 +14,7 @@ void main() {
           id: 0,
           tags: <String>['example'],
           attributes: {'key': 'example'},
+          labels: {'key': 'example'},
         ),
         status: Status.values.first,
       );

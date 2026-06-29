@@ -1892,6 +1892,45 @@ void main() {
         final map = schema as SchemaMap;
         expect(map.valueSchema.object, isA<SchemaUnknown>());
       });
+      test(
+        'empty `properties: {}` with `additionalProperties` schema is a map',
+        () {
+          // Specs use `properties: {}` + `additionalProperties: { ... }` for
+          // a map-typed schema. Previously the parser saw the empty
+          // `properties` first and returned `SchemaEmptyObject`, dropping
+          // the `additionalProperties` value schema entirely. Now it routes
+          // through the map path.
+          final json = {
+            'type': 'object',
+            'properties': <String, dynamic>{},
+            'additionalProperties': {'type': 'string'},
+          };
+          final schema = parseTestSchema(json);
+          expect(schema, isA<SchemaMap>());
+          final map = schema as SchemaMap;
+          expect(map.valueSchema.object, isA<SchemaString>());
+        },
+      );
+      test(
+        'empty `properties: {}` with untyped `additionalProperties` '
+        'stays an empty object',
+        () {
+          // An explicitly empty `properties: {}` plus an *untyped*
+          // `additionalProperties` (`true` or `{}`) is an "any object"
+          // marker, not a typed map — specs use this shape for components
+          // referenced from an `allOf` (the resolver's `allOf` check
+          // admits `ResolvedEmptyObject` but not `ResolvedMap`). Preserve
+          // the existing `SchemaEmptyObject` result so those specs keep
+          // generating.
+          final json = {
+            'type': 'object',
+            'properties': <String, dynamic>{},
+            'additionalProperties': <String, dynamic>{},
+          };
+          final schema = parseTestSchema(json);
+          expect(schema, isA<SchemaEmptyObject>());
+        },
+      );
       test('additionalProperties must be a boolean or a map', () {
         final json = {
           'openapi': '3.1.0',

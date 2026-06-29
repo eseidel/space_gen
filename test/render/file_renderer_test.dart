@@ -1395,6 +1395,100 @@ void main() {
       expect(hasGeneratedSchemaDirs(out), isFalse);
     });
 
+    test(
+      'named empty-properties map with additionalProperties string',
+      () async {
+        // A named component schema with `properties: {}` plus
+        // `additionalProperties: {type: string}` is a map-typed schema, not
+        // an empty object — the generator must emit `Map<String, String>`
+        // inline (no separate model file, no empty stub class).
+        final fs = MemoryFileSystem.test();
+        final spec = {
+          'openapi': '3.1.0',
+          'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://api.spacetraders.io/v2'},
+          ],
+          'paths': {
+            '/users': {
+              'get': {
+                'operationId': 'get-user',
+                'summary': 'Get User',
+                'description': 'Fetch a user by name.',
+                'responses': {
+                  '200': {
+                    'description': 'Default Response',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          r'$ref': '#/components/schemas/User',
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'components': {
+            'schemas': {
+              'User': {
+                'type': 'object',
+                'properties': {
+                  'metadata': {
+                    r'$ref': '#/components/schemas/Metadata',
+                  },
+                },
+                'required': ['metadata'],
+              },
+              'Metadata': {
+                'type': 'object',
+                'properties': {
+                  'name': {'type': 'string'},
+                  'annotations': {
+                    r'$ref': '#/components/schemas/Annotations',
+                  },
+                },
+                'required': ['name'],
+              },
+              'Annotations': {
+                'type': 'object',
+                'properties': <String, dynamic>{},
+                'additionalProperties': {'type': 'string'},
+              },
+            },
+          },
+        };
+        final out = fs.directory('spacetraders');
+
+        await renderToDirectory(spec: spec, outDir: out);
+        // The map-typed `Annotations` schema emits inline as
+        // `Map<String, String>` — no dedicated model file.
+        expect(
+          out,
+          hasGeneratedSchemaFiles([
+            'user.dart',
+            'metadata.dart',
+          ]),
+        );
+        expect(out.childFile('lib/models/annotations.dart'), isNot(exists));
+
+        final metadata = out
+            .childFile('lib/models/metadata.dart')
+            .readAsStringSync();
+        expect(metadata, contains('Map<String, String>? annotations'));
+        // The fromJson path must round-trip the map values (not construct an
+        // empty stub class).
+        expect(
+          metadata,
+          contains("(json['annotations'] as Map<String, dynamic>?)"),
+        );
+        expect(metadata, contains('MapEntry(key, value as String)'));
+        expect(metadata, isNot(contains('Annotations.fromJson')));
+        expect(metadata, isNot(contains('Annotations.maybeFromJson')));
+      },
+    );
+
     test('with inner types', () async {
       final fs = MemoryFileSystem.test();
       final spec = {

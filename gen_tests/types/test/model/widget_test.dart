@@ -9,6 +9,7 @@ void main() {
         id: 0,
         tags: <String>['example'],
         attributes: {'key': 'example'},
+        labels: {'key': 'example'},
       );
       final parsed = Widget.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
