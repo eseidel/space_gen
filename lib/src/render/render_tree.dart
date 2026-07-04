@@ -40,7 +40,7 @@ String tightestCommonType(Iterable<String> types) {
   //    subclasses of one base, or generated enums that all implement `Enum`)
   //    fall back to `Object?` even though a tighter common type exists.
   //  - Ignores nullability of the inputs and unconditionally makes the result
-  //    nullable, instead of deriving nullness from the bag. (Correct for
+  //    nullable, instead of deriving nullability from the bag. (Correct for
   //    today's sole caller, `operator[]`, where an absent key yields null.)
   // Both want a structured type model that carries nullability and inheritance
   // — our own Zod-like type library, or an existing Dart one — so we can do
