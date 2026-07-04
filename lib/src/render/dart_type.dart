@@ -16,6 +16,18 @@ class DartType extends Equatable {
     this.isNullable = false,
   });
 
+  /// A `List<T>` type. [element] defaults to `dynamic` (`List<dynamic>`).
+  DartType.list([DartType? element])
+    : name = 'List',
+      typeArguments = [element ?? dynamic_],
+      isNullable = false;
+
+  /// A `Map<K, V>` type.
+  DartType.map(DartType key, DartType value)
+    : name = 'Map',
+      typeArguments = [key, value],
+      isNullable = false;
+
   /// The base identifier: `String`, `List`, `Map`, `DateTime`, or a generated
   /// class name. No type arguments, no trailing `?`.
   final String name;
@@ -40,6 +52,21 @@ class DartType extends Equatable {
 
   /// `Uint8List` (`dart:typed_data`) — binary field types.
   static const uint8List = DartType('Uint8List');
+
+  /// The `String` type.
+  static const string = DartType('String');
+
+  /// The `bool` type.
+  static const bool_ = DartType('bool');
+
+  /// The `int` type.
+  static const int_ = DartType('int');
+
+  /// The `double` type.
+  static const double_ = DartType('double');
+
+  /// The `num` type.
+  static const num_ = DartType('num');
 
   /// This type made nullable.
   DartType asNullable() => isNullable

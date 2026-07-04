@@ -22,6 +22,10 @@ String avoidReservedWord(String value) {
   return value;
 }
 
+/// `Map<String, dynamic>` — the JSON wire type of an arbitrary object. The
+/// storage type for objects, maps, and object-shaped composites.
+final _jsonWireMap = DartType.map(DartType.string, DartType.dynamic_);
+
 Never _unimplemented(String message, JsonPointer pointer) {
   throw UnimplementedError('$message at $pointer');
 }
@@ -2413,7 +2417,16 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// deep-equality `==`.
   String hashCodeExpression(String name) => name;
 
-  String jsonStorageType({required bool isNullable});
+  /// The non-nullable JSON wire type this schema stores as — the type of its
+  /// value inside the parsed `Map<String, dynamic>`. Often differs from
+  /// [dartType]: a `DateTime` field stores as `String`, an object as
+  /// `Map<String, dynamic>`.
+  DartType get jsonStorageDartType;
+
+  /// The JSON wire type name, made nullable when [isNullable].
+  String jsonStorageType({required bool isNullable}) =>
+      (isNullable ? jsonStorageDartType.asNullable() : jsonStorageDartType)
+          .toString();
 
   String toJsonExpression(
     String dartName,
@@ -2579,17 +2592,15 @@ class RenderPod extends RenderSchema {
   }
 
   @override
-  String jsonStorageType({required bool isNullable}) {
-    return switch (type) {
-      PodType.dateTime ||
-      PodType.uri ||
-      PodType.uriTemplate ||
-      PodType.email ||
-      PodType.uuid ||
-      PodType.date => isNullable ? 'String?' : 'String',
-      PodType.boolean => isNullable ? 'bool?' : 'bool',
-    };
-  }
+  DartType get jsonStorageDartType => switch (type) {
+    PodType.dateTime ||
+    PodType.uri ||
+    PodType.uriTemplate ||
+    PodType.email ||
+    PodType.uuid ||
+    PodType.date => DartType.string,
+    PodType.boolean => DartType.bool_,
+  };
 
   /// The default value of this schema as a string.
   @override
@@ -2826,7 +2837,7 @@ class RenderString extends RenderSchema {
 
   @override
   DartType get dartType =>
-      DartType(createsNewType ? _requireAssignedName() : 'String');
+      createsNewType ? DartType(_requireAssignedName()) : DartType.string;
 
   /// The default value of this schema as a string.
   @override
@@ -2867,8 +2878,7 @@ class RenderString extends RenderSchema {
       createsNewType ? null : _inlinePodConversion('String');
 
   @override
-  String jsonStorageType({required bool isNullable}) =>
-      isNullable ? 'String?' : 'String';
+  DartType get jsonStorageDartType => DartType.string;
 
   String newTypeFromJsonExpression(
     String jsonValue,
@@ -3205,7 +3215,7 @@ class RenderNumber extends RenderNumeric<double> {
 
   @override
   DartType get dartType =>
-      DartType(createsNewType ? _requireAssignedName() : 'double');
+      createsNewType ? DartType(_requireAssignedName()) : DartType.double_;
 
   @override
   String? get wrapperTag => createsNewType ? null : 'Num';
@@ -3225,8 +3235,7 @@ class RenderNumber extends RenderNumeric<double> {
       createsNewType ? null : _inlinePodConversion('num');
 
   @override
-  String jsonStorageType({required bool isNullable}) =>
-      isNullable ? 'num?' : 'num';
+  DartType get jsonStorageDartType => DartType.num_;
 
   @override
   String jsonToDartCall({required bool jsonIsNullable}) =>
@@ -3255,7 +3264,7 @@ class RenderInteger extends RenderNumeric<int> {
 
   @override
   DartType get dartType =>
-      DartType(createsNewType ? _requireAssignedName() : 'int');
+      createsNewType ? DartType(_requireAssignedName()) : DartType.int_;
 
   @override
   String? get wrapperTag => createsNewType ? null : 'Int';
@@ -3268,8 +3277,7 @@ class RenderInteger extends RenderNumeric<int> {
       createsNewType ? null : _inlinePodConversion('int');
 
   @override
-  String jsonStorageType({required bool isNullable}) =>
-      isNullable ? 'int?' : 'int';
+  DartType get jsonStorageDartType => DartType.int_;
 
   // jsonType and dartType are both int, so we don't need to do anything.
   @override
@@ -3385,9 +3393,7 @@ class RenderObject extends RenderNewType {
   bool get defaultCanConstConstruct => false;
 
   @override
-  String jsonStorageType({required bool isNullable}) {
-    return isNullable ? 'Map<String, dynamic>?' : 'Map<String, dynamic>';
-  }
+  DartType get jsonStorageDartType => _jsonWireMap;
 
   @override
   Iterable<Import> get additionalImports => [
@@ -3868,7 +3874,7 @@ class RenderArray extends RenderSchema {
 
   /// The type name of this schema.
   @override
-  DartType get dartType => DartType('List', typeArguments: [items.dartType]);
+  DartType get dartType => DartType.list(items.dartType);
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -3896,9 +3902,7 @@ class RenderArray extends RenderSchema {
   }
 
   @override
-  String jsonStorageType({required bool isNullable}) {
-    return isNullable ? 'List<dynamic>?' : 'List<dynamic>';
-  }
+  DartType get jsonStorageDartType => DartType.list();
 
   @override
   String toJsonExpression(
@@ -4068,12 +4072,9 @@ class RenderMap extends RenderSchema {
   }
 
   @override
-  DartType get dartType => DartType(
-    'Map',
-    typeArguments: [
-      keySchema?.dartType ?? const DartType('String'),
-      valueSchema.dartType,
-    ],
+  DartType get dartType => DartType.map(
+    keySchema?.dartType ?? DartType.string,
+    valueSchema.dartType,
   );
 
   @override
@@ -4084,8 +4085,7 @@ class RenderMap extends RenderSchema {
   String hashCodeExpression(String name) => '${ModelHelpers.mapHash}($name)';
 
   @override
-  String jsonStorageType({required bool isNullable}) =>
-      isNullable ? 'Map<String, dynamic>?' : 'Map<String, dynamic>';
+  DartType get jsonStorageDartType => _jsonWireMap;
 
   @override
   String toJsonExpression(
@@ -4257,9 +4257,7 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
   ];
 
   @override
-  String jsonStorageType({required bool isNullable}) {
-    return isNullable ? '$valueDartType?' : valueDartType;
-  }
+  DartType get jsonStorageDartType => DartType(valueDartType);
 
   /// Template context for an enum schema.
   @override
@@ -4465,12 +4463,8 @@ class RenderOneOf extends RenderNewType {
   }
 
   @override
-  String jsonStorageType({required bool isNullable}) {
-    if (schemas.any((s) => s is RenderPod)) {
-      return 'dynamic';
-    }
-    return isNullable ? 'Map<String, dynamic>?' : 'Map<String, dynamic>';
-  }
+  DartType get jsonStorageDartType =>
+      schemas.any((s) => s is RenderPod) ? DartType.dynamic_ : _jsonWireMap;
 
   /// Looks up the wrapper subclass class name assigned by the naming
   /// pass for [variant]. Variant identity is by index in [schemas]
@@ -5593,7 +5587,7 @@ class RenderUnknown extends RenderSchema {
   bool get shouldCallToJson => false;
 
   @override
-  String jsonStorageType({required bool isNullable}) => 'dynamic';
+  DartType get jsonStorageDartType => DartType.dynamic_;
 
   // We might need to jsonDecode(jsonEncode(dartName)) to get everything into
   // json types.
@@ -5656,6 +5650,13 @@ abstract class RenderNoJson extends RenderSchema {
 
   @override
   bool get shouldCallToJson => false;
+
+  // No JSON representation: [jsonStorageType] is overridden to emit a `throw`
+  // expression where a type name would go, so [jsonStorageDartType] is never
+  // rendered.
+  @override
+  DartType get jsonStorageDartType =>
+      throw UnsupportedError('$runtimeType has no JSON storage type');
 
   @override
   String jsonStorageType({required bool isNullable}) =>
@@ -5744,8 +5745,7 @@ class RenderBase64Bytes extends RenderSchema {
   bool get shouldCallToJson => false;
 
   @override
-  String jsonStorageType({required bool isNullable}) =>
-      isNullable ? 'String?' : 'String';
+  DartType get jsonStorageDartType => DartType.string;
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -5825,8 +5825,7 @@ class RenderEmptyObject extends RenderNewType {
       _newtypeConversion(typeName);
 
   @override
-  String jsonStorageType({required bool isNullable}) =>
-      isNullable ? 'Map<String, dynamic>?' : 'Map<String, dynamic>';
+  DartType get jsonStorageDartType => _jsonWireMap;
 
   @override
   String toJsonExpression(
@@ -5900,8 +5899,7 @@ class RenderRecursiveRef extends RenderSchema {
   DartType get dartType => DartType(_requireAssignedName());
 
   @override
-  String jsonStorageType({required bool isNullable}) =>
-      isNullable ? 'Map<String, dynamic>?' : 'Map<String, dynamic>';
+  DartType get jsonStorageDartType => _jsonWireMap;
 
   @override
   String toJsonExpression(
