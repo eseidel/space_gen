@@ -2387,23 +2387,19 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     return '';
   }
 
-  /// This is the resolved Dart type name for the schema.
+  /// The structured Dart type for this schema — the single source of truth.
+  /// [typeName] and [nullableTypeName] render from it. Subclasses build it
+  /// directly: leaves as a flat name, list/map decomposing their arguments.
+  DartType get dartType;
+
+  /// The non-nullable Dart type name for the schema.
   /// e.g. 'String', 'Uri', or the class name of a new type.
-  String get typeName;
+  String get typeName => dartType.toString();
 
-  /// The structured [DartType] for this schema.
-  ///
-  /// The base implementation wraps [typeName] as a flat, non-nullable type,
-  /// which is enough for structural comparison and rendering. Generic schemas
-  /// (list/map) will override this to decompose their type arguments as the
-  /// model takes over from the `typeName` strings.
-  DartType get dartType => DartType(typeName);
-
-  /// This is the resolved Dart type name for the schema, with a ? if it is
-  /// nullable.
+  /// The Dart type name for the schema, made nullable.
   /// e.g. 'String?', 'Uri?', or the ClassName? of a new type.
   String nullableTypeName(SchemaRenderer context) {
-    return typeName.endsWith('?') ? typeName : '$typeName?';
+    return dartType.asNullable().toString();
   }
 
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -2560,7 +2556,8 @@ class RenderPod extends RenderSchema {
   };
 
   @override
-  String get typeName => createsNewType ? _requireAssignedName() : dartTypeName;
+  DartType get dartType =>
+      DartType(createsNewType ? _requireAssignedName() : dartTypeName);
 
   // Boolean is the only PodType with a `is bool` test that's distinct
   // from the other JSON storage types (the date/uri/uuid/etc. all
@@ -2784,7 +2781,7 @@ abstract class RenderNewType extends RenderSchema {
   String get className => _requireAssignedName();
 
   @override
-  String get typeName => className;
+  DartType get dartType => DartType(className);
 
   @override
   String toJsonExpression(
@@ -2828,7 +2825,8 @@ class RenderString extends RenderSchema {
   List<Object?> get props => [super.props, defaultValue, maxLength, minLength];
 
   @override
-  String get typeName => createsNewType ? _requireAssignedName() : 'String';
+  DartType get dartType =>
+      DartType(createsNewType ? _requireAssignedName() : 'String');
 
   /// The default value of this schema as a string.
   @override
@@ -3206,7 +3204,8 @@ class RenderNumber extends RenderNumeric<double> {
   });
 
   @override
-  String get typeName => createsNewType ? _requireAssignedName() : 'double';
+  DartType get dartType =>
+      DartType(createsNewType ? _requireAssignedName() : 'double');
 
   @override
   String? get wrapperTag => createsNewType ? null : 'Num';
@@ -3255,7 +3254,8 @@ class RenderInteger extends RenderNumeric<int> {
   });
 
   @override
-  String get typeName => createsNewType ? _requireAssignedName() : 'int';
+  DartType get dartType =>
+      DartType(createsNewType ? _requireAssignedName() : 'int');
 
   @override
   String? get wrapperTag => createsNewType ? null : 'Int';
@@ -3868,7 +3868,7 @@ class RenderArray extends RenderSchema {
 
   /// The type name of this schema.
   @override
-  String get typeName => 'List<${items.typeName}>';
+  DartType get dartType => DartType('List', typeArguments: [items.dartType]);
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -4068,10 +4068,13 @@ class RenderMap extends RenderSchema {
   }
 
   @override
-  String get typeName {
-    final keyType = keySchema?.typeName ?? 'String';
-    return 'Map<$keyType, ${valueSchema.typeName}>';
-  }
+  DartType get dartType => DartType(
+    'Map',
+    typeArguments: [
+      keySchema?.dartType ?? const DartType('String'),
+      valueSchema.dartType,
+    ],
+  );
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -5580,7 +5583,7 @@ class RenderUnknown extends RenderSchema {
   dynamic get defaultValue => null;
 
   @override
-  String get typeName => 'dynamic';
+  DartType get dartType => DartType.dynamic_;
 
   @override
   bool get defaultCanConstConstruct => false;
@@ -5625,7 +5628,7 @@ class RenderVoid extends RenderNoJson {
       throw UnimplementedError('RenderVoid.defaultValue');
 
   @override
-  String get typeName => 'void';
+  DartType get dartType => const DartType('void');
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -5696,7 +5699,7 @@ class RenderBinary extends RenderNoJson {
   ];
 
   @override
-  String get typeName => 'Uint8List';
+  DartType get dartType => const DartType('Uint8List');
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -5735,7 +5738,7 @@ class RenderBase64Bytes extends RenderSchema {
   ];
 
   @override
-  String get typeName => 'Uint8List';
+  DartType get dartType => const DartType('Uint8List');
 
   @override
   bool get shouldCallToJson => false;
@@ -5894,7 +5897,7 @@ class RenderRecursiveRef extends RenderSchema {
   bool get shouldCallToJson => true;
 
   @override
-  String get typeName => _requireAssignedName();
+  DartType get dartType => DartType(_requireAssignedName());
 
   @override
   String jsonStorageType({required bool isNullable}) =>
