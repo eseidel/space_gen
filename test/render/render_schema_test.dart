@@ -777,6 +777,32 @@ void main() {
       expect(result, contains('final int bar;'));
     });
 
+    test('allOf with an open map member gets an overflow map', () {
+      // Backstage's `RecursivePartialEntityMeta` shape: an open member
+      // (`{type: object, additionalProperties: true}`, i.e. a `JsonObject`)
+      // makes the merged object open. It gains an `entries` overflow
+      // (`Map<String, dynamic>`) alongside the named fields, and fromJson
+      // excludes the named keys from that overflow.
+      final schema = {
+        'allOf': [
+          {'type': 'object', 'additionalProperties': true},
+          {
+            'type': 'object',
+            'properties': {
+              'name': {'type': 'string'},
+            },
+          },
+        ],
+      };
+      final result = renderTestSchema(schema);
+      // The named field from the object member is still merged in.
+      expect(result, contains('name'));
+      // The open member contributes an `entries` overflow map...
+      expect(result, contains('final Map<String, dynamic> entries;'));
+      // ...whose fromJson excludes the named keys.
+      expect(result, contains('.contains(entry.key)'));
+    });
+
     test('oneOf of allOf variants tagged by single-value enum', () {
       // Each variant is `allOf: [<rule>, <info>]` where the first
       // member tags itself with a single-value enum on `type`. After

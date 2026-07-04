@@ -681,16 +681,29 @@ class SpecResolver {
         // dispatch detection (allOf-shaped variants).
         final properties = <String, RenderSchema>{};
         final requiredProperties = <String>{};
+        // An open member makes the merged object open: its value schema
+        // becomes the merged object's `additionalProperties` overflow. First
+        // open member wins (multiple open members in one allOf is degenerate).
+        RenderSchema? additionalProperties;
         for (final schema in schema.schemas) {
           final renderSchema = toRenderSchema(schema);
           if (renderSchema is RenderObject) {
             properties.addAll(renderSchema.properties);
             requiredProperties.addAll(renderSchema.requiredProperties);
+            // A member that itself declares `additionalProperties` (an
+            // object with an overflow) opens the merged object too.
+            additionalProperties ??= renderSchema.additionalProperties;
+          } else if (renderSchema is RenderMap) {
+            // An open map member (e.g. a `JsonObject` → `Map<String, dynamic>`)
+            // contributes an arbitrary-key overflow of its value type.
+            additionalProperties ??= renderSchema.valueSchema;
           }
+          // Other members (e.g. a closed empty object) contribute nothing.
         }
         return RenderObject(
           common: schema.common,
           properties: properties,
+          additionalProperties: additionalProperties,
           requiredProperties: requiredProperties.toList(),
           parentSealedTypeName: _names.parentSealedTypeFor(schema.pointer),
           assignedName: _nameFor(schema.pointer),
