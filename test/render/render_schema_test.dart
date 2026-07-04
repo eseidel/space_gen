@@ -44,7 +44,7 @@ void main() {
         '        return Test.fromJson(json);\n'
         '    }\n'
         '\n'
-        '    final dynamic? foo;\n'
+        '    final dynamic foo;\n'
         '\n'
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
@@ -82,8 +82,9 @@ void main() {
         },
       };
       final result = renderTestSchema(schema);
-      // Field emitted as `dynamic`, passthrough in toJson/fromJson.
-      expect(result, contains('final dynamic? placeholder;'));
+      // Field emitted as `dynamic` (not a redundant `dynamic?`), passthrough
+      // in toJson/fromJson.
+      expect(result, contains('final dynamic placeholder;'));
       expect(result, contains("placeholder: json['placeholder'],"));
       expect(result, contains("'placeholder': placeholder,"));
     });
