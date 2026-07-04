@@ -99,6 +99,24 @@ New per-spec lint suppression should follow this pattern rather than adding a
 blanket disable. (The blanket disables still present in the
 `analysis_options.mustache` template predate this decision.)
 
+### Prefer output similar to the OpenAPI Generator (for now)
+
+When two output shapes are otherwise equal, space_gen leans toward the one that
+looks like the [OpenAPI Generator](https://openapi-generator.tech/)'s Dart
+client. The reason is migration: when this project started, the OpenAPI
+Generator was the most popular Dart client generator, so the main way people
+would adopt space_gen was by porting an existing generated client — which is
+only painless if the generated surface (field names, accessors, types) lines
+up. This is why, for example, an object with `additionalProperties` exposes its
+overflow through an `entries` map rather than a field name we might pick in
+isolation.
+
+This is a default, not a law — the opt-in [quirks](#openapi-quirks) already
+diverge on purpose — and it's a candidate for revisiting: as LLMs take over the
+mechanical parts of migration, byte-level familiarity with one reference
+generator matters less than it used to. Until we revisit it, when a design
+choice is a toss-up, match the OpenAPI Generator.
+
 ## Tested specs
 
 space_gen is iterated against a rotation of real-world OpenAPI specs.
