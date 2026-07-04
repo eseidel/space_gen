@@ -54,9 +54,16 @@ class DartType extends Equatable {
   // TODO(eseidel): This unifies by structural equality only; it does not know
   // the type hierarchy. Distinct types that share a real supertype (two
   // subclasses of one base, or generated enums that all implement `Enum`) fall
-  // back to `Object?` even though a tighter common type exists. A true
-  // least-upper-bound needs each [DartType] to carry its supertype(s), which
-  // the render tree does not thread through yet.
+  // back to `Object?` even though a tighter common type exists.
+  //
+  // When we add a real least-upper-bound, the inheritance graph should live in
+  // a separate type environment this consults (e.g. `commonType(types, graph)`
+  // or `graph.leastUpperBound(a, b)`) — NOT as a `superType` field on
+  // [DartType]. Keeping [DartType] a pure value expression keeps `==` simple
+  // and avoids making every type reference a graph node (the same supertype
+  // chain repeated on every occurrence, and cycles on recursive schemas like
+  // `Node -> Node`). The graph isn't threaded through to the render context
+  // yet.
   static DartType commonType(Iterable<DartType> types) {
     final list = types.toList();
     if (list.isEmpty) return nullableObject;
