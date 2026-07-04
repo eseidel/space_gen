@@ -3686,6 +3686,30 @@ void main() {
       },
     );
 
+    test('additionalProperties operator[] routes named keys to their fields', () {
+      // `operator[]` must agree with the object's own key set: a key naming a
+      // declared property returns that property (not `null`), and only unknown
+      // keys fall through to the `entries` overflow. Previously it read solely
+      // from `entries`, so `x['name']` was `null` even though `toJson()`
+      // emitted `name`.
+      final schema = {
+        'type': 'object',
+        'properties': {
+          'name': {'type': 'string'},
+          'count': {'type': 'integer'},
+        },
+        'additionalProperties': true,
+      };
+      final result = renderTestSchema(schema);
+      expect(
+        result,
+        contains('Object? operator [](String key) => switch (key)'),
+      );
+      expect(result, contains("'name' => name,"));
+      expect(result, contains("'count' => count,"));
+      expect(result, contains('_ => entries[key],'));
+    });
+
     test('array with default value', () {
       final schema = {
         'type': 'object',
