@@ -6,11 +6,36 @@ import 'dart:convert';
 import 'package:mocktail/mocktail.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/render.dart';
+import 'package:space_gen/src/render/render_tree.dart' show tightestCommonType;
 import 'package:test/test.dart';
 
 class _MockLogger extends Mock implements Logger {}
 
 void main() {
+  group('tightestCommonType', () {
+    test('single base type -> nullable that type', () {
+      expect(tightestCommonType(['String']), 'String?');
+      expect(tightestCommonType(['String', 'String']), 'String?');
+      expect(tightestCommonType(['List<int>', 'List<int>']), 'List<int>?');
+    });
+
+    test('mixed base types -> Object?', () {
+      expect(tightestCommonType(['String', 'int']), 'Object?');
+      expect(tightestCommonType(['Foo', 'Bar', 'String']), 'Object?');
+    });
+
+    test('dynamic / Object bases collapse to Object?', () {
+      // Avoids a redundant `dynamic?` and never claims a bare `Object`.
+      expect(tightestCommonType(['dynamic', 'dynamic']), 'Object?');
+      expect(tightestCommonType(['dynamic', 'String']), 'Object?');
+      expect(tightestCommonType(['Object', 'Object']), 'Object?');
+    });
+
+    test('empty bag -> Object?', () {
+      expect(tightestCommonType(<String>[]), 'Object?');
+    });
+  });
+
   group('renderSchema', () {
     test('smoke test', () {
       final schema = {
@@ -3711,6 +3736,56 @@ void main() {
         expect(result, contains('mapHash(entries)'));
       },
     );
+
+    test('additionalProperties operator[] routes named keys to their fields', () {
+      // `operator[]` must agree with the object's own key set: a key naming a
+      // declared property returns that property (not `null`), and only unknown
+      // keys fall through to the `entries` overflow. Previously it read solely
+      // from `entries`, so `x['name']` was `null` even though `toJson()`
+      // emitted `name`.
+      final schema = {
+        'type': 'object',
+        'properties': {
+          'name': {'type': 'string'},
+          'count': {'type': 'integer'},
+        },
+        'additionalProperties': true,
+      };
+      final result = renderTestSchema(schema);
+      // Return type is `Object?` — the tightest type common to the
+      // heterogeneously-typed named properties and the overflow. Not
+      // `dynamic` (which would opt out of static checking) and not a specific
+      // value type (the named fields have no common subtype).
+      expect(
+        result,
+        contains('Object? operator [](String key) => switch (key)'),
+      );
+      expect(result, contains("'name' => name,"));
+      expect(result, contains("'count' => count,"));
+      expect(result, contains('_ => entries[key],'));
+    });
+
+    test('additionalProperties operator[] tightens to the common type', () {
+      // When every named property and the overflow share one base type, the
+      // accessor returns that type (`String?`), not `Object?` — a
+      // `Map<String, String>`-shaped object with named string fields.
+      final schema = {
+        'type': 'object',
+        'properties': {
+          'name': {'type': 'string'},
+          'label': {'type': 'string'},
+        },
+        'additionalProperties': {'type': 'string'},
+      };
+      final result = renderTestSchema(schema);
+      expect(
+        result,
+        contains('String? operator [](String key) => switch (key)'),
+      );
+      expect(result, contains("'name' => name,"));
+      expect(result, contains("'label' => label,"));
+      expect(result, contains('_ => entries[key],'));
+    });
 
     test('array with default value', () {
       final schema = {

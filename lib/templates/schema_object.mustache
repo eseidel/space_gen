@@ -61,7 +61,16 @@
     {{#hasAdditionalProperties}}
     final Map<String, {{{ valueSchema }}}> {{additionalPropertiesName}};
 
-    {{{ valueSchema }}}? operator [](String key) => {{additionalPropertiesName}}[key];
+    /// Indexes this object by JSON key: a key that names a declared property
+    /// returns that property's value; any other key reads from
+    /// [{{additionalPropertiesName}}]. The return type is the tightest that
+    /// covers every named property and the overflow value type.
+    {{{ operatorIndexType }}} operator [](String key) => switch (key) {
+      {{#properties}}
+      {{{ jsonName }}} => {{ dartName }},
+      {{/properties}}
+      _ => {{additionalPropertiesName}}[key],
+    };
     {{/hasAdditionalProperties}}
 
     {{{ to_json_doc_comment }}}{{#parentSealedTypeName}}@override
