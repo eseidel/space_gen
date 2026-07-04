@@ -1933,6 +1933,81 @@ void main() {
           ),
         );
       });
+      test(
+        'explicit `properties: {}` with `additionalProperties: true` is a map',
+        () {
+          // GitHub uses `{type: object, properties: {}, additionalProperties:
+          // true}` inline as an "arbitrary JSON object". Previously this hit
+          // the empty-properties branch and dropped to `SchemaEmptyObject` (a
+          // lossy empty stub that discards every entry); it should resolve to
+          // a map, exactly like the omitted-`properties` spelling.
+          final schema = parseTestSchema({
+            'type': 'object',
+            'properties': <String, dynamic>{},
+            'additionalProperties': true,
+          });
+          expect(schema, isA<SchemaMap>());
+          expect(
+            (schema as SchemaMap).valueSchema.object,
+            isA<SchemaUnknown>(),
+          );
+        },
+      );
+      test(
+        'explicit `properties: {}` with `additionalProperties: {}` is a map',
+        () {
+          // Backstage's `JsonObject`: an open "any object". Also a map with an
+          // unknown value schema (`Map<String, dynamic>`).
+          final schema = parseTestSchema({
+            'type': 'object',
+            'properties': <String, dynamic>{},
+            'additionalProperties': <String, dynamic>{},
+          });
+          expect(schema, isA<SchemaMap>());
+          expect(
+            (schema as SchemaMap).valueSchema.object,
+            isA<SchemaUnknown>(),
+          );
+        },
+      );
+      test(
+        'explicit `properties: {}` with typed `additionalProperties` is a map',
+        () {
+          // Backstage's `MapStringString`. The value schema is preserved.
+          final schema = parseTestSchema({
+            'type': 'object',
+            'properties': <String, dynamic>{},
+            'additionalProperties': {'type': 'string'},
+          });
+          expect(schema, isA<SchemaMap>());
+          expect((schema as SchemaMap).valueSchema.object, isA<SchemaString>());
+        },
+      );
+      test(
+        'explicit `properties: {}` with no `additionalProperties` '
+        'stays an empty object',
+        () {
+          // Preserve the existing marker: an explicitly empty object with no
+          // `additionalProperties` is GitHub's nullable / empty-response shape.
+          final schema = parseTestSchema({
+            'type': 'object',
+            'properties': <String, dynamic>{},
+          });
+          expect(schema, isA<SchemaEmptyObject>());
+        },
+      );
+      test(
+        'explicit `properties: {}` with `additionalProperties: false` '
+        'stays an empty object',
+        () {
+          final schema = parseTestSchema({
+            'type': 'object',
+            'properties': <String, dynamic>{},
+            'additionalProperties': false,
+          });
+          expect(schema, isA<SchemaEmptyObject>());
+        },
+      );
     });
 
     group('operationId', () {

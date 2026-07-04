@@ -823,6 +823,30 @@ SchemaRef? _handleAdditionalProperties(MapContext parent) {
   _error(parent, 'additionalProperties must be a boolean or a map');
 }
 
+/// Builds a [SchemaMap] for an object with no named properties and an
+/// `additionalProperties` [valueSchema] (arbitrary string keys). Shared by
+/// the omitted-`properties` and explicit-`properties: {}` paths so the two
+/// spellings resolve identically.
+SchemaMap _mapSchema(
+  MapContext json, {
+  required CommonProperties common,
+  required SchemaRef valueSchema,
+}) {
+  // Optional: JSON Schema 2020-12 / OpenAPI 3.1 `propertyNames` constrains the
+  // keys of this map-shaped object to values that conform to the given schema.
+  // When that schema is (or resolves to) a string enum, we use it as the Dart
+  // map key type.
+  final propertyNamesJson = _optionalMap(json, 'propertyNames');
+  final keySchema = propertyNamesJson == null
+      ? null
+      : parseSchemaOrRef(propertyNamesJson);
+  return SchemaMap(
+    common: common,
+    valueSchema: valueSchema,
+    keySchema: keySchema,
+  );
+}
+
 SchemaEnum<Object>? _handleEnum({
   required MapContext json,
   required TypeAndFormat typeAndFormat,
@@ -1334,18 +1358,10 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     if (additionalPropertiesSchema == null) {
       return SchemaUnknown(common: common);
     }
-    // Optional: JSON Schema 2020-12 / OpenAPI 3.1 `propertyNames`
-    // constrains the keys of this map-shaped object to values that
-    // conform to the given schema. When that schema is (or resolves
-    // to) a string enum, we use it as the Dart map key type.
-    final propertyNamesJson = _optionalMap(json, 'propertyNames');
-    final keySchema = propertyNamesJson == null
-        ? null
-        : parseSchemaOrRef(propertyNamesJson);
-    return SchemaMap(
+    return _mapSchema(
+      json,
       common: common,
       valueSchema: additionalPropertiesSchema,
-      keySchema: keySchema,
     );
   }
   // The difference between an empty object and an unknown object is subtle
@@ -1354,6 +1370,20 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   // empty response.  Those aren't "dynamic" types, but unclear if they need
   // a separate class either.
   if (propertiesJson.keys.isEmpty) {
+    // An explicit `properties: {}` alongside an `additionalProperties` schema
+    // is a map — arbitrary string keys, no named fields — exactly like the
+    // omitted-`properties` case above. Route it the same way so the two
+    // spellings agree; an untyped `additionalProperties` (`true` / `{}`)
+    // gives a `SchemaUnknown` value schema, i.e. `Map<String, dynamic>`.
+    // Without an `additionalProperties` schema it stays an empty object
+    // (GitHub's nullable / empty-response marker; see above).
+    if (additionalPropertiesSchema != null) {
+      return _mapSchema(
+        json,
+        common: common,
+        valueSchema: additionalPropertiesSchema,
+      );
+    }
     return SchemaEmptyObject(common: common);
   }
 
