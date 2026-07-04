@@ -238,6 +238,76 @@ void main() {
     });
   });
 
+  group('maybeAddUnintendedHtmlIgnore', () {
+    test('passes through content with no angle-bracket dartdoc', () {
+      const content = '/// A class with no angle brackets.\nclass Foo {}\n';
+      expect(maybeAddUnintendedHtmlIgnore(content), content);
+    });
+
+    test(
+      'prepends directive when dartdoc has an angle-bracket tag-like token',
+      () {
+        // Mirrors Backstage's catalog spec: an entity ref example like
+        // `location:default/generated-<sha1hex>`.
+        const content =
+            '/// The entity ref, e.g. location:default/generated-<sha1hex>.\n'
+            'final String entityRef;\n';
+        expect(
+          maybeAddUnintendedHtmlIgnore(content),
+          startsWith('$unintendedHtmlInDocCommentIgnoreBlock\n'),
+        );
+      },
+    );
+
+    test('does not match plain-comment angle brackets, only `///` doc', () {
+      // A `//` line comment with `<sha1hex>` should not trigger.
+      const content = '// note: see <sha1hex> for details\nclass Foo {}\n';
+      expect(maybeAddUnintendedHtmlIgnore(content), content);
+    });
+
+    test('does not fire on comparison prose like `a < b` or `i < 0`', () {
+      const content =
+          '/// Returns true if a < b for all i < 0.\n'
+          'bool compare() => true;\n';
+      expect(maybeAddUnintendedHtmlIgnore(content), content);
+    });
+
+    test('fires on closing-tag-shaped `</foo>` in dartdoc', () {
+      const content = '/// Closes with </body>.\nclass Foo {}\n';
+      expect(
+        maybeAddUnintendedHtmlIgnore(content),
+        startsWith('$unintendedHtmlInDocCommentIgnoreBlock\n'),
+      );
+    });
+
+    test('idempotent: does not double-prepend if marker already present', () {
+      const content =
+          '$unintendedHtmlInDocCommentIgnoreBlock\n'
+          '/// e.g. <sha1hex>\nclass Foo {}\n';
+      expect(
+        unintendedHtmlInDocCommentIgnoreBlock.allMatches(content).length,
+        1,
+      );
+      final result = maybeAddUnintendedHtmlIgnore(content);
+      expect(
+        unintendedHtmlInDocCommentIgnoreBlock.allMatches(result).length,
+        1,
+      );
+    });
+
+    test('indented `///` member docs still count', () {
+      const content =
+          'class Foo {\n'
+          '  /// e.g. <sha1hex>\n'
+          '  final String ref;\n'
+          '}\n';
+      expect(
+        maybeAddUnintendedHtmlIgnore(content),
+        startsWith('$unintendedHtmlInDocCommentIgnoreBlock\n'),
+      );
+    });
+  });
+
   group('DartFileFormatter', () {
     DartFileFormatter buildFormatter(Map<String, String> files) {
       final fs = MemoryFileSystem.test();
