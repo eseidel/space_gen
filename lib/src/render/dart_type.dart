@@ -35,6 +35,12 @@ class DartType extends Equatable {
   /// no tighter common supertype.
   static const nullableObject = DartType('Object', isNullable: true);
 
+  /// `void` — a schema with no value (e.g. an empty response body).
+  static const void_ = DartType('void');
+
+  /// `Uint8List` (`dart:typed_data`) — binary field types.
+  static const uint8List = DartType('Uint8List');
+
   /// This type made nullable.
   DartType asNullable() => isNullable
       ? this

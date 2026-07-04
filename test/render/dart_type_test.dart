@@ -20,6 +20,13 @@ void main() {
       );
     });
 
+    test('well-known type constants render as expected', () {
+      expect(DartType.dynamic_.toString(), 'dynamic');
+      expect(DartType.nullableObject.toString(), 'Object?');
+      expect(DartType.void_.toString(), 'void');
+      expect(DartType.uint8List.toString(), 'Uint8List');
+    });
+
     test('dynamic never renders a trailing `?`', () {
       // `dynamic` is already nullable; `dynamic?` is a lint.
       expect(DartType.dynamic_.toString(), 'dynamic');

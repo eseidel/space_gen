@@ -5628,7 +5628,7 @@ class RenderVoid extends RenderNoJson {
       throw UnimplementedError('RenderVoid.defaultValue');
 
   @override
-  DartType get dartType => const DartType('void');
+  DartType get dartType => DartType.void_;
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -5699,7 +5699,7 @@ class RenderBinary extends RenderNoJson {
   ];
 
   @override
-  DartType get dartType => const DartType('Uint8List');
+  DartType get dartType => DartType.uint8List;
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -5738,7 +5738,7 @@ class RenderBase64Bytes extends RenderSchema {
   ];
 
   @override
-  DartType get dartType => const DartType('Uint8List');
+  DartType get dartType => DartType.uint8List;
 
   @override
   bool get shouldCallToJson => false;
