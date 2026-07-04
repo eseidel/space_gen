@@ -96,6 +96,60 @@ const commentReferencesIgnoreBlock =
     '// elsewhere; spec authors do not always escape brackets.\n'
     '// ignore_for_file: comment_references';
 
+/// Block prepended to generated `.dart` files whose dartdoc contains
+/// `<...>` patterns that dartdoc parses as (unclosed) HTML tags (e.g.
+/// Backstage's catalog spec describes an entity ref as
+/// `location:default/generated-<sha1hex>`, and `<sha1hex>` reads as a
+/// tag start to dartdoc). Exposed for tests.
+@visibleForTesting
+const unintendedHtmlInDocCommentIgnoreBlock =
+    '// Spec descriptions copy prose verbatim into dartdoc, where `<x>`\n'
+    '// is parsed as an HTML tag start even when it is not HTML (e.g.\n'
+    '// placeholder tokens like `<sha1hex>`).\n'
+    '// Suppress file-locally so the lint stays live elsewhere; spec\n'
+    '// authors do not always escape angle brackets.\n'
+    '// ignore_for_file: unintended_html_in_doc_comment';
+
+/// Returns [content] with [unintendedHtmlInDocCommentIgnoreBlock]
+/// prepended if any `///` doc comment carries an angle-bracket token
+/// that dartdoc parses as an HTML tag start. Threaded through
+/// [maybeAddIgnoreDirectives] at file-emit time on every space_gen-
+/// emitted file — hand-written templates skip the call so a spurious
+/// `<...>` in their docs doesn't get silently suppressed when it
+/// should be fixed at the source.
+///
+/// Mirrors [maybeAddCommentReferencesIgnore]'s approach to `[x]`
+/// bracketed refs (PR #138): spec prose / spec shapes that trip
+/// dartdoc's parser should be sanitized at the generator boundary
+/// rather than forcing every consumer to hand-suppress.
+@visibleForTesting
+String maybeAddUnintendedHtmlIgnore(String content) {
+  const marker = '// ignore_for_file: unintended_html_in_doc_comment';
+  if (content.contains(marker)) return content;
+  if (!_dartdocHasHtmlTag(content)) return content;
+  return '$unintendedHtmlInDocCommentIgnoreBlock\n$content';
+}
+
+/// Whether any `///` doc comment line in [content] carries an
+/// angle-bracket token dartdoc would parse as an HTML tag start.
+///
+/// Matches `<` immediately followed by a letter or `/` — the shapes
+/// dartdoc's HTML parser treats as element starts (HTML names must
+/// start with an ASCII letter). Plain prose like `a < b` or `i < 0`
+/// does not match because the character after `<` is a space or
+/// digit, not a letter. Self-closing `<br/>`-style tags and closing
+/// `</foo>` tags both match via the leading `/` arm only when a
+/// letter follows (so `</` followed by whitespace won't match).
+bool _dartdocHasHtmlTag(String content) {
+  final tagRe = RegExp('</?[A-Za-z]');
+  for (final line in content.split('\n')) {
+    final stripped = line.trimLeft();
+    if (!stripped.startsWith('///')) continue;
+    if (tagRe.hasMatch(stripped)) return true;
+  }
+  return false;
+}
+
 /// Returns [content] with [commentReferencesIgnoreBlock] prepended if
 /// any `///` doc comment carries a bracketed token that wouldn't
 /// resolve in scope. Threaded through [maybeAddIgnoreDirectives] at
@@ -130,8 +184,9 @@ String maybeAddCommentReferencesIgnore(String content) {
 /// pipeline is a single edit here; call sites stay unchanged.
 /// Hand-written templates use `_renderTemplate` instead and bypass
 /// this entirely (see #138's design rationale).
-String maybeAddIgnoreDirectives(String content) =>
-    maybeAddLongLineIgnore(maybeAddCommentReferencesIgnore(content));
+String maybeAddIgnoreDirectives(String content) => maybeAddLongLineIgnore(
+  maybeAddCommentReferencesIgnore(maybeAddUnintendedHtmlIgnore(content)),
+);
 
 /// Collects every `[token]` bracketed reference inside a `///` doc
 /// comment, ignoring `[Foo](url)` markdown links (the `(?!\()` guard).
