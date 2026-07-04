@@ -117,7 +117,7 @@ up. This is why, for example, an object with `additionalProperties` exposes its
 overflow through an `entries` map rather than a field name we might pick in
 isolation.
 
-Even this fallback is a revisitable default — the opt-in [quirks](#openapi-quirks)
+Even this fallback is a default we may revisit — the opt-in [quirks](#openapi-quirks)
 already diverge on purpose, and as LLMs take over the mechanical parts of
 migration, byte-level familiarity with one reference generator matters less
 than it used to. But being OpenAPI-Generator-shaped is always subordinate to
