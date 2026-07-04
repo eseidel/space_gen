@@ -63,9 +63,9 @@
 
     /// Indexes this object by JSON key: a key that names a declared property
     /// returns that property's value; any other key reads from
-    /// [{{additionalPropertiesName}}]. Returns `Object?` — the tightest type
-    /// common to the heterogeneously-typed named properties and the overflow.
-    Object? operator [](String key) => switch (key) {
+    /// [{{additionalPropertiesName}}]. The return type is the tightest that
+    /// covers every named property and the overflow value type.
+    {{{ operatorIndexType }}} operator [](String key) => switch (key) {
       {{#properties}}
       {{{ jsonName }}} => {{ dartName }},
       {{/properties}}

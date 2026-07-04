@@ -21,6 +21,29 @@ String avoidReservedWord(String value) {
   return value;
 }
 
+/// The tightest Dart type that soundly covers every base type name in [types].
+///
+/// When they all share one base type, that type made nullable
+/// (`['String', 'String']` → `'String?'`); otherwise `Object?` — the only
+/// common supertype we can name without walking the full type hierarchy (and
+/// unrelated classes bottom out at `Object` anyway). `dynamic` and `Object`
+/// bases yield `Object?` rather than a redundant `dynamic?`, and an empty bag
+/// is `Object?`.
+///
+/// [types] are non-nullable base type names (e.g. `String`, `List<int>`); the
+/// result is always nullable because callers use it where a null (absent key,
+/// optional field) is possible.
+String tightestCommonType(Iterable<String> types) {
+  final distinct = types.toSet();
+  if (distinct.length == 1) {
+    final only = distinct.first;
+    if (only != 'dynamic' && only != 'Object') {
+      return '$only?';
+    }
+  }
+  return 'Object?';
+}
+
 Never _unimplemented(String message, JsonPointer pointer) {
   throw UnimplementedError('$message at $pointer');
 }
@@ -3573,6 +3596,14 @@ class RenderObject extends RenderNewType {
     // code after the first no-JSON property. Matches what the user gets
     // if they accidentally call toJson on a multipart body.
     final hasNoJsonProperty = properties.values.any((p) => p is RenderNoJson);
+    // The generated `operator[]` returns whichever value the key selects — a
+    // named property or the overflow — so its type must cover them all.
+    final operatorIndexType = valueSchema == null
+        ? null
+        : tightestCommonType([
+            for (final property in properties.values) property.typeName,
+            valueSchema.typeName,
+          ]);
     return {
       'doc_comment': createDocComment(
         common: common,
@@ -3607,6 +3638,7 @@ class RenderObject extends RenderNewType {
       'assignmentsLine': assignmentsLine,
       'additionalPropertiesName': 'entries', // Matching OpenAPI.
       'valueSchema': valueSchema?.typeName,
+      'operatorIndexType': operatorIndexType,
       // Per-entry to/from JSON expressions used in the additional-
       // properties for-loop (key/value extracted via `entry.key` /
       // `entry.value`). The for-loop filters out keys that belong to
