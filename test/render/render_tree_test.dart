@@ -1596,12 +1596,15 @@ void main() {
       expect(pod(PodType.date, createsNewType: true).typeName, 'FooBar');
     });
 
-    test('dartType is the underlying Dart type regardless of newtype', () {
-      expect(pod(PodType.dateTime).dartType, 'DateTime');
-      expect(pod(PodType.dateTime, createsNewType: true).dartType, 'DateTime');
-      expect(pod(PodType.email).dartType, 'String');
-      expect(pod(PodType.uuid).dartType, 'String');
-      expect(pod(PodType.date).dartType, 'DateTime');
+    test('dartTypeName is the underlying Dart type regardless of newtype', () {
+      expect(pod(PodType.dateTime).dartTypeName, 'DateTime');
+      expect(
+        pod(PodType.dateTime, createsNewType: true).dartTypeName,
+        'DateTime',
+      );
+      expect(pod(PodType.email).dartTypeName, 'String');
+      expect(pod(PodType.uuid).dartTypeName, 'String');
+      expect(pod(PodType.date).dartTypeName, 'DateTime');
     });
 
     test('toJsonExpression delegates to .toJson() when a newtype', () {

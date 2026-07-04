@@ -7,6 +7,7 @@ import 'package:space_gen/src/dispatch.dart';
 import 'package:space_gen/src/naming.dart';
 import 'package:space_gen/src/parse/spec.dart' show StatusCodeRange;
 import 'package:space_gen/src/quirks.dart';
+import 'package:space_gen/src/render/dart_type.dart';
 // Any code that depends on SchemaRenderer probably should be moved out
 // of this file and into the schema_renderer.dart file.
 import 'package:space_gen/src/render/schema_renderer.dart';
@@ -19,41 +20,6 @@ String avoidReservedWord(String value) {
     return '${value}_';
   }
   return value;
-}
-
-/// The tightest Dart type that soundly covers every base type name in [types].
-///
-/// When they all share one base type, that type made nullable
-/// (`['String', 'String']` → `'String?'`); otherwise `Object?` — the only
-/// common supertype we can name without walking the full type hierarchy (and
-/// unrelated classes bottom out at `Object` anyway). `dynamic` and `Object`
-/// bases yield `Object?` rather than a redundant `dynamic?`, and an empty bag
-/// is `Object?`.
-///
-/// [types] are non-nullable base type names (e.g. `String`, `List<int>`); the
-/// result is always nullable because callers use it where a null (absent key,
-/// optional field) is possible.
-String tightestCommonType(Iterable<String> types) {
-  // TODO(eseidel): This is string manipulation over type *names*, not real type
-  // logic, so it is weaker than a true least-upper-bound in two ways:
-  //  - Ignores the type hierarchy: distinct types that share a supertype (two
-  //    subclasses of one base, or generated enums that all implement `Enum`)
-  //    fall back to `Object?` even though a tighter common type exists.
-  //  - Ignores nullability of the inputs and unconditionally makes the result
-  //    nullable, instead of deriving nullability from the bag. (Correct for
-  //    today's sole caller, `operator[]`, where an absent key yields null.)
-  // Both want a structured type model that carries nullability and inheritance
-  // — our own Zod-like type library, or an existing Dart one — so we can do
-  // actual logic over types instead of comparing name strings. The resolved
-  // type graph isn't threaded through to the render context here today.
-  final distinct = types.toSet();
-  if (distinct.length == 1) {
-    final only = distinct.first;
-    if (only != 'dynamic' && only != 'Object') {
-      return '$only?';
-    }
-  }
-  return 'Object?';
 }
 
 Never _unimplemented(String message, JsonPointer pointer) {
@@ -2425,6 +2391,14 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// e.g. 'String', 'Uri', or the class name of a new type.
   String get typeName;
 
+  /// The structured [DartType] for this schema.
+  ///
+  /// The base implementation wraps [typeName] as a flat, non-nullable type,
+  /// which is enough for structural comparison and rendering. Generic schemas
+  /// (list/map) will override this to decompose their type arguments as the
+  /// model takes over from the `typeName` strings.
+  DartType get dartType => DartType(typeName);
+
   /// This is the resolved Dart type name for the schema, with a ? if it is
   /// nullable.
   /// e.g. 'String?', 'Uri?', or the ClassName? of a new type.
@@ -2521,8 +2495,8 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 // string subsets (email, uuid).
 //
 // When [createsNewType] is true this is a top-level named schema and
-// renders to its own file as an extension type wrapping [dartType]. When
-// false the schema is inline and uses [dartType] directly at the use
+// renders to its own file as an extension type wrapping [dartTypeName]. When
+// false the schema is inline and uses [dartTypeName] directly at the use
 // site.
 class RenderPod extends RenderSchema {
   const RenderPod({
@@ -2558,7 +2532,7 @@ class RenderPod extends RenderSchema {
 
   @override
   bool get defaultCanConstConstruct {
-    // Newtype defaults wrap dartType in a constructor call; const-ness
+    // Newtype defaults wrap dartTypeName in a constructor call; const-ness
     // depends on whether the wrapped expression is const.
     return switch (type) {
       PodType.dateTime ||
@@ -2572,9 +2546,9 @@ class RenderPod extends RenderSchema {
   @override
   List<Object?> get props => [super.props, type, defaultValue];
 
-  /// The Dart type that represents this pod at the use site (when inline)
-  /// or that the newtype wraps (when a newtype).
-  String get dartType => switch (type) {
+  /// The name of the Dart type that represents this pod at the use site
+  /// (when inline) or that the newtype wraps (when a newtype).
+  String get dartTypeName => switch (type) {
     PodType.boolean => 'bool',
     PodType.dateTime => 'DateTime',
     PodType.uri => 'Uri',
@@ -2586,7 +2560,7 @@ class RenderPod extends RenderSchema {
   };
 
   @override
-  String get typeName => createsNewType ? _requireAssignedName() : dartType;
+  String get typeName => createsNewType ? _requireAssignedName() : dartTypeName;
 
   // Boolean is the only PodType with a `is bool` test that's distinct
   // from the other JSON storage types (the date/uri/uuid/etc. all
@@ -2645,7 +2619,7 @@ class RenderPod extends RenderSchema {
       const Import('package:uri/uri.dart', shown: ['UriTemplate']),
   ];
 
-  /// Converts `value` (of type [dartType]) to its JSON representation.
+  /// Converts `value` (of type [dartTypeName]) to its JSON representation.
   /// Used both at the inline use site and inside the newtype's toJson.
   String _valueToJsonBody(String name, {required bool nameIsNullable}) {
     final nameCall = nameIsNullable ? '$name?' : name;
@@ -2661,7 +2635,7 @@ class RenderPod extends RenderSchema {
     };
   }
 
-  /// Converts `json` (of type jsonStorageType) to [dartType]. Used inside
+  /// Converts `json` (of type jsonStorageType) to [dartTypeName]. Used inside
   /// the newtype's fromJson factory body and (non-nullable only) at the
   /// inline use site.
   String _jsonToValueBody(String jsonName) => switch (type) {
@@ -2745,7 +2719,7 @@ class RenderPod extends RenderSchema {
       'doc_comment': createDocComment(common: common),
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
-      'dartType': dartType,
+      'dartType': dartTypeName,
       'jsonType': jsonStorageType(isNullable: false),
       'fromJsonBody': _jsonToValueBody('json'),
       'toJsonBody': _valueToJsonBody('value', nameIsNullable: false),
@@ -3622,13 +3596,14 @@ class RenderObject extends RenderNewType {
     // if they accidentally call toJson on a multipart body.
     final hasNoJsonProperty = properties.values.any((p) => p is RenderNoJson);
     // The generated `operator[]` returns whichever value the key selects — a
-    // named property or the overflow — so its type must cover them all.
+    // named property or the overflow — so its type must cover them all, and it
+    // is always nullable (an absent key yields null).
     final operatorIndexType = valueSchema == null
         ? null
-        : tightestCommonType([
-            for (final property in properties.values) property.typeName,
-            valueSchema.typeName,
-          ]);
+        : DartType.commonType([
+            for (final property in properties.values) property.dartType,
+            valueSchema.dartType,
+          ]).asNullable().toString();
     return {
       'doc_comment': createDocComment(
         common: common,
