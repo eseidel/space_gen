@@ -78,6 +78,27 @@ a consensus towards a better Dart generator, so releasing this one.
   off to FileRenderer which uses SchemaRenderer to render api (operation) and
   model (schema) files and imports.
 
+### Lint suppression lives in the generated `.dart` files
+
+space_gen supports consumers who don't use the `analysis_options.yaml` it
+emits. A consumer can subclass `FileRenderer` and override the scaffold hooks
+(`renderAnalysisOptions`, the barrel, the HTTP client) to no-op, then
+hand-maintain those files themselves — `shorebird_code_push_protocol` does
+exactly this, down to its own workspace `analysis_options.yaml` formatter
+settings, which space_gen reads and respects at write time.
+
+Because of that, lint noise from spec-derived prose (angle brackets in
+descriptions, unresolvable `[bracket]` references, long lines, etc.) is
+suppressed **in-file**, via emit-time `// ignore_for_file:` directives added by
+the `maybeAdd*Ignore` helpers in `render/formatting.dart`. A per-file directive
+travels with the `.dart` file and works regardless of whose `analysis_options`
+wins; a blanket disable in the emitted `analysis_options.yaml` only reaches
+consumers who keep it, so it silently fails for the hand-maintained case.
+
+New per-spec lint suppression should follow this pattern rather than adding a
+blanket disable. (The blanket disables still present in the
+`analysis_options.mustache` template predate this decision.)
+
 ## Tested specs
 
 space_gen is iterated against a rotation of real-world OpenAPI specs.
