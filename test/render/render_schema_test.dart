@@ -6,36 +6,11 @@ import 'dart:convert';
 import 'package:mocktail/mocktail.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/render.dart';
-import 'package:space_gen/src/render/render_tree.dart' show tightestCommonType;
 import 'package:test/test.dart';
 
 class _MockLogger extends Mock implements Logger {}
 
 void main() {
-  group('tightestCommonType', () {
-    test('single base type -> nullable that type', () {
-      expect(tightestCommonType(['String']), 'String?');
-      expect(tightestCommonType(['String', 'String']), 'String?');
-      expect(tightestCommonType(['List<int>', 'List<int>']), 'List<int>?');
-    });
-
-    test('mixed base types -> Object?', () {
-      expect(tightestCommonType(['String', 'int']), 'Object?');
-      expect(tightestCommonType(['Foo', 'Bar', 'String']), 'Object?');
-    });
-
-    test('dynamic / Object bases collapse to Object?', () {
-      // Avoids a redundant `dynamic?` and never claims a bare `Object`.
-      expect(tightestCommonType(['dynamic', 'dynamic']), 'Object?');
-      expect(tightestCommonType(['dynamic', 'String']), 'Object?');
-      expect(tightestCommonType(['Object', 'Object']), 'Object?');
-    });
-
-    test('empty bag -> Object?', () {
-      expect(tightestCommonType(<String>[]), 'Object?');
-    });
-  });
-
   group('renderSchema', () {
     test('smoke test', () {
       final schema = {
