@@ -365,6 +365,42 @@ void main() {
       );
     });
 
+    test('allOf admits an open map member', () {
+      // Backstage's `RecursivePartialEntityMeta`: `allOf: [<JsonObject>,
+      // <object>]` where `JsonObject` is `type: object` with only
+      // `additionalProperties` (an open "any object", resolving to
+      // `ResolvedMap`). The open member is admitted — it contributes an
+      // arbitrary-key overflow to the merged object — rather than crashing.
+      final json = {
+        'allOf': [
+          {'type': 'object', 'additionalProperties': true},
+          {
+            'type': 'object',
+            'properties': {
+              'name': {'type': 'string'},
+            },
+          },
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(
+        schema,
+        isA<ResolvedAllOf>().having(
+          (e) => e.schemas.length,
+          'schemas',
+          equals(2),
+        ),
+      );
+      expect(
+        (schema as ResolvedAllOf).schemas.any((e) => e is ResolvedMap),
+        isTrue,
+      );
+    });
+
     test('resolve anyOf', () {
       final json = {
         'anyOf': [
