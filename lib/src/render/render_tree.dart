@@ -24,10 +24,7 @@ String avoidReservedWord(String value) {
 
 /// `Map<String, dynamic>` — the JSON wire type of an arbitrary object. The
 /// storage type for objects, maps, and object-shaped composites.
-const _jsonWireMap = DartType(
-  'Map',
-  typeArguments: [DartType('String'), DartType.dynamic_],
-);
+final _jsonWireMap = DartType.map(DartType.string, DartType.dynamic_);
 
 Never _unimplemented(String message, JsonPointer pointer) {
   throw UnimplementedError('$message at $pointer');
@@ -2601,8 +2598,8 @@ class RenderPod extends RenderSchema {
     PodType.uriTemplate ||
     PodType.email ||
     PodType.uuid ||
-    PodType.date => const DartType('String'),
-    PodType.boolean => const DartType('bool'),
+    PodType.date => DartType.string,
+    PodType.boolean => DartType.bool_,
   };
 
   /// The default value of this schema as a string.
@@ -2840,7 +2837,7 @@ class RenderString extends RenderSchema {
 
   @override
   DartType get dartType =>
-      DartType(createsNewType ? _requireAssignedName() : 'String');
+      createsNewType ? DartType(_requireAssignedName()) : DartType.string;
 
   /// The default value of this schema as a string.
   @override
@@ -2881,7 +2878,7 @@ class RenderString extends RenderSchema {
       createsNewType ? null : _inlinePodConversion('String');
 
   @override
-  DartType get jsonStorageDartType => const DartType('String');
+  DartType get jsonStorageDartType => DartType.string;
 
   String newTypeFromJsonExpression(
     String jsonValue,
@@ -3218,7 +3215,7 @@ class RenderNumber extends RenderNumeric<double> {
 
   @override
   DartType get dartType =>
-      DartType(createsNewType ? _requireAssignedName() : 'double');
+      createsNewType ? DartType(_requireAssignedName()) : DartType.double_;
 
   @override
   String? get wrapperTag => createsNewType ? null : 'Num';
@@ -3238,7 +3235,7 @@ class RenderNumber extends RenderNumeric<double> {
       createsNewType ? null : _inlinePodConversion('num');
 
   @override
-  DartType get jsonStorageDartType => const DartType('num');
+  DartType get jsonStorageDartType => DartType.num_;
 
   @override
   String jsonToDartCall({required bool jsonIsNullable}) =>
@@ -3267,7 +3264,7 @@ class RenderInteger extends RenderNumeric<int> {
 
   @override
   DartType get dartType =>
-      DartType(createsNewType ? _requireAssignedName() : 'int');
+      createsNewType ? DartType(_requireAssignedName()) : DartType.int_;
 
   @override
   String? get wrapperTag => createsNewType ? null : 'Int';
@@ -3280,7 +3277,7 @@ class RenderInteger extends RenderNumeric<int> {
       createsNewType ? null : _inlinePodConversion('int');
 
   @override
-  DartType get jsonStorageDartType => const DartType('int');
+  DartType get jsonStorageDartType => DartType.int_;
 
   // jsonType and dartType are both int, so we don't need to do anything.
   @override
@@ -3877,7 +3874,7 @@ class RenderArray extends RenderSchema {
 
   /// The type name of this schema.
   @override
-  DartType get dartType => DartType('List', typeArguments: [items.dartType]);
+  DartType get dartType => DartType.list(items.dartType);
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -3905,8 +3902,7 @@ class RenderArray extends RenderSchema {
   }
 
   @override
-  DartType get jsonStorageDartType =>
-      const DartType('List', typeArguments: [DartType.dynamic_]);
+  DartType get jsonStorageDartType => DartType.list();
 
   @override
   String toJsonExpression(
@@ -4076,12 +4072,9 @@ class RenderMap extends RenderSchema {
   }
 
   @override
-  DartType get dartType => DartType(
-    'Map',
-    typeArguments: [
-      keySchema?.dartType ?? const DartType('String'),
-      valueSchema.dartType,
-    ],
+  DartType get dartType => DartType.map(
+    keySchema?.dartType ?? DartType.string,
+    valueSchema.dartType,
   );
 
   @override
@@ -5752,7 +5745,7 @@ class RenderBase64Bytes extends RenderSchema {
   bool get shouldCallToJson => false;
 
   @override
-  DartType get jsonStorageDartType => const DartType('String');
+  DartType get jsonStorageDartType => DartType.string;
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
