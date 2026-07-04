@@ -1839,5 +1839,35 @@ void main() {
       );
       expect(schema.typeName, 'CustomName');
     });
+
+    test('jsonStorageType: RenderArray stores as List<dynamic>', () {
+      const array = RenderArray(
+        common: CommonProperties.test(
+          snakeName: 'a',
+          pointer: JsonPointer.empty(),
+          description: 'Foo',
+        ),
+        items: RenderUnknown(
+          common: CommonProperties.test(
+            snakeName: 'a',
+            pointer: JsonPointer.empty(),
+            description: 'Foo',
+          ),
+        ),
+      );
+      expect(array.jsonStorageType(isNullable: false), 'List<dynamic>');
+      expect(array.jsonStorageType(isNullable: true), 'List<dynamic>?');
+    });
+
+    test('jsonStorageDartType throws for schemas with no JSON form', () {
+      const binary = RenderBinary(
+        common: CommonProperties.test(
+          snakeName: 'b',
+          pointer: JsonPointer.empty(),
+          description: 'Foo',
+        ),
+      );
+      expect(() => binary.jsonStorageDartType, throwsUnsupportedError);
+    });
   });
 }
