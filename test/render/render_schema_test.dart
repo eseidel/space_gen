@@ -3701,13 +3701,13 @@ void main() {
         'additionalProperties': true,
       };
       final result = renderTestSchema(schema);
-      // Return type is `dynamic`, not `Object?`: the named properties are
-      // heterogeneously typed, and for untyped `additionalProperties` this
-      // matches indexing the overflow map directly (its value type is
-      // `dynamic`), preserving the pre-existing loose access.
+      // Return type is `Object?` — the tightest type common to the
+      // heterogeneously-typed named properties and the overflow. Not
+      // `dynamic` (which would opt out of static checking) and not a specific
+      // value type (the named fields have no common subtype).
       expect(
         result,
-        contains('dynamic operator [](String key) => switch (key)'),
+        contains('Object? operator [](String key) => switch (key)'),
       );
       expect(result, contains("'name' => name,"));
       expect(result, contains("'count' => count,"));

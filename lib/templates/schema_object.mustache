@@ -63,10 +63,9 @@
 
     /// Indexes this object by JSON key: a key that names a declared property
     /// returns that property's value; any other key reads from
-    /// [{{additionalPropertiesName}}]. Returns `dynamic` because the named
-    /// properties are heterogeneously typed; for untyped `additionalProperties`
-    /// this matches indexing the overflow map directly.
-    dynamic operator [](String key) => switch (key) {
+    /// [{{additionalPropertiesName}}]. Returns `Object?` — the tightest type
+    /// common to the heterogeneously-typed named properties and the overflow.
+    Object? operator [](String key) => switch (key) {
       {{#properties}}
       {{{ jsonName }}} => {{ dartName }},
       {{/properties}}
