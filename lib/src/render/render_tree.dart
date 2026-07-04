@@ -34,6 +34,18 @@ String avoidReservedWord(String value) {
 /// result is always nullable because callers use it where a null (absent key,
 /// optional field) is possible.
 String tightestCommonType(Iterable<String> types) {
+  // TODO(eseidel): This is string manipulation over type *names*, not real type
+  // logic, so it is weaker than a true least-upper-bound in two ways:
+  //  - Ignores the type hierarchy: distinct types that share a supertype (two
+  //    subclasses of one base, or generated enums that all implement `Enum`)
+  //    fall back to `Object?` even though a tighter common type exists.
+  //  - Ignores nullability of the inputs and unconditionally makes the result
+  //    nullable, instead of deriving nullness from the bag. (Correct for
+  //    today's sole caller, `operator[]`, where an absent key yields null.)
+  // Both want a structured type model that carries nullability and inheritance
+  // — our own Zod-like type library, or an existing Dart one — so we can do
+  // actual logic over types instead of comparing name strings. The resolved
+  // type graph isn't threaded through to the render context here today.
   final distinct = types.toSet();
   if (distinct.length == 1) {
     final only = distinct.first;
