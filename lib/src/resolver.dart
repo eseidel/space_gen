@@ -222,6 +222,29 @@ ResolvedSchema resolveSchemaRef(SchemaRef ref, ResolveContext context) {
   });
 }
 
+/// The OpenAPI 3.1 nullable idiom spells a nullable `T` as a `oneOf`/`anyOf`
+/// with a `{type: null}` member (e.g. `oneOf: [{type: null}, {$ref: T}]`).
+/// That member resolves to a [ResolvedNull]; strip it so the surviving
+/// members render as a plain nullable type rather than a union carrying an
+/// undispatchable null arm. The `sawNull` flag reports whether one was
+/// removed so the caller can mark the survivors nullable.
+({List<ResolvedSchema> schemas, bool sawNull}) _stripNullVariants(
+  List<ResolvedSchema> schemas,
+) {
+  final sawNull = schemas.any((e) => e is ResolvedNull);
+  return (
+    schemas: sawNull
+        ? schemas.where((e) => e is! ResolvedNull).toList()
+        : schemas,
+    sawNull: sawNull,
+  );
+}
+
+/// Return [schema] marked nullable — used when a `type: null` union member
+/// collapses onto its sole surviving sibling.
+ResolvedSchema _markNullable(ResolvedSchema schema) =>
+    schema.copyWith(common: schema.common.copyWith(nullable: true));
+
 /// Resolve a [SchemaDiscriminator]: turn each mapping ref into a pointer
 /// match against [resolvedVariants], so the result shares identity with
 /// the corresponding ResolvedOneOf.schemas entry.
@@ -386,9 +409,16 @@ ResolvedSchema _resolveSchemaFully(
   if (schema is SchemaOneOf) {
     assert(createsNewType, 'SchemaOneOf should create a new type');
     final oneOf = schema;
-    final resolvedSchemas = oneOf.schemas
-        .map((e) => resolveSchemaRef(e, context))
-        .toList();
+    final stripped = _stripNullVariants(
+      oneOf.schemas.map((e) => resolveSchemaRef(e, context)).toList(),
+    );
+    final resolvedSchemas = stripped.schemas;
+    // `oneOf: [{type: null}, T]` — the OpenAPI 3.1 nullable idiom. With the
+    // null arm removed only `T` is left; elide the union and render `T?`
+    // instead of a sealed class whose `fromJson` can't dispatch on `null`.
+    if (stripped.sawNull && resolvedSchemas.length == 1) {
+      return _markNullable(resolvedSchemas.first);
+    }
     final discriminator = _resolveDiscriminator(
       oneOf.discriminator,
       resolvedSchemas,
@@ -396,7 +426,11 @@ ResolvedSchema _resolveSchemaFully(
     );
     return context.shareCollection(
       ResolvedOneOf(
-        common: resolvedCommon,
+        // A surviving null arm on a 3+ member union (`oneOf: [null, A, B]`)
+        // makes the whole union nullable.
+        common: stripped.sawNull
+            ? resolvedCommon.copyWith(nullable: true)
+            : resolvedCommon,
         schemas: resolvedSchemas,
         discriminator: discriminator,
       ),
@@ -434,13 +468,11 @@ ResolvedSchema _resolveSchemaFully(
   if (schema is SchemaAnyOf) {
     assert(createsNewType, 'SchemaAnyOf should create a new type');
     final anyOf = schema;
-    final schemas = anyOf.schemas
-        .map((e) => resolveSchemaRef(e, context))
-        .toList();
-    final forceNullable = schemas.any((e) => e is ResolvedNull);
-    if (forceNullable) {
-      schemas.removeWhere((e) => e is ResolvedNull);
-    }
+    final stripped = _stripNullVariants(
+      anyOf.schemas.map((e) => resolveSchemaRef(e, context)).toList(),
+    );
+    final schemas = stripped.schemas;
+    final forceNullable = stripped.sawNull;
     ResolvedSchema copyIfNeeded(
       ResolvedSchema schema, {
       bool forceNullable = false,
