@@ -245,13 +245,14 @@ bool _parameterExplode(MapContext json, ParameterLocation location) =>
     _optional<bool>(json, 'explode') ?? _defaultExplode(location);
 
 /// Warn about `style` / `explode` / `allowReserved` values the generator does
-/// not honor. [explode] is the already-resolved effective value (from
-/// [_parameterExplode]); spec-explicit defaults are consumed quietly.
+/// not honor. Reads (and so consumes) each keyword; spec-explicit defaults are
+/// consumed quietly. The honored value — `explode` — is read separately by
+/// [_parameterExplode]; re-reading a key here is a safe no-op (`markUsed` is
+/// idempotent).
 void _warnUnsupportedSerialization(
   MapContext json,
-  ParameterLocation location, {
-  required bool explode,
-}) {
+  ParameterLocation location,
+) {
   final style = _optional<String>(json, 'style');
   final defaultStyle = _defaultStyle(location);
   if (style != null && style != defaultStyle) {
@@ -267,9 +268,12 @@ void _warnUnsupportedSerialization(
   // here — tracked separately in https://github.com/eseidel/space_gen/issues/233
   // (query params need `_canBePathParameter`-style type validation). Other
   // locations only emit their default wire format, so a non-default value
-  // there still warns. (`explode != default` implies it was set explicitly.)
+  // there still warns.
+  final explode = _optional<bool>(json, 'explode');
   final defaultExplode = _defaultExplode(location);
-  if (explode != defaultExplode && location != ParameterLocation.query) {
+  if (explode != null &&
+      explode != defaultExplode &&
+      location != ParameterLocation.query) {
     _warn(
       json,
       'explode=$explode is not honored on ${location.name} parameters; '
@@ -320,8 +324,8 @@ Parameter parseParameter(MapContext json) {
   if (hasSchema && !hasContent) {
     // Schema fields.
     type = parseSchemaOrRef(schema);
+    _warnUnsupportedSerialization(json, inLocation);
     explode = _parameterExplode(json, inLocation);
-    _warnUnsupportedSerialization(json, inLocation, explode: explode);
     example = _optional<dynamic>(json, 'example');
     examples = _parseExamplesMap(json);
   } else if (!hasSchema && hasContent) {
@@ -371,11 +375,7 @@ Header parseHeader(MapContext json) {
   _ignored<bool>(json, 'allowEmptyValue');
   // Headers always comma-join arrays (style=simple, explode=false), so the
   // effective explode isn't stored — only the warnings matter here.
-  _warnUnsupportedSerialization(
-    json,
-    ParameterLocation.header,
-    explode: _parameterExplode(json, ParameterLocation.header),
-  );
+  _warnUnsupportedSerialization(json, ParameterLocation.header);
   final example = _optional<dynamic>(json, 'example');
   final examples = _parseExamplesMap(json);
 
