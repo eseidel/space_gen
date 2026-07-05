@@ -1098,9 +1098,8 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
       if (format == 'uuid') {
         return PodType.uuid;
       }
-      if (format == 'date') {
-        return PodType.date;
-      }
+      // 'date' (RFC 3339 full-date) is handled ahead of this as SchemaDate —
+      // it renders as the generated `Date` value class, not a pod.
       // 'time' (RFC 3339 partial-time, e.g. 14:30:00) has no clean Dart
       // type — DateTime requires a date. Leave it as a plain string so
       // top-level named schemas become String-backed extension-type
@@ -1256,6 +1255,15 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   if (type == 'string') {
     if (typeAndFormat.format == 'binary') {
       return SchemaBinary(common: common);
+    }
+    // `format: date` (RFC 3339 full-date) is a calendar day with no time or
+    // timezone. It renders as the generated `Date` value class rather than a
+    // `DateTime` (which is a lossy instant); see doc/date_type.md.
+    if (typeAndFormat.format == 'date') {
+      return SchemaDate(
+        common: common,
+        defaultValue: _optional<String>(json, 'default'),
+      );
     }
     // JSON Schema 2020-12 / OpenAPI 3.1 successors to `format: byte`
     // and `format: binary`. The wire is still a JSON string, but the

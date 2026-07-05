@@ -6,7 +6,8 @@ void main() {
   group('Types200Response', () {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = Types200Response(
-        date: DateType(DateTime(2024)),
+        date: const Date(2024, 1, 1),
+        inlineDate: const Date(2024, 1, 1),
         email: const EmailType('user@example.com'),
         uuid: const UuidType('00000000-0000-0000-0000-000000000000'),
         timestamp: Timestamp(DateTime.utc(2024)),

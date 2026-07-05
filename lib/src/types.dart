@@ -101,7 +101,10 @@ enum MimeType {
   final String value;
 }
 
-enum PodType { boolean, dateTime, uri, uriTemplate, email, uuid, date }
+// `date` (RFC 3339 full-date) is deliberately absent: it renders as the
+// generated `Date` value class (SchemaDate/ResolvedDate/RenderDate), not a pod.
+// See doc/date_type.md.
+enum PodType { boolean, dateTime, uri, uriTemplate, email, uuid }
 
 /// Properties that are common to all schemas and across
 /// parsing, resolution and rendering.  This just saves a lot of boilerplate.

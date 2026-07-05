@@ -3,15 +3,25 @@ import 'package:types/api.dart';
 
 void main() {
   group('Date', () {
-    test('DateType wraps DateTime and serializes to YYYY-MM-DD', () {
-      final date = DateType(DateTime(2021, 1, 15));
+    test('Date is a calendar day serializing to YYYY-MM-DD', () {
+      final date = Date(2021, 1, 15);
       expect(date.toJson(), '2021-01-15');
-      expect(DateType.maybeFromJson(null), isNull);
+      expect(Date.maybeFromJson(null), isNull);
 
-      // Round-trip through fromJson.
-      final parsed = DateType.fromJson('2021-01-15');
-      expect(parsed.value, DateTime.parse('2021-01-15'));
+      // Round-trip through fromJson — structural equality, no timezone.
+      final parsed = Date.fromJson('2021-01-15');
+      expect(parsed, Date(2021, 1, 15));
       expect(parsed.toJson(), '2021-01-15');
+      expect((parsed.year, parsed.month, parsed.day), (2021, 1, 15));
+    });
+
+    test('Date normalizes any DateTime to its calendar day', () {
+      // A DateTime with a time component keeps only the date; converting back
+      // to a DateTime forces an explicit timezone (no silent instant).
+      final noon = DateTime.utc(2021, 1, 15, 12, 30);
+      final date = Date(noon.year, noon.month, noon.day);
+      expect(date.toJson(), '2021-01-15');
+      expect(date.toUtcDateTime(), DateTime.utc(2021, 1, 15));
     });
   });
   group('Email', () {

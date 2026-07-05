@@ -237,6 +237,16 @@ class SchemaBinary extends Schema {
   const SchemaBinary({required super.common});
 }
 
+/// An RFC 3339 full-date (`type: string, format: date`). Renders as the
+/// generated `Date` value class — a calendar day with no time or timezone,
+/// never a `DateTime`. See `doc/date_type.md` for the rationale.
+class SchemaDate extends Schema {
+  const SchemaDate({required super.common, required this.defaultValue});
+
+  /// A `YYYY-MM-DD` default from the spec, if any.
+  final String? defaultValue;
+}
+
 /// A base64-encoded binary string. JSON Schema 2020-12 / OpenAPI 3.1
 /// spell this as `{type: string, contentEncoding: base64}`. The wire
 /// format is a JSON string; the Dart-side type is `Uint8List` with

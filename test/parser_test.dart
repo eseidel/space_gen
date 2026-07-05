@@ -34,7 +34,9 @@ void main() {
       expect(parse('string', format: 'uri-template'), PodType.uriTemplate);
       expect(parse('string', format: 'email'), PodType.email);
       expect(parse('string', format: 'uuid'), PodType.uuid);
-      expect(parse('string', format: 'date'), PodType.date);
+      // 'date' is not a pod — it parses to SchemaDate (the generated `Date`
+      // value class), so it has no PodType. See doc/date_type.md.
+      expect(parse('string', format: 'date'), isNull);
       // 'time' is accepted (no warning) but has no Dart equivalent, so
       // it falls through to SchemaString.
       expect(parse('string', format: 'time'), isNull);

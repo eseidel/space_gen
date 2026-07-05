@@ -1149,13 +1149,9 @@ void main() {
       pointer: JsonPointer.empty(),
     );
 
-    test('date format produces a local DateTime literal', () {
-      const schema = RenderPod(
-        common: common,
-        type: PodType.date,
-        createsNewType: false,
-      );
-      expect(schema.exampleValue(context), 'DateTime(2024, 1, 1)');
+    test('date format produces a Date value-class literal', () {
+      const schema = RenderDate(common: common, defaultValue: null);
+      expect(schema.exampleValue(context), 'Date(2024, 1, 1)');
     });
 
     test('uri format produces a Uri.parse literal', () {
@@ -1565,6 +1561,82 @@ void main() {
     });
   });
 
+  group('RenderDate', () {
+    final context = SchemaRenderer(
+      templates: TemplateProvider.defaultLocation(),
+    );
+    const common = CommonProperties.test(
+      snakeName: 'd',
+      pointer: JsonPointer.empty(),
+    );
+    const date = RenderDate(common: common, defaultValue: null);
+
+    test('renders as the Date value class with a String wire type', () {
+      expect(date.dartType.toString(), 'Date');
+      expect(date.jsonStorageType(isNullable: false), 'String');
+      expect(date.createsNewType, isFalse);
+      expect(date.shouldCallToJson, isTrue);
+    });
+
+    test('fromJson routes to Date.fromJson / maybeFromJson', () {
+      expect(
+        date.fromJsonExpression(
+          "json['d']",
+          context,
+          jsonIsNullable: false,
+          dartIsNullable: false,
+        ),
+        "Date.fromJson(json['d'] as String)",
+      );
+      expect(
+        date.fromJsonExpression(
+          "json['d']",
+          context,
+          jsonIsNullable: true,
+          dartIsNullable: true,
+        ),
+        "Date.maybeFromJson(json['d'] as String?)",
+      );
+    });
+
+    test('toJson delegates to Date.toJson', () {
+      expect(
+        date.toJsonExpression('d', context, dartIsNullable: false),
+        'd.toJson()',
+      );
+      expect(
+        date.toJsonExpression('d', context, dartIsNullable: true),
+        'd?.toJson()',
+      );
+    });
+
+    test('example is a Date value-class literal', () {
+      expect(date.exampleValue(context), 'Date(2024, 1, 1)');
+      expect(date.invalidJsonExample(context), "'not a date'");
+    });
+
+    test('a spec default parses through Date.fromJson', () {
+      const withDefault = RenderDate(
+        common: common,
+        defaultValue: '2020-01-01',
+      );
+      expect(
+        withDefault.defaultValueString(context),
+        "Date.fromJson('2020-01-01')",
+      );
+      expect(date.defaultValueString(context), isNull);
+    });
+
+    test('equality includes the default; toTemplateContext throws', () {
+      expect(date, const RenderDate(common: common, defaultValue: null));
+      expect(
+        date,
+        isNot(const RenderDate(common: common, defaultValue: '2020-01-01')),
+      );
+      expect(() => date.toTemplateContext(context), throwsUnimplementedError);
+    });
+  });
+
   group('RenderPod newtype', () {
     final context = SchemaRenderer(
       templates: TemplateProvider.defaultLocation(),
@@ -1587,14 +1659,12 @@ void main() {
       expect(pod(PodType.dateTime).typeName, 'DateTime');
       expect(pod(PodType.email).typeName, 'String');
       expect(pod(PodType.uuid).typeName, 'String');
-      expect(pod(PodType.date).typeName, 'DateTime');
       expect(pod(PodType.boolean).typeName, 'bool');
       expect(pod(PodType.uri).typeName, 'Uri');
       expect(pod(PodType.uriTemplate).typeName, 'UriTemplate');
 
       expect(pod(PodType.dateTime, createsNewType: true).typeName, 'FooBar');
       expect(pod(PodType.email, createsNewType: true).typeName, 'FooBar');
-      expect(pod(PodType.date, createsNewType: true).typeName, 'FooBar');
     });
 
     test('wrappedType is the underlying Dart type regardless of newtype', () {
@@ -1605,7 +1675,6 @@ void main() {
       );
       expect(pod(PodType.email).wrappedType, DartType.string);
       expect(pod(PodType.uuid).wrappedType, DartType.string);
-      expect(pod(PodType.date).wrappedType, DartType.dateTime);
     });
 
     test('toJsonExpression delegates to .toJson() when a newtype', () {
@@ -1629,14 +1698,6 @@ void main() {
         ),
         'x.toIso8601String()',
       );
-      expect(
-        pod(PodType.date).toJsonExpression(
-          'x',
-          context,
-          dartIsNullable: true,
-        ),
-        'x?.toIso8601String().substring(0, 10)',
-      );
       // email and uuid are Strings; no conversion, just pass dartName.
       expect(
         pod(PodType.email).toJsonExpression(
@@ -1658,7 +1719,7 @@ void main() {
 
     test('fromJsonExpression delegates to fromJson/maybeFromJson '
         'when a newtype', () {
-      final schema = pod(PodType.date, createsNewType: true);
+      final schema = pod(PodType.dateTime, createsNewType: true);
       expect(
         schema.fromJsonExpression(
           "json['d']",
@@ -1679,25 +1740,7 @@ void main() {
       );
     });
 
-    test('fromJsonExpression inline routes nullable date/uuid correctly', () {
-      expect(
-        pod(PodType.date).fromJsonExpression(
-          "json['d']",
-          context,
-          jsonIsNullable: true,
-          dartIsNullable: true,
-        ),
-        "maybeParseDate(json['d'] as String?)",
-      );
-      expect(
-        pod(PodType.date).fromJsonExpression(
-          "json['d']",
-          context,
-          jsonIsNullable: false,
-          dartIsNullable: false,
-        ),
-        "DateTime.parse(json['d'] as String)",
-      );
+    test('fromJsonExpression inline routes nullable uuid correctly', () {
       expect(
         pod(PodType.uuid).fromJsonExpression(
           "json['u']",
@@ -1718,14 +1761,14 @@ void main() {
 
     test('toTemplateContext exposes the fields the newtype template reads', () {
       final ctx = pod(
-        PodType.date,
+        PodType.dateTime,
         createsNewType: true,
       ).toTemplateContext(context);
       expect(ctx['typeName'], 'FooBar');
       expect(ctx['dartType'], 'DateTime');
       expect(ctx['jsonType'], 'String');
       expect(ctx['fromJsonBody'], 'DateTime.parse(json)');
-      expect(ctx['toJsonBody'], 'value.toIso8601String().substring(0, 10)');
+      expect(ctx['toJsonBody'], 'value.toIso8601String()');
 
       final emailCtx = pod(
         PodType.email,
@@ -1740,7 +1783,6 @@ void main() {
       'shouldCallToJson: inline pods need conversion iff non-json-native',
       () {
         expect(pod(PodType.dateTime).shouldCallToJson, isTrue);
-        expect(pod(PodType.date).shouldCallToJson, isTrue);
         expect(pod(PodType.uri).shouldCallToJson, isTrue);
         expect(pod(PodType.uriTemplate).shouldCallToJson, isTrue);
         expect(pod(PodType.boolean).shouldCallToJson, isFalse);
@@ -1754,6 +1796,12 @@ void main() {
         );
       },
     );
+
+    test('invalidJsonExample is non-null only for dateTime', () {
+      expect(pod(PodType.dateTime).invalidJsonExample(context), "'not a date'");
+      expect(pod(PodType.uri).invalidJsonExample(context), isNull);
+      expect(pod(PodType.email).invalidJsonExample(context), isNull);
+    });
 
     test('defaultValueString wraps in typeName constructor when a newtype', () {
       const newtypeBool = RenderPod(

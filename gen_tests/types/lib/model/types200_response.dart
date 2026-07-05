@@ -1,4 +1,10 @@
-import 'package:types/model/date_type.dart';
+// Spec descriptions copy prose verbatim into dartdoc, where `<x>`
+// is parsed as an HTML tag start even when it is not HTML (e.g.
+// placeholder tokens like `<sha1hex>`).
+// Suppress file-locally so the lint stays live elsewhere; spec
+// authors do not always escape angle brackets.
+// ignore_for_file: unintended_html_in_doc_comment
+import 'package:types/date.dart';
 import 'package:types/model/email_type.dart';
 import 'package:types/model/status.dart';
 import 'package:types/model/timestamp.dart';
@@ -9,6 +15,7 @@ import 'package:types/model_helpers.dart';
 class Types200Response {
   Types200Response({
     required this.date,
+    required this.inlineDate,
     required this.email,
     required this.uuid,
     required this.timestamp,
@@ -23,7 +30,8 @@ class Types200Response {
       'Types200Response',
       json,
       () => Types200Response(
-        date: DateType.fromJson(json['date'] as String),
+        date: Date.fromJson(json['date'] as String),
+        inlineDate: Date.fromJson(json['inlineDate'] as String),
         email: EmailType.fromJson(json['email'] as String),
         uuid: UuidType.fromJson(json['uuid'] as String),
         timestamp: Timestamp.fromJson(json['timestamp'] as String),
@@ -42,7 +50,8 @@ class Types200Response {
     return Types200Response.fromJson(json);
   }
 
-  DateType date;
+  Date date;
+  Date inlineDate;
   EmailType email;
   UuidType uuid;
   Timestamp timestamp;
@@ -56,6 +65,7 @@ class Types200Response {
   Map<String, dynamic> toJson() {
     return {
       'date': date.toJson(),
+      'inlineDate': inlineDate.toJson(),
       'email': email.toJson(),
       'uuid': uuid.toJson(),
       'timestamp': timestamp.toJson(),
@@ -67,6 +77,7 @@ class Types200Response {
   @override
   int get hashCode => Object.hashAll([
     date,
+    inlineDate,
     email,
     uuid,
     timestamp,
@@ -79,6 +90,7 @@ class Types200Response {
     if (identical(this, other)) return true;
     return other is Types200Response &&
         date == other.date &&
+        inlineDate == other.inlineDate &&
         email == other.email &&
         uuid == other.uuid &&
         timestamp == other.timestamp &&

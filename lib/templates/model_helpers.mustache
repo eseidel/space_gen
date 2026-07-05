@@ -19,17 +19,6 @@ DateTime? maybeParseDateTime(String? value) {
 }
 {{/maybeParseDateTime}}
 
-{{#maybeParseDate}}
-/// Parse a nullable RFC 3339 full-date string (`YYYY-MM-DD`) as a DateTime.
-/// Time and timezone components are zero.
-DateTime? maybeParseDate(String? value) {
-  if (value == null) {
-    return null;
-  }
-  return DateTime.parse(value);
-}
-{{/maybeParseDate}}
-
 {{#maybeParseUri}}
 /// Parse a nullable string as a Uri.
 Uri? maybeParseUri(String? value) {
