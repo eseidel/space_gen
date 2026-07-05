@@ -59,15 +59,21 @@ vocabulary), and #226 (string surfaces inverted to derive from DartType).
 
 ## North star
 
-The direction this is heading: `DartType` becomes a small, zod-like type IR
-that the whole pipeline translates *into*. Much of what the generator does is
-"read a generic type spec (JSON/YAML) → emit an idiomatic Dart type"; the more
-that logic lives as *behavior on `DartType`* (rendering, nullability,
-common-type, and eventually JSON conversion) rather than per-node `switch`
-statements over `PodType`/subclass, the thinner the `Render*` layer gets.
-Inverting the last string surfaces (above) was the precondition: you can't
-safely hang behavior on `DartType` while some nodes still compute their type as
-a bare string that bypasses it.
+The direction this is heading: `DartType` is the single source of truth for the
+*type* — rendering, nullability, JSON wire type, common-type. Much of what the
+generator does is "read a generic type spec (JSON/YAML) → emit an idiomatic Dart
+type", and the more that type logic is structure on `DartType` rather than
+string manipulation or per-node `switch` statements, the thinner the `Render*`
+layer gets. That work is largely done (#222–#226).
+
+**Where it stops: JSON conversion.** It's tempting to also move
+`fromJsonExpression` / `toJsonExpression` onto `DartType`, but conversion is a
+pure function of `DartType` *only for scalars*. For composite and named types it
+is a function of the schema's **structure** — an object's fields and their
+per-field nullability/defaults, an array's element codec, whether a name is a
+newtype/enum with `fromJson`/`toJson` — which `DartType` (a name + type args)
+deliberately doesn't carry. So conversion stays on the render nodes; see the
+dropped codec-extension note under **Remaining work**.
 
 ## Remaining work
 
@@ -100,12 +106,23 @@ not a field on the value type. `dartTypeName` renders from it for templates
 that need the bare identifier. This confirmed the design: structured type data
 lives *on the render node*, `DartType` stays a pure value expression.
 
-### Fold JSON conversion onto DartType (next)
+### Scalar JSON codec on a DartType extension (considered, dropped)
 
-The largest remaining `switch`-heavy surface is per-node
-`fromJsonExpression` / `toJsonExpression`. As the pipeline moves toward the
-zod-like IR (see **North star**), these are the natural next candidates to
-become behavior driven by a `DartType` (+ its `jsonStorageDartType`) codec
-pair rather than per-subclass overrides. Not yet attempted; they also depend on
-context, nullability, and defaults, so this is a larger step than the string
-inversions.
+A `DartTypeCodec` extension that moved `RenderPod`'s scalar codec
+(`String`/`bool`/`Uri`/`UriTemplate`, and eventually `DateTime`) off its
+per-`PodType` `switch`es onto `DartType` was prototyped (PR #227) and dropped.
+
+Two reasons it didn't earn its keep:
+
+- **It doesn't generalize.** Conversion is a pure function of `DartType` only
+  for scalars; composite/named conversion is structural (see **North star**).
+  So this isn't slice-1 of a general fold — scalars are the whole of it.
+- **The scalar-only win is marginal.** It replaced clear, local inline codec
+  (`Uri.parse` / `.toString()`) with a centralized helper that only `RenderPod`
+  called — indirection for a ~4-type table. Even completing it (folding
+  `DateTime` in so the `PodType` codec `switch`es disappear) was a coin-flip
+  readability win, not worth the added surface.
+
+`RenderPod` keeps its inline per-`PodType` codec. If a *second* caller ever
+appears — e.g. parameter serialization needing a scalar's wire form without a
+`RenderSchema` in hand — revisit.
