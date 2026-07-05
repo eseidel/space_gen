@@ -236,15 +236,11 @@ bool _defaultExplode(ParameterLocation location) {
   }
 }
 
-/// Read `style`, `explode`, and `allowReserved` and warn if any non-default
-/// value is set. The generator only honors the default wire format today;
-/// non-default values would silently produce wrong output, so we surface
-/// them as `_warn` (visible without --verbose). Spec-explicit defaults are
+/// Read `style`, `explode`, and `allowReserved` on a parameter; warn on any
+/// value the generator doesn't honor, and return the effective `explode`
+/// (explicit value, or the per-location default). Spec-explicit defaults are
 /// consumed quietly.
-void _warnUnsupportedSerialization(
-  MapContext json,
-  ParameterLocation location,
-) {
+bool _parseSerialization(MapContext json, ParameterLocation location) {
   final style = _optional<String>(json, 'style');
   final defaultStyle = _defaultStyle(location);
   if (style != null && style != defaultStyle) {
@@ -256,13 +252,27 @@ void _warnUnsupportedSerialization(
   }
   final explode = _optional<bool>(json, 'explode');
   final defaultExplode = _defaultExplode(location);
-  if (explode != null && explode != defaultExplode) {
+  // Query parameters honor both explode values (array + `explode: false`
+  // comma-joins into one value; see the query renderer). Other locations only
+  // emit their default wire format, so a non-default value there still warns.
+  if (explode != null &&
+      explode != defaultExplode &&
+      location != ParameterLocation.query) {
     _warn(
       json,
       'explode=$explode is not honored on ${location.name} parameters; '
       'generator emits the default (explode=$defaultExplode) wire format',
     );
   }
+  // `allowReserved` is deliberately NOT honored, and we don't intend to unless
+  // a real spec proves a server needs it. `Uri.replace(queryParameters:)`
+  // percent-encodes reserved chars uniformly with no per-param opt-out, so
+  // honoring it would mean hand-building that slice of the query string with a
+  // looser encoder — invasive, and a footgun (an unescaped `&`/`=` in a value
+  // breaks query parsing). It's also a practical no-op: servers percent-decode
+  // query values, so `a%3Ab` and `a:b` mean the same thing on the wire. We
+  // keep the WARN so the divergence is visible; revisit only on a concrete
+  // report.
   final allowReserved = _optional<bool>(json, 'allowReserved') ?? false;
   if (allowReserved) {
     _warn(
@@ -271,6 +281,7 @@ void _warnUnsupportedSerialization(
       'generator URL-encodes reserved characters',
     );
   }
+  return explode ?? defaultExplode;
 }
 
 /// Parse a parameter from a json object.
@@ -292,12 +303,13 @@ Parameter parseParameter(MapContext json) {
   _ignored<bool>(json, 'allowEmptyValue');
 
   final SchemaRef type;
+  final bool explode;
   dynamic example;
   List<dynamic>? examples;
   if (hasSchema && !hasContent) {
     // Schema fields.
     type = parseSchemaOrRef(schema);
-    _warnUnsupportedSerialization(json, inLocation);
+    explode = _parseSerialization(json, inLocation);
     example = _optional<dynamic>(json, 'example');
     examples = _parseExamplesMap(json);
   } else if (!hasSchema && hasContent) {
@@ -328,6 +340,7 @@ Parameter parseParameter(MapContext json) {
     type: type,
     example: example,
     examples: examples,
+    explode: explode,
   );
 }
 
@@ -344,7 +357,9 @@ Header parseHeader(MapContext json) {
   final description = _optional<String>(json, 'description');
   _ignored<bool>(json, 'deprecated');
   _ignored<bool>(json, 'allowEmptyValue');
-  _warnUnsupportedSerialization(json, ParameterLocation.header);
+  // Headers always comma-join arrays (style=simple, explode=false), so the
+  // returned effective explode isn't stored — only the warnings matter here.
+  _parseSerialization(json, ParameterLocation.header);
   final example = _optional<dynamic>(json, 'example');
   final examples = _parseExamplesMap(json);
 

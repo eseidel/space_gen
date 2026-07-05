@@ -2729,6 +2729,7 @@ void main() {
                   inLocation: ParameterLocation.query,
                   example: null,
                   examples: null,
+                  explode: true,
                 ),
               ],
               requestBody: null,

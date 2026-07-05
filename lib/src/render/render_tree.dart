@@ -731,6 +731,7 @@ class SpecResolver {
       type: toRenderSchema(parameter.schema),
       example: parameter.example,
       examples: parameter.examples,
+      explode: parameter.explode,
     );
   }
 
@@ -1242,7 +1243,12 @@ class Endpoint implements ToTemplateContext {
         context,
         dartIsNullable: false,
       );
-      value = '$dartName.map((e) => $itemsToJson.toString()).toList()';
+      final items = '$dartName.map((e) => $itemsToJson.toString())';
+      // `explode: false` (style=form) comma-joins the array into a single
+      // value (`?k=a,b,c`) rather than repeating the key. Wrap the joined
+      // string in a 1-element list so it flows through the same
+      // `Map<String, List<String>>` shape.
+      value = p.explode ? '$items.toList()' : "[$items.join(',')]";
     } else {
       final scalarToJson = paramType.toJsonExpression(
         dartName,
@@ -5480,6 +5486,7 @@ class RenderParameter implements CanBeParameter {
     required this.inLocation,
     required this.example,
     required this.examples,
+    required this.explode,
   });
 
   /// The name of the parameter.
@@ -5496,6 +5503,10 @@ class RenderParameter implements CanBeParameter {
 
   /// The in location of the parameter.
   final ParameterLocation inLocation;
+
+  /// The effective OpenAPI `explode`. For a query array, `false` comma-joins
+  /// into a single value (`?k=a,b,c`) instead of repeating the key.
+  final bool explode;
 
   /// Whether the parameter is required.
   @override

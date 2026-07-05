@@ -1017,6 +1017,39 @@ void main() {
       );
     });
 
+    test('query array with explode: false comma-joins into one value', () {
+      final json = {
+        'summary': 'Get user',
+        'parameters': [
+          {
+            'name': 'foo',
+            'in': 'query',
+            'description': 'Foo',
+            'required': true,
+            'explode': false,
+            'schema': {
+              'type': 'array',
+              'items': {'type': 'string'},
+            },
+          },
+        ],
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      // explode: false → one comma-joined value, not repeated keys. The joined
+      // string is wrapped in a 1-element list for the Map<String, List<String>>.
+      expect(
+        result,
+        contains("'foo': [foo.map((e) => e.toString()).join(',')],"),
+      );
+    });
+
     test('optional newtype parameters', () {
       final json = {
         'operationId': 'get-agents',

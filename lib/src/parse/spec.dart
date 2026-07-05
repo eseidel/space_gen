@@ -27,6 +27,7 @@ class Parameter implements HasPointer, Parseable {
     required this.pointer,
     required this.example,
     required this.examples,
+    required this.explode,
   });
 
   /// The name of the parameter.
@@ -44,6 +45,11 @@ class Parameter implements HasPointer, Parseable {
   /// The "in" of the parameter.
   /// e.g. query, header, path, cookie.
   final ParameterLocation inLocation;
+
+  /// The effective OpenAPI `explode` (explicit value, or the per-location
+  /// default). Honored for query array parameters: `explode: false` comma-joins
+  /// into a single value (`?k=a,b,c`) instead of repeating the key.
+  final bool explode;
 
   /// The type of the parameter.
   final SchemaRef type;

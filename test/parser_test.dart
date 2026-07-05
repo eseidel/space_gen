@@ -1345,19 +1345,16 @@ void main() {
         verifyNever(() => logger.warn(any()));
       });
 
-      test('non-default explode on query warns', () {
+      test('explode: false on query is honored (no warn)', () {
+        // The query renderer comma-joins arrays when explode is false, so the
+        // value is honored rather than warned about (render_tree's
+        // _queryParamEntry).
         final logger = _MockLogger();
         runWithLogger(
           logger,
           () => parseOpenApi(specWithQueryParam({'explode': false})),
         );
-        verify(
-          () => logger.warn(
-            'explode=false is not honored on query parameters; '
-            'generator emits the default (explode=true) wire format '
-            'in #/paths/~1users/get/parameters/0',
-          ),
-        ).called(1);
+        verifyNever(() => logger.warn(any()));
       });
 
       test('non-default style on query warns', () {
