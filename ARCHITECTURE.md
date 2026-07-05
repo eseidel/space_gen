@@ -138,6 +138,12 @@ file path for each schema (`modelPath`, `testPath`), runs Mustache
 templates from `lib/templates/`, and writes. `dart format` and `dart
 fix` run via an injected `runProcess`.
 
+**Type model.** Dart types in the render tree — a schema's `dartType`, its
+`nullableTypeName`, its JSON `jsonStorageType`, the generated `operator[]`
+common-type — are a small structured `DartType` value (name + type arguments +
+nullability) rather than strings composed by hand. See
+[`doc/dart_type.md`](doc/dart_type.md) for the model and remaining work.
+
 **Linkage to dispatch.** `RenderOneOf` carries a back-reference to
 the source `ResolvedSchemaCollection` it was built from. When a
 oneOf renders, it calls `decideDispatch(source)` to retrieve the
