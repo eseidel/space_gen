@@ -236,11 +236,22 @@ bool _defaultExplode(ParameterLocation location) {
   }
 }
 
-/// Read `style`, `explode`, and `allowReserved` on a parameter; warn on any
-/// value the generator doesn't honor, and return the effective `explode`
-/// (explicit value, or the per-location default). Spec-explicit defaults are
-/// consumed quietly.
-bool _parseSerialization(MapContext json, ParameterLocation location) {
+/// The effective OpenAPI `explode` for a parameter — its explicit value, or
+/// the per-location default. This is the one serialization keyword the
+/// generator honors (see the query renderer), so it's the only one threaded
+/// into the model. `style` / `allowReserved` are warn-only
+/// ([_warnUnsupportedSerialization]).
+bool _parameterExplode(MapContext json, ParameterLocation location) =>
+    _optional<bool>(json, 'explode') ?? _defaultExplode(location);
+
+/// Warn about `style` / `explode` / `allowReserved` values the generator does
+/// not honor. [explode] is the already-resolved effective value (from
+/// [_parameterExplode]); spec-explicit defaults are consumed quietly.
+void _warnUnsupportedSerialization(
+  MapContext json,
+  ParameterLocation location, {
+  required bool explode,
+}) {
   final style = _optional<String>(json, 'style');
   final defaultStyle = _defaultStyle(location);
   if (style != null && style != defaultStyle) {
@@ -250,18 +261,15 @@ bool _parseSerialization(MapContext json, ParameterLocation location) {
       'generator emits the default ($defaultStyle) wire format',
     );
   }
-  final explode = _optional<bool>(json, 'explode');
-  final defaultExplode = _defaultExplode(location);
   // Query parameters honor both explode values *for scalars and arrays*
   // (array + `explode: false` comma-joins into one value; see the query
   // renderer). Object-shaped query params are not handled and no longer warn
   // here — tracked separately in https://github.com/eseidel/space_gen/issues/233
   // (query params need `_canBePathParameter`-style type validation). Other
   // locations only emit their default wire format, so a non-default value
-  // there still warns.
-  if (explode != null &&
-      explode != defaultExplode &&
-      location != ParameterLocation.query) {
+  // there still warns. (`explode != default` implies it was set explicitly.)
+  final defaultExplode = _defaultExplode(location);
+  if (explode != defaultExplode && location != ParameterLocation.query) {
     _warn(
       json,
       'explode=$explode is not honored on ${location.name} parameters; '
@@ -285,7 +293,6 @@ bool _parseSerialization(MapContext json, ParameterLocation location) {
       'generator URL-encodes reserved characters',
     );
   }
-  return explode ?? defaultExplode;
 }
 
 /// Parse a parameter from a json object.
@@ -313,7 +320,8 @@ Parameter parseParameter(MapContext json) {
   if (hasSchema && !hasContent) {
     // Schema fields.
     type = parseSchemaOrRef(schema);
-    explode = _parseSerialization(json, inLocation);
+    explode = _parameterExplode(json, inLocation);
+    _warnUnsupportedSerialization(json, inLocation, explode: explode);
     example = _optional<dynamic>(json, 'example');
     examples = _parseExamplesMap(json);
   } else if (!hasSchema && hasContent) {
@@ -362,8 +370,12 @@ Header parseHeader(MapContext json) {
   _ignored<bool>(json, 'deprecated');
   _ignored<bool>(json, 'allowEmptyValue');
   // Headers always comma-join arrays (style=simple, explode=false), so the
-  // returned effective explode isn't stored — only the warnings matter here.
-  _parseSerialization(json, ParameterLocation.header);
+  // effective explode isn't stored — only the warnings matter here.
+  _warnUnsupportedSerialization(
+    json,
+    ParameterLocation.header,
+    explode: _parameterExplode(json, ParameterLocation.header),
+  );
   final example = _optional<dynamic>(json, 'example');
   final examples = _parseExamplesMap(json);
 
