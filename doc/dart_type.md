@@ -62,12 +62,29 @@ vocabulary), and #226 (string surfaces inverted to derive from DartType).
 The direction this is heading: `DartType` becomes a small, zod-like type IR
 that the whole pipeline translates *into*. Much of what the generator does is
 "read a generic type spec (JSON/YAML) → emit an idiomatic Dart type"; the more
-that logic lives as *behavior on `DartType`* (rendering, nullability,
-common-type, and eventually JSON conversion) rather than per-node `switch`
-statements over `PodType`/subclass, the thinner the `Render*` layer gets.
-Inverting the last string surfaces (above) was the precondition: you can't
-safely hang behavior on `DartType` while some nodes still compute their type as
-a bare string that bypasses it.
+that logic lives as *behavior keyed off `DartType`* (rendering, nullability,
+common-type, JSON conversion) rather than per-node `switch` statements over
+`PodType`/subclass, the thinner the `Render*` layer gets. Inverting the last
+string surfaces (above) was the precondition: you can't safely hang behavior on
+`DartType` while some nodes still compute their type as a bare string that
+bypasses it.
+
+**Home vs. key.** `DartType` (`dart_type.dart`) stays a pure value that a
+future generic type system could reuse — codegen behavior does *not* go on the
+class. Render-only behavior lives in an `extension on DartType` in the render
+layer (`render_tree.dart`), so "keyed off `DartType`" and "method on
+`DartType`" stop being in tension: the extension dispatches on the type but the
+generic value never sees it (cf. the `uriTemplate` TODO in `dart_type.dart`).
+
+**Spec-type vs. Dart-type boundary.** Not everything can key off `DartType`.
+Some behavior is a pure function of the Dart type (rendering, JSON wire type,
+the codec for `Uri`/`UriTemplate`/`String`/`bool`); the rest needs the *spec*
+type (`PodType`) because a many-to-one spec→Dart mapping loses information Dart
+can't recover. Today the only lossy cases are: `date` vs `date-time` (both
+`DartType.dateTime`, but different serialize/parse) and example/invalid-JSON
+fixtures (`email` vs `uuid` differ only there). Rule: **codec lives on the
+`DartType` extension, except where two spec formats collapse to one Dart type**
+— that residue stays keyed off `PodType` on the owning render node.
 
 ## Remaining work
 
@@ -100,12 +117,22 @@ not a field on the value type. `dartTypeName` renders from it for templates
 that need the bare identifier. This confirmed the design: structured type data
 lives *on the render node*, `DartType` stays a pure value expression.
 
-### Fold JSON conversion onto DartType (next)
+### Scalar JSON codec on a DartType extension (started — #227)
 
-The largest remaining `switch`-heavy surface is per-node
-`fromJsonExpression` / `toJsonExpression`. As the pipeline moves toward the
-zod-like IR (see **North star**), these are the natural next candidates to
-become behavior driven by a `DartType` (+ its `jsonStorageDartType`) codec
-pair rather than per-subclass overrides. Not yet attempted; they also depend on
-context, nullability, and defaults, so this is a larger step than the string
-inversions.
+`DartTypeCodec` (`extension on DartType`, render layer) owns `toJsonScalar` /
+`fromJsonScalar` for the leaf types the Dart type fully determines: `String`
+and `bool` (JSON-native, identity), `Uri` and `UriTemplate` (`.toString()` /
+`Uri.parse` / `UriTemplate(…)`). `RenderPod` keeps exhaustive `PodType` cases
+(so a new format still won't compile until handled) but delegates their bodies
+to the extension; `date`/`date-time` stay resolved off `PodType` because the
+Dart type can't tell them apart. Unhandled types throw rather than guess.
+
+Remaining folds toward the zod-like IR:
+
+- **`DateTime`** — decide whether the `date`/`date-time` split is worth pulling
+  into the codec (would need a spec-type discriminator the extension can see,
+  since both are `DartType.dateTime`), or whether it stays on `RenderPod`.
+- **Collection / object / enum conversion** — `RenderArray` / `RenderMap` /
+  `RenderObject` / `RenderEnum` still hand-roll `fromJsonExpression` /
+  `toJsonExpression`. These depend on context, nullability, and defaults, so
+  they're a larger step than the scalar codec.

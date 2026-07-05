@@ -429,6 +429,55 @@ abstract final class ModelHelpers {
   ];
 }
 
+/// Rendering-only JSON codec for the scalar leaf [DartType]s whose conversion
+/// the Dart type *fully determines* — `String`/`bool` (JSON-native, identity),
+/// `Uri`, and `UriTemplate`.
+///
+/// Lives in the render layer as an extension, not on [DartType] itself, so the
+/// value type stays a pure, potentially-generic expression — the generic type
+/// system never sees these codegen helpers (cf. the `uriTemplate` TODO in
+/// `dart_type.dart`).
+///
+/// Types where two spec formats collapse to one Dart type are deliberately
+/// *not* handled here: today that is only `DateTime` (`date` vs `date-time`
+/// serialize and parse differently but are both [DartType.dateTime]), so the
+/// Dart type can't distinguish them — [RenderPod] resolves that codec itself
+/// off [PodType]. Unhandled types throw rather than guessing.
+extension DartTypeCodec on DartType {
+  /// The JSON representation of a Dart value expression [name] of this type.
+  /// [nullable] guards the member access on non-native types.
+  String toJsonScalar(String name, {required bool nullable}) {
+    if (this == DartType.uri || this == DartType.uriTemplate) {
+      return '${nullable ? '$name?' : name}.toString()';
+    }
+    // String- and bool-backed types are JSON-native: no conversion.
+    if (this == DartType.string || this == DartType.bool_) {
+      return name;
+    }
+    throw UnsupportedError('No scalar toJson codec for $this');
+  }
+
+  /// A Dart value of this type from an already-cast JSON expression
+  /// [castValue]. When [nullable], parses through the null-tolerant helper so
+  /// the result stays a single nullable-aware expression.
+  String fromJsonScalar(String castValue, {required bool nullable}) {
+    if (this == DartType.uri) {
+      return nullable
+          ? '${ModelHelpers.maybeParseUri}($castValue)'
+          : 'Uri.parse($castValue)';
+    }
+    if (this == DartType.uriTemplate) {
+      return nullable
+          ? '${ModelHelpers.maybeParseUriTemplate}($castValue)'
+          : 'UriTemplate($castValue)';
+    }
+    if (this == DartType.string || this == DartType.bool_) {
+      return castValue;
+    }
+    throw UnsupportedError('No scalar fromJson codec for $this');
+  }
+}
+
 class SpecResolver {
   SpecResolver(this.quirks);
 
@@ -2636,11 +2685,16 @@ class RenderPod extends RenderSchema {
     final nameCall = nameIsNullable ? '$name?' : name;
     return switch (type) {
       PodType.dateTime => '$nameCall.toIso8601String()',
-      PodType.uri => '$nameCall.toString()',
-      PodType.uriTemplate => '$nameCall.toString()',
-      // String- and bool-backed types: no conversion; `name` already
-      // has the correct nullable/non-nullable type.
-      PodType.email || PodType.uuid || PodType.boolean => name,
+      // Uri/UriTemplate (.toString()) and String/bool (identity) are fully
+      // determined by the Dart type — delegate to the DartType codec.
+      PodType.uri ||
+      PodType.uriTemplate ||
+      PodType.email ||
+      PodType.uuid ||
+      PodType.boolean => wrappedType.toJsonScalar(
+        name,
+        nullable: nameIsNullable,
+      ),
     };
   }
 
@@ -2649,9 +2703,11 @@ class RenderPod extends RenderSchema {
   /// inline use site.
   String _jsonToValueBody(String jsonName) => switch (type) {
     PodType.dateTime => 'DateTime.parse($jsonName)',
-    PodType.uri => 'Uri.parse($jsonName)',
-    PodType.uriTemplate => 'UriTemplate($jsonName)',
-    PodType.email || PodType.uuid || PodType.boolean => jsonName,
+    PodType.uri ||
+    PodType.uriTemplate ||
+    PodType.email ||
+    PodType.uuid ||
+    PodType.boolean => wrappedType.fromJsonScalar(jsonName, nullable: false),
   };
 
   @override
@@ -2686,30 +2742,27 @@ class RenderPod extends RenderSchema {
       return '$typeName.$jsonMethod($castedValue)$orDefault';
     }
 
-    // Inline: convert json String -> Dart value at the use site. For
-    // nullable values we call a helper (so the expression remains a
-    // single nullable-aware expression), for non-nullable we inline.
-    switch (type) {
-      case PodType.dateTime:
-        if (jsonIsNullable) {
-          return '${ModelHelpers.maybeParseDateTime}($castedValue)$orDefault';
-        }
-        return 'DateTime.parse($castedValue)';
-      case PodType.uri:
-        if (jsonIsNullable) {
-          return '${ModelHelpers.maybeParseUri}($castedValue)$orDefault';
-        }
-        return 'Uri.parse($castedValue)';
-      case PodType.uriTemplate:
-        if (jsonIsNullable) {
-          final call = '${ModelHelpers.maybeParseUriTemplate}($castedValue)';
-          return '$call$orDefault';
-        }
-        return 'UriTemplate($castedValue)';
-      case PodType.boolean || PodType.email || PodType.uuid:
-        // 'as' has higher precedence than '??' so no parens are needed.
-        return '$castedValue$orDefault';
-    }
+    // Inline: convert the cast JSON value to the Dart value at the use site.
+    // `date-time` collapses to `DateTime`, so its codec is resolved here off
+    // [PodType]; everything else is fully determined by the Dart type and
+    // delegates to the DartType codec. `orDefault` is empty when the JSON is
+    // non-nullable, so appending it unconditionally is safe ('as' has higher
+    // precedence than '??', so no parens are needed).
+    final conversion = switch (type) {
+      PodType.dateTime =>
+        jsonIsNullable
+            ? '${ModelHelpers.maybeParseDateTime}($castedValue)'
+            : 'DateTime.parse($castedValue)',
+      PodType.uri ||
+      PodType.uriTemplate ||
+      PodType.email ||
+      PodType.uuid ||
+      PodType.boolean => wrappedType.fromJsonScalar(
+        castedValue,
+        nullable: jsonIsNullable,
+      ),
+    };
+    return '$conversion$orDefault';
   }
 
   @override

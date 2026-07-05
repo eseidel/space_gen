@@ -1919,4 +1919,55 @@ void main() {
       expect(() => binary.jsonStorageDartType, throwsUnsupportedError);
     });
   });
+
+  group('DartTypeCodec', () {
+    test(
+      'toJsonScalar: Uri/UriTemplate call toString, natives are identity',
+      () {
+        expect(DartType.uri.toJsonScalar('v', nullable: false), 'v.toString()');
+        expect(DartType.uri.toJsonScalar('v', nullable: true), 'v?.toString()');
+        expect(
+          DartType.uriTemplate.toJsonScalar('v', nullable: false),
+          'v.toString()',
+        );
+        expect(DartType.string.toJsonScalar('v', nullable: true), 'v');
+        expect(DartType.bool_.toJsonScalar('v', nullable: false), 'v');
+      },
+    );
+
+    test('fromJsonScalar: nullable parses via the null-tolerant helper', () {
+      expect(DartType.uri.fromJsonScalar('j', nullable: false), 'Uri.parse(j)');
+      expect(
+        DartType.uri.fromJsonScalar('j', nullable: true),
+        'maybeParseUri(j)',
+      );
+      expect(
+        DartType.uriTemplate.fromJsonScalar('j', nullable: false),
+        'UriTemplate(j)',
+      );
+      expect(
+        DartType.uriTemplate.fromJsonScalar('j', nullable: true),
+        'maybeParseUriTemplate(j)',
+      );
+      expect(DartType.string.fromJsonScalar('j', nullable: false), 'j');
+      expect(DartType.bool_.fromJsonScalar('j', nullable: true), 'j');
+    });
+
+    test('throws for types it does not fully determine (e.g. DateTime)', () {
+      // `DateTime` is intentionally unhandled: `date` vs `date-time` share the
+      // Dart type but serialize differently, so RenderPod owns that codec.
+      expect(
+        () => DartType.dateTime.toJsonScalar('v', nullable: false),
+        throwsUnsupportedError,
+      );
+      expect(
+        () => DartType.dateTime.fromJsonScalar('j', nullable: false),
+        throwsUnsupportedError,
+      );
+      expect(
+        () => DartType.int_.fromJsonScalar('j', nullable: false),
+        throwsUnsupportedError,
+      );
+    });
+  });
 }
