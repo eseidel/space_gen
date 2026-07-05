@@ -24,6 +24,10 @@
                                         "date": {
                                             "$ref": "#/components/schemas/DateType"
                                         },
+                                        "inlineDate": {
+                                            "type": "string",
+                                            "format": "date"
+                                        },
                                         "email": {
                                             "$ref": "#/components/schemas/EmailType"
                                         },
@@ -42,6 +46,7 @@
                                     },
                                     "required": [
                                         "date",
+                                        "inlineDate",
                                         "email",
                                         "uuid",
                                         "timestamp",

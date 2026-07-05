@@ -122,7 +122,6 @@ void main() {
 
       for (final format in [
         'uuid',
-        'date',
         'date-time',
         'email',
         'uri',
@@ -136,6 +135,14 @@ void main() {
           reason: 'format: $format should resolve to a ResolvedPod',
         );
       }
+
+      // `format: date` resolves to ResolvedDate (the `Date` value class), not
+      // a pod. See doc/date_type.md.
+      final dateSpec = parseAndResolveTestSpec(specWithPodPathParam('date'));
+      expect(
+        dateSpec.paths.first.operations.first.parameters.first.schema,
+        isA<ResolvedDate>(),
+      );
     });
 
     test('path parameters can be oneOf of strings or integers', () {

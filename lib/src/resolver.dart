@@ -315,6 +315,12 @@ ResolvedSchema _resolveSchemaFully(
       createsNewType: createsNewType,
     );
   }
+  if (schema is SchemaDate) {
+    return ResolvedDate(
+      common: resolvedCommon,
+      defaultValue: schema.defaultValue,
+    );
+  }
   if (schema is SchemaBase64Bytes) {
     return ResolvedBase64Bytes(
       common: resolvedCommon,
@@ -545,12 +551,12 @@ bool _canBePathParameter(ResolvedSchema schema) {
   if (schema is ResolvedString || schema is ResolvedInteger) {
     return true;
   }
-  // Pod types (uuid, email, date, date-time, uri, uri-template, boolean) all
-  // serialize to a single string on the wire via their `toJson` — which is
+  // Pod types (uuid, email, date-time, uri, uri-template, boolean) and `Date`
+  // all serialize to a single string on the wire via their `toJson` — which is
   // the expression interpolated into the URL path — so they're legal path
   // parameters. Without this, common patterns like `format: uuid` on a
   // `/things/{id}` path crash the resolver.
-  if (schema is ResolvedPod) {
+  if (schema is ResolvedPod || schema is ResolvedDate) {
     return true;
   }
   if (schema is ResolvedOneOf) {
@@ -902,6 +908,11 @@ bool shouldCreateNewType(Schema schema) {
       // OpenApi creates a new file for each top level component, even
       // if it's a simple type.  Matching this behavior for now.
       return isTopLevelComponent(schema.pointer);
+    case SchemaDate():
+      // `date` always resolves to the single canonical `Date` type — a named
+      // `format: date` schema is just a second word for "date", so it collapses
+      // to `Date` rather than minting a per-schema newtype. See doc/date_type.md.
+      return false;
     case SchemaObjectBase():
     case SchemaEmptyObject():
     case SchemaEnum():
@@ -1727,6 +1738,24 @@ class ResolvedBinary extends ResolvedSchema {
     return ResolvedBinary(
       common: common ?? this.common,
       createsNewType: createsNewType,
+    );
+  }
+}
+
+/// Resolved counterpart to [SchemaDate]. Always renders as the canonical `Date`
+/// value class (never a newtype), so [createsNewType] is fixed to false.
+class ResolvedDate extends ResolvedSchema {
+  const ResolvedDate({required super.common, required this.defaultValue})
+    : super(createsNewType: false);
+
+  /// A `YYYY-MM-DD` default from the spec, if any.
+  final String? defaultValue;
+
+  @override
+  ResolvedDate copyWith({CommonProperties? common}) {
+    return ResolvedDate(
+      common: common ?? this.common,
+      defaultValue: defaultValue,
     );
   }
 }

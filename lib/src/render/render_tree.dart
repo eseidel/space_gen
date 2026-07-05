@@ -26,6 +26,10 @@ String avoidReservedWord(String value) {
 /// storage type for objects, maps, and object-shaped composites.
 final _jsonWireMap = DartType.map(DartType.string, DartType.dynamic_);
 
+/// The generated `Date` value class (`lib/date.dart`) that every `format: date`
+/// field renders as. A project type, not an SDK one, so it's a plain name.
+const _dateType = DartType('Date');
+
 Never _unimplemented(String message, JsonPointer pointer) {
   throw UnimplementedError('$message at $pointer');
 }
@@ -399,7 +403,6 @@ class Import extends Equatable {
 /// and by [SchemaUsage] to decide whether to import `model_helpers.dart`.
 abstract final class ModelHelpers {
   static const maybeParseDateTime = 'maybeParseDateTime';
-  static const maybeParseDate = 'maybeParseDate';
   static const maybeParseUri = 'maybeParseUri';
   static const maybeParseUriTemplate = 'maybeParseUriTemplate';
   static const listsEqual = 'listsEqual';
@@ -413,7 +416,6 @@ abstract final class ModelHelpers {
 
   static const List<String> all = [
     maybeParseDateTime,
-    maybeParseDate,
     maybeParseUri,
     maybeParseUriTemplate,
     listsEqual,
@@ -603,6 +605,11 @@ class SpecResolver {
         return RenderBinary(common: schema.common);
       case ResolvedBase64Bytes():
         return RenderBase64Bytes(common: schema.common);
+      case ResolvedDate():
+        return RenderDate(
+          common: schema.common,
+          defaultValue: schema.defaultValue,
+        );
       case ResolvedOneOf():
         final renderSchemas = schema.schemas.map(toRenderSchema).toList();
         final disc = schema.discriminator;
@@ -2532,10 +2539,7 @@ class RenderPod extends RenderSchema {
       // Already json-native: no conversion at the use site.
       PodType.boolean || PodType.email || PodType.uuid => false,
       // Need serialization to a string.
-      PodType.dateTime ||
-      PodType.uri ||
-      PodType.uriTemplate ||
-      PodType.date => true,
+      PodType.dateTime || PodType.uri || PodType.uriTemplate => true,
     };
   }
 
@@ -2544,10 +2548,7 @@ class RenderPod extends RenderSchema {
     // Newtype defaults wrap dartTypeName in a constructor call; const-ness
     // depends on whether the wrapped expression is const.
     return switch (type) {
-      PodType.dateTime ||
-      PodType.uri ||
-      PodType.uriTemplate ||
-      PodType.date => false,
+      PodType.dateTime || PodType.uri || PodType.uriTemplate => false,
       PodType.boolean || PodType.email || PodType.uuid => true,
     };
   }
@@ -2566,7 +2567,6 @@ class RenderPod extends RenderSchema {
     // email and uuid are String subsets.
     PodType.email => DartType.string,
     PodType.uuid => DartType.string,
-    PodType.date => DartType.dateTime,
   };
 
   /// The name of [wrappedType], for templates that need the bare identifier.
@@ -2601,8 +2601,7 @@ class RenderPod extends RenderSchema {
     PodType.uri ||
     PodType.uriTemplate ||
     PodType.email ||
-    PodType.uuid ||
-    PodType.date => DartType.string,
+    PodType.uuid => DartType.string,
     PodType.boolean => DartType.bool_,
   };
 
@@ -2613,8 +2612,8 @@ class RenderPod extends RenderSchema {
       return null;
     }
     final raw = switch (type) {
-      PodType.dateTime ||
-      PodType.date => 'DateTime.parse(${quoteString(defaultValue as String)})',
+      PodType.dateTime =>
+        'DateTime.parse(${quoteString(defaultValue as String)})',
       PodType.uri => 'Uri.parse(${quoteString(defaultValue as String)})',
       PodType.uriTemplate =>
         'UriTemplate(${quoteString(defaultValue as String)})',
@@ -2637,8 +2636,6 @@ class RenderPod extends RenderSchema {
     final nameCall = nameIsNullable ? '$name?' : name;
     return switch (type) {
       PodType.dateTime => '$nameCall.toIso8601String()',
-      // Full-date: YYYY-MM-DD, the first 10 chars of ISO-8601.
-      PodType.date => '$nameCall.toIso8601String().substring(0, 10)',
       PodType.uri => '$nameCall.toString()',
       PodType.uriTemplate => '$nameCall.toString()',
       // String- and bool-backed types: no conversion; `name` already
@@ -2651,7 +2648,7 @@ class RenderPod extends RenderSchema {
   /// the newtype's fromJson factory body and (non-nullable only) at the
   /// inline use site.
   String _jsonToValueBody(String jsonName) => switch (type) {
-    PodType.dateTime || PodType.date => 'DateTime.parse($jsonName)',
+    PodType.dateTime => 'DateTime.parse($jsonName)',
     PodType.uri => 'Uri.parse($jsonName)',
     PodType.uriTemplate => 'UriTemplate($jsonName)',
     PodType.email || PodType.uuid || PodType.boolean => jsonName,
@@ -2696,11 +2693,6 @@ class RenderPod extends RenderSchema {
       case PodType.dateTime:
         if (jsonIsNullable) {
           return '${ModelHelpers.maybeParseDateTime}($castedValue)$orDefault';
-        }
-        return 'DateTime.parse($castedValue)';
-      case PodType.date:
-        if (jsonIsNullable) {
-          return '${ModelHelpers.maybeParseDate}($castedValue)$orDefault';
         }
         return 'DateTime.parse($castedValue)';
       case PodType.uri:
@@ -2756,10 +2748,6 @@ class RenderPod extends RenderSchema {
     final raw = switch (type) {
       PodType.boolean => 'false',
       PodType.dateTime => 'DateTime.utc(2024, 1, 1)',
-      // Local (not UTC) so `value.toIso8601String().substring(0, 10)`
-      // round-trips back through `DateTime.parse` (which returns a
-      // local DateTime).
-      PodType.date => 'DateTime(2024, 1, 1)',
       PodType.uri => "Uri.parse('https://example.com')",
       PodType.uriTemplate => "UriTemplate('https://example.com/{id}')",
       PodType.email => "'user@example.com'",
@@ -2768,13 +2756,13 @@ class RenderPod extends RenderSchema {
     return createsNewType ? '$typeName($raw)' : raw;
   }
 
-  /// Only date/dateTime pods parse through `DateTime.parse`, which
-  /// rejects garbage with FormatException. Uri.parse is famously
-  /// lenient; UriTemplate accepts most strings; string/bool/email/uuid
-  /// pods don't validate at all — so no guaranteed-invalid input.
+  /// Only dateTime pods parse through `DateTime.parse`, which rejects garbage
+  /// with FormatException. Uri.parse is famously lenient; UriTemplate accepts
+  /// most strings; string/bool/email/uuid pods don't validate at all — so no
+  /// guaranteed-invalid input.
   @override
   String? invalidJsonExample(SchemaRenderer context) => switch (type) {
-    PodType.dateTime || PodType.date => "'not a date'",
+    PodType.dateTime => "'not a date'",
     _ => null,
   };
 }
@@ -5794,6 +5782,83 @@ class RenderBase64Bytes extends RenderSchema {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
       throw UnimplementedError('RenderBase64Bytes.toTemplateContext');
+}
+
+/// An RFC 3339 full-date (`format: date`). Renders as the generated `Date`
+/// value class (a calendar day: year/month/day, no time/timezone), never a
+/// `DateTime`. Wire format is a JSON `String`; `Date.fromJson` / `.toJson`
+/// handle the boundary. The single canonical `Date` type is emitted once per
+/// package (`lib/date.dart`) and imported wherever a date field appears.
+/// See doc/date_type.md.
+class RenderDate extends RenderSchema {
+  const RenderDate({required super.common, required this.defaultValue})
+    : super(createsNewType: false);
+
+  /// A `YYYY-MM-DD` default from the spec, if any.
+  @override
+  final String? defaultValue;
+
+  @override
+  List<Object?> get props => [super.props, defaultValue];
+
+  @override
+  bool get defaultCanConstConstruct => false;
+
+  @override
+  DartType get dartType => _dateType;
+
+  @override
+  DartType get jsonStorageDartType => DartType.string;
+
+  @override
+  bool get shouldCallToJson => true;
+
+  @override
+  String? defaultValueString(SchemaRenderer context) {
+    final value = defaultValue;
+    if (value == null) return null;
+    return 'Date.fromJson(${quoteString(value)})';
+  }
+
+  @override
+  String fromJsonExpression(
+    String jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) {
+    final castedValue =
+        '$jsonValue as ${jsonStorageType(isNullable: jsonIsNullable)}';
+    final orDefault = orDefaultExpression(
+      context: context,
+      jsonIsNullable: jsonIsNullable,
+      dartIsNullable: dartIsNullable,
+    );
+    final call = jsonIsNullable
+        ? 'Date.maybeFromJson($castedValue)'
+        : 'Date.fromJson($castedValue)';
+    return '$call$orDefault';
+  }
+
+  @override
+  String toJsonExpression(
+    String dartName,
+    SchemaRenderer context, {
+    required bool dartIsNullable,
+  }) => dartIsNullable ? '$dartName?.toJson()' : '$dartName.toJson()';
+
+  @override
+  String? exampleValue(SchemaRenderer context) => 'Date(2024, 1, 1)';
+
+  // `Date.fromJson` parses through `DateTime.parse`, which rejects garbage
+  // with a FormatException — so the round-trip test has a guaranteed-invalid
+  // input to assert on.
+  @override
+  String? invalidJsonExample(SchemaRenderer context) => "'not a date'";
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
+      throw UnimplementedError('RenderDate.toTemplateContext');
 }
 
 class RenderEmptyObject extends RenderNewType {

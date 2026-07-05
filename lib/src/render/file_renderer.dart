@@ -466,6 +466,15 @@ class FileRenderer {
     _renderDartFile(name: 'auth', outPath: 'lib/auth.dart');
   }
 
+  /// Emit `lib/date.dart` (the shared `Date` value class) iff any generated
+  /// file references it. Called after [renderModels] / [renderApis] so
+  /// [usedDate] is complete, mirroring [renderModelHelpers].
+  @protected
+  void renderDate() {
+    if (!usedDate) return;
+    _renderDartFile(name: 'date', outPath: 'lib/date.dart');
+  }
+
   /// Emit `lib/api_client.dart`. Override to no-op if the package
   /// supplies its own HTTP client.
   @protected
@@ -491,6 +500,22 @@ class FileRenderer {
   /// this automatically.
   @protected
   final Set<String> usedModelHelpers = {};
+
+  /// Whether any generated file references the shared `Date` type (from a
+  /// `format: date` field). Set as a side effect of [importsForModel] /
+  /// [importsForApi]; consumed by [renderDate] (emit `lib/date.dart`) and
+  /// [renderPublicApi] (re-export it from the barrel).
+  @protected
+  bool usedDate = false;
+
+  /// The `lib/date.dart` import for [schemas] iff any of them is a [RenderDate]
+  /// (a `format: date` field). Marks [usedDate] so the support file and its
+  /// barrel export are emitted.
+  Iterable<Import> _dateImportFor(Iterable<RenderSchema> schemas) {
+    if (!schemas.any((s) => s is RenderDate)) return const [];
+    usedDate = true;
+    return [Import('package:$packageName/date.dart')];
+  }
 
   /// Emit `lib/model_helpers.dart` containing only the helpers that any
   /// other generated file actually references (per [usedModelHelpers]).
@@ -531,6 +556,9 @@ class FileRenderer {
       ...schemas.map(modelPackagePath),
       'api_client.dart',
       'api_exception.dart',
+      // Re-export the shared `Date` type so barrel consumers (including the
+      // generated round-trip tests) can name it. Emitted only when used.
+      if (usedDate) 'date.dart',
     };
     // Collect third-party `package:` types that any model uses
     // (today: `package:uri/uri.dart` for `UriTemplate`). Dart exports
@@ -655,6 +683,7 @@ class FileRenderer {
         .toList();
     imports.addAll({
       ...inlineSchemas.expand((s) => s.additionalImports),
+      ..._dateImportFor(inlineSchemas),
       ...apiImports,
     });
     return imports;
@@ -728,6 +757,7 @@ class FileRenderer {
       ...usage.importsFor(packageName),
       ...schema.additionalImports,
       ...localSchemas.expand((s) => s.additionalImports),
+      ..._dateImportFor(localSchemas),
       ...referencedImports,
     };
     // A file never imports itself.
@@ -903,6 +933,9 @@ class FileRenderer {
     renderAuth();
     renderApiClient(spec);
     renderModelHelpers();
+    // `usedDate` is complete after renderModels/renderApis; emit lib/date.dart
+    // before the barrel (which re-exports it) and the format pass.
+    renderDate();
     // This is a bit of hack, but seems to work with the specs I've tested.
     // Probably ClientName should be a parameter to the render function.
     final specName = spec.title.split(' ').firstOrNull ?? '';

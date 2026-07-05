@@ -2599,7 +2599,6 @@ void main() {
       expect(usedBy('maybeParseUriTemplate'), {
         ModelHelpers.maybeParseUriTemplate,
       });
-      expect(usedBy('maybeParseDate'), {ModelHelpers.maybeParseDate});
       expect(usedBy('maybeParseUri'), {ModelHelpers.maybeParseUri});
     });
 
