@@ -124,11 +124,24 @@ We depend on `package:uri` for `UriTemplate` — so why not depend on a package
 for `Date`? Because the trade is the reverse. `UriTemplate` implements RFC 6570,
 which is genuinely hard to hand-roll, and `package:uri` is a focused, maintained,
 de-facto-standard package. A date is ~40 lines (year/month/day + ISO
-parse/format). And pub.dev has **no** lightweight, maintained date-only *type*:
-the only real calendar-date type, `time_machine`'s `LocalDate`, is effectively
-unmaintained (last published years ago, still a self-described "preview," drags
-in a full timezone/calendar engine); the popular "date" packages are formatters
-(`intl`, `jiffy`) or UI pickers, not types.
+parse/format), and no comparable date-only package exists. The four named in the
+upstream issue's thread were each evaluated:
+
+- **`dart_date`** — date-fns-style extension methods *on* `DateTime`, not a
+  distinct type. It *is* a `DateTime`, so it inherits the instant/timezone bug
+  this whole design avoids.
+- **`time_machine`** — has a real `LocalDate`, but is effectively unmaintained
+  (last published years ago, still a self-described "preview") and pulls a full
+  Noda Time timezone/calendar engine in for `YYYY-MM-DD`.
+- **`date_time`** — a `Date` class, but tiny adoption (~20 likes, still 0.x,
+  Dart 3 / null-safety unconfirmed) — not stable enough to impose on consumers.
+- **`dateable`** — a `Date` class *backed by `DateTime` internally*, so it
+  reproduces the exact instant-backing footgun we reject; also low adoption and
+  ~2 years stale.
+
+Notably `dateable`, a purpose-built date package, still chose a `DateTime`
+backing — the ecosystem's date types don't reliably avoid the footgun, which is
+why ours states the reasoning in its own doc comment.
 
 This matters more for a code generator than for an app: every dependency we
 reach for is imposed transitively on **every consumer of every generated
