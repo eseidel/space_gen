@@ -568,6 +568,54 @@ void main() {
       );
     });
 
+    test('oneOf nullable idiom collapses to a nullable type', () {
+      // OpenAPI 3.1 spells `T?` as `oneOf: [{type: null}, T]` (Discord does
+      // this ~290 times). Strip the null arm and render the survivor
+      // nullable rather than a sealed class that can't dispatch on `null`.
+      final json = {
+        'oneOf': [
+          {'type': 'null'},
+          {'type': 'string'},
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(
+        schema,
+        isA<ResolvedString>().having(
+          (e) => e.common.nullable,
+          'nullable',
+          isTrue,
+        ),
+      );
+    });
+
+    test('oneOf nullable idiom keeps a real 3+ member union but nullable', () {
+      // With the null arm removed a genuine union survives; it stays a
+      // ResolvedOneOf, and the dropped null makes the union nullable.
+      final json = {
+        'oneOf': [
+          {'type': 'null'},
+          {'type': 'string'},
+          {'type': 'integer'},
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(
+        schema,
+        isA<ResolvedOneOf>()
+            .having((e) => e.schemas.length, 'schemas', equals(2))
+            .having((e) => e.common.nullable, 'nullable', isTrue),
+      );
+    });
+
     test('oneOf with discriminator + mapping resolves variants by '
         'identity', () {
       final json = {
