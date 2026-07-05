@@ -136,6 +136,9 @@ and its synthesized round-trip tests are expected to pass.
 - **[SpaceTraders](https://spacetraders.io)** — Complete.
 - **[Train Travel API](https://github.com/bump-sh-examples/train-travel-api)**
   (YAML, OpenAPI 3.1) — Complete.
+- **[Backstage catalog API](https://github.com/backstage/backstage/blob/master/plugins/catalog-backend/src/schema/openapi.yaml)**
+  (YAML, OpenAPI 3.1) — Complete. Exercises `JsonObject` / open-object `allOf`
+  members and `properties: {}` + `additionalProperties` maps.
 - **[Petstore](https://github.com/swagger-api/swagger-petstore)** (the
   OpenAPI canonical example) — Complete.
 
