@@ -80,11 +80,13 @@ generic value never sees it (cf. the `uriTemplate` TODO in `dart_type.dart`).
 Some behavior is a pure function of the Dart type (rendering, JSON wire type,
 the codec for `Uri`/`UriTemplate`/`String`/`bool`); the rest needs the *spec*
 type (`PodType`) because a many-to-one spec→Dart mapping loses information Dart
-can't recover. Today the only lossy cases are: `date` vs `date-time` (both
-`DartType.dateTime`, but different serialize/parse) and example/invalid-JSON
-fixtures (`email` vs `uuid` differ only there). Rule: **codec lives on the
-`DartType` extension, except where two spec formats collapse to one Dart type**
-— that residue stays keyed off `PodType` on the owning render node.
+can't recover. The remaining lossy case is example/invalid-JSON fixtures:
+`email` vs `uuid` are both `String` and differ only there. (`format: date` used
+to collapse onto `DartType.dateTime` alongside `date-time`, but it now has its
+own `Date` type — see `date_type.md` — so `DateTime` is 1:1 with `date-time`.)
+Rule: **codec lives on the `DartType` extension, except where two spec formats
+collapse to one Dart type** — that residue stays keyed off `PodType` on the
+owning render node.
 
 ## Remaining work
 
@@ -124,14 +126,16 @@ lives *on the render node*, `DartType` stays a pure value expression.
 and `bool` (JSON-native, identity), `Uri` and `UriTemplate` (`.toString()` /
 `Uri.parse` / `UriTemplate(…)`). `RenderPod` keeps exhaustive `PodType` cases
 (so a new format still won't compile until handled) but delegates their bodies
-to the extension; `date`/`date-time` stay resolved off `PodType` because the
-Dart type can't tell them apart. Unhandled types throw rather than guess.
+to the extension; `date-time` stays resolved off `PodType` for now (its codec
+hasn't been moved onto the extension yet — see below). Unhandled types throw
+rather than guess.
 
 Remaining folds toward the zod-like IR:
 
-- **`DateTime`** — decide whether the `date`/`date-time` split is worth pulling
-  into the codec (would need a spec-type discriminator the extension can see,
-  since both are `DartType.dateTime`), or whether it stays on `RenderPod`.
+- **`DateTime`** — now that `format: date` is split off into its own `Date` type
+  (#229), `DateTime` is 1:1 with `date-time`, so its codec (`DateTime.parse` /
+  `.toIso8601String()` / `maybeParseDateTime`) is a pure function of the Dart
+  type and could move onto the extension. Not yet done.
 - **Collection / object / enum conversion** — `RenderArray` / `RenderMap` /
   `RenderObject` / `RenderEnum` still hand-roll `fromJsonExpression` /
   `toJsonExpression`. These depend on context, nullability, and defaults, so
