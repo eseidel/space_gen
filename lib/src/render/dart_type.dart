@@ -53,6 +53,21 @@ class DartType extends Equatable {
   /// `Uint8List` (`dart:typed_data`) — binary field types.
   static const uint8List = DartType('Uint8List');
 
+  /// `DateTime` (`dart:core`) — `format: date` / `date-time` fields.
+  static const dateTime = DartType('DateTime');
+
+  /// `Uri` (`dart:core`) — `format: uri` fields.
+  static const uri = DartType('Uri');
+
+  /// `UriTemplate` (`package:uri`) — `format: uri-template` fields.
+  //
+  // TODO(eseidel): Unlike the other constants, this names a type from a
+  // third-party package, not the Dart SDK. If DartType ever generalizes into a
+  // project-agnostic type model, this project-specific constant should move out
+  // of the core class (e.g. a space_gen-side constant, or built at the use
+  // site) rather than living alongside the language-level types.
+  static const uriTemplate = DartType('UriTemplate');
+
   /// The `String` type.
   static const string = DartType('String');
 

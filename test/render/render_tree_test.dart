@@ -1598,14 +1598,14 @@ void main() {
     });
 
     test('wrappedType is the underlying Dart type regardless of newtype', () {
-      expect(pod(PodType.dateTime).wrappedType, const DartType('DateTime'));
+      expect(pod(PodType.dateTime).wrappedType, DartType.dateTime);
       expect(
         pod(PodType.dateTime, createsNewType: true).wrappedType,
-        const DartType('DateTime'),
+        DartType.dateTime,
       );
       expect(pod(PodType.email).wrappedType, DartType.string);
       expect(pod(PodType.uuid).wrappedType, DartType.string);
-      expect(pod(PodType.date).wrappedType, const DartType('DateTime'));
+      expect(pod(PodType.date).wrappedType, DartType.dateTime);
     });
 
     test('toJsonExpression delegates to .toJson() when a newtype', () {

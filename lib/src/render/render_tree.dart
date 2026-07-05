@@ -2560,13 +2560,13 @@ class RenderPod extends RenderSchema {
   /// and [dartTypeName].
   DartType get wrappedType => switch (type) {
     PodType.boolean => DartType.bool_,
-    PodType.dateTime => const DartType('DateTime'),
-    PodType.uri => const DartType('Uri'),
-    PodType.uriTemplate => const DartType('UriTemplate'),
+    PodType.dateTime => DartType.dateTime,
+    PodType.uri => DartType.uri,
+    PodType.uriTemplate => DartType.uriTemplate,
     // email and uuid are String subsets.
     PodType.email => DartType.string,
     PodType.uuid => DartType.string,
-    PodType.date => const DartType('DateTime'),
+    PodType.date => DartType.dateTime,
   };
 
   /// The name of [wrappedType], for templates that need the bare identifier.

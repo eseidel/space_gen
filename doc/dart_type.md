@@ -25,7 +25,10 @@ structure rather than string manipulation.
 Vocabulary:
 
 - **Constants:** `dynamic_`, `nullableObject` (`Object?`), `void_`,
-  `uint8List`, `string`, `bool_`, `int_`, `double_`, `num_`. Naming convention:
+  `uint8List`, `dateTime`, `uri`, `uriTemplate`, `string`, `bool_`, `int_`,
+  `double_`, `num_`. All name Dart SDK types except `uriTemplate`
+  (`package:uri`) — flagged with a TODO to move out if `DartType` ever
+  generalizes into a project-agnostic type model. Naming convention:
   a trailing `_` for the lowercase type names (`dynamic` / `void` / `bool` /
   `int` / `double` / `num`), plain lowercase `string` for the capitalized
   `String`.
