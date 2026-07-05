@@ -252,9 +252,13 @@ bool _parseSerialization(MapContext json, ParameterLocation location) {
   }
   final explode = _optional<bool>(json, 'explode');
   final defaultExplode = _defaultExplode(location);
-  // Query parameters honor both explode values (array + `explode: false`
-  // comma-joins into one value; see the query renderer). Other locations only
-  // emit their default wire format, so a non-default value there still warns.
+  // Query parameters honor both explode values *for scalars and arrays*
+  // (array + `explode: false` comma-joins into one value; see the query
+  // renderer). Object-shaped query params are not handled and no longer warn
+  // here — tracked separately in https://github.com/eseidel/space_gen/issues/233
+  // (query params need `_canBePathParameter`-style type validation). Other
+  // locations only emit their default wire format, so a non-default value
+  // there still warns.
   if (explode != null &&
       explode != defaultExplode &&
       location != ParameterLocation.query) {
