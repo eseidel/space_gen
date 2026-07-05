@@ -1,13 +1,46 @@
 # A generated `Date` type for `format: date`
 
+## What OpenAPI actually specifies: a serialization, not a type
+
+OpenAPI has no `date` type. Its type system is JSON Schema's — `string`,
+`number`, `integer`, `boolean`, `array`, `object`, `null` — and a date is just:
+
+```yaml
+type: string        # the actual type
+format: date        # an annotation on that string
+```
+
+`format` is an open, string-valued **annotation** layered on `type: string`,
+not a type of its own (in JSON Schema, which OpenAPI 3.1 defers to, `format` is
+officially annotation-only; assertion is opt-in and often unenforced). So
+`format: date` says nothing about an in-memory type — it constrains the
+**wire form**: an RFC 3339 *full-date*, `YYYY-MM-DD` (versus `format: date-time`,
+an RFC 3339 date-time). On the wire it is always a JSON string.
+
+That reframes the generator's job. The spec hands us a *serialization contract*
+("this field is a `YYYY-MM-DD` string"), and we materialize it into an idiomatic
+Dart type — the spec is silent on which one. So the design has two obligations,
+and they're separate:
+
+- **Honor the serialization exactly.** `Date.toJson()` emits `YYYY-MM-DD` and
+  `Date.fromJson` parses it, so on the wire we are byte-faithful to
+  `format: date`.
+- **Choose an in-memory type whose information content matches.** `format: date`
+  deliberately carries no time and no timezone, so mapping it to `DateTime`
+  (which always carries both) *over-represents* what the spec says. `Date`
+  (year/month/day) carries exactly what `format: date` constrains and nothing
+  more.
+
+Reading `format: date` as if it implied a `DateTime` was mistaking a
+serialization constraint for a richer type. That is the mismatch this fixes.
+
 ## The problem this solves
 
-OpenAPI distinguishes `format: date` (`YYYY-MM-DD`, RFC 3339 full-date) from
-`format: date-time`. Dart core has no date-only type — a long-standing gap
-tracked upstream as [dart-lang/sdk#49426][sdk-date] ("[Feature request] Date
-class, without time") — so the generator maps **both** onto `DateTime`. That
-mapping is lossy — a date has no time or timezone, but a `DateTime` always does
-— and every downstream hack exists to paper over the loss:
+Dart core has no date-only type — a long-standing gap tracked upstream as
+[dart-lang/sdk#49426][sdk-date] ("[Feature request] Date class, without time")
+— so the generator mapped both `format: date` and `format: date-time` onto
+`DateTime`. As above, that over-represents `date`, and every downstream hack
+existed to paper over the loss:
 
 [sdk-date]: https://github.com/dart-lang/sdk/issues/49426
 
