@@ -58,3 +58,6 @@ words:
   - readback
   - flaggable
   - mispredicting
+  - footgun
+  - inlineable
+  - Noda
