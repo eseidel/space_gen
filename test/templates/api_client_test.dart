@@ -89,5 +89,82 @@ void main() {
         );
       },
     );
+
+    // The query renderer builds the `List<String>` for each param. These
+    // tests pin what the *actual* sent URL looks like for the two shapes it
+    // produces, exercising the real `Uri.replace` encoding — not the
+    // generated source string.
+    test('array param (explode=true shape) repeats the key', () async {
+      Uri? captured;
+      final client = ApiClient(
+        baseUri: Uri.parse('https://example.com'),
+        client: MockClient((req) async {
+          captured = req.url;
+          return Response('', 200);
+        }),
+      );
+      await client.invokeApi(
+        method: Method.get,
+        path: '/things',
+        queryParameters: {
+          'tags': ['a', 'b', 'c'],
+        },
+      );
+      expect(
+        captured.toString(),
+        'https://example.com/things?tags=a&tags=b&tags=c',
+      );
+      expect(captured!.queryParametersAll['tags'], ['a', 'b', 'c']);
+    });
+
+    test('comma-joined array (explode=false shape) is one param', () async {
+      // `explode: false` renders a 1-element list holding the joined value;
+      // `Uri.replace` percent-encodes the comma (%2C), which the server
+      // decodes back to `a,b,c`.
+      Uri? captured;
+      final client = ApiClient(
+        baseUri: Uri.parse('https://example.com'),
+        client: MockClient((req) async {
+          captured = req.url;
+          return Response('', 200);
+        }),
+      );
+      await client.invokeApi(
+        method: Method.get,
+        path: '/things',
+        queryParameters: {
+          'tags': ['a,b,c'],
+        },
+      );
+      expect(captured.toString(), 'https://example.com/things?tags=a%2Cb%2Cc');
+      // A single value, and it decodes back to the comma-joined string.
+      expect(captured!.queryParametersAll['tags'], ['a,b,c']);
+    });
+
+    test('reserved characters in a value are percent-encoded', () async {
+      // Pins the `allowReserved: false` (default, and only) behavior we honor:
+      // reserved chars are escaped, so the URL is always valid and the server
+      // decodes them back. See parser `_parseSerialization`.
+      Uri? captured;
+      final client = ApiClient(
+        baseUri: Uri.parse('https://example.com'),
+        client: MockClient((req) async {
+          captured = req.url;
+          return Response('', 200);
+        }),
+      );
+      await client.invokeApi(
+        method: Method.get,
+        path: '/things',
+        queryParameters: {
+          'ref': ['kind:default/name'],
+        },
+      );
+      expect(
+        captured.toString(),
+        'https://example.com/things?ref=kind%3Adefault%2Fname',
+      );
+      expect(captured!.queryParametersAll['ref'], ['kind:default/name']);
+    });
   });
 }
