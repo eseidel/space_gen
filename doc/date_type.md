@@ -118,6 +118,24 @@ Cost, honestly: more generated code than an `extension type` wrapper, and `Date`
 is not itself a `DateTime` (conversions are explicit). That explicitness is the
 point — the type refuses to guess a timezone.
 
+### Why generate it instead of depending on a package
+
+We depend on `package:uri` for `UriTemplate` — so why not depend on a package
+for `Date`? Because the trade is the reverse. `UriTemplate` implements RFC 6570,
+which is genuinely hard to hand-roll, and `package:uri` is a focused, maintained,
+de-facto-standard package. A date is ~40 lines (year/month/day + ISO
+parse/format). And pub.dev has **no** lightweight, maintained date-only *type*:
+the only real calendar-date type, `time_machine`'s `LocalDate`, is effectively
+unmaintained (last published years ago, still a self-described "preview," drags
+in a full timezone/calendar engine); the popular "date" packages are formatters
+(`intl`, `jiffy`) or UI pickers, not types.
+
+This matters more for a code generator than for an app: every dependency we
+reach for is imposed transitively on **every consumer of every generated
+client**. `UriTemplate` earns that; a trivially-inlineable date does not.
+Generating a self-contained value class costs the consumer zero dependencies and
+keeps `Date` a one-place swap if the SDK ships one (#49426).
+
 ### Rejected: `extension type Date(DateTime)`
 
 Lighter and `DateTime`-interoperable (`.value` hands back a `DateTime`), and it
