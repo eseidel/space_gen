@@ -2555,22 +2555,26 @@ class RenderPod extends RenderSchema {
   @override
   List<Object?> get props => [super.props, type, defaultValue];
 
-  /// The name of the Dart type that represents this pod at the use site
-  /// (when inline) or that the newtype wraps (when a newtype).
-  String get dartTypeName => switch (type) {
-    PodType.boolean => 'bool',
-    PodType.dateTime => 'DateTime',
-    PodType.uri => 'Uri',
-    PodType.uriTemplate => 'UriTemplate',
+  /// The Dart type this pod represents at the use site (when inline) or that
+  /// the newtype wraps (when a newtype). The source of truth for [dartType]
+  /// and [dartTypeName].
+  DartType get wrappedType => switch (type) {
+    PodType.boolean => DartType.bool_,
+    PodType.dateTime => DartType.dateTime,
+    PodType.uri => DartType.uri,
+    PodType.uriTemplate => DartType.uriTemplate,
     // email and uuid are String subsets.
-    PodType.email => 'String',
-    PodType.uuid => 'String',
-    PodType.date => 'DateTime',
+    PodType.email => DartType.string,
+    PodType.uuid => DartType.string,
+    PodType.date => DartType.dateTime,
   };
+
+  /// The name of [wrappedType], for templates that need the bare identifier.
+  String get dartTypeName => wrappedType.toString();
 
   @override
   DartType get dartType =>
-      DartType(createsNewType ? _requireAssignedName() : dartTypeName);
+      createsNewType ? DartType(_requireAssignedName()) : wrappedType;
 
   // Boolean is the only PodType with a `is bool` test that's distinct
   // from the other JSON storage types (the date/uri/uuid/etc. all
@@ -4234,8 +4238,9 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
 
   /// The bare Dart type name of the enum's underlying value (e.g.
   /// `String`, `int`). Drives the template's `final <type> value`
-  /// declaration and `<type> toJson()` return type.
-  String get valueDartType;
+  /// declaration and `<type> toJson()` return type. Derived from
+  /// [jsonStorageDartType] — an enum's value type is its JSON wire type.
+  String get valueDartType => jsonStorageDartType.toString();
 
   @override
   String? get wrapperTag => typeName;
@@ -4255,9 +4260,6 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
     defaultValue,
     descriptions,
   ];
-
-  @override
-  DartType get jsonStorageDartType => DartType(valueDartType);
 
   /// Template context for an enum schema.
   @override
@@ -4347,7 +4349,7 @@ class RenderStringEnum extends RenderEnum<String> {
   String enumValueLiteral(String value) => quoteString(value);
 
   @override
-  String get valueDartType => 'String';
+  DartType get jsonStorageDartType => DartType.string;
 
   @override
   String? invalidJsonExample(SchemaRenderer context) =>
@@ -4369,7 +4371,7 @@ class RenderIntEnum extends RenderEnum<int> {
   String enumValueLiteral(int value) => value.toString();
 
   @override
-  String get valueDartType => 'int';
+  DartType get jsonStorageDartType => DartType.int_;
 
   @override
   String? invalidJsonExample(SchemaRenderer context) {
