@@ -1,4 +1,5 @@
 import 'package:space_gen/src/quirks.dart';
+import 'package:space_gen/src/render/dart_type.dart';
 import 'package:space_gen/src/render/render_tree.dart';
 import 'package:space_gen/src/render/schema_renderer.dart';
 import 'package:space_gen/src/render/templates.dart';
@@ -1596,15 +1597,15 @@ void main() {
       expect(pod(PodType.date, createsNewType: true).typeName, 'FooBar');
     });
 
-    test('dartTypeName is the underlying Dart type regardless of newtype', () {
-      expect(pod(PodType.dateTime).dartTypeName, 'DateTime');
+    test('wrappedType is the underlying Dart type regardless of newtype', () {
+      expect(pod(PodType.dateTime).wrappedType, const DartType('DateTime'));
       expect(
-        pod(PodType.dateTime, createsNewType: true).dartTypeName,
-        'DateTime',
+        pod(PodType.dateTime, createsNewType: true).wrappedType,
+        const DartType('DateTime'),
       );
-      expect(pod(PodType.email).dartTypeName, 'String');
-      expect(pod(PodType.uuid).dartTypeName, 'String');
-      expect(pod(PodType.date).dartTypeName, 'DateTime');
+      expect(pod(PodType.email).wrappedType, DartType.string);
+      expect(pod(PodType.uuid).wrappedType, DartType.string);
+      expect(pod(PodType.date).wrappedType, const DartType('DateTime'));
     });
 
     test('toJsonExpression delegates to .toJson() when a newtype', () {

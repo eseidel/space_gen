@@ -44,9 +44,27 @@ so `.list` and `.map` are non-const; the scalar / well-known types stay const.
 derives from `jsonStorageDartType`. The generated `operator[]`'s return type
 comes from `DartType.commonType`.
 
+Every remaining string-typed type surface now *derives* from a `DartType`
+rather than being a parallel source of truth: `RenderPod.dartTypeName` renders
+from `RenderPod.wrappedType` (a `DartType`), and `RenderEnum.valueDartType`
+renders from `jsonStorageDartType` (an enum's value type *is* its JSON wire
+type). DartType is the single source of truth for "what Dart type is this."
+
 Landed across PRs #222 (model + `operator[]` common-type), #223 (`dartType`
-made authoritative), and #224 (JSON wire type + the constant/constructor
-vocabulary). The string-typed surfaces are converted.
+made authoritative), #224 (JSON wire type + the constant/constructor
+vocabulary), and #226 (string surfaces inverted to derive from DartType).
+
+## North star
+
+The direction this is heading: `DartType` becomes a small, zod-like type IR
+that the whole pipeline translates *into*. Much of what the generator does is
+"read a generic type spec (JSON/YAML) → emit an idiomatic Dart type"; the more
+that logic lives as *behavior on `DartType`* (rendering, nullability,
+common-type, and eventually JSON conversion) rather than per-node `switch`
+statements over `PodType`/subclass, the thinner the `Render*` layer gets.
+Inverting the last string surfaces (above) was the precondition: you can't
+safely hang behavior on `DartType` while some nodes still compute their type as
+a bare string that bypasses it.
 
 ## Remaining work
 
@@ -71,10 +89,20 @@ fields and `additionalProperties` value all share a single type — and no spec
 in the test set has one, so building it now is speculative (see the
 require-a-real-validation-target rule).
 
-### Newtype wrapped type
+### Newtype wrapped type (done — #226)
 
-A newtype's wrapped underlying type (e.g. a `DateTime`-backed newtype) is a
-`RenderPod` concern — `RenderPod.dartTypeName` (a `String`) today — not a
-`DartType` accessor. It could become a structured `wrappedType` field *on
-`RenderPod`* if newtype rendering migrates onto `DartType`, but it stays off
-the value type.
+A newtype's wrapped underlying type (e.g. a `DateTime`-backed newtype) is now
+`RenderPod.wrappedType` — a `DartType` on `RenderPod`, not a bare string and
+not a field on the value type. `dartTypeName` renders from it for templates
+that need the bare identifier. This confirmed the design: structured type data
+lives *on the render node*, `DartType` stays a pure value expression.
+
+### Fold JSON conversion onto DartType (next)
+
+The largest remaining `switch`-heavy surface is per-node
+`fromJsonExpression` / `toJsonExpression`. As the pipeline moves toward the
+zod-like IR (see **North star**), these are the natural next candidates to
+become behavior driven by a `DartType` (+ its `jsonStorageDartType`) codec
+pair rather than per-subclass overrides. Not yet attempted; they also depend on
+context, nullability, and defaults, so this is a larger step than the string
+inversions.
