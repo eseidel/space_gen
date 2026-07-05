@@ -3,10 +3,13 @@
 ## The problem this solves
 
 OpenAPI distinguishes `format: date` (`YYYY-MM-DD`, RFC 3339 full-date) from
-`format: date-time`. Dart has no date-only type, so the generator maps **both**
-onto `DateTime`. That mapping is lossy — a date has no time or timezone, but a
-`DateTime` always does — and every downstream hack exists to paper over the
-loss:
+`format: date-time`. Dart core has no date-only type — a long-standing gap
+tracked upstream as [dart-lang/sdk#49426][sdk-date] ("[Feature request] Date
+class, without time") — so the generator maps **both** onto `DateTime`. That
+mapping is lossy — a date has no time or timezone, but a `DateTime` always does
+— and every downstream hack exists to paper over the loss:
+
+[sdk-date]: https://github.com/dart-lang/sdk/issues/49426
 
 - `RenderPod._valueToJsonBody` truncates `date` with
   `.toIso8601String().substring(0, 10)`.
@@ -84,10 +87,13 @@ non-const.
 
 ### Alternative: a `Date` value class (`{int year, month, day}`)
 
-Hard-enforces date-only and is the most "correct". Rejected as the default
-because it diverges from the extension-type newtype idiom, adds real interop
-friction (no `DateTime` without a conversion), and is more generated code — a
-poor trade when the wire contract is already safe.
+Hard-enforces date-only and is the most "correct" — and it's the shape the
+upstream proposal [dart-lang/sdk#49426][sdk-date] takes (year/month/day + date
+arithmetic). Rejected as our default because it diverges from the extension-type
+newtype idiom, adds real interop friction (no `DateTime` without a conversion),
+and is more generated code — a poor trade when normalization already keeps the
+in-memory invariant. If Dart ships a first-class `Date`, we'd migrate to it
+(see open questions).
 
 ## One canonical type
 
@@ -171,3 +177,8 @@ one) so the round-trip test exercises `Date`'s normalization across the wire.
    equal.)
 3. Whether a matching `Time` type (`format: time`, if/when supported) follows
    the same pattern later.
+4. Migration if Dart core ships a first-class date type
+   ([dart-lang/sdk#49426][sdk-date]): our `Date` is a stopgap for that gap.
+   Because every date field already funnels through the single `Date` type,
+   swapping its implementation (or aliasing to the SDK type) would be a
+   one-place change — the whole point of one canonical type.
