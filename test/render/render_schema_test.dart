@@ -2828,6 +2828,68 @@ void main() {
       expect(rule, isNot(contains('UnimplementedError')));
     });
 
+    test(r'variants tagged by a $ref-to-enum pinned with a single-value '
+        'enum dispatch on the pinned constant', () {
+      // Discord's auto-moderation-action shape: each variant tags its
+      // shared `type` field via the OpenAPI-3.0 idiom
+      // `allOf: [{$ref: ActionType}]` + a single-value `enum` pinning the
+      // member. The field still renders as the shared enum `ActionType`;
+      // the pinned value is the implicit discriminator.
+      final results = renderTestSchemas(
+        {
+          'Action': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/BlockAction'},
+              {r'$ref': '#/components/schemas/FlagAction'},
+            ],
+          },
+          'ActionType': {
+            'type': 'integer',
+            'enum': [1, 2],
+          },
+          'BlockAction': {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'integer',
+                'enum': [1],
+                'allOf': [
+                  {r'$ref': '#/components/schemas/ActionType'},
+                ],
+              },
+            },
+            'required': ['type'],
+          },
+          'FlagAction': {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'integer',
+                'enum': [2],
+                'allOf': [
+                  {r'$ref': '#/components/schemas/ActionType'},
+                ],
+              },
+            },
+            'required': ['type'],
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final action = results['Action'];
+      expect(action, isNotNull);
+      expect(action, contains('sealed class Action'));
+      expect(action, contains("final discriminator = json['type']"));
+      // Dispatch routes on the pinned integer constants, not the full
+      // ActionType value set.
+      expect(action, contains('1 => BlockAction.fromJson(json)'));
+      expect(action, contains('2 => FlagAction.fromJson(json)'));
+      // The field keeps the shared enum type — no throwaway per-variant
+      // single-value enum.
+      expect(action, contains('final ActionType type'));
+      expect(action, isNot(contains('UnimplementedError')));
+    });
+
     test('discriminator dispatch smooshes inline-object variants: case '
         'arms call the variant directly, no wrapper class', () {
       // Same shape as the implicit-discriminator test above, but

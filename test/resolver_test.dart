@@ -1662,6 +1662,7 @@ void main() {
           properties: const {},
           additionalProperties: null,
           requiredProperties: const [],
+          constProperties: const {},
         );
         final schema2 = ResolvedObject(
           common: CommonProperties.test(
@@ -1674,6 +1675,7 @@ void main() {
           properties: const {},
           additionalProperties: null,
           requiredProperties: const [],
+          constProperties: const {},
         );
         expect(schema1, equals(schema1));
         // Different pointer.
@@ -1944,6 +1946,7 @@ void main() {
           properties: const {},
           additionalProperties: null,
           requiredProperties: const [],
+          constProperties: const {},
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.properties, equals(schema.properties));

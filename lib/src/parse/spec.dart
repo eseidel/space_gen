@@ -414,6 +414,7 @@ class SchemaObject extends SchemaObjectBase {
     required this.requiredProperties,
     required this.additionalProperties,
     required this.defaultValue,
+    required this.constProperties,
   }) {
     if (snakeName.isEmpty) {
       throw ArgumentError.value(
@@ -429,6 +430,16 @@ class SchemaObject extends SchemaObjectBase {
 
   /// The required properties of this schema.
   final List<String> requiredProperties;
+
+  /// Properties pinned to a single constant value by the OpenAPI-3.0
+  /// idiom `allOf: [{$ref: E}]` + single-value `enum`/`const` — "a value
+  /// of enum E fixed to one member." The property still resolves to the
+  /// plain `E` ref (so the field renders as `E`); this map records the
+  /// constant separately so the dispatch pass can use it as an implicit
+  /// discriminator tag. Keyed by property name; values are `int` or
+  /// `String`. Multi-value narrowings are a restricted view, not a tag
+  /// (see issue #235), and are not recorded here.
+  final Map<String, Object> constProperties;
 
   /// The additional properties of this schema.
   /// Used for specifying T for Map\<String, T\>.
