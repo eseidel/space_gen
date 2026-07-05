@@ -593,6 +593,7 @@ List<ResolvedParameter> _resolveParameters(
         schema: type,
         example: resolved.example,
         examples: resolved.examples,
+        explode: resolved.explode,
       );
     });
   }).toList();
@@ -1091,6 +1092,7 @@ class ResolvedParameter {
     required this.schema,
     required this.example,
     required this.examples,
+    required this.explode,
   });
 
   /// The name of the resolved parameter.
@@ -1098,6 +1100,9 @@ class ResolvedParameter {
 
   /// The in of the resolved parameter.
   final ParameterLocation inLocation;
+
+  /// The effective OpenAPI `explode` (see [Parameter.explode]).
+  final bool explode;
 
   /// The description of the resolved parameter.
   final String? description;

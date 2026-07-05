@@ -80,6 +80,7 @@ void main() {
         inLocation: ParameterLocation.query,
         example: null,
         examples: null,
+        explode: true,
       );
       expect(parameter.dartParameterName(quirks), 'aB');
     });
@@ -104,6 +105,7 @@ void main() {
         inLocation: ParameterLocation.header,
         example: null,
         examples: null,
+        explode: true,
       );
       expect(parameter.dartParameterName(quirks), 'apiKey');
     });
@@ -141,6 +143,7 @@ void main() {
         inLocation: ParameterLocation.query,
         example: null,
         examples: null,
+        explode: true,
       );
       // The Dart-visible identifier gets `_` appended so it compiles;
       // the spec-side name and its bracketed form keep the original
