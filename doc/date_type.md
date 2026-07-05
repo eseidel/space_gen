@@ -32,68 +32,100 @@ Apply it only where the distinction is *semantically real*. `date` earns a type
 honestly just `String`, differing only in an example fixture; minting wrapper
 types there would be strong-typing for its own sake.
 
-## Representation (decided: extension type)
+## Representation (decided: value class)
 
-### `extension type const Date(DateTime _value)`
-
-A generated support type emitted once per package (pruned when no `date` field
-exists), owning its own JSON codec:
+`Date` is a generated value class of `year`/`month`/`day` — **not** a wrapper
+around `DateTime`. It's emitted once per package (pruned when no `date` field
+exists) and owns its own JSON codec. The doc comment on the generated type
+explains the choice so a reader isn't tempted to "simplify" it back to a
+`DateTime`:
 
 ```dart
-/// An RFC 3339 full-date (`YYYY-MM-DD`). Any [DateTime] is normalized to UTC
-/// midnight on construction, so the value carries only a date — no time, no
+/// An RFC 3339 full-date (`YYYY-MM-DD`): a calendar day, with no time and no
 /// timezone.
-extension type Date._(DateTime value) {
-  /// Normalizes any [DateTime] to UTC midnight; only the date survives.
-  Date(DateTime dateTime)
-    : this._(DateTime.utc(dateTime.year, dateTime.month, dateTime.day));
+///
+/// Deliberately a plain year/month/day value class rather than a wrapper around
+/// [DateTime]. A [DateTime] is a specific *instant*, so any date backed by one
+/// leaks a timezone bug that no normalization can close: stored as UTC midnight
+/// it reads as the *previous day* under `.toLocal()` in negative-offset zones;
+/// stored as local midnight it breaks the wire round-trip and hits the DST
+/// "no midnight" gap. A date is not an instant, so this type does not hold one.
+/// Converting to a [DateTime] therefore forces you to choose the timezone
+/// explicitly — [toUtcDateTime] / [toLocalDateTime], no silent default.
+///
+/// Dart core has no date-only type (see dart-lang/sdk#49426); if it gains one,
+/// this becomes an alias for it.
+class Date implements Comparable<Date> {
+  const Date(this.year, this.month, this.day);
 
+  /// Parses an RFC 3339 full-date. Only the calendar components are read — the
+  /// string is never treated as an instant — so the result is timezone-free.
   factory Date.fromJson(String json) {
-    final d = DateTime.parse(json);
-    return Date._(DateTime.utc(d.year, d.month, d.day));
+    final dateTime = DateTime.parse(json);
+    return Date(dateTime.year, dateTime.month, dateTime.day);
   }
 
-  /// `YYYY-MM-DD` — the first 10 chars of ISO-8601.
-  String toJson() => value.toIso8601String().substring(0, 10);
+  /// Nullable convenience for optional fields.
+  static Date? maybeFromJson(String? json) =>
+      json == null ? null : Date.fromJson(json);
+
+  final int year;
+  final int month;
+  final int day;
+
+  String toJson() =>
+      '${year.toString().padLeft(4, '0')}-'
+      '${month.toString().padLeft(2, '0')}-'
+      '${day.toString().padLeft(2, '0')}';
+
+  /// This date at midnight UTC. You must pick the timezone; there is no default.
+  DateTime toUtcDateTime() => DateTime.utc(year, month, day);
+
+  /// This date at midnight in the local timezone.
+  DateTime toLocalDateTime() => DateTime(year, month, day);
+
+  @override
+  bool operator ==(Object other) =>
+      other is Date &&
+      year == other.year &&
+      month == other.month &&
+      day == other.day;
+
+  @override
+  int get hashCode => Object.hash(year, month, day);
+
+  /// Zero-padded `toJson` compares lexicographically == chronologically.
+  @override
+  int compareTo(Date other) => toJson().compareTo(other.toJson());
+
+  @override
+  String toString() => toJson();
 }
 ```
 
-Why this one:
+Why the value class:
 
-- **Matches the existing idiom.** Every newtype the generator emits is already
-  an `extension type … ._(…)` with `fromJson`/`toJson`. `Date` is just another
-  one, so it flows through the *existing* newtype codec path — a `date` field
-  renders `Date`, serializes with `value.toJson()`, parses with
-  `Date.fromJson(json as String)`. No new machinery.
-- **Zero-cost and DateTime-interoperable.** `.value` hands back a `DateTime` for
-  arithmetic/formatting; users aren't forced through a foreign calendar type.
-- **Normalizes on construction**, so the date-only invariant holds *in memory*,
-  not just on the wire — `Date(anyDateTime)` can't serialize wrong. Truncation
-  lives in one place (`Date.toJson`) instead of at every use site.
+- **No timezone footgun.** The whole reason `date`-on-`DateTime` is a hazard is
+  that a `DateTime` is an instant; a value class holds none, so there is nothing
+  to convert wrong. Getting a `DateTime` out is explicit and names its zone.
+- **`const`-constructible**, so `format: date` defaults can stay `const` — and
+  structural `==`/`hashCode` mean two `Date`s for the same day are equal without
+  any normalization dance.
+- **Forward-compatible.** It mirrors the upstream proposal's shape
+  ([dart-lang/sdk#49426][sdk-date]), so a native SDK `Date` is a drop-in later.
 
-**Timezone anchor:** normalize to **UTC** midnight, not local. `DateTime.parse`
-of a bare `YYYY-MM-DD` returns *local* midnight, so without a fixed anchor the
-round-trip `value == Date.fromJson(value.toJson())` fails on the timezone even
-when the date matches — this is exactly why the current generator's date
-example is fiddly (forced to use a *local* `DateTime` to survive the round
-trip). Anchoring both construction and parse to UTC also sidesteps the
-local-DST-gap edge case (locales where local midnight doesn't exist on a
-spring-forward day). With normalization in place the round-trip example is just
-`Date(DateTime.utc(2024, 1, 1))` — no local-vs-UTC dance.
+Cost, honestly: more generated code than an `extension type` wrapper, and `Date`
+is not itself a `DateTime` (conversions are explicit). That explicitness is the
+point — the type refuses to guess a timezone.
 
-Cost: construction runs code, so `Date` is **not** `const` (unlike the scalar
-newtypes). Consistent — the generator already treats `format: date` defaults as
-non-const.
+### Rejected: `extension type Date(DateTime)`
 
-### Alternative: a `Date` value class (`{int year, month, day}`)
-
-Hard-enforces date-only and is the most "correct" — and it's the shape the
-upstream proposal [dart-lang/sdk#49426][sdk-date] takes (year/month/day + date
-arithmetic). Rejected as our default because it diverges from the extension-type
-newtype idiom, adds real interop friction (no `DateTime` without a conversion),
-and is more generated code — a poor trade when normalization already keeps the
-in-memory invariant. If Dart ships a first-class `Date`, we'd migrate to it
-(see open questions).
+Lighter and `DateTime`-interoperable (`.value` hands back a `DateTime`), and it
+matches the existing newtype idiom. Rejected because that interoperability *is*
+the liability: the exposed `DateTime` is an instant, so `.value.toLocal()` is
+off by a day in negative-offset zones, and no choice of anchor (UTC vs local
+midnight) is safe in every direction. Normalizing on construction hides it in
+memory but the leak returns the moment anyone touches the underlying instant.
 
 ## One canonical type
 
@@ -120,8 +152,7 @@ question as `email`/`uuid`, orthogonal to this work. Default: collapse to
 
 `Date` is a single generated support type (a static template, emitted once and
 pruned when no date field exists, like `ModelHelpers`/`auth.dart`). It owns the
-entire date codec — normalization, parse, truncating serialize — so nothing
-else has to:
+entire date codec — parse, serialize, comparison — so nothing else has to:
 
 - **Parse/resolve:** `format: date` yields `PodType.date` as today, but a schema
   that is *nothing but* a date pod resolves to the `Date` type instead of a
@@ -129,7 +160,7 @@ else has to:
 - **`RenderPod`'s date codec disappears.** A `date` field references `Date`, so
   its use sites are the standard `value.toJson()` / `Date.fromJson(json as
   String)`. The truncating serialize, `DateTime.parse`, `maybeParseDate`, and
-  the local-vs-UTC example logic all move into (or are subsumed by) the one
+  the local-vs-UTC example logic all vanish — they're subsumed by the one
   hand-written `Date` type. `PodType.date`'s branches in `_valueToJsonBody` /
   `_jsonToValueBody` / `fromJsonExpression` / `exampleValue` / `wrappedType`
   are removed.
@@ -145,23 +176,25 @@ reference to one canonical `Date` type — the same shape as a
 **Public-API change** to generated clients: every `format: date` field is
 `Date` instead of `DateTime`, and pure-date named schemas (e.g. `DateType`)
 collapse to `Date` (their per-schema file stops being generated). A quality
-improvement — one date-only type, normalized, no spurious midnight/timezone —
-but user-visible, so golden fixtures update and round-trip tests exercise
-`Date`.
+improvement — one timezone-free date type instead of a `DateTime` with a
+spurious instant — but user-visible, so golden fixtures update and round-trip
+tests exercise `Date`.
 
 ## Validation target
 
 The `types` gen_test already exercises a `format: date` schema (`DateType`)
 end-to-end (generate → `dart format`/`fix` → round-trip). Under this change
 `DateType` resolves to `Date`; keep a date field (named and/or add an inline
-one) so the round-trip test exercises `Date`'s normalization across the wire.
+one) so the round-trip test exercises `Date` across the wire.
 
 ## Decisions
 
 - **One canonical `Date`** — `format: date` resolves to it everywhere; no
   per-schema date wrappers.
-- **Representation:** `extension type Date(DateTime)` that normalizes to UTC
-  midnight on construction (not `const`). Value class rejected.
+- **Representation:** a `year`/`month`/`day` **value class** (`const`,
+  structural `==`, `Comparable`), *not* an `extension type` over `DateTime` —
+  because a `DateTime` is an instant and leaks a timezone bug. The generated
+  type's doc comment states this rationale.
 - **Named pure-date schemas** resolve to `Date`; nominal-distinction wrappers
   punted with the `email`/`uuid` question.
 
@@ -170,11 +203,10 @@ one) so the round-trip test exercises `Date`'s normalization across the wire.
 1. How `Date` is emitted and how a "pure pod schema" is recognized at
    resolve/render time (so it aliases to `Date` rather than minting a newtype).
    Resolve during implementation.
-2. Should `Date` expose conveniences (`year`/`month`/`day` getters, `compareTo`,
-   `operator ==`) or stay minimal? Start minimal; add when a spec/user motivates
-   it. (Extension-type `==` delegates to the wrapped `DateTime`, which is why
-   UTC-midnight normalization matters — two `Date`s for the same day compare
-   equal.)
+2. `Date` ships minimal (`fromJson`/`toJson`/`maybeFromJson`, `==`/`hashCode`,
+   `compareTo`, `toUtcDateTime`/`toLocalDateTime`). Further conveniences
+   (`weekday`, `addDays`, `difference`) are deferred until a spec/user motivates
+   them — resisting the urge to grow a date-math library.
 3. Whether a matching `Time` type (`format: time`, if/when supported) follows
    the same pattern later.
 4. Migration if Dart core ships a first-class date type
