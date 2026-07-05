@@ -139,10 +139,28 @@ void main() {
       // `format: date` resolves to ResolvedDate (the `Date` value class), not
       // a pod. See doc/date_type.md.
       final dateSpec = parseAndResolveTestSpec(specWithPodPathParam('date'));
-      expect(
-        dateSpec.paths.first.operations.first.parameters.first.schema,
-        isA<ResolvedDate>(),
+      final dateSchema =
+          dateSpec.paths.first.operations.first.parameters.first.schema;
+      expect(dateSchema, isA<ResolvedDate>());
+      expect((dateSchema as ResolvedDate).createsNewType, isFalse);
+    });
+
+    test('ResolvedDate.copyWith swaps common and keeps the default', () {
+      const common = CommonProperties.test(
+        snakeName: 'd',
+        pointer: JsonPointer.empty(),
       );
+      const date = ResolvedDate(common: common, defaultValue: '2020-01-01');
+      final copied = date.copyWith(
+        common: const CommonProperties.test(
+          snakeName: 'e',
+          pointer: JsonPointer.empty(),
+        ),
+      );
+      expect(copied.defaultValue, '2020-01-01');
+      expect(copied.common.snakeName, 'e');
+      // Omitting common keeps the original.
+      expect(date.copyWith().common.snakeName, 'd');
     });
 
     test('path parameters can be oneOf of strings or integers', () {

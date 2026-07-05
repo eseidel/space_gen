@@ -1612,6 +1612,28 @@ void main() {
 
     test('example is a Date value-class literal', () {
       expect(date.exampleValue(context), 'Date(2024, 1, 1)');
+      expect(date.invalidJsonExample(context), "'not a date'");
+    });
+
+    test('a spec default parses through Date.fromJson', () {
+      const withDefault = RenderDate(
+        common: common,
+        defaultValue: '2020-01-01',
+      );
+      expect(
+        withDefault.defaultValueString(context),
+        "Date.fromJson('2020-01-01')",
+      );
+      expect(date.defaultValueString(context), isNull);
+    });
+
+    test('equality includes the default; toTemplateContext throws', () {
+      expect(date, const RenderDate(common: common, defaultValue: null));
+      expect(
+        date,
+        isNot(const RenderDate(common: common, defaultValue: '2020-01-01')),
+      );
+      expect(() => date.toTemplateContext(context), throwsUnimplementedError);
     });
   });
 
@@ -1774,6 +1796,12 @@ void main() {
         );
       },
     );
+
+    test('invalidJsonExample is non-null only for dateTime', () {
+      expect(pod(PodType.dateTime).invalidJsonExample(context), "'not a date'");
+      expect(pod(PodType.uri).invalidJsonExample(context), isNull);
+      expect(pod(PodType.email).invalidJsonExample(context), isNull);
+    });
 
     test('defaultValueString wraps in typeName constructor when a newtype', () {
       const newtypeBool = RenderPod(

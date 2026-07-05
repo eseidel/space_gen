@@ -1747,6 +1747,68 @@ void main() {
       );
     });
 
+    test('with date generates the shared Date type', () async {
+      final fs = MemoryFileSystem.test();
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'operationId': 'get-user',
+              'responses': {
+                '200': {
+                  'description': 'Default Response',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'properties': {
+                          'birthday': {'type': 'string', 'format': 'date'},
+                          // A defaulted date exercises defaultValueString.
+                          'joined': {
+                            'type': 'string',
+                            'format': 'date',
+                            'default': '2020-01-01',
+                          },
+                        },
+                        'required': ['birthday'],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+      final out = fs.directory('spacetraders');
+      await renderToDirectory(spec: spec, outDir: out);
+
+      // The shared Date value class is emitted once and re-exported.
+      final dateFile = out.childFile('lib/date.dart');
+      expect(dateFile.existsSync(), isTrue);
+      expect(dateFile.readAsStringSync(), contains('class Date'));
+      expect(
+        out.childFile('lib/api.dart').readAsStringSync(),
+        contains("export 'package:spacetraders/date.dart';"),
+      );
+
+      // The model references Date (not DateTime) and imports it.
+      final model = out
+          .childFile('lib/messages/get_user200_response.dart')
+          .readAsStringSync();
+      expect(model, contains("import 'package:spacetraders/date.dart';"));
+      expect(model, contains('Date birthday'));
+      expect(model, contains("Date.fromJson(json['birthday'] as String)"));
+      expect(model, contains('birthday.toJson()'));
+      // The defaulted field parses through Date.fromJson at the default site.
+      expect(model, contains("Date.fromJson('2020-01-01')"));
+    });
+
     test('with array', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
