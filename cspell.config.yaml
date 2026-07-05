@@ -23,6 +23,7 @@ words:
   - octocat
   - regen
   - dispatchable
+  - undispatchable
   - unioned
   - watchcrunch
   - dedup
