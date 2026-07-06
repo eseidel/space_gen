@@ -126,3 +126,24 @@ Two reasons it didn't earn its keep:
 `RenderPod` keeps its inline per-`PodType` codec. If a *second* caller ever
 appears — e.g. parameter serialization needing a scalar's wire form without a
 `RenderSchema` in hand — revisit.
+
+### Example-value generation (and its const-ness) stays off DartType
+
+Same rule as JSON conversion, for the same reason. Generating a schema's
+example value (`RenderSchema.exampleValue`, used by the round-trip tests) and
+deciding whether that example is a compile-time **constant** are functions of
+schema *structure*, not of `DartType`:
+
+- Scalars are a pure function of the type (`'false'`, `DateTime.utc(2024)`,
+  `Uri.parse(...)`), so const-ness *could* live on `DartType` — but that's the
+  scalar-only case that #227 showed doesn't generalize.
+- An object's example is `Foo(field: <field example>, ...)`, const iff its
+  constructor is const (`canBeConst` = `assignmentsLine == null`, schema
+  structure) **and** every field example is const (recursion over the object's
+  fields). `DartType` (a name + type args) deliberately doesn't carry fields.
+
+So when the const-example refactor happens (making the generated round-trip
+tests' example instances `const` to close `prefer_const_constructors` — see the
+`spec-iteration` skill's state doc), it is a `bool exampleValueIsConst(context)`
+**sibling to `exampleValue` on `RenderSchema`**, recursive through composites —
+not anything on `DartType`.

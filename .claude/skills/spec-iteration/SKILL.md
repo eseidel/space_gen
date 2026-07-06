@@ -14,6 +14,178 @@ description: |
   any spec-driven follow-up.
 ---
 
+# State as of 2026-07-06 (the `dart fix` reduction arc)
+
+This block supersedes the older sections for current status. It
+documents an in-progress arc; earlier blocks are retained for
+history.
+
+## The arc: stop leaning on `dart fix`
+
+Profiling generation speed (via the Dart VM profiler, and by
+timing the internal subprocess logs) found that **`dart fix
+--apply` dominates wall-clock**: ~47s of github's ~57s total, vs
+~7s for space_gen's own Dart code and ~3s for the two `dart
+format` passes. github is the slowest spec; discord ~23s
+(fix ~14s).
+
+**The pivotal finding: `dart fix` is _analysis-bound_, not
+apply-bound.** Its cost is repeated whole-package static-analysis
+passes over 1000+ files, essentially independent of how many
+fixes it applies. Removing ~4,300 `unused_import` fixes (#250)
+shaved only ~2.6s / 5.5% off it. So closing one lint category at
+the generator gives **~no wall-clock win on its own** — the payoff
+only lands at the *very end*, when every category is clean enough
+that the generated package is `dart analyze`-clean without fix and
+the `_runDart(['fix', ...])` call in
+`lib/src/render/formatting.dart` (`Formatter.formatAndFix`) can be
+deleted. Even a fully-clean package pays ~7s for `dart fix` to
+confirm nothing, so dropping the call reclaims that too. Target:
+github ~57s → ~10s.
+
+`dart fix` is **load-bearing** for the "analyze-clean output"
+promise: the generated package includes `very_good_analysis`, so
+every category fix currently cleans would otherwise fail a
+consumer's `dart analyze` (fix-disabled petstore alone has 112
+issues; github ~35k). So the categories can't just be ignored —
+they must be emitted clean.
+
+Each PR in the arc moves one lint category from "laundered by
+`dart fix`" to "emitted clean by the generator." Because `dart
+fix` was already applying the transform, the **final post-fix
+output stays byte-identical** — that's the validation gate (see
+below). These are output-quality / correct-generation wins, not
+individually perf wins.
+
+## Landed this arc (all merged unless noted)
+
+| PR | Lint closed (github raw count) | Where / fix |
+|---|---|---|
+| #249 | `unnecessary_this` (6307) | `==` body emitted `this.field == other.field`; drop `this.` except for a field literally named `other` (which the `Object other` param shadows — a real bug caught in A/B: `mapsEqual(other, other.other)`). `equalsExpression` + `_equalsReceiver` guard. |
+| #250 | `unused_import` (4337; 97.6% model imports) | `importsForApi`/`importsForModel` imported the whole schema subtree; now gate each import on a `referencedIdentifiers(body)` token scan (mirrors `_referencedModelHelpers`). Closed the pre-existing TODO. |
+| #251 | `unnecessary_brace_in_string_interps` (2014) + `unnecessary_string_interpolations` (1617) | `_pathArgLine` wrapped path params in `'${x}'`; String params substitute bare (`replaceAll('{org}', org)`), non-String interpolate braceless (`'$petId'`). One fix, two categories. |
+| #252 | `noop_primitive_operations` (2045) | `.toString()` on already-`String` values: `response.body.toString()` → `response.body` (template); query/header param `_stringifyWireValue` helper; enum `toString()` gated on new `valueIsString` (int enums keep `.toString()`). |
+| #253 | `prefer_const_constructors_in_immutables` (1185) | `@immutable` model ctors now `const` via `canBeConst` = `!mutableModels && assignmentsLine == null`. Smooshed variants covered (sealed parent already `const`). **Cascade:** making ctors const raised `prefer_const_constructors` at call sites (40→987, mostly generated tests) — see "what's next." |
+| #254 | `always_put_required_named_parameters_first` (946) | Constructor params partitioned required-first (stable); only the ctor reorders (fields/toJson/etc. keep spec order). `entries` (additionalProperties, always required) renders between the two groups. |
+| #255 | `unnecessary_parenthesis` (778) | `RenderNumeric.fromJsonExpression` wrapped bare casts: `(json['id'] as int)`. Drop parens only when no `.toDouble()` and no `?? default` (keeping `(x as int?) ?? 0` matches fix). |
+| #256 | `avoid_redundant_argument_values` (681) | Three sources: `bodyContentType: BodyContentType.json` (invokeApi default — `defaultBodyContentTypeExpression` constant + `isDefaultBodyContentType` compare; the JSON body still declares json *literally*); `DateTime.utc(2024, 1, 1)` → `DateTime.utc(2024)` (month/day default to 1); example args equal to a const field default skipped in `RenderObject.exampleValue`. |
+| #257 | `prefer_final_locals` (68) — **OPEN as of this writing** | Shape-dispatch `switch` patterns emitted `Map<String, dynamic> v =>` without `final`; other dispatch sections already had it. One-word template fix. |
+
+Also this session: #246 (unintended_html lint on code spans),
+#247 (regen in-repo gen_tests goldens), **#248 (release 1.3.0 —
+published to pub.dev)**.
+
+## Remaining lint tail (github, fix-disabled, after #256/#257)
+
+~1,143 lints, **91% the const cascade**:
+
+| count | lint | where |
+|---:|---|---|
+| 987 | `prefer_const_constructors` | 985 generated **tests**, 2 lib/messages |
+| 169 | `prefer_const_literals_to_create_immutables` | tests |
+| 18 | `unnecessary_lambdas` | |
+| 11 | `unused_import` | doc-comment `[Type]` refs + meta tail |
+| 9 | `prefer_int_literals` | |
+| 8 | `prefer_const_declarations` | |
+| 4 | `avoid_escaping_inner_quotes` | |
+| 3 | `unnecessary_this` | (residual, not `==`) |
+| 2 | `use_raw_strings` | |
+
+## The const-example refactor (the big remaining lever — design settled, not started)
+
+Closing `prefer_const_constructors` (987) + `prefer_const_literals`
+(169) means making the generated round-trip tests'
+example-instance construction `const` (`Widget(id: 0, name: '...')` →
+`const Widget(...)`). This is the const-ctor cascade from #253.
+
+**It does NOT need `DartType`** (a question that came up — see
+`doc/dart_type.md` note added alongside this). Const-example-ness
+is an *expression/structure* property, and `dart_type.md`'s North
+star explicitly keeps that class of thing off `DartType` (same as
+`fromJson`/`toJson`; #227 prototyped scalar-codec-on-`DartType` and
+dropped it — "doesn't generalize"). `DartType` can't see an
+object's fields.
+
+**Design:** a `bool exampleValueIsConst(context)` sibling to
+`exampleValue` on `RenderSchema`, recursive:
+
+- `RenderPod`: `false` for uri/uriTemplate (`Uri.parse`,
+  `UriTemplate(...)` aren't const), `true` for bool/dateTime/
+  email/uuid.
+- `RenderString`/`RenderNumber`/`RenderInteger`/`RenderDate`/
+  `RenderEmptyObject`: `true`.
+- `RenderEnum`: `false` today (`values.first` is a getter call) —
+  or make it `true` by emitting the first member (`Type.member`,
+  which *is* const).
+- `RenderArray`/`RenderMap`: the element/value's.
+- `RenderObject`: `canBeConst && every property.exampleValueIsConst
+  && entries-const`.
+- `RenderOneOf`: the chosen variant's; `RenderBase64Bytes`:
+  `false` (`Uint8List.fromList`).
+
+Then prefix `const` **at the outermost const-able point only** (a
+`const` context makes nested literals const automatically; an
+inner `const` would trip `unnecessary_const`). Watch the
+round-trip template (`schema_round_trip_test.mustache`, `final
+instance = {{{ exampleValue }}}`) and the object arg builder.
+
+~15 `exampleValue` impls to touch; intricate but all in the
+`Render*` layer. Entirely affects generated tests.
+
+## What's next — an open decision the user is weighing
+
+1. **Grind the const refactor** — biggest dent (~1,164), most
+   complex, tests-only.
+2. **Keep clearing small categories** — `unnecessary_lambdas`
+   (18), `unused_import` doc-tail (11), `prefer_int_literals` (9),
+   etc.; clean one-shots (some touch lib), but each closes little
+   and the tail is long (~7 more categories) before `dart fix` can
+   be dropped.
+3. **Bank the wins and stop** — ~20k of the original ~35k fix
+   operations already moved to the generator; the rest is a long
+   thin tail that only pays off when the `dart fix` call is
+   actually deleted.
+
+Dropping `dart fix` requires **all** categories clean (the package
+must be analyze-clean without it). That's the whole tail, including
+the tiny categories.
+
+## Methodology learnings (reuse these)
+
+- **Measure raw lint counts by disabling fix.** Temporarily comment
+  out the `_runDart(['fix', '.', '--apply'], ...)` line in
+  `formatting.dart`, regen, `dart analyze` the output. Restore
+  after. Tally: `dart analyze 2>&1 | grep -oE '[a-z_]+$' | sort |
+  uniq -c | sort -rn`.
+- **Byte-identical-after-fix is the validation gate.** Regen
+  `origin/main` (old) vs branch (new) into two dirs, normalize the
+  package name (`sed 's/package:OLD/package:PKG/'` both ways), then
+  `diff -rq`. Expect 0 — *content* — differences.
+- **Benign `dart_style` reflows are expected and OK.** When the
+  generator emits a *shorter* expression than the old `dart fix`
+  produced, `dart_style` sometimes lays it out on one line instead
+  of a trailing-comma-wrapped block. A handful of files differ by
+  whitespace + a trailing comma only. Confirm with: strip
+  whitespace and `,)`→`)`, compare — must be identical. Seen in
+  #249, #251, #255, #257.
+- **`dart fix` is analysis-bound.** Don't expect a category PR to
+  cut wall-clock. Proven: #250 removed 4,315 fixes, saved ~2.6s.
+- **A/B diffs catch real bugs.** #249's blind `this.` strip broke a
+  field named `other` (`mapsEqual(other, other.other)`); only the
+  byte-diff surfaced it (fix had been *keeping* `this.other`, which
+  masked the generator bug). Always A/B, don't trust "fix removed
+  it so it's fine."
+- **Commit messages with backticks: use `git commit -F <file>`**,
+  not `-m "..."`. Backticks inside double-quoted `-m` trigger shell
+  command substitution and silently eat text (`` `default: false`
+  `` → empty). Same for `gh pr create --body-file`.
+- **github regen is ~57s each** (fix-dominated) — two regens for an
+  A/B exceed a 2-min Bash timeout; run them as separate commands.
+- **Rotation after each change:** github (the bar) + discord +
+  backstage + petstore + spacetraders must stay analyze-clean;
+  petstore (28) + discord (1530) generated round-trip suites are
+  the fast correctness check.
+
 # State as of 2026-07-06 (Discord generated suite fully green)
 
 The `2026-04-30` section below is retained for history; this block
