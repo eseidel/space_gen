@@ -22,7 +22,7 @@ void main() {
         result,
         '@immutable\n'
         'class Test {\n'
-        '    Test(\n'
+        '    const Test(\n'
         '        { this.foo, \n'
         '         }\n'
         '    );\n'
@@ -498,7 +498,7 @@ void main() {
           result,
           '@immutable\n'
           'class Test {\n'
-          '    Test(\n'
+          '    const Test(\n'
           '        { required this.foo, \n'
           '         }\n'
           '    );\n'
@@ -647,7 +647,7 @@ void main() {
           result,
           '@immutable\n'
           'class Test {\n'
-          '    Test(\n'
+          '    const Test(\n'
           '        { required this.foo, \n'
           '         }\n'
           '    );\n'
@@ -717,7 +717,7 @@ void main() {
         result,
         '@immutable\n'
         'class Test {\n'
-        '    Test(\n'
+        '    const Test(\n'
         '        { this.foo, this.bar, \n'
         '         }\n'
         '    );\n'
@@ -3271,7 +3271,7 @@ void main() {
           user,
           '@immutable\n'
           'class User {\n'
-          '    User(\n'
+          '    const User(\n'
           '        { required this.foo, \n'
           '         }\n'
           '    );\n'
@@ -3333,7 +3333,7 @@ void main() {
         result,
         '@immutable\n'
         'class Test {\n'
-        '    Test(\n'
+        '    const Test(\n'
         '        { this.map, \n'
         '         }\n'
         '    );\n'
@@ -3429,7 +3429,7 @@ void main() {
         result,
         '@immutable\n'
         'class Test {\n'
-        '    Test(\n'
+        '    const Test(\n'
         '        { this.mString, this.mInt, this.mNumber, this.mBoolean, this.mDateTime, this.mUri, this.mMapOfString, this.mEnum, this.mUnknown, \n'
         '         }\n'
         '    );\n'
@@ -3570,7 +3570,7 @@ void main() {
         result,
         '@immutable\n'
         'class Test {\n'
-        '    Test(\n'
+        '    const Test(\n'
         '        { this.aString = const [], this.aInt = const [], this.aNumber = const [], this.aBoolean = const [], this.aDateTime = const [], this.aUri = const [], this.aArrayOfString = const [], this.aEnum = const [], this.aUnknown = const [], \n'
         '         }\n'
         '    );\n'
@@ -3698,7 +3698,7 @@ void main() {
         result,
         '@immutable\n'
         'class Test {\n'
-        '    Test(\n'
+        '    const Test(\n'
         '        { this.a, \n'
         '         }\n'
         '    );\n'
@@ -3895,7 +3895,7 @@ void main() {
         result,
         '@immutable\n'
         'class Test {\n'
-        '    Test(\n'
+        '    const Test(\n'
         "        { this.a = const <String>['a', 'b'], \n"
         '         }\n'
         '    );\n'
@@ -4084,7 +4084,7 @@ void main() {
         result,
         '@immutable\n'
         'class Test {\n'
-        '    Test(\n'
+        '    const Test(\n'
         '        { this.fooBar, this.notPrivate, this.barBaz, this.n123, this.plus1, this.minus1, this.dont, this.default_, \n'
         '         }\n'
         '    );\n'
@@ -4307,7 +4307,7 @@ void main() {
           result,
           '@immutable\n'
           'class Test {\n'
-          '    Test(\n'
+          '    const Test(\n'
           '        { this.a = 1.2, \n'
           '         }\n'
           '    );\n'
@@ -4475,7 +4475,7 @@ void main() {
           result,
           '@immutable\n'
           'class Test {\n'
-          '    Test(\n'
+          '    const Test(\n'
           '        { this.a = 1, \n'
           '         }\n'
           '    );\n'
@@ -4667,7 +4667,7 @@ void main() {
           '@immutable\n'
           'class Test {\n'
           '    /// {@macro test}\n'
-          '    Test(\n'
+          '    const Test(\n'
           '        { this.a, this.b, \n'
           '         }\n'
           '    );\n'
@@ -4734,7 +4734,7 @@ void main() {
           result,
           '@immutable\n'
           'class Test {\n'
-          '    Test(\n'
+          '    const Test(\n'
           '        { @deprecated this.a, \n'
           '         }\n'
           '    );\n'
@@ -4799,7 +4799,7 @@ void main() {
           renderTestSchema(json, asComponent: true),
           '@immutable\n'
           'class Test {\n'
-          '    Test(\n'
+          '    const Test(\n'
           '        { required this.reqNull, this.optNull, required this.req, this.opt, \n'
           '         }\n'
           '    );\n'
@@ -4888,7 +4888,7 @@ void main() {
           renderTestSchema(json),
           '@immutable\n'
           'class Test {\n'
-          '    Test(\n'
+          '    const Test(\n'
           '        { this.a, \n'
           '         }\n'
           '    );\n'
