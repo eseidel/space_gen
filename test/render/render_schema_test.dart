@@ -2884,13 +2884,16 @@ void main() {
       // ActionType value set.
       expect(action, contains('1 => BlockAction.fromJson(json)'));
       expect(action, contains('2 => FlagAction.fromJson(json)'));
-      // The field keeps the shared enum type — no throwaway per-variant
-      // single-value enum — and decodes through it.
-      expect(action, contains('final ActionType type'));
-      expect(
-        action,
-        contains("type: ActionType.fromJson(json['type'] as int)"),
-      );
+      // The pinned tag renders as a fixed getter of the shared enum — one
+      // per variant, mapping to the pinned member — not a constructor
+      // parameter, so the caller neither passes it nor can set it wrong.
+      expect(action, contains('ActionType get type => ActionType.value1;'));
+      expect(action, contains('ActionType get type => ActionType.value2;'));
+      // `type` is never a constructor field, nor decoded from JSON...
+      expect(action, isNot(contains('this.type')));
+      expect(action, isNot(contains('type: ActionType.fromJson')));
+      // ...yet it still serializes, via the getter.
+      expect(action, contains("'type': type.toJson()"));
       expect(action, isNot(contains('UnimplementedError')));
     });
 

@@ -417,8 +417,7 @@ Map<String, Object> _flattenedConstProperties(ResolvedSchema schema) {
   return switch (schema) {
     ResolvedObject() => schema.constProperties,
     ResolvedAllOf() => {
-      for (final member in schema.schemas)
-        ..._flattenedConstProperties(member),
+      for (final member in schema.schemas) ..._flattenedConstProperties(member),
     },
     _ => const <String, Object>{},
   };
