@@ -24,6 +24,7 @@ words:
   - regen
   - dispatchable
   - undispatchable
+  - narrowings
   - unioned
   - watchcrunch
   - dedup
