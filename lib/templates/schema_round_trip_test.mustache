@@ -23,13 +23,15 @@ void main() {
       );
     });
 {{/invalidJsonExample}}
-{{#isEnum}}
+{{#isStringEnum}}
 
     test('toString matches toJson for every value', () {
       for (final value in {{{ typeName }}}.values) {
         expect(value.toString(), equals(value.toJson()));
       }
     });
+{{/isStringEnum}}
+{{#isEnum}}
 
     test('fromJson round-trips every value', () {
       for (final value in {{{ typeName }}}.values) {

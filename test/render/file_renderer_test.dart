@@ -480,6 +480,58 @@ void main() {
       expect(body, contains('Role.fromJson(value.toJson())'));
     });
 
+    test(
+      'int enum round-trip test omits the toString==toJson assertion',
+      () async {
+        // For an int enum `toString()` is a String but `toJson()` is an int, so
+        // `expect(value.toString(), equals(value.toJson()))` is a type category
+        // error that always fails. Skip that one assertion; keep the rest.
+        final fs = MemoryFileSystem.test();
+        final spec = {
+          'openapi': '3.1.0',
+          'info': {'title': 'IntEnumRoundtrip', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/level': {
+              'get': {
+                'operationId': 'getLevel',
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {r'$ref': '#/components/schemas/Level'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'components': {
+            'schemas': {
+              'Level': {
+                'type': 'integer',
+                'enum': [1, 2, 3],
+              },
+            },
+          },
+        };
+        final out = fs.directory('out');
+        await renderToDirectory(spec: spec, outDir: out);
+        final body = out
+            .childFile('test/models/level_test.dart')
+            .readAsStringSync();
+        // The type-unsafe assertion is gone...
+        expect(body, isNot(contains('toString matches toJson')));
+        // ...but the type-safe round-trip check stays.
+        expect(body, contains('fromJson round-trips every value'));
+        expect(body, contains('Level.fromJson(value.toJson())'));
+      },
+    );
+
     test('non-enum round-trip test omits the enum-only assertions', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
