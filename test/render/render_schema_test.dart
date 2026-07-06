@@ -3429,7 +3429,7 @@ void main() {
         '        json) {\n'
         "        return parseFromJson('Test', json, () => Test(\n"
         "            mString: (json['m_string'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value as String)),\n"
-        "            mInt: (json['m_int'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, (value as int))),\n"
+        "            mInt: (json['m_int'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value as int)),\n"
         "            mNumber: (json['m_number'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, (value as num).toDouble())),\n"
         "            mBoolean: (json['m_boolean'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value as bool)),\n"
         "            mDateTime: (json['m_date_time'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, DateTime.parse(value as String))),\n"
