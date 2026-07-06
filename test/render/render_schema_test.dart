@@ -61,11 +61,32 @@ void main() {
         '    bool operator ==(Object other) {\n'
         '        if (identical(this, other)) return true;\n'
         '        return other is Test\n'
-        '            && this.foo == other.foo\n'
+        '            && foo == other.foo\n'
         '        ;\n'
         '    }\n'
         '}\n',
       );
+    });
+    test('a field named `other` keeps this. in ==; others drop it', () {
+      // In `bool operator ==(Object other)`, the parameter `other`
+      // shadows a field also named `other`, so that field's `==`
+      // receiver must stay `this.other`. Every other field omits the
+      // redundant `this.` (which `unnecessary_this` would otherwise
+      // strip). A map-typed `other` exercises the mapsEqual path too.
+      final schema = {
+        'type': 'object',
+        'properties': {
+          'foo': <String, dynamic>{},
+          'other': {
+            'type': 'object',
+            'additionalProperties': {'type': 'string'},
+          },
+        },
+      };
+      final result = renderTestSchema(schema);
+      expect(result, contains('&& foo == other.foo'));
+      expect(result, contains('&& mapsEqual(this.other, other.other)'));
+      expect(result, isNot(contains('mapsEqual(other, other.other)')));
     });
     test('property with `type: null` renders as dynamic', () {
       // JSON Schema 2020-12 / OpenAPI 3.1 allows `{"type": "null"}` —
@@ -394,7 +415,7 @@ void main() {
         '    bool operator ==(Object other) {\n'
         '        if (identical(this, other)) return true;\n'
         '        return other is Test\n'
-        '            && this.foo == other.foo\n'
+        '            && foo == other.foo\n'
         '        ;\n'
         '    }\n'
         '}\n',
@@ -457,7 +478,7 @@ void main() {
           '    bool operator ==(Object other) {\n'
           '        if (identical(this, other)) return true;\n'
           '        return other is Test\n'
-          '            && this.foo == other.foo\n'
+          '            && foo == other.foo\n'
           '        ;\n'
           '    }\n'
           '}\n',
@@ -516,7 +537,7 @@ void main() {
           '    bool operator ==(Object other) {\n'
           '        if (identical(this, other)) return true;\n'
           '        return other is Test\n'
-          '            && this.foo == other.foo\n'
+          '            && foo == other.foo\n'
           '        ;\n'
           '    }\n'
           '}\n',
@@ -606,7 +627,7 @@ void main() {
           '    bool operator ==(Object other) {\n'
           '        if (identical(this, other)) return true;\n'
           '        return other is Test\n'
-          '            && this.foo == other.foo\n'
+          '            && foo == other.foo\n'
           '        ;\n'
           '    }\n'
           '}\n',
@@ -665,7 +686,7 @@ void main() {
           '    bool operator ==(Object other) {\n'
           '        if (identical(this, other)) return true;\n'
           '        return other is Test\n'
-          '            && this.foo == other.foo\n'
+          '            && foo == other.foo\n'
           '        ;\n'
           '    }\n'
           '}\n',
@@ -741,8 +762,8 @@ void main() {
         '    bool operator ==(Object other) {\n'
         '        if (identical(this, other)) return true;\n'
         '        return other is Test\n'
-        '            && this.foo == other.foo\n'
-        '            && this.bar == other.bar\n'
+        '            && foo == other.foo\n'
+        '            && bar == other.bar\n'
         '        ;\n'
         '    }\n'
         '}\n',
@@ -3289,7 +3310,7 @@ void main() {
           '    bool operator ==(Object other) {\n'
           '        if (identical(this, other)) return true;\n'
           '        return other is User\n'
-          '            && this.foo == other.foo\n'
+          '            && foo == other.foo\n'
           '        ;\n'
           '    }\n'
           '}\n',
@@ -3351,7 +3372,7 @@ void main() {
         '    bool operator ==(Object other) {\n'
         '        if (identical(this, other)) return true;\n'
         '        return other is Test\n'
-        '            && mapsEqual(this.map, other.map)\n'
+        '            && mapsEqual(map, other.map)\n'
         '        ;\n'
         '    }\n'
         '}\n',
@@ -3481,15 +3502,15 @@ void main() {
         '    bool operator ==(Object other) {\n'
         '        if (identical(this, other)) return true;\n'
         '        return other is Test\n'
-        '            && mapsEqual(this.mString, other.mString)\n'
-        '            && mapsEqual(this.mInt, other.mInt)\n'
-        '            && mapsEqual(this.mNumber, other.mNumber)\n'
-        '            && mapsEqual(this.mBoolean, other.mBoolean)\n'
-        '            && mapsEqual(this.mDateTime, other.mDateTime)\n'
-        '            && mapsEqual(this.mUri, other.mUri)\n'
-        '            && mapsEqual(this.mMapOfString, other.mMapOfString)\n'
-        '            && mapsEqual(this.mEnum, other.mEnum)\n'
-        '            && mapsEqual(this.mUnknown, other.mUnknown)\n'
+        '            && mapsEqual(mString, other.mString)\n'
+        '            && mapsEqual(mInt, other.mInt)\n'
+        '            && mapsEqual(mNumber, other.mNumber)\n'
+        '            && mapsEqual(mBoolean, other.mBoolean)\n'
+        '            && mapsEqual(mDateTime, other.mDateTime)\n'
+        '            && mapsEqual(mUri, other.mUri)\n'
+        '            && mapsEqual(mMapOfString, other.mMapOfString)\n'
+        '            && mapsEqual(mEnum, other.mEnum)\n'
+        '            && mapsEqual(mUnknown, other.mUnknown)\n'
         '        ;\n'
         '    }\n'
         '}\n',
@@ -3622,15 +3643,15 @@ void main() {
         '    bool operator ==(Object other) {\n'
         '        if (identical(this, other)) return true;\n'
         '        return other is Test\n'
-        '            && listsEqual(this.aString, other.aString)\n'
-        '            && listsEqual(this.aInt, other.aInt)\n'
-        '            && listsEqual(this.aNumber, other.aNumber)\n'
-        '            && listsEqual(this.aBoolean, other.aBoolean)\n'
-        '            && listsEqual(this.aDateTime, other.aDateTime)\n'
-        '            && listsEqual(this.aUri, other.aUri)\n'
-        '            && listsEqual(this.aArrayOfString, other.aArrayOfString)\n'
-        '            && listsEqual(this.aEnum, other.aEnum)\n'
-        '            && listsEqual(this.aUnknown, other.aUnknown)\n'
+        '            && listsEqual(aString, other.aString)\n'
+        '            && listsEqual(aInt, other.aInt)\n'
+        '            && listsEqual(aNumber, other.aNumber)\n'
+        '            && listsEqual(aBoolean, other.aBoolean)\n'
+        '            && listsEqual(aDateTime, other.aDateTime)\n'
+        '            && listsEqual(aUri, other.aUri)\n'
+        '            && listsEqual(aArrayOfString, other.aArrayOfString)\n'
+        '            && listsEqual(aEnum, other.aEnum)\n'
+        '            && listsEqual(aUnknown, other.aUnknown)\n'
         '        ;\n'
         '    }\n'
         '}\n',
@@ -3716,7 +3737,7 @@ void main() {
         '    bool operator ==(Object other) {\n'
         '        if (identical(this, other)) return true;\n'
         '        return other is Test\n'
-        '            && this.a == other.a\n'
+        '            && a == other.a\n'
         '        ;\n'
         '    }\n'
         '}\n',
@@ -3913,7 +3934,7 @@ void main() {
         '    bool operator ==(Object other) {\n'
         '        if (identical(this, other)) return true;\n'
         '        return other is Test\n'
-        '            && listsEqual(this.a, other.a)\n'
+        '            && listsEqual(a, other.a)\n'
         '        ;\n'
         '    }\n'
         '}\n',
@@ -4132,14 +4153,14 @@ void main() {
         '    bool operator ==(Object other) {\n'
         '        if (identical(this, other)) return true;\n'
         '        return other is Test\n'
-        '            && this.fooBar == other.fooBar\n'
-        '            && this.notPrivate == other.notPrivate\n'
-        '            && this.barBaz == other.barBaz\n'
-        '            && this.n123 == other.n123\n'
-        '            && this.plus1 == other.plus1\n'
-        '            && this.minus1 == other.minus1\n'
-        '            && this.dont == other.dont\n'
-        '            && this.default_ == other.default_\n'
+        '            && fooBar == other.fooBar\n'
+        '            && notPrivate == other.notPrivate\n'
+        '            && barBaz == other.barBaz\n'
+        '            && n123 == other.n123\n'
+        '            && plus1 == other.plus1\n'
+        '            && minus1 == other.minus1\n'
+        '            && dont == other.dont\n'
+        '            && default_ == other.default_\n'
         '        ;\n'
         '    }\n'
         '}\n',
@@ -4325,7 +4346,7 @@ void main() {
           '    bool operator ==(Object other) {\n'
           '        if (identical(this, other)) return true;\n'
           '        return other is Test\n'
-          '            && this.a == other.a\n'
+          '            && a == other.a\n'
           '        ;\n'
           '    }\n'
           '}\n',
@@ -4493,7 +4514,7 @@ void main() {
           '    bool operator ==(Object other) {\n'
           '        if (identical(this, other)) return true;\n'
           '        return other is Test\n'
-          '            && this.a == other.a\n'
+          '            && a == other.a\n'
           '        ;\n'
           '    }\n'
           '}\n',
@@ -4691,8 +4712,8 @@ void main() {
           '    bool operator ==(Object other) {\n'
           '        if (identical(this, other)) return true;\n'
           '        return other is Test\n'
-          '            && this.a == other.a\n'
-          '            && this.b == other.b\n'
+          '            && a == other.a\n'
+          '            && b == other.b\n'
           '        ;\n'
           '    }\n'
           '}\n',
@@ -4753,7 +4774,7 @@ void main() {
           '    bool operator ==(Object other) {\n'
           '        if (identical(this, other)) return true;\n'
           '        return other is Test\n'
-          '            && this.a == other.a\n'
+          '            && a == other.a\n'
           '        ;\n'
           '    }\n'
           '}\n',
@@ -4831,10 +4852,10 @@ void main() {
           '    bool operator ==(Object other) {\n'
           '        if (identical(this, other)) return true;\n'
           '        return other is Test\n'
-          '            && this.reqNull == other.reqNull\n'
-          '            && this.optNull == other.optNull\n'
-          '            && this.req == other.req\n'
-          '            && this.opt == other.opt\n'
+          '            && reqNull == other.reqNull\n'
+          '            && optNull == other.optNull\n'
+          '            && req == other.req\n'
+          '            && opt == other.opt\n'
           '        ;\n'
           '    }\n'
           '}\n',
@@ -4906,7 +4927,7 @@ void main() {
           '    bool operator ==(Object other) {\n'
           '        if (identical(this, other)) return true;\n'
           '        return other is Test\n'
-          '            && this.a == other.a\n'
+          '            && a == other.a\n'
           '        ;\n'
           '    }\n'
           '}\n',

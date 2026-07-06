@@ -2247,6 +2247,15 @@ class RenderDefaultResponse {
   final String? contentType;
 }
 
+/// The receiver for a field named [name] inside a generated
+/// `bool operator ==(Object other)` body. Bare `$name` reads the
+/// field for every name except `other` — which the `Object other`
+/// parameter shadows, so a field literally named `other` must keep
+/// the `this.` qualifier to stay unambiguous. Every other field omits
+/// it (the analyzer's `unnecessary_this` lint would otherwise strip
+/// it post-generation).
+String _equalsReceiver(String name) => name == 'other' ? 'this.$name' : name;
+
 abstract class RenderSchema extends Equatable implements ToTemplateContext {
   const RenderSchema({
     required this.common,
@@ -2435,7 +2444,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   }
 
   String equalsExpression(String name, SchemaRenderer context) =>
-      'this.$name == other.$name';
+      '${_equalsReceiver(name)} == other.$name';
 
   /// Expression to feed into the generated `hashCode` `Object.hashAll(...)`
   /// call for a field named [name]. Default is the field itself —
@@ -3952,7 +3961,7 @@ class RenderArray extends RenderSchema {
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
-      '${ModelHelpers.listsEqual}(this.$name, other.$name)';
+      '${ModelHelpers.listsEqual}(${_equalsReceiver(name)}, other.$name)';
 
   @override
   String hashCodeExpression(String name) => '${ModelHelpers.listHash}($name)';
@@ -4157,7 +4166,7 @@ class RenderMap extends RenderSchema {
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
-      '${ModelHelpers.mapsEqual}(this.$name, other.$name)';
+      '${ModelHelpers.mapsEqual}(${_equalsReceiver(name)}, other.$name)';
 
   @override
   String hashCodeExpression(String name) => '${ModelHelpers.mapHash}($name)';
@@ -5791,7 +5800,7 @@ class RenderBinary extends RenderNoJson {
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
-      '${ModelHelpers.listsEqual}(this.$name, other.$name)';
+      '${ModelHelpers.listsEqual}(${_equalsReceiver(name)}, other.$name)';
 
   @override
   String hashCodeExpression(String name) => '${ModelHelpers.listHash}($name)';
@@ -5836,7 +5845,7 @@ class RenderBase64Bytes extends RenderSchema {
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
-      '${ModelHelpers.listsEqual}(this.$name, other.$name)';
+      '${ModelHelpers.listsEqual}(${_equalsReceiver(name)}, other.$name)';
 
   @override
   String hashCodeExpression(String name) => '${ModelHelpers.listHash}($name)';
