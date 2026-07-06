@@ -16,9 +16,7 @@ class DefaultApi {
   final ApiClient client;
 
   /// Upload a file as the whole request body.
-  Future<void> uploadPlain(
-    UploadPlainRequest uploadPlainRequest,
-  ) async {
+  Future<void> uploadPlain(UploadPlainRequest uploadPlainRequest) async {
     final multipartFields = <String, String>{};
     final multipartFiles = <http.MultipartFile>[
       http.MultipartFile.fromBytes(
@@ -43,12 +41,8 @@ class DefaultApi {
   }
 
   /// Upload a file with metadata.
-  Future<void> uploadMixed(
-    UploadMixedRequest uploadMixedRequest,
-  ) async {
-    final multipartFields = <String, String>{
-      'name': uploadMixedRequest.name,
-    };
+  Future<void> uploadMixed(UploadMixedRequest uploadMixedRequest) async {
+    final multipartFields = <String, String>{'name': uploadMixedRequest.name};
     final multipartFiles = <http.MultipartFile>[
       http.MultipartFile.fromBytes(
         'file',

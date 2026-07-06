@@ -42,12 +42,8 @@ class UploadRichScalarsRequest {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    listHash(file),
-    visibility,
-    capturedAt,
-    tag,
-  ]);
+  int get hashCode =>
+      Object.hashAll([listHash(file), visibility, capturedAt, tag]);
 
   @override
   bool operator ==(Object other) {

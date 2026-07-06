@@ -1,9 +1,3 @@
-// Spec descriptions copy prose verbatim into dartdoc, where `<x>`
-// is parsed as an HTML tag start even when it is not HTML (e.g.
-// placeholder tokens like `<sha1hex>`).
-// Suppress file-locally so the lint stays live elsewhere; spec
-// authors do not always escape angle brackets.
-// ignore_for_file: unintended_html_in_doc_comment
 import 'package:types/date.dart';
 import 'package:types/model/email_type.dart';
 import 'package:types/model/status.dart';

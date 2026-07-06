@@ -2,10 +2,7 @@ import 'dart:typed_data';
 import 'package:multipart/model_helpers.dart';
 
 class UploadMultiFileRequest {
-  UploadMultiFileRequest({
-    required this.primary,
-    this.thumbnail,
-  });
+  UploadMultiFileRequest({required this.primary, this.thumbnail});
 
   /// Converts a `Map<String, dynamic>` to a [UploadMultiFileRequest].
   factory UploadMultiFileRequest.fromJson(dynamic jsonArg) {
@@ -37,10 +34,7 @@ class UploadMultiFileRequest {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    listHash(primary),
-    listHash(thumbnail),
-  ]);
+  int get hashCode => Object.hashAll([listHash(primary), listHash(thumbnail)]);
 
   @override
   bool operator ==(Object other) {
