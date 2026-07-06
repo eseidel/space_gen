@@ -1,3 +1,89 @@
+## 1.3.0
+
+Two more real-world specs now generate analyze-clean Dart with a fully
+passing generated round-trip suite: **Discord** (~511 schemas; 6
+genuine multi-variant-union stubs remain) and **Backstage**'s catalog
+API (zero stubs).
+
+### Features
+
+- **Generate a dedicated `Date` value type for `format: date` instead
+  of `DateTime`.** A `DateTime` is a specific instant, so a calendar
+  date backed by one leaks timezone bugs no normalization can close:
+  UTC midnight reads as the *previous day* under `.toLocal()` in
+  negative-offset zones, and local midnight breaks the wire round-trip
+  and hits the DST no-midnight gap. The generated `Date` holds
+  year/month/day only and forces an explicit timezone to convert
+  (`toUtcDateTime` / `toLocalDateTime`). It's emitted once as
+  `lib/date.dart`, pruned when no date field is present, and
+  re-exported from the barrel. **Public-API change:** `format: date`
+  fields are now `Date` instead of `DateTime`, and a pure-`format:
+  date` named schema collapses to `Date` rather than minting a
+  redundant per-schema newtype (#229).
+- **Honor `explode: false` on query array parameters.** Comma-joins an
+  array into a single value (`?tags=a,b,c`) instead of the default
+  `explode: true` repeated-key form (`?tags=a&tags=b&tags=c`) — those
+  are genuinely different wire formats a server won't silently
+  normalize, so ignoring `explode: false` was a real correctness bug.
+  `allowReserved` stays deliberately unhonored (with a comment on why);
+  the WARN keeps any remaining divergence visible (#232).
+- **Collapse the OpenAPI 3.1 nullable-oneOf idiom `oneOf: [{type:
+  null}, T]` to a plain nullable `T?`.** Each previously resolved to an
+  undispatchable sealed union whose `fromJson` couldn't dispatch on
+  `null`, emitting an `UnimplementedError` stub — Discord spells
+  nullable this way ~290 times. A genuine 3+ member union
+  (`oneOf: [null, A, B]`) still renders as a union, now marked nullable
+  (#234).
+- **Dispatch oneOf variants tagged by a `$ref`-to-enum pinned to a
+  const** — the OpenAPI-3.0 idiom `{allOf: [{$ref: E}], enum: [v]}`,
+  meaning "a value of enum `E` fixed to one member," where the field's
+  type is the shared enum and the pinned value is the discriminator.
+  The parser previously dropped the pinning `enum` when it saw `allOf`,
+  leaving every variant's tag indistinguishable and emitting an
+  `UnimplementedError` stub (#236).
+- **Merge an open/map member of an `allOf` into the object's
+  overflow.** `allOf: [<JsonObject>, <object>]` — the
+  TypeScript-intersection idiom "these known named fields **plus** an
+  arbitrary bag of extra keys" — previously crashed with
+  `FormatException: allOf only supports objects` (#219).
+
+### Bug fixes
+
+- **An explicit `properties: {}` alongside `additionalProperties` now
+  routes to the map path.** It was falling through to a lossy
+  `SchemaEmptyObject` stub whose `fromJson` discarded its input and
+  whose `toJson` always emitted `{}`, so every entry silently
+  round-tripped away. It's now treated identically to the
+  omitted-`properties` map form (#218).
+- **Generated `operator[]` indexes the whole object, not just the
+  `additionalProperties` overflow.** `x['name']` returned `null` for a
+  real named key that `toJson()` emits — a map-style accessor that
+  disagreed with the object's own serialization (#221).
+- **Decode `List<Uri>` / `List<DateTime>` via `.map((e) => parse(e))`,
+  not a broken `.cast<Uri>()`.** The cast produced a lazy view that
+  threw `type 'String' is not a subtype of type 'Uri'` on first element
+  access; these fields serialized fine but blew up on decode (#244).
+- **Suppress `unintended_html_in_doc_comment` for spec-prose angle
+  brackets — but not when they're inside a code span or fenced block.**
+  Spec descriptions copy prose verbatim into dartdoc, where a token
+  like `<sha1hex>` reads as an HTML tag start and trips
+  `very_good_analysis`'s lint on every consumer package. The
+  suppression is scoped to genuine cases: `<...>` inside backticks
+  (`` `Map<String, dynamic>` ``) or a fenced sample is rendered
+  verbatim by dartdoc and no longer triggers it (#215, #246).
+- **Int-enum generated round-trip tests are now correct and fully
+  covered.** The `toString() == toJson()` assertion is a category error
+  for int enums (`"1"` vs `1`) and accounted for 66 of Discord's 67
+  generated-test failures; it's now gated to string enums, with a
+  type-safe assertion restoring int-enum `toString()` coverage
+  (#241, #243).
+- **Prune generated model helpers by whole-identifier match, not
+  substring.** `body.contains(name)` matched `maybeParseDate` inside
+  `maybeParseDateTime` (and `maybeParseUri` inside
+  `maybeParseUriTemplate`), writing an uncalled helper into
+  `model_helpers.dart` that read as uncovered lines on the generated
+  package (#211).
+
 ## 1.2.2
 
 ### Bug fixes
