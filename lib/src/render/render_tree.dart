@@ -3224,7 +3224,14 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
       dartIsNullable: dartIsNullable,
     );
     final toDartCall = jsonToDartCall(jsonIsNullable: jsonIsNullable);
-    return '($jsonValue as $jsonType)$toDartCall$orDefault';
+    final cast = '$jsonValue as $jsonType';
+    // A bare cast needs no parens (`unnecessary_parenthesis`). Keep them
+    // to bind a trailing `.toX()` tighter than `as`
+    // (`(json['x'] as num).toDouble()`), or around a `?? default` where
+    // the analyzer leaves the parens for readability
+    // (`(json['x'] as int?) ?? 0`).
+    if (toDartCall.isEmpty && orDefault.isEmpty) return cast;
+    return '($cast)$toDartCall$orDefault';
   }
 
   @override
