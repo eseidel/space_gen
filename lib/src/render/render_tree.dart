@@ -3368,6 +3368,14 @@ class RenderObject extends RenderNewType {
   /// parameter — the value is fully determined by the class, so the caller
   /// neither passes it nor can set it wrong. Keyed by property name; values
   /// are `int`/`String`.
+  ///
+  /// Decision (a getter, not the alternatives — see issue #238): it is never
+  /// valid to construct one of these with a different tag value, so the value
+  /// is not a constructor parameter at all. A `final` field with a default
+  /// would work but stores, on every instance, a value fixed by the type —
+  /// wasted space for no gain. A `static const` can't be read through an
+  /// instance in Dart, so it can't back a serialized/polymorphic property.
+  /// The getter has no storage and is un-settable, which is exactly right.
   final Map<String, Object> constProperties;
 
   /// The additional properties of the resolved schema.
