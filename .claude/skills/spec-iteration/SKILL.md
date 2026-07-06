@@ -14,6 +14,88 @@ description: |
   any spec-driven follow-up.
 ---
 
+# State as of 2026-07-06 (Discord generated suite fully green)
+
+The `2026-04-30` section below is retained for history; this block
+supersedes it for current status.
+
+## Headline
+
+**Discord went from 334 `UnimplementedError` stubs + 67 failing
+generated round-trip tests to 6 stubs and a 100%-passing generated
+test suite** over the 2026-07-05/06 session. github stayed the bar
+throughout (analyze-clean; byte-identical except two intentional
+bug fixes noted below).
+
+## Landed this session
+
+| PR | What |
+|---|---|
+| #234 | Collapse the OpenAPI 3.1 nullable idiom `oneOf: [{type: null}, T]` → `T?` (resolver: the `SchemaAnyOf` null-collapse existed but `SchemaOneOf` didn't; Discord spells all 290 sites as `oneOf`). Discord 334→38 stubs. |
+| #236 | Dispatch oneOf variants tagged by a `$ref`-to-enum pinned to a const (`allOf:[{$ref:E}] + enum:[v]` — the OpenAPI-3.0 "pinned enum" idiom). Parser captures the pin as `SchemaObject.constProperties`; `_tagValues` unifies it with bare-enum tags in the implicit-discriminator picker. **Also**: pinned tag renders as a fixed getter (`E get type => E.member`), not a ctor param (decision recorded in code + closed #238); and oneOf-of-consts enum members are named from spec `title:` (`AutomodActionType.blockMessage`, was `value1`). Discord 38→6 stubs. |
+| #241 | Skip the bogus `toString == toJson` generated test for int enums (String vs int category error). |
+| #243 | Restore int-enum `toString()` coverage #241 dropped, via a type-safe assertion (`equals(value.toJson().toString())`). |
+| #244 | Decode `List<Uri>`/`List<DateTime>` via `.map((e) => parse(e))`, not a broken `.cast<Uri>()` lazy view. Root cause: list-`fromJson` gated on `createsNewType` instead of the symmetric `shouldCallToJson` that `toJson` uses. Fixed a latent github bug too (one optional, un-exercised field). Discord generated suite → 0 failures. |
+
+## Open issues filed this session (the queue)
+
+- **#235** — model the multi-value enum restriction `allOf:[{$ref:E}]
+  + enum:[subset]` (a *restricted view* of an enum; 16 Discord sites,
+  none discriminators — a field-fidelity gap, not a stub).
+- **#237** — spurious `ignore_for_file:
+  unintended_html_in_doc_comment` fires on `<...>` inside backtick
+  code spans (`` `Map<String, dynamic>` ``). ~1145 github + 422
+  Discord files carry it, mostly false positives. Fix: strip code
+  spans before the tag check in `_dartdocHasHtmlTag`.
+- **#239** — detect "single legal value" properties *semantically*
+  (resolved-schema cardinality-1), not via the narrow `allOf`-ref
+  syntax that `_constTagValue` matches. Would unify github's ~299
+  bare single-value-enum tags with Discord's pinned refs and delete
+  `_constTagValue` — but changes github output (a scope decision).
+- **#240** — a lone scalar `const: "list"` becomes a single-value
+  *enum type + file* instead of a plain constant. The non-enum
+  sibling of the #236 pinned-const work.
+- **#238** — CLOSED. Kept the bespoke const getter over
+  final-with-default / static; rationale recorded in
+  `RenderObject.constProperties`.
+
+## Lessons worth keeping
+
+- **Deleting a failing generated test can silently drop coverage.**
+  #241 removed the int-enum `toString` test (the only caller of the
+  enum's `toString()`) → `DA:0`. #243 fixed it by correcting the
+  *assertion*, not removing the test. When a generated test fails,
+  ask "is this the only thing exercising that generated method?"
+  before deleting.
+- **`createsNewType` is NOT the "needs JSON conversion" predicate;
+  `shouldCallToJson` is.** They diverge for pods whose Dart type
+  differs from their wire type (`Uri`/`DateTime`/`uriTemplate`).
+  A `fromJson` gate must match its `toJson` gate — #244 was a
+  one-directional bug from using the wrong one.
+- **Recognize the semantic, not the syntax.** `_constTagValue`
+  (raw-JSON `allOf`-ref matcher) is a deliberately narrow, graceful
+  recognizer — fine for one idiom, but the honest model is
+  cardinality-1 at the resolved-schema level (#239). Documented as
+  such at the code; promote it if it needs to generalize.
+- **Branch fresh off `origin/main` every PR.** Committed onto an
+  already-merged branch once this session; recovered by
+  cherry-picking onto a fresh branch.
+
+## What's next (pick from here)
+
+- **The 6 remaining Discord stubs** — genuine multi-variant unions
+  (`*_actions_inner`, `*_options_inner`, `*_components_inner`,
+  `error_details`) that need real dispatch (no single-tag
+  discriminator). The last stub frontier.
+- **The const-modeling arc** — #239 (semantic cardinality-1) is the
+  keystone; #240 (lone const → plain const) rides on it.
+- **#237** — cheap, high-file-count cleanup (spurious lint
+  suppression); independent of everything else.
+- Regenerate the `~/Documents/GitHub/personal/gen_tests` tracker
+  after landing output-changing PRs (kept current through #244).
+
+---
+
 # State as of 2026-04-30 (Discord blockers cleared)
 
 ## What this is
