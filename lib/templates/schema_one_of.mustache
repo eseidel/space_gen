@@ -34,7 +34,7 @@
     factory {{ typeName }}.fromJson(dynamic json) {
         return switch (json) {
 {{#dispatch}}
-            {{{ jsonTestType }}} v => {{{ caseExpression }}},
+            final {{{ jsonTestType }}} v => {{{ caseExpression }}},
 {{/dispatch}}
             _ => throw FormatException(
                 'Unsupported shape for {{ typeName }}: ${json.runtimeType}',

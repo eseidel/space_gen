@@ -1033,7 +1033,7 @@ void main() {
       // is inlined into the parent's file as a sealed subclass.
       expect(
         result,
-        contains('Map<String, dynamic> v => TestOneOf1.fromJson(v)'),
+        contains('final Map<String, dynamic> v => TestOneOf1.fromJson(v)'),
       );
       expect(result, contains('final class TestOneOf1 extends Test'));
       expect(result, isNot(contains('throw UnimplementedError')));
@@ -1052,7 +1052,7 @@ void main() {
       };
       final result = renderTestSchema(schema);
       expect(result, contains('num v => TestNum(v)'));
-      expect(result, contains('List<dynamic> v => TestList'));
+      expect(result, contains('final List<dynamic> v => TestList'));
       expect(result, isNot(contains('throw UnimplementedError')));
     });
 
@@ -1087,7 +1087,7 @@ void main() {
         ],
       };
       final result = renderTestSchema(schema);
-      expect(result, contains('Map<String, dynamic> v => TestMap(v)'));
+      expect(result, contains('final Map<String, dynamic> v => TestMap(v)'));
       expect(result, contains('String v => TestString(v)'));
       expect(result, contains('final Map<String, dynamic> value;'));
       // No per-entry conversion when the value type is dynamic.
@@ -1118,7 +1118,7 @@ void main() {
       );
       final wrapper = results['Wrapper'];
       expect(wrapper, isNotNull);
-      expect(wrapper, contains('Map<String, dynamic> v => WrapperMap'));
+      expect(wrapper, contains('final Map<String, dynamic> v => WrapperMap'));
       // Each entry's value is parsed through Tag.fromJson.
       expect(wrapper, contains('Tag.fromJson(val'));
       expect(wrapper, contains('MapEntry'));
@@ -1158,7 +1158,7 @@ void main() {
       };
       final result = renderTestSchema(schema);
       // Empty-object wrapper delegates to the named class.
-      expect(result, contains('Map<String, dynamic> v =>'));
+      expect(result, contains('final Map<String, dynamic> v =>'));
       expect(result, contains('.fromJson(v)'));
       expect(result, contains('value.toJson()'));
       expect(result, contains('String v => TestString(v)'));
@@ -1328,7 +1328,10 @@ void main() {
         // `MixedString` wrapper (primitives can't extend a sealed
         // class).
         expect(mixed, contains('factory Mixed.fromJson(dynamic json)'));
-        expect(mixed, contains('Map<String, dynamic> v => Cat.fromJson(v)'));
+        expect(
+          mixed,
+          contains('final Map<String, dynamic> v => Cat.fromJson(v)'),
+        );
         expect(mixed, contains('String v => MixedString'));
         expect(mixed, contains('final class Cat extends Mixed'));
         expect(mixed, isNot(contains('class MixedCat ')));
@@ -1373,7 +1376,7 @@ void main() {
       });
       expect(result, contains('factory Test.fromJson(dynamic json)'));
       expect(result, contains('String v => TestString(v)'));
-      expect(result, contains('List<dynamic> v => TestList'));
+      expect(result, contains('final List<dynamic> v => TestList'));
       // For primitive-item arrays we cast rather than map.
       expect(result, contains('TestList(v.cast<String>())'));
       // toJson on the list wrapper just returns value (List<String>
@@ -1406,7 +1409,7 @@ void main() {
       );
       final wrapper = results['Wrapper'];
       expect(wrapper, isNotNull);
-      expect(wrapper, contains('List<dynamic> v => WrapperList'));
+      expect(wrapper, contains('final List<dynamic> v => WrapperList'));
       // Object items go through their own fromJson factory.
       expect(wrapper, contains('v.map<Inner>((e) => Inner.fromJson('));
       expect(wrapper, contains('final List<Inner> value;'));
@@ -1824,7 +1827,7 @@ void main() {
       expect(result, contains('String v => ResultStatus(Status.fromJson(v))'));
       expect(
         result,
-        contains('Map<String, dynamic> v => Detail.fromJson(v)'),
+        contains('final Map<String, dynamic> v => Detail.fromJson(v)'),
       );
       expect(result, contains('final class Detail extends Result'));
       expect(result, isNot(contains('class ResultDetail ')));
@@ -2040,7 +2043,7 @@ void main() {
       // sealed subclass.
       expect(
         result,
-        contains('Map<String, dynamic> v => TestOneOf1.fromJson(v)'),
+        contains('final Map<String, dynamic> v => TestOneOf1.fromJson(v)'),
       );
       expect(result, contains('final class TestOneOf1 extends Test'));
       expect(result, contains('@override'));
@@ -2804,7 +2807,7 @@ void main() {
       expect(pet, contains('factory Pet.fromJson(dynamic json)'));
       // `Cat` is exclusive-by-use → smooshed; the Map case arm
       // constructs `Cat` directly, no `PetCat` wrapper.
-      expect(pet, contains('Map<String, dynamic> v => Cat.fromJson(v)'));
+      expect(pet, contains('final Map<String, dynamic> v => Cat.fromJson(v)'));
       expect(pet, contains('final class Cat extends Pet'));
       expect(pet, isNot(contains('class PetCat ')));
       expect(pet, isNot(contains('UnimplementedError')));
@@ -3010,7 +3013,7 @@ void main() {
         ],
       });
       expect(result, contains('int v => '));
-      expect(result, contains('Map<String, dynamic> v =>'));
+      expect(result, contains('final Map<String, dynamic> v =>'));
       expect(result, isNot(contains('throw UnimplementedError')));
     });
 
