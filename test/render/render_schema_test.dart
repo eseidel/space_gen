@@ -3984,7 +3984,7 @@ void main() {
         '\n'
         '    /// Returns the string form of the enum.\n'
         '    @override\n'
-        '    String toString() => value.toString();\n'
+        '    String toString() => value;\n'
         '}\n',
       );
     });
@@ -5003,7 +5003,7 @@ void main() {
           expect(
             result,
             contains(
-              "                if (tags != null) 'tags': tags.map((e) => e.toString()).toList(),",
+              "                if (tags != null) 'tags': tags.map((e) => e).toList(),",
             ),
           );
           // The buggy old emission must be gone — `?tags?.toString()` would
@@ -5040,7 +5040,7 @@ void main() {
         expect(
           result,
           contains(
-            "                'X-Tags': xTags.map((e) => e.toString()).join(','),",
+            "                'X-Tags': xTags.map((e) => e).join(','),",
           ),
         );
       });
@@ -5102,7 +5102,7 @@ void main() {
           '        );\n'
           '\n'
           '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-          '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+          '            throw ApiException<Object?>(response.statusCode, response.body);\n'
           '        }\n'
           '    }\n'
           '}\n',
@@ -5179,7 +5179,7 @@ void main() {
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '    }\n'
         '}\n',

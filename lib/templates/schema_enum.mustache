@@ -33,5 +33,5 @@
 
     /// Returns the string form of the enum.
     @override
-    String toString() => value.toString();
+    String toString() => value{{^valueIsString}}.toString(){{/valueIsString}};
 }
