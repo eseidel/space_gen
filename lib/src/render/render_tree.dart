@@ -3734,6 +3734,15 @@ class RenderObject extends RenderNewType {
       'hasAdditionalProperties': hasAdditionalProperties,
       'hasNoJsonProperty': hasNoJsonProperty,
       'assignmentsLine': assignmentsLine,
+      // The constructor can be `const` when the class is `@immutable`
+      // (fields are `final`) and there's no initializer list — the only
+      // initializers we emit are `this.x = x ?? <non-const default>`,
+      // which reference the runtime parameter and so aren't const.
+      // Const-constructible `@immutable` classes trip
+      // `prefer_const_constructors_in_immutables` otherwise. The sealed
+      // parent of a smooshed variant already declares `const`, so
+      // variants can be const too.
+      'canBeConst': !context.quirks.mutableModels && assignmentsLine == null,
       'additionalPropertiesName': 'entries', // Matching OpenAPI.
       'valueSchema': valueSchema?.typeName,
       'operatorIndexType': operatorIndexType,
