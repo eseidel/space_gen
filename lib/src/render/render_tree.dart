@@ -497,20 +497,31 @@ class SpecResolver {
           assignedSnakeName: _snakeFor(schema.targetPointer),
         );
       case ResolvedStringEnum():
+        // Spec-provided member names (`title:`) win over value-derived
+        // ones; both route through the same identifier sanitization.
+        final stringNames = schema.names;
         return RenderStringEnum(
           common: schema.common,
           values: schema.values,
-          names: RenderEnum.variableNamesFor(quirks, schema.values),
+          names: RenderEnum.variableNamesFor(
+            quirks,
+            stringNames ?? schema.values,
+          ),
           descriptions: schema.descriptions,
           defaultValue: schema.defaultValue,
           assignedName: _nameFor(schema.pointer),
           assignedSnakeName: _snakeFor(schema.pointer),
         );
       case ResolvedIntEnum():
+        // An int enum has no value-derived name (`value1`); a spec `title:`
+        // rescues it (`blockMessage`).
+        final intNames = schema.names;
         return RenderIntEnum(
           common: schema.common,
           values: schema.values,
-          names: RenderEnum.variableNamesForInts(schema.values),
+          names: intNames != null
+              ? RenderEnum.variableNamesFor(quirks, intNames)
+              : RenderEnum.variableNamesForInts(schema.values),
           descriptions: schema.descriptions,
           defaultValue: schema.defaultValue,
           assignedName: _nameFor(schema.pointer),

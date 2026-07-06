@@ -3968,6 +3968,43 @@ void main() {
       expect(result, isNot(contains('factory Test.fromJson(String')));
     });
 
+    test('oneOf-of-consts enum names members from the spec titles', () {
+      // Discord spells typed int enums as `oneOf` of `const` variants,
+      // each with a `title:` — the spec's own member name. Use it
+      // (`blockMessage`) rather than the value-derived fallback (`value1`).
+      final json = {
+        'type': 'integer',
+        'oneOf': [
+          {'title': 'BLOCK_MESSAGE', 'const': 1},
+          {'title': 'FLAG_TO_CHANNEL', 'const': 2},
+        ],
+      };
+      final result = renderTestSchema(json);
+      expect(result, contains('blockMessage._(1)'));
+      expect(result, contains('flagToChannel._(2)'));
+      // The meaningless value-derived fallback must not appear.
+      expect(result, isNot(contains('value1._(1)')));
+      expect(result, isNot(contains('value2._(2)')));
+    });
+
+    test('oneOf-of-consts enum falls back to value names when a title is '
+        'missing', () {
+      // Names are all-or-nothing: a partially-titled enum would mix
+      // `blockMessage` with `value2`, so fall back to value-derived names
+      // for the whole enum.
+      final json = {
+        'type': 'integer',
+        'oneOf': [
+          {'title': 'BLOCK_MESSAGE', 'const': 1},
+          {'const': 2},
+        ],
+      };
+      final result = renderTestSchema(json);
+      expect(result, contains('value1._(1)'));
+      expect(result, contains('value2._(2)'));
+      expect(result, isNot(contains('blockMessage')));
+    });
+
     test('integer enum with negative values uses safe variable names', () {
       final json = {
         'type': 'integer',

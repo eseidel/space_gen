@@ -322,6 +322,7 @@ ResolvedSchema _resolveSchemaFully(
       defaultValue: schema.defaultValue,
       values: schema.enumValues,
       descriptions: schema.enumDescriptions,
+      names: schema.enumNames,
     );
   }
   if (schema is SchemaIntEnum) {
@@ -331,6 +332,7 @@ ResolvedSchema _resolveSchemaFully(
       defaultValue: schema.defaultValue,
       values: schema.enumValues,
       descriptions: schema.enumDescriptions,
+      names: schema.enumNames,
     );
   }
   if (schema is SchemaBinary) {
@@ -1560,6 +1562,7 @@ abstract class ResolvedEnum<T extends Object> extends ResolvedSchema {
     required this.defaultValue,
     required this.values,
     required this.descriptions,
+    required this.names,
   }) : super(createsNewType: true);
 
   /// The values of the resolved schema.
@@ -1571,8 +1574,20 @@ abstract class ResolvedEnum<T extends Object> extends ResolvedSchema {
   /// Optional per-value dartdoc descriptions, parallel to [values].
   final List<String>? descriptions;
 
+  /// Optional spec-provided member names, parallel to [values] (the
+  /// `title:` of each `oneOf`-of-`const`s variant). Render prefers these
+  /// over value-derived names; null when the spec gives none. See
+  /// [SchemaEnum.enumNames].
+  final List<String>? names;
+
   @override
-  List<Object?> get props => [super.props, values, defaultValue, descriptions];
+  List<Object?> get props => [
+    super.props,
+    values,
+    defaultValue,
+    descriptions,
+    names,
+  ];
 }
 
 class ResolvedStringEnum extends ResolvedEnum<String> {
@@ -1581,6 +1596,7 @@ class ResolvedStringEnum extends ResolvedEnum<String> {
     required super.defaultValue,
     required super.values,
     required super.descriptions,
+    required super.names,
   });
 
   @override
@@ -1590,6 +1606,7 @@ class ResolvedStringEnum extends ResolvedEnum<String> {
       defaultValue: defaultValue,
       values: values,
       descriptions: descriptions,
+      names: names,
     );
   }
 }
@@ -1600,6 +1617,7 @@ class ResolvedIntEnum extends ResolvedEnum<int> {
     required super.defaultValue,
     required super.values,
     required super.descriptions,
+    required super.names,
   });
 
   @override
@@ -1609,6 +1627,7 @@ class ResolvedIntEnum extends ResolvedEnum<int> {
       defaultValue: defaultValue,
       values: values,
       descriptions: descriptions,
+      names: names,
     );
   }
 }

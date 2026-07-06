@@ -1792,6 +1792,7 @@ void main() {
           values: const ['bar', 'baz'],
           defaultValue: null,
           descriptions: null,
+          names: null,
         );
         final schema2 = ResolvedStringEnum(
           common: CommonProperties.test(
@@ -1804,6 +1805,7 @@ void main() {
           values: const ['bar', 'qux'],
           defaultValue: null,
           descriptions: null,
+          names: null,
         );
         expect(schema1, equals(schema1));
         // Different values.
@@ -1963,6 +1965,7 @@ void main() {
           values: const ['bar', 'baz'],
           defaultValue: null,
           descriptions: null,
+          names: null,
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.values, equals(schema.values));
@@ -1975,6 +1978,7 @@ void main() {
           values: const [1, 11, 100],
           defaultValue: 1,
           descriptions: null,
+          names: null,
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.values, equals(schema.values));

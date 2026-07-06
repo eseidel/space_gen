@@ -628,15 +628,17 @@ Schema? _maybeCollapseOneOfOfConsts(
     if (!variant.containsKey('const')) return null;
     if (variant.keys.any((k) => !allowedKeys.contains(k))) return null;
   }
-  // Walk the variants once to collect values + descriptions. Titles
-  // aren't preserved yet — `RenderEnum.variableNamesFor` derives Dart
-  // names from the values — but the underlying enum type is correct
-  // and dispatches cleanly.
+  // Walk the variants once to collect values, descriptions, and titles.
+  // A `title:` (`{title: BLOCK_MESSAGE, const: 1}`) is the spec's own
+  // member name; preserved so render emits `blockMessage` instead of the
+  // value-derived fallback `value1`.
   final values = <dynamic>[];
   final descriptions = <String?>[];
+  final titles = <String?>[];
   for (final variant in list.cast<Map<dynamic, dynamic>>()) {
     values.add(variant['const']);
     descriptions.add(variant['description'] as String?);
+    titles.add(variant['title'] as String?);
   }
   // Pick string vs int from the parent's declared `type:`, falling
   // back to value-shape inference when `type:` is absent (matches the
@@ -671,12 +673,18 @@ Schema? _maybeCollapseOneOfOfConsts(
   final descriptionsToPlumb = descriptions.any((d) => d != null)
       ? descriptions.map((d) => d ?? '').toList()
       : null;
+  // Names are all-or-nothing: only drive member names from titles when
+  // every variant has one, so we never mix `blockMessage` with `value1`.
+  final namesToPlumb = titles.every((t) => t != null && t.isNotEmpty)
+      ? titles.cast<String>()
+      : null;
   if (isInt) {
     return SchemaIntEnum(
       common: common,
       defaultValue: null,
       enumValues: values.cast<int>(),
       enumDescriptions: descriptionsToPlumb,
+      enumNames: namesToPlumb,
     );
   }
   return SchemaStringEnum(
@@ -684,6 +692,7 @@ Schema? _maybeCollapseOneOfOfConsts(
     defaultValue: null,
     enumValues: values.cast<String>(),
     enumDescriptions: descriptionsToPlumb,
+    enumNames: namesToPlumb,
   );
 }
 
@@ -977,6 +986,9 @@ SchemaEnum<Object>? _handleEnum({
       defaultValue: typedDefaultValue,
       enumValues: typedEnumValues,
       enumDescriptions: enumDescriptions,
+      // A plain `enum:` list carries no per-member names; render derives
+      // them from the values.
+      enumNames: null,
     );
   }
   if (nonNullValues.any((e) => e is! String)) {
@@ -1006,6 +1018,7 @@ SchemaEnum<Object>? _handleEnum({
     defaultValue: typedDefaultValue,
     enumValues: typedEnumValues,
     enumDescriptions: enumDescriptions,
+    enumNames: null,
   );
 }
 
