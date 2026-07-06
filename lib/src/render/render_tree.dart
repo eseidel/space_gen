@@ -1316,7 +1316,10 @@ class Endpoint implements ToTemplateContext {
         ],
         final RenderRequestBodySimple body => [
           '${indent}body: ${body.bodyExpression(context)},',
-          '${indent}bodyContentType: ${body.bodyContentTypeExpression},',
+          // invokeApi defaults bodyContentType to BodyContentType.json,
+          // so only pass it for the non-default content types.
+          if (!body.isDefaultBodyContentType)
+            '${indent}bodyContentType: ${body.bodyContentTypeExpression},',
         ],
       };
 
@@ -1915,6 +1918,15 @@ final class MultiStatusReturn extends OperationReturn {
   final String wrapperTypeName;
 }
 
+/// The `bodyContentType` value `ApiClient.invokeApi` defaults to (see
+/// the `bodyContentType` parameter default in `api_client.dart`). This
+/// describes the *client's* default, not any one body's content type —
+/// a body whose own `bodyContentTypeExpression` equals it omits the
+/// redundant `bodyContentType:` argument at the call site. It happens to
+/// be JSON today, but a JSON body still declares its type literally, so
+/// the two would diverge cleanly if the default ever changed.
+const defaultBodyContentTypeExpression = 'BodyContentType.json';
+
 /// Sealed so the endpoint arg-builder can pattern-match exhaustively on
 /// the body shape: the multipart path emits `fields:`/`files:`, every
 /// other subclass emits `body:`/`bodyContentType:`. Adding a fifth shape
@@ -1962,6 +1974,12 @@ abstract class RenderRequestBodySimple extends RenderRequestBody {
   /// The `BodyContentType.xxx` Dart expression that pairs with this
   /// body, passed to `ApiClient.invokeApi(bodyContentType: ...)`.
   String get bodyContentTypeExpression;
+
+  /// Whether [bodyContentTypeExpression] is the value `invokeApi`
+  /// defaults `bodyContentType` to. When true the operation renderer
+  /// omits the redundant argument (`avoid_redundant_argument_values`).
+  bool get isDefaultBodyContentType =>
+      bodyContentTypeExpression == defaultBodyContentTypeExpression;
 
   /// The Dart expression for the `body:` argument to `invokeApi`. For
   /// JSON: the map/list the client will `jsonEncode`. For octet-stream
@@ -2807,7 +2825,9 @@ class RenderPod extends RenderSchema {
   String? exampleValue(SchemaRenderer context) {
     final raw = switch (type) {
       PodType.boolean => 'false',
-      PodType.dateTime => 'DateTime.utc(2024, 1, 1)',
+      // `month`/`day` default to 1, so passing them is redundant
+      // (`avoid_redundant_argument_values`).
+      PodType.dateTime => 'DateTime.utc(2024)',
       PodType.uri => "Uri.parse('https://example.com')",
       PodType.uriTemplate => "UriTemplate('https://example.com/{id}')",
       PodType.email => "'user@example.com'",
@@ -3877,6 +3897,15 @@ class RenderObject extends RenderNewType {
       if (rendersAsConstGetter(jsonName, property)) continue;
       final example = property.exampleValue(context);
       if (example == null) return null;
+      // A JSON-required property that also has a default renders as an
+      // optional constructor param `= <default>`; passing an example
+      // equal to that default is redundant
+      // (`avoid_redundant_argument_values`), so omit it — the field
+      // still takes the same value. Only a const default's string can
+      // match the example here (a `?? DateTime.parse(...)` initializer
+      // reads differently from `DateTime.utc(...)`), so this can't drop
+      // a genuinely-needed argument.
+      if (property.defaultValueString(context) == example) continue;
       final dartName = variableSafeName(context.quirks, jsonName);
       args.add('$dartName: $example');
     }

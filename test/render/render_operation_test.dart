@@ -437,6 +437,32 @@ void main() {
         '}\n',
       );
     });
+
+    test('application/json omits the default bodyContentType argument', () {
+      // invokeApi defaults bodyContentType to BodyContentType.json, so a
+      // JSON body passes only `body:` (avoid_redundant_argument_values).
+      final operation = {
+        'tags': ['pet'],
+        'operationId': 'createPet',
+        'requestBody': {
+          'content': {
+            'application/json': {
+              'schema': {'type': 'string'},
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/pet',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      expect(result, contains('body: string,'));
+      expect(result, isNot(contains('bodyContentType:')));
+    });
   });
 
   group('multiple responses', () {
