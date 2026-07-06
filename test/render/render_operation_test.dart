@@ -64,7 +64,7 @@ void main() {
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
-        "            path: '/pet/{petId}/uploadImage'.replaceAll('{petId}', '\${ petId }'),\n"
+        "            path: '/pet/{petId}/uploadImage'.replaceAll('{petId}', '\$petId'),\n"
         '            body: uint8List,\n'
         '            bodyContentType: BodyContentType.octetStream,\n'
         '        );\n'
@@ -75,6 +75,39 @@ void main() {
         '    }\n'
         '}\n',
       );
+    });
+
+    test('String path parameter substitutes bare, without interpolation', () {
+      // A String path parameter is already a String, so it substitutes
+      // directly — no `'${...}'` wrapper (which would trip
+      // unnecessary_string_interpolations / _brace_in_string_interps).
+      final operation = {
+        'tags': ['pet'],
+        'summary': 'Get by name.',
+        'operationId': 'getByName',
+        'parameters': [
+          {
+            'name': 'name',
+            'in': 'path',
+            'required': true,
+            'schema': {'type': 'string'},
+          },
+        ],
+        'responses': {
+          '200': {'description': 'ok'},
+        },
+      };
+      final result = runWithLogger(
+        _MockLogger(),
+        () => renderTestOperation(
+          path: '/pet/{name}',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        ),
+      );
+      expect(result, contains(".replaceAll('{name}', name)"));
+      expect(result, isNot(contains(r"'${ name }'")));
+      expect(result, isNot(contains(r"'$name'")));
     });
 
     test('multipart/form-data with required file only', () {
