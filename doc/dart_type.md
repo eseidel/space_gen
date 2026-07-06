@@ -75,6 +75,35 @@ newtype/enum with `fromJson`/`toJson` — which `DartType` (a name + type args)
 deliberately doesn't carry. So conversion stays on the render nodes; see the
 dropped codec-extension note under **Remaining work**.
 
+### Longer arc: the missing Dart schema library (motivation, not a mandate)
+
+Dart lacks a Zod — a standalone, analyzer-free, community-neutral type/schema
+library. Every codegen tool (freezed, json_serializable, space_gen) reinvents a
+private version internally.
+
+The Zod mapping locates the pieces: Zod's `ZodType` (structure + codec +
+validation) is `RenderSchema`; Zod's `z.infer` (the derived static type, with no
+runtime behavior) is `DartType`. Zod hangs everything on the schema and nothing
+on the inferred type — which is *exactly* why codec / example / validation
+belong on `RenderSchema`, not `DartType`. Same factoring, not a contradiction.
+
+Why Dart has no Zod: `z.infer` — deriving a static type *from* a runtime schema
+value — needs TypeScript's structural typing plus type-level computation, which
+Dart doesn't have. So a real Dart-Zod is **codegen**-shaped (define schema →
+generate typed class + codec), not runtime-dynamic. That makes space_gen's
+spec-agnostic kernel — `DartType` + composite structure + codec/example/
+validation — precisely the substrate such a library would sit on.
+`RenderSchema` today is that kernel *fused with an OpenAPI frontend* (allOf
+merge, discriminator detection, readOnly, dispatch-strategy selection, smoosh /
+file layout, naming, doc-comment prose); the fusion line is the extraction seam,
+pulled apart when a **second consumer** appears (another spec frontend, or a
+Dart-Frog-style runtime request-typing library). Two seeds at different
+maturities:
+`DartType`-as-a-standalone-value (a tiny, build-free "Dart type as a value" the
+community keeps reinventing) is nearly extractable and useful alone; the schema
+kernel is later. Discipline: grow both under real use, extract on the second
+consumer — the same require-a-validation-target rule.
+
 ## Remaining work
 
 ### Type-graph least-upper-bound (deferred)
@@ -97,6 +126,26 @@ like `Node -> Node`). The `commonType` doc comment records this too.
 fields and `additionalProperties` value all share a single type — and no spec
 in the test set has one, so building it now is speculative (see the
 require-a-real-validation-target rule).
+
+**The bigger picture this belongs to.** `DartType` today is a type *reference
+and renderer*, not a type *system*: it can name a type and do name-equality
+common-type, but it can't answer the relational questions (subtype? real LUB?
+shared supertype?). The environment/graph above is the missing half — and it is
+the single biggest gap between "nice codegen type-reference" and "a type system
+the community could build on." The analyzer proves the shape (its `DartType`
+value vs. its `TypeSystem`/`TypeProvider` that holds the hierarchy); a
+lightweight, standalone version of *that separation* is what's wanted.
+
+Note this is a burden a Dart-Zod carries that a TS one never does: TypeScript
+subtyping is structural and the compiler computes it for free, so Zod never
+models a class hierarchy. Dart is nominal with no codegen-time compiler, so the
+hierarchy must be modeled explicitly. Today that relational knowledge is
+scattered — `RenderObject.parentSealedTypeName`, the dispatch decisions, the
+sealed-class generation — and the sealed-class/smoosh machinery is partly a
+*workaround* for not having a queryable tree (it emits a sealed class and
+pattern-matches instead of typing a union as its shared supertype).
+Consolidating that into the type environment is the "understand the type tree"
+work; it would likely simplify parts of dispatch as a side effect.
 
 ### Newtype wrapped type (done — #226)
 
@@ -126,3 +175,24 @@ Two reasons it didn't earn its keep:
 `RenderPod` keeps its inline per-`PodType` codec. If a *second* caller ever
 appears — e.g. parameter serialization needing a scalar's wire form without a
 `RenderSchema` in hand — revisit.
+
+### Example-value generation (and its const-ness) stays off DartType
+
+Same rule as JSON conversion, for the same reason. Generating a schema's
+example value (`RenderSchema.exampleValue`, used by the round-trip tests) and
+deciding whether that example is a compile-time **constant** are functions of
+schema *structure*, not of `DartType`:
+
+- Scalars are a pure function of the type (`'false'`, `DateTime.utc(2024)`,
+  `Uri.parse(...)`), so const-ness *could* live on `DartType` — but that's the
+  scalar-only case that #227 showed doesn't generalize.
+- An object's example is `Foo(field: <field example>, ...)`, const iff its
+  constructor is const (`canBeConst` = `assignmentsLine == null`, schema
+  structure) **and** every field example is const (recursion over the object's
+  fields). `DartType` (a name + type args) deliberately doesn't carry fields.
+
+So when the const-example refactor happens (making the generated round-trip
+tests' example instances `const` to close `prefer_const_constructors` — see the
+`spec-iteration` skill's state doc), it is a `bool exampleValueIsConst(context)`
+**sibling to `exampleValue` on `RenderSchema`**, recursive through composites —
+not anything on `DartType`.

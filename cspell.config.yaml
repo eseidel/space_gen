@@ -4,6 +4,11 @@ ignorePaths:
   - "coverage/**"
   - "*.txt" # ignore text files at the root of the project
 words:
+  - subtyping
+  - interps
+  - goldens
+  - impls
+  - regens
   - spacetraders
   - newtype
   - newtypes
