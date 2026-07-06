@@ -8,6 +8,19 @@ final _identifierPattern = RegExp(r'[a-zA-Z_$][\w$]*');
 /// [ModelHelpers.all] as a set, for O(1) membership while scanning.
 final Set<String> _helperNames = ModelHelpers.all.toSet();
 
+/// Every whole-identifier token appearing in [body].
+///
+/// Used to prune an emitted file's imports down to the symbols it
+/// actually names: an import is kept only when its type/sentinel token
+/// is in this set. Tokenizing (rather than `body.contains(name)`)
+/// avoids substring false positives — the same whole-identifier
+/// discipline [_referencedModelHelpers] relies on. Keeping an import on
+/// *any* appearance (including doc comments) is deliberately
+/// conservative: it can never drop a genuinely-used import, so it can
+/// never break compilation.
+Set<String> referencedIdentifiers(String body) =>
+    _identifierPattern.allMatches(body).map((m) => m[0]!).toSet();
+
 /// The subset of [ModelHelpers.all] that [body] references as whole
 /// identifiers.
 ///
