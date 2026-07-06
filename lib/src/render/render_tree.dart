@@ -1918,6 +1918,15 @@ final class MultiStatusReturn extends OperationReturn {
   final String wrapperTypeName;
 }
 
+/// The `bodyContentType` value `ApiClient.invokeApi` defaults to (see
+/// the `bodyContentType` parameter default in `api_client.dart`). This
+/// describes the *client's* default, not any one body's content type —
+/// a body whose own `bodyContentTypeExpression` equals it omits the
+/// redundant `bodyContentType:` argument at the call site. It happens to
+/// be JSON today, but a JSON body still declares its type literally, so
+/// the two would diverge cleanly if the default ever changed.
+const defaultBodyContentTypeExpression = 'BodyContentType.json';
+
 /// Sealed so the endpoint arg-builder can pattern-match exhaustively on
 /// the body shape: the multipart path emits `fields:`/`files:`, every
 /// other subclass emits `body:`/`bodyContentType:`. Adding a fifth shape
@@ -1966,11 +1975,11 @@ abstract class RenderRequestBodySimple extends RenderRequestBody {
   /// body, passed to `ApiClient.invokeApi(bodyContentType: ...)`.
   String get bodyContentTypeExpression;
 
-  /// Whether [bodyContentTypeExpression] is `invokeApi`'s default
-  /// (`BodyContentType.json`). When true the operation renderer omits
-  /// the redundant `bodyContentType:` argument
-  /// (`avoid_redundant_argument_values`).
-  bool get isDefaultBodyContentType => false;
+  /// Whether [bodyContentTypeExpression] is the value `invokeApi`
+  /// defaults `bodyContentType` to. When true the operation renderer
+  /// omits the redundant argument (`avoid_redundant_argument_values`).
+  bool get isDefaultBodyContentType =>
+      bodyContentTypeExpression == defaultBodyContentTypeExpression;
 
   /// The Dart expression for the `body:` argument to `invokeApi`. For
   /// JSON: the map/list the client will `jsonEncode`. For octet-stream
@@ -2006,9 +2015,6 @@ class RenderRequestBodyJson extends RenderRequestBodySimple {
 
   @override
   String get bodyContentTypeExpression => 'BodyContentType.json';
-
-  @override
-  bool get isDefaultBodyContentType => true;
 
   @override
   String bodyExpression(SchemaRenderer context) => schema.toJsonExpression(
