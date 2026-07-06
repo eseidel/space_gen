@@ -140,12 +140,29 @@ String maybeAddUnintendedHtmlIgnore(String content) {
 /// digit, not a letter. Self-closing `<br/>`-style tags and closing
 /// `</foo>` tags both match via the leading `/` arm only when a
 /// letter follows (so `</` followed by whitespace won't match).
+///
+/// Angle brackets inside a code span or fenced code block are
+/// **not** matched: dartdoc renders those verbatim, so the
+/// `unintended_html_in_doc_comment` lint doesn't fire on
+/// `` `Map<String, dynamic>` `` or a ` ``` `-fenced sample. Inline
+/// spans are stripped before the tag check; fenced regions (opened
+/// and closed by a `` ``` `` line) are skipped entirely.
 bool _dartdocHasHtmlTag(String content) {
   final tagRe = RegExp('</?[A-Za-z]');
+  final fenceRe = RegExp('^`{3,}');
+  final inlineCodeRe = RegExp('`[^`]*`');
+  var inFence = false;
   for (final line in content.split('\n')) {
     final stripped = line.trimLeft();
     if (!stripped.startsWith('///')) continue;
-    if (tagRe.hasMatch(stripped)) return true;
+    // Doc text after the `///` marker and any leading whitespace.
+    final doc = stripped.substring(3).trimLeft();
+    if (fenceRe.hasMatch(doc)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+    if (tagRe.hasMatch(doc.replaceAll(inlineCodeRe, ''))) return true;
   }
   return false;
 }
