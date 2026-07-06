@@ -481,11 +481,12 @@ void main() {
     });
 
     test(
-      'int enum round-trip test omits the toString==toJson assertion',
+      'int enum toString test compares against the stringified value',
       () async {
         // For an int enum `toString()` is a String but `toJson()` is an int, so
-        // `expect(value.toString(), equals(value.toJson()))` is a type category
-        // error that always fails. Skip that one assertion; keep the rest.
+        // comparing them directly is a type category error that always fails.
+        // Compare against the stringified wire value instead — type-safe, and
+        // it keeps `toString()` covered.
         final fs = MemoryFileSystem.test();
         final spec = {
           'openapi': '3.1.0',
@@ -524,9 +525,14 @@ void main() {
         final body = out
             .childFile('test/models/level_test.dart')
             .readAsStringSync();
-        // The type-unsafe assertion is gone...
-        expect(body, isNot(contains('toString matches toJson')));
-        // ...but the type-safe round-trip check stays.
+        // The toString test is present (so toString() stays covered)...
+        expect(body, contains('toString matches toJson for every value'));
+        // ...comparing against the stringified wire value, not the raw int...
+        expect(
+          body,
+          contains('equals(value.toJson().toString())'),
+        );
+        // ...and the fromJson round-trip check stays too.
         expect(body, contains('fromJson round-trips every value'));
         expect(body, contains('Level.fromJson(value.toJson())'));
       },
