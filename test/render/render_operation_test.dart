@@ -70,7 +70,7 @@ void main() {
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '    }\n'
         '}\n',
@@ -108,6 +108,40 @@ void main() {
       expect(result, contains(".replaceAll('{name}', name)"));
       expect(result, isNot(contains(r"'${ name }'")));
       expect(result, isNot(contains(r"'$name'")));
+    });
+
+    test('String query parameter is not stringified with .toString()', () {
+      // A String query param already produces a String, so no
+      // `.toString()` (which would trip noop_primitive_operations). An
+      // int param keeps it, since it genuinely converts.
+      final operation = {
+        'tags': ['pet'],
+        'operationId': 'search',
+        'parameters': [
+          {
+            'name': 'q',
+            'in': 'query',
+            'schema': {'type': 'string'},
+          },
+          {
+            'name': 'page',
+            'in': 'query',
+            'schema': {'type': 'integer'},
+          },
+        ],
+        'responses': {
+          '200': {'description': 'ok'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/search',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      expect(result, contains("'q': [q],"));
+      expect(result, isNot(contains('q.toString()')));
+      // int param still converts.
+      expect(result, contains("'page': [page.toString()],"));
     });
 
     test('multipart/form-data with required file only', () {
@@ -397,7 +431,7 @@ void main() {
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '    }\n'
         '}\n',
@@ -444,7 +478,7 @@ void main() {
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '    }\n'
         '}\n',
@@ -533,7 +567,7 @@ void main() {
           '        );\n'
           '\n'
           '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-          '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+          '            throw ApiException<Object?>(response.statusCode, response.body);\n'
           '        }\n'
           '\n'
           '        return switch (response.statusCode) {\n'
@@ -589,7 +623,7 @@ void main() {
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '\n'
         '        if (response.body.isNotEmpty) {\n'
@@ -824,7 +858,7 @@ void main() {
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '\n'
         '        if (response.body.isNotEmpty) {\n'
@@ -866,7 +900,7 @@ void main() {
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '    }\n'
         '}\n',
@@ -979,12 +1013,12 @@ void main() {
         '            method: Method.post,\n'
         "            path: '/users',\n"
         '            queryParameters: {\n'
-        "                if (foo != null) 'foo': [foo.toString()],\n"
+        "                if (foo != null) 'foo': [foo],\n"
         '            },\n'
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '    }\n'
         '}\n',
@@ -1038,12 +1072,12 @@ void main() {
         '            method: Method.post,\n'
         "            path: '/users',\n"
         '            queryParameters: {\n'
-        "                if (foo != null) 'foo': foo.map((e) => e.toString()).toList(),\n"
+        "                if (foo != null) 'foo': foo.map((e) => e).toList(),\n"
         '            },\n'
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '    }\n'
         '}\n',
@@ -1079,7 +1113,7 @@ void main() {
       // string is wrapped in a 1-element list for the Map<String, List<String>>.
       expect(
         result,
-        contains("'foo': [foo.map((e) => e.toString()).join(',')],"),
+        contains("'foo': [foo.map((e) => e).join(',')],"),
       );
     });
 
@@ -1130,7 +1164,7 @@ void main() {
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '    }\n'
         '}\n',
@@ -1218,14 +1252,14 @@ void main() {
         '            method: Method.post,\n'
         "            path: '/users',\n"
         '            queryParameters: {\n'
-        "                if (foo != null) 'foo': [foo.toString()],\n"
+        "                if (foo != null) 'foo': [foo],\n"
         "                if (bar != null) 'bar': [bar.toString()],\n"
         "                if (baz != null) 'baz': [baz.toString()],\n"
         '            },\n'
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '    }\n'
         '}\n',
@@ -1277,7 +1311,7 @@ void main() {
           '        );\n'
           '\n'
           '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-          '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+          '            throw ApiException<Object?>(response.statusCode, response.body);\n'
           '        }\n'
           '    }\n'
           '}\n',
@@ -1330,7 +1364,7 @@ void main() {
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '\n'
         '        if (response.body.isNotEmpty) {\n'
@@ -1442,7 +1476,7 @@ void main() {
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '\n'
         '        if (response.body.isNotEmpty) {\n'
@@ -1510,7 +1544,7 @@ void main() {
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '\n'
         '        if (response.body.isNotEmpty) {\n'
@@ -1585,7 +1619,7 @@ void main() {
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
-        '            throw ApiException<Object?>(response.statusCode, response.body.toString());\n'
+        '            throw ApiException<Object?>(response.statusCode, response.body);\n'
         '        }\n'
         '\n'
         '        if (response.body.isNotEmpty) {\n'
@@ -1724,7 +1758,7 @@ void main() {
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
         '            throw ApiException<GetWidgetsDefaultResponse>(\n'
         '                response.statusCode,\n'
-        '                response.body.toString(),\n'
+        '                response.body,\n'
         '                body: GetWidgetsDefaultResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>),\n'
         '            );\n'
         '        }\n'
@@ -1849,7 +1883,7 @@ void main() {
           result,
           contains(
             'throw ApiException<Object?>(response.statusCode, '
-            'response.body.toString());',
+            'response.body);',
           ),
         );
       },

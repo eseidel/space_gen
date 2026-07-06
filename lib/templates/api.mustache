@@ -25,12 +25,12 @@
             {{#hasErrorType}}
             throw ApiException<{{{ errorType }}}>(
                 response.statusCode,
-                response.body.toString(),
+                response.body,
                 body: {{{ errorFromJson }}},
             );
             {{/hasErrorType}}
             {{^hasErrorType}}
-            throw ApiException<Object?>(response.statusCode, response.body.toString());
+            throw ApiException<Object?>(response.statusCode, response.body);
             {{/hasErrorType}}
         }
 {{^isVoidReturn}}

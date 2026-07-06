@@ -20,6 +20,15 @@ import 'package:space_gen/src/types.dart';
 /// (`'$x'` rather than `'${x}'`).
 final _bareIdentifier = RegExp(r'^[a-zA-Z_$][\w$]*$');
 
+/// Coerces [expr] — the wire value of [schema] — to a `String`, adding
+/// `.toString()` only when the value isn't already one. Query/header
+/// params must hand `String`s to the client; calling `.toString()` on a
+/// value that is already a `String` (raw strings, dateTime/date/uri
+/// pods that serialize to `String`, string enums) is a
+/// `noop_primitive_operations` lint.
+String _stringifyWireValue(RenderSchema schema, String expr) =>
+    schema.jsonStorageDartType == DartType.string ? expr : '$expr.toString()';
+
 String avoidReservedWord(String value) {
   if (isReservedWord(value)) {
     return '${value}_';
@@ -1277,7 +1286,8 @@ class Endpoint implements ToTemplateContext {
         context,
         dartIsNullable: false,
       );
-      final items = '$dartName.map((e) => $itemsToJson.toString())';
+      final item = _stringifyWireValue(paramType.items, itemsToJson);
+      final items = '$dartName.map((e) => $item)';
       // `explode: false` (style=form) comma-joins the array into a single
       // value (`?k=a,b,c`) rather than repeating the key. Wrap the joined
       // string in a 1-element list so it flows through the same
@@ -1289,7 +1299,7 @@ class Endpoint implements ToTemplateContext {
         context,
         dartIsNullable: false,
       );
-      value = '[$scalarToJson.toString()]';
+      value = '[${_stringifyWireValue(paramType, scalarToJson)}]';
     }
     if (p.isNullable) {
       return "${innerIndent}if ($dartName != null) '${p.name}': $value,";
@@ -1342,7 +1352,8 @@ class Endpoint implements ToTemplateContext {
         context,
         dartIsNullable: false,
       );
-      final mapCall = ".map((e) => $itemsToJson.toString()).join(',')";
+      final item = _stringifyWireValue(paramType.items, itemsToJson);
+      final mapCall = ".map((e) => $item).join(',')";
       final value = p.isNullable ? '?$dartName?$mapCall' : '$dartName$mapCall';
       return "$innerIndent'${p.name}': $value,";
     }
@@ -4384,6 +4395,9 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
       'valueDartType': valueDartType,
+      // A string enum's `value` is already a `String`, so `toString()`
+      // returns it directly; an int enum must convert (see the template).
+      'valueIsString': jsonStorageDartType == DartType.string,
       'enumValues': [
         for (var i = 0; i < values.length; i++) enumValueToTemplateContext(i),
       ],
