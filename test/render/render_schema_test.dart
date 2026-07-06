@@ -2885,8 +2885,12 @@ void main() {
       expect(action, contains('1 => BlockAction.fromJson(json)'));
       expect(action, contains('2 => FlagAction.fromJson(json)'));
       // The field keeps the shared enum type — no throwaway per-variant
-      // single-value enum.
+      // single-value enum — and decodes through it.
       expect(action, contains('final ActionType type'));
+      expect(
+        action,
+        contains("type: ActionType.fromJson(json['type'] as int)"),
+      );
       expect(action, isNot(contains('UnimplementedError')));
     });
 
