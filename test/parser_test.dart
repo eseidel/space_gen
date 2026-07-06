@@ -339,6 +339,44 @@ void main() {
       expect(obj.requiredProperties, ['a']);
     });
 
+    test('captures a property pinned via allOf-ref + single-value enum '
+        'as a const tag', () {
+      // OpenAPI-3.0 "pinned enum" idiom: `allOf: [{$ref: E}]` + a
+      // single-value `enum`. The property still parses as the plain `E`
+      // ref; the pinned value is recorded in `constProperties` for the
+      // dispatch pass to use as an implicit discriminator.
+      final json = {
+        'type': 'object',
+        'properties': {
+          'type': {
+            'type': 'integer',
+            'enum': [1],
+            'allOf': [
+              {r'$ref': '#/components/schemas/ActionType'},
+            ],
+          },
+          'other': {'type': 'string'},
+          // Multi-value narrowing is a restricted view (issue #235), not
+          // a single tag — must NOT be captured.
+          'status': {
+            'type': 'integer',
+            'enum': [1, 2],
+            'allOf': [
+              {r'$ref': '#/components/schemas/ActionType'},
+            ],
+          },
+        },
+        'required': ['type'],
+      };
+      // The multi-value `status` narrowing isn't captured, so its `enum`
+      // still trips `_warnUnused` (the issue #235 TODO) — needs a scope.
+      final logger = _MockLogger();
+      final schema = runWithLogger(logger, () => parseTestSchema(json));
+      expect(schema, isA<SchemaObject>());
+      final obj = schema as SchemaObject;
+      expect(obj.constProperties, {'type': 1});
+    });
+
     test('oneOf with a real polymorphic variant stays a oneOf', () {
       // A oneOf where any variant brings its own shape (here, a
       // `type: string` variant) is a real polymorphic schema — the

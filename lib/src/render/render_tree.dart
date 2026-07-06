@@ -497,20 +497,31 @@ class SpecResolver {
           assignedSnakeName: _snakeFor(schema.targetPointer),
         );
       case ResolvedStringEnum():
+        // Spec-provided member names (`title:`) win over value-derived
+        // ones; both route through the same identifier sanitization.
+        final stringNames = schema.names;
         return RenderStringEnum(
           common: schema.common,
           values: schema.values,
-          names: RenderEnum.variableNamesFor(quirks, schema.values),
+          names: RenderEnum.variableNamesFor(
+            quirks,
+            stringNames ?? schema.values,
+          ),
           descriptions: schema.descriptions,
           defaultValue: schema.defaultValue,
           assignedName: _nameFor(schema.pointer),
           assignedSnakeName: _snakeFor(schema.pointer),
         );
       case ResolvedIntEnum():
+        // An int enum has no value-derived name (`value1`); a spec `title:`
+        // rescues it (`blockMessage`).
+        final intNames = schema.names;
         return RenderIntEnum(
           common: schema.common,
           values: schema.values,
-          names: RenderEnum.variableNamesForInts(schema.values),
+          names: intNames != null
+              ? RenderEnum.variableNamesFor(quirks, intNames)
+              : RenderEnum.variableNamesForInts(schema.values),
           descriptions: schema.descriptions,
           defaultValue: schema.defaultValue,
           assignedName: _nameFor(schema.pointer),
@@ -524,6 +535,7 @@ class SpecResolver {
           ),
           additionalProperties: maybeRenderSchema(schema.additionalProperties),
           requiredProperties: schema.requiredProperties,
+          constProperties: schema.constProperties,
           parentSealedTypeName: _names.parentSealedTypeFor(schema.pointer),
           assignedName: _nameFor(schema.pointer),
           assignedSnakeName: _snakeFor(schema.pointer),
@@ -662,11 +674,13 @@ class SpecResolver {
         // becomes the merged object's `additionalProperties` overflow. First
         // open member wins (multiple open members in one allOf is degenerate).
         RenderSchema? additionalProperties;
+        final constProperties = <String, Object>{};
         for (final schema in schema.schemas) {
           final renderSchema = toRenderSchema(schema);
           if (renderSchema is RenderObject) {
             properties.addAll(renderSchema.properties);
             requiredProperties.addAll(renderSchema.requiredProperties);
+            constProperties.addAll(renderSchema.constProperties);
             // A member that itself declares `additionalProperties` (an
             // object with an overflow) opens the merged object too.
             additionalProperties ??= renderSchema.additionalProperties;
@@ -682,6 +696,7 @@ class SpecResolver {
           properties: properties,
           additionalProperties: additionalProperties,
           requiredProperties: requiredProperties.toList(),
+          constProperties: constProperties,
           parentSealedTypeName: _names.parentSealedTypeFor(schema.pointer),
           assignedName: _nameFor(schema.pointer),
           assignedSnakeName: _snakeFor(schema.pointer),
@@ -3337,6 +3352,7 @@ class RenderObject extends RenderNewType {
     required this.properties,
     this.additionalProperties,
     this.requiredProperties = const [],
+    this.constProperties = const {},
     this.parentSealedTypeName,
     super.assignedName,
     super.assignedSnakeName,
@@ -3344,6 +3360,23 @@ class RenderObject extends RenderNewType {
 
   /// The properties of the resolved schema.
   final Map<String, RenderSchema> properties;
+
+  /// Properties pinned to a single constant value (the `allOf: [{$ref: E}]`
+  /// + single-value `enum`/`const` idiom; see
+  /// [ResolvedObject.constProperties]). Such a property renders as a fixed
+  /// getter (`E get type => E.member;`) rather than a required constructor
+  /// parameter — the value is fully determined by the class, so the caller
+  /// neither passes it nor can set it wrong. Keyed by property name; values
+  /// are `int`/`String`.
+  ///
+  /// Decision (a getter, not the alternatives — see issue #238): it is never
+  /// valid to construct one of these with a different tag value, so the value
+  /// is not a constructor parameter at all. A `final` field with a default
+  /// would work but stores, on every instance, a value fixed by the type —
+  /// wasted space for no gain. A `static const` can't be read through an
+  /// instance in Dart, so it can't back a serialized/polymorphic property.
+  /// The getter has no storage and is un-settable, which is exactly right.
+  final Map<String, Object> constProperties;
 
   /// The additional properties of the resolved schema.
   final RenderSchema? additionalProperties;
@@ -3380,6 +3413,7 @@ class RenderObject extends RenderNewType {
     properties,
     additionalProperties,
     requiredProperties,
+    constProperties,
   ];
 
   @override
@@ -3510,6 +3544,20 @@ class RenderObject extends RenderNewType {
     // both the json property is required and it does not have a default.
     final isRequired =
         requiredProperties.contains(jsonName) && !hasDefaultValue;
+    // A property pinned to a constant of a named enum (the `allOf: [{$ref: E}]`
+    // + single-value `enum` idiom) renders as a fixed getter rather than a
+    // constructor parameter — the value is fully determined by the class, so
+    // the caller neither passes it nor can set it wrong. It still serializes
+    // (toJson references the getter) but is absent from the constructor,
+    // `fromJson`, and equality.
+    // Matches [rendersAsConstGetter]; bound locally so flow analysis promotes
+    // `property`/`constValue` for the getter expression (no cast, no `!`).
+    final constValue = constProperties[jsonName];
+    final constGetter = (constValue != null && property is RenderEnum)
+        ? '${property.typeName} get $dartName => '
+              '${property.constExpression(constValue)};'
+        : null;
+    final isConstGetter = constGetter != null;
     return {
       'dartName': dartName,
       'jsonName': quoteString(jsonName),
@@ -3517,18 +3565,22 @@ class RenderObject extends RenderNewType {
         common: property.common,
         indent: 4,
       ),
+      'isConstGetter': isConstGetter,
+      'constGetter': constGetter,
       'argumentLine': argumentLine(
         jsonName,
         property,
         context,
         isRequired: isRequired,
       ),
-      'assignmentsLine': assignmentsLine(
-        jsonName,
-        property,
-        context,
-        isRequired: isRequired,
-      ),
+      'assignmentsLine': isConstGetter
+          ? null
+          : assignmentsLine(
+              jsonName,
+              property,
+              context,
+              isRequired: isRequired,
+            ),
       'storageTypeDeclaration': propertyStorageTypeDeclaration(
         property: property,
         context: context,
@@ -3576,15 +3628,18 @@ class RenderObject extends RenderNewType {
 
     final valueSchema = additionalProperties;
     final hasAdditionalProperties = valueSchema != null;
-    // Force named properties to be rendered if hasAdditionalProperties is true.
-    final hasProperties =
-        renderProperties.isNotEmpty || hasAdditionalProperties;
-    const isNullable = false;
-    final propertiesCount =
-        renderProperties.length + (hasAdditionalProperties ? 1 : 0);
-    if (propertiesCount == 0) {
+    if (renderProperties.isEmpty && !hasAdditionalProperties) {
       throw StateError('Object schema has no properties: $this');
     }
+    // Const-getter properties aren't constructor parameters or equality
+    // members, so the constructor-braces and single-property-hashCode
+    // decisions count only the "real" (non-getter) properties.
+    final realPropertiesCount =
+        renderProperties.where((p) => p['isConstGetter'] != true).length +
+        (hasAdditionalProperties ? 1 : 0);
+    // Force named properties to be rendered if hasAdditionalProperties is true.
+    final hasProperties = realPropertiesCount > 0;
+    const isNullable = false;
     // Wrap the class-level description in a `{@template <snakeName>}`
     // block so the same prose can be reused as the constructor's
     // dartdoc via a `{@macro}` reference. Matches the handwritten
@@ -3635,7 +3690,7 @@ class RenderObject extends RenderNewType {
       'nullableTypeName': nullableTypeName(context),
       'hasProperties': hasProperties,
       // Special case behavior hashCode with only one property.
-      'hasOneProperty': propertiesCount == 1,
+      'hasOneProperty': realPropertiesCount == 1,
       'properties': renderProperties,
       'hasAdditionalProperties': hasAdditionalProperties,
       'hasNoJsonProperty': hasNoJsonProperty,
@@ -3731,6 +3786,13 @@ class RenderObject extends RenderNewType {
     return super.equalsIgnoringName(other);
   }
 
+  /// Whether property [jsonName] renders as a fixed const getter rather than
+  /// a constructor field (the `allOf: [{$ref: E}]` + single-value `enum`
+  /// idiom pinning it to one member of enum `E`). Such properties are absent
+  /// from the constructor, `fromJson`, equality, and example synthesis.
+  bool rendersAsConstGetter(String jsonName, RenderSchema property) =>
+      constProperties.containsKey(jsonName) && property is RenderEnum;
+
   @override
   String? exampleValue(SchemaRenderer context) {
     final args = <String>[];
@@ -3738,6 +3800,8 @@ class RenderObject extends RenderNewType {
       final jsonName = entry.key;
       if (!requiredProperties.contains(jsonName)) continue;
       final property = entry.value;
+      // Pinned tags are fixed getters, not constructor parameters.
+      if (rendersAsConstGetter(jsonName, property)) continue;
       final example = property.exampleValue(context);
       if (example == null) return null;
       final dartName = variableSafeName(context.quirks, jsonName);
@@ -3765,10 +3829,17 @@ class RenderObject extends RenderNewType {
   /// and we have no guaranteed-invalid input. The parser drops names
   /// listed in `required` that don't match a real property (with a
   /// warn-log), so [requiredProperties] only ever contains names
-  /// that will actually fail the cast.
+  /// that will actually fail the cast — except const-getter properties,
+  /// which aren't read from JSON at all, so their absence doesn't make
+  /// `{}` invalid.
   @override
-  String? invalidJsonExample(SchemaRenderer context) =>
-      requiredProperties.isEmpty ? null : '<String, dynamic>{}';
+  String? invalidJsonExample(SchemaRenderer context) {
+    final hasFailingRequired = requiredProperties.any((name) {
+      final property = properties[name];
+      return property != null && !rendersAsConstGetter(name, property);
+    });
+    return hasFailingRequired ? '<String, dynamic>{}' : null;
+  }
 }
 
 class RenderArray extends RenderSchema {
@@ -4289,6 +4360,12 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
     if (value == null) return null;
     return '$className.${variableNameFor(value)}';
   }
+
+  /// Renders [value] as a reference to this enum's member (e.g.
+  /// `ActionType.blockMessage`) — used when a property is pinned to a
+  /// single constant of this enum and rendered as a fixed getter.
+  String constExpression(Object value) =>
+      '$className.${variableNameFor(value as T)}';
 
   @override
   String fromJsonExpression(

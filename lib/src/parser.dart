@@ -628,15 +628,17 @@ Schema? _maybeCollapseOneOfOfConsts(
     if (!variant.containsKey('const')) return null;
     if (variant.keys.any((k) => !allowedKeys.contains(k))) return null;
   }
-  // Walk the variants once to collect values + descriptions. Titles
-  // aren't preserved yet — `RenderEnum.variableNamesFor` derives Dart
-  // names from the values — but the underlying enum type is correct
-  // and dispatches cleanly.
+  // Walk the variants once to collect values, descriptions, and titles.
+  // A `title:` (`{title: BLOCK_MESSAGE, const: 1}`) is the spec's own
+  // member name; preserved so render emits `blockMessage` instead of the
+  // value-derived fallback `value1`.
   final values = <dynamic>[];
   final descriptions = <String?>[];
+  final titles = <String?>[];
   for (final variant in list.cast<Map<dynamic, dynamic>>()) {
     values.add(variant['const']);
     descriptions.add(variant['description'] as String?);
+    titles.add(variant['title'] as String?);
   }
   // Pick string vs int from the parent's declared `type:`, falling
   // back to value-shape inference when `type:` is absent (matches the
@@ -671,12 +673,18 @@ Schema? _maybeCollapseOneOfOfConsts(
   final descriptionsToPlumb = descriptions.any((d) => d != null)
       ? descriptions.map((d) => d ?? '').toList()
       : null;
+  // Names are all-or-nothing: only drive member names from titles when
+  // every variant has one, so we never mix `blockMessage` with `value1`.
+  final namesToPlumb = titles.every((t) => t != null && t.isNotEmpty)
+      ? titles.cast<String>()
+      : null;
   if (isInt) {
     return SchemaIntEnum(
       common: common,
       defaultValue: null,
       enumValues: values.cast<int>(),
       enumDescriptions: descriptionsToPlumb,
+      enumNames: namesToPlumb,
     );
   }
   return SchemaStringEnum(
@@ -684,6 +692,7 @@ Schema? _maybeCollapseOneOfOfConsts(
     defaultValue: null,
     enumValues: values.cast<String>(),
     enumDescriptions: descriptionsToPlumb,
+    enumNames: namesToPlumb,
   );
 }
 
@@ -977,6 +986,9 @@ SchemaEnum<Object>? _handleEnum({
       defaultValue: typedDefaultValue,
       enumValues: typedEnumValues,
       enumDescriptions: enumDescriptions,
+      // A plain `enum:` list carries no per-member names; render derives
+      // them from the values.
+      enumNames: null,
     );
   }
   if (nonNullValues.any((e) => e is! String)) {
@@ -1006,6 +1018,7 @@ SchemaEnum<Object>? _handleEnum({
     defaultValue: typedDefaultValue,
     enumValues: typedEnumValues,
     enumDescriptions: enumDescriptions,
+    enumNames: null,
   );
 }
 
@@ -1429,11 +1442,25 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   }
 
   final properties = <String, SchemaRef>{};
+  final constProperties = <String, Object>{};
   for (final name in propertiesJson.json.keys) {
     final snakeName = snakeFromCamel(name);
     final childContext = propertiesJson
         .childAsMap(name)
         .addSnakeName(snakeName);
+    final constValue = _constTagValue(childContext);
+    if (constValue != null) {
+      // We consume the pinning `enum`/`const` as a discriminator tag, so
+      // mark it used before parsing the property (the allOf branch would
+      // otherwise leave it to `_warnUnused`). Multi-value narrowings
+      // aren't captured, so their `enum` still surfaces at -v — the
+      // honest signal for the restricted-view work in issue #235.
+      if (childContext.json.containsKey('enum')) childContext.markUsed('enum');
+      if (childContext.json.containsKey('const')) {
+        childContext.markUsed('const');
+      }
+      constProperties[name] = constValue;
+    }
     properties[name] = parseSchemaOrRef(childContext);
   }
 
@@ -1471,7 +1498,41 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     requiredProperties: requiredProperties,
     additionalProperties: additionalPropertiesSchema,
     defaultValue: defaultValue,
+    constProperties: constProperties,
   );
+}
+
+/// Detects the OpenAPI-3.0 "pinned enum" idiom on a property:
+/// `allOf: [{$ref: E}]` wrapping a single reference, with a sibling
+/// single-value `enum` (or `const`). This spells "a value of enum E
+/// fixed to one member" — the property still parses/resolves as the
+/// plain `E` ref (so its field renders as `E`), but the fixed value is
+/// a discriminator tag. Returns that constant (`int`/`String`), or null
+/// when the property isn't this shape.
+///
+/// A multi-value `enum` is a restricted *view* of E, not a single tag
+/// (issue #235); it returns null here. The `allOf` wrapper is required —
+/// a bare inline `enum` already resolves to a `SchemaEnum` the dispatch
+/// pass reads directly, so it needs no separate record.
+Object? _constTagValue(MapContext json) {
+  final raw = json.json;
+  final allOf = raw['allOf'];
+  if (allOf is! List || allOf.length != 1) return null;
+  final only = allOf.first;
+  if (only is! Map || !only.containsKey(r'$ref')) return null;
+  final enumValues = raw['enum'];
+  final Object? value;
+  if (enumValues is List) {
+    if (enumValues.length != 1) return null;
+    value = enumValues.first;
+  } else if (raw.containsKey('const')) {
+    value = raw['const'];
+  } else {
+    return null;
+  }
+  // Only scalar int/string tags dispatch cleanly; anything else isn't a
+  // usable discriminator value.
+  return (value is int || value is String) ? value : null;
 }
 
 /// Parse a schema from a json object.

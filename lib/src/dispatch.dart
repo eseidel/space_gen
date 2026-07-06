@@ -410,6 +410,45 @@ Map<String, ResolvedSchema> _flattenedProperties(ResolvedSchema schema) {
   };
 }
 
+/// Properties pinned to a constant value on an object-or-allOf variant
+/// (the `allOf: [{$ref: E}]` + single-value `enum` idiom; see
+/// [ResolvedObject.constProperties]). [ResolvedAllOf] members are unioned.
+Map<String, Object> _flattenedConstProperties(ResolvedSchema schema) {
+  return switch (schema) {
+    ResolvedObject() => schema.constProperties,
+    ResolvedAllOf() => {
+      for (final member in schema.schemas) ..._flattenedConstProperties(member),
+    },
+    _ => const <String, Object>{},
+  };
+}
+
+/// The discriminator value(s) a [variant] fixes property [propName] to, or
+/// null when the property isn't a usable tag on this variant. A property
+/// pinned to a constant contributes that single value; otherwise a
+/// `ResolvedEnum` property contributes its enum values. Unifies the two
+/// spellings of an implicit tag — a bare inline `enum` (github) and a
+/// `$ref`-to-enum pinned by `enum`/`const` (Discord) — so the pickers
+/// treat them identically.
+List<Object>? _tagValues(ResolvedSchema variant, String propName) {
+  final constValue = _flattenedConstProperties(variant)[propName];
+  if (constValue != null) return [constValue];
+  final prop = _flattenedProperties(variant)[propName];
+  if (prop is ResolvedEnum && prop.values.isNotEmpty) {
+    return List<Object>.of(prop.values);
+  }
+  return null;
+}
+
+/// Whether every tag value across all variants is the same scalar kind —
+/// all `int` or all `String`. Mixing forces a runtime type check the
+/// discriminator switch shouldn't emit.
+bool _uniformTagType(List<List<Object>> perVariantValues) {
+  final all = perVariantValues.expand((values) => values).toList();
+  if (all.isEmpty) return false;
+  return all.every((v) => v is int) || all.every((v) => v is String);
+}
+
 bool _isObjectLike(ResolvedSchema schema) =>
     schema is ResolvedObject ||
     schema is ResolvedEmptyObject ||
@@ -480,12 +519,11 @@ ResolvedDiscriminator? _implicitDiscriminatorForProperty(
 ) {
   if (variants.isEmpty) return null;
   if (!variants.every(_isObjectLike)) return null;
-  final flatProps = variants.map(_flattenedProperties).toList();
   final perVariantValues = <List<Object>>[];
-  for (var i = 0; i < variants.length; i++) {
-    final type = flatProps[i][propertyName];
-    if (type is! ResolvedEnum || type.values.isEmpty) return null;
-    perVariantValues.add(List.of(type.values));
+  for (final variant in variants) {
+    final values = _tagValues(variant, propertyName);
+    if (values == null) return null;
+    perVariantValues.add(values);
   }
   final seen = <Object>{};
   for (final values in perVariantValues) {
@@ -512,6 +550,12 @@ ResolvedDiscriminator? _implicitDiscriminatorForProperty(
 /// value sets are pairwise disjoint, each enum value routes to exactly
 /// one variant.
 ///
+/// The tag may also be a `$ref`-to-enum pinned to one member via the
+/// `allOf: [{$ref: E}]` + `enum: [v]` idiom (Discord's auto-moderation
+/// actions): the property renders as `E` but is fixed to `v`, captured in
+/// [ResolvedObject.constProperties]. [_tagValues] folds both spellings
+/// together, so a mix of pinned refs and bare enums across variants works.
+///
 /// Variants may be [ResolvedObject] OR [ResolvedAllOf] — the latter
 /// flattens its members the same way `toRenderSchema` synthesizes a
 /// `RenderObject`, so a tag declared in one allOf member counts.
@@ -519,35 +563,23 @@ ResolvedDiscriminator? _implicitDiscriminator(List<ResolvedSchema> variants) {
   if (variants.isEmpty) return null;
   if (!variants.every(_isObjectLike)) return null;
   final flatRequired = variants.map(_flattenedRequiredProperties).toList();
-  final flatProps = variants.map(_flattenedProperties).toList();
   final candidates = <(String, List<List<Object>>)>[];
-  for (final entry in flatProps.first.entries) {
-    final propName = entry.key;
-    if (!flatRequired.first.contains(propName)) continue;
-    final firstType = entry.value;
-    if (firstType is! ResolvedEnum || firstType.values.isEmpty) continue;
-    final perVariantValues = <List<Object>>[List.of(firstType.values)];
+  // Seed candidate tag names from the first variant's required properties;
+  // a tag must be required and carry a usable value set on every variant.
+  for (final propName in flatRequired.first) {
+    final perVariantValues = <List<Object>>[];
     var allMatch = true;
-    for (var i = 1; i < variants.length; i++) {
-      if (!flatRequired[i].contains(propName)) {
+    for (var i = 0; i < variants.length; i++) {
+      final values = _tagValues(variants[i], propName);
+      if (!flatRequired[i].contains(propName) || values == null) {
         allMatch = false;
         break;
       }
-      final otherType = flatProps[i][propName];
-      if (otherType is! ResolvedEnum || otherType.values.isEmpty) {
-        allMatch = false;
-        break;
-      }
-      // All variants' tag enums must agree on the value type — mixing
-      // string and integer tags within one discriminator would force
-      // a runtime check we don't want to emit.
-      if (otherType.runtimeType != firstType.runtimeType) {
-        allMatch = false;
-        break;
-      }
-      perVariantValues.add(List.of(otherType.values));
+      perVariantValues.add(values);
     }
-    if (allMatch) candidates.add((propName, perVariantValues));
+    if (allMatch && _uniformTagType(perVariantValues)) {
+      candidates.add((propName, perVariantValues));
+    }
   }
   if (candidates.isEmpty) return null;
   candidates.sort((a, b) => a.$1.compareTo(b.$1));

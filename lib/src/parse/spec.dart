@@ -278,6 +278,7 @@ abstract class SchemaEnum<T extends Object> extends Schema {
     required this.defaultValue,
     required this.enumValues,
     required this.enumDescriptions,
+    required this.enumNames,
   });
 
   /// The default value of the enum, if any.
@@ -290,6 +291,14 @@ abstract class SchemaEnum<T extends Object> extends Schema {
   /// Populated from the OpenAPI vendor extension `x-enum-descriptions`
   /// when present.
   final List<String>? enumDescriptions;
+
+  /// Optional human-readable member names, parallel to [enumValues].
+  /// Populated from the `title:` of each variant in the OpenAPI 3.1
+  /// `oneOf`-of-`const`s enum spelling (Discord: `{title: BLOCK_MESSAGE,
+  /// const: 1}`). Drives the generated Dart member name (`blockMessage`)
+  /// instead of the value-derived fallback (`value1`); null when the spec
+  /// gives no names, in which case render derives them from the values.
+  final List<String>? enumNames;
 }
 
 class SchemaStringEnum extends SchemaEnum<String> {
@@ -298,6 +307,7 @@ class SchemaStringEnum extends SchemaEnum<String> {
     required super.defaultValue,
     required super.enumValues,
     required super.enumDescriptions,
+    required super.enumNames,
   });
 }
 
@@ -307,6 +317,7 @@ class SchemaIntEnum extends SchemaEnum<int> {
     required super.defaultValue,
     required super.enumValues,
     required super.enumDescriptions,
+    required super.enumNames,
   });
 }
 
@@ -414,6 +425,7 @@ class SchemaObject extends SchemaObjectBase {
     required this.requiredProperties,
     required this.additionalProperties,
     required this.defaultValue,
+    required this.constProperties,
   }) {
     if (snakeName.isEmpty) {
       throw ArgumentError.value(
@@ -429,6 +441,16 @@ class SchemaObject extends SchemaObjectBase {
 
   /// The required properties of this schema.
   final List<String> requiredProperties;
+
+  /// Properties pinned to a single constant value by the OpenAPI-3.0
+  /// idiom `allOf: [{$ref: E}]` + single-value `enum`/`const` — "a value
+  /// of enum E fixed to one member." The property still resolves to the
+  /// plain `E` ref (so the field renders as `E`); this map records the
+  /// constant separately so the dispatch pass can use it as an implicit
+  /// discriminator tag. Keyed by property name; values are `int` or
+  /// `String`. Multi-value narrowings are a restricted view, not a tag
+  /// (see issue #235), and are not recorded here.
+  final Map<String, Object> constProperties;
 
   /// The additional properties of this schema.
   /// Used for specifying T for Map\<String, T\>.

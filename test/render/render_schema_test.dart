@@ -2828,6 +2828,75 @@ void main() {
       expect(rule, isNot(contains('UnimplementedError')));
     });
 
+    test(r'variants tagged by a $ref-to-enum pinned with a single-value '
+        'enum dispatch on the pinned constant', () {
+      // Discord's auto-moderation-action shape: each variant tags its
+      // shared `type` field via the OpenAPI-3.0 idiom
+      // `allOf: [{$ref: ActionType}]` + a single-value `enum` pinning the
+      // member. The field still renders as the shared enum `ActionType`;
+      // the pinned value is the implicit discriminator.
+      final results = renderTestSchemas(
+        {
+          'Action': {
+            'oneOf': [
+              {r'$ref': '#/components/schemas/BlockAction'},
+              {r'$ref': '#/components/schemas/FlagAction'},
+            ],
+          },
+          'ActionType': {
+            'type': 'integer',
+            'enum': [1, 2],
+          },
+          'BlockAction': {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'integer',
+                'enum': [1],
+                'allOf': [
+                  {r'$ref': '#/components/schemas/ActionType'},
+                ],
+              },
+            },
+            'required': ['type'],
+          },
+          'FlagAction': {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'integer',
+                'enum': [2],
+                'allOf': [
+                  {r'$ref': '#/components/schemas/ActionType'},
+                ],
+              },
+            },
+            'required': ['type'],
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final action = results['Action'];
+      expect(action, isNotNull);
+      expect(action, contains('sealed class Action'));
+      expect(action, contains("final discriminator = json['type']"));
+      // Dispatch routes on the pinned integer constants, not the full
+      // ActionType value set.
+      expect(action, contains('1 => BlockAction.fromJson(json)'));
+      expect(action, contains('2 => FlagAction.fromJson(json)'));
+      // The pinned tag renders as a fixed getter of the shared enum — one
+      // per variant, mapping to the pinned member — not a constructor
+      // parameter, so the caller neither passes it nor can set it wrong.
+      expect(action, contains('ActionType get type => ActionType.value1;'));
+      expect(action, contains('ActionType get type => ActionType.value2;'));
+      // `type` is never a constructor field, nor decoded from JSON...
+      expect(action, isNot(contains('this.type')));
+      expect(action, isNot(contains('type: ActionType.fromJson')));
+      // ...yet it still serializes, via the getter.
+      expect(action, contains("'type': type.toJson()"));
+      expect(action, isNot(contains('UnimplementedError')));
+    });
+
     test('discriminator dispatch smooshes inline-object variants: case '
         'arms call the variant directly, no wrapper class', () {
       // Same shape as the implicit-discriminator test above, but
@@ -3897,6 +3966,43 @@ void main() {
       // No String-typed survivors anywhere in the body.
       expect(result, isNot(contains('final String value;')));
       expect(result, isNot(contains('factory Test.fromJson(String')));
+    });
+
+    test('oneOf-of-consts enum names members from the spec titles', () {
+      // Discord spells typed int enums as `oneOf` of `const` variants,
+      // each with a `title:` — the spec's own member name. Use it
+      // (`blockMessage`) rather than the value-derived fallback (`value1`).
+      final json = {
+        'type': 'integer',
+        'oneOf': [
+          {'title': 'BLOCK_MESSAGE', 'const': 1},
+          {'title': 'FLAG_TO_CHANNEL', 'const': 2},
+        ],
+      };
+      final result = renderTestSchema(json);
+      expect(result, contains('blockMessage._(1)'));
+      expect(result, contains('flagToChannel._(2)'));
+      // The meaningless value-derived fallback must not appear.
+      expect(result, isNot(contains('value1._(1)')));
+      expect(result, isNot(contains('value2._(2)')));
+    });
+
+    test('oneOf-of-consts enum falls back to value names when a title is '
+        'missing', () {
+      // Names are all-or-nothing: a partially-titled enum would mix
+      // `blockMessage` with `value2`, so fall back to value-derived names
+      // for the whole enum.
+      final json = {
+        'type': 'integer',
+        'oneOf': [
+          {'title': 'BLOCK_MESSAGE', 'const': 1},
+          {'const': 2},
+        ],
+      };
+      final result = renderTestSchema(json);
+      expect(result, contains('value1._(1)'));
+      expect(result, contains('value2._(2)'));
+      expect(result, isNot(contains('blockMessage')));
     });
 
     test('integer enum with negative values uses safe variable names', () {

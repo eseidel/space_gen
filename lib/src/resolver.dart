@@ -312,6 +312,7 @@ ResolvedSchema _resolveSchemaFully(
         context,
       ),
       requiredProperties: schema.requiredProperties,
+      constProperties: schema.constProperties,
     );
   }
   if (schema is SchemaStringEnum) {
@@ -321,6 +322,7 @@ ResolvedSchema _resolveSchemaFully(
       defaultValue: schema.defaultValue,
       values: schema.enumValues,
       descriptions: schema.enumDescriptions,
+      names: schema.enumNames,
     );
   }
   if (schema is SchemaIntEnum) {
@@ -330,6 +332,7 @@ ResolvedSchema _resolveSchemaFully(
       defaultValue: schema.defaultValue,
       values: schema.enumValues,
       descriptions: schema.enumDescriptions,
+      names: schema.enumNames,
     );
   }
   if (schema is SchemaBinary) {
@@ -1559,6 +1562,7 @@ abstract class ResolvedEnum<T extends Object> extends ResolvedSchema {
     required this.defaultValue,
     required this.values,
     required this.descriptions,
+    required this.names,
   }) : super(createsNewType: true);
 
   /// The values of the resolved schema.
@@ -1570,8 +1574,20 @@ abstract class ResolvedEnum<T extends Object> extends ResolvedSchema {
   /// Optional per-value dartdoc descriptions, parallel to [values].
   final List<String>? descriptions;
 
+  /// Optional spec-provided member names, parallel to [values] (the
+  /// `title:` of each `oneOf`-of-`const`s variant). Render prefers these
+  /// over value-derived names; null when the spec gives none. See
+  /// [SchemaEnum.enumNames].
+  final List<String>? names;
+
   @override
-  List<Object?> get props => [super.props, values, defaultValue, descriptions];
+  List<Object?> get props => [
+    super.props,
+    values,
+    defaultValue,
+    descriptions,
+    names,
+  ];
 }
 
 class ResolvedStringEnum extends ResolvedEnum<String> {
@@ -1580,6 +1596,7 @@ class ResolvedStringEnum extends ResolvedEnum<String> {
     required super.defaultValue,
     required super.values,
     required super.descriptions,
+    required super.names,
   });
 
   @override
@@ -1589,6 +1606,7 @@ class ResolvedStringEnum extends ResolvedEnum<String> {
       defaultValue: defaultValue,
       values: values,
       descriptions: descriptions,
+      names: names,
     );
   }
 }
@@ -1599,6 +1617,7 @@ class ResolvedIntEnum extends ResolvedEnum<int> {
     required super.defaultValue,
     required super.values,
     required super.descriptions,
+    required super.names,
   });
 
   @override
@@ -1608,6 +1627,7 @@ class ResolvedIntEnum extends ResolvedEnum<int> {
       defaultValue: defaultValue,
       values: values,
       descriptions: descriptions,
+      names: names,
     );
   }
 }
@@ -1618,6 +1638,7 @@ class ResolvedObject extends ResolvedSchema {
     required this.properties,
     required this.additionalProperties,
     required this.requiredProperties,
+    required this.constProperties,
   }) : super(createsNewType: true);
 
   /// The properties of the resolved schema.
@@ -1630,6 +1651,13 @@ class ResolvedObject extends ResolvedSchema {
   /// The required properties of the resolved schema.
   final List<String> requiredProperties;
 
+  /// Properties pinned to a single constant value (`int`/`String`) by the
+  /// `allOf: [{$ref: E}]` + single-value `enum`/`const` idiom. Carried
+  /// through from parse so the dispatch pass can treat the fixed value as
+  /// an implicit discriminator tag; the property itself still resolves to
+  /// the plain `E` ref. See [SchemaObject.constProperties].
+  final Map<String, Object> constProperties;
+
   @override
   ResolvedObject copyWith({CommonProperties? common}) {
     return ResolvedObject(
@@ -1637,6 +1665,7 @@ class ResolvedObject extends ResolvedSchema {
       properties: properties,
       additionalProperties: additionalProperties,
       requiredProperties: requiredProperties,
+      constProperties: constProperties,
     );
   }
 
@@ -1646,6 +1675,7 @@ class ResolvedObject extends ResolvedSchema {
     properties,
     additionalProperties,
     requiredProperties,
+    constProperties,
   ];
 }
 
