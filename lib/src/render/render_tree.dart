@@ -15,6 +15,11 @@ import 'package:space_gen/src/resolver.dart';
 import 'package:space_gen/src/string.dart';
 import 'package:space_gen/src/types.dart';
 
+/// A Dart expression that is a single bare identifier — no member
+/// access, call, or operator — so it can be interpolated without braces
+/// (`'$x'` rather than `'${x}'`).
+final _bareIdentifier = RegExp(r'^[a-zA-Z_$][\w$]*$');
+
 String avoidReservedWord(String value) {
   if (isReservedWord(value)) {
     return '${value}_';
@@ -1212,12 +1217,26 @@ class Endpoint implements ToTemplateContext {
     for (final p in parameters) {
       if (p.inLocation != ParameterLocation.path) continue;
       buffer.write(
-        ".replaceAll('${p.bracketedName}', "
-        "'\${ ${p.toJsonExpression(context)} }')",
+        ".replaceAll('${p.bracketedName}', ${_pathReplacement(p, context)})",
       );
     }
     buffer.write(',');
     return buffer.toString();
+  }
+
+  /// The `replaceAll` replacement expression for path parameter [p]. It
+  /// must evaluate to a `String`.
+  ///
+  /// When the parameter's wire type is already `String`, the bare
+  /// expression is used directly — wrapping it in an interpolation
+  /// (`'${x}'`) is redundant (`unnecessary_string_interpolations`).
+  /// Otherwise the value is interpolated to stringify it, with the
+  /// braces dropped for a bare identifier
+  /// (`unnecessary_brace_in_string_interps`).
+  String _pathReplacement(RenderParameter p, SchemaRenderer context) {
+    final expr = p.toJsonExpression(context);
+    if (p.type.jsonStorageDartType == DartType.string) return expr;
+    return _bareIdentifier.hasMatch(expr) ? "'\$$expr'" : "'\${$expr}'";
   }
 
   List<String> _queryParamsLines(
