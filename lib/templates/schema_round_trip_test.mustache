@@ -27,7 +27,7 @@ void main() {
 
     test('toString matches toJson for every value', () {
       for (final value in {{{ typeName }}}.values) {
-        expect(value.toString(), equals({{{ toStringComparand }}}));
+        expect(value.toString(), equals({{{ toJsonAsString }}}));
       }
     });
 

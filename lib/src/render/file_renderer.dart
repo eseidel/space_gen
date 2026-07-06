@@ -827,7 +827,7 @@ class FileRenderer {
           // the assertion type-checks (and keeps exercising `toString()`) for
           // both. For string enums this is exactly `value.toJson()`, so their
           // output is unchanged.
-          'toStringComparand': schema is RenderStringEnum
+          'toJsonAsString': schema is RenderStringEnum
               ? 'value.toJson()'
               : 'value.toJson().toString()',
         },
