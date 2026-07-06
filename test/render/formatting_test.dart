@@ -306,6 +306,48 @@ void main() {
         startsWith('$unintendedHtmlInDocCommentIgnoreBlock\n'),
       );
     });
+
+    test('does not fire on angle brackets inside an inline code span', () {
+      // dartdoc renders code spans verbatim, so the lint never fires on
+      // `Map<String, dynamic>` inside backticks.
+      const content =
+          '/// Serializes to `Map<String, dynamic>`.\n'
+          'class Foo {}\n';
+      expect(maybeAddUnintendedHtmlIgnore(content), content);
+    });
+
+    test('still fires on a raw tag outside a code span on the same line', () {
+      const content =
+          '/// Use `Map<String, int>` not <foo>.\n'
+          'class Foo {}\n';
+      expect(
+        maybeAddUnintendedHtmlIgnore(content),
+        startsWith('$unintendedHtmlInDocCommentIgnoreBlock\n'),
+      );
+    });
+
+    test('does not fire on angle brackets inside a fenced code block', () {
+      const content =
+          '/// Example:\n'
+          '/// ```\n'
+          '/// Map<String, int> m;\n'
+          '/// ```\n'
+          'class Foo {}\n';
+      expect(maybeAddUnintendedHtmlIgnore(content), content);
+    });
+
+    test('fires again once the fence closes', () {
+      const content =
+          '/// ```\n'
+          '/// Map<String, int> m;\n'
+          '/// ```\n'
+          '/// Then see <sha1hex>.\n'
+          'class Foo {}\n';
+      expect(
+        maybeAddUnintendedHtmlIgnore(content),
+        startsWith('$unintendedHtmlInDocCommentIgnoreBlock\n'),
+      );
+    });
   });
 
   group('DartFileFormatter', () {
