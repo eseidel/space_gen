@@ -2,8 +2,7 @@
 {{#parentSealedTypeName}}final {{/parentSealedTypeName}}class {{ typeName }}{{#parentSealedTypeName}} extends {{ parentSealedTypeName }}{{/parentSealedTypeName}} {
     {{{ constructor_doc_comment }}}{{#canBeConst}}const {{/canBeConst}}{{ typeName }}(
         {{#hasProperties}}
-        { {{#properties}}{{^isConstGetter}}{{{ argumentLine }}}, {{/isConstGetter}}{{/properties}}
-        {{#hasAdditionalProperties}}required this.{{additionalPropertiesName}},{{/hasAdditionalProperties}} }
+        { {{#requiredConstructorProperties}}{{^isConstGetter}}{{{ argumentLine }}}, {{/isConstGetter}}{{/requiredConstructorProperties}}{{#hasAdditionalProperties}}required this.{{additionalPropertiesName}}, {{/hasAdditionalProperties}}{{#optionalConstructorProperties}}{{^isConstGetter}}{{{ argumentLine }}}, {{/isConstGetter}}{{/optionalConstructorProperties}} }
         {{/hasProperties}}
     ){{{assignmentsLine}}};
 

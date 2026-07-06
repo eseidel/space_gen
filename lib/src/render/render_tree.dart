@@ -3604,6 +3604,10 @@ class RenderObject extends RenderNewType {
         common: property.common,
         indent: 4,
       ),
+      // Required named params must precede optional ones in the
+      // constructor (`always_put_required_named_parameters_first`); see
+      // the required/optional split in the object template context.
+      'isRequired': isRequired,
       'isConstGetter': isConstGetter,
       'constGetter': constGetter,
       'argumentLine': argumentLine(
@@ -3731,6 +3735,20 @@ class RenderObject extends RenderNewType {
       // Special case behavior hashCode with only one property.
       'hasOneProperty': realPropertiesCount == 1,
       'properties': renderProperties,
+      // Constructor named params, partitioned so `required` ones come
+      // first (`always_put_required_named_parameters_first`). Each
+      // group keeps its spec order, so the result matches a stable sort.
+      // Fields, `toJson`, `fromJson`, and equality keep spec order via
+      // `properties`; only the constructor reorders. The required
+      // `entries` param (additionalProperties) renders between the two
+      // groups in the template — last among required, matching the
+      // stable sort.
+      'requiredConstructorProperties': renderProperties
+          .where((p) => p['isRequired'] == true)
+          .toList(),
+      'optionalConstructorProperties': renderProperties
+          .where((p) => p['isRequired'] != true)
+          .toList(),
       'hasAdditionalProperties': hasAdditionalProperties,
       'hasNoJsonProperty': hasNoJsonProperty,
       'assignmentsLine': assignmentsLine,
