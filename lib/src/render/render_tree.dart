@@ -3912,7 +3912,12 @@ class RenderArray extends RenderSchema {
   _VariantConversion? _variantConversion(SchemaRenderer context) {
     final itemTypeName = items.typeName;
     final String fromJson;
-    if (items.createsNewType) {
+    // `shouldCallToJson` is the symmetric "this item needs JSON conversion"
+    // predicate — true for newtypes/enums AND for pods whose Dart type differs
+    // from their wire type (`Uri`, `DateTime`, `uriTemplate`). A bare
+    // `.cast<Uri>()` over a `List<String>` is a lazy view that throws on
+    // access; those items must be mapped through `fromJsonExpression`.
+    if (items.shouldCallToJson) {
       final itemFrom = items.fromJsonExpression(
         'e',
         context,
@@ -4017,8 +4022,12 @@ class RenderArray extends RenderSchema {
       // Unless itemSchema itself has a nullable type this is always false.
       jsonIsNullable: false,
     );
-    // If it doesn't create a new type we can just cast the list.
-    if (!items.createsNewType) {
+    // Only a truly json-native item (Dart type == wire type: String, int,
+    // bool, num) can be cast directly. Items that need conversion — newtypes,
+    // enums, and pods like `Uri`/`DateTime` whose wire type is a String —
+    // must be mapped through `fromJsonExpression`; a bare `.cast<Uri>()` is a
+    // lazy view over the wire Strings that throws on element access.
+    if (!items.shouldCallToJson) {
       return '$castAsList.cast<$itemTypeName>()$orDefault';
     }
     return '$castAsList.map<$itemTypeName>('

@@ -522,6 +522,32 @@ void main() {
           '}\n',
         );
       });
+
+      test('List<Uri> maps through Uri.parse rather than casting', () {
+        // A `List<Uri>` decodes from a JSON `List<String>`; each element
+        // needs `Uri.parse`. A bare `.cast<Uri>()` is a lazy view over the
+        // wire Strings that throws on element access (issue #242).
+        final schema = {
+          'type': 'object',
+          'properties': {
+            'uris': {
+              'type': 'array',
+              'items': {'type': 'string', 'format': 'uri'},
+            },
+            // A json-native element type still casts (byte-identical).
+            'names': {
+              'type': 'array',
+              'items': {'type': 'string'},
+            },
+          },
+          'required': ['uris', 'names'],
+        };
+        final result = renderTestSchema(schema);
+        expect(result, contains('.map<Uri>((e) => Uri.parse(e as String))'));
+        expect(result, isNot(contains('.cast<Uri>()')));
+        // A plain String list is json-native — a direct cast is correct.
+        expect(result, contains('.cast<String>()'));
+      });
     });
 
     group('uriTemplate', () {
@@ -3536,8 +3562,8 @@ void main() {
         "            aInt: (json['a_int'] as List?)?.cast<int>() ?? const [],\n"
         "            aNumber: (json['a_number'] as List?)?.cast<double>() ?? const [],\n"
         "            aBoolean: (json['a_boolean'] as List?)?.cast<bool>() ?? const [],\n"
-        "            aDateTime: (json['a_date_time'] as List?)?.cast<DateTime>() ?? const [],\n"
-        "            aUri: (json['a_uri'] as List?)?.cast<Uri>() ?? const [],\n"
+        "            aDateTime: (json['a_date_time'] as List?)?.map<DateTime>((e) => DateTime.parse(e as String)).toList() ?? const [],\n"
+        "            aUri: (json['a_uri'] as List?)?.map<Uri>((e) => Uri.parse(e as String)).toList() ?? const [],\n"
         "            aArrayOfString: (json['a_array_of_string'] as List?)?.cast<List<String>>() ?? const [],\n"
         "            aEnum: (json['a_enum'] as List?)?.map<TestAEnumInner>((e) => TestAEnumInner.fromJson(e as String)).toList() ?? const [],\n"
         "            aUnknown: (json['a_unknown'] as List?)?.cast<dynamic>() ?? const [],\n"
