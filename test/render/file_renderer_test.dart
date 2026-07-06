@@ -2668,12 +2668,76 @@ void main() {
           usesMetaAnnotations: true,
           modelHelpers: {ModelHelpers.parseFromJson},
         ),
+        body: 'class Foo {}',
       );
       expect(imports, {
         const Import('package:meta/meta.dart'),
         const Import('package:spacetraders/model_helpers.dart'),
         const Import('dart:typed_data'), // Uint8List from RenderBinary.
       });
+    });
+
+    test('importsForModel imports a newtype field the body names, not '
+        'types nested only inside it', () {
+      final templates = TemplateProvider.defaultLocation();
+      final schemaRenderer = SchemaRenderer(templates: templates);
+      final formatter = Formatter();
+      final spellChecker = SpellChecker();
+      final fileRenderer = FileRenderer(
+        FileRendererConfig(
+          packageName: 'spacetraders',
+          schemaRenderer: schemaRenderer,
+          templates: templates,
+          formatter: formatter,
+          fileWriter: FileWriter(
+            outDir: MemoryFileSystem.test().directory('spacetraders'),
+          ),
+          spellChecker: spellChecker,
+        ),
+      );
+      // Outer names a Nested-typed field; Nested itself owns a
+      // Deep-typed field. Outer's file references Nested but never Deep
+      // (that lives in Nested's own file), so only Nested is imported.
+      final deep = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'deep',
+          pointer: JsonPointer.parse('#/components/schemas/deep'),
+          description: 'Deep',
+        ),
+        assignedName: 'Deep',
+        properties: const {},
+      );
+      final nested = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'nested',
+          pointer: JsonPointer.parse('#/components/schemas/nested'),
+          description: 'Nested',
+        ),
+        assignedName: 'Nested',
+        properties: {'deep': deep},
+      );
+      final outer = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'outer',
+          pointer: JsonPointer.parse('#/components/schemas/outer'),
+          description: 'Outer',
+        ),
+        assignedName: 'Outer',
+        properties: {'nested': nested},
+      );
+      final imports = fileRenderer.importsForModel(
+        outer,
+        const SchemaUsage(),
+        body: 'class Outer { final Nested nested; }',
+      );
+      expect(
+        imports,
+        contains(const Import('package:spacetraders/models/nested.dart')),
+      );
+      expect(
+        imports,
+        isNot(contains(const Import('package:spacetraders/models/deep.dart'))),
+      );
     });
 
     test('SchemaUsage.fromBody detects validateXxx calls and adds the '
@@ -2800,7 +2864,23 @@ void main() {
           ),
         ],
       );
-      final imports = fileRenderer.importsForApi(api, const ApiUsage());
+      // A body that names every fixed-import sentinel keeps them all.
+      const fullBody =
+          'class FooApi {\n'
+          '  FooApi(ApiClient? client) : client = client ?? ApiClient();\n'
+          '  Future<void> bar() async {\n'
+          '    final response = await client.upload(http.MultipartFile(...));\n'
+          '    if (response.statusCode >= HttpStatus.badRequest) {\n'
+          '      throw ApiException<Object?>(response.statusCode, "");\n'
+          '    }\n'
+          '    return jsonDecode(response.body) as Map<String, dynamic>;\n'
+          '  }\n'
+          '}\n';
+      final imports = fileRenderer.importsForApi(
+        api,
+        const ApiUsage(),
+        body: fullBody,
+      );
       expect(imports, {
         const Import('dart:async'),
         const Import('dart:convert'),
@@ -2810,6 +2890,39 @@ void main() {
         const Import('package:http/http.dart', asName: 'http'),
         const Import('dart:typed_data'), // Uint8List from RenderBinary.
       });
+    });
+
+    test('imports for api prunes fixed imports the body never names', () {
+      final templates = TemplateProvider.defaultLocation();
+      final schemaRenderer = SchemaRenderer(templates: templates);
+      final formatter = Formatter();
+      final spellChecker = SpellChecker();
+      final fileRenderer = FileRenderer(
+        FileRendererConfig(
+          packageName: 'spacetraders',
+          schemaRenderer: schemaRenderer,
+          templates: templates,
+          formatter: formatter,
+          fileWriter: FileWriter(
+            outDir: MemoryFileSystem.test().directory('spacetraders'),
+          ),
+          spellChecker: spellChecker,
+        ),
+      );
+      const api = Api(
+        snakeName: 'foo',
+        description: 'Foo description',
+        removePrefix: null,
+        endpoints: [],
+      );
+      // A body that references none of the sentinels drops every fixed
+      // import — an empty api file needs nothing.
+      final imports = fileRenderer.importsForApi(
+        api,
+        const ApiUsage(),
+        body: 'class FooApi {}\n',
+      );
+      expect(imports, isEmpty);
     });
   });
 }

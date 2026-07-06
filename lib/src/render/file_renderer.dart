@@ -511,10 +511,18 @@ class FileRenderer {
   /// The `lib/date.dart` import for [schemas] iff any of them is a [RenderDate]
   /// (a `format: date` field). Marks [usedDate] so the support file and its
   /// barrel export are emitted.
-  Iterable<Import> _dateImportFor(Iterable<RenderSchema> schemas) {
+  Iterable<Import> _dateImportFor(
+    Iterable<RenderSchema> schemas, {
+    required bool bodyNamesDate,
+  }) {
     if (!schemas.any((s) => s is RenderDate)) return const [];
+    // A `RenderDate` anywhere in the tree means `lib/date.dart` gets
+    // emitted; that's independent of whether this particular file uses
+    // it. The import is only added when the body actually names `Date`.
     usedDate = true;
-    return [Import('package:$packageName/date.dart')];
+    return bodyNamesDate
+        ? [Import('package:$packageName/date.dart')]
+        : const [];
   }
 
   /// Emit `lib/model_helpers.dart` containing only the helpers that any
@@ -654,15 +662,34 @@ class FileRenderer {
       !schema.isSmooshed;
 
   @visibleForTesting
-  Iterable<Import> importsForApi(Api api, ApiUsage usage) {
-    // TODO(eseidel): Make type imports dynamic based on used schemas.
+  Iterable<Import> importsForApi(
+    Api api,
+    ApiUsage usage, {
+    required String body,
+  }) {
+    // Import only what the rendered [body] actually names. Each fixed
+    // import is gated on a sentinel identifier that must appear if the
+    // import is used (e.g. `HttpStatus` for `dart:io`), and each model
+    // newtype on its own class name. Keeping an import requires the
+    // token to be present, so a used import is never dropped; the
+    // effect is purely to stop emitting imports the api file never
+    // references (which `dart fix` would otherwise strip).
+    final referenced = referencedIdentifiers(body);
+    bool names(String token) => referenced.contains(token);
+
     final imports = {
-      const Import('dart:async'),
-      const Import('dart:convert'), // jsonDecode, for decoding response body.
-      const Import('dart:io'), // HttpStatus, emitted by api.mustache.
-      Import('package:$packageName/api_client.dart'),
-      Import('package:$packageName/api_exception.dart'),
-      const Import('package:http/http.dart', asName: 'http'),
+      if (names('Future')) const Import('dart:async'),
+      // jsonDecode, for decoding response body.
+      if (names('jsonDecode')) const Import('dart:convert'),
+      // HttpStatus, emitted by api.mustache.
+      if (names('HttpStatus')) const Import('dart:io'),
+      if (names('ApiClient')) Import('package:$packageName/api_client.dart'),
+      if (names('ApiException'))
+        Import('package:$packageName/api_exception.dart'),
+      // `as http` is only ever used via the `http.` prefix; gate on that
+      // so a bare `http` token in a URL doc-comment doesn't keep it.
+      if (body.contains('http.'))
+        const Import('package:http/http.dart', asName: 'http'),
       ...usage.importsFor(packageName),
     };
 
@@ -673,17 +700,19 @@ class FileRenderer {
     // except smooshed variants, which are emitted inline in their
     // sealed parent's file. The sealed parent is itself imported
     // here, so the variant's class name resolves through that import.
+    // A newtype under the api that the body never names (e.g. a type
+    // nested inside another model, referenced only in that model's own
+    // file) is not imported.
     final importedSchemas = apiSchemas
         .where((s) => s.createsNewType)
-        .where(
-          (s) => !s.isSmooshed,
-        );
+        .where((s) => !s.isSmooshed)
+        .where((s) => names(s.typeName));
     final apiImports = importedSchemas
         .map((s) => Import(modelPackageImport(this, s)))
         .toList();
     imports.addAll({
       ...inlineSchemas.expand((s) => s.additionalImports),
-      ..._dateImportFor(inlineSchemas),
+      ..._dateImportFor(inlineSchemas, bodyNamesDate: names('Date')),
       ...apiImports,
     });
     return imports;
@@ -699,7 +728,11 @@ class FileRenderer {
     for (final api in apis) {
       final renderedApi = schemaRenderer.renderApi(api);
       usedModelHelpers.addAll(renderedApi.usage.modelHelpers);
-      final imports = importsForApi(api, renderedApi.usage);
+      final imports = importsForApi(
+        api,
+        renderedApi.usage,
+        body: renderedApi.body,
+      );
       final importsContext = imports
           .sortedBy((i) => i.path)
           .map((i) => i.toTemplateContext())
@@ -735,19 +768,25 @@ class FileRenderer {
   }
 
   @visibleForTesting
-  Iterable<Import> importsForModel(RenderSchema schema, SchemaUsage usage) {
+  Iterable<Import> importsForModel(
+    RenderSchema schema,
+    SchemaUsage usage, {
+    required String body,
+  }) {
+    final referenced = referencedIdentifiers(body);
     final referencedSchemas = collectSchemasUnderSchema(schema);
     final localSchemas = referencedSchemas.where(
       (s) => !s.createsNewType,
     );
     // Every newtype (including RenderRecursiveRef) imports the target's
     // file — except smooshed variants, which the sealed parent emits
-    // inline (same library, no separate file to import).
+    // inline (same library, no separate file to import). A newtype the
+    // body never names (a type nested inside another model, referenced
+    // only in that model's own file) is not imported.
     final importedSchemas = referencedSchemas
         .where((s) => s.createsNewType)
-        .where(
-          (s) => !s.isSmooshed,
-        )
+        .where((s) => !s.isSmooshed)
+        .where((s) => referenced.contains(s.typeName))
         .toSet();
     final referencedImports = importedSchemas
         .map((s) => Import(modelPackageImport(this, s)))
@@ -757,7 +796,10 @@ class FileRenderer {
       ...usage.importsFor(packageName),
       ...schema.additionalImports,
       ...localSchemas.expand((s) => s.additionalImports),
-      ..._dateImportFor(localSchemas),
+      ..._dateImportFor(
+        localSchemas,
+        bodyNamesDate: referenced.contains('Date'),
+      ),
       ...referencedImports,
     };
     // A file never imports itself.
@@ -770,7 +812,11 @@ class FileRenderer {
     for (final schema in schemas) {
       final rendered = schemaRenderer.renderSchema(schema);
       usedModelHelpers.addAll(rendered.usage.modelHelpers);
-      final imports = importsForModel(schema, rendered.usage);
+      final imports = importsForModel(
+        schema,
+        rendered.usage,
+        body: rendered.body,
+      );
       final importsContext = imports
           .sortedBy((i) => i.path)
           .map((i) => i.toTemplateContext())
