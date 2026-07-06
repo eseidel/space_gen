@@ -41,12 +41,7 @@ class UploadMixedRequest {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    listHash(file),
-    name,
-    description,
-    size,
-  ]);
+  int get hashCode => Object.hashAll([listHash(file), name, description, size]);
 
   @override
   bool operator ==(Object other) {

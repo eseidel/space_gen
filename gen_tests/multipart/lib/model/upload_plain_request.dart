@@ -2,9 +2,7 @@ import 'dart:typed_data';
 import 'package:multipart/model_helpers.dart';
 
 class UploadPlainRequest {
-  UploadPlainRequest({
-    required this.file,
-  });
+  UploadPlainRequest({required this.file});
 
   /// Converts a `Map<String, dynamic>` to a [UploadPlainRequest].
   factory UploadPlainRequest.fromJson(dynamic jsonArg) {

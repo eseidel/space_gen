@@ -13,10 +13,7 @@ class DefaultApi {
 
   /// Get types
   Future<Types200Response> types() async {
-    final response = await client.invokeApi(
-      method: Method.get,
-      path: '/types',
-    );
+    final response = await client.invokeApi(method: Method.get, path: '/types');
 
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException<Object?>(

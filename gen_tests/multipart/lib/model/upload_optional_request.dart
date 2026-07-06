@@ -2,10 +2,7 @@ import 'dart:typed_data';
 import 'package:multipart/model_helpers.dart';
 
 class UploadOptionalRequest {
-  UploadOptionalRequest({
-    required this.file,
-    this.note,
-  });
+  UploadOptionalRequest({required this.file, this.note});
 
   /// Converts a `Map<String, dynamic>` to a [UploadOptionalRequest].
   factory UploadOptionalRequest.fromJson(dynamic jsonArg) {
@@ -37,10 +34,7 @@ class UploadOptionalRequest {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    listHash(file),
-    note,
-  ]);
+  int get hashCode => Object.hashAll([listHash(file), note]);
 
   @override
   bool operator ==(Object other) {
