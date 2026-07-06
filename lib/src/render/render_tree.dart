@@ -1316,7 +1316,10 @@ class Endpoint implements ToTemplateContext {
         ],
         final RenderRequestBodySimple body => [
           '${indent}body: ${body.bodyExpression(context)},',
-          '${indent}bodyContentType: ${body.bodyContentTypeExpression},',
+          // invokeApi defaults bodyContentType to BodyContentType.json,
+          // so only pass it for the non-default content types.
+          if (!body.isDefaultBodyContentType)
+            '${indent}bodyContentType: ${body.bodyContentTypeExpression},',
         ],
       };
 
@@ -1963,6 +1966,12 @@ abstract class RenderRequestBodySimple extends RenderRequestBody {
   /// body, passed to `ApiClient.invokeApi(bodyContentType: ...)`.
   String get bodyContentTypeExpression;
 
+  /// Whether [bodyContentTypeExpression] is `invokeApi`'s default
+  /// (`BodyContentType.json`). When true the operation renderer omits
+  /// the redundant `bodyContentType:` argument
+  /// (`avoid_redundant_argument_values`).
+  bool get isDefaultBodyContentType => false;
+
   /// The Dart expression for the `body:` argument to `invokeApi`. For
   /// JSON: the map/list the client will `jsonEncode`. For octet-stream
   /// or text/plain: the parameter itself, passed through as-is.
@@ -1997,6 +2006,9 @@ class RenderRequestBodyJson extends RenderRequestBodySimple {
 
   @override
   String get bodyContentTypeExpression => 'BodyContentType.json';
+
+  @override
+  bool get isDefaultBodyContentType => true;
 
   @override
   String bodyExpression(SchemaRenderer context) => schema.toJsonExpression(
@@ -2807,7 +2819,9 @@ class RenderPod extends RenderSchema {
   String? exampleValue(SchemaRenderer context) {
     final raw = switch (type) {
       PodType.boolean => 'false',
-      PodType.dateTime => 'DateTime.utc(2024, 1, 1)',
+      // `month`/`day` default to 1, so passing them is redundant
+      // (`avoid_redundant_argument_values`).
+      PodType.dateTime => 'DateTime.utc(2024)',
       PodType.uri => "Uri.parse('https://example.com')",
       PodType.uriTemplate => "UriTemplate('https://example.com/{id}')",
       PodType.email => "'user@example.com'",
@@ -3877,6 +3891,15 @@ class RenderObject extends RenderNewType {
       if (rendersAsConstGetter(jsonName, property)) continue;
       final example = property.exampleValue(context);
       if (example == null) return null;
+      // A JSON-required property that also has a default renders as an
+      // optional constructor param `= <default>`; passing an example
+      // equal to that default is redundant
+      // (`avoid_redundant_argument_values`), so omit it — the field
+      // still takes the same value. Only a const default's string can
+      // match the example here (a `?? DateTime.parse(...)` initializer
+      // reads differently from `DateTime.utc(...)`), so this can't drop
+      // a genuinely-needed argument.
+      if (property.defaultValueString(context) == example) continue;
       final dartName = variableSafeName(context.quirks, jsonName);
       args.add('$dartName: $example');
     }

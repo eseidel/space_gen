@@ -433,6 +433,59 @@ void main() {
       expect(body, contains('parsed.hashCode'));
     });
 
+    test('round-trip example omits args that match a default value', () async {
+      final fs = MemoryFileSystem.test();
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Roundtrip', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/things': {
+            'get': {
+              'operationId': 'getThing',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Thing'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Thing': {
+              'type': 'object',
+              'required': ['id', 'private', 'createdAt'],
+              'properties': {
+                'id': {'type': 'integer'},
+                // JSON-required but has a default -> optional ctor param
+                // `= false`; the example (`false`) must not be passed.
+                'private': {'type': 'boolean', 'default': false},
+                // A date-time example uses DateTime.utc's own defaulted
+                // month/day, so no redundant `1, 1`.
+                'createdAt': {'type': 'string', 'format': 'date-time'},
+              },
+            },
+          },
+        },
+      };
+      final out = fs.directory('out');
+      await renderToDirectory(spec: spec, outDir: out);
+      final body = out
+          .childFile('test/models/thing_test.dart')
+          .readAsStringSync();
+      expect(body, contains('createdAt: DateTime.utc(2024)'));
+      expect(body, isNot(contains('DateTime.utc(2024, 1, 1)')));
+      expect(body, isNot(contains('private:')));
+    });
+
     test('enum round-trip test exercises toString and every value', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
