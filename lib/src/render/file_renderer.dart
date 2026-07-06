@@ -821,11 +821,15 @@ class FileRenderer {
           'exampleValue': example,
           'invalidJsonExample': invalidJson,
           'isEnum': schema is RenderEnum,
-          // The `toString matches toJson` check only type-checks for string
-          // enums, whose `toString()` and `toJson()` both return the wire
-          // String. An int enum's `toString()` is a String while `toJson()`
-          // is an int, so the assertion is a category error — skip it.
-          'isStringEnum': schema is RenderStringEnum,
+          // `toString()` returns a String for every enum, but `toJson()`
+          // returns the wire type — String for a string enum, int for an int
+          // enum. Compare `toString()` against the *stringified* wire value so
+          // the assertion type-checks (and keeps exercising `toString()`) for
+          // both. For string enums this is exactly `value.toJson()`, so their
+          // output is unchanged.
+          'toJsonAsString': schema is RenderStringEnum
+              ? 'value.toJson()'
+              : 'value.toJson().toString()',
         },
       );
     }
