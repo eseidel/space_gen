@@ -90,6 +90,66 @@ void main() {
       },
     );
 
+    // Regression for issue #139. The operation path is grafted onto
+    // baseUri field-by-field rather than by string concatenation, so
+    // baseUri's own path survives and its query/fragment can't swallow
+    // the path.
+    group('grafts the operation path onto baseUri', () {
+      Future<String> sentUrlFor(String baseUri) async {
+        Uri? captured;
+        final client = ApiClient(
+          baseUri: Uri.parse(baseUri),
+          client: MockClient((req) async {
+            captured = req.url;
+            return Response('', 200);
+          }),
+        );
+        await client.invokeApi(method: Method.get, path: '/things');
+        return captured.toString();
+      }
+
+      test('keeps a path already on baseUri', () async {
+        expect(
+          await sentUrlFor('https://example.com/v2'),
+          'https://example.com/v2/things',
+        );
+      });
+
+      test('collapses a trailing slash instead of emitting //', () async {
+        expect(
+          await sentUrlFor('https://example.com/v2/'),
+          'https://example.com/v2/things',
+        );
+      });
+
+      test('keeps the path when baseUri carries a query', () async {
+        // The concatenation this replaced produced
+        // `https://example.com?ext=1/things`, which parses with an empty
+        // path and `ext=1/things` as the query — the path was lost
+        // entirely once `Uri.replace` rewrote the query.
+        expect(
+          await sentUrlFor('https://example.com?ext=1'),
+          'https://example.com/things?ext=1',
+        );
+      });
+
+      test('keeps both a path and a query on baseUri', () async {
+        expect(
+          await sentUrlFor('https://example.com/v2?ext=1'),
+          'https://example.com/v2/things?ext=1',
+        );
+      });
+
+      test('preserves userInfo and port, drops the fragment', () async {
+        // A fragment is never sent to a server, so dropping it is
+        // correct; concatenation used to mangle it into the path.
+        expect(
+          await sentUrlFor('https://user@example.com:8080/v2#frag'),
+          'https://user@example.com:8080/v2/things',
+        );
+      });
+    });
+
     // The query renderer builds the `List<String>` for each param. These
     // tests pin what the *actual* sent URL looks like for the two shapes it
     // produces, exercising the real `Uri.replace` encoding — not the

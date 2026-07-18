@@ -38,6 +38,30 @@ enum BodyContentType {
   final String value;
 }
 
+/// Grafts an operation [path] onto [baseUri], keeping baseUri's own
+/// path and discarding its query and fragment.
+///
+/// The method we wish `Uri` had. `Uri` can set a query but never clear
+/// one (no `removeQuery()` to match `removeFragment()`), which is the
+/// only reason these fields are copied by hand — if that ever lands,
+/// this collapses to `baseUri.replace(path: ...).removeQuery()`. The
+/// obvious alternatives (`resolveUri`, `pathSegments:`) are wrong for
+/// subtler reasons; see
+/// https://github.com/eseidel/space_gen/issues/139.
+Uri _appendPath(Uri baseUri, String path) {
+  // [path] is absolute, so a trailing slash would emit an empty `//`.
+  final basePath = baseUri.path.endsWith('/')
+      ? baseUri.path.substring(0, baseUri.path.length - 1)
+      : baseUri.path;
+  return Uri(
+    scheme: baseUri.scheme,
+    userInfo: baseUri.userInfo,
+    host: baseUri.host,
+    port: baseUri.port,
+    path: '$basePath$path',
+  );
+}
+
 /// The client interface for the API.
 /// Subclasses can override [invokeApi] to add custom behavior.
 class ApiClient {
@@ -62,7 +86,8 @@ class ApiClient {
     // baseUri can contain a path, so we need to resolve the passed path
     // relative to it.  The passed path will always be absolute (leading slash)
     // but should be interpreted as relative to the baseUri.
-    final uri = Uri.parse('$baseUri$path');
+    // baseUri's query is dropped here and re-enters via [mergedParameters].
+    final uri = _appendPath(baseUri, path);
     // Single-shape map: every value is a `List<String>`. `Uri.replace`
     // spreads each list across repeated keys, so a 1-element list yields
     // `?k=v` and an N-element list yields `?k=v1&k=v2&…` (the OpenAPI
