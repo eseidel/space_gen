@@ -926,6 +926,29 @@ void main() {
       );
     });
 
+    // Both are gated: a nullable base64 field decodes through
+    // `maybeBase64Decode` from model_helpers.dart, so the body names
+    // neither `base64` nor necessarily `Uint8List`.
+    test('base64 bytes carries gated typed_data and convert imports', () {
+      expect(
+        const RenderBase64Bytes(
+          common: CommonProperties.test(
+            snakeName: 'a',
+            pointer: JsonPointer.empty(),
+            description: 'Foo',
+          ),
+        ).additionalImports,
+        equals([
+          const Import(
+            'dart:typed_data',
+            shown: ['Uint8List'],
+            neededWhenBodyNames: 'Uint8List',
+          ),
+          const Import('dart:convert', neededWhenBodyNames: 'base64'),
+        ]),
+      );
+    });
+
     test('uriTemplate', () {
       expect(
         const RenderPod(
