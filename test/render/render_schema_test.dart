@@ -1128,6 +1128,43 @@ void main() {
       expect(pong, isNot(contains('() => Pong(')));
     });
 
+    // A const getter returns a non-nullable type whatever the `required`
+    // list says, so `toJson` must not reach through it with `?.` —  that
+    // is an `invalid_null_aware_operator` warning, not just a lint.
+    // Discord's `*UpsertRequestPartial.trigger_type` is the canonical
+    // site: pinned to one enum value but absent from `required`.
+    test('optional const-getter property serializes without null-aware', () {
+      final results = renderTestSchemas(
+        {
+          'Rule': {
+            'type': 'object',
+            'properties': {
+              'trigger_type': {
+                'type': 'integer',
+                'enum': [1],
+                'allOf': [
+                  {r'$ref': '#/components/schemas/TriggerType'},
+                ],
+              },
+            },
+            // Deliberately not required — that is what made the
+            // generator believe the getter was nullable.
+          },
+          'TriggerType': {
+            'type': 'integer',
+            'enum': [1, 4],
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final rule = results['Rule'];
+      expect(rule, isNotNull);
+      // The getter itself is non-nullable.
+      expect(rule, contains('TriggerType get triggerType =>'));
+      expect(rule, contains("'trigger_type': triggerType.toJson()"));
+      expect(rule, isNot(contains('triggerType?.toJson()')));
+    });
+
     test('typed map variant walks each entry through fromJson/toJson', () {
       // Map with a non-trivial value schema. The wrapper must convert
       // each entry on fromJson and reverse on toJson.
