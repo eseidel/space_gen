@@ -31,6 +31,39 @@ import 'package:meta/meta.dart';
 /// before a constructor call or collection literal — `const
 /// UserRole.admin` and `const 'text'` are syntax errors, so prefixing
 /// the initializer could not have worked uniformly anyway.
+// TODO(eseidel): Replace `code` with a real expression IR.
+//
+// Carrying Dart code as a `String` is the same mistake `DartType`
+// exists to fix, one layer up: we stopped writing `'$typeName?'` for
+// types, but expressions are still built by concatenation. The tell is
+// `isConst` — const-ness is a *derived* property of an expression's
+// structure (a constructor invocation is const iff its constructor is
+// const and every argument is), so with a tree it would be a computed
+// getter instead of a field every composite has to thread by hand.
+// Two bugs during this class's own development came from exactly that
+// gap: `const` was emitted before an enum member (`const
+// UserRole.admin` is a syntax error — a static member reference is not
+// a constructor invocation), and const-ness was first attached to the
+// initializer rather than the declaration. A tree answers both
+// structurally.
+//
+// This isn't only about examples. `defaultValueString` is compared to
+// `code` by *rendered text* in `RenderObject.exampleValue` — structural
+// equality spelled as string equality — and `fromJsonExpression` /
+// `toJsonExpression` plus the dispatch `caseExpression`s are all
+// string-composed too. #255 (don't parenthesize a bare numeric cast)
+// and #256 (drop redundant argument values) were string-level fixes to
+// what are structural questions.
+//
+// Evaluate `package:code_builder` first — it is the Dart team's
+// answer for building Dart source programmatically and has an
+// `Expression` type with `.property()` / `.call()` / `.constInstance()`.
+// If its `Expression` won't answer "is this const?", a small
+// home-grown IR (literals, identifiers, property access, invocation,
+// collection literals) is a few hundred lines and mirrors how
+// `DartType` earned its place. Not `package:analyzer`'s AST: that is a
+// parsing representation built around tokens, offsets and resolution,
+// and is painful to construct synthetically.
 @immutable
 class ExampleValue extends Equatable {
   /// For expressions whose const-ness is *computed* — a composite

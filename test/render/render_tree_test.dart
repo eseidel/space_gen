@@ -1,5 +1,6 @@
 import 'package:space_gen/src/quirks.dart';
 import 'package:space_gen/src/render/dart_type.dart';
+import 'package:space_gen/src/render/example_value.dart';
 import 'package:space_gen/src/render/render_tree.dart';
 import 'package:space_gen/src/render/schema_renderer.dart';
 import 'package:space_gen/src/render/templates.dart';
@@ -1522,9 +1523,10 @@ void main() {
         pattern: null,
         assignedName: 'Foo',
       );
-      final example = schema.exampleValue(context);
-      expect(example?.code, "Foo('example')");
-      expect(example?.isConst, isTrue);
+      expect(
+        schema.exampleValue(context),
+        const ExampleValue.constant("Foo('example')"),
+      );
     });
 
     test('a validating newtype is not constant', () {
@@ -1576,9 +1578,10 @@ void main() {
         descriptions: null,
         assignedName: 'Foo',
       );
-      final example = schema.exampleValue(context);
-      expect(example?.code, 'Foo.a');
-      expect(example?.isConst, isTrue);
+      expect(
+        schema.exampleValue(context),
+        const ExampleValue.constant('Foo.a'),
+      );
     });
 
     test('an array is constant only when its element is', () {
@@ -1629,7 +1632,31 @@ void main() {
 
     test('base64 bytes are not constant', () {
       const schema = RenderBase64Bytes(common: common);
-      expect(schema.exampleValue(context)?.isConst, isFalse);
+      expect(
+        schema.exampleValue(context),
+        const ExampleValue.notConst('Uint8List.fromList(<int>[0])'),
+      );
+    });
+
+    test('equal code with differing const-ness are not equal', () {
+      // Const-ness is part of the value: the same expression reached
+      // via a validating vs non-validating newtype is a different
+      // answer, and `==` has to see that.
+      expect(
+        const ExampleValue.constant('Foo(1)'),
+        isNot(const ExampleValue.notConst('Foo(1)')),
+      );
+      expect(
+        const ExampleValue('Foo(1)', isConst: true),
+        const ExampleValue.constant('Foo(1)'),
+      );
+    });
+
+    test('toString shows the code and its const-ness', () {
+      expect(
+        const ExampleValue.constant('Foo.a').toString(),
+        'ExampleValue(Foo.a, isConst: true)',
+      );
     });
   });
 
