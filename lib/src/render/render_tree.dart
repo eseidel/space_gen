@@ -7,8 +7,8 @@ import 'package:space_gen/src/dispatch.dart';
 import 'package:space_gen/src/naming.dart';
 import 'package:space_gen/src/parse/spec.dart' show StatusCodeRange;
 import 'package:space_gen/src/quirks.dart';
+import 'package:space_gen/src/render/dart_expression.dart';
 import 'package:space_gen/src/render/dart_type.dart';
-import 'package:space_gen/src/render/example_value.dart';
 // Any code that depends on SchemaRenderer probably should be moved out
 // of this file and into the schema_renderer.dart file.
 import 'package:space_gen/src/render/schema_renderer.dart';
@@ -2534,9 +2534,9 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// Callers treat `null` as a signal to skip emitting a round-trip
   /// test for the enclosing type.
   ///
-  /// The returned [ExampleValue] carries both the expression and whether
-  /// it is const-able; see that class for why the two travel together.
-  ExampleValue? exampleValue(SchemaRenderer context);
+  /// Whether the result is const-able is [DartExpression.isConst], derived
+  /// from the returned tree rather than tracked alongside it.
+  DartExpression? exampleValue(SchemaRenderer context);
 
   /// Wrap a scalar [literal] in this schema's newtype constructor, when
   /// it creates one. Shared by the string and numeric newtypes, whose
@@ -2547,11 +2547,12 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// Not used by [RenderPod], whose newtype constructor is
   /// unconditionally const.
   @protected
-  ExampleValue newtypeWrappedExample(String literal) {
-    if (!createsNewType) return ExampleValue.constant(literal);
-    return ExampleValue(
-      '$typeName($literal)',
-      isConst: validationCalls.isEmpty,
+  DartExpression newtypeWrappedExample(DartLiteral literal) {
+    if (!createsNewType) return literal;
+    return DartInvocation(
+      type: dartType,
+      arguments: [literal],
+      isConstConstructor: validationCalls.isEmpty,
     );
   }
 
@@ -2613,6 +2614,33 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 // renders to its own file as an extension type wrapping [dartTypeName]. When
 // false the schema is inline and uses [dartTypeName] directly at the use
 // site.
+// Expressions for the handful of Dart SDK constructs the generator emits
+// by name. Spelling `Uri.parse(...)` out as a [DartInvocation] at every
+// site describes the call structurally when we already know exactly which
+// call it is; naming them lets the call site read like the Dart it
+// produces. None are constant: each computes its value at runtime.
+
+/// `DateTime.utc(2024)`.
+DartExpression _dateTimeUtc(int year) =>
+    DartType.dateTime.construct([DartLiteral(year)], name: 'utc');
+
+/// `Uri.parse('...')`.
+DartExpression _uriParse(String uri) =>
+    DartType.uri.construct([DartLiteral(uri)], name: 'parse');
+
+/// `UriTemplate('...')`.
+DartExpression _uriTemplate(String template) =>
+    DartType.uriTemplate.construct([DartLiteral(template)]);
+
+/// `Uint8List.fromList(<int>[...])`.
+DartExpression _uint8ListFromList(List<int> bytes) =>
+    DartType.uint8List.construct([
+      DartListLiteral(
+        elementType: DartType.int_,
+        elements: bytes.map(DartLiteral.new).toList(),
+      ),
+    ], name: 'fromList');
+
 class RenderPod extends RenderSchema {
   const RenderPod({
     required super.common,
@@ -2843,25 +2871,27 @@ class RenderPod extends RenderSchema {
       super.equalsIgnoringName(other);
 
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) {
-    // Const-ness is per-type: `DateTime` has no const constructor, and
-    // `Uri.parse` / `UriTemplate` parse their argument at runtime.
-    final (raw, rawIsConst) = switch (type) {
-      PodType.boolean => ('false', true),
+  DartExpression? exampleValue(SchemaRenderer context) {
+    // Const-ness is per-type and falls out of the node: the literals are
+    // constant, and the three `_`-helper calls are all runtime invocations
+    // (`DateTime` has no const constructor; `Uri` / `UriTemplate` parse
+    // their argument).
+    final raw = switch (type) {
+      PodType.boolean => const DartLiteral(false),
       // `month`/`day` default to 1, so passing them is redundant
       // (`avoid_redundant_argument_values`).
-      PodType.dateTime => ('DateTime.utc(2024)', false),
-      PodType.uri => ("Uri.parse('https://example.com')", false),
-      PodType.uriTemplate => ("UriTemplate('https://example.com/{id}')", false),
-      PodType.email => ("'user@example.com'", true),
-      PodType.uuid => ("'00000000-0000-0000-0000-000000000000'", true),
+      PodType.dateTime => _dateTimeUtc(2024),
+      PodType.uri => _uriParse('https://example.com'),
+      PodType.uriTemplate => _uriTemplate('https://example.com/{id}'),
+      PodType.email => const DartLiteral('user@example.com'),
+      PodType.uuid => const DartLiteral(
+        '00000000-0000-0000-0000-000000000000',
+      ),
     };
+    if (!createsNewType) return raw;
     // A pod newtype's constructor is unconditionally `const`
     // (`schema_pod_newtype.mustache`), so wrapping preserves const-ness.
-    return ExampleValue(
-      createsNewType ? '$typeName($raw)' : raw,
-      isConst: rawIsConst,
-    );
+    return dartType.constConstruct([raw]);
   }
 
   /// Only dateTime pods parse through `DateTime.parse`, which rejects garbage
@@ -3064,8 +3094,8 @@ class RenderString extends RenderSchema {
   }
 
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) =>
-      newtypeWrappedExample(quoteString(validStringExample()));
+  DartExpression? exampleValue(SchemaRenderer context) =>
+      newtypeWrappedExample(DartLiteral(validStringExample()));
 }
 
 /// Pick the first `String`-typed entry from `common.example` or
@@ -3345,8 +3375,8 @@ class RenderNumber extends RenderNumeric<double> {
       jsonIsNullable ? '?.toDouble()' : '.toDouble()';
 
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) =>
-      newtypeWrappedExample(_validNumberExample(common, this).toString());
+  DartExpression? exampleValue(SchemaRenderer context) =>
+      newtypeWrappedExample(DartLiteral(_validNumberExample(common, this)));
 }
 
 class RenderInteger extends RenderNumeric<int> {
@@ -3385,8 +3415,8 @@ class RenderInteger extends RenderNumeric<int> {
   String jsonToDartCall({required bool jsonIsNullable}) => '';
 
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) => newtypeWrappedExample(
-    _validNumberExample(common, this).toInt().toString(),
+  DartExpression? exampleValue(SchemaRenderer context) => newtypeWrappedExample(
+    DartLiteral(_validNumberExample(common, this).toInt()),
   );
 }
 
@@ -3926,11 +3956,8 @@ class RenderObject extends RenderNewType {
   }
 
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) {
-    final args = <String>[];
-    // An argument that isn't const makes the whole construction
-    // non-const, even when the constructor itself is `const`.
-    var argsAreConst = true;
+  DartExpression? exampleValue(SchemaRenderer context) {
+    final args = <String, DartExpression>{};
     for (final entry in properties.entries) {
       final jsonName = entry.key;
       if (!requiredProperties.contains(jsonName)) continue;
@@ -3948,13 +3975,12 @@ class RenderObject extends RenderNewType {
       // reads differently from `DateTime.utc(...)`), so this can't drop
       // a genuinely-needed argument.
       //
-      // Compares the rendered code only, not the whole [ExampleValue]:
-      // the question is whether the two spell the same argument, and
-      // const-ness doesn't change that.
-      if (property.defaultValueString(context) == example.code) continue;
+      // Compares rendered text because `defaultValueString` is still a
+      // `String`; once it becomes a [DartExpression] this is structural
+      // equality between two trees.
+      if (property.defaultValueString(context) == example.toString()) continue;
       final dartName = variableSafeName(context.quirks, jsonName);
-      args.add('$dartName: ${example.code}');
-      argsAreConst &= example.isConst;
+      args[dartName] = example;
     }
     // When the schema has `additionalProperties`, the generated class
     // carries a synthetic required `entries` Map field whose value type
@@ -3969,11 +3995,18 @@ class RenderObject extends RenderNewType {
     if (additional != null) {
       // An empty map literal is a constant expression, so this argument
       // never costs const-ness.
-      args.add('entries: <String, ${additional.typeName}>{}');
+      args['entries'] = DartMapLiteral(
+        keyType: DartType.string,
+        valueType: additional.dartType,
+      );
     }
-    return ExampleValue(
-      '$typeName(${args.join(', ')})',
-      isConst: canBeConst(context) && argsAreConst,
+    // Any non-const argument makes the whole construction non-const even
+    // when the constructor itself is `const` — [DartInvocation.isConst]
+    // folds that over the arguments.
+    return DartInvocation(
+      type: dartType,
+      namedArguments: args,
+      isConstConstructor: canBeConst(context),
     );
   }
 
@@ -4204,13 +4237,10 @@ class RenderArray extends RenderSchema {
   }
 
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) {
+  DartExpression? exampleValue(SchemaRenderer context) {
     final inner = items.exampleValue(context);
     if (inner == null) return null;
-    return ExampleValue(
-      '<${items.typeName}>[${inner.code}]',
-      isConst: inner.isConst,
-    );
+    return DartListLiteral(elementType: items.dartType, elements: [inner]);
   }
 }
 
@@ -4384,18 +4414,11 @@ class RenderMap extends RenderSchema {
   }
 
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) {
+  DartExpression? exampleValue(SchemaRenderer context) {
     final value = valueSchema.exampleValue(context);
     if (value == null) return null;
-    // A map with no key schema uses a plain string literal, which is
-    // const; otherwise the key's own const-ness applies.
-    final key =
-        keySchema?.exampleValue(context) ??
-        const ExampleValue.constant("'key'");
-    return ExampleValue(
-      '{${key.code}: ${value.code}}',
-      isConst: key.isConst && value.isConst,
-    );
+    final key = keySchema?.exampleValue(context) ?? const DartLiteral('key');
+    return DartMapLiteral.untyped([DartMapEntry(key, value)]);
   }
 }
 
@@ -4578,14 +4601,14 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
   }
 
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) {
+  DartExpression? exampleValue(SchemaRenderer context) {
     // Name the first member directly rather than going through
     // `values.first`: a static member reference is a constant
     // expression, where `values.first` is a getter call and isn't. It
     // also reads better in the generated test.
     final first = names.firstOrNull;
     if (first == null) return null;
-    return ExampleValue.constant('$typeName.$first');
+    return dartType.member(first);
   }
 }
 
@@ -5191,7 +5214,7 @@ class RenderOneOf extends RenderNewType {
   dynamic get defaultValue => null;
 
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) {
+  DartExpression? exampleValue(SchemaRenderer context) {
     // A oneOf / anyOf currently renders as a sealed class with no
     // subclasses (the template at `schema_one_of.mustache` emits only
     // the base class and an `UnimplementedError`-throwing fromJson).
@@ -5873,8 +5896,10 @@ class RenderUnknown extends RenderSchema {
       throw UnimplementedError('RenderUnknown.toTemplateContext');
 
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) =>
-      const ExampleValue.constant('<String, dynamic>{}');
+  DartExpression? exampleValue(SchemaRenderer context) => const DartMapLiteral(
+    keyType: DartType.string,
+    valueType: DartType.dynamic_,
+  );
 }
 
 class RenderVoid extends RenderNoJson {
@@ -5904,7 +5929,7 @@ class RenderVoid extends RenderNoJson {
   // a void type, maybe we need a "return expression" value instead?
 
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) => null;
+  DartExpression? exampleValue(SchemaRenderer context) => null;
 }
 
 /// A schema that represents a type which cannot be converted to json.
@@ -5947,7 +5972,7 @@ abstract class RenderNoJson extends RenderSchema {
   /// No-JSON types (void, binary) can't round-trip via JSON so they
   /// have no example value.
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) => null;
+  DartExpression? exampleValue(SchemaRenderer context) => null;
 }
 
 class RenderBinary extends RenderNoJson {
@@ -6049,9 +6074,8 @@ class RenderBase64Bytes extends RenderSchema {
   }
 
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) =>
-      // `Uint8List.fromList` is a factory, so this isn't a constant.
-      const ExampleValue.notConst('Uint8List.fromList(<int>[0])');
+  DartExpression? exampleValue(SchemaRenderer context) =>
+      _uint8ListFromList([0]);
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
@@ -6122,9 +6146,13 @@ class RenderDate extends RenderSchema {
   }) => dartIsNullable ? '$dartName?.toJson()' : '$dartName.toJson()';
 
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) =>
+  DartExpression? exampleValue(SchemaRenderer context) =>
       // The generated `Date` has a const constructor (`date.dart`).
-      const ExampleValue.constant('Date(2024, 1, 1)');
+      const DartType('Date').constConstruct(const [
+        DartLiteral(2024),
+        DartLiteral(1),
+        DartLiteral(1),
+      ]);
 
   // `Date.fromJson` parses through `DateTime.parse`, which rejects garbage
   // with a FormatException — so the round-trip test has a guaranteed-invalid
@@ -6198,11 +6226,8 @@ class RenderEmptyObject extends RenderNewType {
   };
 
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) =>
-      // Bare, not `const`-prefixed: the outermost caller applies the
-      // keyword, so a nested empty object can't trip
-      // `unnecessary_const` inside an enclosing const expression.
-      ExampleValue.constant('$typeName()');
+  DartExpression? exampleValue(SchemaRenderer context) =>
+      dartType.constConstruct(const []);
 }
 
 /// A cycle-break marker: appears where a $ref would otherwise recurse back
@@ -6284,7 +6309,7 @@ class RenderRecursiveRef extends RenderSchema {
   /// Returning null here propagates up the tree so the enclosing
   /// schema opts out of test generation.
   @override
-  ExampleValue? exampleValue(SchemaRenderer context) => null;
+  DartExpression? exampleValue(SchemaRenderer context) => null;
 
   @override
   List<Object?> get props => [super.props, targetPointer];

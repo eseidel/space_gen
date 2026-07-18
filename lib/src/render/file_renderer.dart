@@ -866,8 +866,8 @@ class FileRenderer {
           'typeName': schema.typeName,
           // Const-ness is spent on the declaration keyword rather
           // than the initializer, so the expression stays bare — see
-          // [ExampleValue].
-          'exampleValue': example.code,
+          // [DartExpression].
+          'exampleValue': example.toString(),
           'exampleIsConst': example.isConst,
           'invalidJsonExample': invalidJson,
           'isEnum': schema is RenderEnum,
@@ -923,7 +923,7 @@ class FileRenderer {
       if (example == null) continue;
       variants.add({
         'variantTypeName': variant.typeName,
-        'exampleValue': example.code,
+        'exampleValue': example.toString(),
         'exampleIsConst': example.isConst,
       });
     }
