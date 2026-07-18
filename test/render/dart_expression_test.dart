@@ -61,7 +61,7 @@ void main() {
     });
 
     test('untyped omits the type argument', () {
-      expect(const DartListLiteral.untyped([]).toString(), '[]');
+      expect(DartListLiteral.empty.toString(), '[]');
       expect(
         const DartListLiteral.untyped([DartLiteral(0)]).toString(),
         '[0]',
@@ -303,40 +303,58 @@ void main() {
     });
   });
 
-  group('hasConstKeyword', () {
-    test('writes the keyword before the literal', () {
-      expect(
-        const DartListLiteral.untyped([], hasConstKeyword: true).toString(),
-        'const []',
-      );
+  group('toConstantSource', () {
+    test('writes the keyword at the outermost node that can carry it', () {
+      expect(DartListLiteral.empty.toConstantSource(), 'const []');
       expect(
         const DartListLiteral(
           elementType: DartType.int_,
           elements: [DartLiteral(0)],
-          hasConstKeyword: true,
-        ).toString(),
+        ).toConstantSource(),
         'const <int>[0]',
       );
-    });
-
-    test('is off by default and part of the value', () {
-      expect(const DartListLiteral.untyped([]).toString(), '[]');
-      final elements = <DartExpression>[];
       expect(
-        DartListLiteral.untyped(elements, hasConstKeyword: true),
-        isNot(const DartListLiteral.untyped([])),
+        const DartMapLiteral(
+          keyType: DartType.string,
+          valueType: DartType.dynamic_,
+        ).toConstantSource(),
+        'const <String, dynamic>{}',
+      );
+      expect(
+        const DartInvocation(
+          type: DartType('Foo'),
+          arguments: [DartLiteral(1)],
+          isConstConstructor: true,
+        ).toConstantSource(),
+        'const Foo(1)',
       );
     });
 
-    test('refuses to write const around a non-constant literal', () {
+    test('renders bare where the keyword is not legal', () {
+      // `const 5` and `const UserRole.admin` are syntax errors.
+      expect(const DartLiteral(5).toConstantSource(), '5');
       expect(
-        () => const DartListLiteral(
+        const DartStaticMember(
+          type: DartType('Foo'),
+          name: 'a',
+        ).toConstantSource(),
+        'Foo.a',
+      );
+    });
+
+    test('renders bare when the value is not constant', () {
+      expect(nonConst.toConstantSource(), "Uri.parse('https://example.com')");
+      expect(
+        const DartListLiteral(
           elementType: DartType.uri,
           elements: [nonConst],
-          hasConstKeyword: true,
-        ).toString(),
-        throwsA(isA<AssertionError>()),
+        ).toConstantSource(),
+        "<Uri>[Uri.parse('https://example.com')]",
       );
+    });
+
+    test('toString stays bare — the keyword is a serialization choice', () {
+      expect(DartListLiteral.empty.toString(), '[]');
     });
   });
 

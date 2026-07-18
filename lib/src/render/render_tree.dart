@@ -2001,7 +2001,9 @@ Map<String, dynamic> _requestBodyParameterContext(
     'dartName': body.dartParameterName(context.quirks),
     'required': body.isRequired,
     'hasDefaultValue': body.schema.defaultValue != null,
-    'defaultValue': body.schema.defaultValueExpression(context)?.toString(),
+    'defaultValue': body.schema
+        .defaultValueExpression(context)
+        ?.toConstantSource(),
     'type': body.schema.typeName,
     'nullableType': body.schema.nullableTypeName(context),
   };
@@ -2462,7 +2464,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     // Non-null Dart slot fed by nullable JSON: an `as T?` cast would
     // crash on null. Substitute the default whether the default is
     // const or not.
-    if (!dartIsNullable) return ' ?? $defaultValue';
+    if (!dartIsNullable) return ' ?? ${defaultValue.toConstantSource()}';
     // Nullable Dart slot with a const default: the constructor uses
     // `this.foo = default`, which only fires when the param is omitted.
     // `fromJson` always passes a value (possibly null), so substitute
@@ -2470,7 +2472,9 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     // produces `null` instead of the spec's default. Surfaced by a
     // real spec with `bool` properties marked `default: false` outside
     // the `required` array.
-    if (defaultCanConstConstruct) return ' ?? $defaultValue';
+    if (defaultCanConstConstruct) {
+      return ' ?? ${defaultValue.toConstantSource()}';
+    }
     // Nullable Dart slot with a non-const default: the constructor uses
     // an initializer list (`: foo = foo ?? default`) that substitutes
     // on null too, so the default lands without `fromJson`'s help.
@@ -3590,7 +3594,8 @@ class RenderObject extends RenderNewType {
     } else {
       line.write('this.$dartName');
       if (property.hasDefaultValue(context)) {
-        line.write(' = ${property.defaultValueExpression(context)}');
+        final value = property.defaultValueExpression(context);
+        line.write(' = ${value?.toConstantSource()}');
       }
     }
     return line.toString();
@@ -3605,8 +3610,8 @@ class RenderObject extends RenderNewType {
   }) {
     final dartName = variableSafeName(context.quirks, jsonName);
     if (property.hasNonConstDefaultValue(context)) {
-      return 'this.$dartName = $dartName '
-          '?? ${property.defaultValueExpression(context)}';
+      final value = property.defaultValueExpression(context);
+      return 'this.$dartName = $dartName ?? ${value?.toConstantSource()}';
     }
     return null;
   }
@@ -4157,12 +4162,11 @@ class RenderArray extends RenderSchema {
     final listDefault = value as List;
     if (listDefault.isEmpty) {
       // Type annotation is not needed for empty lists.
-      return const DartListLiteral.untyped([], hasConstKeyword: true);
+      return DartListLiteral.empty;
     }
     return DartListLiteral(
       elementType: items.dartType,
       elements: listDefault.map(DartLiteral.new).toList(),
-      hasConstKeyword: items.defaultCanConstConstruct,
     );
   }
 
@@ -5853,7 +5857,7 @@ class RenderParameter implements CanBeParameter {
     'dartName': dartParameterName(context.quirks),
     'required': isRequired,
     'hasDefaultValue': type.defaultValue != null,
-    'defaultValue': type.defaultValueExpression(context)?.toString(),
+    'defaultValue': type.defaultValueExpression(context)?.toConstantSource(),
     'type': type.typeName,
     'nullableType': type.nullableTypeName(context),
   };
