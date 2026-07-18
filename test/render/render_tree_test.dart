@@ -1,6 +1,6 @@
 import 'package:space_gen/src/quirks.dart';
+import 'package:space_gen/src/render/dart_expression.dart';
 import 'package:space_gen/src/render/dart_type.dart';
-import 'package:space_gen/src/render/example_value.dart';
 import 'package:space_gen/src/render/render_tree.dart';
 import 'package:space_gen/src/render/schema_renderer.dart';
 import 'package:space_gen/src/render/templates.dart';
@@ -1155,7 +1155,7 @@ void main() {
 
     test('date format produces a Date value-class literal', () {
       const schema = RenderDate(common: common, defaultValue: null);
-      expect(schema.exampleValue(context)?.code, 'Date(2024, 1, 1)');
+      expect(schema.exampleValue(context)?.toString(), 'Date(2024, 1, 1)');
     });
 
     test('uri format produces a Uri.parse literal', () {
@@ -1165,7 +1165,7 @@ void main() {
         createsNewType: false,
       );
       expect(
-        schema.exampleValue(context)?.code,
+        schema.exampleValue(context)?.toString(),
         "Uri.parse('https://example.com')",
       );
     });
@@ -1177,7 +1177,7 @@ void main() {
         createsNewType: false,
       );
       expect(
-        schema.exampleValue(context)?.code,
+        schema.exampleValue(context)?.toString(),
         "UriTemplate('https://example.com/{id}')",
       );
     });
@@ -1188,7 +1188,7 @@ void main() {
         type: PodType.email,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context)?.code, "'user@example.com'");
+      expect(schema.exampleValue(context)?.toString(), "'user@example.com'");
     });
 
     test('uuid format produces a uuid string literal', () {
@@ -1198,24 +1198,24 @@ void main() {
         createsNewType: false,
       );
       expect(
-        schema.exampleValue(context)?.code,
+        schema.exampleValue(context)?.toString(),
         "'00000000-0000-0000-0000-000000000000'",
       );
     });
 
     test('unknown returns an empty dynamic map literal', () {
       const schema = RenderUnknown(common: common);
-      expect(schema.exampleValue(context)?.code, '<String, dynamic>{}');
+      expect(schema.exampleValue(context)?.toString(), '<String, dynamic>{}');
     });
 
     test('void returns null (no round-trip possible)', () {
       const schema = RenderVoid(common: common);
-      expect(schema.exampleValue(context)?.code, isNull);
+      expect(schema.exampleValue(context)?.toString(), isNull);
     });
 
     test('binary (NoJson) returns null', () {
       const schema = RenderBinary(common: common);
-      expect(schema.exampleValue(context)?.code, isNull);
+      expect(schema.exampleValue(context)?.toString(), isNull);
     });
 
     test('recursive ref returns null', () {
@@ -1223,7 +1223,7 @@ void main() {
         common: common,
         targetPointer: JsonPointer.empty(),
       );
-      expect(schema.exampleValue(context)?.code, isNull);
+      expect(schema.exampleValue(context)?.toString(), isNull);
     });
 
     test('oneOf returns null (sealed class, no constructable subtype)', () {
@@ -1252,7 +1252,7 @@ void main() {
         discriminator: null,
         source: null,
       );
-      expect(schema.exampleValue(context)?.code, isNull);
+      expect(schema.exampleValue(context)?.toString(), isNull);
     });
 
     test('map with keySchema uses its exampleValue', () {
@@ -1278,7 +1278,7 @@ void main() {
       );
       // Key example names the enum's first member; value is the string
       // example.
-      expect(map.exampleValue(context)?.code, "{Foo.a: 'example'}");
+      expect(map.exampleValue(context)?.toString(), "{Foo.a: 'example'}");
     });
 
     test('string with spec example uses it verbatim', () {
@@ -1294,7 +1294,7 @@ void main() {
         pattern: r'^refs/(heads|tags|pull)/.*$',
         createsNewType: false,
       );
-      expect(schema.exampleValue(context)?.code, "'refs/heads/main'");
+      expect(schema.exampleValue(context)?.toString(), "'refs/heads/main'");
     });
 
     test('string falls back to first String entry from examples list', () {
@@ -1310,7 +1310,7 @@ void main() {
         pattern: null,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context)?.code, "'second'");
+      expect(schema.exampleValue(context)?.toString(), "'second'");
     });
 
     test('string synthesizes a value matching simple character-class '
@@ -1330,7 +1330,7 @@ void main() {
         pattern: r'^[0-9a-fA-F]+$',
         createsNewType: false,
       );
-      expect(schema.exampleValue(context)?.code, "'${'a' * 40}'");
+      expect(schema.exampleValue(context)?.toString(), "'${'a' * 40}'");
     });
 
     test('string synthesizes for an alternation pattern by trying '
@@ -1348,7 +1348,7 @@ void main() {
         createsNewType: false,
       );
       // `'a'` doesn't match; `'0'` does (the 0 alternative).
-      expect(schema.exampleValue(context)?.code, "'0'");
+      expect(schema.exampleValue(context)?.toString(), "'0'");
     });
 
     test('string truncates a too-long fallback to maxLength', () {
@@ -1363,7 +1363,7 @@ void main() {
         pattern: null,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context)?.code, "'exam'");
+      expect(schema.exampleValue(context)?.toString(), "'exam'");
     });
 
     test('string falls back when no candidate matches the pattern', () {
@@ -1382,7 +1382,7 @@ void main() {
         pattern: r'^Z+$',
         createsNewType: false,
       );
-      expect(schema.exampleValue(context)?.code, "'example'");
+      expect(schema.exampleValue(context)?.toString(), "'example'");
     });
 
     test('string falls back when the spec pattern is invalid regex', () {
@@ -1399,7 +1399,7 @@ void main() {
         pattern: '(',
         createsNewType: false,
       );
-      expect(schema.exampleValue(context)?.code, "'example'");
+      expect(schema.exampleValue(context)?.toString(), "'example'");
     });
 
     test('integer with spec example uses it', () {
@@ -1417,7 +1417,7 @@ void main() {
         multipleOf: null,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context)?.code, '42');
+      expect(schema.exampleValue(context)?.toString(), '42');
     });
 
     test('integer with no spec example picks minimum', () {
@@ -1434,7 +1434,7 @@ void main() {
         multipleOf: null,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context)?.code, '5');
+      expect(schema.exampleValue(context)?.toString(), '5');
     });
 
     test('integer falls back to first num in examples list when example '
@@ -1453,7 +1453,7 @@ void main() {
         multipleOf: null,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context)?.code, '7');
+      expect(schema.exampleValue(context)?.toString(), '7');
     });
 
     test('integer with negative max picks the upper bound when zero is '
@@ -1471,7 +1471,7 @@ void main() {
         multipleOf: null,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context)?.code, '-5');
+      expect(schema.exampleValue(context)?.toString(), '-5');
     });
 
     test('integer rounds candidate up to the next multipleOf', () {
@@ -1488,7 +1488,7 @@ void main() {
         multipleOf: 5,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context)?.code, '10');
+      expect(schema.exampleValue(context)?.toString(), '10');
     });
   });
 
@@ -1525,7 +1525,13 @@ void main() {
       );
       expect(
         schema.exampleValue(context),
-        const ExampleValue.constant("Foo('example')"),
+        const DartInvocation(
+          type: DartType('Foo'),
+          constructorName: null,
+          positionalArguments: [DartLiteral('example')],
+          namedArguments: {},
+          isConstConstructor: true,
+        ),
       );
     });
 
@@ -1580,7 +1586,7 @@ void main() {
       );
       expect(
         schema.exampleValue(context),
-        const ExampleValue.constant('Foo.a'),
+        const DartStaticMember(type: DartType('Foo'), name: 'a'),
       );
     });
 
@@ -1632,31 +1638,9 @@ void main() {
 
     test('base64 bytes are not constant', () {
       const schema = RenderBase64Bytes(common: common);
-      expect(
-        schema.exampleValue(context),
-        const ExampleValue.notConst('Uint8List.fromList(<int>[0])'),
-      );
-    });
-
-    test('equal code with differing const-ness are not equal', () {
-      // Const-ness is part of the value: the same expression reached
-      // via a validating vs non-validating newtype is a different
-      // answer, and `==` has to see that.
-      expect(
-        const ExampleValue.constant('Foo(1)'),
-        isNot(const ExampleValue.notConst('Foo(1)')),
-      );
-      expect(
-        const ExampleValue('Foo(1)', isConst: true),
-        const ExampleValue.constant('Foo(1)'),
-      );
-    });
-
-    test('toString shows the code and its const-ness', () {
-      expect(
-        const ExampleValue.constant('Foo.a').toString(),
-        'ExampleValue(Foo.a, isConst: true)',
-      );
+      final example = schema.exampleValue(context);
+      expect(example.toString(), 'Uint8List.fromList(<int>[0])');
+      expect(example?.isConst, isFalse);
     });
   });
 
@@ -1784,7 +1768,7 @@ void main() {
     });
 
     test('example is a Date value-class literal', () {
-      expect(date.exampleValue(context)?.code, 'Date(2024, 1, 1)');
+      expect(date.exampleValue(context)?.toString(), 'Date(2024, 1, 1)');
       expect(date.invalidJsonExample(context), "'not a date'");
     });
 
