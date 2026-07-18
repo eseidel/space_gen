@@ -895,7 +895,10 @@ void main() {
       );
     });
 
-    test('deprecated', () {
+    // `@deprecated` is a `dart:core` constant, so a deprecated property
+    // needs no import of its own. Meta is imported only for `@immutable`,
+    // which `SchemaUsage.usesMetaAnnotations` drives from the body.
+    test('deprecated property adds no import', () {
       expect(
         const RenderObject(
           common: CommonProperties.test(
@@ -919,7 +922,7 @@ void main() {
             ),
           },
         ).additionalImports,
-        equals([const Import('package:meta/meta.dart')]),
+        isEmpty,
       );
     });
 
@@ -935,7 +938,11 @@ void main() {
           createsNewType: false,
         ).additionalImports,
         equals([
-          const Import('package:uri/uri.dart', shown: ['UriTemplate']),
+          const Import(
+            'package:uri/uri.dart',
+            shown: ['UriTemplate'],
+            neededWhenBodyNames: 'UriTemplate',
+          ),
         ]),
       );
     });

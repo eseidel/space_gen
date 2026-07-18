@@ -394,10 +394,33 @@ abstract class CanBeParameter implements ToTemplateContext {
 // Could make this comparable to have a nicer sort for our test results.
 @immutable
 class Import extends Equatable {
-  const Import(this.path, {this.asName, this.shown = const []});
+  const Import(
+    this.path, {
+    this.asName,
+    this.shown = const [],
+    this.neededWhenBodyNames,
+  });
 
   final String path;
   final String? asName;
+
+  /// An identifier that must appear in the rendered body for this import
+  /// to be needed, or `null` to keep the import unconditionally.
+  ///
+  /// Schema-contributed imports (`additionalImports`) are collected from
+  /// the *schema tree*, but a model file only emits code for part of that
+  /// tree: a nested schema can contribute `dart:convert` while the body
+  /// reaches its bytes through a `model_helpers.dart` wrapper
+  /// (`maybeBase64Decode`) and never names `base64` itself. Gating on a
+  /// sentinel the emitted code must contain closes that gap.
+  ///
+  /// Conservative in the safe direction, like `referencedIdentifiers`:
+  /// keeping an import requires the token to be present, so a used
+  /// import is never dropped — the effect is only to stop emitting ones
+  /// the file never references (which `dart fix` would otherwise strip).
+  /// This mirrors the `names(...)` gating `FileRenderer.importsForApi`
+  /// already applies to the api file's fixed imports.
+  final String? neededWhenBodyNames;
 
   /// Specific identifiers to narrow the import/export with a `show`
   /// clause. Empty means "show all". Only meaningful when `asName` is
@@ -409,7 +432,7 @@ class Import extends Equatable {
   Map<String, dynamic> toTemplateContext() => {'path': path, 'asName': asName};
 
   @override
-  List<Object?> get props => [path, asName, shown];
+  List<Object?> get props => [path, asName, shown, neededWhenBodyNames];
 }
 
 /// Identifiers emitted by the renderer that are defined in the generated
@@ -2799,7 +2822,11 @@ class RenderPod extends RenderSchema {
   Iterable<Import> get additionalImports => [
     ...super.additionalImports,
     if (type == PodType.uriTemplate)
-      const Import('package:uri/uri.dart', shown: ['UriTemplate']),
+      const Import(
+        'package:uri/uri.dart',
+        shown: ['UriTemplate'],
+        neededWhenBodyNames: 'UriTemplate',
+      ),
   ];
 
   /// Converts `value` (of type [dartTypeName]) to its JSON representation.
@@ -3610,12 +3637,10 @@ class RenderObject extends RenderNewType {
   @override
   DartType get jsonStorageDartType => _jsonWireMap;
 
-  @override
-  Iterable<Import> get additionalImports => [
-    ...super.additionalImports,
-    if (properties.values.any((p) => p.isDeprecated))
-      const Import('package:meta/meta.dart'),
-  ];
+  // A deprecated property emits `@deprecated`, which is a `dart:core`
+  // constant — not `package:meta`'s. This class used to add a meta
+  // import for it, which was never needed; the `@immutable` case that
+  // genuinely needs meta comes from `SchemaUsage.usesMetaAnnotations`.
 
   // isNullable means it's optional for the server, use nullable storage.
   bool propertyDartIsNullable({
@@ -4877,21 +4902,19 @@ class RenderOneOf extends RenderNewType {
     );
   }
 
-  /// Whether any dispatch strategy will fire — drives whether the
-  /// `@immutable` wrapper-class import is needed. Calls [decideDispatch]
-  /// on the resolved source; cheap and pure.
-  bool get _hasDispatch {
-    final src = source;
-    if (src == null) return false;
-    return decideDispatch(src) is! NoDispatch;
-  }
-
   @override
   Iterable<Import> get additionalImports => [
     ...super.additionalImports,
-    // The dispatch path emits @immutable wrappers that override == /
-    // hashCode; the legacy UnimplementedError stub doesn't need it.
-    if (_hasDispatch) const Import('package:meta/meta.dart'),
+    // The dispatch path emits `@immutable` wrappers that override == /
+    // hashCode; the legacy UnimplementedError stub doesn't.
+    //
+    // Gated on the body naming `immutable` rather than on a
+    // `decideDispatch(source) is! NoDispatch` prediction, which this
+    // used to ask. The prediction was wrong for a oneOf with no
+    // variants — dispatch fires, but the emitted body is a bare
+    // `switch (json) { _ => throw }` with no annotation — so the import
+    // was unused. Asking what was emitted cannot disagree with it.
+    const Import('package:meta/meta.dart', neededWhenBodyNames: 'immutable'),
   ];
 
   @override
@@ -6041,7 +6064,7 @@ class RenderBinary extends RenderNoJson {
   @override
   Iterable<Import> get additionalImports => [
     ...super.additionalImports,
-    const Import('dart:typed_data'),
+    const Import('dart:typed_data', neededWhenBodyNames: 'Uint8List'),
   ];
 
   @override
@@ -6073,8 +6096,17 @@ class RenderBase64Bytes extends RenderSchema {
     // api.dart barrel. `dart:convert` is imported without a `shown:`
     // list since `base64` is only used internally by the encoded
     // fromJson/toJson and never appears in a public field signature.
-    const Import('dart:typed_data', shown: ['Uint8List']),
-    const Import('dart:convert'),
+    //
+    // Both are gated on the emitted code naming them: a nullable field
+    // reaches its bytes through `maybeBase64Decode` from
+    // `model_helpers.dart`, so the body names neither `base64` nor
+    // (if no field is non-nullable) `Uint8List`.
+    const Import(
+      'dart:typed_data',
+      shown: ['Uint8List'],
+      neededWhenBodyNames: 'Uint8List',
+    ),
+    const Import('dart:convert', neededWhenBodyNames: 'base64'),
   ];
 
   @override
