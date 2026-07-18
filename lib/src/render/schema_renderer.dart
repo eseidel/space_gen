@@ -5,26 +5,169 @@ import 'package:space_gen/src/render/templates.dart';
 /// A maximal Dart identifier: `[a-zA-Z_$]` head, `[\w$]*` tail.
 final _identifierPattern = RegExp(r'[a-zA-Z_$][\w$]*');
 
+/// A single character that can appear inside a Dart identifier.
+final _identifierCharPattern = RegExp(r'[\w$]');
+
 /// [ModelHelpers.all] as a set, for O(1) membership while scanning.
 final Set<String> _helperNames = ModelHelpers.all.toSet();
 
-/// Every whole-identifier token appearing in [body].
+/// A `[Bracketed]` doc-comment reference. The analyzer resolves these,
+/// so they count as uses of an import just like code does.
+///
+/// Whitespace inside the brackets disqualifies it: a real reference is
+/// a single identifier chain (`[Foo]`, `[Foo.bar]`), never a phrase.
+/// What phrases are is markdown link labels — github writes `[Link
+/// header](https://…)` and spacetraders `[Market Overview page](…)`,
+/// where `Link` and `Market` also happen to be model class names. The
+/// analyzer resolves the leading word of those and so counts the import
+/// as used, which is why `dart fix` kept two imports nothing references.
+/// Requiring a whitespace-free reference drops them without putting any
+/// genuine one at risk.
+final _docReferencePattern = RegExp(r'\[([^\]\s]+)\]');
+
+/// [body] with comment prose removed, keeping the parts that can name a
+/// Dart identifier.
+///
+/// A comment survives only as its `[Bracketed]` references; the rest of
+/// the prose is replaced by spaces, so offsets and line structure are
+/// unaffected and patterns anchored on `\b` still see what they expect.
+/// Code and string literals are kept verbatim: a string can carry an
+/// identifier through interpolation (`'${Foo.bar}'`), and reproducing
+/// Dart's interpolation grammar to find out buys nothing, since keeping
+/// an extra identifier only ever keeps an extra import.
+///
+/// Strings are still *recognized* — not to drop them, but to skip past
+/// them. `Uri.parse('https://example.com/x')` embeds a `//` that a
+/// string-blind scan would read as starting a comment, discarding the
+/// real code that follows it on that line. That is the one direction
+/// this function must never fail in: dropping code loses a genuine
+/// reference, and losing a reference drops a needed import and breaks
+/// compilation.
+String stripComments(String body) {
+  final out = StringBuffer();
+  // Start of the run of kept text not yet flushed to [out]. Everything
+  // that is not a comment is kept verbatim, so the scan only has to find
+  // comment boundaries and copy whole runs between them.
+  var runStart = 0;
+  var i = 0;
+
+  /// Advances [i] past the string literal starting there, handling raw,
+  /// multiline, and escaped quotes. The literal itself needs no special
+  /// copying — it stays part of the current run.
+  void skipStringLiteral() {
+    // In a raw string a backslash is literal, so it cannot escape the
+    // closing quote.
+    final isRaw = body[i] == 'r';
+    if (isRaw) i++;
+    final quote = body[i];
+    // `'''` / `"""` — a multiline string ends only on the full triple.
+    final delimiter = body.startsWith(quote * 3, i) ? quote * 3 : quote;
+    i += delimiter.length;
+    while (i < body.length) {
+      if (!isRaw && body[i] == r'\') {
+        i += 2;
+        continue;
+      }
+      if (body.startsWith(delimiter, i)) {
+        i += delimiter.length;
+        return;
+      }
+      i++;
+    }
+  }
+
+  /// Advances [i] past the comment starting there, returning its text.
+  String skipComment({required bool isBlock}) {
+    final start = i;
+    if (isBlock) {
+      // Dart nests block comments, so track depth rather than stopping
+      // at the first `*/`.
+      var depth = 0;
+      while (i < body.length) {
+        if (body.startsWith('/*', i)) {
+          depth++;
+          i += 2;
+        } else if (body.startsWith('*/', i)) {
+          depth--;
+          i += 2;
+          if (depth == 0) break;
+        } else {
+          i++;
+        }
+      }
+    } else {
+      while (i < body.length && body[i] != '\n') {
+        i++;
+      }
+    }
+    return body.substring(start, i);
+  }
+
+  /// The replacement for [comment]: its doc references at their original
+  /// offsets, everything else blanked. Same length as [comment], so the
+  /// surrounding text keeps its line structure.
+  String elided(String comment) {
+    final kept = List.filled(comment.length, ' ');
+    for (final match in _docReferencePattern.allMatches(comment)) {
+      final reference = match[1]!;
+      for (var k = 0; k < reference.length; k++) {
+        kept[match.start + 1 + k] = reference[k];
+      }
+    }
+    return kept.join();
+  }
+
+  while (i < body.length) {
+    final char = body[i];
+    if (char == '/' && i + 1 < body.length) {
+      final next = body[i + 1];
+      if (next == '/' || next == '*') {
+        out
+          ..write(body.substring(runStart, i))
+          ..write(elided(skipComment(isBlock: next == '*')));
+        runStart = i;
+        continue;
+      }
+    }
+    // A quote, or the `r` of a raw string — as opposed to an `r` ending
+    // a longer identifier that happens to precede one.
+    if (char == "'" ||
+        char == '"' ||
+        (char == 'r' &&
+            i + 1 < body.length &&
+            (body[i + 1] == "'" || body[i + 1] == '"') &&
+            (i == 0 || !_identifierCharPattern.hasMatch(body[i - 1])))) {
+      skipStringLiteral();
+      continue;
+    }
+    i++;
+  }
+  out.write(body.substring(runStart));
+  return out.toString();
+}
+
+/// Every whole-identifier token appearing in [code], which callers pass
+/// through [stripComments] first.
 ///
 /// Used to prune an emitted file's imports down to the symbols it
 /// actually names: an import is kept only when its type/sentinel token
-/// is in this set. Tokenizing (rather than `body.contains(name)`)
+/// is in this set. Tokenizing (rather than `code.contains(name)`)
 /// avoids substring false positives — the same whole-identifier
-/// discipline [_referencedModelHelpers] relies on. Keeping an import on
-/// *any* appearance (including doc comments) is deliberately
-/// conservative: it can never drop a genuinely-used import, so it can
-/// never break compilation.
-Set<String> referencedIdentifiers(String body) =>
-    _identifierPattern.allMatches(body).map((m) => m[0]!).toSet();
-
-/// The subset of [ModelHelpers.all] that [body] references as whole
-/// identifiers.
+/// discipline [_referencedModelHelpers] relies on.
 ///
-/// We tokenize [body] into identifiers in a single pass and match each
+/// Taking stripped code rather than the raw body is what makes comment
+/// prose not count. Spec descriptions routinely repeat a type's name in
+/// English ("GitHub Enterprise Cloud", "Register New Agent"), which kept
+/// 23 imports across the tracked specs that the file never referenced.
+Set<String> referencedIdentifiers(String code) =>
+    _identifierPattern.allMatches(code).map((m) => m[0]!).toSet();
+
+/// The subset of [ModelHelpers.all] that [code] references as whole
+/// identifiers. [code] has already been through [stripComments]: a
+/// helper named in prose is not a call, and pulling an uncalled helper
+/// into `model_helpers.dart` is exactly the dead-code problem below.
+///
+/// We tokenize [code] into identifiers in a single pass and match each
 /// token against [_helperNames] by exact equality. A plain
 /// `body.contains(name)` would over-match helper names that are
 /// prefixes of others — `maybeParseDateTime` contains `maybeParseDate`,
@@ -33,9 +176,9 @@ Set<String> referencedIdentifiers(String body) =>
 /// one into `model_helpers.dart` as a dead function: uncovered lines
 /// that fail the consuming package's coverage gate. Comparing whole
 /// tokens makes that impossible by construction.
-Set<String> _referencedModelHelpers(String body) {
+Set<String> _referencedModelHelpers(String code) {
   final found = <String>{};
-  for (final match in _identifierPattern.allMatches(body)) {
+  for (final match in _identifierPattern.allMatches(code)) {
     final token = match[0]!;
     if (_helperNames.contains(token)) found.add(token);
   }
@@ -60,10 +203,11 @@ class SchemaUsage {
 
   /// Derives usage by inspecting a rendered body.
   factory SchemaUsage.fromBody(String body) {
+    final code = stripComments(body);
     return SchemaUsage(
-      usesMetaAnnotations: body.contains('@immutable'),
-      usesValidationExtensions: _validationCallPattern.hasMatch(body),
-      modelHelpers: _referencedModelHelpers(body),
+      usesMetaAnnotations: code.contains('@immutable'),
+      usesValidationExtensions: _validationCallPattern.hasMatch(code),
+      modelHelpers: _referencedModelHelpers(code),
     );
   }
 
@@ -111,10 +255,13 @@ class ApiUsage {
     this.modelHelpers = const {},
   });
 
-  factory ApiUsage.fromBody(String body) => ApiUsage(
-    usesMetaAnnotations: body.contains('@immutable'),
-    modelHelpers: _referencedModelHelpers(body),
-  );
+  factory ApiUsage.fromBody(String body) {
+    final code = stripComments(body);
+    return ApiUsage(
+      usesMetaAnnotations: code.contains('@immutable'),
+      modelHelpers: _referencedModelHelpers(code),
+    );
+  }
 
   /// True when the body emits `@immutable` (multi-status response
   /// wrappers do; the legacy single-return path does not). Drives the

@@ -714,7 +714,8 @@ class FileRenderer {
     // token to be present, so a used import is never dropped; the
     // effect is purely to stop emitting imports the api file never
     // references (which `dart fix` would otherwise strip).
-    final referenced = referencedIdentifiers(body);
+    final code = stripComments(body);
+    final referenced = referencedIdentifiers(code);
     bool names(String token) => referenced.contains(token);
 
     final imports = {
@@ -733,9 +734,9 @@ class FileRenderer {
       if (names('ApiException'))
         Import.path('package:$packageName/api_exception.dart'),
       // `as http` is only ever used via the `http.` prefix, so it is
-      // gated on that rather than on a bare identifier: a `http` token in
-      // a URL doc-comment must not keep it.
-      if (body.contains('http.')) const Import(Libraries.http, asName: 'http'),
+      // gated on that rather than on a bare identifier: a plain `http`
+      // token in a URL string literal must not keep it.
+      if (code.contains('http.')) const Import(Libraries.http, asName: 'http'),
       ...usage.importsFor(packageName),
     };
 
@@ -823,7 +824,7 @@ class FileRenderer {
     SchemaUsage usage, {
     required String body,
   }) {
-    final referenced = referencedIdentifiers(body);
+    final referenced = referencedIdentifiers(stripComments(body));
     final referencedSchemas = collectSchemasUnderSchema(schema);
     final localSchemas = referencedSchemas.where(
       (s) => !s.createsNewType,

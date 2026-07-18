@@ -2845,6 +2845,121 @@ void main() {
       expect(usedBy('maybeParseUri'), {ModelHelpers.maybeParseUri});
     });
 
+    test('stripComments drops prose but keeps [Bracketed] references', () {
+      // The prose case is why this exists: github's spec says "GitHub
+      // Enterprise Cloud" in a description, which is not a reference to
+      // the `Enterprise` model. A `[Bracketed]` ref is one — the
+      // analyzer resolves those, so dropping the import would leave a
+      // dangling comment reference.
+      final code = stripComments('''
+/// Uses [Enterprise] and mentions GitHub Milestone Server.
+/* Block Contract */
+final x = Ship();
+''');
+      expect(referencedIdentifiers(code), contains('Enterprise'));
+      expect(referencedIdentifiers(code), contains('Ship'));
+      expect(referencedIdentifiers(code), isNot(contains('Milestone')));
+      expect(referencedIdentifiers(code), isNot(contains('Contract')));
+    });
+
+    test('stripComments does not treat a markdown link label as a '
+        'reference', () {
+      // `[Link header](url)` is prose, not a doc reference, even though
+      // the analyzer resolves its leading word and counts the import as
+      // used. A real reference has no whitespace in it.
+      final code = stripComments('/// See the [Link header](https://x/y).');
+      expect(referencedIdentifiers(code), isNot(contains('Link')));
+    });
+
+    test('stripComments keeps code following a // inside a string', () {
+      // The dangerous direction: a URL literal embeds `//`. Reading that
+      // as a comment start would discard the rest of the line, losing a
+      // real reference and dropping an import the file needs.
+      final code = stripComments(
+        "final u = Uri.parse('https://example.com/x'); final s = Ship();",
+      );
+      expect(referencedIdentifiers(code), contains('Ship'));
+    });
+
+    test('stripComments keeps identifiers inside string interpolation', () {
+      // Interpolated code is code. Keeping whole string literals is the
+      // conservative way to cover it.
+      final code = stripComments(r"final s = '${Ship.symbol}';");
+      expect(referencedIdentifiers(code), contains('Ship'));
+    });
+
+    test('stripComments handles raw, multiline, and escaped strings', () {
+      // Each of these can swallow the rest of the file if its end is
+      // mis-detected: a raw string's backslash does not escape, a
+      // multiline string ends only on the full triple quote, and an
+      // escaped quote does not end an ordinary one.
+      for (final literal in [
+        r"r'a\'",
+        "'''multi ' line'''",
+        r"'it\'s'",
+        r'"say \"hi\""',
+      ]) {
+        final code = stripComments('final s = $literal; final x = Ship();');
+        expect(
+          referencedIdentifiers(code),
+          contains('Ship'),
+          reason: 'literal $literal swallowed the code after it',
+        );
+      }
+    });
+
+    test('stripComments handles nested block comments', () {
+      // Dart nests these, so stopping at the first `*/` would resume
+      // treating comment prose as code.
+      final code = stripComments('/* a /* b */ Milestone */ final x = Ship();');
+      expect(referencedIdentifiers(code), contains('Ship'));
+      expect(referencedIdentifiers(code), isNot(contains('Milestone')));
+    });
+
+    test('importsForModel drops a model named only in prose', () {
+      final templates = TemplateProvider.defaultLocation();
+      final fileRenderer = FileRenderer(
+        FileRendererConfig(
+          packageName: 'spacetraders',
+          schemaRenderer: SchemaRenderer(templates: templates),
+          templates: templates,
+          formatter: Formatter(),
+          fileWriter: FileWriter(
+            outDir: MemoryFileSystem.test().directory('spacetraders'),
+          ),
+          spellChecker: SpellChecker(),
+        ),
+      );
+      final nested = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'nested',
+          pointer: JsonPointer.parse('#/components/schemas/nested'),
+          description: 'Nested',
+        ),
+        assignedName: 'Nested',
+        properties: const {},
+      );
+      final outer = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'outer',
+          pointer: JsonPointer.parse('#/components/schemas/outer'),
+          description: 'Outer',
+        ),
+        assignedName: 'Outer',
+        properties: {'nested': nested},
+      );
+      final imports = fileRenderer.importsForModel(
+        outer,
+        const SchemaUsage(),
+        // `Nested` appears, but only as English in the doc comment.
+        body: '/// A Nested thing.\nclass Outer {}',
+      );
+      expect(
+        imports,
+        isNot(contains(Import.path('package:spacetraders/models/nested.dart'))),
+      );
+    });
+
     test('ApiUsage.fromBody uses the same whole-identifier match', () {
       // ApiUsage derives modelHelpers independently of SchemaUsage; pin
       // that it doesn't regress to a substring scan on its own.
