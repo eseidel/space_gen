@@ -4414,7 +4414,9 @@ void main() {
             quirks: const Quirks.openapi(),
           );
           final rule = results['Rule']!;
-          expect(rule, contains('?? WaitTimer(30)'));
+          // `const`: the substitution runs on every parse that omits the
+          // field, and a const newtype default costs no allocation.
+          expect(rule, contains('?? const WaitTimer(30)'));
           expect(rule, isNot(contains('WaitTimer(null)')));
         },
       );

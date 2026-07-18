@@ -12,14 +12,15 @@ import 'package:space_gen/src/string.dart';
 /// `const` and every argument is constant, which is a fold over the tree
 /// and not something a composite should have to thread by hand.
 ///
-/// [toString] is the single rendering source of truth, again matching
-/// [DartType]. Expressions are always rendered bare: no `const` keyword is
-/// ever emitted, because the only consumer today is a variable declaration
-/// where const-ness is spent on the declaration keyword (`const instance =
-/// Foo(...)`). That covers the whole tree at once — a const declaration is a
-/// const context, so nested constructors and collection literals become
-/// constant without their own keyword, and an inner `const` would trip
-/// `unnecessary_const`.
+/// Unlike [DartType], the tree does *not* render itself. Rendering lives in
+/// [DartExpressionSerializer], because the source for a given expression
+/// depends on where the text lands: `const` must be written when the
+/// destination evaluates at runtime, and must not be when the destination is
+/// already a constant context (an enclosing `const` declaration, a parameter
+/// default), where it would trip `unnecessary_const`. That is a property of
+/// the destination, not of the expression, so it cannot be a method on the
+/// node — and it has to thread down through nesting, which is why it is a
+/// serializer carrying context rather than a flag on a call.
 ///
 /// See `doc/dart_expression.md` for the decision record, including why
 /// `package:code_builder` was evaluated and rejected.
@@ -34,9 +35,104 @@ sealed class DartExpression extends Equatable {
   /// Derived, never stored.
   bool get isConst;
 
-  /// The rendered Dart source for this expression, never `const`-prefixed.
+  /// Debug form (`DartLiteral(5)`), not Dart source. Rendering goes
+  /// through [DartExpressionSerializer] — an expression cannot serialize
+  /// itself, because how it renders depends on where the text lands.
   @override
-  String toString();
+  bool get stringify => true;
+}
+
+/// Renders a [DartExpression] to Dart source.
+///
+/// Separate from the tree on purpose. Whether a `const` keyword belongs in
+/// front of an expression is a fact about the *destination* — a `??`
+/// right-hand side evaluates at runtime and wants one, a parameter default
+/// is already a constant context and must not have one. The same tree
+/// therefore has more than one correct rendering, so it cannot render
+/// itself.
+///
+/// Context also has to travel down through nesting. Writing `const` at one
+/// level makes everything below it constant, so children must not repeat
+/// it; but where no keyword is written the context passes through, which is
+/// what lets a constant child inside a runtime parent get one of its own
+/// (`Uint8List.fromList(const <int>[0])`).
+@immutable
+class DartExpressionSerializer extends Equatable {
+  const DartExpressionSerializer({required this.isConstContext});
+
+  /// For a destination that is already a constant context: an enclosing
+  /// `const` declaration, a parameter default, or inside another `const`
+  /// expression. No keyword is written; one would be `unnecessary_const`.
+  static const constContext = DartExpressionSerializer(isConstContext: true);
+
+  /// For a destination that evaluates at runtime, such as the right-hand
+  /// side of a `??`. A `const` keyword is written wherever it turns an
+  /// allocation into a compile-time constant.
+  static const runtimeContext = DartExpressionSerializer(
+    isConstContext: false,
+  );
+
+  final bool isConstContext;
+
+  /// The Dart source for [expression].
+  String serialize(DartExpression expression) {
+    // A keyword written here (or a context inherited from above) makes
+    // every child a constant context.
+    final children = isConstContext || expression.isConst
+        ? constContext
+        : runtimeContext;
+    return switch (expression) {
+      // `const 5` and `const UserRole.admin` are syntax errors, so these
+      // two arms never offer the keyword — that rule is expressed by the
+      // shape of this switch rather than by a predicate.
+      DartLiteral(:final value) =>
+        value is String ? quoteString(value) : '$value',
+      DartStaticMember(:final type, :final name) => '$type.$name',
+      DartListLiteral(:final elementType, :final elements) => _maybeConst(
+        expression,
+        '${elementType == null ? '' : '<$elementType>'}'
+        '[${elements.map(children.serialize).join(', ')}]',
+      ),
+      DartMapLiteral(:final keyType, :final valueType, :final entries) =>
+        _maybeConst(expression, () {
+          final typeArguments = keyType == null || valueType == null
+              ? ''
+              : '<$keyType, $valueType>';
+          final rendered = entries.map(children._serializeEntry);
+          return '$typeArguments{${rendered.join(', ')}}';
+        }()),
+      DartInvocation(
+        :final type,
+        :final constructorName,
+        :final arguments,
+        :final namedArguments,
+      ) =>
+        _maybeConst(expression, () {
+          final target = constructorName == null
+              ? '$type'
+              : '$type.$constructorName';
+          final rendered = [
+            ...arguments.map(children.serialize),
+            ...namedArguments.entries.map(
+              (entry) => '${entry.key}: ${children.serialize(entry.value)}',
+            ),
+          ];
+          return '$target(${rendered.join(', ')})';
+        }()),
+    };
+  }
+
+  String _serializeEntry(DartMapEntry entry) =>
+      '${serialize(entry.key)}: ${serialize(entry.value)}';
+
+  /// Prefixes `const` when the destination is not already constant and the
+  /// keyword buys a compile-time constant. Only called from the arms whose
+  /// node kind can legally carry it.
+  String _maybeConst(DartExpression expression, String source) =>
+      !isConstContext && expression.isConst ? 'const $source' : source;
+
+  @override
+  List<Object?> get props => [isConstContext];
 }
 
 /// Expression builders for the forms that are *rooted at a type name* —
@@ -107,39 +203,34 @@ class DartLiteral extends DartExpression {
   @override
   bool get isConst => true;
 
-  @override
-  String toString() {
-    final value = this.value;
-    // Strings quote through the shared helper, which owns quote style and
-    // escaping (`$`, `'`, newlines).
-    return value is String ? quoteString(value) : '$value';
-  }
-
   // Includes the runtime type because `5 == 5.0` in Dart, but `5` and `5.0`
   // are different literals — equality here has to agree with [toString].
   @override
   List<Object?> get props => [value, value.runtimeType];
 }
 
-/// A list literal, e.g. `<int>[0]`.
+/// A list literal, e.g. `<int>[0]` or `[]`.
 class DartListLiteral extends DartExpression {
-  const DartListLiteral({
-    required this.elementType,
-    required this.elements,
-  });
+  const DartListLiteral({required this.elementType, required this.elements});
 
-  /// The element type argument. Always written — an untyped `[...]` would
-  /// infer from context, which generated code shouldn't rely on.
-  final DartType elementType;
+  /// A list literal with no type argument, e.g. `[]` — the elements (or the
+  /// context it lands in) infer it. Mirrors [DartMapLiteral.untyped].
+  const DartListLiteral.untyped(this.elements) : elementType = null;
+
+  /// The empty, untyped list literal `[]` — common enough as a default
+  /// value to be worth naming.
+  static const empty = DartListLiteral.untyped([]);
+
+  /// The element type argument, or `null` to omit the `<T>`. An empty
+  /// default (`const []`) is written untyped because the surrounding
+  /// declaration already pins the type.
+  final DartType? elementType;
 
   final List<DartExpression> elements;
 
   /// A list literal is constant when every element is.
   @override
   bool get isConst => elements.every((element) => element.isConst);
-
-  @override
-  String toString() => '<$elementType>[${elements.join(', ')}]';
 
   @override
   List<Object?> get props => [elementType, elements];
@@ -154,9 +245,6 @@ class DartMapEntry extends Equatable {
   final DartExpression value;
 
   bool get isConst => key.isConst && value.isConst;
-
-  @override
-  String toString() => '$key: $value';
 
   @override
   List<Object?> get props => [key, value];
@@ -186,16 +274,6 @@ class DartMapLiteral extends DartExpression {
   /// A map literal is constant when every key and value is.
   @override
   bool get isConst => entries.every((entry) => entry.isConst);
-
-  @override
-  String toString() {
-    final keyType = this.keyType;
-    final valueType = this.valueType;
-    final typeArguments = keyType == null || valueType == null
-        ? ''
-        : '<$keyType, $valueType>';
-    return '$typeArguments{${entries.join(', ')}}';
-  }
 
   @override
   List<Object?> get props => [keyType, valueType, entries];
@@ -266,17 +344,6 @@ class DartInvocation extends DartExpression {
       namedArguments.values.every((argument) => argument.isConst);
 
   @override
-  String toString() {
-    final name = constructorName;
-    final target = name == null ? '$type' : '$type.$name';
-    final rendered = [
-      ...arguments.map((argument) => '$argument'),
-      ...namedArguments.entries.map((entry) => '${entry.key}: ${entry.value}'),
-    ];
-    return '$target(${rendered.join(', ')})';
-  }
-
-  @override
   List<Object?> get props => [
     type,
     constructorName,
@@ -303,9 +370,6 @@ class DartStaticMember extends DartExpression {
   /// only used for members that are; a static getter would not be.
   @override
   bool get isConst => true;
-
-  @override
-  String toString() => '$type.$name';
 
   @override
   List<Object?> get props => [type, name];

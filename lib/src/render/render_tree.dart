@@ -2001,7 +2001,7 @@ Map<String, dynamic> _requestBodyParameterContext(
     'dartName': body.dartParameterName(context.quirks),
     'required': body.isRequired,
     'hasDefaultValue': body.schema.defaultValue != null,
-    'defaultValue': body.schema.defaultValueString(context),
+    'defaultValue': _runtimeSource(body.schema.defaultValueExpression(context)),
     'type': body.schema.typeName,
     'nullableType': body.schema.nullableTypeName(context),
   };
@@ -2445,7 +2445,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
-    final defaultValue = defaultValueString(context);
+    final defaultValue = defaultValueExpression(context);
     if (defaultValue == null) {
       if (jsonIsNullable && !dartIsNullable) {
         // Belt-and-braces: a non-nullable Dart slot fed by a nullable
@@ -2462,7 +2462,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     // Non-null Dart slot fed by nullable JSON: an `as T?` cast would
     // crash on null. Substitute the default whether the default is
     // const or not.
-    if (!dartIsNullable) return ' ?? $defaultValue';
+    if (!dartIsNullable) return ' ?? ${_runtimeSource(defaultValue)}';
     // Nullable Dart slot with a const default: the constructor uses
     // `this.foo = default`, which only fires when the param is omitted.
     // `fromJson` always passes a value (possibly null), so substitute
@@ -2470,7 +2470,9 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     // produces `null` instead of the spec's default. Surfaced by a
     // real spec with `bool` properties marked `default: false` outside
     // the `required` array.
-    if (defaultCanConstConstruct) return ' ?? $defaultValue';
+    if (defaultCanConstConstruct) {
+      return ' ?? ${_runtimeSource(defaultValue)}';
+    }
     // Nullable Dart slot with a non-const default: the constructor uses
     // an initializer list (`: foo = foo ?? default`) that substitutes
     // on null too, so the default lands without `fromJson`'s help.
@@ -2565,15 +2567,13 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// emitting the negative test for those.
   String? invalidJsonExample(SchemaRenderer context) => null;
 
-  /// The default value of this schema as a string.
-  String? defaultValueString(SchemaRenderer context) {
-    if (defaultValue == null) {
+  /// The default value of this schema, as an expression.
+  DartExpression? defaultValueExpression(SchemaRenderer context) {
+    final value = defaultValue;
+    if (value == null) {
       return null;
     }
-    if (defaultValue is String) {
-      return quoteString(defaultValue as String);
-    }
-    return defaultValue.toString();
+    return DartLiteral(value);
   }
 
   bool hasDefaultValue(SchemaRenderer context) => defaultValue != null;
@@ -2620,9 +2620,20 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 // call it is; naming them lets the call site read like the Dart it
 // produces. None are constant: each computes its value at runtime.
 
+/// Source for an expression landing somewhere that evaluates at runtime —
+/// a `??` right-hand side, or a parameter default, where a `const` keyword
+/// turns an allocation into a compile-time constant.
+String? _runtimeSource(DartExpression? expression) => expression == null
+    ? null
+    : DartExpressionSerializer.runtimeContext.serialize(expression);
+
 /// `DateTime.utc(2024)`.
 DartExpression _dateTimeUtc(int year) =>
     DartType.dateTime.construct([DartLiteral(year)], name: 'utc');
+
+/// `DateTime.parse('...')`.
+DartExpression _dateTimeParse(String value) =>
+    DartType.dateTime.construct([DartLiteral(value)], name: 'parse');
 
 /// `Uri.parse('...')`.
 DartExpression _uriParse(String uri) =>
@@ -2732,22 +2743,21 @@ class RenderPod extends RenderSchema {
     PodType.boolean => DartType.bool_,
   };
 
-  /// The default value of this schema as a string.
+  /// The default value of this schema, as an expression.
   @override
-  String? defaultValueString(SchemaRenderer context) {
-    if (defaultValue == null) {
+  DartExpression? defaultValueExpression(SchemaRenderer context) {
+    final value = defaultValue;
+    if (value == null) {
       return null;
     }
     final raw = switch (type) {
-      PodType.dateTime =>
-        'DateTime.parse(${quoteString(defaultValue as String)})',
-      PodType.uri => 'Uri.parse(${quoteString(defaultValue as String)})',
-      PodType.uriTemplate =>
-        'UriTemplate(${quoteString(defaultValue as String)})',
-      PodType.email || PodType.uuid => quoteString(defaultValue as String),
-      PodType.boolean => defaultValue.toString(),
+      PodType.dateTime => _dateTimeParse(value as String),
+      PodType.uri => _uriParse(value as String),
+      PodType.uriTemplate => _uriTemplate(value as String),
+      PodType.email || PodType.uuid => DartLiteral(value as String),
+      PodType.boolean => DartLiteral(value),
     };
-    return createsNewType ? '$typeName($raw)' : raw;
+    return createsNewType ? dartType.constConstruct([raw]) : raw;
   }
 
   @override
@@ -2969,11 +2979,11 @@ class RenderString extends RenderSchema {
   DartType get dartType =>
       createsNewType ? DartType(_requireAssignedName()) : DartType.string;
 
-  /// The default value of this schema as a string.
+  /// The default value of this schema, as an expression.
   @override
-  String? defaultValueString(SchemaRenderer context) {
+  DartExpression? defaultValueExpression(SchemaRenderer context) {
     final value = defaultValue;
-    return value == null ? null : quoteString(value);
+    return value == null ? null : DartLiteral(value);
   }
 
   @override
@@ -3212,15 +3222,19 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
   bool get defaultCanConstConstruct => true;
 
   @override
-  String? defaultValueString(SchemaRenderer context) {
-    if (defaultValue == null) {
+  DartExpression? defaultValueExpression(SchemaRenderer context) {
+    final value = defaultValue;
+    if (value == null) {
       return null;
     }
+    // `dartType` rather than `camelFromSnake(snakeName)`, which is what
+    // this used to spell: one way to name a type, and the same one every
+    // other expression here uses. Verified equivalent across the spec
+    // rotation before switching.
     if (createsNewType) {
-      final typeName = camelFromSnake(snakeName);
-      return '$typeName($defaultValue)';
+      return dartType.constConstruct([DartLiteral(value)]);
     }
-    return defaultValue.toString();
+    return DartLiteral(value);
   }
 
   @override
@@ -3585,7 +3599,8 @@ class RenderObject extends RenderNewType {
     } else {
       line.write('this.$dartName');
       if (property.hasDefaultValue(context)) {
-        line.write(' = ${property.defaultValueString(context)}');
+        final value = property.defaultValueExpression(context);
+        line.write(' = ${_runtimeSource(value)}');
       }
     }
     return line.toString();
@@ -3600,8 +3615,8 @@ class RenderObject extends RenderNewType {
   }) {
     final dartName = variableSafeName(context.quirks, jsonName);
     if (property.hasNonConstDefaultValue(context)) {
-      return 'this.$dartName = $dartName '
-          '?? ${property.defaultValueString(context)}';
+      final value = property.defaultValueExpression(context);
+      return 'this.$dartName = $dartName ?? ${_runtimeSource(value)}';
     }
     return null;
   }
@@ -3975,10 +3990,9 @@ class RenderObject extends RenderNewType {
       // reads differently from `DateTime.utc(...)`), so this can't drop
       // a genuinely-needed argument.
       //
-      // Compares rendered text because `defaultValueString` is still a
-      // `String`; once it becomes a [DartExpression] this is structural
-      // equality between two trees.
-      if (property.defaultValueString(context) == example.toString()) continue;
+      // Structural equality between two expression trees, which is the
+      // question actually being asked: do these spell the same argument?
+      if (property.defaultValueExpression(context) == example) continue;
       final dartName = variableSafeName(context.quirks, jsonName);
       args[dartName] = example;
     }
@@ -4145,21 +4159,20 @@ class RenderArray extends RenderSchema {
   String hashCodeExpression(String name) => '${ModelHelpers.listHash}($name)';
 
   @override
-  String? defaultValueString(SchemaRenderer context) {
-    if (defaultValue == null) {
+  DartExpression? defaultValueExpression(SchemaRenderer context) {
+    final value = defaultValue;
+    if (value == null) {
       return null;
     }
-    final listDefault = defaultValue as List;
+    final listDefault = value as List;
     if (listDefault.isEmpty) {
       // Type annotation is not needed for empty lists.
-      return 'const []';
+      return DartListLiteral.empty;
     }
-    final maybeConst = items.defaultCanConstConstruct ? 'const ' : '';
-    final itemType = items.typeName;
-    String toString(dynamic value) =>
-        value is String ? quoteString(value) : value.toString();
-    final values = listDefault.map(toString).join(', ');
-    return '$maybeConst<$itemType>[$values]';
+    return DartListLiteral(
+      elementType: items.dartType,
+      elements: listDefault.map(DartLiteral.new).toList(),
+    );
   }
 
   @override
@@ -4552,12 +4565,12 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
     };
   }
 
-  /// The default value of this schema as a string.
+  /// The default value of this schema, as an expression.
   @override
-  String? defaultValueString(SchemaRenderer context) {
+  DartExpression? defaultValueExpression(SchemaRenderer context) {
     final value = defaultValue;
     if (value == null) return null;
-    return '$className.${variableNameFor(value)}';
+    return DartType(className).member(variableNameFor(value));
   }
 
   /// Renders [value] as a reference to this enum's member (e.g.
@@ -5849,7 +5862,7 @@ class RenderParameter implements CanBeParameter {
     'dartName': dartParameterName(context.quirks),
     'required': isRequired,
     'hasDefaultValue': type.defaultValue != null,
-    'defaultValue': type.defaultValueString(context),
+    'defaultValue': _runtimeSource(type.defaultValueExpression(context)),
     'type': type.typeName,
     'nullableType': type.nullableTypeName(context),
   };
@@ -6112,10 +6125,12 @@ class RenderDate extends RenderSchema {
   bool get shouldCallToJson => true;
 
   @override
-  String? defaultValueString(SchemaRenderer context) {
+  DartExpression? defaultValueExpression(SchemaRenderer context) {
     final value = defaultValue;
     if (value == null) return null;
-    return 'Date.fromJson(${quoteString(value)})';
+    return const DartType(
+      'Date',
+    ).construct([DartLiteral(value)], name: 'fromJson');
   }
 
   @override

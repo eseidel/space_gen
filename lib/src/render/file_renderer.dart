@@ -6,6 +6,7 @@ import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/quirks.dart';
+import 'package:space_gen/src/render/dart_expression.dart';
 import 'package:space_gen/src/render/formatting.dart';
 import 'package:space_gen/src/render/render_tree.dart';
 import 'package:space_gen/src/render/schema_renderer.dart';
@@ -864,10 +865,11 @@ class FileRenderer {
           'packageName': packageName,
           'barrelImportPath': testBarrelImport(),
           'typeName': schema.typeName,
-          // Const-ness is spent on the declaration keyword rather
-          // than the initializer, so the expression stays bare — see
-          // [DartExpression].
-          'exampleValue': example.toString(),
+          // The declaration carries the keyword when the example is
+          // constant (`const instance = ...`), which makes the whole tree
+          // a constant context; otherwise it is a `final` declaration and
+          // any constant subtree writes its own.
+          'exampleValue': _exampleSource(example),
           'exampleIsConst': example.isConst,
           'invalidJsonExample': invalidJson,
           'isEnum': schema is RenderEnum,
@@ -923,7 +925,7 @@ class FileRenderer {
       if (example == null) continue;
       variants.add({
         'variantTypeName': variant.typeName,
-        'exampleValue': example.toString(),
+        'exampleValue': _exampleSource(example),
         'exampleIsConst': example.isConst,
       });
     }
@@ -1008,3 +1010,11 @@ class FileRenderer {
     renderCspellConfig(misspellings);
   }
 }
+
+/// Source for a round-trip test's `instance` initializer. A constant
+/// example is declared `const`, which makes its whole tree a constant
+/// context; a non-constant one is declared `final`, so any constant
+/// subtree inside it needs its own keyword.
+String _exampleSource(DartExpression example) => example.isConst
+    ? DartExpressionSerializer.constContext.serialize(example)
+    : DartExpressionSerializer.runtimeContext.serialize(example);
