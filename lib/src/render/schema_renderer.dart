@@ -29,8 +29,11 @@ final _docReferencePattern = RegExp(r'\[([^\]\s]+)\]');
 /// Dart identifier.
 ///
 /// A comment survives only as its `[Bracketed]` references; the rest of
-/// the prose is replaced by spaces, so offsets and line structure are
-/// unaffected and patterns anchored on `\b` still see what they expect.
+/// the prose is replaced by spaces rather than deleted, so that the code
+/// on either side stays separated. Deleting it would fuse
+/// `foo/*c*/bar` into the identifier `foobar`, inventing a reference
+/// that never appeared.
+///
 /// Code and string literals are kept verbatim: a string can carry an
 /// identifier through interpolation (`'${Foo.bar}'`), and reproducing
 /// Dart's interpolation grammar to find out buys nothing, since keeping
@@ -104,8 +107,8 @@ String stripComments(String body) {
   }
 
   /// The replacement for [comment]: its doc references at their original
-  /// offsets, everything else blanked. Same length as [comment], so the
-  /// surrounding text keeps its line structure.
+  /// offsets, everything else blanked. Never empty, so the code on
+  /// either side of the comment cannot fuse into one token.
   String elided(String comment) {
     final kept = List.filled(comment.length, ' ');
     for (final match in _docReferencePattern.allMatches(comment)) {
@@ -202,14 +205,15 @@ class SchemaUsage {
   });
 
   /// Derives usage by inspecting a rendered body.
-  factory SchemaUsage.fromBody(String body) {
-    final code = stripComments(body);
-    return SchemaUsage(
-      usesMetaAnnotations: code.contains('@immutable'),
-      usesValidationExtensions: _validationCallPattern.hasMatch(code),
-      modelHelpers: _referencedModelHelpers(code),
-    );
-  }
+  factory SchemaUsage.fromBody(String body) =>
+      SchemaUsage.fromCode(stripComments(body));
+
+  /// Derives usage from a body already reduced by [stripComments].
+  factory SchemaUsage.fromCode(String code) => SchemaUsage(
+    usesMetaAnnotations: code.contains('@immutable'),
+    usesValidationExtensions: _validationCallPattern.hasMatch(code),
+    modelHelpers: _referencedModelHelpers(code),
+  );
 
   /// Matches any `validateXxx` extension-method call. The
   /// `api_exception.dart` file declares them as extensions on
@@ -255,13 +259,14 @@ class ApiUsage {
     this.modelHelpers = const {},
   });
 
-  factory ApiUsage.fromBody(String body) {
-    final code = stripComments(body);
-    return ApiUsage(
-      usesMetaAnnotations: code.contains('@immutable'),
-      modelHelpers: _referencedModelHelpers(code),
-    );
-  }
+  factory ApiUsage.fromBody(String body) =>
+      ApiUsage.fromCode(stripComments(body));
+
+  /// Derives usage from a body already reduced by [stripComments].
+  factory ApiUsage.fromCode(String code) => ApiUsage(
+    usesMetaAnnotations: code.contains('@immutable'),
+    modelHelpers: _referencedModelHelpers(code),
+  );
 
   /// True when the body emits `@immutable` (multi-status response
   /// wrappers do; the legacy single-return path does not). Drives the
@@ -284,15 +289,59 @@ class ApiUsage {
 
 /// A rendered schema body paired with the usage of that body.
 class RenderedSchema {
-  const RenderedSchema({required this.body, required this.usage});
+  /// Scans [body] once: [code] and [usage] are both derived from that
+  /// single pass, which is also what keeps them consistent with each
+  /// other.
+  factory RenderedSchema.fromBody(String body) {
+    final code = stripComments(body);
+    return RenderedSchema._(
+      body: body,
+      code: code,
+      usage: SchemaUsage.fromCode(code),
+    );
+  }
+
+  const RenderedSchema._({
+    required this.body,
+    required this.usage,
+    required this.code,
+  });
+
+  /// What gets written to the file.
   final String body;
+
+  /// [body] reduced to the parts that can name a Dart identifier — what
+  /// import decisions are made against. See [stripComments].
+  final String code;
+
   final SchemaUsage usage;
 }
 
 /// A rendered api body paired with the usage of that body.
 class RenderedApi {
-  const RenderedApi({required this.body, required this.usage});
+  /// Scans [body] once; see [RenderedSchema.fromBody].
+  factory RenderedApi.fromBody(String body) {
+    final code = stripComments(body);
+    return RenderedApi._(
+      body: body,
+      code: code,
+      usage: ApiUsage.fromCode(code),
+    );
+  }
+
+  const RenderedApi._({
+    required this.body,
+    required this.usage,
+    required this.code,
+  });
+
+  /// What gets written to the file.
   final String body;
+
+  /// [body] reduced to the parts that can name a Dart identifier. See
+  /// [stripComments].
+  final String code;
+
   final ApiUsage usage;
 }
 
@@ -329,7 +378,7 @@ class SchemaRenderer {
     final body = templates
         .loadTemplate(template)
         .renderString(schema.toTemplateContext(this));
-    return RenderedSchema(body: body, usage: SchemaUsage.fromBody(body));
+    return RenderedSchema.fromBody(body);
   }
 
   String renderEndpoints({
@@ -356,6 +405,6 @@ class SchemaRenderer {
       endpoints: api.endpoints,
       removePrefix: api.removePrefix,
     );
-    return RenderedApi(body: body, usage: ApiUsage.fromBody(body));
+    return RenderedApi.fromBody(body);
   }
 }

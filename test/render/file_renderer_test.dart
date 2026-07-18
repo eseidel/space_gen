@@ -2681,23 +2681,26 @@ void main() {
   });
 
   group('FileRenderer', () {
-    test('imports for model', () {
+    /// A [FileRenderer] over an in-memory file system, for the import
+    /// tests below — they all want the same one.
+    FileRenderer testFileRenderer() {
       final templates = TemplateProvider.defaultLocation();
-      final schemaRenderer = SchemaRenderer(templates: templates);
-      final formatter = Formatter();
-      final spellChecker = SpellChecker();
-      final fileRenderer = FileRenderer(
+      return FileRenderer(
         FileRendererConfig(
           packageName: 'spacetraders',
-          schemaRenderer: schemaRenderer,
+          schemaRenderer: SchemaRenderer(templates: templates),
           templates: templates,
-          formatter: formatter,
+          formatter: Formatter(),
           fileWriter: FileWriter(
             outDir: MemoryFileSystem.test().directory('spacetraders'),
           ),
-          spellChecker: spellChecker,
+          spellChecker: SpellChecker(),
         ),
       );
+    }
+
+    test('imports for model', () {
+      final fileRenderer = testFileRenderer();
       final schema = RenderObject(
         common: CommonProperties.test(
           snakeName: 'foo',
@@ -2719,8 +2722,11 @@ void main() {
         usesMetaAnnotations: true,
         modelHelpers: {ModelHelpers.parseFromJson},
       );
-      Iterable<Import> importsFor(String body) =>
-          fileRenderer.importsForModel(schema, usage, body: body);
+      Iterable<Import> importsFor(String body) => fileRenderer.importsForModel(
+        schema,
+        usage,
+        code: stripComments(body),
+      );
 
       // `dart:typed_data` comes from the nested RenderBinary, but is
       // gated on the body naming `Uint8List` — a schema in the tree does
@@ -2738,22 +2744,7 @@ void main() {
 
     test('importsForModel imports a newtype field the body names, not '
         'types nested only inside it', () {
-      final templates = TemplateProvider.defaultLocation();
-      final schemaRenderer = SchemaRenderer(templates: templates);
-      final formatter = Formatter();
-      final spellChecker = SpellChecker();
-      final fileRenderer = FileRenderer(
-        FileRendererConfig(
-          packageName: 'spacetraders',
-          schemaRenderer: schemaRenderer,
-          templates: templates,
-          formatter: formatter,
-          fileWriter: FileWriter(
-            outDir: MemoryFileSystem.test().directory('spacetraders'),
-          ),
-          spellChecker: spellChecker,
-        ),
-      );
+      final fileRenderer = testFileRenderer();
       // Outer names a Nested-typed field; Nested itself owns a
       // Deep-typed field. Outer's file references Nested but never Deep
       // (that lives in Nested's own file), so only Nested is imported.
@@ -2787,7 +2778,7 @@ void main() {
       final imports = fileRenderer.importsForModel(
         outer,
         const SchemaUsage(),
-        body: 'class Outer { final Nested nested; }',
+        code: stripComments('class Outer { final Nested nested; }'),
       );
       expect(
         imports,
@@ -2908,6 +2899,15 @@ final x = Ship();
       }
     });
 
+    test('stripComments does not fuse the code on either side of a '
+        'comment', () {
+      // Blanking rather than deleting is what keeps these apart —
+      // deleting would invent the identifier `foobar`.
+      final code = stripComments('foo/* c */bar');
+      expect(referencedIdentifiers(code), containsAll(['foo', 'bar']));
+      expect(referencedIdentifiers(code), isNot(contains('foobar')));
+    });
+
     test('stripComments handles nested block comments', () {
       // Dart nests these, so stopping at the first `*/` would resume
       // treating comment prose as code.
@@ -2917,19 +2917,7 @@ final x = Ship();
     });
 
     test('importsForModel drops a model named only in prose', () {
-      final templates = TemplateProvider.defaultLocation();
-      final fileRenderer = FileRenderer(
-        FileRendererConfig(
-          packageName: 'spacetraders',
-          schemaRenderer: SchemaRenderer(templates: templates),
-          templates: templates,
-          formatter: Formatter(),
-          fileWriter: FileWriter(
-            outDir: MemoryFileSystem.test().directory('spacetraders'),
-          ),
-          spellChecker: SpellChecker(),
-        ),
-      );
+      final fileRenderer = testFileRenderer();
       final nested = RenderObject(
         common: CommonProperties.test(
           snakeName: 'nested',
@@ -2952,7 +2940,7 @@ final x = Ship();
         outer,
         const SchemaUsage(),
         // `Nested` appears, but only as English in the doc comment.
-        body: '/// A Nested thing.\nclass Outer {}',
+        code: stripComments('/// A Nested thing.\nclass Outer {}'),
       );
       expect(
         imports,
@@ -2970,22 +2958,7 @@ final x = Ship();
     });
 
     test('imports for api', () {
-      final templates = TemplateProvider.defaultLocation();
-      final schemaRenderer = SchemaRenderer(templates: templates);
-      final formatter = Formatter();
-      final spellChecker = SpellChecker();
-      final fileRenderer = FileRenderer(
-        FileRendererConfig(
-          packageName: 'spacetraders',
-          schemaRenderer: schemaRenderer,
-          templates: templates,
-          formatter: formatter,
-          fileWriter: FileWriter(
-            outDir: MemoryFileSystem.test().directory('spacetraders'),
-          ),
-          spellChecker: spellChecker,
-        ),
-      );
+      final fileRenderer = testFileRenderer();
       final api = Api(
         snakeName: 'foo',
         description: 'Foo description',
@@ -3056,7 +3029,7 @@ final x = Ship();
       final imports = fileRenderer.importsForApi(
         api,
         const ApiUsage(),
-        body: fullBody,
+        code: stripComments(fullBody),
       );
       expect(imports, {
         const Import(Libraries.dartAsync),
@@ -3071,22 +3044,7 @@ final x = Ship();
     });
 
     test('imports for api prunes fixed imports the body never names', () {
-      final templates = TemplateProvider.defaultLocation();
-      final schemaRenderer = SchemaRenderer(templates: templates);
-      final formatter = Formatter();
-      final spellChecker = SpellChecker();
-      final fileRenderer = FileRenderer(
-        FileRendererConfig(
-          packageName: 'spacetraders',
-          schemaRenderer: schemaRenderer,
-          templates: templates,
-          formatter: formatter,
-          fileWriter: FileWriter(
-            outDir: MemoryFileSystem.test().directory('spacetraders'),
-          ),
-          spellChecker: spellChecker,
-        ),
-      );
+      final fileRenderer = testFileRenderer();
       const api = Api(
         snakeName: 'foo',
         description: 'Foo description',
@@ -3098,7 +3056,7 @@ final x = Ship();
       final imports = fileRenderer.importsForApi(
         api,
         const ApiUsage(),
-        body: 'class FooApi {}\n',
+        code: stripComments('class FooApi {}\n'),
       );
       expect(imports, isEmpty);
     });

@@ -705,16 +705,15 @@ class FileRenderer {
   Iterable<Import> importsForApi(
     Api api,
     ApiUsage usage, {
-    required String body,
+    required String code,
   }) {
-    // Import only what the rendered [body] actually names. Each fixed
+    // Import only what the rendered [code] actually names. Each fixed
     // import is gated on a sentinel identifier that must appear if the
     // import is used (e.g. `HttpStatus` for `dart:io`), and each model
     // newtype on its own class name. Keeping an import requires the
     // token to be present, so a used import is never dropped; the
     // effect is purely to stop emitting imports the api file never
     // references (which `dart fix` would otherwise strip).
-    final code = stripComments(body);
     final referenced = referencedIdentifiers(code);
     bool names(String token) => referenced.contains(token);
 
@@ -782,7 +781,7 @@ class FileRenderer {
       final imports = importsForApi(
         api,
         renderedApi.usage,
-        body: renderedApi.body,
+        code: renderedApi.code,
       );
       final importsContext = imports
           .sortedBy((i) => i.path)
@@ -822,9 +821,9 @@ class FileRenderer {
   Iterable<Import> importsForModel(
     RenderSchema schema,
     SchemaUsage usage, {
-    required String body,
+    required String code,
   }) {
-    final referenced = referencedIdentifiers(stripComments(body));
+    final referenced = referencedIdentifiers(code);
     final referencedSchemas = collectSchemasUnderSchema(schema);
     final localSchemas = referencedSchemas.where(
       (s) => !s.createsNewType,
@@ -872,7 +871,7 @@ class FileRenderer {
       final imports = importsForModel(
         schema,
         rendered.usage,
-        body: rendered.body,
+        code: rendered.code,
       );
       final importsContext = imports
           .sortedBy((i) => i.path)
