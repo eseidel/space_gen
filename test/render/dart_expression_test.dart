@@ -4,10 +4,11 @@ import 'package:test/test.dart';
 
 /// A non-constant expression to nest as an argument: `Uri.parse` computes
 /// at runtime.
-const nonConst = DartInvocation.runtime(
+const nonConst = DartInvocation(
   type: DartType.uri,
   constructorName: 'parse',
   arguments: [DartLiteral('https://example.com')],
+  isConstConstructor: false,
 );
 
 void main() {
@@ -224,18 +225,6 @@ void main() {
         ).isConst,
         isFalse,
       );
-      // `.runtime` is the same fact, spelled as the category it names.
-      expect(
-        const DartInvocation.runtime(
-          type: DartType('Foo'),
-          arguments: [DartLiteral(1)],
-        ),
-        const DartInvocation(
-          type: DartType('Foo'),
-          arguments: [DartLiteral(1)],
-          isConstConstructor: false,
-        ),
-      );
     });
 
     test('a non-const argument makes the whole invocation non-const', () {
@@ -307,30 +296,8 @@ void main() {
   });
 
   group('DartTypeExpressions', () {
-    test('construct builds a const-constructor invocation', () {
-      expect(
-        const DartType('Foo').construct(),
-        const DartInvocation(type: DartType('Foo'), isConstConstructor: true),
-      );
-      expect(
-        const DartType(
-              'Foo',
-            )
-            .construct(name: 'named', arguments: const [DartLiteral(1)])
-            .toString(),
-        'Foo.named(1)',
-      );
-      // The point of `construct` vs `constructAtRuntime`: const-ness.
-      expect(
-        const DartType(
-          'Foo',
-        ).construct(arguments: const [DartLiteral(1)]).isConst,
-        isTrue,
-      );
-    });
-
-    test('constructAtRuntime is never constant', () {
-      final parse = DartType.uri.constructAtRuntime(
+    test('construct is never constant', () {
+      final parse = DartType.uri.construct(
         name: 'parse',
         arguments: const [DartLiteral('https://example.com')],
       );
@@ -338,11 +305,27 @@ void main() {
       expect(parse.isConst, isFalse);
     });
 
-    test('listOf and member build the collection and reference forms', () {
+    test('constConstruct is constant when its arguments are', () {
       expect(
-        DartType.int_.listOf(const [DartLiteral(0)]).toString(),
-        '<int>[0]',
+        const DartType('Foo').constConstruct(),
+        const DartInvocation(type: DartType('Foo'), isConstConstructor: true),
       );
+      expect(
+        const DartType(
+          'Foo',
+        ).constConstruct(arguments: const [DartLiteral(1)]).isConst,
+        isTrue,
+      );
+      // ...and not when they aren't: the whole point of the derivation.
+      expect(
+        const DartType(
+          'Foo',
+        ).constConstruct(arguments: const [nonConst]).isConst,
+        isFalse,
+      );
+    });
+
+    test('member builds a static reference', () {
       expect(const DartType('Foo').member('a').toString(), 'Foo.a');
     });
   });

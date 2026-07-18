@@ -2621,26 +2621,27 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 // produces. None are constant: each computes its value at runtime.
 
 /// `DateTime.utc(2024)`.
-DartExpression _dateTimeUtc(int year) => DartType.dateTime.constructAtRuntime(
-  name: 'utc',
-  arguments: [DartLiteral(year)],
-);
+DartExpression _dateTimeUtc(int year) =>
+    DartType.dateTime.construct(name: 'utc', arguments: [DartLiteral(year)]);
 
 /// `Uri.parse('...')`.
-DartExpression _uriParse(String uri) => DartType.uri.constructAtRuntime(
-  name: 'parse',
-  arguments: [DartLiteral(uri)],
-);
+DartExpression _uriParse(String uri) =>
+    DartType.uri.construct(name: 'parse', arguments: [DartLiteral(uri)]);
 
 /// `UriTemplate('...')`.
 DartExpression _uriTemplate(String template) =>
-    DartType.uriTemplate.constructAtRuntime(arguments: [DartLiteral(template)]);
+    DartType.uriTemplate.construct(arguments: [DartLiteral(template)]);
 
 /// `Uint8List.fromList(<int>[...])`.
 DartExpression _uint8ListFromList(List<int> bytes) =>
-    DartType.uint8List.constructAtRuntime(
+    DartType.uint8List.construct(
       name: 'fromList',
-      arguments: [DartType.int_.listOf(bytes.map(DartLiteral.new))],
+      arguments: [
+        DartListLiteral(
+          elementType: DartType.int_,
+          elements: bytes.map(DartLiteral.new).toList(),
+        ),
+      ],
     );
 
 class RenderPod extends RenderSchema {
@@ -2893,7 +2894,7 @@ class RenderPod extends RenderSchema {
     if (!createsNewType) return raw;
     // A pod newtype's constructor is unconditionally `const`
     // (`schema_pod_newtype.mustache`), so wrapping preserves const-ness.
-    return dartType.construct(arguments: [raw]);
+    return dartType.constConstruct(arguments: [raw]);
   }
 
   /// Only dateTime pods parse through `DateTime.parse`, which rejects garbage
@@ -4242,7 +4243,7 @@ class RenderArray extends RenderSchema {
   DartExpression? exampleValue(SchemaRenderer context) {
     final inner = items.exampleValue(context);
     if (inner == null) return null;
-    return items.dartType.listOf([inner]);
+    return DartListLiteral(elementType: items.dartType, elements: [inner]);
   }
 }
 
@@ -6150,7 +6151,7 @@ class RenderDate extends RenderSchema {
   @override
   DartExpression? exampleValue(SchemaRenderer context) =>
       // The generated `Date` has a const constructor (`date.dart`).
-      const DartType('Date').construct(
+      const DartType('Date').constConstruct(
         arguments: const [DartLiteral(2024), DartLiteral(1), DartLiteral(1)],
       );
 
@@ -6226,7 +6227,8 @@ class RenderEmptyObject extends RenderNewType {
   };
 
   @override
-  DartExpression? exampleValue(SchemaRenderer context) => dartType.construct();
+  DartExpression? exampleValue(SchemaRenderer context) =>
+      dartType.constConstruct();
 }
 
 /// A cycle-break marker: appears where a $ref would otherwise recurse back

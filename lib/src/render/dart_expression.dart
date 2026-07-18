@@ -39,24 +39,45 @@ sealed class DartExpression extends Equatable {
   String toString();
 }
 
-/// Expression builders that start from the type they produce, so a call
-/// site reads roughly like the Dart it emits:
-/// `DartType.uri.constructAtRuntime(name: 'parse', arguments: [...])`.
+/// Expression builders for the forms that are *rooted at a type name* —
+/// `Foo(...)`, `Uri.parse(...)`, `UserRole.admin` — so a call site reads
+/// like the Dart it emits.
 ///
-/// Deliberately an extension declared here rather than methods on
-/// [DartType]: the type model shouldn't have to know about expressions
-/// (it is the lower layer, and is imported by code that never builds one).
-/// This is the seam between the two, and it lives on the expression side.
+/// Collection literals are deliberately absent: `<int>[0]` is rooted at
+/// the bracket with the type as an argument, so `DartType.int_.listOf(...)`
+/// would read as if it built the *type* `List<int>` (which
+/// [DartType.list] does). Build those with [DartListLiteral] /
+/// [DartMapLiteral] directly.
+///
+/// Also deliberately an extension declared here rather than methods on
+/// [DartType]: the type model is the lower layer, imported by plenty of
+/// code that never builds an expression. This is the seam between the two,
+/// and it lives on the expression side.
 extension DartTypeExpressions on DartType {
-  /// An invocation of a constructor declared `const` — `Foo(1)`,
-  /// `Foo.named(a: 1)` — so the result is constant when its arguments are.
+  /// An invocation whose result is never constant — a factory, a parse
+  /// (`Uri.parse('...')`), or a constructor with a body.
   ///
-  /// Every constructor the generator emits for a model is `const` (#253),
-  /// so this is the common case. When unsure, prefer
-  /// [constructAtRuntime]: under-claiming only costs a `const`, while
-  /// over-claiming emits `const Foo(...)` around a non-constant, which
-  /// doesn't compile.
+  /// The unmarked name is the non-const one on purpose. The two failure
+  /// directions are not symmetric: reaching for this when
+  /// [constConstruct] would do only costs a `const`, while the reverse
+  /// emits `const Foo(...)` around a non-constant, which doesn't compile.
   DartExpression construct({
+    String? name,
+    List<DartExpression> arguments = const [],
+    Map<String, DartExpression> namedArguments = const {},
+  }) => DartInvocation(
+    type: this,
+    constructorName: name,
+    arguments: arguments,
+    namedArguments: namedArguments,
+    isConstConstructor: false,
+  );
+
+  /// An invocation of a constructor *declared* `const`, so the result is
+  /// constant when its arguments are. Every constructor the generator
+  /// emits for a model is `const` (#253), as are `Date` and the pod
+  /// newtypes.
+  DartExpression constConstruct({
     String? name,
     List<DartExpression> arguments = const [],
     Map<String, DartExpression> namedArguments = const {},
@@ -67,23 +88,6 @@ extension DartTypeExpressions on DartType {
     namedArguments: namedArguments,
     isConstConstructor: true,
   );
-
-  /// An invocation that computes at runtime — `Uri.parse('...')`,
-  /// `Uint8List.fromList([...])` — and so is never constant.
-  DartExpression constructAtRuntime({
-    String? name,
-    List<DartExpression> arguments = const [],
-    Map<String, DartExpression> namedArguments = const {},
-  }) => DartInvocation.runtime(
-    type: this,
-    constructorName: name,
-    arguments: arguments,
-    namedArguments: namedArguments,
-  );
-
-  /// A list literal of this element type: `<int>[0]`.
-  DartExpression listOf(Iterable<DartExpression> elements) =>
-      DartListLiteral(elementType: this, elements: elements.toList());
 
   /// A static member reference on this type: `UserRole.admin`.
   DartExpression member(String name) =>
@@ -219,17 +223,6 @@ class DartInvocation extends DartExpression {
     this.namedArguments = const {},
   });
 
-  /// An invocation that computes its value at runtime, and so is never a
-  /// constant expression however constant its arguments are: a factory
-  /// (`Uint8List.fromList`), a parse (`Uri.parse`, `UriTemplate`), or a
-  /// generated constructor with a validating body.
-  const DartInvocation.runtime({
-    required this.type,
-    this.constructorName,
-    this.arguments = const [],
-    this.namedArguments = const {},
-  }) : isConstConstructor = false;
-
   /// The type being constructed (or whose static member is being called).
   final DartType type;
 
@@ -252,6 +245,22 @@ class DartInvocation extends DartExpression {
   /// This is the input to [isConst], not a synonym for it: a const
   /// constructor invoked with a non-constant argument is not a constant
   /// expression.
+  //
+  // TODO(eseidel): Model the constructor itself, not a bool about it.
+  //
+  // `[type] + [constructorName] + [isConstConstructor]` is a
+  // `DartConstructor` spelled as three loose fields, and const-ness is the
+  // one part callers have to supply by hand — which is why
+  // [DartTypeExpressions] needs a `construct` / `constConstruct` pair at
+  // all. With a real constructor entity there is one `invoke(...)`, and
+  // const-ness comes from the declaration being invoked.
+  //
+  // The bigger win is upstream: for a generated model the answer is
+  // `RenderObject.canBeConst(context)`, which is consulted *twice* today —
+  // once by the template that emits `const Foo(...)` and once here, from
+  // the example builder. Two readers of one fact, kept in agreement by
+  // hand, is the same coupling this IR exists to remove. A schema should
+  // hand out the constructor it is going to emit, and both should use it.
   final bool isConstConstructor;
 
   @override
