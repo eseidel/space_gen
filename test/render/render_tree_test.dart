@@ -895,7 +895,10 @@ void main() {
       );
     });
 
-    test('deprecated', () {
+    // `@deprecated` is a `dart:core` constant, so a deprecated property
+    // needs no import of its own. Meta is imported only for `@immutable`,
+    // which `SchemaUsage.usesMetaAnnotations` drives from the body.
+    test('deprecated property adds no import', () {
       expect(
         const RenderObject(
           common: CommonProperties.test(
@@ -919,7 +922,30 @@ void main() {
             ),
           },
         ).additionalImports,
-        equals([const Import('package:meta/meta.dart')]),
+        isEmpty,
+      );
+    });
+
+    // Both are gated: a nullable base64 field decodes through
+    // `maybeBase64Decode` from model_helpers.dart, so the body names
+    // neither `base64` nor necessarily `Uint8List`.
+    test('base64 bytes carries gated typed_data and convert imports', () {
+      expect(
+        const RenderBase64Bytes(
+          common: CommonProperties.test(
+            snakeName: 'a',
+            pointer: JsonPointer.empty(),
+            description: 'Foo',
+          ),
+        ).additionalImports,
+        equals([
+          const Import(
+            'dart:typed_data',
+            shown: ['Uint8List'],
+            neededWhenBodyNames: 'Uint8List',
+          ),
+          const Import('dart:convert', neededWhenBodyNames: 'base64'),
+        ]),
       );
     });
 
@@ -935,7 +961,11 @@ void main() {
           createsNewType: false,
         ).additionalImports,
         equals([
-          const Import('package:uri/uri.dart', shown: ['UriTemplate']),
+          const Import(
+            'package:uri/uri.dart',
+            shown: ['UriTemplate'],
+            neededWhenBodyNames: 'UriTemplate',
+          ),
         ]),
       );
     });

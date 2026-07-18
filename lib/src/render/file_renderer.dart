@@ -662,6 +662,14 @@ class FileRenderer {
       // subclasses to live in the same library) — no separate file.
       !schema.isSmooshed;
 
+  /// Whether a schema-contributed import survives its sentinel gate:
+  /// either it declares none, or [bodyNames] confirms the rendered body
+  /// references it. See [Import.neededWhenBodyNames].
+  static bool _bodyNeedsImport(Import i, bool Function(String) bodyNames) {
+    final sentinel = i.neededWhenBodyNames;
+    return sentinel == null || bodyNames(sentinel);
+  }
+
   @visibleForTesting
   Iterable<Import> importsForApi(
     Api api,
@@ -712,7 +720,11 @@ class FileRenderer {
         .map((s) => Import(modelPackageImport(this, s)))
         .toList();
     imports.addAll({
-      ...inlineSchemas.expand((s) => s.additionalImports),
+      // Gated on their declared sentinel, the same as the fixed imports
+      // above — see [Import.neededWhenBodyNames].
+      ...inlineSchemas
+          .expand((s) => s.additionalImports)
+          .where((i) => _bodyNeedsImport(i, names)),
       ..._dateImportFor(inlineSchemas, bodyNamesDate: names('Date')),
       ...apiImports,
     });
@@ -793,10 +805,16 @@ class FileRenderer {
         .map((s) => Import(modelPackageImport(this, s)))
         .toList();
 
+    // `additionalImports` are collected from the schema *tree*, but the
+    // body only emits code for part of it, so each is gated on the
+    // sentinel it declares (see [Import.neededWhenBodyNames]). Same
+    // discipline [importsForApi] applies to the api file's fixed imports.
+    bool bodyNeeds(Import i) => _bodyNeedsImport(i, referenced.contains);
+
     final imports = {
       ...usage.importsFor(packageName),
-      ...schema.additionalImports,
-      ...localSchemas.expand((s) => s.additionalImports),
+      ...schema.additionalImports.where(bodyNeeds),
+      ...localSchemas.expand((s) => s.additionalImports).where(bodyNeeds),
       ..._dateImportFor(
         localSchemas,
         bodyNamesDate: referenced.contains('Date'),

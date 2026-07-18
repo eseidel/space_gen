@@ -2715,18 +2715,24 @@ void main() {
           ),
         },
       );
-      final imports = fileRenderer.importsForModel(
-        schema,
-        const SchemaUsage(
-          usesMetaAnnotations: true,
-          modelHelpers: {ModelHelpers.parseFromJson},
-        ),
-        body: 'class Foo {}',
+      const usage = SchemaUsage(
+        usesMetaAnnotations: true,
+        modelHelpers: {ModelHelpers.parseFromJson},
       );
-      expect(imports, {
+      Iterable<Import> importsFor(String body) =>
+          fileRenderer.importsForModel(schema, usage, body: body);
+
+      // `dart:typed_data` comes from the nested RenderBinary, but is
+      // gated on the body naming `Uint8List` — a schema in the tree does
+      // not mean the emitted code uses it.
+      expect(importsFor('class Foo { Uint8List? bar; }'), {
         const Import('package:meta/meta.dart'),
         const Import('package:spacetraders/model_helpers.dart'),
-        const Import('dart:typed_data'), // Uint8List from RenderBinary.
+        const Import('dart:typed_data', neededWhenBodyNames: 'Uint8List'),
+      });
+      expect(importsFor('class Foo {}'), {
+        const Import('package:meta/meta.dart'),
+        const Import('package:spacetraders/model_helpers.dart'),
       });
     });
 
@@ -2928,6 +2934,9 @@ void main() {
           '    }\n'
           '    return jsonDecode(response.body) as Map<String, dynamic>;\n'
           '  }\n'
+          // Names `Uint8List` so the RenderBinary-contributed
+          // `dart:typed_data` clears its sentinel gate too.
+          '  Uint8List? bytes;\n'
           '}\n';
       final imports = fileRenderer.importsForApi(
         api,
@@ -2941,7 +2950,8 @@ void main() {
         const Import('package:spacetraders/api_client.dart'),
         const Import('package:spacetraders/api_exception.dart'),
         const Import('package:http/http.dart', asName: 'http'),
-        const Import('dart:typed_data'), // Uint8List from RenderBinary.
+        // Uint8List from RenderBinary.
+        const Import('dart:typed_data', neededWhenBodyNames: 'Uint8List'),
       });
     });
 
