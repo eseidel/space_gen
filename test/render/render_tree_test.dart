@@ -1776,10 +1776,10 @@ void main() {
         defaultValue: '2020-01-01',
       );
       expect(
-        withDefault.defaultValueString(context),
+        withDefault.defaultValueExpression(context)?.toString(),
         "Date.fromJson('2020-01-01')",
       );
-      expect(date.defaultValueString(context), isNull);
+      expect(date.defaultValueExpression(context), isNull);
     });
 
     test('equality includes the default; toTemplateContext throws', () {
@@ -1969,7 +1969,10 @@ void main() {
         defaultValue: true,
         assignedName: 'Flag',
       );
-      expect(newtypeBool.defaultValueString(context), 'Flag(true)');
+      expect(
+        newtypeBool.defaultValueExpression(context)?.toString(),
+        'Flag(true)',
+      );
 
       const inlineEmail = RenderPod(
         common: CommonProperties.test(
@@ -1980,7 +1983,10 @@ void main() {
         createsNewType: false,
         defaultValue: 'a@b.c',
       );
-      expect(inlineEmail.defaultValueString(context), "'a@b.c'");
+      expect(
+        inlineEmail.defaultValueExpression(context)?.toString(),
+        "'a@b.c'",
+      );
     });
   });
 

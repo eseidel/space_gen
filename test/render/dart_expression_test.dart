@@ -60,6 +60,14 @@ void main() {
       );
     });
 
+    test('untyped omits the type argument', () {
+      expect(const DartListLiteral.untyped([]).toString(), '[]');
+      expect(
+        const DartListLiteral.untyped([DartLiteral(0)]).toString(),
+        '[0]',
+      );
+    });
+
     test('equality is by value', () {
       // Built from a non-const local so this is a distinct object:
       // identical `const` instances are canonicalized to one, and `==`
@@ -291,6 +299,84 @@ void main() {
             isConstConstructor: false,
           ),
         ),
+      );
+    });
+  });
+
+  group('DartConst', () {
+    test('renders the keyword and stays constant', () {
+      const empty = DartConst(DartListLiteral.untyped([]));
+      expect(empty.toString(), 'const []');
+      expect(empty.isConst, isTrue);
+    });
+
+    test('rejects an expression the keyword is not legal before', () {
+      // `const 5` and `const UserRole.admin` are syntax errors — the bug
+      // that motivated this IR, now caught structurally.
+      expect(
+        () => const DartConst(DartLiteral(5)).toString(),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(
+        () => const DartConst(
+          DartStaticMember(type: DartType('Foo'), name: 'a'),
+        ).toString(),
+        throwsA(isA<AssertionError>()),
+      );
+    });
+
+    test('rejects a non-constant expression', () {
+      expect(
+        () => const DartConst(
+          DartListLiteral(elementType: DartType.uri, elements: [nonConst]),
+        ).toString(),
+        throwsA(isA<AssertionError>()),
+      );
+    });
+
+    test('equality is by value', () {
+      // See the list-literal equality test for why one side is built from
+      // a non-const local.
+      final elements = [const DartLiteral(0)];
+      final inner = DartListLiteral.untyped(elements);
+      expect(
+        DartConst(inner),
+        const DartConst(DartListLiteral.untyped([DartLiteral(0)])),
+      );
+    });
+  });
+
+  group('canTakeConstKeyword', () {
+    test('is true only for collection literals and const constructors', () {
+      expect(const DartLiteral(5).canTakeConstKeyword, isFalse);
+      expect(
+        const DartStaticMember(
+          type: DartType('Foo'),
+          name: 'a',
+        ).canTakeConstKeyword,
+        isFalse,
+      );
+      expect(const DartListLiteral.untyped([]).canTakeConstKeyword, isTrue);
+      expect(
+        const DartMapLiteral(
+          keyType: null,
+          valueType: null,
+        ).canTakeConstKeyword,
+        isTrue,
+      );
+      expect(
+        const DartInvocation(
+          type: DartType('Foo'),
+          isConstConstructor: true,
+        ).canTakeConstKeyword,
+        isTrue,
+      );
+      // A non-const constructor can never take the keyword.
+      expect(nonConst.canTakeConstKeyword, isFalse);
+      // Already const; a second keyword is `unnecessary_const`.
+      expect(
+        const DartConst(DartListLiteral.untyped([])).canTakeConstKeyword,
+        isFalse,
       );
     });
   });
