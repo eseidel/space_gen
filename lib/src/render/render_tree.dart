@@ -2417,7 +2417,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// list rather than as a constructor parameter default.
   bool hasNonConstDefaultValue(SchemaRenderer context) {
     final expression = defaultValueExpression(context);
-    return expression != null && !expression.isConst;
+    return expression != null && !expression.canBeConst;
   }
 
   Iterable<Import> get additionalImports => const [];
@@ -2493,7 +2493,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     // produces `null` instead of the spec's default. Surfaced by a
     // real spec with `bool` properties marked `default: false` outside
     // the `required` array.
-    if (defaultValue.isConst) {
+    if (defaultValue.canBeConst) {
       return ' ?? ${_runtimeSource(defaultValue)}';
     }
     // Nullable Dart slot with a non-const default: the constructor uses
@@ -2561,7 +2561,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// Callers treat `null` as a signal to skip emitting a round-trip
   /// test for the enclosing type.
   ///
-  /// Whether the result is const-able is [DartExpression.isConst], derived
+  /// Whether the result is const-able is [DartExpression.canBeConst], derived
   /// from the returned tree rather than tracked alongside it.
   DartExpression? exampleValue(SchemaRenderer context);
 
@@ -4058,7 +4058,7 @@ class RenderObject extends RenderNewType {
       );
     }
     // Any non-const argument makes the whole construction non-const even
-    // when the constructor itself is `const` — [DartInvocation.isConst]
+    // when the constructor itself is `const` — [DartInvocation.canBeConst]
     // folds that over the arguments.
     return DartInvocation(
       type: dartType,

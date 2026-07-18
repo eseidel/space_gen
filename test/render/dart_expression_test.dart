@@ -33,8 +33,8 @@ void main() {
     });
 
     test('is always constant', () {
-      expect(const DartLiteral(5).isConst, isTrue);
-      expect(const DartLiteral(null).isConst, isTrue);
+      expect(const DartLiteral(5).canBeConst, isTrue);
+      expect(const DartLiteral(null).canBeConst, isTrue);
     });
 
     test('equality is by value', () {
@@ -98,14 +98,14 @@ void main() {
         const DartListLiteral(
           elementType: DartType.int_,
           elements: [DartLiteral(0)],
-        ).isConst,
+        ).canBeConst,
         isTrue,
       );
       expect(
         const DartListLiteral(
           elementType: DartType.uri,
           elements: [nonConst],
-        ).isConst,
+        ).canBeConst,
         isFalse,
       );
     });
@@ -137,7 +137,7 @@ void main() {
           keyType: null,
           valueType: null,
           entries: [DartMapEntry(DartLiteral('key'), DartLiteral(1))],
-        ).isConst,
+        ).canBeConst,
         isTrue,
       );
       expect(
@@ -145,7 +145,7 @@ void main() {
           keyType: null,
           valueType: null,
           entries: [DartMapEntry(DartLiteral('key'), nonConst)],
-        ).isConst,
+        ).canBeConst,
         isFalse,
       );
     });
@@ -235,7 +235,7 @@ void main() {
           type: DartType('Foo'),
           arguments: [DartLiteral(1)],
           isConstConstructor: false,
-        ).isConst,
+        ).canBeConst,
         isFalse,
       );
     });
@@ -246,7 +246,7 @@ void main() {
           type: DartType('Foo'),
           arguments: [nonConst],
           isConstConstructor: true,
-        ).isConst,
+        ).canBeConst,
         isFalse,
       );
       expect(
@@ -254,7 +254,7 @@ void main() {
           type: DartType('Foo'),
           namedArguments: {'a': nonConst},
           isConstConstructor: true,
-        ).isConst,
+        ).canBeConst,
         isFalse,
       );
     });
@@ -266,7 +266,7 @@ void main() {
           arguments: [DartLiteral(1)],
           namedArguments: {'b': DartLiteral('x')},
           isConstConstructor: true,
-        ).isConst,
+        ).canBeConst,
         isTrue,
       );
     });
@@ -286,7 +286,7 @@ void main() {
         arguments: [inner],
         isConstConstructor: true,
       );
-      expect(outer.isConst, isFalse);
+      expect(outer.canBeConst, isFalse);
       expect(outer.source, "Foo(Bar(Uri.parse('https://example.com')))");
     });
 
@@ -315,7 +315,7 @@ void main() {
       expect(value.source, 'value');
       // A reference to a variable is not a constant expression even when
       // the variable holds one.
-      expect(value.isConst, isFalse);
+      expect(value.canBeConst, isFalse);
     });
 
     test('a method call renders with and without null-aware access', () {
@@ -353,7 +353,7 @@ void main() {
         name: 'toList',
       );
       expect(chained.source, 'value?.map((e) => e.toJson()).toList()');
-      expect(chained.isConst, isFalse);
+      expect(chained.canBeConst, isFalse);
     });
 
     test('a property access emits no parentheses', () {
@@ -518,7 +518,7 @@ void main() {
         DartLiteral('https://example.com'),
       ], name: 'parse');
       expect(parse.source, "Uri.parse('https://example.com')");
-      expect(parse.isConst, isFalse);
+      expect(parse.canBeConst, isFalse);
     });
 
     test('constConstruct is constant when its arguments are', () {
@@ -527,12 +527,12 @@ void main() {
         const DartInvocation(type: DartType('Foo'), isConstConstructor: true),
       );
       expect(
-        const DartType('Foo').constConstruct(const [DartLiteral(1)]).isConst,
+        const DartType('Foo').constConstruct(const [DartLiteral(1)]).canBeConst,
         isTrue,
       );
       // ...and not when they aren't: the whole point of the derivation.
       expect(
-        const DartType('Foo').constConstruct(const [nonConst]).isConst,
+        const DartType('Foo').constConstruct(const [nonConst]).canBeConst,
         isFalse,
       );
     });
@@ -546,7 +546,7 @@ void main() {
     test('renders as a member reference and is constant', () {
       const member = DartStaticMember(type: DartType('Foo'), name: 'a');
       expect(member.source, 'Foo.a');
-      expect(member.isConst, isTrue);
+      expect(member.canBeConst, isTrue);
       expect(member, const DartStaticMember(type: DartType('Foo'), name: 'a'));
     });
   });

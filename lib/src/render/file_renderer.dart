@@ -870,7 +870,7 @@ class FileRenderer {
           // a constant context; otherwise it is a `final` declaration and
           // any constant subtree writes its own.
           'exampleValue': _exampleSource(example),
-          'exampleIsConst': example.isConst,
+          'exampleIsConst': example.canBeConst,
           'invalidJsonExample': invalidJson,
           'isEnum': schema is RenderEnum,
           // `toString()` returns a String for every enum, but `toJson()`
@@ -926,7 +926,7 @@ class FileRenderer {
       variants.add({
         'variantTypeName': variant.typeName,
         'exampleValue': _exampleSource(example),
-        'exampleIsConst': example.isConst,
+        'exampleIsConst': example.canBeConst,
       });
     }
     if (variants.isEmpty) return;
@@ -1015,6 +1015,6 @@ class FileRenderer {
 /// example is declared `const`, which makes its whole tree a constant
 /// context; a non-constant one is declared `final`, so any constant
 /// subtree inside it needs its own keyword.
-String _exampleSource(DartExpression example) => example.isConst
+String _exampleSource(DartExpression example) => example.canBeConst
     ? DartExpressionSerializer.constContext.serialize(example)
     : DartExpressionSerializer.runtimeContext.serialize(example);
