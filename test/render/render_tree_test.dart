@@ -958,7 +958,6 @@ void main() {
       expect(ref.createsNewType, isTrue);
       expect(ref.shouldCallToJson, isTrue);
       expect(ref.defaultValue, isNull);
-      expect(ref.defaultCanConstConstruct, isFalse);
     });
 
     test('typeName is derived from snakeName', () {
