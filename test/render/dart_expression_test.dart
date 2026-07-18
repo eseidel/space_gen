@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 const nonConst = DartInvocation.runtime(
   type: DartType.uri,
   constructorName: 'parse',
-  positionalArguments: [DartLiteral('https://example.com')],
+  arguments: [DartLiteral('https://example.com')],
 );
 
 void main() {
@@ -194,7 +194,7 @@ void main() {
         const DartInvocation(
           type: DartType('Foo'),
           constructorName: 'named',
-          positionalArguments: [DartLiteral(1)],
+          arguments: [DartLiteral(1)],
           namedArguments: {'b': DartLiteral(2)},
           isConstConstructor: true,
         ).toString(),
@@ -219,7 +219,7 @@ void main() {
       expect(
         const DartInvocation(
           type: DartType('Foo'),
-          positionalArguments: [DartLiteral(1)],
+          arguments: [DartLiteral(1)],
           isConstConstructor: false,
         ).isConst,
         isFalse,
@@ -228,11 +228,11 @@ void main() {
       expect(
         const DartInvocation.runtime(
           type: DartType('Foo'),
-          positionalArguments: [DartLiteral(1)],
+          arguments: [DartLiteral(1)],
         ),
         const DartInvocation(
           type: DartType('Foo'),
-          positionalArguments: [DartLiteral(1)],
+          arguments: [DartLiteral(1)],
           isConstConstructor: false,
         ),
       );
@@ -242,7 +242,7 @@ void main() {
       expect(
         const DartInvocation(
           type: DartType('Foo'),
-          positionalArguments: [nonConst],
+          arguments: [nonConst],
           isConstConstructor: true,
         ).isConst,
         isFalse,
@@ -261,7 +261,7 @@ void main() {
       expect(
         const DartInvocation(
           type: DartType('Foo'),
-          positionalArguments: [DartLiteral(1)],
+          arguments: [DartLiteral(1)],
           namedArguments: {'b': DartLiteral('x')},
           isConstConstructor: true,
         ).isConst,
@@ -276,12 +276,12 @@ void main() {
       // `const Foo(...)`); see doc/dart_expression.md.
       const inner = DartInvocation(
         type: DartType('Bar'),
-        positionalArguments: [nonConst],
+        arguments: [nonConst],
         isConstConstructor: true,
       );
       const outer = DartInvocation(
         type: DartType('Foo'),
-        positionalArguments: [inner],
+        arguments: [inner],
         isConstConstructor: true,
       );
       expect(outer.isConst, isFalse);
@@ -292,17 +292,58 @@ void main() {
       expect(
         const DartInvocation(
           type: DartType('Foo'),
-          positionalArguments: [DartLiteral(1)],
+          arguments: [DartLiteral(1)],
           isConstConstructor: true,
         ),
         isNot(
           const DartInvocation(
             type: DartType('Foo'),
-            positionalArguments: [DartLiteral(1)],
+            arguments: [DartLiteral(1)],
             isConstConstructor: false,
           ),
         ),
       );
+    });
+  });
+
+  group('DartTypeExpressions', () {
+    test('construct builds a const-constructor invocation', () {
+      expect(
+        const DartType('Foo').construct(),
+        const DartInvocation(type: DartType('Foo'), isConstConstructor: true),
+      );
+      expect(
+        const DartType(
+              'Foo',
+            )
+            .construct(name: 'named', arguments: const [DartLiteral(1)])
+            .toString(),
+        'Foo.named(1)',
+      );
+      // The point of `construct` vs `constructAtRuntime`: const-ness.
+      expect(
+        const DartType(
+          'Foo',
+        ).construct(arguments: const [DartLiteral(1)]).isConst,
+        isTrue,
+      );
+    });
+
+    test('constructAtRuntime is never constant', () {
+      final parse = DartType.uri.constructAtRuntime(
+        name: 'parse',
+        arguments: const [DartLiteral('https://example.com')],
+      );
+      expect(parse.toString(), "Uri.parse('https://example.com')");
+      expect(parse.isConst, isFalse);
+    });
+
+    test('listOf and member build the collection and reference forms', () {
+      expect(
+        DartType.int_.listOf(const [DartLiteral(0)]).toString(),
+        '<int>[0]',
+      );
+      expect(const DartType('Foo').member('a').toString(), 'Foo.a');
     });
   });
 

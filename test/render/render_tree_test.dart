@@ -1527,7 +1527,7 @@ void main() {
         schema.exampleValue(context),
         const DartInvocation(
           type: DartType('Foo'),
-          positionalArguments: [DartLiteral('example')],
+          arguments: [DartLiteral('example')],
           isConstConstructor: true,
         ),
       );

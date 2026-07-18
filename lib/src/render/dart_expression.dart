@@ -39,6 +39,57 @@ sealed class DartExpression extends Equatable {
   String toString();
 }
 
+/// Expression builders that start from the type they produce, so a call
+/// site reads roughly like the Dart it emits:
+/// `DartType.uri.constructAtRuntime(name: 'parse', arguments: [...])`.
+///
+/// Deliberately an extension declared here rather than methods on
+/// [DartType]: the type model shouldn't have to know about expressions
+/// (it is the lower layer, and is imported by code that never builds one).
+/// This is the seam between the two, and it lives on the expression side.
+extension DartTypeExpressions on DartType {
+  /// An invocation of a constructor declared `const` — `Foo(1)`,
+  /// `Foo.named(a: 1)` — so the result is constant when its arguments are.
+  ///
+  /// Every constructor the generator emits for a model is `const` (#253),
+  /// so this is the common case. When unsure, prefer
+  /// [constructAtRuntime]: under-claiming only costs a `const`, while
+  /// over-claiming emits `const Foo(...)` around a non-constant, which
+  /// doesn't compile.
+  DartExpression construct({
+    String? name,
+    List<DartExpression> arguments = const [],
+    Map<String, DartExpression> namedArguments = const {},
+  }) => DartInvocation(
+    type: this,
+    constructorName: name,
+    arguments: arguments,
+    namedArguments: namedArguments,
+    isConstConstructor: true,
+  );
+
+  /// An invocation that computes at runtime — `Uri.parse('...')`,
+  /// `Uint8List.fromList([...])` — and so is never constant.
+  DartExpression constructAtRuntime({
+    String? name,
+    List<DartExpression> arguments = const [],
+    Map<String, DartExpression> namedArguments = const {},
+  }) => DartInvocation.runtime(
+    type: this,
+    constructorName: name,
+    arguments: arguments,
+    namedArguments: namedArguments,
+  );
+
+  /// A list literal of this element type: `<int>[0]`.
+  DartExpression listOf(Iterable<DartExpression> elements) =>
+      DartListLiteral(elementType: this, elements: elements.toList());
+
+  /// A static member reference on this type: `UserRole.admin`.
+  DartExpression member(String name) =>
+      DartStaticMember(type: this, name: name);
+}
+
 /// A literal `String`, `num`, `bool`, or `null`.
 ///
 /// Holds the real Dart value, not its rendered form, so the value stays
@@ -164,7 +215,7 @@ class DartInvocation extends DartExpression {
     required this.type,
     required this.isConstConstructor,
     this.constructorName,
-    this.positionalArguments = const [],
+    this.arguments = const [],
     this.namedArguments = const {},
   });
 
@@ -175,7 +226,7 @@ class DartInvocation extends DartExpression {
   const DartInvocation.runtime({
     required this.type,
     this.constructorName,
-    this.positionalArguments = const [],
+    this.arguments = const [],
     this.namedArguments = const {},
   }) : isConstConstructor = false;
 
@@ -186,7 +237,8 @@ class DartInvocation extends DartExpression {
   /// constructor.
   final String? constructorName;
 
-  final List<DartExpression> positionalArguments;
+  /// Positional arguments, rendered before [namedArguments].
+  final List<DartExpression> arguments;
 
   /// Named arguments, rendered in iteration order. Callers own the ordering
   /// (required-first, matching the generated constructor's signature).
@@ -205,25 +257,25 @@ class DartInvocation extends DartExpression {
   @override
   bool get isConst =>
       isConstConstructor &&
-      positionalArguments.every((argument) => argument.isConst) &&
+      arguments.every((argument) => argument.isConst) &&
       namedArguments.values.every((argument) => argument.isConst);
 
   @override
   String toString() {
     final name = constructorName;
     final target = name == null ? '$type' : '$type.$name';
-    final arguments = [
-      ...positionalArguments.map((argument) => '$argument'),
+    final rendered = [
+      ...arguments.map((argument) => '$argument'),
       ...namedArguments.entries.map((entry) => '${entry.key}: ${entry.value}'),
     ];
-    return '$target(${arguments.join(', ')})';
+    return '$target(${rendered.join(', ')})';
   }
 
   @override
   List<Object?> get props => [
     type,
     constructorName,
-    positionalArguments,
+    arguments,
     namedArguments,
     isConstConstructor,
   ];
