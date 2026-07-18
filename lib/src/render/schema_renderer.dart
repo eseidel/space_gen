@@ -93,12 +93,12 @@ class SchemaUsage {
   /// Imports required by the body itself. Package-local imports are
   /// resolved against [packageName].
   Iterable<Import> importsFor(String packageName) sync* {
-    if (usesMetaAnnotations) yield const Import('package:meta/meta.dart');
+    if (usesMetaAnnotations) yield const Import(Libraries.meta);
     if (usesModelHelpers) {
-      yield Import('package:$packageName/model_helpers.dart');
+      yield Import.path('package:$packageName/model_helpers.dart');
     }
     if (usesValidationExtensions) {
-      yield Import('package:$packageName/api_exception.dart');
+      yield Import.path('package:$packageName/api_exception.dart');
     }
   }
 }
@@ -128,9 +128,9 @@ class ApiUsage {
   bool get usesModelHelpers => modelHelpers.isNotEmpty;
 
   Iterable<Import> importsFor(String packageName) sync* {
-    if (usesMetaAnnotations) yield const Import('package:meta/meta.dart');
+    if (usesMetaAnnotations) yield const Import(Libraries.meta);
     if (usesModelHelpers) {
-      yield Import('package:$packageName/model_helpers.dart');
+      yield Import.path('package:$packageName/model_helpers.dart');
     }
   }
 }
