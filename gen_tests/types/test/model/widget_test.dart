@@ -7,8 +7,8 @@ void main() {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = Widget(
         id: 0,
-        tags: <String>['example'],
-        attributes: {'key': 'example'},
+        tags: const <String>['example'],
+        attributes: const {'key': 'example'},
       );
       final parsed = Widget.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));

@@ -18,10 +18,7 @@ class DefaultApi {
     );
 
     if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException<Object?>(
-        response.statusCode,
-        response.body,
-      );
+      throw ApiException<Object?>(response.statusCode, response.body);
     }
   }
 
@@ -34,10 +31,7 @@ class DefaultApi {
     );
 
     if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException<Object?>(
-        response.statusCode,
-        response.body,
-      );
+      throw ApiException<Object?>(response.statusCode, response.body);
     }
   }
 
@@ -50,10 +44,7 @@ class DefaultApi {
     );
 
     if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException<Object?>(
-        response.statusCode,
-        response.body,
-      );
+      throw ApiException<Object?>(response.statusCode, response.body);
     }
   }
 }
