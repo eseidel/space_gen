@@ -7,10 +7,10 @@ import 'package:space_gen/src/string.dart';
 ///
 /// The expression-level counterpart to [DartType], and for the same reason:
 /// facts about an expression should be *derived* from what it is, not
-/// recovered by inspecting rendered source. [isConst] is the motivating
-/// case — a constructor invocation is constant iff its constructor is
-/// `const` and every argument is constant, which is a fold over the tree
-/// and not something a composite should have to thread by hand.
+/// recovered by inspecting rendered source. [canBeConst] is the motivating
+/// case — a constructor invocation can be const iff its constructor is
+/// declared `const` and every argument can be, which is a fold over the
+/// tree and not something a composite should have to thread by hand.
 ///
 /// Unlike [DartType], the tree does *not* render itself. Rendering lives in
 /// [DartExpressionSerializer], because the source for a given expression
@@ -28,12 +28,28 @@ import 'package:space_gen/src/string.dart';
 sealed class DartExpression extends Equatable {
   const DartExpression();
 
-  /// Whether this is a compile-time constant expression, and so whether it
-  /// can be assigned to a `const` variable and used inside an enclosing
-  /// constant expression.
+  /// Whether this expression *could* be evaluated at compile time — with
+  /// the keyword written, or by sitting in a context that is already
+  /// constant.
   ///
-  /// Derived, never stored.
-  bool get isConst;
+  /// Deliberately not `isConst`. Three different things get called that,
+  /// and only this one is a property of the tree:
+  ///
+  /// - **is a constant** — actually evaluated at compile time. `5` always
+  ///   is; `Foo(1)` only if it is written `const Foo(1)` or lands in a
+  ///   constant context. That depends on the destination, so the tree
+  ///   cannot answer it.
+  /// - **can be const** — this getter. A constructor invocation qualifies
+  ///   when its constructor is declared `const` *and* every argument
+  ///   qualifies. `[1, 2]` qualifies even though, written bare in a
+  ///   runtime context, it allocates a fresh list each time.
+  /// - **is written `const`** — the keyword, pure syntax. That is
+  ///   [DartExpressionSerializer.isConstContext]'s business, not the
+  ///   tree's.
+  ///
+  /// Derived, never stored. That derivation is the reason this IR exists:
+  /// see `doc/dart_expression.md`.
+  bool get canBeConst;
 
   /// Debug form (`DartLiteral(5)`), not Dart source. Rendering goes
   /// through [DartExpressionSerializer] — an expression cannot serialize
@@ -78,7 +94,7 @@ class DartExpressionSerializer extends Equatable {
   String serialize(DartExpression expression) {
     // A keyword written here (or a context inherited from above) makes
     // every child a constant context.
-    final children = isConstContext || expression.isConst
+    final children = isConstContext || expression.canBeConst
         ? constContext
         : runtimeContext;
     return switch (expression) {
@@ -88,6 +104,22 @@ class DartExpressionSerializer extends Equatable {
       DartLiteral(:final value) =>
         value is String ? quoteString(value) : '$value',
       DartStaticMember(:final type, :final name) => '$type.$name',
+      DartIdentifier(:final name) => name,
+      // A call and a closure both evaluate at runtime, so neither can
+      // carry the keyword; their children serialize in whatever context
+      // reaches them.
+      DartMethodCall(
+        :final target,
+        :final name,
+        :final arguments,
+        :final isNullAware,
+      ) =>
+        '${children.serialize(target)}${isNullAware ? '?.' : '.'}$name'
+            '(${arguments.map(children.serialize).join(', ')})',
+      DartPropertyAccess(:final target, :final name, :final isNullAware) =>
+        '${children.serialize(target)}${isNullAware ? '?.' : '.'}$name',
+      DartLambda(:final parameters, :final body) =>
+        '(${parameters.join(', ')}) => ${children.serialize(body)}',
       DartListLiteral(:final elementType, :final elements) => _maybeConst(
         expression,
         '${elementType == null ? '' : '<$elementType>'}'
@@ -129,7 +161,7 @@ class DartExpressionSerializer extends Equatable {
   /// keyword buys a compile-time constant. Only called from the arms whose
   /// node kind can legally carry it.
   String _maybeConst(DartExpression expression, String source) =>
-      !isConstContext && expression.isConst ? 'const $source' : source;
+      !isConstContext && expression.canBeConst ? 'const $source' : source;
 
   @override
   List<Object?> get props => [isConstContext];
@@ -201,7 +233,7 @@ class DartLiteral extends DartExpression {
 
   /// Literals are always constant.
   @override
-  bool get isConst => true;
+  bool get canBeConst => true;
 
   // Includes the runtime type because `5 == 5.0` in Dart, but `5` and `5.0`
   // are different literals — equality here has to agree with [toString].
@@ -230,7 +262,7 @@ class DartListLiteral extends DartExpression {
 
   /// A list literal is constant when every element is.
   @override
-  bool get isConst => elements.every((element) => element.isConst);
+  bool get canBeConst => elements.every((element) => element.canBeConst);
 
   @override
   List<Object?> get props => [elementType, elements];
@@ -244,7 +276,7 @@ class DartMapEntry extends Equatable {
   final DartExpression key;
   final DartExpression value;
 
-  bool get isConst => key.isConst && value.isConst;
+  bool get canBeConst => key.canBeConst && value.canBeConst;
 
   @override
   List<Object?> get props => [key, value];
@@ -273,10 +305,108 @@ class DartMapLiteral extends DartExpression {
 
   /// A map literal is constant when every key and value is.
   @override
-  bool get isConst => entries.every((entry) => entry.isConst);
+  bool get canBeConst => entries.every((entry) => entry.canBeConst);
 
   @override
   List<Object?> get props => [keyType, valueType, entries];
+}
+
+/// A bare identifier: a parameter, local, or field name (`json`, `e`,
+/// `value`).
+///
+/// Modeled rather than spliced as text so consumers can ask what an
+/// expression *is* instead of matching `^[a-zA-Z_$][\w$]*$` against
+/// rendered source.
+class DartIdentifier extends DartExpression {
+  const DartIdentifier(this.name);
+
+  final String name;
+
+  /// A reference to a variable is not a constant expression, even when the
+  /// variable happens to hold one.
+  @override
+  bool get canBeConst => false;
+
+  @override
+  List<Object?> get props => [name];
+}
+
+/// A method call on a target: `value.toJson()`, `items?.map(f).toList()`.
+///
+/// Chains by nesting — the target of one call is another call — so
+/// `x.map(f).toList()` needs no special support.
+class DartMethodCall extends DartExpression {
+  const DartMethodCall({
+    required this.target,
+    required this.name,
+    this.arguments = const [],
+    this.isNullAware = false,
+  });
+
+  /// The receiver the method is called on.
+  final DartExpression target;
+
+  final String name;
+
+  final List<DartExpression> arguments;
+
+  /// Whether to call through `?.` rather than `.`, so a null target short
+  /// circuits to null instead of throwing.
+  final bool isNullAware;
+
+  /// A method call runs at runtime; no invocation of one is constant.
+  @override
+  bool get canBeConst => false;
+
+  @override
+  List<Object?> get props => [target, name, arguments, isNullAware];
+}
+
+/// A property access: `entry.value`, `response.body`.
+///
+/// Distinct from [DartMethodCall] because it emits no parentheses, and
+/// from [DartStaticMember] because the target is an expression rather than
+/// a type.
+class DartPropertyAccess extends DartExpression {
+  const DartPropertyAccess({
+    required this.target,
+    required this.name,
+    this.isNullAware = false,
+  });
+
+  final DartExpression target;
+
+  final String name;
+
+  /// Whether to read through `?.` rather than `.`.
+  final bool isNullAware;
+
+  /// Reading a property runs at runtime; the result is not a constant.
+  @override
+  bool get canBeConst => false;
+
+  @override
+  List<Object?> get props => [target, name, isNullAware];
+}
+
+/// An expression-bodied lambda: `(e) => e.toJson()`.
+///
+/// Only the arrow form is modeled, which is all the generator emits.
+class DartLambda extends DartExpression {
+  const DartLambda({required this.parameters, required this.body});
+
+  /// Parameter names, in order. Untyped — the generator relies on
+  /// inference at every site that emits one.
+  final List<String> parameters;
+
+  final DartExpression body;
+
+  /// A closure is never a constant expression.
+  @override
+  bool get canBeConst => false;
+
+  @override
+  List<Object?> get props => [parameters, body];
 }
 
 /// A constructor invocation or static method call: `Foo(1)`,
@@ -312,13 +442,14 @@ class DartInvocation extends DartExpression {
   final Map<String, DartExpression> namedArguments;
 
   /// Whether the invoked constructor is *declared* `const` — a fact only the
-  /// caller knows. False for factories and anything that computes at runtime
+  /// caller knows, and the input to [canBeConst] rather than a synonym for
+  /// it. False for factories and anything that computes at runtime
   /// (`Uri.parse`, `DateTime.utc`, `Uint8List.fromList`), and for a
   /// generated constructor with a validating body.
   ///
-  /// This is the input to [isConst], not a synonym for it: a const
-  /// constructor invoked with a non-constant argument is not a constant
-  /// expression.
+  /// A const constructor invoked with an argument that cannot be const
+  /// does not itself qualify, which is what the fold in [canBeConst]
+  /// works out.
   //
   // TODO(eseidel): Model the constructor itself, not a bool about it.
   //
@@ -338,10 +469,10 @@ class DartInvocation extends DartExpression {
   final bool isConstConstructor;
 
   @override
-  bool get isConst =>
+  bool get canBeConst =>
       isConstConstructor &&
-      arguments.every((argument) => argument.isConst) &&
-      namedArguments.values.every((argument) => argument.isConst);
+      arguments.every((argument) => argument.canBeConst) &&
+      namedArguments.values.every((argument) => argument.canBeConst);
 
   @override
   List<Object?> get props => [
@@ -369,7 +500,7 @@ class DartStaticMember extends DartExpression {
   /// Enum members and other static const members are constant. This node is
   /// only used for members that are; a static getter would not be.
   @override
-  bool get isConst => true;
+  bool get canBeConst => true;
 
   @override
   List<Object?> get props => [type, name];
