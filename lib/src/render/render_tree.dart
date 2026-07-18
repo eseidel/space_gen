@@ -8,6 +8,7 @@ import 'package:space_gen/src/naming.dart';
 import 'package:space_gen/src/parse/spec.dart' show StatusCodeRange;
 import 'package:space_gen/src/quirks.dart';
 import 'package:space_gen/src/render/dart_type.dart';
+import 'package:space_gen/src/render/example_value.dart';
 // Any code that depends on SchemaRenderer probably should be moved out
 // of this file and into the schema_renderer.dart file.
 import 'package:space_gen/src/render/schema_renderer.dart';
@@ -2532,7 +2533,27 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// [RenderRecursiveRef] in a non-nullable slot would loop forever.
   /// Callers treat `null` as a signal to skip emitting a round-trip
   /// test for the enclosing type.
-  String? exampleValue(SchemaRenderer context);
+  ///
+  /// The returned [ExampleValue] carries both the expression and whether
+  /// it is const-able; see that class for why the two travel together.
+  ExampleValue? exampleValue(SchemaRenderer context);
+
+  /// Wrap a scalar [literal] in this schema's newtype constructor, when
+  /// it creates one. Shared by the string and numeric newtypes, whose
+  /// generated constructor is `const` only when the schema declares no
+  /// validations — the same `hasValidations` gate the templates use. A
+  /// validating constructor has a body, so it cannot be const.
+  ///
+  /// Not used by [RenderPod], whose newtype constructor is
+  /// unconditionally const.
+  @protected
+  ExampleValue newtypeWrappedExample(String literal) {
+    if (!createsNewType) return ExampleValue.constant(literal);
+    return ExampleValue(
+      '$typeName($literal)',
+      isConst: validationCalls.isEmpty,
+    );
+  }
 
   /// A Dart expression of type [jsonStorageType] that is guaranteed to
   /// fail this schema's `fromJson`/`maybeFromJson` with a
@@ -2822,18 +2843,25 @@ class RenderPod extends RenderSchema {
       super.equalsIgnoringName(other);
 
   @override
-  String? exampleValue(SchemaRenderer context) {
-    final raw = switch (type) {
-      PodType.boolean => 'false',
+  ExampleValue? exampleValue(SchemaRenderer context) {
+    // Const-ness is per-type: `DateTime` has no const constructor, and
+    // `Uri.parse` / `UriTemplate` parse their argument at runtime.
+    final (raw, rawIsConst) = switch (type) {
+      PodType.boolean => ('false', true),
       // `month`/`day` default to 1, so passing them is redundant
       // (`avoid_redundant_argument_values`).
-      PodType.dateTime => 'DateTime.utc(2024)',
-      PodType.uri => "Uri.parse('https://example.com')",
-      PodType.uriTemplate => "UriTemplate('https://example.com/{id}')",
-      PodType.email => "'user@example.com'",
-      PodType.uuid => "'00000000-0000-0000-0000-000000000000'",
+      PodType.dateTime => ('DateTime.utc(2024)', false),
+      PodType.uri => ("Uri.parse('https://example.com')", false),
+      PodType.uriTemplate => ("UriTemplate('https://example.com/{id}')", false),
+      PodType.email => ("'user@example.com'", true),
+      PodType.uuid => ("'00000000-0000-0000-0000-000000000000'", true),
     };
-    return createsNewType ? '$typeName($raw)' : raw;
+    // A pod newtype's constructor is unconditionally `const`
+    // (`schema_pod_newtype.mustache`), so wrapping preserves const-ness.
+    return ExampleValue(
+      createsNewType ? '$typeName($raw)' : raw,
+      isConst: rawIsConst,
+    );
   }
 
   /// Only dateTime pods parse through `DateTime.parse`, which rejects garbage
@@ -3036,12 +3064,8 @@ class RenderString extends RenderSchema {
   }
 
   @override
-  String? exampleValue(SchemaRenderer context) {
-    final value = validStringExample();
-    return createsNewType
-        ? '$typeName(${quoteString(value)})'
-        : quoteString(value);
-  }
+  ExampleValue? exampleValue(SchemaRenderer context) =>
+      newtypeWrappedExample(quoteString(validStringExample()));
 }
 
 /// Pick the first `String`-typed entry from `common.example` or
@@ -3321,10 +3345,8 @@ class RenderNumber extends RenderNumeric<double> {
       jsonIsNullable ? '?.toDouble()' : '.toDouble()';
 
   @override
-  String? exampleValue(SchemaRenderer context) {
-    final value = _validNumberExample(common, this).toString();
-    return createsNewType ? '$typeName($value)' : value;
-  }
+  ExampleValue? exampleValue(SchemaRenderer context) =>
+      newtypeWrappedExample(_validNumberExample(common, this).toString());
 }
 
 class RenderInteger extends RenderNumeric<int> {
@@ -3363,10 +3385,9 @@ class RenderInteger extends RenderNumeric<int> {
   String jsonToDartCall({required bool jsonIsNullable}) => '';
 
   @override
-  String? exampleValue(SchemaRenderer context) {
-    final value = _validNumberExample(common, this).toInt().toString();
-    return createsNewType ? '$typeName($value)' : value;
-  }
+  ExampleValue? exampleValue(SchemaRenderer context) => newtypeWrappedExample(
+    _validNumberExample(common, this).toInt().toString(),
+  );
 }
 
 /// Pick a numeric value satisfying [schema]'s declared bounds. Prefers
@@ -3787,7 +3808,7 @@ class RenderObject extends RenderNewType {
       // `prefer_const_constructors_in_immutables` otherwise. The sealed
       // parent of a smooshed variant already declares `const`, so
       // variants can be const too.
-      'canBeConst': !context.quirks.mutableModels && assignmentsLine == null,
+      'canBeConst': canBeConst(context),
       'additionalPropertiesName': 'entries', // Matching OpenAPI.
       'valueSchema': valueSchema?.typeName,
       'operatorIndexType': operatorIndexType,
@@ -3886,9 +3907,30 @@ class RenderObject extends RenderNewType {
   bool rendersAsConstGetter(String jsonName, RenderSchema property) =>
       constProperties.containsKey(jsonName) && property is RenderEnum;
 
+  /// Whether the generated constructor is declared `const`.
+  ///
+  /// Equivalent to the template's gate (`!mutableModels &&
+  /// assignmentsLine == null`) but stated directly against the
+  /// properties, so it can be asked before the per-property template
+  /// contexts are built. A mutable model has non-final fields; an
+  /// aggregate assignments line exists exactly when some property that
+  /// isn't a const getter has a non-const default (see
+  /// [assignmentsLine] and [buildAssignmentsLine]).
+  bool canBeConst(SchemaRenderer context) {
+    if (context.quirks.mutableModels) return false;
+    return !properties.entries.any(
+      (entry) =>
+          !rendersAsConstGetter(entry.key, entry.value) &&
+          entry.value.hasNonConstDefaultValue(context),
+    );
+  }
+
   @override
-  String? exampleValue(SchemaRenderer context) {
+  ExampleValue? exampleValue(SchemaRenderer context) {
     final args = <String>[];
+    // An argument that isn't const makes the whole construction
+    // non-const, even when the constructor itself is `const`.
+    var argsAreConst = true;
     for (final entry in properties.entries) {
       final jsonName = entry.key;
       if (!requiredProperties.contains(jsonName)) continue;
@@ -3905,9 +3947,14 @@ class RenderObject extends RenderNewType {
       // match the example here (a `?? DateTime.parse(...)` initializer
       // reads differently from `DateTime.utc(...)`), so this can't drop
       // a genuinely-needed argument.
-      if (property.defaultValueString(context) == example) continue;
+      //
+      // Compares the rendered code only, not the whole [ExampleValue]:
+      // the question is whether the two spell the same argument, and
+      // const-ness doesn't change that.
+      if (property.defaultValueString(context) == example.code) continue;
       final dartName = variableSafeName(context.quirks, jsonName);
-      args.add('$dartName: $example');
+      args.add('$dartName: ${example.code}');
+      argsAreConst &= example.isConst;
     }
     // When the schema has `additionalProperties`, the generated class
     // carries a synthetic required `entries` Map field whose value type
@@ -3920,9 +3967,14 @@ class RenderObject extends RenderNewType {
     // family on the GitHub spec all hit this.
     final additional = additionalProperties;
     if (additional != null) {
+      // An empty map literal is a constant expression, so this argument
+      // never costs const-ness.
       args.add('entries: <String, ${additional.typeName}>{}');
     }
-    return '$typeName(${args.join(', ')})';
+    return ExampleValue(
+      '$typeName(${args.join(', ')})',
+      isConst: canBeConst(context) && argsAreConst,
+    );
   }
 
   /// Empty map: any required property will fail its type cast inside
@@ -4152,10 +4204,13 @@ class RenderArray extends RenderSchema {
   }
 
   @override
-  String? exampleValue(SchemaRenderer context) {
+  ExampleValue? exampleValue(SchemaRenderer context) {
     final inner = items.exampleValue(context);
     if (inner == null) return null;
-    return '<${items.typeName}>[$inner]';
+    return ExampleValue(
+      '<${items.typeName}>[${inner.code}]',
+      isConst: inner.isConst,
+    );
   }
 }
 
@@ -4329,11 +4384,18 @@ class RenderMap extends RenderSchema {
   }
 
   @override
-  String? exampleValue(SchemaRenderer context) {
+  ExampleValue? exampleValue(SchemaRenderer context) {
     final value = valueSchema.exampleValue(context);
     if (value == null) return null;
-    final key = keySchema?.exampleValue(context) ?? "'key'";
-    return '{$key: $value}';
+    // A map with no key schema uses a plain string literal, which is
+    // const; otherwise the key's own const-ness applies.
+    final key =
+        keySchema?.exampleValue(context) ??
+        const ExampleValue.constant("'key'");
+    return ExampleValue(
+      '{${key.code}: ${value.code}}',
+      isConst: key.isConst && value.isConst,
+    );
   }
 }
 
@@ -4516,7 +4578,15 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
   }
 
   @override
-  String? exampleValue(SchemaRenderer context) => '$typeName.values.first';
+  ExampleValue? exampleValue(SchemaRenderer context) {
+    // Name the first member directly rather than going through
+    // `values.first`: a static member reference is a constant
+    // expression, where `values.first` is a getter call and isn't. It
+    // also reads better in the generated test.
+    final first = names.firstOrNull;
+    if (first == null) return null;
+    return ExampleValue.constant('$typeName.$first');
+  }
 }
 
 class RenderStringEnum extends RenderEnum<String> {
@@ -5121,7 +5191,7 @@ class RenderOneOf extends RenderNewType {
   dynamic get defaultValue => null;
 
   @override
-  String? exampleValue(SchemaRenderer context) {
+  ExampleValue? exampleValue(SchemaRenderer context) {
     // A oneOf / anyOf currently renders as a sealed class with no
     // subclasses (the template at `schema_one_of.mustache` emits only
     // the base class and an `UnimplementedError`-throwing fromJson).
@@ -5803,7 +5873,8 @@ class RenderUnknown extends RenderSchema {
       throw UnimplementedError('RenderUnknown.toTemplateContext');
 
   @override
-  String? exampleValue(SchemaRenderer context) => '<String, dynamic>{}';
+  ExampleValue? exampleValue(SchemaRenderer context) =>
+      const ExampleValue.constant('<String, dynamic>{}');
 }
 
 class RenderVoid extends RenderNoJson {
@@ -5833,7 +5904,7 @@ class RenderVoid extends RenderNoJson {
   // a void type, maybe we need a "return expression" value instead?
 
   @override
-  String? exampleValue(SchemaRenderer context) => null;
+  ExampleValue? exampleValue(SchemaRenderer context) => null;
 }
 
 /// A schema that represents a type which cannot be converted to json.
@@ -5876,7 +5947,7 @@ abstract class RenderNoJson extends RenderSchema {
   /// No-JSON types (void, binary) can't round-trip via JSON so they
   /// have no example value.
   @override
-  String? exampleValue(SchemaRenderer context) => null;
+  ExampleValue? exampleValue(SchemaRenderer context) => null;
 }
 
 class RenderBinary extends RenderNoJson {
@@ -5978,8 +6049,9 @@ class RenderBase64Bytes extends RenderSchema {
   }
 
   @override
-  String? exampleValue(SchemaRenderer context) =>
-      'Uint8List.fromList(<int>[0])';
+  ExampleValue? exampleValue(SchemaRenderer context) =>
+      // `Uint8List.fromList` is a factory, so this isn't a constant.
+      const ExampleValue.notConst('Uint8List.fromList(<int>[0])');
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
@@ -6050,7 +6122,9 @@ class RenderDate extends RenderSchema {
   }) => dartIsNullable ? '$dartName?.toJson()' : '$dartName.toJson()';
 
   @override
-  String? exampleValue(SchemaRenderer context) => 'Date(2024, 1, 1)';
+  ExampleValue? exampleValue(SchemaRenderer context) =>
+      // The generated `Date` has a const constructor (`date.dart`).
+      const ExampleValue.constant('Date(2024, 1, 1)');
 
   // `Date.fromJson` parses through `DateTime.parse`, which rejects garbage
   // with a FormatException — so the round-trip test has a guaranteed-invalid
@@ -6124,7 +6198,11 @@ class RenderEmptyObject extends RenderNewType {
   };
 
   @override
-  String? exampleValue(SchemaRenderer context) => 'const $typeName()';
+  ExampleValue? exampleValue(SchemaRenderer context) =>
+      // Bare, not `const`-prefixed: the outermost caller applies the
+      // keyword, so a nested empty object can't trip
+      // `unnecessary_const` inside an enclosing const expression.
+      ExampleValue.constant('$typeName()');
 }
 
 /// A cycle-break marker: appears where a $ref would otherwise recurse back
@@ -6206,7 +6284,7 @@ class RenderRecursiveRef extends RenderSchema {
   /// Returning null here propagates up the tree so the enclosing
   /// schema opts out of test generation.
   @override
-  String? exampleValue(SchemaRenderer context) => null;
+  ExampleValue? exampleValue(SchemaRenderer context) => null;
 
   @override
   List<Object?> get props => [super.props, targetPointer];

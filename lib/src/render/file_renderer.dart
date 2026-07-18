@@ -864,7 +864,11 @@ class FileRenderer {
           'packageName': packageName,
           'barrelImportPath': testBarrelImport(),
           'typeName': schema.typeName,
-          'exampleValue': example,
+          // Const-ness is spent on the declaration keyword rather
+          // than the initializer, so the expression stays bare — see
+          // [ExampleValue].
+          'exampleValue': example.code,
+          'exampleIsConst': example.isConst,
           'invalidJsonExample': invalidJson,
           'isEnum': schema is RenderEnum,
           // `toString()` returns a String for every enum, but `toJson()`
@@ -919,7 +923,8 @@ class FileRenderer {
       if (example == null) continue;
       variants.add({
         'variantTypeName': variant.typeName,
-        'exampleValue': example,
+        'exampleValue': example.code,
+        'exampleIsConst': example.isConst,
       });
     }
     if (variants.isEmpty) return;
