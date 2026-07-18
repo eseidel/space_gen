@@ -144,6 +144,13 @@ common-type — are a small structured `DartType` value (name + type arguments +
 nullability) rather than strings composed by hand. See
 [`doc/dart_type.md`](doc/dart_type.md) for the model and remaining work.
 
+**Expression model (planned).** Dart *expressions* are still composed as
+strings (`'$typeName($literal)'`, `'{$key: $value}'`, `"$json as $type"`) —
+the same problem `DartType` solved for types, one layer up. The decision to
+build a small home-grown sealed expression IR, and why `package:code_builder`
+was evaluated and rejected, is recorded in
+[`doc/dart_expression.md`](doc/dart_expression.md).
+
 **Linkage to dispatch.** `RenderOneOf` carries a back-reference to
 the source `ResolvedSchemaCollection` it was built from. When a
 oneOf renders, it calls `decideDispatch(source)` to retrieve the
