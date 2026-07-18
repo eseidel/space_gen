@@ -13,10 +13,10 @@ void main() {
         timestamp: Timestamp(DateTime.utc(2024)),
         widget: Widget(
           id: 0,
-          tags: <String>['example'],
-          attributes: {'key': 'example'},
+          tags: const <String>['example'],
+          attributes: const {'key': 'example'},
         ),
-        status: Status.values.first,
+        status: Status.active,
       );
       final parsed = Types200Response.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));

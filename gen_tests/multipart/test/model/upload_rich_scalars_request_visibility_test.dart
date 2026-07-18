@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('UploadRichScalarsRequestVisibility', () {
     test('round-trips via maybeFromJson/toJson', () {
-      final instance = UploadRichScalarsRequestVisibility.values.first;
+      const instance = UploadRichScalarsRequestVisibility.public;
       final parsed = UploadRichScalarsRequestVisibility.maybeFromJson(
         instance.toJson(),
       )!;
