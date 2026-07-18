@@ -55,15 +55,14 @@ import 'package:meta/meta.dart';
 // and #256 (drop redundant argument values) were string-level fixes to
 // what are structural questions.
 //
-// Evaluate `package:code_builder` first — it is the Dart team's
-// answer for building Dart source programmatically and has an
-// `Expression` type with `.property()` / `.call()` / `.constInstance()`.
-// If its `Expression` won't answer "is this const?", a small
-// home-grown IR (literals, identifiers, property access, invocation,
-// collection literals) is a few hundred lines and mirrors how
-// `DartType` earned its place. Not `package:analyzer`'s AST: that is a
-// parsing representation built around tokens, offsets and resolution,
-// and is painful to construct synthetically.
+// The approach is settled: a small home-grown sealed IR, reusing
+// `DartType` for type references, with `isConst` as an exhaustive
+// switch rather than a stored field. `package:code_builder` was
+// evaluated and rejected — its `Expression.isConst` is an authoring
+// flag recorded at construction, not derived (it reports `false` for
+// the literal `5` and `true` for the invalid `const Foo(Bar())`), and
+// its tree is too lossy to recompute it. See `doc/dart_expression.md`
+// for the full decision record; don't re-litigate it here.
 @immutable
 class ExampleValue extends Equatable {
   /// For expressions whose const-ness is *computed* — a composite
