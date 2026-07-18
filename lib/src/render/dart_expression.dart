@@ -116,8 +116,12 @@ class DartMapLiteral extends DartExpression {
   const DartMapLiteral({
     required this.keyType,
     required this.valueType,
-    required this.entries,
+    this.entries = const [],
   });
+
+  /// A map literal with no type arguments, e.g. `{'key': 'example'}` —
+  /// its entries infer them.
+  const DartMapLiteral.untyped(this.entries) : keyType = null, valueType = null;
 
   /// The key type argument, or `null` to omit the `<K, V>` entirely and let
   /// the literal's own entries infer it.
@@ -149,13 +153,31 @@ class DartMapLiteral extends DartExpression {
 /// A constructor invocation or static method call: `Foo(1)`,
 /// `Uri.parse('...')`, `Uint8List.fromList(<int>[0])`.
 class DartInvocation extends DartExpression {
+  // Unlike the `Render*` / `Resolved*` / `Schema*` pipeline types, these
+  // parameters default rather than being `required`. Nothing threads
+  // through three layers here — an expression is built and rendered in
+  // one place — and most invocations are an unnamed constructor with
+  // only positional arguments, so requiring `constructorName: null,
+  // namedArguments: {}` at every site is noise that hides the fields
+  // that do vary. Same call for the same reason as [DartType].
   const DartInvocation({
     required this.type,
-    required this.constructorName,
-    required this.positionalArguments,
-    required this.namedArguments,
     required this.isConstConstructor,
+    this.constructorName,
+    this.positionalArguments = const [],
+    this.namedArguments = const {},
   });
+
+  /// An invocation that computes its value at runtime, and so is never a
+  /// constant expression however constant its arguments are: a factory
+  /// (`Uint8List.fromList`), a parse (`Uri.parse`, `UriTemplate`), or a
+  /// generated constructor with a validating body.
+  const DartInvocation.runtime({
+    required this.type,
+    this.constructorName,
+    this.positionalArguments = const [],
+    this.namedArguments = const {},
+  }) : isConstConstructor = false;
 
   /// The type being constructed (or whose static member is being called).
   final DartType type;

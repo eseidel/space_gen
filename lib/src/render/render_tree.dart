@@ -2551,9 +2551,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     if (!createsNewType) return literal;
     return DartInvocation(
       type: dartType,
-      constructorName: null,
       positionalArguments: [literal],
-      namedArguments: const {},
       isConstConstructor: validationCalls.isEmpty,
     );
   }
@@ -2854,26 +2852,19 @@ class RenderPod extends RenderSchema {
       PodType.boolean => const DartLiteral(false),
       // `month`/`day` default to 1, so passing them is redundant
       // (`avoid_redundant_argument_values`).
-      PodType.dateTime => const DartInvocation(
+      PodType.dateTime => const DartInvocation.runtime(
         type: DartType.dateTime,
         constructorName: 'utc',
         positionalArguments: [DartLiteral(2024)],
-        namedArguments: {},
-        isConstConstructor: false,
       ),
-      PodType.uri => const DartInvocation(
+      PodType.uri => const DartInvocation.runtime(
         type: DartType.uri,
         constructorName: 'parse',
         positionalArguments: [DartLiteral('https://example.com')],
-        namedArguments: {},
-        isConstConstructor: false,
       ),
-      PodType.uriTemplate => const DartInvocation(
+      PodType.uriTemplate => const DartInvocation.runtime(
         type: DartType.uriTemplate,
-        constructorName: null,
         positionalArguments: [DartLiteral('https://example.com/{id}')],
-        namedArguments: {},
-        isConstConstructor: false,
       ),
       PodType.email => const DartLiteral('user@example.com'),
       PodType.uuid => const DartLiteral(
@@ -2885,9 +2876,7 @@ class RenderPod extends RenderSchema {
     // (`schema_pod_newtype.mustache`), so wrapping preserves const-ness.
     return DartInvocation(
       type: dartType,
-      constructorName: null,
       positionalArguments: [raw],
-      namedArguments: const {},
       isConstConstructor: true,
     );
   }
@@ -3996,7 +3985,6 @@ class RenderObject extends RenderNewType {
       args['entries'] = DartMapLiteral(
         keyType: DartType.string,
         valueType: additional.dartType,
-        entries: const [],
       );
     }
     // Any non-const argument makes the whole construction non-const even
@@ -4004,8 +3992,6 @@ class RenderObject extends RenderNewType {
     // folds that over the arguments.
     return DartInvocation(
       type: dartType,
-      constructorName: null,
-      positionalArguments: const [],
       namedArguments: args,
       isConstConstructor: canBeConst(context),
     );
@@ -4419,12 +4405,7 @@ class RenderMap extends RenderSchema {
     final value = valueSchema.exampleValue(context);
     if (value == null) return null;
     final key = keySchema?.exampleValue(context) ?? const DartLiteral('key');
-    // No type arguments: the single entry infers them.
-    return DartMapLiteral(
-      keyType: null,
-      valueType: null,
-      entries: [DartMapEntry(key, value)],
-    );
+    return DartMapLiteral.untyped([DartMapEntry(key, value)]);
   }
 }
 
@@ -5905,7 +5886,6 @@ class RenderUnknown extends RenderSchema {
   DartExpression? exampleValue(SchemaRenderer context) => const DartMapLiteral(
     keyType: DartType.string,
     valueType: DartType.dynamic_,
-    entries: [],
   );
 }
 
@@ -6081,16 +6061,18 @@ class RenderBase64Bytes extends RenderSchema {
   }
 
   @override
-  DartExpression? exampleValue(SchemaRenderer context) => const DartInvocation(
-    type: DartType.uint8List,
-    // `Uint8List.fromList` is a factory, so this isn't a constant.
-    constructorName: 'fromList',
-    positionalArguments: [
-      DartListLiteral(elementType: DartType.int_, elements: [DartLiteral(0)]),
-    ],
-    namedArguments: {},
-    isConstConstructor: false,
-  );
+  DartExpression? exampleValue(SchemaRenderer context) =>
+      // `Uint8List.fromList` is a factory, hence `.runtime`.
+      const DartInvocation.runtime(
+        type: DartType.uint8List,
+        constructorName: 'fromList',
+        positionalArguments: [
+          DartListLiteral(
+            elementType: DartType.int_,
+            elements: [DartLiteral(0)],
+          ),
+        ],
+      );
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
@@ -6163,9 +6145,7 @@ class RenderDate extends RenderSchema {
   @override
   DartExpression? exampleValue(SchemaRenderer context) => const DartInvocation(
     type: DartType('Date'),
-    constructorName: null,
     positionalArguments: [DartLiteral(2024), DartLiteral(1), DartLiteral(1)],
-    namedArguments: {},
     // The generated `Date` has a const constructor (`date.dart`).
     isConstConstructor: true,
   );
@@ -6242,13 +6222,8 @@ class RenderEmptyObject extends RenderNewType {
   };
 
   @override
-  DartExpression? exampleValue(SchemaRenderer context) => DartInvocation(
-    type: dartType,
-    constructorName: null,
-    positionalArguments: const [],
-    namedArguments: const {},
-    isConstConstructor: true,
-  );
+  DartExpression? exampleValue(SchemaRenderer context) =>
+      DartInvocation(type: dartType, isConstConstructor: true);
 }
 
 /// A cycle-break marker: appears where a $ref would otherwise recurse back

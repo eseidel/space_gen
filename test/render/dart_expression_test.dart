@@ -4,12 +4,10 @@ import 'package:test/test.dart';
 
 /// A non-constant expression to nest as an argument: `Uri.parse` computes
 /// at runtime.
-const nonConst = DartInvocation(
+const nonConst = DartInvocation.runtime(
   type: DartType.uri,
   constructorName: 'parse',
   positionalArguments: [DartLiteral('https://example.com')],
-  namedArguments: {},
-  isConstConstructor: false,
 );
 
 void main() {
@@ -103,13 +101,11 @@ void main() {
   });
 
   group('DartMapLiteral', () {
-    test('omits type arguments when they are absent', () {
+    test('untyped omits the type arguments', () {
       expect(
-        const DartMapLiteral(
-          keyType: null,
-          valueType: null,
-          entries: [DartMapEntry(DartLiteral('key'), DartLiteral('example'))],
-        ).toString(),
+        const DartMapLiteral.untyped([
+          DartMapEntry(DartLiteral('key'), DartLiteral('example')),
+        ]).toString(),
         "{'key': 'example'}",
       );
     });
@@ -119,7 +115,6 @@ void main() {
         const DartMapLiteral(
           keyType: DartType.string,
           valueType: DartType.dynamic_,
-          entries: [],
         ).toString(),
         '<String, dynamic>{}',
       );
@@ -170,7 +165,6 @@ void main() {
         const DartMapLiteral(
           keyType: DartType.string,
           valueType: DartType.dynamic_,
-          entries: [],
         ),
       );
       // `{}` and `<String, dynamic>{}` render differently.
@@ -181,7 +175,7 @@ void main() {
           entries: entries,
         ),
         isNot(
-          const DartMapLiteral(keyType: null, valueType: null, entries: []),
+          const DartMapLiteral(keyType: null, valueType: null),
         ),
       );
     });
@@ -192,9 +186,6 @@ void main() {
       expect(
         const DartInvocation(
           type: DartType('Foo'),
-          constructorName: null,
-          positionalArguments: [],
-          namedArguments: {},
           isConstConstructor: true,
         ).toString(),
         'Foo()',
@@ -215,8 +206,6 @@ void main() {
       expect(
         const DartInvocation(
           type: DartType('Foo'),
-          constructorName: null,
-          positionalArguments: [],
           namedArguments: {'b': DartLiteral(1), 'a': DartLiteral(2)},
           isConstConstructor: true,
         ).toString(),
@@ -230,12 +219,22 @@ void main() {
       expect(
         const DartInvocation(
           type: DartType('Foo'),
-          constructorName: null,
           positionalArguments: [DartLiteral(1)],
-          namedArguments: {},
           isConstConstructor: false,
         ).isConst,
         isFalse,
+      );
+      // `.runtime` is the same fact, spelled as the category it names.
+      expect(
+        const DartInvocation.runtime(
+          type: DartType('Foo'),
+          positionalArguments: [DartLiteral(1)],
+        ),
+        const DartInvocation(
+          type: DartType('Foo'),
+          positionalArguments: [DartLiteral(1)],
+          isConstConstructor: false,
+        ),
       );
     });
 
@@ -243,9 +242,7 @@ void main() {
       expect(
         const DartInvocation(
           type: DartType('Foo'),
-          constructorName: null,
           positionalArguments: [nonConst],
-          namedArguments: {},
           isConstConstructor: true,
         ).isConst,
         isFalse,
@@ -253,8 +250,6 @@ void main() {
       expect(
         const DartInvocation(
           type: DartType('Foo'),
-          constructorName: null,
-          positionalArguments: [],
           namedArguments: {'a': nonConst},
           isConstConstructor: true,
         ).isConst,
@@ -266,7 +261,6 @@ void main() {
       expect(
         const DartInvocation(
           type: DartType('Foo'),
-          constructorName: null,
           positionalArguments: [DartLiteral(1)],
           namedArguments: {'b': DartLiteral('x')},
           isConstConstructor: true,
@@ -282,16 +276,12 @@ void main() {
       // `const Foo(...)`); see doc/dart_expression.md.
       const inner = DartInvocation(
         type: DartType('Bar'),
-        constructorName: null,
         positionalArguments: [nonConst],
-        namedArguments: {},
         isConstConstructor: true,
       );
       const outer = DartInvocation(
         type: DartType('Foo'),
-        constructorName: null,
         positionalArguments: [inner],
-        namedArguments: {},
         isConstConstructor: true,
       );
       expect(outer.isConst, isFalse);
@@ -302,17 +292,13 @@ void main() {
       expect(
         const DartInvocation(
           type: DartType('Foo'),
-          constructorName: null,
           positionalArguments: [DartLiteral(1)],
-          namedArguments: {},
           isConstConstructor: true,
         ),
         isNot(
           const DartInvocation(
             type: DartType('Foo'),
-            constructorName: null,
             positionalArguments: [DartLiteral(1)],
-            namedArguments: {},
             isConstConstructor: false,
           ),
         ),
