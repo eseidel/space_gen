@@ -3846,35 +3846,34 @@ class RenderObject extends RenderNewType {
     required SchemaRenderer context,
   }) {
     final dartName = variableSafeName(context.quirks, jsonName);
-    final hasDefaultValue = property.hasDefaultValue(context);
-    final jsonKeyIsRequired = requiredProperties.contains(jsonName);
-    final jsonIsNullable = !jsonKeyIsRequired || property.common.nullable;
     // A property pinned to a constant of a named enum (the `allOf: [{$ref: E}]`
     // + single-value `enum` idiom) renders as a fixed getter rather than a
     // constructor parameter — the value is fully determined by the class, so
-    // the caller neither passes it nor can set it wrong. It still serializes
-    // (toJson references the getter) but is absent from the constructor,
-    // `fromJson`, and equality.
+    // the caller neither passes it nor can set it wrong. It has no storage, no
+    // constructor argument, no JSON read and no part in equality, so it gets a
+    // context of its own rather than a full one with most keys discarded.
     // Matches [rendersAsConstGetter]; bound locally so flow analysis promotes
     // `property`/`constValue` for the getter expression (no cast, no `!`).
     final constValue = constProperties[jsonName];
-    final constGetter = (constValue != null && property is RenderEnum)
-        ? '${property.typeName} get $dartName => '
-              '${property.constExpression(constValue)};'
-        : null;
-    final isConstGetter = constGetter != null;
-    // A const getter returns [RenderSchema.typeName] unconditionally, so its
-    // Dart storage is never nullable no matter what the `required` list says.
-    // Deriving this from the schema's optionality instead would emit `?.` on a
-    // non-nullable receiver in `toJson` (`invalid_null_aware_operator`).
+    if (constValue != null && property is RenderEnum) {
+      return _constGetterPropertyContext(
+        jsonName: jsonName,
+        dartName: dartName,
+        property: property,
+        constValue: constValue,
+        context: context,
+      );
+    }
+    final hasDefaultValue = property.hasDefaultValue(context);
+    final jsonKeyIsRequired = requiredProperties.contains(jsonName);
+    final jsonIsNullable = !jsonKeyIsRequired || property.common.nullable;
     final dartIsNullable =
-        !isConstGetter &&
-        (propertyDartIsNullable(
-              jsonName: jsonName,
-              context: context,
-              propertyHasDefaultValue: hasDefaultValue,
-            ) ||
-            property.common.nullable);
+        propertyDartIsNullable(
+          jsonName: jsonName,
+          context: context,
+          propertyHasDefaultValue: hasDefaultValue,
+        ) ||
+        property.common.nullable;
     // OpenAPI 3.1 lets a property be both `required` and accept `null`
     // as its value (`type: [T, "null"]` + `required: [key]`). A plain
     // `json[key] as T?` cast would then accept a missing key as a null
@@ -3900,22 +3899,19 @@ class RenderObject extends RenderNewType {
       // constructor (`always_put_required_named_parameters_first`); see
       // the required/optional split in the object template context.
       'isRequired': isRequired,
-      'isConstGetter': isConstGetter,
-      'constGetter': constGetter,
+      'isConstGetter': false,
       'argumentLine': argumentLine(
         jsonName,
         property,
         context,
         isRequired: isRequired,
       ),
-      'assignmentsLine': isConstGetter
-          ? null
-          : assignmentsLine(
-              jsonName,
-              property,
-              context,
-              isRequired: isRequired,
-            ),
+      'assignmentsLine': assignmentsLine(
+        jsonName,
+        property,
+        context,
+        isRequired: isRequired,
+      ),
       'storageTypeDeclaration': propertyStorageTypeDeclaration(
         property: property,
         context: context,
@@ -3931,18 +3927,46 @@ class RenderObject extends RenderNewType {
           dartIsNullable: dartIsNullable,
         ),
       ),
-      // A const getter is absent from `fromJson` (the template skips it), so
-      // there is no read expression to build. Computing one anyway would ask
-      // for a non-nullable value from a nullable json key and throw looking
-      // for a default that a pinned constant has no need of.
-      'fromJson': isConstGetter
-          ? null
-          : property.fromJsonExpression(
-              jsonRead,
-              context,
-              dartIsNullable: dartIsNullable,
-              jsonIsNullable: jsonIsNullable,
-            ),
+      'fromJson': property.fromJsonExpression(
+        jsonRead,
+        context,
+        dartIsNullable: dartIsNullable,
+        jsonIsNullable: jsonIsNullable,
+      ),
+    };
+  }
+
+  /// Template context for a property pinned to a single enum value, which
+  /// renders as a fixed getter. Deliberately much narrower than the stored-
+  /// property context: a const getter appears only in the field declaration,
+  /// `operator[]` and `toJson`, so those are the only keys it carries. The
+  /// getter returns [RenderSchema.typeName], so it is never nullable and
+  /// `toJson` must not reach through it with `?.`.
+  Map<String, dynamic> _constGetterPropertyContext({
+    required String jsonName,
+    required String dartName,
+    required RenderEnum property,
+    required Object constValue,
+    required SchemaRenderer context,
+  }) {
+    return {
+      'dartName': dartName,
+      'jsonName': quoteString(jsonName),
+      'property_doc_comment': createDocComment(
+        common: property.common,
+        indent: 4,
+      ),
+      'isConstGetter': true,
+      'constGetter':
+          '${property.typeName} get $dartName => '
+          '${property.constExpression(constValue)};',
+      'toJson': _runtimeSource(
+        property.toJsonExpression(
+          DartIdentifier(dartName),
+          context,
+          dartIsNullable: false,
+        ),
+      ),
     };
   }
 
@@ -3967,19 +3991,25 @@ class RenderObject extends RenderNewType {
       );
     }).toList();
 
-    final assignmentsLine = buildAssignmentsLine(renderProperties);
+    // Properties with actual storage. A const getter is fully determined by
+    // the class, so it takes no constructor argument, is not read back in
+    // `fromJson`, and plays no part in equality — every site that cares about
+    // storage iterates this list rather than filtering `properties` itself.
+    final storedProperties = renderProperties
+        .where((p) => p['isConstGetter'] != true)
+        .toList();
+
+    final assignmentsLine = buildAssignmentsLine(storedProperties);
 
     final valueSchema = additionalProperties;
     final hasAdditionalProperties = valueSchema != null;
     if (renderProperties.isEmpty && !hasAdditionalProperties) {
       throw StateError('Object schema has no properties: $this');
     }
-    // Const-getter properties aren't constructor parameters or equality
-    // members, so the constructor-braces and single-property-hashCode
-    // decisions count only the "real" (non-getter) properties.
+    // The constructor-braces and single-property-hashCode decisions count
+    // only stored properties, for the same reason.
     final realPropertiesCount =
-        renderProperties.where((p) => p['isConstGetter'] != true).length +
-        (hasAdditionalProperties ? 1 : 0);
+        storedProperties.length + (hasAdditionalProperties ? 1 : 0);
     // Force named properties to be rendered if hasAdditionalProperties is true.
     final hasProperties = realPropertiesCount > 0;
     const isNullable = false;
@@ -4035,6 +4065,7 @@ class RenderObject extends RenderNewType {
       // Special case behavior hashCode with only one property.
       'hasOneProperty': realPropertiesCount == 1,
       'properties': renderProperties,
+      'storedProperties': storedProperties,
       // Constructor named params, partitioned so `required` ones come
       // first (`always_put_required_named_parameters_first`). Each
       // group keeps its spec order, so the result matches a stable sort.
@@ -4043,10 +4074,10 @@ class RenderObject extends RenderNewType {
       // `entries` param (additionalProperties) renders between the two
       // groups in the template — last among required, matching the
       // stable sort.
-      'requiredConstructorProperties': renderProperties
+      'requiredConstructorProperties': storedProperties
           .where((p) => p['isRequired'] == true)
           .toList(),
-      'optionalConstructorProperties': renderProperties
+      'optionalConstructorProperties': storedProperties
           .where((p) => p['isRequired'] != true)
           .toList(),
       'hasAdditionalProperties': hasAdditionalProperties,

@@ -2,7 +2,7 @@
 {{#parentSealedTypeName}}final {{/parentSealedTypeName}}class {{ typeName }}{{#parentSealedTypeName}} extends {{ parentSealedTypeName }}{{/parentSealedTypeName}} {
     {{{ constructor_doc_comment }}}{{#canBeConst}}const {{/canBeConst}}{{ typeName }}(
         {{#hasProperties}}
-        { {{#requiredConstructorProperties}}{{^isConstGetter}}{{{ argumentLine }}}, {{/isConstGetter}}{{/requiredConstructorProperties}}{{#hasAdditionalProperties}}required this.{{additionalPropertiesName}}, {{/hasAdditionalProperties}}{{#optionalConstructorProperties}}{{^isConstGetter}}{{{ argumentLine }}}, {{/isConstGetter}}{{/optionalConstructorProperties}} }
+        { {{#requiredConstructorProperties}}{{{ argumentLine }}}, {{/requiredConstructorProperties}}{{#hasAdditionalProperties}}required this.{{additionalPropertiesName}}, {{/hasAdditionalProperties}}{{#optionalConstructorProperties}}{{{ argumentLine }}}, {{/optionalConstructorProperties}} }
         {{/hasProperties}}
     ){{{assignmentsLine}}};
 
@@ -33,9 +33,9 @@
     {{^hasNoJsonProperty}}
         {{#hasProperties}}
         return parseFromJson('{{ typeName }}', json, () => {{ typeName }}(
-            {{#properties}}
-            {{^isConstGetter}}{{ dartName }}: {{{ fromJson }}},{{/isConstGetter}}
-            {{/properties}}
+            {{#storedProperties}}
+            {{ dartName }}: {{{ fromJson }}},
+            {{/storedProperties}}
             {{#hasAdditionalProperties}}
             {{additionalPropertiesName}}: <String, {{{ valueSchema }}}>{
                 for (final entry in json.entries)
@@ -103,18 +103,18 @@
     @override
     int get hashCode =>
         {{#hasOneProperty}}
-          {{#properties}}
-          {{^isConstGetter}}{{{ hashCode }}}.hashCode;{{/isConstGetter}}
-          {{/properties}}
+          {{#storedProperties}}
+          {{{ hashCode }}}.hashCode;
+          {{/storedProperties}}
           {{#hasAdditionalProperties}}
           mapHash({{additionalPropertiesName}});
           {{/hasAdditionalProperties}}
         {{/hasOneProperty}}
         {{^hasOneProperty}}
         Object.hashAll([
-          {{#properties}}
-          {{^isConstGetter}}{{{ hashCode }}},{{/isConstGetter}}
-          {{/properties}}
+          {{#storedProperties}}
+          {{{ hashCode }}},
+          {{/storedProperties}}
           {{#hasAdditionalProperties}}
           mapHash({{additionalPropertiesName}}),
           {{/hasAdditionalProperties}}
@@ -125,9 +125,9 @@
     bool operator ==(Object other) {
         if (identical(this, other)) return true;
         return other is {{ typeName }}
-            {{#properties}}
-            {{^isConstGetter}}&& {{ equals}}{{/isConstGetter}}
-            {{/properties}}
+            {{#storedProperties}}
+            && {{ equals}}
+            {{/storedProperties}}
             {{#hasAdditionalProperties}}
             && mapsEqual({{additionalPropertiesName}}, other.{{additionalPropertiesName}})
             {{/hasAdditionalProperties}}
