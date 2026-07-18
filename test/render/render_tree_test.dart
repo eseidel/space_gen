@@ -1493,6 +1493,173 @@ void main() {
     });
   });
 
+  group('exampleValue drops arguments equal to the property default', () {
+    // A JSON-required property that also has a default renders as an
+    // optional constructor parameter `= <default>`, so passing an example
+    // equal to that default is redundant (`avoid_redundant_argument_values`).
+    // The comparison is structural equality between two expression trees,
+    // not string equality between two rendered fragments.
+    final context = SchemaRenderer(
+      templates: TemplateProvider.defaultLocation(),
+    );
+    const common = CommonProperties.test(
+      snakeName: 'foo',
+      pointer: JsonPointer.empty(),
+    );
+
+    RenderObject objectWithStringDefault(String? defaultValue) => RenderObject(
+      common: common,
+      assignedName: 'Foo',
+      requiredProperties: const ['a'],
+      properties: {
+        'a': RenderString(
+          createsNewType: false,
+          common: common,
+          defaultValue: defaultValue,
+          maxLength: null,
+          minLength: null,
+          pattern: null,
+        ),
+      },
+    );
+
+    test('omits the argument when the default matches the example', () {
+      // `validStringExample()` synthesizes `'example'`, so this default
+      // and this example are the same expression.
+      final schema = objectWithStringDefault('example');
+      expect(schema.exampleValue(context)?.source, 'Foo()');
+    });
+
+    test('keeps the argument when the default differs', () {
+      final schema = objectWithStringDefault('other');
+      expect(schema.exampleValue(context)?.source, "Foo(a: 'example')");
+    });
+
+    test('keeps the argument when there is no default', () {
+      final schema = objectWithStringDefault(null);
+      expect(schema.exampleValue(context)?.source, "Foo(a: 'example')");
+    });
+  });
+
+  group('default value const-ness', () {
+    final context = SchemaRenderer(
+      templates: TemplateProvider.defaultLocation(),
+    );
+    const common = CommonProperties.test(
+      snakeName: 'wait_timer',
+      pointer: JsonPointer.empty(),
+    );
+
+    test('a non-validating numeric newtype default is constant', () {
+      const schema = RenderInteger(
+        createsNewType: true,
+        common: common,
+        defaultValue: 30,
+        maximum: null,
+        minimum: null,
+        exclusiveMaximum: null,
+        exclusiveMinimum: null,
+        multipleOf: null,
+        assignedName: 'WaitTimer',
+      );
+      expect(schema.defaultValueExpression(context)?.source, 'WaitTimer(30)');
+      expect(schema.defaultValueExpression(context)?.isConst, isTrue);
+      expect(schema.hasNonConstDefaultValue(context), isFalse);
+    });
+
+    test('names the newtype from its assigned name, not its snake name', () {
+      // `camelFromSnake('wait_timer')` would also produce `WaitTimer`, so
+      // the assigned name is deliberately different here — otherwise this
+      // could not tell the two spellings apart.
+      const schema = RenderInteger(
+        createsNewType: true,
+        common: common,
+        defaultValue: 30,
+        maximum: null,
+        minimum: null,
+        exclusiveMaximum: null,
+        exclusiveMinimum: null,
+        multipleOf: null,
+        assignedName: 'Delay',
+      );
+      expect(schema.defaultValueExpression(context)?.source, 'Delay(30)');
+    });
+
+    test('a validating numeric newtype default is not constant', () {
+      // The generated constructor has a validating body
+      // (`validateMinimum`), so it cannot be declared `const`. Emitting
+      // `const WaitTimer(30)` against it would not compile. No spec in the
+      // rotation reaches this today, which is why it needs a unit test.
+      const schema = RenderInteger(
+        createsNewType: true,
+        common: common,
+        defaultValue: 30,
+        maximum: null,
+        minimum: 1,
+        exclusiveMaximum: null,
+        exclusiveMinimum: null,
+        multipleOf: null,
+        assignedName: 'WaitTimer',
+      );
+      expect(schema.validationCalls, isNotEmpty);
+      expect(schema.defaultValueExpression(context)?.source, 'WaitTimer(30)');
+      expect(schema.defaultValueExpression(context)?.isConst, isFalse);
+      expect(schema.hasNonConstDefaultValue(context), isTrue);
+    });
+
+    test('no default value is not a non-const default', () {
+      const schema = RenderInteger(
+        createsNewType: false,
+        common: common,
+        defaultValue: null,
+        maximum: null,
+        minimum: 1,
+        exclusiveMaximum: null,
+        exclusiveMinimum: null,
+        multipleOf: null,
+      );
+      expect(schema.defaultValueExpression(context), isNull);
+      expect(schema.hasNonConstDefaultValue(context), isFalse);
+    });
+
+    test('a list default is constant when its elements are', () {
+      const schema = RenderArray(
+        common: common,
+        items: RenderString(
+          createsNewType: false,
+          common: common,
+          defaultValue: null,
+          maxLength: null,
+          minLength: null,
+          pattern: null,
+        ),
+        defaultValue: ['push'],
+      );
+      expect(schema.defaultValueExpression(context)?.isConst, isTrue);
+      expect(schema.hasNonConstDefaultValue(context), isFalse);
+      // The `??` destination evaluates at runtime, so the keyword is
+      // written there and not in a parameter default.
+      expect(
+        schema.defaultValueExpression(context)?.runtimeSource,
+        "const <String>['push']",
+      );
+    });
+
+    test('a DateTime default is never constant', () {
+      const schema = RenderPod(
+        common: common,
+        type: PodType.dateTime,
+        createsNewType: false,
+        defaultValue: '2024-01-01',
+      );
+      expect(
+        schema.defaultValueExpression(context)?.source,
+        "DateTime.parse('2024-01-01')",
+      );
+      expect(schema.hasNonConstDefaultValue(context), isTrue);
+    });
+  });
+
   group('exampleValue const-ness', () {
     final context = SchemaRenderer(
       templates: TemplateProvider.defaultLocation(),
