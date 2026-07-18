@@ -973,11 +973,23 @@ void main() {
       final templates = TemplateProvider.defaultLocation();
       final context = SchemaRenderer(templates: templates);
       expect(
-        ref.toJsonExpression('foo', context, dartIsNullable: false),
+        ref
+            .toJsonExpression(
+              const DartIdentifier('foo'),
+              context,
+              dartIsNullable: false,
+            )
+            .source,
         'foo.toJson()',
       );
       expect(
-        ref.toJsonExpression('foo', context, dartIsNullable: true),
+        ref
+            .toJsonExpression(
+              const DartIdentifier('foo'),
+              context,
+              dartIsNullable: true,
+            )
+            .source,
         'foo?.toJson()',
       );
     });
@@ -1924,11 +1936,23 @@ void main() {
 
     test('toJson delegates to Date.toJson', () {
       expect(
-        date.toJsonExpression('d', context, dartIsNullable: false),
+        date
+            .toJsonExpression(
+              const DartIdentifier('d'),
+              context,
+              dartIsNullable: false,
+            )
+            .source,
         'd.toJson()',
       );
       expect(
-        date.toJsonExpression('d', context, dartIsNullable: true),
+        date
+            .toJsonExpression(
+              const DartIdentifier('d'),
+              context,
+              dartIsNullable: true,
+            )
+            .source,
         'd?.toJson()',
       );
     });
@@ -2003,39 +2027,57 @@ void main() {
     test('toJsonExpression delegates to .toJson() when a newtype', () {
       final schema = pod(PodType.dateTime, createsNewType: true);
       expect(
-        schema.toJsonExpression('x', context, dartIsNullable: false),
+        schema
+            .toJsonExpression(
+              const DartIdentifier('x'),
+              context,
+              dartIsNullable: false,
+            )
+            .source,
         'x.toJson()',
       );
       expect(
-        schema.toJsonExpression('x', context, dartIsNullable: true),
+        schema
+            .toJsonExpression(
+              const DartIdentifier('x'),
+              context,
+              dartIsNullable: true,
+            )
+            .source,
         'x?.toJson()',
       );
     });
 
     test('toJsonExpression is inline for pod types when not a newtype', () {
       expect(
-        pod(PodType.dateTime).toJsonExpression(
-          'x',
-          context,
-          dartIsNullable: false,
-        ),
+        pod(PodType.dateTime)
+            .toJsonExpression(
+              const DartIdentifier('x'),
+              context,
+              dartIsNullable: false,
+            )
+            .source,
         'x.toIso8601String()',
       );
       // email and uuid are Strings; no conversion, just pass dartName.
       expect(
-        pod(PodType.email).toJsonExpression(
-          'x',
-          context,
-          dartIsNullable: true,
-        ),
+        pod(PodType.email)
+            .toJsonExpression(
+              const DartIdentifier('x'),
+              context,
+              dartIsNullable: true,
+            )
+            .source,
         'x',
       );
       expect(
-        pod(PodType.uuid).toJsonExpression(
-          'x',
-          context,
-          dartIsNullable: true,
-        ),
+        pod(PodType.uuid)
+            .toJsonExpression(
+              const DartIdentifier('x'),
+              context,
+              dartIsNullable: true,
+            )
+            .source,
         'x',
       );
     });

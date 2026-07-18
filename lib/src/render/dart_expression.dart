@@ -88,6 +88,22 @@ class DartExpressionSerializer extends Equatable {
       DartLiteral(:final value) =>
         value is String ? quoteString(value) : '$value',
       DartStaticMember(:final type, :final name) => '$type.$name',
+      DartIdentifier(:final name) => name,
+      // A call and a closure both evaluate at runtime, so neither can
+      // carry the keyword; their children serialize in whatever context
+      // reaches them.
+      DartMethodCall(
+        :final target,
+        :final name,
+        :final arguments,
+        :final isNullAware,
+      ) =>
+        '${children.serialize(target)}${isNullAware ? '?.' : '.'}$name'
+            '(${arguments.map(children.serialize).join(', ')})',
+      DartPropertyAccess(:final target, :final name, :final isNullAware) =>
+        '${children.serialize(target)}${isNullAware ? '?.' : '.'}$name',
+      DartLambda(:final parameters, :final body) =>
+        '(${parameters.join(', ')}) => ${children.serialize(body)}',
       DartListLiteral(:final elementType, :final elements) => _maybeConst(
         expression,
         '${elementType == null ? '' : '<$elementType>'}'
@@ -277,6 +293,104 @@ class DartMapLiteral extends DartExpression {
 
   @override
   List<Object?> get props => [keyType, valueType, entries];
+}
+
+/// A bare identifier: a parameter, local, or field name (`json`, `e`,
+/// `value`).
+///
+/// Modeled rather than spliced as text so consumers can ask what an
+/// expression *is* instead of matching `^[a-zA-Z_$][\w$]*$` against
+/// rendered source.
+class DartIdentifier extends DartExpression {
+  const DartIdentifier(this.name);
+
+  final String name;
+
+  /// A reference to a variable is not a constant expression, even when the
+  /// variable happens to hold one.
+  @override
+  bool get isConst => false;
+
+  @override
+  List<Object?> get props => [name];
+}
+
+/// A method call on a target: `value.toJson()`, `items?.map(f).toList()`.
+///
+/// Chains by nesting — the target of one call is another call — so
+/// `x.map(f).toList()` needs no special support.
+class DartMethodCall extends DartExpression {
+  const DartMethodCall({
+    required this.target,
+    required this.name,
+    this.arguments = const [],
+    this.isNullAware = false,
+  });
+
+  /// The receiver the method is called on.
+  final DartExpression target;
+
+  final String name;
+
+  final List<DartExpression> arguments;
+
+  /// Whether to call through `?.` rather than `.`, so a null target short
+  /// circuits to null instead of throwing.
+  final bool isNullAware;
+
+  /// A method call runs at runtime; no invocation of one is constant.
+  @override
+  bool get isConst => false;
+
+  @override
+  List<Object?> get props => [target, name, arguments, isNullAware];
+}
+
+/// A property access: `entry.value`, `response.body`.
+///
+/// Distinct from [DartMethodCall] because it emits no parentheses, and
+/// from [DartStaticMember] because the target is an expression rather than
+/// a type.
+class DartPropertyAccess extends DartExpression {
+  const DartPropertyAccess({
+    required this.target,
+    required this.name,
+    this.isNullAware = false,
+  });
+
+  final DartExpression target;
+
+  final String name;
+
+  /// Whether to read through `?.` rather than `.`.
+  final bool isNullAware;
+
+  /// Reading a property runs at runtime; the result is not a constant.
+  @override
+  bool get isConst => false;
+
+  @override
+  List<Object?> get props => [target, name, isNullAware];
+}
+
+/// An expression-bodied lambda: `(e) => e.toJson()`.
+///
+/// Only the arrow form is modeled, which is all the generator emits.
+class DartLambda extends DartExpression {
+  const DartLambda({required this.parameters, required this.body});
+
+  /// Parameter names, in order. Untyped — the generator relies on
+  /// inference at every site that emits one.
+  final List<String> parameters;
+
+  final DartExpression body;
+
+  /// A closure is never a constant expression.
+  @override
+  bool get isConst => false;
+
+  @override
+  List<Object?> get props => [parameters, body];
 }
 
 /// A constructor invocation or static method call: `Foo(1)`,

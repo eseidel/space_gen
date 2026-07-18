@@ -19,16 +19,16 @@ import 'package:space_gen/src/types.dart';
 /// A Dart expression that is a single bare identifier — no member
 /// access, call, or operator — so it can be interpolated without braces
 /// (`'$x'` rather than `'${x}'`).
-final _bareIdentifier = RegExp(r'^[a-zA-Z_$][\w$]*$');
-
 /// Coerces [expr] — the wire value of [schema] — to a `String`, adding
 /// `.toString()` only when the value isn't already one. Query/header
 /// params must hand `String`s to the client; calling `.toString()` on a
 /// value that is already a `String` (raw strings, dateTime/date/uri
 /// pods that serialize to `String`, string enums) is a
 /// `noop_primitive_operations` lint.
-String _stringifyWireValue(RenderSchema schema, String expr) =>
-    schema.jsonStorageDartType == DartType.string ? expr : '$expr.toString()';
+DartExpression _stringifyWireValue(RenderSchema schema, DartExpression expr) =>
+    schema.jsonStorageDartType == DartType.string
+    ? expr
+    : DartMethodCall(target: expr, name: 'toString');
 
 String avoidReservedWord(String value) {
   if (isReservedWord(value)) {
@@ -1245,8 +1245,13 @@ class Endpoint implements ToTemplateContext {
   /// (`unnecessary_brace_in_string_interps`).
   String _pathReplacement(RenderParameter p, SchemaRenderer context) {
     final expr = p.toJsonExpression(context);
-    if (p.type.jsonStorageDartType == DartType.string) return expr;
-    return _bareIdentifier.hasMatch(expr) ? "'\$$expr'" : "'\${$expr}'";
+    final source = _runtimeSource(expr);
+    if (p.type.jsonStorageDartType == DartType.string) return source;
+    // Braces are only needed when the expression is more than a bare
+    // identifier (`unnecessary_brace_in_string_interps`). That is a
+    // question about the expression's shape, which the tree answers
+    // directly — it used to be a regex over the rendered text.
+    return expr is DartIdentifier ? "'\$$source'" : "'\${$source}'";
   }
 
   List<String> _queryParamsLines(
@@ -1283,12 +1288,12 @@ class Endpoint implements ToTemplateContext {
     final String value;
     if (paramType is RenderArray) {
       final itemsToJson = paramType.items.toJsonExpression(
-        'e',
+        const DartIdentifier('e'),
         context,
         dartIsNullable: false,
       );
       final item = _stringifyWireValue(paramType.items, itemsToJson);
-      final items = '$dartName.map((e) => $item)';
+      final items = '$dartName.map((e) => ${_runtimeSource(item)})';
       // `explode: false` (style=form) comma-joins the array into a single
       // value (`?k=a,b,c`) rather than repeating the key. Wrap the joined
       // string in a 1-element list so it flows through the same
@@ -1296,11 +1301,12 @@ class Endpoint implements ToTemplateContext {
       value = p.explode ? '$items.toList()' : "[$items.join(',')]";
     } else {
       final scalarToJson = paramType.toJsonExpression(
-        dartName,
+        DartIdentifier(dartName),
         context,
         dartIsNullable: false,
       );
-      value = '[${_stringifyWireValue(paramType, scalarToJson)}]';
+      final stringified = _stringifyWireValue(paramType, scalarToJson);
+      value = '[${_runtimeSource(stringified)}]';
     }
     if (p.isNullable) {
       return "${innerIndent}if ($dartName != null) '${p.name}': $value,";
@@ -1352,17 +1358,18 @@ class Endpoint implements ToTemplateContext {
     if (paramType is RenderArray) {
       final dartName = p.dartParameterName(context.quirks);
       final itemsToJson = paramType.items.toJsonExpression(
-        'e',
+        const DartIdentifier('e'),
         context,
         dartIsNullable: false,
       );
       final item = _stringifyWireValue(paramType.items, itemsToJson);
-      final mapCall = ".map((e) => $item).join(',')";
+      final mapCall = ".map((e) => ${_runtimeSource(item)}).join(',')";
       final value = p.isNullable ? '?$dartName?$mapCall' : '$dartName$mapCall';
       return "$innerIndent'${p.name}': $value,";
     }
     final prefix = p.isNullable ? '?' : '';
-    return "$innerIndent'${p.name}': $prefix${p.toJsonExpression(context)},";
+    final scalar = _runtimeSource(p.toJsonExpression(context));
+    return "$innerIndent'${p.name}': $prefix$scalar,";
   }
 
   List<String> _authRequestLines(String indent) {
@@ -2001,7 +2008,9 @@ Map<String, dynamic> _requestBodyParameterContext(
     'dartName': body.dartParameterName(context.quirks),
     'required': body.isRequired,
     'hasDefaultValue': body.schema.defaultValue != null,
-    'defaultValue': _runtimeSource(body.schema.defaultValueExpression(context)),
+    'defaultValue': _maybeRuntimeSource(
+      body.schema.defaultValueExpression(context),
+    ),
     'type': body.schema.typeName,
     'nullableType': body.schema.nullableTypeName(context),
   };
@@ -2018,10 +2027,12 @@ class RenderRequestBodyJson extends RenderRequestBodySimple {
   String get bodyContentTypeExpression => 'BodyContentType.json';
 
   @override
-  String bodyExpression(SchemaRenderer context) => schema.toJsonExpression(
-    dartParameterName(context.quirks),
-    context,
-    dartIsNullable: !isRequired,
+  String bodyExpression(SchemaRenderer context) => _runtimeSource(
+    schema.toJsonExpression(
+      DartIdentifier(dartParameterName(context.quirks)),
+      context,
+      dartIsNullable: !isRequired,
+    ),
   );
 
   @override
@@ -2184,12 +2195,20 @@ class RenderRequestBodyMultipart extends RenderRequestBody {
             // Dart types → identity). `.toString()` coerces non-String
             // json types (int, bool, enum with int values) to satisfy
             // Map<String, String>.
-            requiredValueExpr: _multipartValueExpr(
-              property,
-              dartAccess,
-              context,
+            requiredValueExpr: _runtimeSource(
+              _multipartValueExpr(
+                property,
+                DartIdentifier(dartAccess),
+                context,
+              ),
             ),
-            nullableValueExpr: _multipartValueExpr(property, 'v', context),
+            nullableValueExpr: _runtimeSource(
+              _multipartValueExpr(
+                property,
+                const DartIdentifier('v'),
+                context,
+              ),
+            ),
           ),
         );
       } else {
@@ -2208,9 +2227,9 @@ class RenderRequestBodyMultipart extends RenderRequestBody {
       _requestBodyParameterContext(this, context);
 }
 
-String _multipartValueExpr(
+DartExpression _multipartValueExpr(
   RenderSchema property,
-  String base,
+  DartExpression base,
   SchemaRenderer context,
 ) {
   final jsonExpr = property.toJsonExpression(
@@ -2218,8 +2237,10 @@ String _multipartValueExpr(
     context,
     dartIsNullable: false,
   );
-  final jsonType = property.jsonStorageType(isNullable: false);
-  return jsonType == 'String' ? jsonExpr : '$jsonExpr.toString()';
+  // Was `jsonStorageType(isNullable: false) == 'String'` — the same
+  // question [_stringifyWireValue] already answers from [DartType],
+  // spelled as a comparison against rendered text.
+  return _stringifyWireValue(property, jsonExpr);
 }
 
 bool _isMultipartScalar(RenderSchema schema) {
@@ -2518,8 +2539,10 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
       (isNullable ? jsonStorageDartType.asNullable() : jsonStorageDartType)
           .toString();
 
-  String toJsonExpression(
-    String dartName,
+  /// The expression that converts [dartName] (a value of this schema's
+  /// Dart type) into its JSON wire form.
+  DartExpression toJsonExpression(
+    DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
   });
@@ -2625,9 +2648,12 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 /// Source for an expression landing somewhere that evaluates at runtime —
 /// a `??` right-hand side, or a parameter default, where a `const` keyword
 /// turns an allocation into a compile-time constant.
-String? _runtimeSource(DartExpression? expression) => expression == null
-    ? null
-    : DartExpressionSerializer.runtimeContext.serialize(expression);
+String _runtimeSource(DartExpression expression) =>
+    DartExpressionSerializer.runtimeContext.serialize(expression);
+
+/// [_runtimeSource] for an expression that may be absent.
+String? _maybeRuntimeSource(DartExpression? expression) =>
+    expression == null ? null : _runtimeSource(expression);
 
 /// `DateTime.utc(2024)`.
 DartExpression _dateTimeUtc(int year) =>
@@ -2761,12 +2787,15 @@ class RenderPod extends RenderSchema {
 
   /// Converts `value` (of type [dartTypeName]) to its JSON representation.
   /// Used both at the inline use site and inside the newtype's toJson.
-  String _valueToJsonBody(String name, {required bool nameIsNullable}) {
-    final nameCall = nameIsNullable ? '$name?' : name;
+  DartExpression _valueToJsonBody(
+    DartExpression name, {
+    required bool nameIsNullable,
+  }) {
+    DartExpression call(String method) =>
+        DartMethodCall(target: name, name: method, isNullAware: nameIsNullable);
     return switch (type) {
-      PodType.dateTime => '$nameCall.toIso8601String()',
-      PodType.uri => '$nameCall.toString()',
-      PodType.uriTemplate => '$nameCall.toString()',
+      PodType.dateTime => call('toIso8601String'),
+      PodType.uri || PodType.uriTemplate => call('toString'),
       // String- and bool-backed types: no conversion; `name` already
       // has the correct nullable/non-nullable type.
       PodType.email || PodType.uuid || PodType.boolean => name,
@@ -2784,13 +2813,17 @@ class RenderPod extends RenderSchema {
   };
 
   @override
-  String toJsonExpression(
-    String dartName,
+  DartExpression toJsonExpression(
+    DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) {
     if (createsNewType) {
-      return dartIsNullable ? '$dartName?.toJson()' : '$dartName.toJson()';
+      return DartMethodCall(
+        target: dartName,
+        name: 'toJson',
+        isNullAware: dartIsNullable,
+      );
     }
     return _valueToJsonBody(dartName, nameIsNullable: dartIsNullable);
   }
@@ -2855,7 +2888,9 @@ class RenderPod extends RenderSchema {
       'dartType': dartTypeName,
       'jsonType': jsonStorageType(isNullable: false),
       'fromJsonBody': _jsonToValueBody('json'),
-      'toJsonBody': _valueToJsonBody('value', nameIsNullable: false),
+      'toJsonBody': _runtimeSource(
+        _valueToJsonBody(const DartIdentifier('value'), nameIsNullable: false),
+      ),
       // Bool newtypes wrap a single positional `bool` in three places
       // (the extension-type representation, `fromJson`, `maybeFromJson`)
       // that all trip `avoid_positional_boolean_parameters`. The lint
@@ -2927,13 +2962,16 @@ abstract class RenderNewType extends RenderSchema {
   DartType get dartType => DartType(className);
 
   @override
-  String toJsonExpression(
-    String dartName,
+  DartExpression toJsonExpression(
+    DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) {
-    final nameCall = dartIsNullable ? '$dartName?' : dartName;
-    return '$nameCall.toJson()';
+    return DartMethodCall(
+      target: dartName,
+      name: 'toJson',
+      isNullAware: dartIsNullable,
+    );
   }
 }
 
@@ -3053,13 +3091,17 @@ class RenderString extends RenderSchema {
   }
 
   @override
-  String toJsonExpression(
-    String dartName,
+  DartExpression toJsonExpression(
+    DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) {
     if (createsNewType) {
-      return dartIsNullable ? '$dartName?.toJson()' : '$dartName.toJson()';
+      return DartMethodCall(
+        target: dartName,
+        name: 'toJson',
+        isNullAware: dartIsNullable,
+      );
     }
     return dartName;
   }
@@ -3317,13 +3359,17 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
   }
 
   @override
-  String toJsonExpression(
-    String dartName,
+  DartExpression toJsonExpression(
+    DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) {
     if (createsNewType) {
-      return dartIsNullable ? '$dartName?.toJson()' : '$dartName.toJson()';
+      return DartMethodCall(
+        target: dartName,
+        name: 'toJson',
+        isNullAware: dartIsNullable,
+      );
     }
     return dartName;
   }
@@ -3589,7 +3635,7 @@ class RenderObject extends RenderNewType {
       line.write('this.$dartName');
       if (property.hasDefaultValue(context)) {
         final value = property.defaultValueExpression(context);
-        line.write(' = ${_runtimeSource(value)}');
+        line.write(' = ${_maybeRuntimeSource(value)}');
       }
     }
     return line.toString();
@@ -3605,7 +3651,8 @@ class RenderObject extends RenderNewType {
     final dartName = variableSafeName(context.quirks, jsonName);
     if (property.hasNonConstDefaultValue(context)) {
       final value = property.defaultValueExpression(context);
-      return 'this.$dartName = $dartName ?? ${_runtimeSource(value)}';
+      final source = _maybeRuntimeSource(value);
+      return 'this.$dartName = $dartName ?? $source';
     }
     return null;
   }
@@ -3714,10 +3761,12 @@ class RenderObject extends RenderNewType {
       ),
       'equals': property.equalsExpression(dartName, context),
       'hashCode': property.hashCodeExpression(dartName),
-      'toJson': property.toJsonExpression(
-        dartName,
-        context,
-        dartIsNullable: dartIsNullable,
+      'toJson': _runtimeSource(
+        property.toJsonExpression(
+          DartIdentifier(dartName),
+          context,
+          dartIsNullable: dartIsNullable,
+        ),
       ),
       'fromJson': property.fromJsonExpression(
         jsonRead,
@@ -3851,10 +3900,15 @@ class RenderObject extends RenderNewType {
       // `entry.value`). The for-loop filters out keys that belong to
       // the named properties so a round-trip doesn't accidentally
       // sweep them into `entries`.
-      'entryValueToJson': valueSchema?.toJsonExpression(
-        'entry.value',
-        context,
-        dartIsNullable: isNullable,
+      'entryValueToJson': _maybeRuntimeSource(
+        valueSchema?.toJsonExpression(
+          const DartPropertyAccess(
+            target: DartIdentifier('entry'),
+            name: 'value',
+          ),
+          context,
+          dartIsNullable: isNullable,
+        ),
       ),
       'entryValueFromJson': valueSchema?.fromJsonExpression(
         'entry.value',
@@ -4110,11 +4164,11 @@ class RenderArray extends RenderSchema {
     final String toJson;
     if (items.shouldCallToJson) {
       final itemTo = items.toJsonExpression(
-        'e',
+        const DartIdentifier('e'),
         context,
         dartIsNullable: false,
       );
-      toJson = 'value.map((e) => $itemTo).toList()';
+      toJson = 'value.map((e) => ${_runtimeSource(itemTo)}).toList()';
     } else {
       toJson = 'value';
     }
@@ -4157,8 +4211,8 @@ class RenderArray extends RenderSchema {
   DartType get jsonStorageDartType => DartType.list();
 
   @override
-  String toJsonExpression(
-    String dartName,
+  DartExpression toJsonExpression(
+    DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) {
@@ -4166,13 +4220,22 @@ class RenderArray extends RenderSchema {
     if (!items.shouldCallToJson) {
       return dartName;
     }
-    final nameCall = dartIsNullable ? '$dartName?' : dartName;
     final itemsToJson = items.toJsonExpression(
-      'e',
+      const DartIdentifier('e'),
       context,
       dartIsNullable: false,
     );
-    return '$nameCall.map((e) => $itemsToJson).toList()';
+    return DartMethodCall(
+      target: DartMethodCall(
+        target: dartName,
+        name: 'map',
+        arguments: [
+          DartLambda(parameters: const ['e'], body: itemsToJson),
+        ],
+        isNullAware: dartIsNullable,
+      ),
+      name: 'toList',
+    );
   }
 
   @override
@@ -4301,7 +4364,7 @@ class RenderMap extends RenderSchema {
     );
     final keyToJson = keyEnum == null ? 'k' : 'k.toJson()';
     final valueToJson = value.toJsonExpression(
-      'val',
+      const DartIdentifier('val'),
       context,
       dartIsNullable: false,
     );
@@ -4333,8 +4396,8 @@ class RenderMap extends RenderSchema {
   DartType get jsonStorageDartType => _jsonWireMap;
 
   @override
-  String toJsonExpression(
-    String dartName,
+  DartExpression toJsonExpression(
+    DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) {
@@ -4342,15 +4405,26 @@ class RenderMap extends RenderSchema {
     if (keySchema == null && !valueSchema.shouldCallToJson) {
       return dartName;
     }
-    final keyToJson = keySchema == null ? 'key' : 'key.toJson()';
+    const key = DartIdentifier('key');
+    final keyToJson = keySchema == null
+        ? key
+        : const DartMethodCall(target: key, name: 'toJson');
     final valueToJson = valueSchema.toJsonExpression(
-      'value',
+      const DartIdentifier('value'),
       context,
       dartIsNullable: false,
     );
-    final callMap = dartIsNullable ? '?.map' : '.map';
-    return '$dartName$callMap((key, value) => '
-        'MapEntry($keyToJson, $valueToJson))';
+    return DartMethodCall(
+      target: dartName,
+      name: 'map',
+      arguments: [
+        DartLambda(
+          parameters: const ['key', 'value'],
+          body: const DartType('MapEntry').construct([keyToJson, valueToJson]),
+        ),
+      ],
+      isNullAware: dartIsNullable,
+    );
   }
 
   @override
@@ -5800,9 +5874,9 @@ class RenderParameter implements CanBeParameter {
   /// The Dart expression that serializes this parameter's value. Wraps
   /// [RenderSchema.toJsonExpression] with the right [dartParameterName]
   /// and nullability for this parameter.
-  String toJsonExpression(SchemaRenderer context) {
+  DartExpression toJsonExpression(SchemaRenderer context) {
     return type.toJsonExpression(
-      dartParameterName(context.quirks),
+      DartIdentifier(dartParameterName(context.quirks)),
       context,
       dartIsNullable: isNullable,
     );
@@ -5821,7 +5895,7 @@ class RenderParameter implements CanBeParameter {
     'dartName': dartParameterName(context.quirks),
     'required': isRequired,
     'hasDefaultValue': type.defaultValue != null,
-    'defaultValue': _runtimeSource(type.defaultValueExpression(context)),
+    'defaultValue': _maybeRuntimeSource(type.defaultValueExpression(context)),
     'type': type.typeName,
     'nullableType': type.nullableTypeName(context),
   };
@@ -5846,8 +5920,8 @@ class RenderUnknown extends RenderSchema {
   // We might need to jsonDecode(jsonEncode(dartName)) to get everything into
   // json types.
   @override
-  String toJsonExpression(
-    String dartName,
+  DartExpression toJsonExpression(
+    DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) => dartName;
@@ -5917,11 +5991,11 @@ abstract class RenderNoJson extends RenderSchema {
       'throw UnimplementedError("$runtimeType.jsonStorageType")';
 
   @override
-  String toJsonExpression(
-    String dartName,
+  DartExpression toJsonExpression(
+    DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
-  }) => 'throw UnimplementedError("$runtimeType.toJson")';
+  }) => DartIdentifier('throw UnimplementedError("$runtimeType.toJson")');
 
   @override
   String fromJsonExpression(
@@ -6020,17 +6094,25 @@ class RenderBase64Bytes extends RenderSchema {
   }
 
   @override
-  String toJsonExpression(
-    String dartName,
+  DartExpression toJsonExpression(
+    DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) {
     if (dartIsNullable) {
       // Same reasoning as `fromJsonExpression`: nullable `Uint8List`
       // doesn't promote in a ternary at a property access site.
-      return '${ModelHelpers.maybeBase64Encode}($dartName)';
+      return DartInvocation(
+        type: const DartType(ModelHelpers.maybeBase64Encode),
+        arguments: [dartName],
+        isConstConstructor: false,
+      );
     }
-    return 'base64.encode($dartName)';
+    return DartMethodCall(
+      target: const DartIdentifier('base64'),
+      name: 'encode',
+      arguments: [dartName],
+    );
   }
 
   @override
@@ -6098,11 +6180,15 @@ class RenderDate extends RenderSchema {
   }
 
   @override
-  String toJsonExpression(
-    String dartName,
+  DartExpression toJsonExpression(
+    DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
-  }) => dartIsNullable ? '$dartName?.toJson()' : '$dartName.toJson()';
+  }) => DartMethodCall(
+    target: dartName,
+    name: 'toJson',
+    isNullAware: dartIsNullable,
+  );
 
   @override
   DartExpression? exampleValue(SchemaRenderer context) =>
@@ -6155,11 +6241,15 @@ class RenderEmptyObject extends RenderNewType {
   DartType get jsonStorageDartType => _jsonWireMap;
 
   @override
-  String toJsonExpression(
-    String dartName,
+  DartExpression toJsonExpression(
+    DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
-  }) => dartIsNullable ? '$dartName?.toJson()' : '$dartName.toJson()';
+  }) => DartMethodCall(
+    target: dartName,
+    name: 'toJson',
+    isNullAware: dartIsNullable,
+  );
 
   @override
   String fromJsonExpression(
@@ -6227,13 +6317,16 @@ class RenderRecursiveRef extends RenderSchema {
   DartType get jsonStorageDartType => _jsonWireMap;
 
   @override
-  String toJsonExpression(
-    String dartName,
+  DartExpression toJsonExpression(
+    DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) {
-    final nameCall = dartIsNullable ? '$dartName?' : dartName;
-    return '$nameCall.toJson()';
+    return DartMethodCall(
+      target: dartName,
+      name: 'toJson',
+      isNullAware: dartIsNullable,
+    );
   }
 
   @override
