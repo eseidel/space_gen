@@ -297,30 +297,25 @@ void main() {
 
   group('DartTypeExpressions', () {
     test('construct is never constant', () {
-      final parse = DartType.uri.construct(
-        name: 'parse',
-        arguments: const [DartLiteral('https://example.com')],
-      );
+      final parse = DartType.uri.construct(const [
+        DartLiteral('https://example.com'),
+      ], name: 'parse');
       expect(parse.toString(), "Uri.parse('https://example.com')");
       expect(parse.isConst, isFalse);
     });
 
     test('constConstruct is constant when its arguments are', () {
       expect(
-        const DartType('Foo').constConstruct(),
+        const DartType('Foo').constConstruct(const []),
         const DartInvocation(type: DartType('Foo'), isConstConstructor: true),
       );
       expect(
-        const DartType(
-          'Foo',
-        ).constConstruct(arguments: const [DartLiteral(1)]).isConst,
+        const DartType('Foo').constConstruct(const [DartLiteral(1)]).isConst,
         isTrue,
       );
       // ...and not when they aren't: the whole point of the derivation.
       expect(
-        const DartType(
-          'Foo',
-        ).constConstruct(arguments: const [nonConst]).isConst,
+        const DartType('Foo').constConstruct(const [nonConst]).isConst,
         isFalse,
       );
     });

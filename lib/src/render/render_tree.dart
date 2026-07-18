@@ -2622,27 +2622,24 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 
 /// `DateTime.utc(2024)`.
 DartExpression _dateTimeUtc(int year) =>
-    DartType.dateTime.construct(name: 'utc', arguments: [DartLiteral(year)]);
+    DartType.dateTime.construct([DartLiteral(year)], name: 'utc');
 
 /// `Uri.parse('...')`.
 DartExpression _uriParse(String uri) =>
-    DartType.uri.construct(name: 'parse', arguments: [DartLiteral(uri)]);
+    DartType.uri.construct([DartLiteral(uri)], name: 'parse');
 
 /// `UriTemplate('...')`.
 DartExpression _uriTemplate(String template) =>
-    DartType.uriTemplate.construct(arguments: [DartLiteral(template)]);
+    DartType.uriTemplate.construct([DartLiteral(template)]);
 
 /// `Uint8List.fromList(<int>[...])`.
 DartExpression _uint8ListFromList(List<int> bytes) =>
-    DartType.uint8List.construct(
-      name: 'fromList',
-      arguments: [
-        DartListLiteral(
-          elementType: DartType.int_,
-          elements: bytes.map(DartLiteral.new).toList(),
-        ),
-      ],
-    );
+    DartType.uint8List.construct([
+      DartListLiteral(
+        elementType: DartType.int_,
+        elements: bytes.map(DartLiteral.new).toList(),
+      ),
+    ], name: 'fromList');
 
 class RenderPod extends RenderSchema {
   const RenderPod({
@@ -2894,7 +2891,7 @@ class RenderPod extends RenderSchema {
     if (!createsNewType) return raw;
     // A pod newtype's constructor is unconditionally `const`
     // (`schema_pod_newtype.mustache`), so wrapping preserves const-ness.
-    return dartType.constConstruct(arguments: [raw]);
+    return dartType.constConstruct([raw]);
   }
 
   /// Only dateTime pods parse through `DateTime.parse`, which rejects garbage
@@ -6151,9 +6148,11 @@ class RenderDate extends RenderSchema {
   @override
   DartExpression? exampleValue(SchemaRenderer context) =>
       // The generated `Date` has a const constructor (`date.dart`).
-      const DartType('Date').constConstruct(
-        arguments: const [DartLiteral(2024), DartLiteral(1), DartLiteral(1)],
-      );
+      const DartType('Date').constConstruct(const [
+        DartLiteral(2024),
+        DartLiteral(1),
+        DartLiteral(1),
+      ]);
 
   // `Date.fromJson` parses through `DateTime.parse`, which rejects garbage
   // with a FormatException — so the round-trip test has a guaranteed-invalid
@@ -6228,7 +6227,7 @@ class RenderEmptyObject extends RenderNewType {
 
   @override
   DartExpression? exampleValue(SchemaRenderer context) =>
-      dartType.constConstruct();
+      dartType.constConstruct(const []);
 }
 
 /// A cycle-break marker: appears where a $ref would otherwise recurse back

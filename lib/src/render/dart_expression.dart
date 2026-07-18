@@ -61,15 +61,13 @@ extension DartTypeExpressions on DartType {
   /// directions are not symmetric: reaching for this when
   /// [constConstruct] would do only costs a `const`, while the reverse
   /// emits `const Foo(...)` around a non-constant, which doesn't compile.
-  DartExpression construct({
+  DartExpression construct(
+    List<DartExpression> arguments, {
     String? name,
-    List<DartExpression> arguments = const [],
-    Map<String, DartExpression> namedArguments = const {},
   }) => DartInvocation(
     type: this,
     constructorName: name,
     arguments: arguments,
-    namedArguments: namedArguments,
     isConstConstructor: false,
   );
 
@@ -77,15 +75,13 @@ extension DartTypeExpressions on DartType {
   /// constant when its arguments are. Every constructor the generator
   /// emits for a model is `const` (#253), as are `Date` and the pod
   /// newtypes.
-  DartExpression constConstruct({
+  DartExpression constConstruct(
+    List<DartExpression> arguments, {
     String? name,
-    List<DartExpression> arguments = const [],
-    Map<String, DartExpression> namedArguments = const {},
   }) => DartInvocation(
     type: this,
     constructorName: name,
     arguments: arguments,
-    namedArguments: namedArguments,
     isConstConstructor: true,
   );
 
