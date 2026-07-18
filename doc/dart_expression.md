@@ -1,6 +1,6 @@
 # Dart expression IR — decision record
 
-**Status:** accepted, not yet implemented.
+**Status:** accepted; implementation in progress (#261-#265).
 **Date:** 2026-07-18 (after #259).
 **Sibling:** [`doc/dart_type.md`](dart_type.md) — the same argument, one layer
 down, already implemented.
@@ -129,9 +129,75 @@ Buys nothing. Emission from a sealed IR is a `switch` returning strings — the
 easy half — while paying the full dependency cost and inheriting
 code_builder's emission quirks (`[1, 2, ]`, forced parens on casts).
 
+## Scope: what belongs in the IR
+
+The test is not "is this Dart code" but **does any consumer need to know
+something about it other than its text?** Every node added so far was driven by
+a specific question:
+
+| node | the question that justified it |
+|---|---|
+| `DartLiteral`, `DartInvocation` | can this be a compile-time constant? |
+| `DartIdentifier` | is this a bare identifier, so string interpolation needs no braces? |
+| `DartMethodCall`, `DartLambda` | compose without re-parsing; eventually, what does this reference? |
+| `DartMapLiteral` and friends | does this expression equal that default? |
+
+Text nobody interrogates stays text. There are three tiers, and a text
+comparison is evidence something is wrong without implying the fix is always an
+expression:
+
+1. **`DartExpression`** — open-ended composed syntax where consumers ask
+   structural questions. Casts, `??` and ternaries belong here as
+   `fromJsonExpression` migrates.
+2. **A domain type** — where the set of possibilities is fixed and small and
+   the question is "which one is it". `bodyContentTypeExpression ==
+   defaultBodyContentTypeExpression` is a text comparison, but the fix is an
+   **enum**: an enum cannot represent nonsense, an expression can. Likewise
+   `source == 'response.body'`, which wants a small sealed type naming which
+   branch the producer took.
+3. **A plain `String`** — statement- and declaration-level fragments nobody
+   interrogates: an initializer-list entry (`this.x = x ?? default`), a
+   collection-`if` element, a whole method body. These are not expressions
+   grammatically, and modeling them means becoming a full AST.
+
+**What this is not.** Not a parser — no source goes in. Not a formatter;
+`dart_style` owns that. Not a full AST: no statements, no declarations, no
+imports. That last boundary is load-bearing, because it is exactly the line at
+which the `package:code_builder` decision above would need revisiting.
+
+**The endgame moves this line.** Once referenced identifiers are accumulated
+for import derivation, everything landing in a rendered file becomes a
+candidate for modeling — which is the argument for eventually widening to
+declarations, and so for reopening the code_builder question. That should be a
+deliberate decision, not a drift arrived at one node at a time.
+
+## Three things called `const`
+
+Keeping these apart is most of the design:
+
+- **is a constant** — actually evaluated at compile time. `5` always is;
+  `Foo(1)` only when written `const Foo(1)` or placed in a constant context.
+  This depends on the *destination*, so the tree cannot answer it.
+- **can be const** — `DartExpression.canBeConst`. A constructor invocation
+  qualifies when its constructor is declared `const` and every argument
+  qualifies. `[1, 2]` qualifies even though, written bare in a runtime context,
+  it allocates a fresh list each time.
+- **is written `const`** — the keyword. `DartExpressionSerializer.isConstContext`
+  decides it, because it is a property of where the text lands.
+
+Two attempts at the third one failed before landing on the serializer: a
+`DartConst` wrapper node (`const` is not an operator over arbitrary
+expressions, so the wrapper could wrap what it must not), then a
+`hasConstKeyword` field (storing a serialization decision as data on the tree).
+Rendering finally moved out of the tree entirely, which is also why
+`DartExpression.toString` is a debug form rather than Dart source — an
+expression interpolated instead of serialized then shows up as obvious garbage
+rather than plausible text.
+
 ## Consequences
 
-**Good.** `isConst` stops being a stored field. The text-comparison sites above
+**Good.** Const-ness stops being a stored field (`ExampleValue.isConst` and
+`defaultCanConstConstruct` both deleted, #261 and #263). The text-comparison sites above
 become structural questions or disappear. Eventually referenced identifiers are
 accumulated while building rather than grepped out of rendered output, retiring
 the `schema_renderer.dart` regex layer. Adding a node type becomes a compile
