@@ -2391,11 +2391,13 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// The default value of this schema.
   dynamic get defaultValue;
 
-  /// Whether the defaultValue can be const constructed.
-  bool get defaultCanConstConstruct;
-
-  bool hasNonConstDefaultValue(SchemaRenderer context) =>
-      hasDefaultValue(context) && !defaultCanConstConstruct;
+  /// Whether this schema has a default value that cannot be written as a
+  /// compile-time constant, and so has to be substituted in an initializer
+  /// list rather than as a constructor parameter default.
+  bool hasNonConstDefaultValue(SchemaRenderer context) {
+    final expression = defaultValueExpression(context);
+    return expression != null && !expression.isConst;
+  }
 
   Iterable<Import> get additionalImports => const [];
 
@@ -2470,7 +2472,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     // produces `null` instead of the spec's default. Surfaced by a
     // real spec with `bool` properties marked `default: false` outside
     // the `required` array.
-    if (defaultCanConstConstruct) {
+    if (defaultValue.isConst) {
       return ' ?? ${_runtimeSource(defaultValue)}';
     }
     // Nullable Dart slot with a non-const default: the constructor uses
@@ -2678,16 +2680,6 @@ class RenderPod extends RenderSchema {
       PodType.boolean || PodType.email || PodType.uuid => false,
       // Need serialization to a string.
       PodType.dateTime || PodType.uri || PodType.uriTemplate => true,
-    };
-  }
-
-  @override
-  bool get defaultCanConstConstruct {
-    // Newtype defaults wrap dartTypeName in a constructor call; const-ness
-    // depends on whether the wrapped expression is const.
-    return switch (type) {
-      PodType.dateTime || PodType.uri || PodType.uriTemplate => false,
-      PodType.boolean || PodType.email || PodType.uuid => true,
     };
   }
 
@@ -2970,9 +2962,6 @@ class RenderString extends RenderSchema {
   final String? pattern;
 
   @override
-  bool get defaultCanConstConstruct => true;
-
-  @override
   List<Object?> get props => [super.props, defaultValue, maxLength, minLength];
 
   @override
@@ -3217,10 +3206,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     multipleOf,
   ];
 
-  // Careful, this might not be true depending on validations.
-  @override
-  bool get defaultCanConstConstruct => true;
-
   @override
   DartExpression? defaultValueExpression(SchemaRenderer context) {
     final value = defaultValue;
@@ -3232,7 +3217,16 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     // other expression here uses. Verified equivalent across the spec
     // rotation before switching.
     if (createsNewType) {
-      return dartType.constConstruct([DartLiteral(value)]);
+      // A validating newtype's generated constructor has a body, so it is
+      // not `const` — the same gate [newtypeWrappedExample] applies to
+      // example values. The `defaultCanConstConstruct` this replaced said
+      // `true` unconditionally, with a comment admitting it might be
+      // wrong; asking the constructor directly is that comment's fix.
+      return DartInvocation(
+        type: dartType,
+        arguments: [DartLiteral(value)],
+        isConstConstructor: validationCalls.isEmpty,
+      );
     }
     return DartLiteral(value);
   }
@@ -3549,11 +3543,6 @@ class RenderObject extends RenderNewType {
 
   @override
   dynamic get defaultValue => null;
-
-  // We could do something smarter here, to determine if the object has a
-  // const constructor, but it's not worth the complexity for now.
-  @override
-  bool get defaultCanConstConstruct => false;
 
   @override
   DartType get jsonStorageDartType => _jsonWireMap;
@@ -4078,17 +4067,6 @@ class RenderArray extends RenderSchema {
   }
 
   @override
-  bool get defaultCanConstConstruct {
-    final dValue = defaultValue as List?;
-    if (dValue is List && dValue.isEmpty) {
-      return true;
-    }
-    // In the null case we're falling through to here, but this will also never
-    // be called in that case.
-    return items.defaultCanConstConstruct;
-  }
-
-  @override
   List<Object?> get props => [
     super.props,
     items,
@@ -4339,17 +4317,6 @@ class RenderMap extends RenderSchema {
       keySchema != null || valueSchema.shouldCallToJson;
 
   @override
-  bool get defaultCanConstConstruct {
-    final dValue = defaultValue as Map?;
-    if (dValue is Map && dValue.isEmpty) {
-      return true;
-    }
-    // In the null case we're falling through to here, but this will also never
-    // be called in that case.
-    return valueSchema.defaultCanConstConstruct;
-  }
-
-  @override
   DartType get dartType => DartType.map(
     keySchema?.dartType ?? DartType.string,
     valueSchema.dartType,
@@ -4492,9 +4459,6 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
 
   @override
   final T? defaultValue;
-
-  @override
-  bool get defaultCanConstConstruct => true;
 
   /// The enum values.
   final List<T> values;
@@ -4727,11 +4691,6 @@ class RenderOneOf extends RenderNewType {
   /// owns their coverage.
   List<RenderObject> get smooshedVariants =>
       schemas.whereType<RenderObject>().where((v) => v.isSmooshed).toList();
-
-  /// We could do something smarter here, to determine if the oneOf has a
-  /// const constructor, but it's not worth the complexity for now.
-  @override
-  bool get defaultCanConstConstruct => false;
 
   @override
   List<Object?> get props => [super.props, schemas, discriminator];
@@ -5877,9 +5836,6 @@ class RenderUnknown extends RenderSchema {
   @override
   DartType get dartType => DartType.dynamic_;
 
-  @override
-  bool get defaultCanConstConstruct => false;
-
   // We never deserialize or serialize unknown types.
   @override
   bool get shouldCallToJson => false;
@@ -5928,9 +5884,6 @@ class RenderVoid extends RenderNoJson {
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
       'throw UnimplementedError("RenderVoid.equalsExpression")';
-
-  @override
-  bool get defaultCanConstConstruct => false;
 
   @override
   String fromJsonExpression(
@@ -6009,9 +5962,6 @@ class RenderBinary extends RenderNoJson {
 
   @override
   String hashCodeExpression(String name) => '${ModelHelpers.listHash}($name)';
-
-  @override
-  bool get defaultCanConstConstruct => false;
 }
 
 /// Base64-encoded binary string. Wire format is a JSON `String`; Dart-
@@ -6024,9 +5974,6 @@ class RenderBase64Bytes extends RenderSchema {
 
   @override
   dynamic get defaultValue => null;
-
-  @override
-  bool get defaultCanConstConstruct => false;
 
   @override
   Iterable<Import> get additionalImports => [
@@ -6113,9 +6060,6 @@ class RenderDate extends RenderSchema {
   List<Object?> get props => [super.props, defaultValue];
 
   @override
-  bool get defaultCanConstConstruct => false;
-
-  @override
   DartType get dartType => _dateType;
 
   @override
@@ -6189,9 +6133,6 @@ class RenderEmptyObject extends RenderNewType {
 
   @override
   dynamic get defaultValue => null;
-
-  @override
-  bool get defaultCanConstConstruct => true;
 
   // EmptyObject is always a newtype with a Map<String, dynamic> wire
   // shape. Participates in shape dispatch (when the only Map-shaped
@@ -6275,9 +6216,6 @@ class RenderRecursiveRef extends RenderSchema {
 
   @override
   dynamic get defaultValue => null;
-
-  @override
-  bool get defaultCanConstConstruct => false;
 
   @override
   bool get shouldCallToJson => true;
