@@ -2726,13 +2726,13 @@ void main() {
       // gated on the body naming `Uint8List` — a schema in the tree does
       // not mean the emitted code uses it.
       expect(importsFor('class Foo { Uint8List? bar; }'), {
-        const Import('package:meta/meta.dart'),
-        const Import('package:spacetraders/model_helpers.dart'),
-        const Import('dart:typed_data', neededWhenBodyNames: 'Uint8List'),
+        const Import(Libraries.meta),
+        Import.path('package:spacetraders/model_helpers.dart'),
+        const Import(Libraries.dartTypedData),
       });
       expect(importsFor('class Foo {}'), {
-        const Import('package:meta/meta.dart'),
-        const Import('package:spacetraders/model_helpers.dart'),
+        const Import(Libraries.meta),
+        Import.path('package:spacetraders/model_helpers.dart'),
       });
     });
 
@@ -2791,11 +2791,11 @@ void main() {
       );
       expect(
         imports,
-        contains(const Import('package:spacetraders/models/nested.dart')),
+        contains(Import.path('package:spacetraders/models/nested.dart')),
       );
       expect(
         imports,
-        isNot(contains(const Import('package:spacetraders/models/deep.dart'))),
+        isNot(contains(Import.path('package:spacetraders/models/deep.dart'))),
       );
     });
 
@@ -2811,7 +2811,7 @@ void main() {
       expect(usage.usesValidationExtensions, isTrue);
       expect(
         usage.importsFor('spacetraders'),
-        contains(const Import('package:spacetraders/api_exception.dart')),
+        contains(Import.path('package:spacetraders/api_exception.dart')),
       );
     });
 
@@ -2822,7 +2822,7 @@ void main() {
       expect(
         usage.importsFor('spacetraders'),
         isNot(
-          contains(const Import('package:spacetraders/api_exception.dart')),
+          contains(Import.path('package:spacetraders/api_exception.dart')),
         ),
       );
     });
@@ -2944,14 +2944,14 @@ void main() {
         body: fullBody,
       );
       expect(imports, {
-        const Import('dart:async'),
-        const Import('dart:convert'),
-        const Import('dart:io'),
-        const Import('package:spacetraders/api_client.dart'),
-        const Import('package:spacetraders/api_exception.dart'),
-        const Import('package:http/http.dart', asName: 'http'),
+        const Import(Libraries.dartAsync),
+        const Import(Libraries.dartConvert),
+        const Import(Libraries.dartIo),
+        Import.path('package:spacetraders/api_client.dart'),
+        Import.path('package:spacetraders/api_exception.dart'),
+        const Import(Libraries.http, asName: 'http'),
         // Uint8List from RenderBinary.
-        const Import('dart:typed_data', neededWhenBodyNames: 'Uint8List'),
+        const Import(Libraries.dartTypedData),
       });
     });
 
