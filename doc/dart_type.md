@@ -191,8 +191,15 @@ schema *structure*, not of `DartType`:
   structure) **and** every field example is const (recursion over the object's
   fields). `DartType` (a name + type args) deliberately doesn't carry fields.
 
-So when the const-example refactor happens (making the generated round-trip
-tests' example instances `const` to close `prefer_const_constructors` — see the
-`spec-iteration` skill's state doc), it is a `bool exampleValueIsConst(context)`
-**sibling to `exampleValue` on `RenderSchema`**, recursive through composites —
-not anything on `DartType`.
+This landed as `ExampleValue` (`lib/src/render/example_value.dart`) — a
+`(code, isConst)` value type that `exampleValue` returns, recursive through
+composites, on `RenderSchema` and not on `DartType`.
+
+It is deliberately **one** method returning both halves rather than the
+`exampleValue` / `bool exampleValueIsConst(context)` sibling pair this section
+originally proposed. `exampleValue` returns `null` for "no example possible"
+(recursive refs, `RenderUnknown`, oneOf), and that `null` propagates through
+every composite. A separate const-ness recursion would have to mirror each of
+those bail-outs by hand, in ~15 implementations; the two disagreeing emits a
+`const` declaration around a non-constant initializer, which doesn't compile.
+Returning both from one recursion makes that class of bug unrepresentable.

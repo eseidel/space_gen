@@ -1154,7 +1154,7 @@ void main() {
 
     test('date format produces a Date value-class literal', () {
       const schema = RenderDate(common: common, defaultValue: null);
-      expect(schema.exampleValue(context), 'Date(2024, 1, 1)');
+      expect(schema.exampleValue(context)?.code, 'Date(2024, 1, 1)');
     });
 
     test('uri format produces a Uri.parse literal', () {
@@ -1164,7 +1164,7 @@ void main() {
         createsNewType: false,
       );
       expect(
-        schema.exampleValue(context),
+        schema.exampleValue(context)?.code,
         "Uri.parse('https://example.com')",
       );
     });
@@ -1176,7 +1176,7 @@ void main() {
         createsNewType: false,
       );
       expect(
-        schema.exampleValue(context),
+        schema.exampleValue(context)?.code,
         "UriTemplate('https://example.com/{id}')",
       );
     });
@@ -1187,7 +1187,7 @@ void main() {
         type: PodType.email,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context), "'user@example.com'");
+      expect(schema.exampleValue(context)?.code, "'user@example.com'");
     });
 
     test('uuid format produces a uuid string literal', () {
@@ -1197,24 +1197,24 @@ void main() {
         createsNewType: false,
       );
       expect(
-        schema.exampleValue(context),
+        schema.exampleValue(context)?.code,
         "'00000000-0000-0000-0000-000000000000'",
       );
     });
 
     test('unknown returns an empty dynamic map literal', () {
       const schema = RenderUnknown(common: common);
-      expect(schema.exampleValue(context), '<String, dynamic>{}');
+      expect(schema.exampleValue(context)?.code, '<String, dynamic>{}');
     });
 
     test('void returns null (no round-trip possible)', () {
       const schema = RenderVoid(common: common);
-      expect(schema.exampleValue(context), isNull);
+      expect(schema.exampleValue(context)?.code, isNull);
     });
 
     test('binary (NoJson) returns null', () {
       const schema = RenderBinary(common: common);
-      expect(schema.exampleValue(context), isNull);
+      expect(schema.exampleValue(context)?.code, isNull);
     });
 
     test('recursive ref returns null', () {
@@ -1222,7 +1222,7 @@ void main() {
         common: common,
         targetPointer: JsonPointer.empty(),
       );
-      expect(schema.exampleValue(context), isNull);
+      expect(schema.exampleValue(context)?.code, isNull);
     });
 
     test('oneOf returns null (sealed class, no constructable subtype)', () {
@@ -1251,7 +1251,7 @@ void main() {
         discriminator: null,
         source: null,
       );
-      expect(schema.exampleValue(context), isNull);
+      expect(schema.exampleValue(context)?.code, isNull);
     });
 
     test('map with keySchema uses its exampleValue', () {
@@ -1275,8 +1275,9 @@ void main() {
         valueSchema: inner,
         keySchema: keySchema,
       );
-      // Key example is the enum's first value; value is the string example.
-      expect(map.exampleValue(context), "{Foo.values.first: 'example'}");
+      // Key example names the enum's first member; value is the string
+      // example.
+      expect(map.exampleValue(context)?.code, "{Foo.a: 'example'}");
     });
 
     test('string with spec example uses it verbatim', () {
@@ -1292,7 +1293,7 @@ void main() {
         pattern: r'^refs/(heads|tags|pull)/.*$',
         createsNewType: false,
       );
-      expect(schema.exampleValue(context), "'refs/heads/main'");
+      expect(schema.exampleValue(context)?.code, "'refs/heads/main'");
     });
 
     test('string falls back to first String entry from examples list', () {
@@ -1308,7 +1309,7 @@ void main() {
         pattern: null,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context), "'second'");
+      expect(schema.exampleValue(context)?.code, "'second'");
     });
 
     test('string synthesizes a value matching simple character-class '
@@ -1328,7 +1329,7 @@ void main() {
         pattern: r'^[0-9a-fA-F]+$',
         createsNewType: false,
       );
-      expect(schema.exampleValue(context), "'${'a' * 40}'");
+      expect(schema.exampleValue(context)?.code, "'${'a' * 40}'");
     });
 
     test('string synthesizes for an alternation pattern by trying '
@@ -1346,7 +1347,7 @@ void main() {
         createsNewType: false,
       );
       // `'a'` doesn't match; `'0'` does (the 0 alternative).
-      expect(schema.exampleValue(context), "'0'");
+      expect(schema.exampleValue(context)?.code, "'0'");
     });
 
     test('string truncates a too-long fallback to maxLength', () {
@@ -1361,7 +1362,7 @@ void main() {
         pattern: null,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context), "'exam'");
+      expect(schema.exampleValue(context)?.code, "'exam'");
     });
 
     test('string falls back when no candidate matches the pattern', () {
@@ -1380,7 +1381,7 @@ void main() {
         pattern: r'^Z+$',
         createsNewType: false,
       );
-      expect(schema.exampleValue(context), "'example'");
+      expect(schema.exampleValue(context)?.code, "'example'");
     });
 
     test('string falls back when the spec pattern is invalid regex', () {
@@ -1397,7 +1398,7 @@ void main() {
         pattern: '(',
         createsNewType: false,
       );
-      expect(schema.exampleValue(context), "'example'");
+      expect(schema.exampleValue(context)?.code, "'example'");
     });
 
     test('integer with spec example uses it', () {
@@ -1415,7 +1416,7 @@ void main() {
         multipleOf: null,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context), '42');
+      expect(schema.exampleValue(context)?.code, '42');
     });
 
     test('integer with no spec example picks minimum', () {
@@ -1432,7 +1433,7 @@ void main() {
         multipleOf: null,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context), '5');
+      expect(schema.exampleValue(context)?.code, '5');
     });
 
     test('integer falls back to first num in examples list when example '
@@ -1451,7 +1452,7 @@ void main() {
         multipleOf: null,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context), '7');
+      expect(schema.exampleValue(context)?.code, '7');
     });
 
     test('integer with negative max picks the upper bound when zero is '
@@ -1469,7 +1470,7 @@ void main() {
         multipleOf: null,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context), '-5');
+      expect(schema.exampleValue(context)?.code, '-5');
     });
 
     test('integer rounds candidate up to the next multipleOf', () {
@@ -1486,7 +1487,149 @@ void main() {
         multipleOf: 5,
         createsNewType: false,
       );
-      expect(schema.exampleValue(context), '10');
+      expect(schema.exampleValue(context)?.code, '10');
+    });
+  });
+
+  group('exampleValue const-ness', () {
+    final context = SchemaRenderer(
+      templates: TemplateProvider.defaultLocation(),
+    );
+    const common = CommonProperties.test(
+      snakeName: 'foo',
+      pointer: JsonPointer.empty(),
+    );
+
+    test('a plain string literal is constant', () {
+      const schema = RenderString(
+        createsNewType: false,
+        common: common,
+        defaultValue: null,
+        maxLength: null,
+        minLength: null,
+        pattern: null,
+      );
+      expect(schema.exampleValue(context)?.isConst, isTrue);
+    });
+
+    test('a newtype with no validations is constant', () {
+      const schema = RenderString(
+        createsNewType: true,
+        common: common,
+        defaultValue: null,
+        maxLength: null,
+        minLength: null,
+        pattern: null,
+        assignedName: 'Foo',
+      );
+      final example = schema.exampleValue(context);
+      expect(example?.code, "Foo('example')");
+      expect(example?.isConst, isTrue);
+    });
+
+    test('a validating newtype is not constant', () {
+      // A validating newtype's generated constructor has a body
+      // (`hasValidations`), so it cannot be declared const.
+      const schema = RenderString(
+        createsNewType: true,
+        common: common,
+        defaultValue: null,
+        maxLength: null,
+        minLength: 3,
+        pattern: null,
+        assignedName: 'Foo',
+      );
+      expect(schema.exampleValue(context)?.isConst, isFalse);
+    });
+
+    test('DateTime and Uri pods are not constant', () {
+      for (final type in [PodType.dateTime, PodType.uri]) {
+        final schema = RenderPod(
+          common: common,
+          type: type,
+          createsNewType: false,
+        );
+        expect(
+          schema.exampleValue(context)?.isConst,
+          isFalse,
+          reason: '$type has no const constructor',
+        );
+      }
+    });
+
+    test('a bool pod is constant', () {
+      const schema = RenderPod(
+        common: common,
+        type: PodType.boolean,
+        createsNewType: false,
+      );
+      expect(schema.exampleValue(context)?.isConst, isTrue);
+    });
+
+    test('an enum names its first member rather than values.first', () {
+      // `values.first` is a getter call, so it isn't a constant
+      // expression; a static member reference is.
+      final schema = RenderStringEnum(
+        common: common,
+        values: const ['a', 'b'],
+        names: const ['a', 'b'],
+        descriptions: null,
+        assignedName: 'Foo',
+      );
+      final example = schema.exampleValue(context);
+      expect(example?.code, 'Foo.a');
+      expect(example?.isConst, isTrue);
+    });
+
+    test('an array is constant only when its element is', () {
+      const constElement = RenderString(
+        createsNewType: false,
+        common: common,
+        defaultValue: null,
+        maxLength: null,
+        minLength: null,
+        pattern: null,
+      );
+      const nonConstElement = RenderPod(
+        common: common,
+        type: PodType.dateTime,
+        createsNewType: false,
+      );
+      expect(
+        const RenderArray(
+          common: common,
+          items: constElement,
+        ).exampleValue(context)?.isConst,
+        isTrue,
+      );
+      expect(
+        const RenderArray(
+          common: common,
+          items: nonConstElement,
+        ).exampleValue(context)?.isConst,
+        isFalse,
+      );
+    });
+
+    test('a map is constant only when key and value both are', () {
+      const nonConstValue = RenderPod(
+        common: common,
+        type: PodType.uri,
+        createsNewType: false,
+      );
+      expect(
+        const RenderMap(
+          common: common,
+          valueSchema: nonConstValue,
+          keySchema: null,
+        ).exampleValue(context)?.isConst,
+        isFalse,
+      );
+    });
+
+    test('base64 bytes are not constant', () {
+      const schema = RenderBase64Bytes(common: common);
+      expect(schema.exampleValue(context)?.isConst, isFalse);
     });
   });
 
@@ -1614,7 +1757,7 @@ void main() {
     });
 
     test('example is a Date value-class literal', () {
-      expect(date.exampleValue(context), 'Date(2024, 1, 1)');
+      expect(date.exampleValue(context)?.code, 'Date(2024, 1, 1)');
       expect(date.invalidJsonExample(context), "'not a date'");
     });
 

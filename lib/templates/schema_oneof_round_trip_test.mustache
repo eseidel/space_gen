@@ -6,7 +6,7 @@ void main() {
   group('{{{ typeName }}}', () {
 {{#variants}}
     test('{{{ variantTypeName }}} round-trips via maybeFromJson/toJson', () {
-      final instance = {{{ exampleValue }}};
+      {{#exampleIsConst}}const{{/exampleIsConst}}{{^exampleIsConst}}final{{/exampleIsConst}} instance = {{{ exampleValue }}};
       final parsed = {{{ variantTypeName }}}.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));
