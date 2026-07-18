@@ -2001,9 +2001,7 @@ Map<String, dynamic> _requestBodyParameterContext(
     'dartName': body.dartParameterName(context.quirks),
     'required': body.isRequired,
     'hasDefaultValue': body.schema.defaultValue != null,
-    'defaultValue': body.schema
-        .defaultValueExpression(context)
-        ?.toConstantSource(),
+    'defaultValue': _runtimeSource(body.schema.defaultValueExpression(context)),
     'type': body.schema.typeName,
     'nullableType': body.schema.nullableTypeName(context),
   };
@@ -2464,7 +2462,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     // Non-null Dart slot fed by nullable JSON: an `as T?` cast would
     // crash on null. Substitute the default whether the default is
     // const or not.
-    if (!dartIsNullable) return ' ?? ${defaultValue.toConstantSource()}';
+    if (!dartIsNullable) return ' ?? ${_runtimeSource(defaultValue)}';
     // Nullable Dart slot with a const default: the constructor uses
     // `this.foo = default`, which only fires when the param is omitted.
     // `fromJson` always passes a value (possibly null), so substitute
@@ -2473,7 +2471,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     // real spec with `bool` properties marked `default: false` outside
     // the `required` array.
     if (defaultCanConstConstruct) {
-      return ' ?? ${defaultValue.toConstantSource()}';
+      return ' ?? ${_runtimeSource(defaultValue)}';
     }
     // Nullable Dart slot with a non-const default: the constructor uses
     // an initializer list (`: foo = foo ?? default`) that substitutes
@@ -2621,6 +2619,13 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 // site describes the call structurally when we already know exactly which
 // call it is; naming them lets the call site read like the Dart it
 // produces. None are constant: each computes its value at runtime.
+
+/// Source for an expression landing somewhere that evaluates at runtime —
+/// a `??` right-hand side, or a parameter default, where a `const` keyword
+/// turns an allocation into a compile-time constant.
+String? _runtimeSource(DartExpression? expression) => expression == null
+    ? null
+    : DartExpressionSerializer.runtimeContext.serialize(expression);
 
 /// `DateTime.utc(2024)`.
 DartExpression _dateTimeUtc(int year) =>
@@ -3595,7 +3600,7 @@ class RenderObject extends RenderNewType {
       line.write('this.$dartName');
       if (property.hasDefaultValue(context)) {
         final value = property.defaultValueExpression(context);
-        line.write(' = ${value?.toConstantSource()}');
+        line.write(' = ${_runtimeSource(value)}');
       }
     }
     return line.toString();
@@ -3611,7 +3616,7 @@ class RenderObject extends RenderNewType {
     final dartName = variableSafeName(context.quirks, jsonName);
     if (property.hasNonConstDefaultValue(context)) {
       final value = property.defaultValueExpression(context);
-      return 'this.$dartName = $dartName ?? ${value?.toConstantSource()}';
+      return 'this.$dartName = $dartName ?? ${_runtimeSource(value)}';
     }
     return null;
   }
@@ -5857,7 +5862,7 @@ class RenderParameter implements CanBeParameter {
     'dartName': dartParameterName(context.quirks),
     'required': isRequired,
     'hasDefaultValue': type.defaultValue != null,
-    'defaultValue': type.defaultValueExpression(context)?.toConstantSource(),
+    'defaultValue': _runtimeSource(type.defaultValueExpression(context)),
     'type': type.typeName,
     'nullableType': type.nullableTypeName(context),
   };
