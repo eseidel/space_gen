@@ -1008,28 +1008,34 @@ class RenderSpec {
   }).toList();
 }
 
+/// The `AuthRequest` types from `lib/templates/auth.dart`, all of which
+/// declare `const` constructors — which is what lets an auth argument be a
+/// compile-time constant, since every value in one comes from the spec and
+/// so is a literal or an enum member.
+const _noAuthType = DartType('NoAuth');
+const _allOfAuthType = DartType('AllOfAuth');
+const _oneOfAuthType = DartType('OneOfAuth');
+const _apiKeyAuthType = DartType('ApiKeyAuth');
+const _httpAuthType = DartType('HttpAuth');
+const _apiKeyLocationType = DartType('ApiKeyLocation');
+
 extension on ResolvedSecurityRequirement {
   /// Turn the SecurityRequirements into AuthRequest subclasses to be
   /// resolved at runtime by the ApiClient.  If this requirement has
   /// multiple conditions, wrap them in an AllOfAuth.
-  String toArgumentString({int indent = 0}) {
-    final indentString = ' ' * indent;
+  DartExpression toExpression() {
     if (conditions.isEmpty) {
-      return '${indentString}NoAuth()';
+      return _noAuthType.constConstruct([]);
     }
     // TODO(eseidel): Support scopes/roles in conditions.values.
-    final buffer = StringBuffer();
-    if (conditions.length > 1) {
-      buffer.write('${indentString}AllOfAuth([\n');
-      for (final scheme in conditions.keys) {
-        buffer.write('${scheme.toArgumentString(indent: indent + 2)},\n');
-      }
-      buffer.write('$indentString])');
-    } else {
-      final scheme = conditions.keys.first;
-      buffer.write(scheme.toArgumentString(indent: indent));
+    if (conditions.length == 1) {
+      return conditions.keys.first.toExpression();
     }
-    return buffer.toString();
+    return _allOfAuthType.constConstruct([
+      DartListLiteral.untyped(
+        conditions.keys.map((scheme) => scheme.toExpression()).toList(),
+      ),
+    ]);
   }
 }
 
@@ -1040,20 +1046,32 @@ extension on SecurityScheme {
   /// caller is expected to override `ApiClient.resolveAuth` or set
   /// `defaultHeaders` to inject auth themselves. The parser emits a
   /// warning at generation time so consumers notice.
-  String toArgumentString({int indent = 0}) {
-    final expression = switch (this) {
-      ApiKeySecurityScheme(
-        keyName: final keyName,
-        inLocation: final inLocation,
-      ) =>
-        "ApiKeyAuth(name: '$keyName', secretName: '$name', "
-            'sendIn: $inLocation)',
-      HttpSecurityScheme(scheme: final scheme) =>
-        "HttpAuth(scheme: '$scheme', secretName: '$name')",
-      UnsupportedSecurityScheme() => 'NoAuth()',
-    };
-    return '${' ' * indent}$expression';
-  }
+  DartExpression toExpression() => switch (this) {
+    // Named arguments, so these build [DartInvocation] directly rather than
+    // going through `constConstruct` (positional only).
+    ApiKeySecurityScheme(
+      keyName: final keyName,
+      inLocation: final inLocation,
+    ) =>
+      DartInvocation(
+        type: _apiKeyAuthType,
+        isConstConstructor: true,
+        namedArguments: {
+          'name': DartLiteral(keyName),
+          'secretName': DartLiteral(name),
+          'sendIn': _apiKeyLocationType.member(inLocation.name),
+        },
+      ),
+    HttpSecurityScheme(scheme: final scheme) => DartInvocation(
+      type: _httpAuthType,
+      isConstConstructor: true,
+      namedArguments: {
+        'scheme': DartLiteral(scheme),
+        'secretName': DartLiteral(name),
+      },
+    ),
+    UnsupportedSecurityScheme() => _noAuthType.constConstruct([]),
+  };
 }
 
 /// A convenience class created for each operation within a path item
@@ -1173,23 +1191,18 @@ class Endpoint implements ToTemplateContext {
   ///     ),
   ///     NoAuth(),
   /// ]),
-  String? authArgument({int indent = 0}) {
+  DartExpression? authExpression() {
     if (securityRequirements.isEmpty) {
       return null;
     }
-
-    final indentString = ' ' * indent;
-    final buffer = StringBuffer();
     if (securityRequirements.length == 1) {
-      buffer.write(securityRequirements.first.toArgumentString(indent: indent));
-    } else {
-      buffer.write('${indentString}OneOfAuth([\n');
-      for (final requirement in securityRequirements) {
-        buffer.write('${requirement.toArgumentString(indent: indent + 2)},\n');
-      }
-      buffer.write('$indentString])');
+      return securityRequirements.first.toExpression();
     }
-    return buffer.toString();
+    return _oneOfAuthType.constConstruct([
+      DartListLiteral.untyped(
+        securityRequirements.map((r) => r.toExpression()).toList(),
+      ),
+    ]);
   }
 
   // The two builders below produce strings whose indentation is fixed
@@ -1373,9 +1386,13 @@ class Endpoint implements ToTemplateContext {
   }
 
   List<String> _authRequestLines(String indent) {
-    final authArg = authArgument(indent: indent.length)?.trimLeft();
-    if (authArg == null) return const [];
-    return ['${indent}authRequest: $authArg,'];
+    // Serialized for a runtime destination: `invokeApi`'s argument list is
+    // not a constant context, so the `const` keyword gets written at the
+    // outermost const-able point (and, by [DartExpressionSerializer], only
+    // there). `dart format` owns the wrapping, so no indent is threaded in.
+    final auth = _maybeRuntimeSource(authExpression());
+    if (auth == null) return const [];
+    return ['${indent}authRequest: $auth,'];
   }
 
   /// Render the `multipart/form-data` field/file assembly that precedes

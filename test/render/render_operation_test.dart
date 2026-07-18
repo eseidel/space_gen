@@ -1566,7 +1566,7 @@ void main() {
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
         "            path: '/users',\n"
-        "            authRequest: ApiKeyAuth(name: 'apiKey', secretName: 'apiKey', sendIn: ApiKeyLocation.header),\n"
+        "            authRequest: const ApiKeyAuth(name: 'apiKey', secretName: 'apiKey', sendIn: ApiKeyLocation.header),\n"
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
@@ -1634,14 +1634,11 @@ void main() {
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
         "            path: '/users',\n"
-        '            authRequest: OneOfAuth([\n'
-        '              AllOfAuth([\n'
-        "                ApiKeyAuth(name: 'apiKey', secretName: 'apiKey', sendIn: ApiKeyLocation.header),\n"
-        "                HttpAuth(scheme: 'Bearer', secretName: 'http'),\n"
-        '              ]),\n'
-        "              ApiKeyAuth(name: 'apiKey', secretName: 'apiKey', sendIn: ApiKeyLocation.header),\n"
-        '              NoAuth(),\n'
-        '            ]),\n'
+        // One `const`, at the outermost const-able point: the nested
+        // AllOfAuth / ApiKeyAuth / NoAuth sit in a constant context already,
+        // so repeating it would be `unnecessary_const`. `dart format` owns
+        // the wrapping, which is why this is emitted on one line.
+        "            authRequest: const OneOfAuth([AllOfAuth([ApiKeyAuth(name: 'apiKey', secretName: 'apiKey', sendIn: ApiKeyLocation.header), HttpAuth(scheme: 'Bearer', secretName: 'http')]), ApiKeyAuth(name: 'apiKey', secretName: 'apiKey', sendIn: ApiKeyLocation.header), NoAuth()]),\n"
         '        );\n'
         '\n'
         '        if (response.statusCode >= HttpStatus.badRequest) {\n'
@@ -1700,7 +1697,7 @@ void main() {
       expect(
         result,
         contains(
-          "authRequest: HttpAuth(scheme: 'bearer', secretName: 'oauth2'),",
+          "authRequest: const HttpAuth(scheme: 'bearer', secretName: 'oauth2'),",
         ),
       );
     });
