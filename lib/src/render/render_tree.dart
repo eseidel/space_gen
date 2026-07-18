@@ -3852,8 +3852,9 @@ class RenderObject extends RenderNewType {
     // the caller neither passes it nor can set it wrong. It has no storage, no
     // constructor argument, no JSON read and no part in equality, so it gets a
     // context of its own rather than a full one with most keys discarded.
-    // Matches [rendersAsConstGetter]; bound locally so flow analysis promotes
-    // `property`/`constValue` for the getter expression (no cast, no `!`).
+    // This is [rendersAsConstGetter]'s test, spelled inline: bound locally so
+    // flow analysis promotes `property`/`constValue` for the getter expression
+    // (no cast, no `!`), which a `bool` return cannot do. Keep the two in step.
     final constValue = constProperties[jsonName];
     if (constValue != null && property is RenderEnum) {
       return _constGetterPropertyContext(
@@ -3981,23 +3982,28 @@ class RenderObject extends RenderNewType {
   /// Template context for an object schema.
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final renderProperties = properties.entries.map((entry) {
-      final jsonName = entry.key;
-      final schema = entry.value;
-      return propertyTemplateContext(
-        jsonName: jsonName,
-        property: schema,
+    // Built in one pass so the two lists stay in spec order and the
+    // const-getter question is asked once, through [rendersAsConstGetter],
+    // rather than re-derived from a key in the map we just built.
+    //
+    // [storedProperties] is the properties with actual storage. A const getter
+    // is fully determined by the class, so it takes no constructor argument,
+    // is not read back in `fromJson`, and plays no part in equality — every
+    // site that cares about storage iterates it instead of walking all
+    // [properties] and skipping as it goes.
+    final renderProperties = <Map<String, dynamic>>[];
+    final storedProperties = <Map<String, dynamic>>[];
+    for (final entry in properties.entries) {
+      final propertyContext = propertyTemplateContext(
+        jsonName: entry.key,
+        property: entry.value,
         context: context,
       );
-    }).toList();
-
-    // Properties with actual storage. A const getter is fully determined by
-    // the class, so it takes no constructor argument, is not read back in
-    // `fromJson`, and plays no part in equality — every site that cares about
-    // storage iterates this list rather than filtering `properties` itself.
-    final storedProperties = renderProperties
-        .where((p) => p['isConstGetter'] != true)
-        .toList();
+      renderProperties.add(propertyContext);
+      if (!rendersAsConstGetter(entry.key, entry.value)) {
+        storedProperties.add(propertyContext);
+      }
+    }
 
     final assignmentsLine = buildAssignmentsLine(storedProperties);
 
@@ -4192,8 +4198,16 @@ class RenderObject extends RenderNewType {
   /// a constructor field (the `allOf: [{$ref: E}]` + single-value `enum`
   /// idiom pinning it to one member of enum `E`). Such properties are absent
   /// from the constructor, `fromJson`, equality, and example synthesis.
+  ///
+  /// The definition of the const-getter shape. `propertyTemplateContext`
+  /// spells the same test inline — `constProperties[jsonName]` bound to a
+  /// local, plus `is RenderEnum` — because it needs the promoted value and
+  /// type to build the getter, which a `bool` return cannot give it. Written
+  /// as a lookup rather than `containsKey` so the two are the same test:
+  /// `constProperties` is non-nullable-valued, so they agree today, and this
+  /// keeps them agreeing if that ever changes.
   bool rendersAsConstGetter(String jsonName, RenderSchema property) =>
-      constProperties.containsKey(jsonName) && property is RenderEnum;
+      constProperties[jsonName] != null && property is RenderEnum;
 
   /// Whether the generated constructor is declared `const`.
   ///
