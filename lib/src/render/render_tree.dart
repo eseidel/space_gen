@@ -393,24 +393,34 @@ abstract class CanBeParameter implements ToTemplateContext {
 
 // Could make this comparable to have a nicer sort for our test results.
 @immutable
-class Import extends Equatable {
-  const Import(
-    this.path, {
-    this.asName,
-    this.shown = const [],
-    this.provides = const {},
-  });
+/// A library the generator can emit an import of, and the identifiers it
+/// provides.
+///
+/// The *providing* side of an import: where the library lives and which
+/// of its names the generator is able to emit. Distinct from [Import],
+/// which is one file's directive naming this library — the prefix and
+/// `show` clause there are the consuming file's choices and no business
+/// of the library's.
+@immutable
+class Library extends Equatable {
+  const Library(this.path, {this.provides = const {}});
 
   final String path;
-  final String? asName;
 
   /// The identifiers this library provides that the generator can emit,
-  /// or empty to keep the import unconditionally.
+  /// or empty to import it unconditionally.
   ///
   /// The generator never reads a library to find out what it exports, so
   /// the identifier-to-library mapping has to be written down — see
-  /// [Libraries], which is where it lives. An import is kept when the
-  /// rendered body names any of these.
+  /// [Libraries], which is where it lives.
+  ///
+  /// A set rather than one name because a library can provide several:
+  /// `dart:convert` supplies `jsonDecode` to api files and `base64` to
+  /// models.
+  final Set<String> provides;
+
+  /// Whether a file whose body is tokenized by [bodyNames] needs this
+  /// library.
   ///
   /// Gating matters because schema-contributed imports
   /// (`additionalImports`) are collected from the *schema tree*, but a
@@ -419,37 +429,49 @@ class Import extends Equatable {
   /// a `model_helpers.dart` wrapper (`maybeBase64Decode`) and never
   /// names `base64` itself.
   ///
-  /// A set rather than one name because a library can provide several —
-  /// `dart:convert` supplies `jsonDecode` to api files and `base64` to
-  /// models. Encoding that as one sentinel per call site is what let two
-  /// spellings of `package:meta/meta.dart` disagree and both survive the
-  /// set they were gathered in, emitting a duplicate directive.
-  ///
   /// Conservative in the safe direction, like `referencedIdentifiers`:
-  /// keeping an import requires a token to be present, so a used import
+  /// keeping a library requires a token to be present, so a used import
   /// is never dropped — the effect is only to stop emitting ones the
   /// file never references (which `dart fix` would otherwise strip).
-  final Set<String> provides;
+  bool isNeededBy(bool Function(String) bodyNames) =>
+      provides.isEmpty || provides.any(bodyNames);
+
+  @override
+  List<Object?> get props => [path, provides];
+}
+
+/// One file's import directive naming a [Library].
+///
+/// The *consuming* side: [asName] and [shown] are this file's choices
+/// about how to bring the library into scope, so two files can import
+/// one library differently without disagreeing about the library itself.
+@immutable
+class Import extends Equatable {
+  const Import(this.library, {this.asName, this.shown = const []});
+
+  /// An import of a library that declares no identifiers — the generated
+  /// package's own files, whose paths depend on the package name and so
+  /// cannot be [Libraries] constants.
+  Import.path(String path, {this.asName, this.shown = const []})
+    : library = Library(path);
+
+  final Library library;
+
+  final String? asName;
 
   /// Specific identifiers to narrow the import/export with a `show`
-  /// clause. Empty means "show all". Only meaningful when `asName` is
+  /// clause. Empty means "show all". Only meaningful when [asName] is
   /// null (prefix imports already scope symbols via the prefix). Used
   /// by the public-api barrel to narrow third-party re-exports to the
   /// types the generated API actually references.
   final List<String> shown;
 
-  /// This import narrowed to a `show` clause, for the barrel re-export.
-  Import showing(List<String> types) =>
-      Import(path, asName: asName, shown: types, provides: provides);
-
-  /// Whether the body, tokenized by [bodyNames], needs this import.
-  bool isNeededBy(bool Function(String) bodyNames) =>
-      provides.isEmpty || provides.any(bodyNames);
+  String get path => library.path;
 
   Map<String, dynamic> toTemplateContext() => {'path': path, 'asName': asName};
 
   @override
-  List<Object?> get props => [path, asName, shown, provides];
+  List<Object?> get props => [library, asName, shown];
 }
 
 /// Every library space_gen imports on a consumer's behalf, defined once.
@@ -466,43 +488,44 @@ class Import extends Equatable {
 /// generator itself emits into `model_helpers.dart`.
 abstract final class Libraries {
   /// `@immutable` on generated model and wrapper classes.
-  static const meta = Import(
+  static const meta = Library(
     'package:meta/meta.dart',
     provides: {'immutable'},
   );
 
   /// `Future`, in generated api method signatures.
-  static const dartAsync = Import('dart:async', provides: {'Future'});
+  static const dartAsync = Library('dart:async', provides: {'Future'});
 
   /// `jsonDecode` in api files; `base64` in models with
   /// `contentEncoding: base64` fields.
-  static const dartConvert = Import(
+  static const dartConvert = Library(
     'dart:convert',
     provides: {'jsonDecode', 'jsonEncode', 'base64'},
   );
 
   /// `HttpStatus`, emitted by `api.mustache`.
-  static const dartIo = Import('dart:io', provides: {'HttpStatus'});
+  static const dartIo = Library('dart:io', provides: {'HttpStatus'});
 
   /// `Uint8List`, for `format: binary` and `contentEncoding: base64`.
-  static const dartTypedData = Import(
+  static const dartTypedData = Library(
     'dart:typed_data',
     provides: {'Uint8List'},
   );
 
   /// `UriTemplate`, for `format: uri-template`.
-  static const uri = Import(
+  static const uri = Library(
     'package:uri/uri.dart',
     provides: {'UriTemplate'},
   );
 
-  /// Always used via the `http.` prefix, so it is gated on that rather
-  /// than on a bare identifier — a `http` token in a doc-comment URL
-  /// must not keep it.
-  static const http = Import('package:http/http.dart', asName: 'http');
+  /// Always imported via the `http.` prefix. It declares no `provides`
+  /// because the gate is on the `http.` prefix appearing in the body, not
+  /// on a bare identifier — a `http` token in a doc-comment URL must not
+  /// keep it.
+  static const http = Library('package:http/http.dart');
 
   /// `package:test`, in generated round-trip tests.
-  static const test = Import('package:test/test.dart');
+  static const test = Library('package:test/test.dart');
 }
 
 /// Identifiers emitted by the renderer that are defined in the generated
@@ -2892,7 +2915,7 @@ class RenderPod extends RenderSchema {
   Iterable<Import> get additionalImports => [
     ...super.additionalImports,
     if (type == PodType.uriTemplate)
-      Libraries.uri.showing(const ['UriTemplate']),
+      const Import(Libraries.uri, shown: ['UriTemplate']),
   ];
 
   /// Converts `value` (of type [dartTypeName]) to its JSON representation.
@@ -5023,7 +5046,7 @@ class RenderOneOf extends RenderNewType {
     // variants — dispatch fires, but the emitted body is a bare
     // `switch (json) { _ => throw }` with no annotation — so the import
     // was unused. Asking what was emitted cannot disagree with it.
-    Libraries.meta,
+    const Import(Libraries.meta),
   ];
 
   @override
@@ -6173,7 +6196,7 @@ class RenderBinary extends RenderNoJson {
   @override
   Iterable<Import> get additionalImports => [
     ...super.additionalImports,
-    Libraries.dartTypedData,
+    const Import(Libraries.dartTypedData),
   ];
 
   @override
@@ -6210,8 +6233,8 @@ class RenderBase64Bytes extends RenderSchema {
     // reaches its bytes through `maybeBase64Decode` from
     // `model_helpers.dart`, so the body names neither `base64` nor
     // (if no field is non-nullable) `Uint8List`.
-    Libraries.dartTypedData.showing(const ['Uint8List']),
-    Libraries.dartConvert,
+    const Import(Libraries.dartTypedData, shown: ['Uint8List']),
+    const Import(Libraries.dartConvert),
   ];
 
   @override
