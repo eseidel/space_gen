@@ -2726,12 +2726,12 @@ void main() {
       // gated on the body naming `Uint8List` — a schema in the tree does
       // not mean the emitted code uses it.
       expect(importsFor('class Foo { Uint8List? bar; }'), {
-        const Import('package:meta/meta.dart'),
+        Libraries.meta,
         const Import('package:spacetraders/model_helpers.dart'),
-        const Import('dart:typed_data', neededWhenBodyNames: 'Uint8List'),
+        Libraries.dartTypedData,
       });
       expect(importsFor('class Foo {}'), {
-        const Import('package:meta/meta.dart'),
+        Libraries.meta,
         const Import('package:spacetraders/model_helpers.dart'),
       });
     });
@@ -2944,14 +2944,14 @@ void main() {
         body: fullBody,
       );
       expect(imports, {
-        const Import('dart:async'),
-        const Import('dart:convert'),
-        const Import('dart:io'),
+        Libraries.dartAsync,
+        Libraries.dartConvert,
+        Libraries.dartIo,
         const Import('package:spacetraders/api_client.dart'),
         const Import('package:spacetraders/api_exception.dart'),
-        const Import('package:http/http.dart', asName: 'http'),
+        Libraries.http,
         // Uint8List from RenderBinary.
-        const Import('dart:typed_data', neededWhenBodyNames: 'Uint8List'),
+        Libraries.dartTypedData,
       });
     });
 

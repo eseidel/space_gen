@@ -93,7 +93,7 @@ class SchemaUsage {
   /// Imports required by the body itself. Package-local imports are
   /// resolved against [packageName].
   Iterable<Import> importsFor(String packageName) sync* {
-    if (usesMetaAnnotations) yield const Import('package:meta/meta.dart');
+    if (usesMetaAnnotations) yield Libraries.meta;
     if (usesModelHelpers) {
       yield Import('package:$packageName/model_helpers.dart');
     }
@@ -128,7 +128,7 @@ class ApiUsage {
   bool get usesModelHelpers => modelHelpers.isNotEmpty;
 
   Iterable<Import> importsFor(String packageName) sync* {
-    if (usesMetaAnnotations) yield const Import('package:meta/meta.dart');
+    if (usesMetaAnnotations) yield Libraries.meta;
     if (usesModelHelpers) {
       yield Import('package:$packageName/model_helpers.dart');
     }

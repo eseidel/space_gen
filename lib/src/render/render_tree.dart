@@ -398,29 +398,38 @@ class Import extends Equatable {
     this.path, {
     this.asName,
     this.shown = const [],
-    this.neededWhenBodyNames,
+    this.provides = const {},
   });
 
   final String path;
   final String? asName;
 
-  /// An identifier that must appear in the rendered body for this import
-  /// to be needed, or `null` to keep the import unconditionally.
+  /// The identifiers this library provides that the generator can emit,
+  /// or empty to keep the import unconditionally.
   ///
-  /// Schema-contributed imports (`additionalImports`) are collected from
-  /// the *schema tree*, but a model file only emits code for part of that
-  /// tree: a nested schema can contribute `dart:convert` while the body
-  /// reaches its bytes through a `model_helpers.dart` wrapper
-  /// (`maybeBase64Decode`) and never names `base64` itself. Gating on a
-  /// sentinel the emitted code must contain closes that gap.
+  /// The generator never reads a library to find out what it exports, so
+  /// the identifier-to-library mapping has to be written down — see
+  /// [Libraries], which is where it lives. An import is kept when the
+  /// rendered body names any of these.
+  ///
+  /// Gating matters because schema-contributed imports
+  /// (`additionalImports`) are collected from the *schema tree*, but a
+  /// file only emits code for part of that tree: a nested schema can
+  /// contribute `dart:convert` while the body reaches its bytes through
+  /// a `model_helpers.dart` wrapper (`maybeBase64Decode`) and never
+  /// names `base64` itself.
+  ///
+  /// A set rather than one name because a library can provide several —
+  /// `dart:convert` supplies `jsonDecode` to api files and `base64` to
+  /// models. Encoding that as one sentinel per call site is what let two
+  /// spellings of `package:meta/meta.dart` disagree and both survive the
+  /// set they were gathered in, emitting a duplicate directive.
   ///
   /// Conservative in the safe direction, like `referencedIdentifiers`:
-  /// keeping an import requires the token to be present, so a used
-  /// import is never dropped — the effect is only to stop emitting ones
-  /// the file never references (which `dart fix` would otherwise strip).
-  /// This mirrors the `names(...)` gating `FileRenderer.importsForApi`
-  /// already applies to the api file's fixed imports.
-  final String? neededWhenBodyNames;
+  /// keeping an import requires a token to be present, so a used import
+  /// is never dropped — the effect is only to stop emitting ones the
+  /// file never references (which `dart fix` would otherwise strip).
+  final Set<String> provides;
 
   /// Specific identifiers to narrow the import/export with a `show`
   /// clause. Empty means "show all". Only meaningful when `asName` is
@@ -429,10 +438,71 @@ class Import extends Equatable {
   /// types the generated API actually references.
   final List<String> shown;
 
+  /// This import narrowed to a `show` clause, for the barrel re-export.
+  Import showing(List<String> types) =>
+      Import(path, asName: asName, shown: types, provides: provides);
+
+  /// Whether the body, tokenized by [bodyNames], needs this import.
+  bool isNeededBy(bool Function(String) bodyNames) =>
+      provides.isEmpty || provides.any(bodyNames);
+
   Map<String, dynamic> toTemplateContext() => {'path': path, 'asName': asName};
 
   @override
-  List<Object?> get props => [path, asName, shown, neededWhenBodyNames];
+  List<Object?> get props => [path, asName, shown, provides];
+}
+
+/// Every library space_gen imports on a consumer's behalf, defined once.
+///
+/// The generator emits identifiers it does not declare — `@immutable`,
+/// `jsonDecode`, `Uint8List` — and cannot ask the providing library which
+/// names it exports, so that mapping is written down here and nowhere
+/// else. Spelling a library out at the call site instead is what produced
+/// the duplicate `package:meta/meta.dart` directive: two sites described
+/// the same library differently, so the set they were gathered in kept
+/// both.
+///
+/// Sibling of [ModelHelpers], which does the same for identifiers the
+/// generator itself emits into `model_helpers.dart`.
+abstract final class Libraries {
+  /// `@immutable` on generated model and wrapper classes.
+  static const meta = Import(
+    'package:meta/meta.dart',
+    provides: {'immutable'},
+  );
+
+  /// `Future`, in generated api method signatures.
+  static const dartAsync = Import('dart:async', provides: {'Future'});
+
+  /// `jsonDecode` in api files; `base64` in models with
+  /// `contentEncoding: base64` fields.
+  static const dartConvert = Import(
+    'dart:convert',
+    provides: {'jsonDecode', 'jsonEncode', 'base64'},
+  );
+
+  /// `HttpStatus`, emitted by `api.mustache`.
+  static const dartIo = Import('dart:io', provides: {'HttpStatus'});
+
+  /// `Uint8List`, for `format: binary` and `contentEncoding: base64`.
+  static const dartTypedData = Import(
+    'dart:typed_data',
+    provides: {'Uint8List'},
+  );
+
+  /// `UriTemplate`, for `format: uri-template`.
+  static const uri = Import(
+    'package:uri/uri.dart',
+    provides: {'UriTemplate'},
+  );
+
+  /// Always used via the `http.` prefix, so it is gated on that rather
+  /// than on a bare identifier — a `http` token in a doc-comment URL
+  /// must not keep it.
+  static const http = Import('package:http/http.dart', asName: 'http');
+
+  /// `package:test`, in generated round-trip tests.
+  static const test = Import('package:test/test.dart');
 }
 
 /// Identifiers emitted by the renderer that are defined in the generated
@@ -2822,11 +2892,7 @@ class RenderPod extends RenderSchema {
   Iterable<Import> get additionalImports => [
     ...super.additionalImports,
     if (type == PodType.uriTemplate)
-      const Import(
-        'package:uri/uri.dart',
-        shown: ['UriTemplate'],
-        neededWhenBodyNames: 'UriTemplate',
-      ),
+      Libraries.uri.showing(const ['UriTemplate']),
   ];
 
   /// Converts `value` (of type [dartTypeName]) to its JSON representation.
@@ -4957,7 +5023,7 @@ class RenderOneOf extends RenderNewType {
     // variants — dispatch fires, but the emitted body is a bare
     // `switch (json) { _ => throw }` with no annotation — so the import
     // was unused. Asking what was emitted cannot disagree with it.
-    const Import('package:meta/meta.dart', neededWhenBodyNames: 'immutable'),
+    Libraries.meta,
   ];
 
   @override
@@ -6107,7 +6173,7 @@ class RenderBinary extends RenderNoJson {
   @override
   Iterable<Import> get additionalImports => [
     ...super.additionalImports,
-    const Import('dart:typed_data', neededWhenBodyNames: 'Uint8List'),
+    Libraries.dartTypedData,
   ];
 
   @override
@@ -6144,12 +6210,8 @@ class RenderBase64Bytes extends RenderSchema {
     // reaches its bytes through `maybeBase64Decode` from
     // `model_helpers.dart`, so the body names neither `base64` nor
     // (if no field is non-nullable) `Uint8List`.
-    const Import(
-      'dart:typed_data',
-      shown: ['Uint8List'],
-      neededWhenBodyNames: 'Uint8List',
-    ),
-    const Import('dart:convert', neededWhenBodyNames: 'base64'),
+    Libraries.dartTypedData.showing(const ['Uint8List']),
+    Libraries.dartConvert,
   ];
 
   @override

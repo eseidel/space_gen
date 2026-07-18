@@ -939,12 +939,8 @@ void main() {
           ),
         ).additionalImports,
         equals([
-          const Import(
-            'dart:typed_data',
-            shown: ['Uint8List'],
-            neededWhenBodyNames: 'Uint8List',
-          ),
-          const Import('dart:convert', neededWhenBodyNames: 'base64'),
+          Libraries.dartTypedData.showing(const ['Uint8List']),
+          Libraries.dartConvert,
         ]),
       );
     });
@@ -961,11 +957,7 @@ void main() {
           createsNewType: false,
         ).additionalImports,
         equals([
-          const Import(
-            'package:uri/uri.dart',
-            shown: ['UriTemplate'],
-            neededWhenBodyNames: 'UriTemplate',
-          ),
+          Libraries.uri.showing(const ['UriTemplate']),
         ]),
       );
     });

@@ -5,6 +5,8 @@ ignorePaths:
   - "*.txt" # ignore text files at the root of the project
 words:
   - subtyping
+  - dedupe
+  - dedupes
   - tearoff
   - tearoffs
   - parenthesization
