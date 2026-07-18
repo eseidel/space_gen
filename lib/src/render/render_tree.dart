@@ -4157,13 +4157,13 @@ class RenderArray extends RenderSchema {
     final listDefault = value as List;
     if (listDefault.isEmpty) {
       // Type annotation is not needed for empty lists.
-      return const DartConst(DartListLiteral.untyped([]));
+      return const DartListLiteral.untyped([], hasConstKeyword: true);
     }
-    final literal = DartListLiteral(
+    return DartListLiteral(
       elementType: items.dartType,
       elements: listDefault.map(DartLiteral.new).toList(),
+      hasConstKeyword: items.defaultCanConstConstruct,
     );
-    return items.defaultCanConstConstruct ? DartConst(literal) : literal;
   }
 
   @override

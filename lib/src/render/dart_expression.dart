@@ -13,13 +13,14 @@ import 'package:space_gen/src/string.dart';
 /// and not something a composite should have to thread by hand.
 ///
 /// [toString] is the single rendering source of truth, again matching
-/// [DartType]. Expressions are always rendered bare: no `const` keyword is
-/// ever emitted, because the only consumer today is a variable declaration
-/// where const-ness is spent on the declaration keyword (`const instance =
-/// Foo(...)`). That covers the whole tree at once — a const declaration is a
-/// const context, so nested constructors and collection literals become
-/// constant without their own keyword, and an inner `const` would trip
-/// `unnecessary_const`.
+/// [DartType]. Expressions render bare by default — no `const` keyword —
+/// because const-ness is normally spent on an enclosing declaration
+/// (`const instance = Foo(...)`). That covers the whole tree at once: a
+/// const declaration is a const context, so nested constructors and
+/// collection literals become constant without their own keyword, and an
+/// inner `const` would trip `unnecessary_const`. Where no such declaration
+/// exists — a default value spliced into a `??` — the node that carries the
+/// keyword does so itself (see [DartListLiteral.hasConstKeyword]).
 ///
 /// See `doc/dart_expression.md` for the decision record, including why
 /// `package:code_builder` was evaluated and rejected.
@@ -34,23 +35,7 @@ sealed class DartExpression extends Equatable {
   /// Derived, never stored.
   bool get isConst;
 
-  /// Whether a `const` keyword may legally be written before this
-  /// expression. Only a collection literal or a constructor invocation
-  /// takes one — `const 5` and `const UserRole.admin` are syntax errors,
-  /// which is the bug that motivated this IR in the first place.
-  ///
-  /// Independent of [isConst]: a `const`-declared constructor invoked with
-  /// a non-constant argument may take the keyword syntactically and still
-  /// not be a constant. [DartConst] requires both.
-  bool get canTakeConstKeyword => switch (this) {
-    DartLiteral() || DartStaticMember() => false,
-    DartListLiteral() || DartMapLiteral() => true,
-    DartInvocation(:final isConstConstructor) => isConstConstructor,
-    // Already `const`; a second keyword would be `unnecessary_const`.
-    DartConst() => false,
-  };
-
-  /// The rendered Dart source for this expression, never `const`-prefixed.
+  /// The rendered Dart source for this expression.
   @override
   String toString();
 }
@@ -139,11 +124,16 @@ class DartLiteral extends DartExpression {
 
 /// A list literal, e.g. `<int>[0]` or `[]`.
 class DartListLiteral extends DartExpression {
-  const DartListLiteral({required this.elementType, required this.elements});
+  const DartListLiteral({
+    required this.elementType,
+    required this.elements,
+    this.hasConstKeyword = false,
+  });
 
   /// A list literal with no type argument, e.g. `[]` — the elements (or the
   /// context it lands in) infer it. Mirrors [DartMapLiteral.untyped].
-  const DartListLiteral.untyped(this.elements) : elementType = null;
+  const DartListLiteral.untyped(this.elements, {this.hasConstKeyword = false})
+    : elementType = null;
 
   /// The element type argument, or `null` to omit the `<T>`. An empty
   /// default (`const []`) is written untyped because the surrounding
@@ -152,56 +142,42 @@ class DartListLiteral extends DartExpression {
 
   final List<DartExpression> elements;
 
+  /// Whether to write an explicit `const` before the literal.
+  ///
+  /// Const-ness is usually spent on an enclosing declaration, which covers
+  /// a whole tree at once. Where there is no such declaration — a default
+  /// value spliced into a `??` — the keyword has to appear here.
+  ///
+  /// This lives on the literal rather than on a wrapper node because
+  /// `const` is not an operator over arbitrary expressions: it is a
+  /// modifier that only a collection literal or an instance creation can
+  /// carry. `const 5` and `const UserRole.admin` are syntax errors, so
+  /// those nodes simply have no such field. [DartMapLiteral] and
+  /// [DartInvocation] can take one too; neither has a call site that needs
+  /// it yet.
+  ///
+  /// Independent of [isConst], which asks whether the value *is* constant
+  /// rather than whether the keyword is written.
+  final bool hasConstKeyword;
+
   /// A list literal is constant when every element is.
   @override
   bool get isConst => elements.every((element) => element.isConst);
 
   @override
   String toString() {
+    assert(
+      !hasConstKeyword || isConst,
+      'const around a non-constant list literal: $elements',
+    );
     final elementType = this.elementType;
     final typeArgument = elementType == null ? '' : '<$elementType>';
-    return '$typeArgument[${elements.join(', ')}]';
+    final keyword = hasConstKeyword ? 'const ' : '';
+    return '$keyword$typeArgument[${elements.join(', ')}]';
   }
 
   @override
-  List<Object?> get props => [elementType, elements];
-}
-
-/// An expression written with an explicit `const` keyword: `const []`,
-/// `const Foo(1)`.
-///
-/// Most expressions are rendered bare — const-ness is normally spent on an
-/// enclosing declaration, which covers the whole tree at once. This node is
-/// for the positions where that isn't available and the keyword has to
-/// appear in the expression itself, such as a default value spliced into a
-/// `??`.
-class DartConst extends DartExpression {
-  const DartConst(this.expression);
-
-  final DartExpression expression;
-
-  @override
-  bool get isConst => expression.isConst;
-
-  // Checked at render rather than in the constructor: this is a `const`
-  // constructor, so its asserts may only use constant expressions, and
-  // both of these are getter calls. Rendering is where a bad node would
-  // become broken generated code anyway.
-  @override
-  String toString() {
-    assert(
-      expression.isConst,
-      'const around a non-constant expression: $expression',
-    );
-    assert(
-      expression.canTakeConstKeyword,
-      'const is not legal before this expression: $expression',
-    );
-    return 'const $expression';
-  }
-
-  @override
-  List<Object?> get props => [expression];
+  List<Object?> get props => [elementType, elements, hasConstKeyword];
 }
 
 /// One `key: value` pair in a [DartMapLiteral].
