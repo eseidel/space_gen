@@ -4506,11 +4506,13 @@ class RenderMap extends RenderSchema {
     // We could probably do a smaller cast if the value schema is only json
     // types.
     final jsonType = jsonStorageType(isNullable: jsonIsNullable);
+    const keyName = 'key';
+    const valueName = 'value';
     final keyFromJson = keySchema == null
-        ? 'key'
-        : '${keySchema!.typeName}.fromJson(key)';
+        ? keyName
+        : '${keySchema!.typeName}.fromJson($keyName)';
     final valueFromJson = valueSchema.fromJsonExpression(
-      'value',
+      valueName,
       context,
       jsonIsNullable: false,
       dartIsNullable: false,
@@ -4518,8 +4520,22 @@ class RenderMap extends RenderSchema {
     // TODO(eseidel): Support orDefault?
     // Should this have a leading ? to skip the key on null?
     final callMap = jsonIsNullable ? '?.map' : '.map';
-    return '($jsonValue as $jsonType)$callMap((key, value) => '
-        'MapEntry($keyFromJson, $valueFromJson))';
+    // When neither key nor value transforms, the closure is
+    // `(key, value) => MapEntry(key, value)` — a tearoff written the long
+    // way (`unnecessary_lambdas`). Asking whether each side returned the
+    // name it was handed is a stopgap: once `fromJsonExpression` returns a
+    // `DartExpression` (see doc/dart_expression.md), identity becomes
+    // `expr == DartIdentifier(valueName)` structurally.
+    //
+    // The better output drops the `.map(...)` altogether, since an
+    // identity map only copies. That needs the same migration, because
+    // the result is then a bare cast whose parenthesization is a
+    // structural question (#255) rather than one this string can answer.
+    final isIdentity = keyFromJson == keyName && valueFromJson == valueName;
+    final transform = isIdentity
+        ? 'MapEntry.new'
+        : '(key, value) => MapEntry($keyFromJson, $valueFromJson)';
+    return '($jsonValue as $jsonType)$callMap($transform)';
   }
 
   @override

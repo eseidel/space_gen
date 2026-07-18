@@ -31,6 +31,7 @@
     {{/hasNoJsonProperty}}
     {{/castFromJsonArg}}
     {{^hasNoJsonProperty}}
+        {{#hasProperties}}
         return parseFromJson('{{ typeName }}', json, () => {{ typeName }}(
             {{#properties}}
             {{^isConstGetter}}{{ dartName }}: {{{ fromJson }}},{{/isConstGetter}}
@@ -43,6 +44,12 @@
             },
             {{/hasAdditionalProperties}}
         ));
+        {{/hasProperties}}
+        {{! Every property is a const getter, so the constructor takes no }}
+        {{! arguments and the closure is a tearoff written the long way. }}
+        {{^hasProperties}}
+        return parseFromJson('{{ typeName }}', json, {{ typeName }}.new);
+        {{/hasProperties}}
     {{/hasNoJsonProperty}}
     }
 
