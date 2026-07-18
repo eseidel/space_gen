@@ -33,7 +33,20 @@ import 'package:meta/meta.dart';
 /// the initializer could not have worked uniformly anyway.
 @immutable
 class ExampleValue extends Equatable {
+  /// For expressions whose const-ness is *computed* — a composite
+  /// inheriting from its children, or a newtype gated on whether the
+  /// schema declares validations. Prefer [ExampleValue.constant] /
+  /// [ExampleValue.notConst] when the answer is known outright.
   const ExampleValue(this.code, {required this.isConst});
+
+  /// A constant expression: literals, enum members, and constructor
+  /// calls whose arguments are all themselves constant.
+  const ExampleValue.constant(this.code) : isConst = true;
+
+  /// An expression that can never be constant — `Uri.parse(...)`,
+  /// `DateTime.utc(...)`, `Uint8List.fromList(...)`, or a validating
+  /// newtype constructor.
+  const ExampleValue.notConst(this.code) : isConst = false;
 
   /// The Dart expression, without any `const` prefix.
   final String code;

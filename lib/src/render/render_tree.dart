@@ -2548,7 +2548,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// unconditionally const.
   @protected
   ExampleValue newtypeWrappedExample(String literal) {
-    if (!createsNewType) return ExampleValue(literal, isConst: true);
+    if (!createsNewType) return ExampleValue.constant(literal);
     return ExampleValue(
       '$typeName($literal)',
       isConst: validationCalls.isEmpty,
@@ -4391,7 +4391,7 @@ class RenderMap extends RenderSchema {
     // const; otherwise the key's own const-ness applies.
     final key =
         keySchema?.exampleValue(context) ??
-        const ExampleValue("'key'", isConst: true);
+        const ExampleValue.constant("'key'");
     return ExampleValue(
       '{${key.code}: ${value.code}}',
       isConst: key.isConst && value.isConst,
@@ -4585,7 +4585,7 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
     // also reads better in the generated test.
     final first = names.firstOrNull;
     if (first == null) return null;
-    return ExampleValue('$typeName.$first', isConst: true);
+    return ExampleValue.constant('$typeName.$first');
   }
 }
 
@@ -5874,7 +5874,7 @@ class RenderUnknown extends RenderSchema {
 
   @override
   ExampleValue? exampleValue(SchemaRenderer context) =>
-      const ExampleValue('<String, dynamic>{}', isConst: true);
+      const ExampleValue.constant('<String, dynamic>{}');
 }
 
 class RenderVoid extends RenderNoJson {
@@ -6051,7 +6051,7 @@ class RenderBase64Bytes extends RenderSchema {
   @override
   ExampleValue? exampleValue(SchemaRenderer context) =>
       // `Uint8List.fromList` is a factory, so this isn't a constant.
-      const ExampleValue('Uint8List.fromList(<int>[0])', isConst: false);
+      const ExampleValue.notConst('Uint8List.fromList(<int>[0])');
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
@@ -6124,7 +6124,7 @@ class RenderDate extends RenderSchema {
   @override
   ExampleValue? exampleValue(SchemaRenderer context) =>
       // The generated `Date` has a const constructor (`date.dart`).
-      const ExampleValue('Date(2024, 1, 1)', isConst: true);
+      const ExampleValue.constant('Date(2024, 1, 1)');
 
   // `Date.fromJson` parses through `DateTime.parse`, which rejects garbage
   // with a FormatException — so the round-trip test has a guaranteed-invalid
@@ -6202,7 +6202,7 @@ class RenderEmptyObject extends RenderNewType {
       // Bare, not `const`-prefixed: the outermost caller applies the
       // keyword, so a nested empty object can't trip
       // `unnecessary_const` inside an enclosing const expression.
-      ExampleValue('$typeName()', isConst: true);
+      ExampleValue.constant('$typeName()');
 }
 
 /// A cycle-break marker: appears where a $ref would otherwise recurse back
