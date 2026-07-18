@@ -341,8 +341,8 @@ class FileRenderer {
   /// the order without tripping `directives_ordering` on one spec or the
   /// other. Sorted here for the same reason [renderModels] sorts its own.
   List<Map<String, dynamic>> testImportsContext() => [
-    Import('package:$packageName/${testBarrelImport()}'),
-    Libraries.test,
+    Import.path('package:$packageName/${testBarrelImport()}'),
+    const Import(Libraries.test),
   ].sortedBy((i) => i.path).map((i) => i.toTemplateContext()).toList();
 
   LayoutContext _contextFor(RenderSchema schema) => LayoutContext(
@@ -534,7 +534,7 @@ class FileRenderer {
     // it. The import is only added when the body actually names `Date`.
     usedDate = true;
     return bodyNamesDate
-        ? [Import('package:$packageName/date.dart')]
+        ? [Import.path('package:$packageName/date.dart')]
         : const [];
   }
 
@@ -597,7 +597,7 @@ class FileRenderer {
     // them. Which side it lands on depends on the package name, so
     // appending only happened to look right for the names we generate.
     final allExports = <Import>[
-      for (final path in paths) Import('package:$packageName/$path'),
+      for (final path in paths) Import.path('package:$packageName/$path'),
       ...externalExports,
     ];
     bool isDart(Import e) => e.path.startsWith('dart:');
@@ -639,7 +639,7 @@ class FileRenderer {
   /// names re-exposed explicitly.
   ///
   /// Only imports with an explicit `shown:` list are candidates — an
-  /// unconstrained `Import('package:x/x.dart')` means "the schema
+  /// unconstrained `Import.path('package:x/x.dart')` means "the schema
   /// needs the package internally" (e.g. `package:meta/meta.dart`
   /// for `@immutable` or `dart:convert` for the `base64` codec), not
   /// "expose every symbol in it to consumers of the barrel."
@@ -661,7 +661,7 @@ class FileRenderer {
     }
     return [
       for (final entry in byPath.entries)
-        Import(entry.key, shown: entry.value.toList()),
+        Import.path(entry.key, shown: entry.value.toList()),
     ]..sort((a, b) => a.path.compareTo(b.path));
   }
 
@@ -692,7 +692,7 @@ class FileRenderer {
   /// [Libraries] makes one library one value, so the set these are
   /// gathered in normally dedupes them itself. This is the backstop for
   /// the case it cannot catch: the same library legitimately described
-  /// two ways, e.g. bare versus narrowed by [Import.showing] for the
+  /// two ways, e.g. bare versus narrowed by a `show` clause for the
   /// barrel. `add_imports.mustache` emits only the path and the prefix,
   /// so those two decide identity here — prefix included, because
   /// `import 'x' as a` and `import 'x' as b` are different directives.
@@ -727,14 +727,15 @@ class FileRenderer {
         Libraries.dartConvert,
         Libraries.dartIo,
       ])
-        if (library.isNeededBy(names)) library,
-      if (names('ApiClient')) Import('package:$packageName/api_client.dart'),
+        if (library.isNeededBy(names)) Import(library),
+      if (names('ApiClient'))
+        Import.path('package:$packageName/api_client.dart'),
       if (names('ApiException'))
-        Import('package:$packageName/api_exception.dart'),
+        Import.path('package:$packageName/api_exception.dart'),
       // `as http` is only ever used via the `http.` prefix, so it is
       // gated on that rather than on a bare identifier: a `http` token in
       // a URL doc-comment must not keep it.
-      if (body.contains('http.')) Libraries.http,
+      if (body.contains('http.')) const Import(Libraries.http, asName: 'http'),
       ...usage.importsFor(packageName),
     };
 
@@ -753,14 +754,14 @@ class FileRenderer {
         .where((s) => !s.isSmooshed)
         .where((s) => names(s.typeName));
     final apiImports = importedSchemas
-        .map((s) => Import(modelPackageImport(this, s)))
+        .map((s) => Import.path(modelPackageImport(this, s)))
         .toList();
     imports.addAll({
       // Gated on what each library provides, the same as the fixed
       // imports above — see [Import.provides].
       ...inlineSchemas
           .expand((s) => s.additionalImports)
-          .where((i) => i.isNeededBy(names)),
+          .where((i) => i.library.isNeededBy(names)),
       ..._dateImportFor(inlineSchemas, bodyNamesDate: names('Date')),
       ...apiImports,
     });
@@ -838,14 +839,14 @@ class FileRenderer {
         .where((s) => referenced.contains(s.typeName))
         .toSet();
     final referencedImports = importedSchemas
-        .map((s) => Import(modelPackageImport(this, s)))
+        .map((s) => Import.path(modelPackageImport(this, s)))
         .toList();
 
     // `additionalImports` are collected from the schema *tree*, but the
     // body only emits code for part of it, so each is gated on what its
     // library provides (see [Import.provides]). Same discipline
     // [importsForApi] applies to the api file's fixed imports.
-    bool bodyNeeds(Import i) => i.isNeededBy(referenced.contains);
+    bool bodyNeeds(Import i) => i.library.isNeededBy(referenced.contains);
 
     final imports = {
       ...usage.importsFor(packageName),

@@ -939,8 +939,8 @@ void main() {
           ),
         ).additionalImports,
         equals([
-          Libraries.dartTypedData.showing(const ['Uint8List']),
-          Libraries.dartConvert,
+          const Import(Libraries.dartTypedData, shown: ['Uint8List']),
+          const Import(Libraries.dartConvert),
         ]),
       );
     });
@@ -957,7 +957,7 @@ void main() {
           createsNewType: false,
         ).additionalImports,
         equals([
-          Libraries.uri.showing(const ['UriTemplate']),
+          const Import(Libraries.uri, shown: ['UriTemplate']),
         ]),
       );
     });
@@ -1166,15 +1166,18 @@ void main() {
     // emit a duplicate import line.
 
     test('imports with identical fields compare equal', () {
-      const a = Import('package:meta/meta.dart');
-      const b = Import('package:meta/meta.dart');
+      final a = Import.path('package:meta/meta.dart');
+      final b = Import.path('package:meta/meta.dart');
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
     });
 
     test('imports with different shown lists do NOT compare equal', () {
-      const a = Import('package:uri/uri.dart', shown: ['UriTemplate']);
-      const b = Import('package:uri/uri.dart');
+      final a = Import.path(
+        'package:uri/uri.dart',
+        shown: const ['UriTemplate'],
+      );
+      final b = Import.path('package:uri/uri.dart');
       expect(a, isNot(equals(b)));
     });
   });
