@@ -194,6 +194,31 @@ Rendering finally moved out of the tree entirely, which is also why
 expression interpolated instead of serialized then shows up as obvious garbage
 rather than plausible text.
 
+## Remaining work
+
+Roughly in value order. Counts are current as of #265; line numbers drift, so
+they are deliberately omitted.
+
+1. **`fromJsonExpression`** — 16 overrides, the other half of #265. Needs
+   cast (`as T`), `??` and null-aware nodes. Watch #255: a bare numeric cast
+   must not gain parentheses, which becomes a structural question about
+   whether the operand needs them rather than a string rule.
+2. **Dispatch predicates** — the `RenderOneOf` `caseExpression` closures and
+   `Predicate.dartIfTest` in `lib/src/dispatch.dart` (6 sites).
+3. **The two remaining text-inspection sites**, both of which want a *domain
+   type* rather than an expression (see Scope above): `source ==
+   'response.body'`, which recovers which branch the producer took, and
+   `bodyContentTypeExpression == defaultBodyContentTypeExpression`, a constant
+   that exists only to be compared against.
+4. **Import derivation** — the real prize. `schema_renderer.dart` re-tokenizes
+   rendered file bodies so `file_renderer.dart` can decide imports; referenced
+   identifiers should instead accumulate while the tree is built. This is the
+   step that widens scope toward declarations, so revisit the code_builder
+   decision here rather than drifting into it.
+
+Each step stands alone: the codebase is strictly better if the arc stops at any
+point, which is the mitigation for the payoff sitting at the end.
+
 ## Consequences
 
 **Good.** Const-ness stops being a stored field (`ExampleValue.isConst` and
