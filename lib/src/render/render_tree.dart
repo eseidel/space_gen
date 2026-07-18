@@ -3849,27 +3849,6 @@ class RenderObject extends RenderNewType {
     final hasDefaultValue = property.hasDefaultValue(context);
     final jsonKeyIsRequired = requiredProperties.contains(jsonName);
     final jsonIsNullable = !jsonKeyIsRequired || property.common.nullable;
-    final dartIsNullable =
-        propertyDartIsNullable(
-          jsonName: jsonName,
-          context: context,
-          propertyHasDefaultValue: hasDefaultValue,
-        ) ||
-        property.common.nullable;
-    // OpenAPI 3.1 lets a property be both `required` and accept `null`
-    // as its value (`type: [T, "null"]` + `required: [key]`). A plain
-    // `json[key] as T?` cast would then accept a missing key as a null
-    // value, silently violating `required`. Route the read through
-    // `checkedKey`, which throws `FormatException` when the key is
-    // absent — other combinations still read `json[key]` directly.
-    final jsonRead = jsonKeyIsRequired && property.common.nullable
-        ? "${ModelHelpers.checkedKey}(json, '$jsonName')"
-        : "json['$jsonName']";
-
-    // Means that the constructor parameter is required which is only true if
-    // both the json property is required and it does not have a default.
-    final isRequired =
-        requiredProperties.contains(jsonName) && !hasDefaultValue;
     // A property pinned to a constant of a named enum (the `allOf: [{$ref: E}]`
     // + single-value `enum` idiom) renders as a fixed getter rather than a
     // constructor parameter — the value is fully determined by the class, so
@@ -3884,6 +3863,32 @@ class RenderObject extends RenderNewType {
               '${property.constExpression(constValue)};'
         : null;
     final isConstGetter = constGetter != null;
+    // A const getter returns [RenderSchema.typeName] unconditionally, so its
+    // Dart storage is never nullable no matter what the `required` list says.
+    // Deriving this from the schema's optionality instead would emit `?.` on a
+    // non-nullable receiver in `toJson` (`invalid_null_aware_operator`).
+    final dartIsNullable =
+        !isConstGetter &&
+        (propertyDartIsNullable(
+              jsonName: jsonName,
+              context: context,
+              propertyHasDefaultValue: hasDefaultValue,
+            ) ||
+            property.common.nullable);
+    // OpenAPI 3.1 lets a property be both `required` and accept `null`
+    // as its value (`type: [T, "null"]` + `required: [key]`). A plain
+    // `json[key] as T?` cast would then accept a missing key as a null
+    // value, silently violating `required`. Route the read through
+    // `checkedKey`, which throws `FormatException` when the key is
+    // absent — other combinations still read `json[key]` directly.
+    final jsonRead = jsonKeyIsRequired && property.common.nullable
+        ? "${ModelHelpers.checkedKey}(json, '$jsonName')"
+        : "json['$jsonName']";
+
+    // Means that the constructor parameter is required which is only true if
+    // both the json property is required and it does not have a default.
+    final isRequired =
+        requiredProperties.contains(jsonName) && !hasDefaultValue;
     return {
       'dartName': dartName,
       'jsonName': quoteString(jsonName),
@@ -3926,12 +3931,18 @@ class RenderObject extends RenderNewType {
           dartIsNullable: dartIsNullable,
         ),
       ),
-      'fromJson': property.fromJsonExpression(
-        jsonRead,
-        context,
-        dartIsNullable: dartIsNullable,
-        jsonIsNullable: jsonIsNullable,
-      ),
+      // A const getter is absent from `fromJson` (the template skips it), so
+      // there is no read expression to build. Computing one anyway would ask
+      // for a non-nullable value from a nullable json key and throw looking
+      // for a default that a pinned constant has no need of.
+      'fromJson': isConstGetter
+          ? null
+          : property.fromJsonExpression(
+              jsonRead,
+              context,
+              dartIsNullable: dartIsNullable,
+              jsonIsNullable: jsonIsNullable,
+            ),
     };
   }
 
