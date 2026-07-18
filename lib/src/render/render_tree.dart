@@ -3283,11 +3283,11 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
       // wrong; asking the constructor directly is that comment's fix.
       return DartInvocation(
         type: dartType,
-        arguments: [DartLiteral(value)],
+        arguments: [_numericLiteral(value)],
         isConstConstructor: validationCalls.isEmpty,
       );
     }
-    return DartLiteral(value);
+    return _numericLiteral(value);
   }
 
   @override
@@ -3447,7 +3447,7 @@ class RenderNumber extends RenderNumeric<double> {
 
   @override
   DartExpression? exampleValue(SchemaRenderer context) =>
-      newtypeWrappedExample(DartLiteral(_validNumberExample(common, this)));
+      newtypeWrappedExample(_numericLiteral(_validNumberExample(common, this)));
 }
 
 class RenderInteger extends RenderNumeric<int> {
@@ -3490,6 +3490,33 @@ class RenderInteger extends RenderNumeric<int> {
     DartLiteral(_validNumberExample(common, this).toInt()),
   );
 }
+
+/// A numeric literal for a destination whose static type is the schema's
+/// own — `double` for `number`, `int` for `integer`, or a newtype over
+/// one of those.
+///
+/// A whole-valued `double` renders as an int literal (`0`, not `0.0`).
+/// Dart converts an int literal in a `double` context, so the two forms
+/// denote the same value, and `prefer_int_literals` wants the shorter
+/// one — which `dart fix` was already rewriting it to.
+///
+/// Only sound because the destination is statically `double`. In a
+/// `dynamic` or `num` context (a JSON map literal, say) the two forms
+/// differ at runtime, so this must not be used to build one.
+DartLiteral _numericLiteral(num value) =>
+    DartLiteral(_isExactWholeDouble(value) ? value.toInt() : value);
+
+/// Whether [value] is a `double` holding a whole number that an `int`
+/// can represent exactly.
+///
+/// Non-finite values have no `int` form (`toInt()` throws), and past
+/// 2^53 a `double` no longer represents every integer, so converting
+/// would round to a different number than the spec wrote.
+bool _isExactWholeDouble(num value) =>
+    value is double &&
+    value.isFinite &&
+    value == value.truncateToDouble() &&
+    value.abs() <= 9007199254740992; // 2^53
 
 /// Pick a numeric value satisfying [schema]'s declared bounds. Prefers
 /// the spec's own `example` / `examples` (assumed valid by the

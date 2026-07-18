@@ -1171,6 +1171,41 @@ void main() {
       expect(schema.exampleValue(context)?.source, 'Date(2024, 1, 1)');
     });
 
+    // `number` examples land in a statically-`double` destination, where an
+    // int literal converts and reads better (`prefer_int_literals`). A
+    // fractional value has no int form and must keep the double literal.
+    RenderNumber numberWithExample(num example) => RenderNumber(
+      common: CommonProperties.test(
+        snakeName: 'foo',
+        pointer: const JsonPointer.empty(),
+        example: example,
+      ),
+      defaultValue: null,
+      maximum: null,
+      minimum: null,
+      exclusiveMaximum: null,
+      exclusiveMinimum: null,
+      multipleOf: null,
+      createsNewType: false,
+    );
+
+    test('whole-valued number example renders as an int literal', () {
+      expect(numberWithExample(0.0).exampleValue(context)?.source, '0');
+      expect(numberWithExample(7.0).exampleValue(context)?.source, '7');
+      expect(numberWithExample(-3.0).exampleValue(context)?.source, '-3');
+    });
+
+    test('fractional number example keeps the double literal', () {
+      expect(numberWithExample(1.5).exampleValue(context)?.source, '1.5');
+      expect(numberWithExample(0.25).exampleValue(context)?.source, '0.25');
+    });
+
+    test('number example beyond 2^53 keeps the double literal', () {
+      // Past 2^53 a double no longer represents every integer, so the int
+      // form could denote a different number than the spec wrote.
+      expect(numberWithExample(1e300).exampleValue(context)?.source, '1e+300');
+    });
+
     test('uri format produces a Uri.parse literal', () {
       const schema = RenderPod(
         common: common,
