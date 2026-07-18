@@ -1095,6 +1095,39 @@ void main() {
       expect(result, isNot(contains('throw UnimplementedError')));
     });
 
+    // An object whose only property is pinned to a single enum value
+    // renders that property as a const getter, so the constructor takes
+    // no arguments. The fromJson closure is then a tearoff written the
+    // long way (`unnecessary_lambdas`) and is emitted as `Type.new`.
+    test('object with only const-getter properties uses a tearoff', () {
+      final results = renderTestSchemas(
+        {
+          'Pong': {
+            'type': 'object',
+            'properties': {
+              'type': {
+                'type': 'integer',
+                'enum': [1],
+                'allOf': [
+                  {r'$ref': '#/components/schemas/CallbackType'},
+                ],
+              },
+            },
+            'required': ['type'],
+          },
+          'CallbackType': {
+            'type': 'integer',
+            'enum': [1, 4],
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final pong = results['Pong'];
+      expect(pong, isNotNull);
+      expect(pong, contains("parseFromJson('Pong', json, Pong.new)"));
+      expect(pong, isNot(contains('() => Pong(')));
+    });
+
     test('typed map variant walks each entry through fromJson/toJson', () {
       // Map with a non-trivial value schema. The wrapper must convert
       // each entry on fromJson and reverse on toJson.
@@ -3439,7 +3472,9 @@ void main() {
         "            mUri: (json['m_uri'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, Uri.parse(value as String))),\n"
         "            mMapOfString: (json['m_map_of_string'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, (value as Map<String, dynamic>).map((key, value) => MapEntry(key, value as String)))),\n"
         "            mEnum: (json['m_enum'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, TestMEnum.fromJson(value as String))),\n"
-        "            mUnknown: (json['m_unknown'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, value)),\n"
+        // Neither key nor value transforms, so the identity closure is
+        // emitted as the tearoff it is.
+        "            mUnknown: (json['m_unknown'] as Map<String, dynamic>?)?.map(MapEntry.new),\n"
         '        ));\n'
         '    }\n'
         '\n'
