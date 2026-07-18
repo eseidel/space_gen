@@ -1,6 +1,7 @@
 # Dart expression IR — decision record
 
-**Status:** accepted; implementation in progress (#261-#265).
+**Status:** accepted; implementation in progress. #261–#265 landed; see
+[Remaining work](#remaining-work).
 **Date:** 2026-07-18 (after #259).
 **Sibling:** [`doc/dart_type.md`](dart_type.md) — the same argument, one layer
 down, already implemented.
@@ -35,22 +36,24 @@ first attached to the initializer rather than the declaration, trading 987
 `prefer_const_constructors` for 1486 `prefer_const_declarations`.
 
 **Consumers recover producers' decisions by re-reading text.** Eight families,
-about twenty concrete sites. Representative ones:
+about twenty concrete sites as of #259. Representative ones, with what has
+since become of each — three of the five are already gone, which doubles as the
+arc's progress report:
 
-| site | what it does |
-|---|---|
-| `render_tree.dart:1249` | regex `^[a-zA-Z_$][\w$]*$` to ask "is this a bare identifier?", choosing `'$x'` vs `'${x}'` |
-| `render_tree.dart:1604` | `source == 'response.body'` — recovers which branch the producer took |
-| `render_tree.dart:2222` | `jsonType == 'String'` — the same question `_stringifyWireValue` (`:30`) answers structurally via `DartType` |
-| `render_tree.dart:3952` | `defaultValueString(context) == example.code` — structural equality spelled as string equality |
-| `render_tree.dart:1982` | `bodyContentTypeExpression == defaultBodyContentTypeExpression`, a constant that exists only to be compared |
+| text comparison | what it recovers | since |
+|---|---|---|
+| regex `^[a-zA-Z_$][\w$]*$` — "is this a bare identifier?", choosing `'$x'` vs `'${x}'` | how the producer spelled the thing | retired by `DartIdentifier` (#265) |
+| `jsonType == 'String'` | the question `_stringifyWireValue` answers structurally via `DartType` | retired by #265 |
+| `defaultValueString(context) == example.code` | structural equality spelled as string equality | retired by #262/#263 |
+| `source == 'response.body'` | which branch the producer took | still there — wants a domain type |
+| `bodyContentTypeExpression == defaultBodyContentTypeExpression` | a constant that exists only to be compared | still there — wants an enum |
 
 The largest instance is not in the expression layer at all:
 `lib/src/render/schema_renderer.dart` re-tokenizes fully rendered file bodies
 with `RegExp(r'[a-zA-Z_$][\w$]*')` (`referencedIdentifiers`,
 `_referencedModelHelpers`, `SchemaUsage.fromBody`) so that
-`file_renderer.dart` can decide imports (`importsForApi:677`,
-`importsForModel:776`). `SchemaUsage._validationCallPattern` is a regex
+`file_renderer.dart` can decide imports (`importsForApi`,
+`importsForModel`). `SchemaUsage._validationCallPattern` is a regex
 matching the exact method names `validationCalls` generates — a producer and a
 consumer coupled through nothing but text. That is #250's import pruning: the
 generator asking "what did I just write?" by grepping its own output.
