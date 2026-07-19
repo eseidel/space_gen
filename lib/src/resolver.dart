@@ -456,13 +456,15 @@ ResolvedSchema _resolveSchemaFully(
       // allOf members must be object-shaped. Besides plain objects, admit an
       // open map member (e.g. a `JsonObject`: `type: object` with only
       // `additionalProperties`, which resolves to `ResolvedMap`) — it
-      // contributes an arbitrary-key overflow to the merged object — and an
-      // empty object member, which contributes nothing. Both are folded into
-      // the merged `RenderObject` at render time (see `case ResolvedAllOf` in
-      // `render_tree.dart`).
+      // contributes an arbitrary-key overflow to the merged object — an
+      // empty object member, which contributes nothing, and a nested
+      // `allOf` member, which is itself an object composition: its own
+      // merge (recursively) is a `RenderObject` whose properties fold in.
+      // All are handled by `case ResolvedAllOf` in `render_tree.dart`.
       if (schema is ResolvedObject ||
           schema is ResolvedMap ||
-          schema is ResolvedEmptyObject) {
+          schema is ResolvedEmptyObject ||
+          schema is ResolvedAllOf) {
         continue;
       }
       _error('allOf only supports objects: $schema', allOf.pointer);
