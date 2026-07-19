@@ -126,6 +126,7 @@ void main() {
       required Map<String, dynamic> spec,
       Directory? outDir,
       Logger? logger,
+      bool generateTests = true,
     }) async {
       final out = outDir ?? MemoryFileSystem.test().directory('spacetraders');
       final fs = out.fileSystem;
@@ -142,6 +143,7 @@ void main() {
             templatesDir: templatesDir,
             runProcess: runProcess,
             logSchemas: false,
+            generateTests: generateTests,
           ),
         ),
       );
@@ -2283,6 +2285,130 @@ void main() {
           'workflow_usage_billable_windows.dart',
         ]),
       );
+    });
+
+    test('regen clears a stale generated test after a rename', () async {
+      // Generated model tests live under `test/`, mirroring the `lib/`
+      // layout. Regenerating into an existing package has to clear them
+      // the same way it clears `lib/`: a schema that changes file name
+      // otherwise leaves its old test behind, still referencing the
+      // class under its old name, and the package stops analyzing.
+      //
+      // Found by regenerating the spec repo after #207 renamed
+      // discord's `MLSpamTriggerMetadataResponse` file — both the old
+      // and new test survived and 13 suites failed to compile.
+      final out = MemoryFileSystem.test().directory('spacetraders');
+      Map<String, dynamic> specWithSchema(String name) => {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/thing': {
+            'get': {
+              'operationId': 'getThing',
+              'responses': {
+                '200': {
+                  'description': 'ok',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/$name'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            name: {
+              'type': 'object',
+              'properties': {
+                'id': {'type': 'string'},
+              },
+            },
+          },
+        },
+      };
+
+      await renderToDirectory(spec: specWithSchema('OldName'), outDir: out);
+      final staleTest = out.childFile('test/models/old_name_test.dart');
+      expect(staleTest.existsSync(), isTrue, reason: 'sanity: first regen');
+
+      // Regenerate the same package with the schema renamed.
+      await renderToDirectory(spec: specWithSchema('NewName'), outDir: out);
+      expect(
+        out.childFile('test/models/new_name_test.dart').existsSync(),
+        isTrue,
+      );
+      expect(
+        staleTest.existsSync(),
+        isFalse,
+        reason: "the previous name's test must not survive the regen",
+      );
+    });
+
+    test('regen leaves test/ alone when not generating tests', () async {
+      // `test/` is where a consumer's own tests live by Dart
+      // convention. With generateTests off we write nothing there, so
+      // clearing it would delete files this run never produces — worse
+      // than the stale-file problem the clearing exists to fix.
+      final out = MemoryFileSystem.test().directory('spacetraders');
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/thing': {
+            'get': {
+              'operationId': 'getThing',
+              'responses': {
+                '200': {
+                  'description': 'ok',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Thing'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Thing': {
+              'type': 'object',
+              'properties': {
+                'id': {'type': 'string'},
+              },
+            },
+          },
+        },
+      };
+
+      await renderToDirectory(
+        spec: spec,
+        outDir: out,
+        generateTests: false,
+      );
+      // A hand-written test, in the layout a consumer would naturally
+      // mirror from lib/.
+      final handWritten = out.childFile('test/models/my_own_test.dart')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('// mine');
+
+      await renderToDirectory(
+        spec: spec,
+        outDir: out,
+        generateTests: false,
+      );
+      expect(handWritten.existsSync(), isTrue);
+      expect(handWritten.readAsStringSync(), '// mine');
     });
 
     test('colliding names are renamed', () async {

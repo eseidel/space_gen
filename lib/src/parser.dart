@@ -1089,6 +1089,10 @@ TypeAndFormat parseTypeAndFormat(MapContext json) {
     final expectedFormats = {
       'string': {
         'binary',
+        // OAS 3.0 / JSON Schema draft-4 for base64-encoded bytes. Dropped
+        // in 3.1 in favor of `contentEncoding: base64`; both are handled
+        // and converge on the same schema node.
+        'byte',
         'date-time',
         'uri',
         'uri-template',
@@ -1322,9 +1326,6 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
     // bytes' MIME type. Not actionable on the Dart side beyond
     // documentation; consume to suppress the unused-key warning.
     _ignored<String>(json, 'contentMediaType');
-    if (contentEncoding == 'base64') {
-      return SchemaBase64Bytes(common: common);
-    }
     // `contentEncoding: binary` is the OpenAPI 3.1 successor to
     // `format: binary`, but on a non-multipart response body (e.g.
     // an `image/png` content type) it implies the response method
@@ -1341,6 +1342,19 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
         'Ignoring: contentEncoding=$contentEncoding (String) in '
         '${json.pointer}',
       );
+    }
+    // `format: byte` (OAS 3.0 / draft-4) and `contentEncoding: base64`
+    // (OAS 3.1 / 2020-12) are the same statement in the vocabulary of
+    // two spec versions: a JSON string whose value is base64-encoded
+    // binary. They converge on one node, so a 3.0 spec gets the same
+    // `Uint8List` a 3.1 spec does rather than a `String` the caller has
+    // to decode by hand.
+    //
+    // A spec that sets both is accepted rather than flagged: they agree,
+    // and belt-and-braces declarations are common in specs that straddle
+    // versions.
+    if (typeAndFormat.format == 'byte' || contentEncoding == 'base64') {
+      return SchemaBase64Bytes(common: common);
     }
   }
 

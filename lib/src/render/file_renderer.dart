@@ -1074,6 +1074,22 @@ class FileRenderer {
         // Current layout.
         p.join('lib', 'models'),
         p.join('lib', 'messages'),
+        // Generated model tests mirror the `lib/` layout under `test/`
+        // (see [testPath]), so they need the same treatment. A schema
+        // that changes file name leaves a test behind otherwise, and
+        // that test still references the class under its old name — so
+        // the regenerated package no longer analyzes.
+        //
+        // Only when we are the ones writing them. `test/` is where a
+        // consumer's own tests live by Dart convention, so with
+        // [GeneratorConfig.generateTests] off these directories are not
+        // ours to delete — clearing them there would destroy files this
+        // run never produces.
+        if (config.generateTests) ...[
+          p.join('test', 'model'),
+          p.join('test', 'models'),
+          p.join('test', 'messages'),
+        ],
       };
       for (final dirName in dirs) {
         final path = p.join(fileWriter.outDir.path, dirName);

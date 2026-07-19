@@ -2518,6 +2518,31 @@ void main() {
         final schema = runWithLogger(logger, () => parseTestSchema(json));
         expect(schema, isA<SchemaBase64Bytes>());
       });
+      test('format=byte parses as SchemaBase64Bytes', () {
+        // OAS 3.0's spelling of the same thing, and the only one 3.0 has.
+        // Before this it fell through to the unknown-format branch and
+        // rendered a plain `String` the caller had to decode by hand.
+        final json = {'type': 'string', 'format': 'byte'};
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaBase64Bytes>());
+        // A recognized format, so no "unknown format" chatter.
+        verifyNever(
+          () => logger.detail(any(that: contains('unknown string format'))),
+        );
+      });
+      test('format=byte and contentEncoding=base64 together agree', () {
+        // Specs straddling 3.0 and 3.1 declare both. They say the same
+        // thing, so this is accepted rather than treated as a conflict.
+        final json = {
+          'type': 'string',
+          'format': 'byte',
+          'contentEncoding': 'base64',
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaBase64Bytes>());
+      });
       test('contentEncoding=binary stays a SchemaString (deferred)', () {
         // Routing `contentEncoding: binary` to `SchemaBinary` (a no-
         // JSON type) breaks generated response handlers for non-JSON
