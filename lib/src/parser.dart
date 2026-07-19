@@ -2169,10 +2169,36 @@ class RefRegistry {
 
   final objectsByUri = <Uri, dynamic>{};
 
+  /// A ref location whose target is itself a `$ref` — a components alias
+  /// like `Product-Base: {$ref: ./schemas/product_base.yaml}`. Looking up
+  /// the alias URI follows the chain to the underlying object. Kept separate
+  /// from [objectsByUri] because a location holds either an object or a ref,
+  /// never both, so the two maps never key the same URI.
+  final aliasesByUri = <Uri, Uri>{};
+
   Iterable<Uri> get uris => objectsByUri.keys;
 
+  /// Follow any alias chain from [uri] to the URI of the object it
+  /// ultimately names. Returns [uri] unchanged when it isn't an alias.
+  /// Callers switching their document base must resolve refs against *this*
+  /// URI's document, not the alias's — a `Product-Base` alias in `api.yaml`
+  /// points at `schemas/product_base.yaml`, whose own refs are relative to
+  /// `schemas/`, not to `api.yaml`.
+  Uri followAliases(Uri uri) {
+    var resolved = uri;
+    final seen = <Uri>{};
+    while (aliasesByUri.containsKey(resolved)) {
+      if (!seen.add(resolved)) {
+        throw FormatException('Cyclic ref alias chain reaching $uri');
+      }
+      resolved = aliasesByUri[resolved]!;
+    }
+    return resolved;
+  }
+
   T get<T>(Uri uri) {
-    final object = objectsByUri[uri];
+    final resolved = followAliases(uri);
+    final object = objectsByUri[resolved];
     if (object == null) {
       throw FormatException('$T not found: $uri');
     }
@@ -2180,6 +2206,14 @@ class RefRegistry {
       throw FormatException('Expected $T, got ${object.runtimeType}');
     }
     return object;
+  }
+
+  /// Record that [from] is an alias for [to] (both absolute URIs). A
+  /// components entry that is a bare `$ref` names no object of its own; the
+  /// alias lets a lookup of its URI reach whatever [to] eventually holds.
+  /// First arrival wins — re-registering the same alias is a no-op.
+  void registerAlias(Uri from, Uri to) {
+    aliasesByUri.putIfAbsent(from, () => to);
   }
 
   void register(Uri uri, dynamic object) {

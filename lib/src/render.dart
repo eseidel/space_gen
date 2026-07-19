@@ -66,7 +66,12 @@ Future<void> _loadExternalRefs({
   required Cache cache,
   required RefRegistry refRegistry,
 }) async {
-  final processedDocs = <Uri>{rootSpecUrl};
+  // Documents indexed whole (the root spec, plus any external
+  // components-library document): a ref into one is already satisfied, so
+  // it is skipped by document URI. Split-spec targets, by contrast, are
+  // registered one JSON-pointer at a time and deduped by full URI below.
+  final fullyIndexedDocs = <Uri>{rootSpecUrl};
+  final processedTargets = <Uri>{};
   // Each work item carries the URL of the doc containing the ref, so the
   // ref's (possibly relative) URI resolves against the right base.
   final workItems = Queue<(Uri sourceDoc, Ref<Parseable> ref)>();
@@ -81,31 +86,112 @@ Future<void> _loadExternalRefs({
 
   while (workItems.isNotEmpty) {
     final (sourceDoc, ref) = workItems.removeFirst();
-    final docUri = sourceDoc.resolveUri(ref.uri).removeFragment();
-    if (!processedDocs.add(docUri)) continue;
+    final resolved = sourceDoc.resolveUri(ref.uri);
+    final docUri = resolved.removeFragment();
+    if (fullyIndexedDocs.contains(docUri)) continue;
 
     final doc = await cache.load(docUri);
     final componentsJson = doc['components'];
-    if (componentsJson is! Map<String, dynamic>) {
+    if (componentsJson is Map<String, dynamic>) {
+      // OpenAPI-shaped components library: index every component by its
+      // in-document pointer (`docUri#/components/schemas/Foo`).
+      fullyIndexedDocs.add(docUri);
+      final componentsContext = MapContext(
+        pointerParts: ['components'],
+        snakeNameStack: const [],
+        json: componentsJson,
+      );
+      final components = parseComponents(componentsContext);
+
+      SpecWalker(
+        RegistryBuilder(docUri, refRegistry),
+      ).walkComponents(components);
+
+      enqueue(docUri, _collectRefsFromComponents(components));
+    } else {
+      // Split-spec convention (redocly/stoplight style): the document has
+      // no `components:` section; the `$ref`'s fragment is a JSON-pointer
+      // into it (empty fragment = the whole-file root). The pointed-at
+      // node is a lone component whose type comes from the referencing
+      // site. Register it under its full URI — exactly the key the ref
+      // resolves to — and chase its own external refs.
+      if (!processedTargets.add(resolved)) continue;
+      final targetJson = _resolveJsonPointer(doc, resolved);
+      final refOr = _parseExternalTarget(ref, resolved, targetJson);
+      final object = refOr.object;
+      if (object == null) {
+        // The target is itself only a `$ref`; follow it transitively.
+        enqueue(docUri, [refOr.ref!]);
+      } else {
+        refRegistry.register(resolved, object);
+        final nestedRefs = <Ref<Parseable>>{};
+        SpecWalker(_RefCollector(nestedRefs)).walkRefOr(refOr);
+        enqueue(docUri, nestedRefs);
+      }
+    }
+  }
+}
+
+/// Navigate the JSON-pointer fragment of [target] into [doc] and return the
+/// pointed-at object. An empty fragment yields the document root.
+Map<String, dynamic> _resolveJsonPointer(
+  Map<String, dynamic> doc,
+  Uri target,
+) {
+  dynamic current = doc;
+  for (final rawPart in target.fragment.split('/')) {
+    if (rawPart.isEmpty) continue;
+    // RFC 6901 unescaping: `~1` → `/` before `~0` → `~`.
+    final part = rawPart.replaceAll('~1', '/').replaceAll('~0', '~');
+    if (current is! Map<String, dynamic> || !current.containsKey(part)) {
       throw FormatException(
-        'External ref target $docUri has no `components:` section; '
-        'space_gen only supports external refs into OpenAPI-shaped '
-        'components libraries.',
+        'External ref $target: no `$part` at that JSON-pointer path.',
       );
     }
-    final componentsContext = MapContext(
-      pointerParts: ['components'],
-      snakeNameStack: const [],
-      json: componentsJson,
-    );
-    final components = parseComponents(componentsContext);
-
-    SpecWalker(
-      RegistryBuilder(docUri, refRegistry),
-    ).walkComponents(components);
-
-    enqueue(docUri, _collectRefsFromComponents(components));
+    current = current[part];
   }
+  if (current is! Map<String, dynamic>) {
+    throw FormatException('External ref $target does not point at an object.');
+  }
+  return current;
+}
+
+/// Parse an external split-spec [target] JSON as the component type its
+/// referencing site [ref] demands. Keyed in the registry by [target]'s full
+/// URI, so the parse pointer only has to be globally unique (the URI is) and
+/// the snake name only has to read well.
+RefOr<Parseable> _parseExternalTarget(
+  Ref<Parseable> ref,
+  Uri target,
+  Map<String, dynamic> targetJson,
+) {
+  // A fragment names the node (`.../tags.yaml#/properties/brands` →
+  // `brands`); a bare file is named by its basename.
+  final fragment = target.fragment;
+  final rawName = fragment.isEmpty
+      ? p.basenameWithoutExtension(target.path)
+      : fragment.split('/').lastWhere(
+          (s) => s.isNotEmpty,
+          orElse: () => p.basenameWithoutExtension(target.path),
+        );
+  final context = MapContext(
+    // A unique, opaque identity for the resolver's recursion stack and the
+    // name allocator; never emitted, so the full URI is fine.
+    pointerParts: [target.toString()],
+    snakeNameStack: [toSnakeCase(rawName)],
+    json: targetJson,
+  );
+  final type = ref.type;
+  if (type == Schema) return parseSchemaOrRef(context);
+  if (type == Response) return parseResponseOrRef(context);
+  if (type == Parameter) return parseParameterOrRef(context);
+  if (type == RequestBody) return parseRequestBodyOrRef(context);
+  if (type == Header) return parseHeaderOrRef(context);
+  throw FormatException(
+    'External ref target $target is a whole-file component of unsupported '
+    'type $type; space_gen supports whole-file schemas, responses, '
+    'parameters, request bodies, and headers.',
+  );
 }
 
 void validatePackageName(String packageName) {

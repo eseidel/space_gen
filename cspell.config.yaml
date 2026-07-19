@@ -86,6 +86,8 @@ words:
   - codeowners
   - backticked
   - typeless
+  - redocly
+  - stoplight
   - favorited
   - readback
   - flaggable

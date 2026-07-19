@@ -3010,4 +3010,51 @@ void main() {
       expect(pointerOne.hashCode, isNot(pointerThree.hashCode));
     });
   });
+
+  group('RefRegistry aliases', () {
+    final objectUri = Uri.parse('file:///schemas/product_base.yaml');
+    final aliasUri = Uri.parse('file:///api.yaml#/components/schemas/Base');
+    final schema = SchemaObject(
+      common: CommonProperties.empty(
+        pointer: JsonPointer.parse('#/components/schemas/Base'),
+        snakeName: 'base',
+      ),
+      properties: const {},
+      requiredProperties: const [],
+      additionalProperties: null,
+      defaultValue: null,
+      constProperties: const {},
+    );
+
+    test('a lookup follows an alias chain to the underlying object', () {
+      final registry = RefRegistry()
+        ..register(objectUri, schema)
+        ..registerAlias(aliasUri, objectUri);
+      // Both the alias URI and the object URI reach the same object, and
+      // `followAliases` reports the object's real URI (the document a
+      // caller must switch its ref base to).
+      expect(registry.get<Schema>(aliasUri), same(schema));
+      expect(registry.get<Schema>(objectUri), same(schema));
+      expect(registry.followAliases(aliasUri), objectUri);
+      // A non-alias URI is returned unchanged.
+      expect(registry.followAliases(objectUri), objectUri);
+    });
+
+    test('first alias registration wins', () {
+      final other = Uri.parse('file:///other.yaml');
+      final registry = RefRegistry()
+        ..registerAlias(aliasUri, objectUri)
+        ..registerAlias(aliasUri, other);
+      expect(registry.followAliases(aliasUri), objectUri);
+    });
+
+    test('a cyclic alias chain throws rather than looping', () {
+      final a = Uri.parse('file:///a#/x');
+      final b = Uri.parse('file:///b#/y');
+      final registry = RefRegistry()
+        ..registerAlias(a, b)
+        ..registerAlias(b, a);
+      expect(() => registry.followAliases(a), throwsFormatException);
+    });
+  });
 }

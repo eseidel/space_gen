@@ -160,12 +160,16 @@ class ResolveContext {
     RefOr<T> refOr,
     R Function(T target) body,
   ) {
-    final target = refOr.object != null
-        ? refOr.object!
-        : refRegistry.get<T>(currentDoc.resolveUri(refOr.ref!.uri));
-    if (refOr.ref == null) return body(target);
+    if (refOr.ref == null) return body(refOr.object!);
+    // Follow alias chains so the document switch lands on the document that
+    // actually holds the target, not the (possibly aliasing) document the
+    // ref names. A direct ref has no alias, so this is a no-op there.
+    final targetUri = refRegistry.followAliases(
+      currentDoc.resolveUri(refOr.ref!.uri),
+    );
+    final target = refRegistry.get<T>(targetUri);
     final prev = currentDoc;
-    currentDoc = currentDoc.resolveUri(refOr.ref!.uri).removeFragment();
+    currentDoc = targetUri.removeFragment();
     try {
       return body(target);
     } finally {
@@ -883,6 +887,20 @@ class RegistryBuilder extends Visitor {
     final fragment = object.pointer.urlEncodedFragment;
     final uri = specUrl.resolve(fragment);
     refRegistry.register(uri, object);
+  }
+
+  @override
+  void visitRefOr<T extends Parseable>(RefOr<T> refOr) {
+    // A location holding a bare `$ref` (a components alias like
+    // `Product-Base: {$ref: ./schemas/product_base.yaml}`) registers no
+    // object of its own — the inline case is handled by the `visitX` calls
+    // as the walk descends. Record the alias so a lookup of this location
+    // reaches whatever the target eventually resolves to.
+    final ref = refOr.ref;
+    if (ref == null) return;
+    final from = specUrl.resolve(refOr.pointer.urlEncodedFragment);
+    final to = specUrl.resolveUri(ref.uri);
+    refRegistry.registerAlias(from, to);
   }
 
   @override

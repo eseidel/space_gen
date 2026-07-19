@@ -2876,6 +2876,113 @@ void main() {
       expect(out.childFile('lib/custom/create_widget_request.dart'), exists);
       expect(hasGeneratedSchemaDirs(out), isFalse);
     });
+
+    test('resolves split-spec external refs (whole-file, pointer, alias)', () {
+      // The redocly/stoplight split-spec convention (issue #315): one
+      // component per file, referenced by external `$ref`. This exercises
+      // every external-ref shape at once:
+      //   * a bare, fragment-less `$ref` to a whole-file schema
+      //     (`./schemas/widget.json`),
+      //   * a fragment `$ref` into an arbitrary JSON-pointer path of a
+      //     document with no `components:` section
+      //     (`./params/query.json#/properties/limit`, a Parameter),
+      //   * a components entry that is itself only a `$ref` — an alias —
+      //     referenced back as `#/components/schemas/Widget`, whose own
+      //     relative `$ref` (`./detail.json`) must resolve against the
+      //     alias *target's* directory, not the aliasing document's.
+      final fs = MemoryFileSystem.test();
+      final files = {
+        '/src/api.json': {
+          'openapi': '3.1.0',
+          'info': {'title': 'Split', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/widget': {
+              'get': {
+                'operationId': 'getWidget',
+                'parameters': [
+                  {r'$ref': './params/query.json#/properties/limit'},
+                ],
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {r'$ref': '#/components/schemas/Widget'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'components': {
+            'schemas': {
+              'Widget': {r'$ref': './schemas/widget.json'},
+            },
+          },
+        },
+        '/src/schemas/widget.json': {
+          'type': 'object',
+          'required': ['id', 'detail'],
+          'properties': {
+            'id': {'type': 'integer'},
+            'detail': {r'$ref': './detail.json'},
+          },
+        },
+        '/src/schemas/detail.json': {
+          'type': 'object',
+          'properties': {
+            'note': {'type': 'string'},
+          },
+        },
+        '/src/params/query.json': {
+          'type': 'object',
+          'properties': {
+            'limit': {
+              'name': 'limit',
+              'in': 'query',
+              'schema': {'type': 'integer'},
+            },
+          },
+        },
+      };
+      for (final entry in files.entries) {
+        fs.file(entry.key)
+          ..createSync(recursive: true)
+          ..writeAsStringSync(jsonEncode(entry.value));
+      }
+      final out = fs.directory('pkg');
+      return runWithLogger(_MockLogger(), () async {
+        await loadAndRenderSpec(
+          GeneratorConfig(
+            specUrl: Uri.file('/src/api.json'),
+            packageName: 'pkg',
+            outDir: out,
+            templatesDir: templatesDir,
+            runProcess: runProcess,
+            logSchemas: false,
+          ),
+        );
+        final widget = out.childFile('lib/models/widget.dart');
+        final detail = out.childFile('lib/models/detail.dart');
+        expect(widget, exists);
+        expect(detail, exists);
+        // The alias resolved to the whole-file schema, and its transitive
+        // `./detail.json` ref resolved against `schemas/` (the alias
+        // target's directory).
+        expect(widget.readAsStringSync(), contains('final int id;'));
+        expect(widget.readAsStringSync(), contains('final Detail detail;'));
+        expect(detail.readAsStringSync(), contains('class Detail'));
+        // The arbitrary-JSON-pointer ref resolved to a query Parameter.
+        expect(
+          out.childFile('lib/api/default_api.dart').readAsStringSync(),
+          contains('int? limit'),
+        );
+      });
+    });
   });
 
   group('Formatter', () {
