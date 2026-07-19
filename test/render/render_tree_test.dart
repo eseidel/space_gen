@@ -10,6 +10,13 @@ import 'package:test/test.dart';
 
 import 'expression_source.dart';
 
+/// `json`, the parameter every generated `fromJson` receives.
+const _json = DartIdentifier('json');
+
+/// `json['<key>']`, the read a property's `fromJson` starts from.
+DartExpression _jsonKey(String key) =>
+    DartIndex(target: _json, index: DartLiteral(key));
+
 class _Collector extends RenderTreeVisitor {
   final List<RenderSchema> visited = [];
 
@@ -1020,21 +1027,25 @@ void main() {
       final templates = TemplateProvider.defaultLocation();
       final context = SchemaRenderer(templates: templates);
       expect(
-        ref.fromJsonExpression(
-          'json',
-          context,
-          jsonIsNullable: false,
-          dartIsNullable: false,
-        ),
+        ref
+            .fromJsonExpression(
+              _json,
+              context,
+              jsonIsNullable: false,
+              dartIsNullable: false,
+            )
+            ?.runtimeSource,
         'Node.fromJson(json as Map<String, dynamic>)',
       );
       expect(
-        ref.fromJsonExpression(
-          'json',
-          context,
-          jsonIsNullable: true,
-          dartIsNullable: true,
-        ),
+        ref
+            .fromJsonExpression(
+              _json,
+              context,
+              jsonIsNullable: true,
+              dartIsNullable: true,
+            )
+            ?.runtimeSource,
         'Node.maybeFromJson(json as Map<String, dynamic>?)',
       );
     });
@@ -1976,21 +1987,25 @@ void main() {
 
     test('fromJson routes to Date.fromJson / maybeFromJson', () {
       expect(
-        date.fromJsonExpression(
-          "json['d']",
-          context,
-          jsonIsNullable: false,
-          dartIsNullable: false,
-        ),
+        date
+            .fromJsonExpression(
+              _jsonKey('d'),
+              context,
+              jsonIsNullable: false,
+              dartIsNullable: false,
+            )
+            ?.runtimeSource,
         "Date.fromJson(json['d'] as String)",
       );
       expect(
-        date.fromJsonExpression(
-          "json['d']",
-          context,
-          jsonIsNullable: true,
-          dartIsNullable: true,
-        ),
+        date
+            .fromJsonExpression(
+              _jsonKey('d'),
+              context,
+              jsonIsNullable: true,
+              dartIsNullable: true,
+            )
+            ?.runtimeSource,
         "Date.maybeFromJson(json['d'] as String?)",
       );
     });
@@ -2147,33 +2162,39 @@ void main() {
         'when a newtype', () {
       final schema = pod(PodType.dateTime, createsNewType: true);
       expect(
-        schema.fromJsonExpression(
-          "json['d']",
-          context,
-          jsonIsNullable: false,
-          dartIsNullable: false,
-        ),
+        schema
+            .fromJsonExpression(
+              _jsonKey('d'),
+              context,
+              jsonIsNullable: false,
+              dartIsNullable: false,
+            )
+            ?.runtimeSource,
         "FooBar.fromJson(json['d'] as String)",
       );
       expect(
-        schema.fromJsonExpression(
-          "json['d']",
-          context,
-          jsonIsNullable: true,
-          dartIsNullable: true,
-        ),
+        schema
+            .fromJsonExpression(
+              _jsonKey('d'),
+              context,
+              jsonIsNullable: true,
+              dartIsNullable: true,
+            )
+            ?.runtimeSource,
         "FooBar.maybeFromJson(json['d'] as String?)",
       );
     });
 
     test('fromJsonExpression inline routes nullable uuid correctly', () {
       expect(
-        pod(PodType.uuid).fromJsonExpression(
-          "json['u']",
-          context,
-          jsonIsNullable: false,
-          dartIsNullable: false,
-        ),
+        pod(PodType.uuid)
+            .fromJsonExpression(
+              _jsonKey('u'),
+              context,
+              jsonIsNullable: false,
+              dartIsNullable: false,
+            )
+            ?.runtimeSource,
         "json['u'] as String",
       );
     });

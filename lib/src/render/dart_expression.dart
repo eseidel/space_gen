@@ -68,10 +68,10 @@ sealed class DartExpression extends Equatable {
 /// there is no arithmetic or comparison in generated `fromJson`/`toJson`
 /// code, and an unused level is a level nothing tests.
 ///
-/// The point of the enum is that composition asks rather than assumes.
-/// Before it, two overrides answered "does a cast on the left of `??` need
-/// parens" independently and disagreed: `RenderNumeric` emitted
-/// `(json['x'] as int?) ?? 0` and `RenderPod` emitted
+/// Composition asks rather than assumes. Before this, two
+/// `fromJsonExpression` overrides answered "does a cast on the left of
+/// `??` need parens" independently and disagreed — `RenderNumeric` emitted
+/// `(json['x'] as int?) ?? 0`, `RenderPod` emitted
 /// `json['x'] as bool? ?? false`.
 enum DartPrecedence {
   /// `throw x` — binds looser than everything, including a lambda body.
@@ -176,14 +176,24 @@ class DartExpressionSerializer extends Equatable {
             '${isNullAware ? '?.' : '.'}$name',
       DartFunctionCall(:final name, :final arguments) =>
         '$name(${arguments.map(children.serialize).join(', ')})',
+      DartIndex(:final target, :final index) =>
+        '${children._serializeAt(target, DartPrecedence.postfix)}'
+            '[${children.serialize(index)}]',
       // `as` binds tighter than `??`, so its operand has to be at least a
       // cast itself; `(a ?? b) as T` is where this earns the parens.
       DartCast(:final operand, :final type) =>
         '${children._serializeAt(operand, DartPrecedence.cast)} as $type',
-      // `??` is right-associative: the left side must bind tighter, the
-      // right side may be another `??` without parens.
+      // Elective parens, not required ones: `as` already binds tighter
+      // than `??`, so `json['x'] as int? ?? 0` compiles and doesn't trip
+      // `unnecessary_parenthesis`. It just reads badly — `? ??` runs two
+      // unrelated question marks together — and handwritten Dart brackets
+      // it. Asking for `postfix` rather than `cast` on the left is what
+      // buys that.
+      //
+      // `??` is right-associative, so the right side may be another `??`
+      // without parens.
       DartIfNull(:final value, :final ifNullValue) =>
-        '${children._serializeAt(value, DartPrecedence.cast)} ?? '
+        '${children._serializeAt(value, DartPrecedence.postfix)} ?? '
             '${children._serializeAt(ifNullValue, DartPrecedence.ifNull)}',
       DartThrow(:final value) => 'throw ${children.serialize(value)}',
       DartLambda(:final parameters, :final body) =>
@@ -488,6 +498,26 @@ class DartFunctionCall extends DartExpression {
 
   @override
   List<Object?> get props => [name, arguments];
+}
+
+/// An index read: `json['name']`.
+class DartIndex extends DartExpression {
+  const DartIndex({required this.target, required this.index});
+
+  final DartExpression target;
+
+  final DartExpression index;
+
+  /// `const` collections can be indexed in a constant expression, but the
+  /// generator only indexes the runtime JSON map.
+  @override
+  bool get canBeConst => false;
+
+  @override
+  DartPrecedence get precedence => DartPrecedence.postfix;
+
+  @override
+  List<Object?> get props => [target, index];
 }
 
 /// A cast: `json['x'] as String?`.
