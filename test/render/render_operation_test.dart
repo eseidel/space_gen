@@ -1223,7 +1223,7 @@ void main() {
         '}\n',
       );
     });
-    test('openapi quirks all lists to empty default', () {
+    test('openapi list-default quirk does not apply to query params', () {
       final json = {
         'summary': 'Get user',
         'parameters': [
@@ -1254,9 +1254,10 @@ void main() {
       );
       expect(
         result,
-        // The `const []` default is an openapi-quirk artifact; foo should
-        // really default to null. Tracked separately — that quirk is
-        // out of scope for this query-array fix.
+        // `allListsDefaultToEmpty` fakes an empty-list default for
+        // response-model fields (never null); a query param is an input, so
+        // it keeps its real null default rather than a no-op `= const []`
+        // that the `if (foo != null)` guard would always pass. See #137.
         '/// Test API\n'
         'class DefaultApi {\n'
         '    DefaultApi(ApiClient? client) : client = client ?? ApiClient();\n'
@@ -1265,7 +1266,7 @@ void main() {
         '\n'
         '    /// Get user\n'
         '    Future<void> users(\n'
-        '        { List<String>? foo = const [], }\n'
+        '        { List<String>? foo, }\n'
         '    ) async {\n'
         '        final response = await client.invokeApi(\n'
         '            method: Method.post,\n'
