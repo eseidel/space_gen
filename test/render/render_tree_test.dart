@@ -1034,7 +1034,7 @@ void main() {
               jsonIsNullable: false,
               dartIsNullable: false,
             )
-            ?.runtimeSource,
+            .runtimeSource,
         'Node.fromJson(json as Map<String, dynamic>)',
       );
       expect(
@@ -1045,7 +1045,7 @@ void main() {
               jsonIsNullable: true,
               dartIsNullable: true,
             )
-            ?.runtimeSource,
+            .runtimeSource,
         'Node.maybeFromJson(json as Map<String, dynamic>?)',
       );
     });
@@ -1296,6 +1296,36 @@ void main() {
     test('void returns null (no round-trip possible)', () {
       const schema = RenderVoid(common: common);
       expect(schema.exampleValue(context)?.source, isNull);
+    });
+
+    test('void has no fromJson expression, and array items must', () {
+      const void_ = RenderVoid(common: common);
+      expect(
+        void_.fromJsonExpression(
+          const DartIdentifier('json'),
+          context,
+          jsonIsNullable: false,
+          dartIsNullable: false,
+        ),
+        isNull,
+      );
+      // A map value's type can't be void, so an absent expression there
+      // means the tree was built wrong — say so rather than propagating a
+      // null into an expression with nowhere to put it.
+      const map = RenderMap(
+        common: common,
+        valueSchema: void_,
+        keySchema: null,
+      );
+      expect(
+        () => map.fromJsonExpression(
+          const DartIdentifier('json'),
+          context,
+          jsonIsNullable: false,
+          dartIsNullable: false,
+        ),
+        throwsStateError,
+      );
     });
 
     test('binary (NoJson) returns null', () {
@@ -1994,7 +2024,7 @@ void main() {
               jsonIsNullable: false,
               dartIsNullable: false,
             )
-            ?.runtimeSource,
+            .runtimeSource,
         "Date.fromJson(json['d'] as String)",
       );
       expect(
@@ -2005,7 +2035,7 @@ void main() {
               jsonIsNullable: true,
               dartIsNullable: true,
             )
-            ?.runtimeSource,
+            .runtimeSource,
         "Date.maybeFromJson(json['d'] as String?)",
       );
     });
@@ -2169,7 +2199,7 @@ void main() {
               jsonIsNullable: false,
               dartIsNullable: false,
             )
-            ?.runtimeSource,
+            .runtimeSource,
         "FooBar.fromJson(json['d'] as String)",
       );
       expect(
@@ -2180,7 +2210,7 @@ void main() {
               jsonIsNullable: true,
               dartIsNullable: true,
             )
-            ?.runtimeSource,
+            .runtimeSource,
         "FooBar.maybeFromJson(json['d'] as String?)",
       );
     });
@@ -2194,7 +2224,7 @@ void main() {
               jsonIsNullable: false,
               dartIsNullable: false,
             )
-            ?.runtimeSource,
+            .runtimeSource,
         "json['u'] as String",
       );
     });

@@ -202,22 +202,27 @@ rather than plausible text.
 Roughly in value order. Counts are current as of #265; line numbers drift, so
 they are deliberately omitted.
 
-1. **`fromJsonExpression`** — 16 overrides, the other half of #265. Needs
-   cast (`as T`), `??` and null-aware nodes. Watch #255: a bare numeric cast
-   must not gain parentheses, which becomes a structural question about
-   whether the operand needs them rather than a string rule.
+1. ~~**`fromJsonExpression`**~~ — done (#291). Parenthesization is now a
+   serializer question answered from `DartPrecedence`, which is where the
+   #255 rule lives: a bare cast is not parenthesized, a cast under a
+   selector is. The parens around a cast on the left of `??` are the one
+   *elective* rule — `as` already binds tighter, so they are for
+   readability, and the serializer says so.
 2. **Dispatch predicates** — the `RenderOneOf` `caseExpression` closures and
    `Predicate.dartIfTest` in `lib/src/dispatch.dart` (6 sites).
-3. **The two remaining text-inspection sites**, both of which want a *domain
-   type* rather than an expression (see Scope above): `source ==
-   'response.body'`, which recovers which branch the producer took, and
-   `bodyContentTypeExpression == defaultBodyContentTypeExpression`, a constant
-   that exists only to be compared against.
-4. **Import derivation** — the real prize. `schema_renderer.dart` re-tokenizes
-   rendered file bodies so `file_renderer.dart` can decide imports; referenced
-   identifiers should instead accumulate while the tree is built. This is the
-   step that widens scope toward declarations, so revisit the code_builder
-   decision here rather than drifting into it.
+3. **One remaining text-inspection site**, which wants a *domain type*
+   rather than an expression (see Scope above):
+   `bodyContentTypeExpression == defaultBodyContentTypeExpression`, a
+   constant that exists only to be compared against. (`source ==
+   'response.body'` became an enum in #291.)
+4. **Library imports** — narrower than it first looked. #287 answered the
+   *schema* half structurally from the render tree, so what is left is
+   whether a rendered body called `jsonDecode`, named `Uint8List`, or
+   emitted a `validateXxx` — facts about what the template wrote, which
+   the render tree does not describe. That is a smaller surface than
+   "accumulate every referenced identifier", and correspondingly weaker
+   grounds for widening scope to declarations: **revisit the code_builder
+   decision only if this step actually demands it.**
 
 Each step stands alone: the codebase is strictly better if the arc stops at any
 point, which is the mitigation for the payoff sitting at the end.

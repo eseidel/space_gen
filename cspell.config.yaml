@@ -10,6 +10,8 @@ words:
   - tearoff
   - tearoffs
   - parenthesization
+  - unparameterized
+  - inlines
   - interps
   - goldens
   - impls
