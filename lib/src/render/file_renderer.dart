@@ -41,6 +41,32 @@ class _ImportCollector extends RenderTreeVisitor {
 /// An `import '<path>';` directive, capturing the path.
 final _importDirectivePattern = RegExp("^import '([^']+)'");
 
+/// [directives] in the order `directives_ordering` wants: `dart:` first,
+/// then everything else, each section alphabetical by path. Returns the
+/// ordered list and the index where the second section starts, which is
+/// also where the conventional blank line goes (0 when there is only one
+/// section).
+///
+/// The rule lives here rather than at each call site because the two
+/// sites express the separator differently — `renderPublicApi` sets a
+/// `separatorBefore` flag its mustache template reads, while
+/// [sortDartImports] writes a real blank line into `.dart` output — and
+/// duplicating the ordering to accommodate that is how the two drift.
+/// If they drift, the symptom is `directives_ordering`, the very lint
+/// this ordering exists to satisfy.
+({List<T> ordered, int sectionBreak}) orderDirectives<T>(
+  Iterable<T> directives,
+  String Function(T) pathOf,
+) {
+  bool isDart(T d) => pathOf(d).startsWith('dart:');
+  final dartOnes = directives.where(isDart).sortedBy(pathOf);
+  final others = directives.whereNot(isDart).sortedBy(pathOf);
+  return (
+    ordered: [...dartOnes, ...others],
+    sectionBreak: dartOnes.isEmpty || others.isEmpty ? 0 : dartOnes.length,
+  );
+}
+
 /// [source] with its leading `import` directives sorted the way
 /// `directives_ordering` wants them: `dart:` first, then everything
 /// else, each section alphabetical by path, one blank line between.
@@ -84,16 +110,14 @@ String sortDartImports(String source) {
     return source;
   }
 
-  final imports = span.where((l) => l.trim().isNotEmpty).toList();
-  String pathOf(String line) =>
-      _importDirectivePattern.firstMatch(line)!.group(1)!;
-  bool isDart(String line) => pathOf(line).startsWith('dart:');
-  final dartImports = imports.where(isDart).sortedBy(pathOf);
-  final otherImports = imports.whereNot(isDart).sortedBy(pathOf);
+  final (:ordered, :sectionBreak) = orderDirectives(
+    span.where((l) => l.trim().isNotEmpty),
+    (line) => _importDirectivePattern.firstMatch(line)!.group(1)!,
+  );
   final sorted = [
-    ...dartImports,
-    if (dartImports.isNotEmpty && otherImports.isNotEmpty) '',
-    ...otherImports,
+    ...ordered.take(sectionBreak),
+    if (sectionBreak > 0) '',
+    ...ordered.skip(sectionBreak),
   ];
   return [
     ...lines.sublist(0, first),
@@ -667,12 +691,12 @@ class FileRenderer {
       for (final path in paths) Import.path('package:$packageName/$path'),
       ...externalExports,
     ];
-    bool isDart(Import e) => e.path.startsWith('dart:');
-    final dartExports = allExports.where(isDart).sortedBy((e) => e.path);
-    final packageExports = allExports.whereNot(isDart).sortedBy((e) => e.path);
-    final orderedExports = [...dartExports, ...packageExports];
+    final (:ordered, :sectionBreak) = orderDirectives(
+      allExports,
+      (e) => e.path,
+    );
     final exportContexts = [
-      for (final (index, e) in orderedExports.indexed)
+      for (final (index, e) in ordered.indexed)
         {
           'path': e.path,
           'hasShow': e.shown.isNotEmpty,
@@ -680,8 +704,7 @@ class FileRenderer {
           // Blank line between the `dart:` and `package:` sections, the
           // conventional Dart grouping (and what `dart fix` inserts when
           // it reorders these itself).
-          'separatorBefore':
-              dartExports.isNotEmpty && index == dartExports.length,
+          'separatorBefore': sectionBreak > 0 && index == sectionBreak,
         },
     ];
     _renderTemplate(
