@@ -1333,6 +1333,35 @@ void main() {
       expect(schema.exampleValue(context)?.source, isNull);
     });
 
+    test('a no-JSON schema converts to a throw in both directions', () {
+      // `toJson` used to spell this as a DartIdentifier holding the whole
+      // `throw ...` string, because no node could express a throw. Both
+      // directions now build one, so the message is a real string literal
+      // and is quoted like every other.
+      const schema = RenderBinary(common: common);
+      expect(
+        schema
+            .fromJsonExpression(
+              const DartIdentifier('json'),
+              context,
+              jsonIsNullable: false,
+              dartIsNullable: false,
+            )
+            ?.runtimeSource,
+        "throw UnimplementedError('RenderBinary.fromJson')",
+      );
+      expect(
+        schema
+            .toJsonExpression(
+              const DartIdentifier('value'),
+              context,
+              dartIsNullable: false,
+            )
+            .runtimeSource,
+        "throw UnimplementedError('RenderBinary.toJson')",
+      );
+    });
+
     test('recursive ref returns null', () {
       const schema = RenderRecursiveRef(
         common: common,
@@ -2318,6 +2347,43 @@ void main() {
     // that catches naming-pass bypasses (a test forgot to populate
     // `SpecResolver.names`, or a render path didn't go through one of
     // the documented entry points).
+    test('a newtype fromJson names the assigned type, not the snake name', () {
+      // The `fromJson` call used to be built from
+      // `camelFromSnake(snakeName)` while every type *reference* around it
+      // came from the assigned name. Those agree whenever the naming pass
+      // hands back the snake-derived name, which is why this went
+      // unnoticed — when they disagree the old form called a class that
+      // does not exist.
+      const schema = RenderString(
+        common: CommonProperties.test(
+          snakeName: 'foo_bar',
+          pointer: JsonPointer.empty(),
+        ),
+        defaultValue: null,
+        maxLength: null,
+        minLength: null,
+        pattern: null,
+        createsNewType: true,
+        assignedName: 'CustomName',
+      );
+      expect(schema.typeName, 'CustomName');
+      final context = SchemaRenderer(
+        templates: TemplateProvider.defaultLocation(),
+      );
+      expect(
+        schema
+            .fromJsonExpression(
+              _json,
+              context,
+              jsonIsNullable: false,
+              dartIsNullable: false,
+            )
+            .runtimeSource,
+        // Not `FooBar.fromJson(...)`.
+        'CustomName.fromJson(json as String)',
+      );
+    });
+
     test('newtype RenderObject without assignedName throws on typeName', () {
       const schema = RenderObject(
         common: CommonProperties.test(

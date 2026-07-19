@@ -18,9 +18,19 @@ class DartType extends Equatable {
 
   /// A `List<T>` type, or bare `List` when [element] is omitted.
   ///
-  /// Raw `List` and `List<dynamic>` are the same type in Dart, so the
-  /// no-argument form is spelling, not meaning: it is what a JSON array is
-  /// cast through, where there is no element type worth writing.
+  /// The two spellings are the same type — `List<E>` is unbounded, so raw
+  /// `List` instantiates to `List<dynamic>` — but they are *not*
+  /// interchangeable in output, which is why this does not canonicalize
+  /// one into the other:
+  ///
+  /// - A **declaration** wants `List<dynamic>`. Bare `List` there trips
+  ///   `strict_raw_type`, and generated models are public API for
+  ///   consumers who may enable it.
+  /// - A **cast** wants bare `List`. `as List` reads better than
+  ///   `as List<dynamic>` and raw types in an expression trip nothing.
+  ///
+  /// So `dartType` passes an element and `jsonStorageDartType` does not,
+  /// and `==` distinguishing them is the point rather than a defect.
   DartType.list([DartType? element])
     : name = 'List',
       typeArguments = element == null ? const [] : [element],

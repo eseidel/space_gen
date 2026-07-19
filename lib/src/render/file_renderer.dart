@@ -1134,5 +1134,5 @@ class FileRenderer {
 /// context; a non-constant one is declared `final`, so any constant
 /// subtree inside it needs its own keyword.
 String _exampleSource(DartExpression example) => example.canBeConst
-    ? DartExpressionSerializer.serialize(example, isConstContext: true)
-    : DartExpressionSerializer.serialize(example, isConstContext: false);
+    ? serializeExpression(example, isConstContext: true)
+    : serializeExpression(example, isConstContext: false);

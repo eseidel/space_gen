@@ -2941,7 +2941,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 /// a `??` right-hand side, or a parameter default, where a `const` keyword
 /// turns an allocation into a compile-time constant.
 String _runtimeSource(DartExpression expression) =>
-    DartExpressionSerializer.serialize(expression, isConstContext: false);
+    serializeExpression(expression, isConstContext: false);
 
 /// [_runtimeSource] for an expression that may be absent.
 String? _maybeRuntimeSource(DartExpression? expression) =>

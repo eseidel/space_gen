@@ -13,7 +13,7 @@ import 'package:space_gen/src/string.dart';
 /// tree and not something a composite should have to thread by hand.
 ///
 /// Unlike [DartType], the tree does *not* render itself. Rendering lives in
-/// [DartExpressionSerializer], because the source for a given expression
+/// [serializeExpression], because the source for a given expression
 /// depends on where the text lands: `const` must be written when the
 /// destination evaluates at runtime, and must not be when the destination is
 /// already a constant context (an enclosing `const` declaration, a parameter
@@ -44,7 +44,7 @@ sealed class DartExpression extends Equatable {
   ///   qualifies. `[1, 2]` qualifies even though, written bare in a
   ///   runtime context, it allocates a fresh list each time.
   /// - **is written `const`** — the keyword, pure syntax. That is
-  ///   [DartExpressionSerializer.isConstContext]'s business, not the
+  ///   [_ExpressionSerializer.isConstContext]'s business, not the
   ///   tree's.
   ///
   /// Derived, never stored. That derivation is the reason this IR exists:
@@ -56,7 +56,7 @@ sealed class DartExpression extends Equatable {
   DartPrecedence get precedence;
 
   /// Debug form (`DartLiteral(5)`), not Dart source. Rendering goes
-  /// through [DartExpressionSerializer] — an expression cannot serialize
+  /// through [serializeExpression] — an expression cannot serialize
   /// itself, because how it renders depends on where the text lands.
   @override
   bool get stringify => true;
@@ -94,6 +94,29 @@ enum DartPrecedence {
   primary,
 }
 
+/// The Dart source for [expression], as the whole of whatever it is being
+/// written into.
+///
+/// [isConstContext] describes the destination: true for an enclosing
+/// `const` declaration or a parameter default, false for anything that
+/// evaluates at runtime.
+///
+/// **A free function, not a method.** This is the one entry that accepts
+/// any expression without parentheses — true at the root, false everywhere
+/// inside. [_ExpressionSerializer] is private and has no such member, so an
+/// arm rendering a child literally cannot reach this; it has to use
+/// `_serializeAt` or `_serializeDelimited` and say what that position
+/// accepts. A comment asking callers not to would be a convention; this is
+/// a compile error.
+String serializeExpression(
+  DartExpression expression, {
+  required bool isConstContext,
+}) =>
+    (isConstContext
+            ? _ExpressionSerializer.constContext
+            : _ExpressionSerializer.runtimeContext)
+        ._serializeAt(expression, DartPrecedence.throw_);
+
 /// Renders a [DartExpression] to Dart source.
 ///
 /// Separate from the tree on purpose. Whether a `const` keyword belongs in
@@ -109,55 +132,31 @@ enum DartPrecedence {
 /// what lets a constant child inside a runtime parent get one of its own
 /// (`Uint8List.fromList(const <int>[0])`).
 @immutable
-class DartExpressionSerializer extends Equatable {
-  const DartExpressionSerializer._({required this.isConstContext});
+class _ExpressionSerializer extends Equatable {
+  const _ExpressionSerializer({required this.isConstContext});
 
   /// For a destination that is already a constant context: an enclosing
   /// `const` declaration, a parameter default, or inside another `const`
   /// expression. No keyword is written; one would be `unnecessary_const`.
-  static const _constContext = DartExpressionSerializer._(isConstContext: true);
+  static const constContext = _ExpressionSerializer(isConstContext: true);
 
   /// For a destination that evaluates at runtime, such as the right-hand
   /// side of a `??`. A `const` keyword is written wherever it turns an
   /// allocation into a compile-time constant.
-  static const _runtimeContext = DartExpressionSerializer._(
-    isConstContext: false,
-  );
+  static const runtimeContext = _ExpressionSerializer(isConstContext: false);
 
   final bool isConstContext;
-
-  /// The Dart source for [expression], as the whole of whatever it is
-  /// being written into.
-  ///
-  /// **Static on purpose.** This is the one entry that accepts any
-  /// expression without parentheses — true at the root, false everywhere
-  /// inside. Dart forbids reaching a static through an instance, so an arm
-  /// below *cannot* call `children.serialize(...)`; it has to use
-  /// [_serializeAt] or [_serializeDelimited] and say what that position
-  /// accepts. The alternative — an instance method with a comment asking
-  /// callers not to — is a convention, and this is a compile error.
-  ///
-  /// [isConstContext] describes the destination: true for an enclosing
-  /// `const` declaration or a parameter default, false for anything that
-  /// evaluates at runtime.
-  static String serialize(
-    DartExpression expression, {
-    required bool isConstContext,
-  }) => (isConstContext ? _constContext : _runtimeContext)._serializeAt(
-    expression,
-    DartPrecedence.throw_,
-  );
 
   /// Source for a position already closed by a delimiter — an argument, a
   /// collection element, a map value, a lambda body.
   ///
   /// Nothing can bind looser than the bracket or comma that ends it, so no
-  /// expression needs parentheses. Spelled out rather than reusing
-  /// [serialize] so the claim is visible at the call site.
+  /// expression needs parentheses. Named rather than passing
+  /// [DartPrecedence.throw_] at each site so the claim is visible.
   String _serializeDelimited(DartExpression expression) =>
       _serializeAt(expression, DartPrecedence.throw_);
 
-  /// [serialize], parenthesizing when [expression] binds looser than the
+  /// Source for [expression], parenthesized when it binds looser than the
   /// position it is landing in requires.
   ///
   /// A written `const` keyword needs no accounting here: `const Foo(1)` is
@@ -171,8 +170,8 @@ class DartExpressionSerializer extends Equatable {
     // A keyword written here (or a context inherited from above) makes
     // every child a constant context.
     final children = isConstContext || expression.canBeConst
-        ? _constContext
-        : _runtimeContext;
+        ? constContext
+        : runtimeContext;
     return switch (expression) {
       // `const 5` and `const UserRole.admin` are syntax errors, so these
       // two arms never offer the keyword — that rule is expressed by the

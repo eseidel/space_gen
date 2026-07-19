@@ -507,11 +507,11 @@ void main() {
         isConstConstructor: true,
       );
       expect(
-        DartExpressionSerializer.serialize(constable, isConstContext: false),
+        serializeExpression(constable, isConstContext: false),
         'const Foo()',
       );
       expect(
-        DartExpressionSerializer.serialize(constable, isConstContext: true),
+        serializeExpression(constable, isConstContext: true),
         'Foo()',
       );
     });
