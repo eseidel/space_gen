@@ -10,6 +10,38 @@ void main() {
     expect(snakeFromCamel('snakeFromCamel'), 'snake_from_camel');
   });
 
+  test('snakeFromCamel treats a run of capitals as one word', () {
+    // github declares properties in SCREAMING_CAPS; splitting before
+    // every capital produced `workflow_usage_billable_m_a_c_o_s` (#207).
+    expect(snakeFromCamel('MACOS'), 'macos');
+    expect(
+      snakeFromCamel('WorkflowUsageBillableMACOS'),
+      'workflow_usage_billable_macos',
+    );
+    // An acronym followed by a word breaks before the last capital of
+    // the run, not after it.
+    expect(snakeFromCamel('XMLHttpRequest'), 'xml_http_request');
+    expect(snakeFromCamel('IOError'), 'io_error');
+    // A trailing acronym and a two-letter one both stay whole.
+    expect(snakeFromCamel('userID'), 'user_id');
+    expect(snakeFromCamel('ID'), 'id');
+    // Digits do not start a new word, but a capital after one does.
+    expect(snakeFromCamel('Types200Response'), 'types200_response');
+    expect(snakeFromCamel('HTTPCode2'), 'http_code2');
+    // Degenerate inputs.
+    expect(snakeFromCamel('A'), 'a');
+    expect(snakeFromCamel(''), '');
+  });
+
+  test('snakeFromCamel drops a leading underscore', () {
+    // github declares `_links` properties. Direct callers compose
+    // `'${parent}_${snakeFromCamel(part)}'`, so keeping the leading
+    // underscore would yield `pull_request__links`. Regression guard:
+    // toSnakeCase collapses `_+`, but these callers do not.
+    expect(snakeFromCamel('_links'), 'links');
+    expect(snakeFromCamel('_Links'), 'links');
+  });
+
   test('toSnakeCase', () {
     expect(toSnakeCase('snakeFromCamel'), 'snake_from_camel');
     expect(toSnakeCase('SnakeFromCamel'), 'snake_from_camel');
