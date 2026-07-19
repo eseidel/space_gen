@@ -85,6 +85,7 @@ words:
   - fixnum
   - codeowners
   - backticked
+  - typeless
   - favorited
   - readback
   - flaggable

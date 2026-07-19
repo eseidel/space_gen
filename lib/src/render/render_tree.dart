@@ -4200,17 +4200,17 @@ class RenderObject extends RenderNewType {
     required SchemaRenderer context,
   }) {
     final dartName = variableSafeName(context.quirks, jsonName);
-    // A property pinned to a constant of a named enum (the `allOf: [{$ref: E}]`
-    // + single-value `enum` idiom) renders as a fixed getter rather than a
-    // constructor parameter — the value is fully determined by the class, so
-    // the caller neither passes it nor can set it wrong. It has no storage, no
-    // constructor argument, no JSON read and no part in equality, so it gets a
-    // context of its own rather than a full one with most keys discarded.
-    // This is [rendersAsConstGetter]'s test, spelled inline: bound locally so
-    // flow analysis promotes `property`/`constValue` for the getter expression
-    // (no cast, no `!`), which a `bool` return cannot do. Keep the two in step.
+    // A property pinned to a constant — a named enum member (the `allOf:
+    // [{$ref: E}]` idiom) or a bare inline lone `const` scalar (#240) —
+    // renders as a fixed getter rather than a constructor parameter: the
+    // value is fully determined by the class, so the caller neither passes
+    // it nor can set it wrong. It has no storage, no constructor argument,
+    // no JSON read and no part in equality, so it gets a context of its own
+    // rather than a full one with most keys discarded. The lookup is bound
+    // to a local so flow analysis keeps `constValue` non-null for the
+    // builder, which [rendersAsConstGetter]'s `bool` return cannot give it.
     final constValue = constProperties[jsonName];
-    if (constValue != null && property is RenderEnum) {
+    if (constValue != null && rendersAsConstGetter(jsonName, property)) {
       return _constGetterPropertyContext(
         jsonName: jsonName,
         dartName: dartName,
@@ -4299,19 +4299,26 @@ class RenderObject extends RenderNewType {
     };
   }
 
-  /// Template context for a property pinned to a single enum value, which
+  /// Template context for a property pinned to a single value, which
   /// renders as a fixed getter. Deliberately much narrower than the stored-
   /// property context: a const getter appears only in the field declaration,
   /// `operator[]` and `toJson`, so those are the only keys it carries. The
   /// getter returns [RenderSchema.typeName], so it is never nullable and
   /// `toJson` must not reach through it with `?.`.
+  ///
+  /// The getter body is the pinned value as a Dart expression: an enum
+  /// member (`E.member`) when the property is that enum, or the literal
+  /// itself (`'list'`, `5`) when it's a bare inline lone `const` scalar.
   Map<String, dynamic> _constGetterPropertyContext({
     required String jsonName,
     required String dartName,
-    required RenderEnum property,
+    required RenderSchema property,
     required Object constValue,
     required SchemaRenderer context,
   }) {
+    final constExpression = property is RenderEnum
+        ? property.constExpression(constValue)
+        : serializeExpression(DartLiteral(constValue), isConstContext: true);
     return {
       'dartName': dartName,
       'jsonName': quoteString(jsonName),
@@ -4320,9 +4327,7 @@ class RenderObject extends RenderNewType {
         indent: 4,
       ),
       'isConstGetter': true,
-      'constGetter':
-          '${property.typeName} get $dartName => '
-          '${property.constExpression(constValue)};',
+      'constGetter': '${property.typeName} get $dartName => $constExpression;',
       'toJson': _runtimeSource(
         property.toJsonExpression(
           DartIdentifier(dartName),
@@ -4558,19 +4563,35 @@ class RenderObject extends RenderNewType {
   }
 
   /// Whether property [jsonName] renders as a fixed const getter rather than
-  /// a constructor field (the `allOf: [{$ref: E}]` + single-value `enum`
-  /// idiom pinning it to one member of enum `E`). Such properties are absent
-  /// from the constructor, `fromJson`, equality, and example synthesis.
+  /// a constructor field. Two shapes qualify, both carried by
+  /// [constProperties]: the `allOf: [{$ref: E}]` + single-value `enum` idiom
+  /// pinning the property to one member of enum `E` (getter returns
+  /// `E.member`), and a bare inline lone `const` on a scalar property
+  /// (getter returns the literal itself — issue #240). Such properties are
+  /// absent from the constructor, `fromJson`, equality, and example
+  /// synthesis.
   ///
-  /// The definition of the const-getter shape. `propertyTemplateContext`
-  /// spells the same test inline — `constProperties[jsonName]` bound to a
-  /// local, plus `is RenderEnum` — because it needs the promoted value and
-  /// type to build the getter, which a `bool` return cannot give it. Written
-  /// as a lookup rather than `containsKey` so the two are the same test:
-  /// `constProperties` is non-nullable-valued, so they agree today, and this
-  /// keeps them agreeing if that ever changes.
+  /// The definition of the const-getter shape. Written as a lookup rather
+  /// than `containsKey` so it stays a single test even if
+  /// `constProperties` ever gains nullable values.
   bool rendersAsConstGetter(String jsonName, RenderSchema property) =>
-      constProperties[jsonName] != null && property is RenderEnum;
+      constProperties[jsonName] != null && _isConstGetterType(property);
+
+  /// The render types a const getter can pin: a named enum (returns
+  /// `E.member`) or a plain string/int scalar (returns the literal). The
+  /// bare-inline-`const` parser strips its property down to one of the
+  /// scalars, so those are the only extra shapes reachable here.
+  ///
+  /// The scalars must be inline (`createsNewType == false`): the literal
+  /// getter is typed as the scalar's `typeName`, so `String get x => 'a'`
+  /// is only sound when that name is the built-in `String`/`int`. A named
+  /// scalar newtype (e.g. an `allOf: [{$ref: StringNewtype}]` + `const`)
+  /// would type the getter as the wrapper while returning a raw literal —
+  /// which wouldn't compile — so it keeps the stored-field shape.
+  static bool _isConstGetterType(RenderSchema property) =>
+      property is RenderEnum ||
+      ((property is RenderString || property is RenderInteger) &&
+          !property.createsNewType);
 
   /// Whether the generated constructor is declared `const`.
   ///
