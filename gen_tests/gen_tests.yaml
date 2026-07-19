@@ -1,0 +1,22 @@
+# Manifest for `tool/gen_tests.dart` — the list of fixtures this
+# directory generates, and how.
+#
+#     dart run tool/gen_tests.dart            # all of them
+#     dart run tool/gen_tests.dart types      # just one
+#     dart run tool/gen_tests.dart --dry-run  # show the mapping only
+#
+# These fixtures are generated WITH `Quirks.openapi()`, unlike the
+# parallel spec repo, which sets `openapi: false`. The quirks flip six
+# flags (dynamicJson, mutableModels, nonNullableDefaultValues,
+# allListsDefaultToEmpty, screamingCapsEnums, flatModelDir), so the
+# setting decides both the `lib/model/` layout and the emitted
+# nullability and mutability.
+openapi: true
+
+# `package:` defaults to the spec's filename with the extension dropped
+# and `.`/`-` folded to `_`, which is what every fixture here wants.
+specs:
+  - spec: multipart.json
+  - spec: security.json
+  - spec: types.json
+  - spec: unsupported_auth.json
