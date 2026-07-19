@@ -12,6 +12,7 @@ class TestCase {
     required this.spec,
     required this.outDir,
     required this.quirks,
+    required this.verify,
   });
   final File spec;
   final Directory outDir;
@@ -25,6 +26,17 @@ class TestCase {
   /// generated with it; the parallel spec repo is generated without.
   /// Hardcoding either one silently rewrites the other's output.
   final Quirks quirks;
+
+  /// Whether `--verify` should compile and test this package's generated
+  /// output (`dart pub get` + `dart analyze` + `dart test`).
+  ///
+  /// The synthetic fixtures set this: they are generated and diff-gated
+  /// but otherwise never compiled, so a generator change that emits code
+  /// which does not analyze would land green (#307). `third_party/`
+  /// clears it — those packages are already compiled by Shorebird's
+  /// Workflow Discovery, and github's ~1700 test kernels are too
+  /// disk-hungry to build a second time here.
+  final bool verify;
 
   String get packageName => outDir.basename;
 }
@@ -74,10 +86,14 @@ List<TestCase> _testsFromManifest(Directory testDir) {
   if (doc is! Map || doc['specs'] is! List) {
     throw Exception('${manifest.path}: expected a top-level `specs:` list');
   }
-  // Directory-wide default, overridable per spec. `true` matches what
-  // a directory without a manifest gets below, so adding a manifest to
-  // an existing directory changes nothing until you say otherwise.
+  // Directory-wide defaults, overridable per spec. `openapi: true`
+  // matches what a directory without a manifest gets below, so adding a
+  // manifest to an existing directory changes nothing until you say
+  // otherwise. `verify: true` is fail-closed: a new fixture is compiled
+  // and tested unless its directory explicitly opts out, so nothing can
+  // silently slip past `--verify` the way the synthetic fixtures did.
   final dirOpenapi = doc['openapi'] as bool? ?? true;
+  final dirVerify = doc['verify'] as bool? ?? true;
   final tests = <TestCase>[];
   for (final entry in doc['specs'] as List) {
     if (entry is! Map || entry['spec'] is! String) {
@@ -90,11 +106,13 @@ List<TestCase> _testsFromManifest(Directory testDir) {
     final packageName =
         (entry['package'] as String?) ?? _derivePackageName(specFile);
     final openapi = entry['openapi'] as bool? ?? dirOpenapi;
+    final verify = entry['verify'] as bool? ?? dirVerify;
     tests.add(
       TestCase(
         spec: specFile,
         outDir: testDir.childDirectory(packageName),
         quirks: openapi ? const Quirks.openapi() : const Quirks(),
+        verify: verify,
       ),
     );
   }
@@ -157,9 +175,48 @@ Future<void> runTest({
   );
 }
 
+/// Runs [command] in [workingDirectory], streaming its output to the
+/// logger, and throws if it exits non-zero.
+Future<void> _run(
+  String command,
+  List<String> args, {
+  required String workingDirectory,
+}) async {
+  final result = await io.Process.run(
+    command,
+    args,
+    workingDirectory: workingDirectory,
+  );
+  logger
+    ..info(result.stdout as String)
+    ..info(result.stderr as String);
+  if (result.exitCode != 0) {
+    throw Exception(
+      '`$command ${args.join(' ')}` failed in $workingDirectory '
+      '(exit ${result.exitCode})',
+    );
+  }
+}
+
+/// Compiles and tests a generated package: `dart pub get`, then
+/// `dart analyze`, then `dart test` when the package has a `test/`
+/// directory. Fixtures like `unsupported_auth` generate no model tests,
+/// and `dart test` errors when there is nothing to run, so testing is
+/// skipped there — analysis still covers that the code compiles.
+Future<void> _verify(TestCase test) async {
+  final dir = test.outDir.path;
+  logger.info('Verifying ${test.packageName}');
+  await _run('dart', ['pub', 'get'], workingDirectory: dir);
+  await _run('dart', ['analyze'], workingDirectory: dir);
+  if (test.outDir.childDirectory('test').existsSync()) {
+    await _run('dart', ['test'], workingDirectory: dir);
+  }
+}
+
 Future<void> run({
   bool verbose = false,
   bool dryRun = false,
+  bool verify = false,
   List<String> skipList = const [],
   List<String> globList = const [],
   List<String> extraDirs = const [],
@@ -213,19 +270,21 @@ Future<void> run({
   }
 
   // Run the unit tests.
-  final result = await io.Process.run(
+  await _run(
     'dart',
     ['test', '.'],
-    workingDirectory: packageRoot
-        .childDirectory('gen_tests')
-        .childDirectory('tests')
-        .path,
+    workingDirectory: genTests.childDirectory('tests').path,
   );
-  logger
-    ..info(result.stdout as String)
-    ..info(result.stderr as String);
-  if (result.exitCode != 0) {
-    throw Exception('Unit tests failed');
+
+  // Compile and test the generated packages that ask for it. Off by
+  // default because it is slow and needs the network (a `dart pub get`
+  // per package); CI turns it on. Regeneration above already ran for
+  // every fixture, so the goldens are settled before anything here
+  // touches a `pubspec.lock` (gitignored, so it never reaches the diff).
+  if (verify) {
+    for (final test in tests.where((t) => t.verify)) {
+      await _verify(test);
+    }
   }
 }
 
@@ -235,6 +294,13 @@ void main(List<String> args) async {
     ..addFlag(
       'dry-run',
       help: 'Print each spec -> output directory mapping and exit',
+    )
+    ..addFlag(
+      'verify',
+      help:
+          'After generating, compile and test each generated package '
+          '(dart pub get + analyze + test) that its manifest marks '
+          '`verify: true`',
     )
     ..addMultiOption(
       'ignore',
@@ -256,6 +322,7 @@ void main(List<String> args) async {
     () => run(
       verbose: verbose,
       dryRun: results['dry-run'] as bool,
+      verify: results['verify'] as bool,
       skipList: ignoreList,
       globList: globList,
       extraDirs: extraDirs,
