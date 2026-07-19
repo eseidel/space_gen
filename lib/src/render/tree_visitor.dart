@@ -22,39 +22,13 @@ class RenderTreeWalker {
     }
   }
 
-  void maybeWalkSchema(RenderSchema? schema) {
-    if (schema != null) {
-      walkSchema(schema);
-    }
-  }
-
   void walkSchema(RenderSchema schema) {
     visitor.visitSchema(schema);
-    switch (schema) {
-      case RenderObject():
-        for (final property in schema.properties.values) {
-          walkSchema(property);
-        }
-        maybeWalkSchema(schema.additionalProperties);
-      case RenderArray():
-        maybeWalkSchema(schema.items);
-      case RenderOneOf():
-        for (final schema in schema.schemas) {
-          walkSchema(schema);
-        }
-      case RenderMap():
-        walkSchema(schema.valueSchema);
-        final keySchema = schema.keySchema;
-        if (keySchema != null) walkSchema(keySchema);
-      case RenderRecursiveRef():
-      case RenderEnum():
-      case RenderString():
-      case RenderInteger():
-      case RenderNumber():
-      case RenderPod():
-      case RenderUnknown():
-      case RenderVoid():
-        break;
+    // Every reachable schema, so each gets a file: descend through
+    // everything, newtypes included. Child enumeration lives on
+    // `RenderSchema.children` (see #289).
+    for (final child in schema.children) {
+      walkSchema(child);
     }
   }
 
@@ -231,41 +205,15 @@ class _NamedSchemaCollector {
       // per endpoint that reaches it.
       if (!inline.add(schema)) return;
     }
-    switch (schema) {
-      case RenderObject():
-        for (final property in schema.properties.values) {
-          _collect(property, isRoot: false);
-        }
-        final additional = schema.additionalProperties;
-        if (additional != null) _collect(additional, isRoot: false);
-      case RenderArray():
-        _collect(schema.items, isRoot: false);
-      case RenderOneOf():
-        // A oneOf with no dispatch emits an `UnimplementedError` stub
-        // that names no variant, so it imports none of them. Asking the
-        // oneOf rather than assuming keeps this in step with what the
-        // dispatch actually emits.
-        if (schema.emitsVariantDispatch) {
-          for (final variant in schema.schemas) {
-            _collect(variant, isRoot: false);
-          }
-        }
-      case RenderMap():
-        _collect(schema.valueSchema, isRoot: false);
-        final keySchema = schema.keySchema;
-        if (keySchema != null) _collect(keySchema, isRoot: false);
-      // Leaves: a recursive ref is handled above (it creates a type and
-      // points at the file that renders it), and the rest name nothing
-      // beyond themselves.
-      case RenderRecursiveRef():
-      case RenderEnum():
-      case RenderString():
-      case RenderInteger():
-      case RenderNumber():
-      case RenderPod():
-      case RenderUnknown():
-      case RenderVoid():
-        break;
+    // A oneOf with no dispatch emits an `UnimplementedError` stub that
+    // names no variant, so this file imports none of them. Asking the
+    // oneOf rather than assuming keeps this in step with what the
+    // dispatch actually emits. Every other schema names all its children,
+    // so the shared enumeration (`RenderSchema.children`, see #289)
+    // serves them directly.
+    if (schema is RenderOneOf && !schema.emitsVariantDispatch) return;
+    for (final child in schema.children) {
+      _collect(child, isRoot: false);
     }
   }
 }
