@@ -236,6 +236,44 @@ void main() {
           '}\n';
       expect(maybeAddCommentReferencesIgnore(content), content);
     });
+
+    test('passes through GitHub Markdown alert markers', () {
+      // github spec prose copies GitHub-flavored-Markdown alerts
+      // verbatim: `> [!NOTE]`, `> [!WARNING]`. `!NOTE` is not a valid
+      // Dart identifier, so `comment_references` never parses it as a
+      // reference — these were the single biggest false trigger, the
+      // sole reason for the directive on 27 of github's 43 annotated
+      // files (#142).
+      const content =
+          '/// [!NOTE]\n'
+          '/// [!WARNING] this endpoint is rate limited.\n'
+          'class Repo {}\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
+    });
+
+    test('passes through bracketed literals and numbers', () {
+      // Quoted enum-value prose (`["push"]`, `['pull']`) and bare
+      // numbers (`[789]`) are not identifiers, so the lint leaves them
+      // as plain text. Collecting them made the file look like it
+      // needed suppression.
+      const content =
+          '/// One of [\'push\'], ["pull"], or the id [789].\n'
+          'class Event {}\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
+    });
+
+    test('a real ref among alert markers still needs the directive', () {
+      // Dropping the noise must not drop a genuine unresolved reference
+      // sharing the same doc comment.
+      const content =
+          '/// [!NOTE]\n'
+          '/// See [ImportedThing] for details.\n'
+          'class Repo {}\n';
+      expect(
+        maybeAddCommentReferencesIgnore(content),
+        startsWith('$commentReferencesIgnoreBlock\n'),
+      );
+    });
   });
 
   group('maybeAddUnintendedHtmlIgnore', () {

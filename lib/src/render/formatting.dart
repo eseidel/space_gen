@@ -175,12 +175,17 @@ bool _dartdocHasHtmlTag(String content) {
 /// reference in their docs doesn't get silently suppressed when it
 /// should be fixed at the source.
 ///
+/// A token counts only if it is a real comment reference in the first
+/// place — [_bracketedDartdocTokens] drops Markdown-alert and literal
+/// noise the lint never fires on.
+///
 /// "In scope" today means *declared in the same file* — top-level
 /// types ([_topLevelDeclarations]) plus same-file field declarations
 /// (so e.g. shorebird's `/// The signature of the [hash].` resolves
-/// against `final String hash;`). Imported names aren't tracked yet
-/// — see #142 — so a `[Foo]` ref to an imported type still triggers
-/// the directive even when it would resolve.
+/// against `final String hash;`). Names reachable another way aren't
+/// tracked yet — see #142 — so a `[Foo]` ref to an imported type, or a
+/// `[param]` ref to a method parameter, still triggers the directive
+/// even when the analyzer would resolve it.
 @visibleForTesting
 String maybeAddCommentReferencesIgnore(String content) {
   final tokens = _bracketedDartdocTokens(content);
@@ -206,7 +211,20 @@ String maybeAddIgnoreDirectives(String content) => maybeAddLongLineIgnore(
 );
 
 /// Collects every `[token]` bracketed reference inside a `///` doc
-/// comment, ignoring `[Foo](url)` markdown links (the `(?!\()` guard).
+/// comment that `comment_references` could actually fire on, ignoring
+/// `[Foo](url)` markdown links (the `(?!\()` guard).
+///
+/// Only tokens shaped like a Dart comment reference are kept — an
+/// identifier or a dotted chain of them ([_commentReferenceRe]). The
+/// analyzer parses `[x]` as a comment reference (and so can complain it
+/// doesn't resolve) *only* when `x` is such a chain; anything else it
+/// leaves as plain text. github's spec prose is full of the "anything
+/// else" case — GitHub-flavored-Markdown alerts (`[!NOTE]`,
+/// `[!WARNING]`), quoted literals (`["push"]`), and bare numbers
+/// (`[789]`) — none of which the lint touches. Collecting them anyway
+/// made the file look like it needed the directive when it did not:
+/// across github those non-references alone accounted for the directive
+/// on 27 of 43 annotated files.
 Set<String> _bracketedDartdocTokens(String content) {
   final tokenRe = RegExp(r'\[([^\]\s]+)\](?!\()');
   final tokens = <String>{};
@@ -214,11 +232,22 @@ Set<String> _bracketedDartdocTokens(String content) {
     final stripped = line.trimLeft();
     if (!stripped.startsWith('///')) continue;
     for (final m in tokenRe.allMatches(stripped)) {
-      tokens.add(m.group(1)!);
+      final token = m.group(1)!;
+      if (_commentReferenceRe.hasMatch(token)) tokens.add(token);
     }
   }
   return tokens;
 }
+
+/// A bracketed dartdoc token the analyzer treats as a comment
+/// reference: a Dart identifier, optionally a dotted chain (`Foo`,
+/// `Foo.bar`, `Foo.bar.baz`). Operator references (`[==]`) are not
+/// matched — the generator never emits them in prose — so, like the
+/// rest of this file's regex-based scan, this is a pragmatic
+/// approximation of the parser rather than the parser itself.
+final _commentReferenceRe = RegExp(
+  r'^[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*$',
+);
 
 /// Collects the names of declarations the analyzer would resolve a
 /// `[token]` bracketed dartdoc reference against. Two regexes:
