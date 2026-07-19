@@ -170,10 +170,12 @@ RefOr<Parseable> _parseExternalTarget(
   final fragment = target.fragment;
   final rawName = fragment.isEmpty
       ? p.basenameWithoutExtension(target.path)
-      : fragment.split('/').lastWhere(
-          (s) => s.isNotEmpty,
-          orElse: () => p.basenameWithoutExtension(target.path),
-        );
+      : fragment
+            .split('/')
+            .lastWhere(
+              (s) => s.isNotEmpty,
+              orElse: () => p.basenameWithoutExtension(target.path),
+            );
   final context = MapContext(
     // A unique, opaque identity for the resolver's recursion stack and the
     // name allocator; never emitted, so the full URI is fine.
