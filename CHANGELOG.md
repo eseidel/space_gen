@@ -1,3 +1,116 @@
+## 1.4.0
+
+Correctness pass over the optional/nullable/default matrix, broader
+real-world spec support (split-spec external refs, nested `allOf`,
+cookie API keys, form-urlencoded bodies, lone-scalar `const`), and
+precise stale-file handling when regenerating a package in place. Generated output also got
+markedly cleaner: a long refactor arc made the generator emit const
+constructors and instances, `int` literals, tearoffs, and tightly
+scoped imports, cutting the raw `dart fix` lint count on the github
+regen by roughly an order of magnitude.
+
+### Features
+
+- **Correctly model optional vs. nullable vs. default, end to end.**
+  The generator conflated "the key may be absent" with "the value may
+  be null," in both directions: `toJson` made every property a key, so
+  an optional property the caller never set went out as `{"x": null}`
+  — an invalid payload for a non-nullable `type` — and `fromJson`
+  applied defaults with `??`, which fires on an explicit null as well
+  as a missing key, contrary to JSON Schema (`default` applies to
+  *absence*). Fixed across `fromJson`, storage, and `toJson` for the
+  whole matrix (#321, closes #318, supersedes #102/#316).
+- **Resolve split-spec external `$ref`s** — the
+  one-component-per-file convention (redocly/stoplight, openfoodfacts).
+  Fragment-less whole-file refs, arbitrary JSON-pointer targets into
+  documents with no `components:` section, and aliases all resolve now,
+  where before any of them threw `has no components: section` and
+  generation never started (#319, #315).
+- **Flatten a nested `allOf` member instead of crashing.** An `allOf`
+  whose member is itself an `allOf` — a common composition shape —
+  threw `allOf only supports objects`. The nested member is
+  object-shaped like the others, so it now folds into the parent class
+  and the existing recursive merge does the rest (#322, #320).
+- **Render a lone scalar `const` property as a fixed getter.** A
+  property pinned to a single value (`{type: string, const: "list"}`,
+  common for envelope markers like Stripe's `object: {const: "list"}`
+  and version pins) was modeled as a throwaway single-value enum,
+  minting a class and file per const. It now renders as a plain getter
+  returning the literal — no constructor argument, absent from
+  `fromJson` and equality, `toJson` emits the literal directly (#317,
+  #240).
+- **Support `apiKey` security schemes with `in: cookie`.** They threw
+  `UnimplementedError` at parse time; the generated client now sends
+  the key as a `Cookie:` header, alongside the already-handled
+  `in: header` and `in: query` (#314).
+- **Generate `application/x-www-form-urlencoded` request bodies.** The
+  body renders as a `Map<String, String>` that `http` encodes as
+  `key=value&…` form fields, with optional fields behind a
+  collection-`if` and non-`String` scalars coerced. Form-urlencoded is
+  lowest in content-type precedence, so a body that also offers JSON
+  still picks JSON; it wins only as the sole content type. No existing
+  generated operation changes (#325).
+
+### Bug fixes
+
+- **Remove stale output precisely when regenerating in place.** A
+  schema renamed or deleted between runs left its old file behind,
+  still naming a class that no longer exists, so the regenerated
+  package stopped analyzing — and generated tests under `test/` were
+  never cleaned at all. `FileRenderer.generatedDirs` now declares the
+  directories the generator owns; those are emptied each run and
+  nothing else is touched. Generated tests move to `test/gen/` so the
+  cleared directories are ones we unambiguously own, and `--no-clear`
+  (`GeneratorConfig.clearDirectory: false`) opts a shared package out
+  entirely (#313, #310, #305, #300).
+- **Don't over-suppress `comment_references`.** The file-wide
+  `ignore_for_file` was added whenever a doc comment held any bracketed
+  token, including ones the analyzer never treats as a reference —
+  GitHub-flavored-Markdown alerts (`[!NOTE]`, `[!WARNING]`) copied from
+  spec prose, quoted enum values, bare numbers. Of 43 annotated files
+  on github, 27 were annotated for tokens the lint would never fire on;
+  now only real comment-reference shapes count (#312).
+- **Serialize query parameters correctly across more shapes.** A
+  parameter typed as a union of a scalar and an array of it now
+  serializes per variant instead of stringifying the union, and
+  unsupported query shapes warn instead of silently rendering wrong
+  (#292, #233).
+- **Don't fake an empty-list default on query-array params.** Under the
+  `allListsDefaultToEmpty` quirk an optional array query parameter got
+  `= const []`, making it non-optional in practice and emitting a no-op
+  `if (x != null)` guard that always fired. The quirk now applies only
+  to response-model fields, where it belongs; an optional array
+  parameter defaults to `null`, matching the non-quirk output (#326,
+  #137).
+- **Accept `format: date` and base64 properties in a multipart body.**
+  Both crashed the generator with `multipart/form-data property must be
+  a scalar or binary`; their wire value is a plain `String`, so they
+  render as text fields (#297, #294).
+- **Recognize `format: byte` as base64 bytes.** An OAS 3.0 spec now
+  gets the same `Uint8List` a 3.1 `contentEncoding: base64` spec does,
+  instead of a `String` the caller has to decode by hand (#303, #298).
+- **Parse a map of json types as a bare cast** rather than an identity
+  `.map(MapEntry.new)` that only copied it (#301, #272).
+- **Percent-encode path parameters at substitution time**, so a value
+  containing a URL-reserved character is carried as data instead of
+  changing the request URL's structure (#284).
+- **Compose the request `Uri` field by field.** Fixes
+  `ApiClient._resolveUri` losing the operation path when `baseUri`
+  carries a query string, collapsing a trailing slash into an empty
+  `//` segment, and closes a query-injection hole in path parameters
+  (#279).
+- **Snake-case a run of capitals as one word.** github's
+  `SCREAMING_CAPS` property names snaked character-by-character
+  (`WorkflowUsageBillableMACOS` → `..._m_a_c_o_s`); now
+  `..._macos` (#288).
+- **Emit imports cleanly.** Each imported library is defined once and
+  directives are ordered as `directives_ordering` wants, fixing 145
+  duplicate directives and `api_client.dart` tripping the lint for any
+  package whose name sorts before `http` (#275, #286).
+- **Stop a const getter serializing through a null-aware `?.`** on a
+  non-nullable receiver, which raised `invalid_null_aware_operator` in
+  generated models (#277).
+
 ## 1.3.0
 
 Two more real-world specs now generate analyze-clean Dart with a fully
