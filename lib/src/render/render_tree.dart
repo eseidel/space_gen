@@ -2445,13 +2445,7 @@ class RenderRequestBodyFormUrlEncoded extends RenderRequestBodySimple {
 
   @override
   String bodyExpression(SchemaRenderer context) {
-    final object = schema;
-    if (object is! RenderObject) {
-      throw FormatException(
-        'application/x-www-form-urlencoded request body schema must be an '
-        'object (got ${object.runtimeType}) at ${schema.common.pointer}',
-      );
-    }
+    final object = _requireObjectBody(this, MimeType.formUrlEncoded.value);
     final paramName = dartParameterName(context.quirks);
     // An optional body makes the whole parameter nullable, so even its
     // required fields are read through `?.` and gated behind a null check.
@@ -2577,13 +2571,7 @@ class RenderRequestBodyMultipart extends RenderRequestBody {
   ({List<MultipartScalarPart> scalars, List<MultipartFilePart> files}) partsFor(
     SchemaRenderer context,
   ) {
-    final object = schema;
-    if (object is! RenderObject) {
-      throw FormatException(
-        'multipart/form-data request body schema must be an object '
-        '(got ${object.runtimeType}) at ${schema.common.pointer}',
-      );
-    }
+    final object = _requireObjectBody(this, MimeType.multipartFormData.value);
     final paramName = dartParameterName(context.quirks);
     final scalars = <MultipartScalarPart>[];
     final files = <MultipartFilePart>[];
@@ -2644,6 +2632,21 @@ class RenderRequestBodyMultipart extends RenderRequestBody {
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
       _requestBodyParameterContext(this, context);
+}
+
+/// The body's [RenderObject] schema, or a [FormatException] naming
+/// [contentType] when it is some other shape. Both form-shaped request
+/// bodies (multipart, form-urlencoded) encode an object's properties into
+/// named fields, so both require an object here.
+RenderObject _requireObjectBody(RenderRequestBody body, String contentType) {
+  final object = body.schema;
+  if (object is! RenderObject) {
+    throw FormatException(
+      '$contentType request body schema must be an object '
+      '(got ${object.runtimeType}) at ${body.schema.common.pointer}',
+    );
+  }
+  return object;
 }
 
 /// The Dart expression that renders [property] as one `Map<String, String>`
