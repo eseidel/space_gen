@@ -202,6 +202,53 @@ void main() {
       );
     });
 
+    // The path rule is the query rule minus `number`, and it recurses into
+    // unions rather than asking whether each variant is a single wire
+    // value — otherwise a `number` hidden in a `oneOf` would slip into a
+    // URL path segment.
+    test('a number nested in a path parameter union is still rejected', () {
+      final json = {
+        'openapi': '3.1.0',
+        'info': {'title': 'T', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'summary': 'Get user',
+              'parameters': [
+                {
+                  'name': 'foo',
+                  'in': 'path',
+                  'schema': {
+                    'oneOf': [
+                      {'type': 'string'},
+                      {'type': 'number'},
+                    ],
+                  },
+                  'required': true,
+                },
+              ],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+      expect(
+        () => parseAndResolveTestSpec(json),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('Path parameters must be strings or integers'),
+          ),
+        ),
+      );
+    });
+
     test('path parameters can be pod types (uuid/date/date-time/etc)', () {
       // A common real-world pattern: a `/resource/{id}` path where `id` is
       // declared as `type: string, format: uuid`. Previously this crashed

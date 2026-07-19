@@ -10,6 +10,7 @@ import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/parse/spec.dart';
 import 'package:space_gen/src/parse/visitor.dart';
 import 'package:space_gen/src/parser.dart';
+import 'package:space_gen/src/query_encoding.dart';
 
 void _warn(String message, JsonPointer pointer) {
   logger.warn('$message in $pointer');
@@ -582,92 +583,33 @@ ResolvedRequestBody? _resolveRequestBody(
   });
 }
 
+/// A path parameter is any single wire value except a `number`.
+///
+/// [isSingleWireValue] covers the rest: strings, integers, enums, and the
+/// pod types (uuid, email, date-time, uri, uri-template, boolean) plus
+/// `Date`, all of which serialize to a single string via their `toJson` —
+/// the expression interpolated into the URL path. Without those, common
+/// patterns like `format: uuid` on a `/things/{id}` path would be rejected.
+///
+/// `number` is excluded deliberately: `?ratio=0.5` is a fine query value,
+/// but a float in a path segment is not something we want to emit. Stating
+/// the path rule as a subtraction from the query rule keeps the two in step
+/// — they previously enumerated the same types twice.
+///
+/// Note this will be wrong if we support non-string, non-integer enums.
 bool _canBePathParameter(ResolvedSchema schema) {
-  if (schema is ResolvedString || schema is ResolvedInteger) {
+  if (schema is ResolvedNumber) {
+    return false;
+  }
+  if (isSingleWireValue(schema)) {
     return true;
   }
-  // Pod types (uuid, email, date-time, uri, uri-template, boolean) and `Date`
-  // all serialize to a single string on the wire via their `toJson` — which is
-  // the expression interpolated into the URL path — so they're legal path
-  // parameters. Without this, common patterns like `format: uuid` on a
-  // `/things/{id}` path crash the resolver.
-  if (schema is ResolvedPod || schema is ResolvedDate) {
-    return true;
-  }
+  // Recurses rather than calling [isSingleWireValue] on the variants, so a
+  // `number` nested anywhere in the union is still rejected.
   if (schema is ResolvedOneOf) {
     return schema.schemas.every(_canBePathParameter);
   }
-
-  /// Note this will be wrong if we support non-string, non-integer enums.
-  if (schema is ResolvedEnum) {
-    return true;
-  }
   return false;
-}
-
-/// True when [schema] serializes to a single value on the wire — the shape a
-/// query parameter may take on its own, and the element type an array-shaped
-/// one may hold.
-///
-/// Deliberately a superset of what [_canBePathParameter] accepts: `number`
-/// is a legal query value (`?ratio=0.5`) whether or not we want one in a URL
-/// path segment. Keeping the two predicates separate lets the path rule stay
-/// as strict as it is.
-bool _isSingleWireValue(ResolvedSchema schema) {
-  if (schema is ResolvedString ||
-      schema is ResolvedInteger ||
-      schema is ResolvedNumber ||
-      schema is ResolvedEnum) {
-    return true;
-  }
-  // Pods (uuid, email, date-time, uri, uri-template, boolean) and `Date` all
-  // serialize to a single string on the wire via their `toJson`.
-  return schema is ResolvedPod || schema is ResolvedDate;
-}
-
-/// True when [schema] is a shape the query renderer knows how to put on the
-/// wire under `style: form` — the only style the generator emits.
-///
-/// That is a single wire value, an array of those, or a union whose every
-/// variant is one of the two. A union may mix arities: github's `cwes` is
-/// `oneOf: [string, array<string>]`, which serializes as either `?k=a` or
-/// `?k=a&k=b` depending on the variant held at the call site.
-///
-/// Object shapes are rejected. `form`/`deepObject` object serialization isn't
-/// implemented, and no spec in the validation rotation uses it — so rather
-/// than guess at a wire format, the caller warns and the renderer's existing
-/// fallback stringifies the value. The warning is the record that we're
-/// dropping spec semantics; implement the real encoding when a spec needs it.
-bool _canBeQueryParameter(ResolvedSchema schema) {
-  if (_isSingleWireValue(schema)) {
-    return true;
-  }
-  if (schema is ResolvedArray) {
-    return _isSingleWireValue(schema.items);
-  }
-  // `anyOf` as well as `oneOf`: both render as a sealed union (anyOf becomes
-  // a `RenderOneOf`), and both appear in this position in the wild —
-  // spacetraders' `traits` is an `anyOf`. `allOf` is a
-  // [ResolvedSchemaCollection] too, but it intersects rather than unions its
-  // members, so it is deliberately not accepted here.
-  final variants = switch (schema) {
-    ResolvedOneOf(:final schemas) => schemas,
-    ResolvedAnyOf(:final schemas) => schemas,
-    _ => null,
-  };
-  if (variants == null) {
-    return false;
-  }
-  // Variants are checked one level deep rather than recursively. The renderer
-  // switches over this union's own wrapper subclasses and emits a wire form
-  // per arm, so a variant that is itself a union has no single form to emit.
-  // Holding this in step with the renderer is what keeps an accepted shape
-  // from silently rendering wrong instead of warning.
-  return variants.every(
-    (v) =>
-        _isSingleWireValue(v) ||
-        (v is ResolvedArray && _isSingleWireValue(v.items)),
-  );
 }
 
 List<ResolvedParameter> _resolveParameters(
@@ -684,11 +626,17 @@ List<ResolvedParameter> _resolveParameters(
           resolved.pointer,
         );
       }
+      // The wire form is decided once, here, and carried to the renderer
+      // on [ResolvedParameter.queryEncoding]. The renderer switches on the
+      // decision rather than re-deriving it, so the shape we warn about
+      // and the shape we emit cannot drift apart (#296).
+      final queryEncoding = resolved.inLocation == ParameterLocation.query
+          ? decideQueryEncoding(type, explode: resolved.explode)
+          : null;
       // Warn rather than error: an unsupported query shape still renders
       // (as a stringified value), so this is a "we're dropping spec
       // semantics" signal, not a reason to fail the whole spec.
-      if (resolved.inLocation == ParameterLocation.query &&
-          !_canBeQueryParameter(type)) {
+      if (queryEncoding is UnsupportedEncoding) {
         _warn(
           'Unsupported query parameter shape; generator emits a stringified '
           'value, which is unlikely to match what the server expects',
@@ -705,6 +653,7 @@ List<ResolvedParameter> _resolveParameters(
         example: resolved.example,
         examples: resolved.examples,
         explode: resolved.explode,
+        queryEncoding: queryEncoding,
       );
     });
   }).toList();
@@ -1204,10 +1153,18 @@ class ResolvedParameter {
     required this.example,
     required this.examples,
     required this.explode,
+    required this.queryEncoding,
   });
 
   /// The name of the resolved parameter.
   final String name;
+
+  /// How this parameter's value goes on the wire — null for every
+  /// location other than `query`, where the question doesn't arise.
+  ///
+  /// Decided during resolution so that one answer drives both the
+  /// "unsupported shape" warning and the code the renderer emits.
+  final QueryEncoding? queryEncoding;
 
   /// The in of the resolved parameter.
   final ParameterLocation inLocation;
