@@ -224,11 +224,6 @@ class FileWriter {
 
   final Set<String> _writtenFiles = {};
 
-  /// Every path written this run, relative to [outDir]. Their parent
-  /// directories are the ones the generator owns — see
-  /// `FileRenderer._removeStale`.
-  Set<String> get writtenFiles => UnmodifiableSetView(_writtenFiles);
-
   /// Ensure a file exists.
   File _ensureFile(String path) {
     final file = fs.file(p.join(outDir.path, path));
@@ -568,7 +563,18 @@ class FileRenderer {
   /// [usedDate] is complete, mirroring [renderModelHelpers].
   @protected
   void renderDate() {
-    if (!usedDate) return;
+    // `lib/` is shared with the consumer, so nothing sweeps it — this
+    // hook owns the file and removes it when a spec stops using dates.
+    // Doing it here rather than from a list of files we own keeps it
+    // safe for a subclass that no-ops this hook: our delete never runs,
+    // so we never remove a file we did not produce.
+    if (!usedDate) {
+      final stale = fileWriter.fs.file(
+        p.join(fileWriter.outDir.path, 'lib', 'date.dart'),
+      );
+      if (stale.existsSync()) stale.deleteSync();
+      return;
+    }
     _renderDartFile(name: 'date', outPath: 'lib/date.dart');
   }
 
@@ -1065,95 +1071,67 @@ class FileRenderer {
     );
   }
 
-  /// Directories a package's own files live in by Dart convention, so
-  /// ours and the consumer's sit side by side: we write
-  /// `lib/model_helpers.dart` and they keep their barrel next to it.
-  /// Never swept — only directories nested inside them are.
-  static const _sharedDirs = {
-    '.',
-    'lib',
-    'test',
-    'bin',
-    'tool',
-    'example',
-    'benchmark',
-  };
-
-  /// Directories the default layout writes models into, past and
-  /// present. Swept even with nothing written into them this run, so
-  /// that regenerating with [Quirks.flatModelDir] flipped removes the
-  /// layout it moved off of. We can enumerate these because they are
-  /// ours to define; a subclass layout we cannot, hence [_removeStale].
-  static final Set<String> _defaultModelDirs = {
+  /// Directories, relative to the package root, that this renderer
+  /// generates into and therefore owns. Emptied before each run when
+  /// clearing is on, so a renamed or deleted schema leaves nothing
+  /// behind.
+  ///
+  /// Declared rather than worked out from the files we write, so that
+  /// the claim "this directory is ours" is something the renderer says
+  /// out loud, in one place, instead of being inferred from output
+  /// paths after the fact.
+  ///
+  /// A directory here is deleted **recursively**, so only name ones
+  /// holding nothing but generated output. In particular not `lib/`,
+  /// `test/`, or the package root: a package's own files live there by
+  /// Dart convention, so ours sit beside the consumer's, and we write
+  /// no README, LICENSE, CHANGELOG or `.github/` that would replace
+  /// theirs. Our files directly inside those have fixed names and are
+  /// overwritten when still needed.
+  ///
+  /// **Override this whenever you override [modelPath] or [testPath].**
+  /// The two encode the same decision — where output goes — and a
+  /// layout moved without moving this gets no cleanup at all. That is
+  /// how `shorebird_code_push_protocol`, which puts models under
+  /// `lib/src/models/`, went without stale-file removal entirely.
+  ///
+  /// Generating into a package that also holds hand-written code is
+  /// exactly the case to be explicit about: give the generated output
+  /// a directory of its own (`lib/gen/`, `lib/src/models/`) and name it
+  /// here, rather than sharing a directory with files we must not
+  /// delete.
+  @protected
+  @visibleForOverriding
+  Set<String> get generatedDirs => {
     p.join('lib', 'api'),
+    // Both model layouts: [Quirks.flatModelDir] writes a flat `model/`,
+    // the default splits into `models/` and `messages/`. Naming both
+    // means regenerating with the quirk flipped clears the layout it
+    // moved off of.
     p.join('lib', 'model'),
     p.join('lib', 'models'),
     p.join('lib', 'messages'),
+    // The `test/` mirrors of the above, from [testPath].
+    p.join('test', 'model'),
+    p.join('test', 'models'),
+    p.join('test', 'messages'),
   };
 
-  /// Delete output left over from a previous run.
-  ///
-  /// What we own is a set of *directories*: the ones we generate into.
-  /// Each is ours entirely, so anything in it we did not write this run
-  /// is stale — a renamed schema's old file, and equally a whole
-  /// subdirectory belonging to an operation the spec no longer has.
-  ///
-  /// The set is derived from what was written rather than hardcoded,
-  /// because layout is a subclass hook ([modelPath], [testPath]): a
-  /// consumer generating into `lib/src/models/` gets nothing cleaned by
-  /// a list naming `lib/models/`.
-  ///
-  /// Owning the whole *output directory* instead would be simpler to
-  /// state, and wrong. We do not write a README, a LICENSE, a CHANGELOG
-  /// or `.github/`, and a generated client is often its own repository
-  /// holding all of them. The files that would need sparing belong to
-  /// the consumer and cannot be enumerated — so we enumerate what is
-  /// ours instead, which we can.
-  ///
-  /// Not swept: [_sharedDirs]. Those hold a package's own files by Dart
-  /// convention, so ours sit beside the consumer's — writing
-  /// `lib/model_helpers.dart` says nothing about who owns the rest of
-  /// `lib/`. Our files directly inside them have fixed names and are
-  /// overwritten when still needed.
-  ///
-  /// One gap follows from deriving the set this way: a layout that only
-  /// ever writes into *subdirectories* of some directory never names
-  /// that directory, so a stale subdirectory beside the live ones is
-  /// not reached. Claiming the parent anyway would mean owning a
-  /// directory we never write to, which is how the previous rule came
-  /// to delete consumers' files. The cost of the gap is a stale file
-  /// that fails to analyze — noisy and fixable — so this errs toward
-  /// leaving too much rather than deleting too much.
-  void _removeStale() {
-    final written = fileWriter.writtenFiles.map(p.normalize).toSet();
-    final dirs = written.map(p.dirname).toSet()
-      ..removeAll(_sharedDirs)
-      ..addAll(_defaultModelDirs);
-    for (final dir in dirs) {
+  /// Delete the contents of [generatedDirs].
+  void _clearGeneratedDirs() {
+    for (final dir in generatedDirs) {
       final directory = fileWriter.fs.directory(
         p.join(fileWriter.outDir.path, dir),
       );
-      if (directory.existsSync()) _purge(directory, written);
-    }
-  }
-
-  /// Recursively delete everything under [dir] that is not in
-  /// [written], including subdirectories the deletion leaves empty.
-  void _purge(Directory dir, Set<String> written) {
-    for (final entity in dir.listSync()) {
-      if (entity is Directory) {
-        _purge(entity, written);
-        if (entity.listSync().isEmpty) entity.deleteSync();
-      } else if (entity is File) {
-        final relative = p.relative(entity.path, from: fileWriter.outDir.path);
-        if (written.contains(p.normalize(relative))) continue;
-        entity.deleteSync();
-      }
+      if (directory.existsSync()) directory.deleteSync(recursive: true);
     }
   }
 
   /// Render the entire spec.
   void render(RenderSpec spec, {bool clearDirectory = true}) {
+    if (clearDirectory) {
+      _clearGeneratedDirs();
+    }
     // Collect all the Apis and Model Schemas.
     // Do we walk through each endpoint and ask which class to put it on?
     // Do we then walk through each class and ask what file to put it in?
@@ -1193,13 +1171,6 @@ class FileRenderer {
     renderClient(renderedApis, specName: specName);
     // Render the combined api.dart exporting all rendered schemas.
     renderPublicApi(spec.apis, schemas);
-    // After rendering, since which directories we own is derived from
-    // what we just wrote. Before the format pass: `dart fix` would
-    // otherwise spend time on stale files, and a stale file naming a
-    // class that no longer exists does not analyze.
-    if (clearDirectory) {
-      _removeStale();
-    }
     formatter.formatAndFix(pkgDir: fileWriter.outDir.path);
 
     final misspellings = spellChecker.collectMisspellings(fileWriter.outDir);

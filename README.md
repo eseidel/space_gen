@@ -78,33 +78,34 @@ a consensus towards a better Dart generator, so releasing this one.
   off to FileRenderer which uses SchemaRenderer to render api (operation) and
   model (schema) files and imports.
 
-### We own the directories we generate into, and nothing else
+### We own the directories we declare, and nothing else
 
 A schema you rename or delete would otherwise leave its old file
 behind, and that file still refers to the class under its old name — so
-the regenerated package stops analyzing. So after generating, space_gen
-removes anything it did not write from the directories it wrote into.
+the regenerated package stops analyzing. `FileRenderer.generatedDirs`
+names the directories holding that output; they are emptied before each
+run.
 
-Those directories are worked out from what the run actually produced,
-not from a fixed list, because layout is yours to change through
-`FileRenderer.modelPath` and `FileRenderer.testPath`. A fixed list
-naming `lib/models/` cleans nothing for a consumer who moved models to
-`lib/src/models/` — which is exactly the consumer most likely to need
-it.
+Output comes in two shapes, and only one can go stale. Files named
+after something in the spec live in `generatedDirs`. The rest —
+`pubspec.yaml`, the barrel, `model_helpers.dart` — keep the same name
+every run and are simply overwritten.
 
-Two things are deliberately never touched:
+**If you override `modelPath` or `testPath`, override `generatedDirs`
+too.** They encode the same decision, and a layout that moves without
+it gets no cleanup at all. If you generate into a package that also
+holds hand-written code, give the output a directory of its own
+(`lib/gen/`, `lib/src/models/`) and name it there, rather than sharing
+a directory with files that must survive.
+
+Never touched:
 
 - **The package root, `lib/`, and `test/` themselves.** A package's own
   files live there by Dart convention, so ours sit beside yours. We
   write no README, LICENSE, CHANGELOG or `.github/`, and a generated
   client is often its own repository holding all of them.
-- **Anything under `--no-clear`** (`GeneratorConfig.clearDirectory:
-  false`), which disables removal entirely. Use it if you want to
-  manage stale output yourself.
-
-The rule errs toward leaving too much rather than deleting too much. A
-stale file that fails to analyze is noisy and takes one `rm` to fix;
-a deleted file you wrote is gone.
+- **Everything, under `--no-clear`** (`GeneratorConfig.clearDirectory:
+  false`), if you would rather manage stale output yourself.
 
 ### Lint suppression lives in the generated `.dart` files
 

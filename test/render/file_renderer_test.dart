@@ -95,6 +95,9 @@ class _CustomLayoutRenderer extends FileRenderer {
   @override
   String modelPath(LayoutContext context) =>
       'custom/${context.schema.snakeName}.dart';
+
+  @override
+  Set<String> get generatedDirs => {'lib/custom', 'test/custom'};
 }
 
 /// Mirrors the shape of Shorebird's message layout: some schemas sit
@@ -111,6 +114,9 @@ class _NestedLayoutRenderer extends FileRenderer {
         ? 'custom/$name.dart'
         : 'custom/$name/$name.dart';
   }
+
+  @override
+  Set<String> get generatedDirs => {'lib/custom', 'test/custom'};
 }
 
 /// A spec exposing one endpoint per named object schema, so schemas can

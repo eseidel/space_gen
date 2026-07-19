@@ -201,11 +201,11 @@ class GeneratorConfig {
   /// constructed (recursive types, no-JSON types).
   final bool generateTests;
 
-  /// Whether to remove stale output. Default `true`: after generating,
-  /// anything we did not write is deleted from the directories we
-  /// wrote into. Without it a renamed or deleted schema leaves its old
-  /// file behind, still referencing the class under the old name, and
-  /// the regenerated package stops analyzing.
+  /// Whether to remove stale output. Default `true`, which empties the
+  /// directories named by [FileRenderer.generatedDirs] before each run.
+  /// Without it a renamed or deleted schema leaves its old file behind,
+  /// still referencing the class under the old name, and the
+  /// regenerated package stops analyzing.
   ///
   /// Only those directories — never [outDir] itself, `lib/` or `test/`,
   /// where a package's own files live by Dart convention beside ours.
