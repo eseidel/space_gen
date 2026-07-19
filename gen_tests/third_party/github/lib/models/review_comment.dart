@@ -38,8 +38,8 @@ class ReviewComment {
     this.bodyText,
     this.bodyHtml,
     this.reactions,
-    this.side = ReviewCommentSide.right,
-    this.startSide = ReviewCommentStartSide.right,
+    this.side = .right,
+    this.startSide = .right,
     this.line,
     this.originalLine,
     this.startLine,
@@ -84,13 +84,12 @@ class ReviewComment {
           json['reactions'] as Map<String, dynamic>?,
         ),
         side:
-            ReviewCommentSide.maybeFromJson(json['side'] as String?) ??
-            ReviewCommentSide.right,
+            ReviewCommentSide.maybeFromJson(json['side'] as String?) ?? .right,
         startSide: json.containsKey('start_side')
             ? ReviewCommentStartSide.maybeFromJson(
                 json['start_side'] as String?,
               )
-            : ReviewCommentStartSide.right,
+            : .right,
         line: json['line'] as int?,
         originalLine: json['original_line'] as int?,
         startLine: json['start_line'] as int?,

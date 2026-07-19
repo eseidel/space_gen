@@ -11,7 +11,7 @@ class ReposCreateRepoRulesetRequest {
   const ReposCreateRepoRulesetRequest({
     required this.name,
     required this.enforcement,
-    this.target = ReposCreateRepoRulesetRequestTarget.branch,
+    this.target = .branch,
     this.bypassActors,
     this.conditions,
     this.rules,
@@ -28,7 +28,7 @@ class ReposCreateRepoRulesetRequest {
             ReposCreateRepoRulesetRequestTarget.maybeFromJson(
               json['target'] as String?,
             ) ??
-            ReposCreateRepoRulesetRequestTarget.branch,
+            .branch,
         enforcement: RepositoryRuleEnforcement.fromJson(
           json['enforcement'] as String,
         ),

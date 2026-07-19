@@ -562,6 +562,17 @@ void main() {
     });
   });
 
+  group('DartShorthandMember', () {
+    test('renders as a dot shorthand and is constant', () {
+      const member = DartShorthandMember('a');
+      expect(member.source, '.a');
+      expect(member.canBeConst, isTrue);
+      expect(member, const DartShorthandMember('a'));
+      // The type is deliberately absent — it does not participate in equality.
+      expect(member, isNot(const DartShorthandMember('b')));
+    });
+  });
+
   group('parenthesization', () {
     const json = DartIdentifier('json');
     const read = DartIndex(target: json, index: DartLiteral('x'));

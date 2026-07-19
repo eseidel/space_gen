@@ -11,7 +11,7 @@ class TeamsUpdateInOrgRequest {
     this.description,
     this.privacy,
     this.notificationSetting,
-    this.permission = TeamsUpdateInOrgRequestPermission.pull,
+    this.permission = .pull,
     this.parentTeamId,
   });
 
@@ -34,7 +34,7 @@ class TeamsUpdateInOrgRequest {
             TeamsUpdateInOrgRequestPermission.maybeFromJson(
               json['permission'] as String?,
             ) ??
-            TeamsUpdateInOrgRequestPermission.pull,
+            .pull,
         parentTeamId: json['parent_team_id'] as int?,
       ),
     );

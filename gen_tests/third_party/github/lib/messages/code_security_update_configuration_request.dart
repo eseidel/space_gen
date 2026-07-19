@@ -37,9 +37,7 @@ class CodeSecurityUpdateConfigurationRequest {
     this.dependabotSecurityUpdates,
     this.codeScanningDefaultSetup,
     this.codeScanningDefaultSetupOptions,
-    this.codeScanningDelegatedAlertDismissal =
-        CodeSecurityUpdateConfigurationRequestCodeScanningDelegatedAlertDismissal
-            .disabled,
+    this.codeScanningDelegatedAlertDismissal = .disabled,
     this.secretScanning,
     this.secretScanningPushProtection,
     this.secretScanningDelegatedBypass,
@@ -101,8 +99,7 @@ class CodeSecurityUpdateConfigurationRequest {
             CodeSecurityUpdateConfigurationRequestCodeScanningDelegatedAlertDismissal.maybeFromJson(
               json['code_scanning_delegated_alert_dismissal'] as String?,
             ) ??
-            CodeSecurityUpdateConfigurationRequestCodeScanningDelegatedAlertDismissal
-                .disabled,
+            .disabled,
         secretScanning:
             CodeSecurityUpdateConfigurationRequestSecretScanning.maybeFromJson(
               json['secret_scanning'] as String?,

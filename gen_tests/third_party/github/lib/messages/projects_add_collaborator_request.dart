@@ -4,9 +4,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class ProjectsAddCollaboratorRequest {
-  const ProjectsAddCollaboratorRequest({
-    this.permission = ProjectsAddCollaboratorRequestPermission.write,
-  });
+  const ProjectsAddCollaboratorRequest({this.permission = .write});
 
   /// Converts a `Map<String, dynamic>` to a [ProjectsAddCollaboratorRequest].
   factory ProjectsAddCollaboratorRequest.fromJson(Map<String, dynamic> json) {
@@ -18,7 +16,7 @@ class ProjectsAddCollaboratorRequest {
             ProjectsAddCollaboratorRequestPermission.maybeFromJson(
               json['permission'] as String?,
             ) ??
-            ProjectsAddCollaboratorRequestPermission.write,
+            .write,
       ),
     );
   }

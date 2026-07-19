@@ -789,7 +789,7 @@ class AppsApi {
   /// with their client ID and client secret to access this endpoint.
   Future<List<MarketplacePurchase>> listAccountsForPlan(
     int planId, {
-    SortParam? sort = SortParam.created,
+    SortParam? sort = .created,
     AppsListAccountsForPlanParameter2? direction,
     int? perPage = 30,
     int? page = 1,
@@ -909,7 +909,7 @@ class AppsApi {
   /// with their client ID and client secret to access this endpoint.
   Future<List<MarketplacePurchase>> listAccountsForPlanStubbed(
     int planId, {
-    SortParam? sort = SortParam.created,
+    SortParam? sort = .created,
     AppsListAccountsForPlanStubbedParameter2? direction,
     int? perPage = 30,
     int? page = 1,

@@ -453,8 +453,7 @@ class CodeSecurityApi {
   /// `write:org` scope to use this endpoint.
   Future<List<CodeSecurityConfiguration>> codeSecurityGetConfigurationsForOrg(
     String org, {
-    CodeSecurityGetConfigurationsForOrgParameter1? targetType =
-        CodeSecurityGetConfigurationsForOrgParameter1.all,
+    CodeSecurityGetConfigurationsForOrgParameter1? targetType = .all,
     int? perPage = 30,
     String? before,
     String? after,

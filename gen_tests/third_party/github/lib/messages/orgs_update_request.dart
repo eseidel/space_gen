@@ -19,8 +19,7 @@ class OrgsUpdateRequest {
     this.description,
     this.hasOrganizationProjects,
     this.hasRepositoryProjects,
-    this.defaultRepositoryPermission =
-        OrgsUpdateRequestDefaultRepositoryPermission.read,
+    this.defaultRepositoryPermission = .read,
     this.membersCanCreateRepositories = true,
     this.membersCanCreateInternalRepositories,
     this.membersCanCreatePrivateRepositories,
@@ -62,7 +61,7 @@ class OrgsUpdateRequest {
             OrgsUpdateRequestDefaultRepositoryPermission.maybeFromJson(
               json['default_repository_permission'] as String?,
             ) ??
-            OrgsUpdateRequestDefaultRepositoryPermission.read,
+            .read,
         membersCanCreateRepositories:
             (json['members_can_create_repositories'] as bool?) ?? true,
         membersCanCreateInternalRepositories:

@@ -110,10 +110,9 @@ class CodeScanningApi {
     String? after,
     int? page = 1,
     int? perPage = 30,
-    DirectionParam? direction = DirectionParam.desc,
+    DirectionParam? direction = .desc,
     CodeScanningAlertStateQuery? state,
-    CodeScanningListAlertsForOrgParameter9? sort =
-        CodeScanningListAlertsForOrgParameter9.created,
+    CodeScanningListAlertsForOrgParameter9? sort = .created,
     CodeScanningAlertSeverity? severity,
   }) async {
     final response = await client.invokeApi(
@@ -174,11 +173,10 @@ class CodeScanningApi {
     int? perPage = 30,
     CodeScanningRef? ref,
     int? pr,
-    DirectionParam? direction = DirectionParam.desc,
+    DirectionParam? direction = .desc,
     String? before,
     String? after,
-    CodeScanningListAlertsForRepoParameter11? sort =
-        CodeScanningListAlertsForRepoParameter11.created,
+    CodeScanningListAlertsForRepoParameter11? sort = .created,
     CodeScanningAlertStateQuery? state,
     CodeScanningAlertSeverity? severity,
   }) async {
@@ -476,9 +474,8 @@ class CodeScanningApi {
     int? pr,
     CodeScanningRef? ref,
     CodeScanningAnalysisSarifId? sarifId,
-    DirectionParam? direction = DirectionParam.desc,
-    CodeScanningListRecentAnalysesParameter10? sort =
-        CodeScanningListRecentAnalysesParameter10.created,
+    DirectionParam? direction = .desc,
+    CodeScanningListRecentAnalysesParameter10? sort = .created,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,

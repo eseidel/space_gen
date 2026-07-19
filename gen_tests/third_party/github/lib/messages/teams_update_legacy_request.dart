@@ -11,7 +11,7 @@ class TeamsUpdateLegacyRequest {
     this.description,
     this.privacy,
     this.notificationSetting,
-    this.permission = TeamsUpdateLegacyRequestPermission.pull,
+    this.permission = .pull,
     this.parentTeamId,
   });
 
@@ -34,7 +34,7 @@ class TeamsUpdateLegacyRequest {
             TeamsUpdateLegacyRequestPermission.maybeFromJson(
               json['permission'] as String?,
             ) ??
-            TeamsUpdateLegacyRequestPermission.pull,
+            .pull,
         parentTeamId: json['parent_team_id'] as int?,
       ),
     );

@@ -13,7 +13,7 @@ class TeamsCreateRequest {
     this.repoNames,
     this.privacy,
     this.notificationSetting,
-    this.permission = TeamsCreateRequestPermission.pull,
+    this.permission = .pull,
     this.parentTeamId,
   });
 
@@ -38,7 +38,7 @@ class TeamsCreateRequest {
             TeamsCreateRequestPermission.maybeFromJson(
               json['permission'] as String?,
             ) ??
-            TeamsCreateRequestPermission.pull,
+            .pull,
         parentTeamId: json['parent_team_id'] as int?,
       ),
     );

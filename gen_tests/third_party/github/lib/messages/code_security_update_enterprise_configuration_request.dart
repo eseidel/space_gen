@@ -35,19 +35,13 @@ class CodeSecurityUpdateEnterpriseConfigurationRequest {
     this.dependabotSecurityUpdates,
     this.codeScanningDefaultSetup,
     this.codeScanningDefaultSetupOptions,
-    this.codeScanningDelegatedAlertDismissal =
-        CodeSecurityUpdateEnterpriseConfigurationRequestCodeScanningDelegatedAlertDismissal
-            .disabled,
+    this.codeScanningDelegatedAlertDismissal = .disabled,
     this.secretScanning,
     this.secretScanningPushProtection,
     this.secretScanningValidityChecks,
     this.secretScanningNonProviderPatterns,
-    this.secretScanningGenericSecrets =
-        CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanningGenericSecrets
-            .disabled,
-    this.secretScanningDelegatedAlertDismissal =
-        CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanningDelegatedAlertDismissal
-            .disabled,
+    this.secretScanningGenericSecrets = .disabled,
+    this.secretScanningDelegatedAlertDismissal = .disabled,
     this.privateVulnerabilityReporting,
     this.enforcement,
   });
@@ -101,8 +95,7 @@ class CodeSecurityUpdateEnterpriseConfigurationRequest {
             CodeSecurityUpdateEnterpriseConfigurationRequestCodeScanningDelegatedAlertDismissal.maybeFromJson(
               json['code_scanning_delegated_alert_dismissal'] as String?,
             ) ??
-            CodeSecurityUpdateEnterpriseConfigurationRequestCodeScanningDelegatedAlertDismissal
-                .disabled,
+            .disabled,
         secretScanning:
             CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanning.maybeFromJson(
               json['secret_scanning'] as String?,
@@ -123,14 +116,12 @@ class CodeSecurityUpdateEnterpriseConfigurationRequest {
             CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanningGenericSecrets.maybeFromJson(
               json['secret_scanning_generic_secrets'] as String?,
             ) ??
-            CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanningGenericSecrets
-                .disabled,
+            .disabled,
         secretScanningDelegatedAlertDismissal:
             CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanningDelegatedAlertDismissal.maybeFromJson(
               json['secret_scanning_delegated_alert_dismissal'] as String?,
             ) ??
-            CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanningDelegatedAlertDismissal
-                .disabled,
+            .disabled,
         privateVulnerabilityReporting:
             CodeSecurityUpdateEnterpriseConfigurationRequestPrivateVulnerabilityReporting.maybeFromJson(
               json['private_vulnerability_reporting'] as String?,

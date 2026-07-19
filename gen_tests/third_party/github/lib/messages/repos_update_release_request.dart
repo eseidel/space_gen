@@ -15,7 +15,7 @@ class ReposUpdateReleaseRequest {
     this.body,
     this.draft,
     this.prerelease,
-    this.makeLatest = ReposUpdateReleaseRequestMakeLatest.true_,
+    this.makeLatest = .true_,
     this.discussionCategoryName,
   });
 
@@ -35,7 +35,7 @@ class ReposUpdateReleaseRequest {
             ReposUpdateReleaseRequestMakeLatest.maybeFromJson(
               json['make_latest'] as String?,
             ) ??
-            ReposUpdateReleaseRequestMakeLatest.true_,
+            .true_,
         discussionCategoryName: json['discussion_category_name'] as String?,
       ),
     );

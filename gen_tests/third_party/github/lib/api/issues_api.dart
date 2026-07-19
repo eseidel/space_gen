@@ -87,11 +87,11 @@ class IssuesApi {
   /// representations. Response will include `body`, `body_text`, and
   /// `body_html`.
   Future<List<Issue>> list({
-    IssuesListParameter0? filter = IssuesListParameter0.assigned,
-    IssuesListParameter1? state = IssuesListParameter1.open,
+    IssuesListParameter0? filter = .assigned,
+    IssuesListParameter1? state = .open,
     String? labels,
-    IssuesListParameter3? sort = IssuesListParameter3.created,
-    DirectionParam? direction = DirectionParam.desc,
+    IssuesListParameter3? sort = .created,
+    DirectionParam? direction = .desc,
     DateTime? since,
     bool? collab,
     bool? orgs,
@@ -161,12 +161,12 @@ class IssuesApi {
   /// `body_html`.
   Future<List<Issue>> listForOrg(
     String org, {
-    IssuesListForOrgParameter1? filter = IssuesListForOrgParameter1.assigned,
-    IssuesListForOrgParameter2? state = IssuesListForOrgParameter2.open,
+    IssuesListForOrgParameter1? filter = .assigned,
+    IssuesListForOrgParameter2? state = .open,
     String? labels,
     String? type,
-    IssuesListForOrgParameter5? sort = IssuesListForOrgParameter5.created,
-    DirectionParam? direction = DirectionParam.desc,
+    IssuesListForOrgParameter5? sort = .created,
+    DirectionParam? direction = .desc,
     DateTime? since,
     int? perPage = 30,
     int? page = 1,
@@ -293,14 +293,14 @@ class IssuesApi {
     String owner,
     String repo, {
     String? milestone,
-    IssuesListForRepoParameter3? state = IssuesListForRepoParameter3.open,
+    IssuesListForRepoParameter3? state = .open,
     String? assignee,
     String? type,
     String? creator,
     String? mentioned,
     String? labels,
-    IssuesListForRepoParameter9? sort = IssuesListForRepoParameter9.created,
-    DirectionParam? direction = DirectionParam.desc,
+    IssuesListForRepoParameter9? sort = .created,
+    DirectionParam? direction = .desc,
     DateTime? since,
     int? perPage = 30,
     int? page = 1,
@@ -415,7 +415,7 @@ class IssuesApi {
   Future<List<IssueComment>> listCommentsForRepo(
     String owner,
     String repo, {
-    SortParam? sort = SortParam.created,
+    SortParam? sort = .created,
     IssuesListCommentsForRepoParameter3? direction,
     DateTime? since,
     int? perPage = 30,
@@ -1482,10 +1482,9 @@ class IssuesApi {
   Future<List<Milestone>> listMilestones(
     String owner,
     String repo, {
-    IssuesListMilestonesParameter2? state = IssuesListMilestonesParameter2.open,
-    IssuesListMilestonesParameter3? sort = IssuesListMilestonesParameter3.dueOn,
-    IssuesListMilestonesParameter4? direction =
-        IssuesListMilestonesParameter4.asc,
+    IssuesListMilestonesParameter2? state = .open,
+    IssuesListMilestonesParameter3? sort = .dueOn,
+    IssuesListMilestonesParameter4? direction = .asc,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -1685,14 +1684,11 @@ class IssuesApi {
   /// representations. Response will include `body`, `body_text`, and
   /// `body_html`.
   Future<List<Issue>> listForAuthenticatedUser({
-    IssuesListForAuthenticatedUserParameter0? filter =
-        IssuesListForAuthenticatedUserParameter0.assigned,
-    IssuesListForAuthenticatedUserParameter1? state =
-        IssuesListForAuthenticatedUserParameter1.open,
+    IssuesListForAuthenticatedUserParameter0? filter = .assigned,
+    IssuesListForAuthenticatedUserParameter1? state = .open,
     String? labels,
-    IssuesListForAuthenticatedUserParameter3? sort =
-        IssuesListForAuthenticatedUserParameter3.created,
-    DirectionParam? direction = DirectionParam.desc,
+    IssuesListForAuthenticatedUserParameter3? sort = .created,
+    DirectionParam? direction = .desc,
     DateTime? since,
     int? perPage = 30,
     int? page = 1,

@@ -230,7 +230,7 @@ class PackagesApi {
     int? page = 1,
     int? perPage = 30,
     PackagesGetAllPackageVersionsForPackageOwnedByOrgParameter5? state =
-        PackagesGetAllPackageVersionsForPackageOwnedByOrgParameter5.active,
+        .active,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,
@@ -571,8 +571,7 @@ class PackagesApi {
     int? perPage = 30,
     PackagesGetAllPackageVersionsForPackageOwnedByAuthenticatedUserParameter4?
         state =
-        PackagesGetAllPackageVersionsForPackageOwnedByAuthenticatedUserParameter4
-            .active,
+        .active,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,

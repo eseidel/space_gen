@@ -13,7 +13,7 @@ class TeamMembership {
   const TeamMembership({
     required this.url,
     required this.state,
-    this.role = TeamMembershipRole.member,
+    this.role = .member,
   });
 
   /// Converts a `Map<String, dynamic>` to a [TeamMembership].

@@ -73,10 +73,10 @@ class PullsApi {
   Future<List<PullRequestSimple>> list(
     String owner,
     String repo, {
-    PullsListParameter2? state = PullsListParameter2.open,
+    PullsListParameter2? state = .open,
     String? head,
     String? base,
-    PullsListParameter5? sort = PullsListParameter5.created,
+    PullsListParameter5? sort = .created,
     PullsListParameter6? direction,
     int? perPage = 30,
     int? page = 1,
@@ -514,7 +514,7 @@ class PullsApi {
     String owner,
     String repo,
     int pullNumber, {
-    SortParam? sort = SortParam.created,
+    SortParam? sort = .created,
     PullsListReviewCommentsParameter4? direction,
     DateTime? since,
     int? perPage = 30,
