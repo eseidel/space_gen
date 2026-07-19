@@ -48,15 +48,13 @@ class _RefCollector extends Visitor {
   }
 }
 
-Set<Ref<Parseable>> _collectRefsFromRoot(OpenApi root) {
+/// Collect every external `$ref` reachable by [walk] into a fresh set.
+/// Each call gets its own set (and thus a throwaway collector) because the
+/// refs it finds are enqueued against a specific source document — different
+/// walks feed different base URIs, so the batches can't share one set.
+Set<Ref<Parseable>> _collectRefs(void Function(SpecWalker walker) walk) {
   final refs = <Ref<Parseable>>{};
-  SpecWalker(_RefCollector(refs)).walkRoot(root);
-  return refs;
-}
-
-Set<Ref<Parseable>> _collectRefsFromComponents(Components components) {
-  final refs = <Ref<Parseable>>{};
-  SpecWalker(_RefCollector(refs)).walkComponents(components);
+  walk(SpecWalker(_RefCollector(refs)));
   return refs;
 }
 
@@ -95,7 +93,7 @@ Future<void> _loadExternalRefs({
     }
   }
 
-  enqueue(rootSpecUrl, _collectRefsFromRoot(rootSpec));
+  enqueue(rootSpecUrl, _collectRefs((w) => w.walkRoot(rootSpec)));
 
   while (workItems.isNotEmpty) {
     final (sourceDoc, ref) = workItems.removeFirst();
@@ -120,7 +118,7 @@ Future<void> _loadExternalRefs({
         RegistryBuilder(docUri, refRegistry),
       ).walkComponents(components);
 
-      enqueue(docUri, _collectRefsFromComponents(components));
+      enqueue(docUri, _collectRefs((w) => w.walkComponents(components)));
     } else {
       // Split-spec convention (redocly/stoplight style): the document has
       // no `components:` section; the `$ref`'s fragment is a JSON-pointer
@@ -140,9 +138,7 @@ Future<void> _loadExternalRefs({
         enqueue(docUri, [inner]);
       } else {
         refRegistry.register(resolved, object);
-        final nestedRefs = <Ref<Parseable>>{};
-        SpecWalker(_RefCollector(nestedRefs)).walkRefOr(refOr);
-        enqueue(docUri, nestedRefs);
+        enqueue(docUri, _collectRefs((w) => w.walkRefOr(refOr)));
       }
     }
   }
