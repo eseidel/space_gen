@@ -549,8 +549,8 @@ class ReposApi {
   /// organization](https://docs.github.com/organizations/managing-peoples-access-to-your-organization-with-roles/managing-security-managers-in-your-organization)."
   Future<List<MinimalRepository>> listForOrg(
     String org, {
-    ReposListForOrgParameter1? type = ReposListForOrgParameter1.all,
-    ReposListForOrgParameter2? sort = ReposListForOrgParameter2.created,
+    ReposListForOrgParameter1? type = .all,
+    ReposListForOrgParameter2? sort = .created,
     ReposListForOrgParameter3? direction,
     int? perPage = 30,
     int? page = 1,
@@ -684,9 +684,9 @@ class ReposApi {
     String org, {
     String? ref,
     String? repositoryName,
-    TimePeriodParam? timePeriod = TimePeriodParam.day,
+    TimePeriodParam? timePeriod = .day,
     String? actorName,
-    RuleSuiteResultParam? ruleSuiteResult = RuleSuiteResultParam.all,
+    RuleSuiteResultParam? ruleSuiteResult = .all,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -914,7 +914,7 @@ class ReposApi {
   Future<List<Activity>> listActivities(
     String owner,
     String repo, {
-    DirectionParam? direction = DirectionParam.desc,
+    DirectionParam? direction = .desc,
     int? perPage = 30,
     String? before,
     String? after,
@@ -2615,8 +2615,7 @@ class ReposApi {
   Future<List<Collaborator>> listCollaborators(
     String owner,
     String repo, {
-    ReposListCollaboratorsParameter2? affiliation =
-        ReposListCollaboratorsParameter2.all,
+    ReposListCollaboratorsParameter2? affiliation = .all,
     ReposListCollaboratorsParameter3? permission,
     int? perPage = 30,
     int? page = 1,
@@ -4795,7 +4794,7 @@ class ReposApi {
   Future<List<MinimalRepository>> listForks(
     String owner,
     String repo, {
-    ReposListForksParameter2? sort = ReposListForksParameter2.newest,
+    ReposListForksParameter2? sort = .newest,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -6607,9 +6606,9 @@ class ReposApi {
     String owner,
     String repo, {
     String? ref,
-    TimePeriodParam? timePeriod = TimePeriodParam.day,
+    TimePeriodParam? timePeriod = .day,
     String? actorName,
-    RuleSuiteResultParam? ruleSuiteResult = RuleSuiteResultParam.all,
+    RuleSuiteResultParam? ruleSuiteResult = .all,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -7300,7 +7299,7 @@ class ReposApi {
   Future<CloneTraffic> getClones(
     String owner,
     String repo, {
-    PerParam? per = PerParam.day,
+    PerParam? per = .day,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,
@@ -7385,7 +7384,7 @@ class ReposApi {
   Future<ViewTraffic> getViews(
     String owner,
     String repo, {
-    PerParam? per = PerParam.day,
+    PerParam? per = .day,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,
@@ -7609,13 +7608,10 @@ class ReposApi {
   /// they own, repositories where they are a collaborator, and repositories
   /// that they can access through an organization membership.
   Future<List<Repository>> listForAuthenticatedUser({
-    ReposListForAuthenticatedUserParameter0? visibility =
-        ReposListForAuthenticatedUserParameter0.all,
+    ReposListForAuthenticatedUserParameter0? visibility = .all,
     String? affiliation = 'owner,collaborator,organization_member',
-    ReposListForAuthenticatedUserParameter2? type =
-        ReposListForAuthenticatedUserParameter2.all,
-    ReposListForAuthenticatedUserParameter3? sort =
-        ReposListForAuthenticatedUserParameter3.fullName,
+    ReposListForAuthenticatedUserParameter2? type = .all,
+    ReposListForAuthenticatedUserParameter3? sort = .fullName,
     ReposListForAuthenticatedUserParameter4? direction,
     int? perPage = 30,
     int? page = 1,
@@ -7749,8 +7745,8 @@ class ReposApi {
   /// Lists public repositories for the specified user.
   Future<List<MinimalRepository>> listForUser(
     String username, {
-    ReposListForUserParameter1? type = ReposListForUserParameter1.owner,
-    ReposListForUserParameter2? sort = ReposListForUserParameter2.fullName,
+    ReposListForUserParameter1? type = .owner,
+    ReposListForUserParameter2? sort = .fullName,
     ReposListForUserParameter3? direction,
     int? perPage = 30,
     int? page = 1,

@@ -182,6 +182,7 @@ class _ExpressionSerializer extends Equatable {
       DartLiteral(:final value) =>
         value is String ? quoteString(value) : '$value',
       DartStaticMember(:final type, :final name) => '$type.$name',
+      DartShorthandMember(:final name) => '.$name',
       DartIdentifier(:final name) => name,
       // A call and a closure both evaluate at runtime, so neither can
       // carry the keyword; their children serialize in whatever context
@@ -835,4 +836,28 @@ class DartStaticMember extends DartExpression {
 
   @override
   List<Object?> get props => [type, name];
+}
+
+/// A Dart 3.10 dot shorthand for a static member: `.admin` in place of
+/// `UserRole.admin`. Valid only where the context type is already known —
+/// a typed default, a `??` fallback into a typed slot, a typed argument —
+/// so producers emit it exclusively at those positions. The type it resolves
+/// against is left implicit, which is the whole point: the reader (and the
+/// analyzer) recover it from the destination.
+class DartShorthandMember extends DartExpression {
+  const DartShorthandMember(this.name);
+
+  /// The member name, e.g. an enum member.
+  final String name;
+
+  /// Enum members are constant, and the shorthand appears only where the
+  /// qualified [DartStaticMember] would have — so it carries the same answer.
+  @override
+  bool get canBeConst => true;
+
+  @override
+  DartPrecedence get precedence => DartPrecedence.postfix;
+
+  @override
+  List<Object?> get props => [name];
 }

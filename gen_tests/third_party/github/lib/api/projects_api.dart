@@ -46,7 +46,7 @@ class ProjectsApi {
   /// for more information.
   Future<List<Project>> listForOrg(
     String org, {
-    ProjectsListForOrgParameter1? state = ProjectsListForOrgParameter1.open,
+    ProjectsListForOrgParameter1? state = .open,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -317,8 +317,7 @@ class ProjectsApi {
   /// for more information.
   Future<List<ProjectCard>> listCards(
     int columnId, {
-    ProjectsListCardsParameter1? archivedState =
-        ProjectsListCardsParameter1.notArchived,
+    ProjectsListCardsParameter1? archivedState = .notArchived,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -499,8 +498,7 @@ class ProjectsApi {
   /// for more information.
   Future<List<SimpleUser>> listCollaborators(
     int projectId, {
-    ProjectsListCollaboratorsParameter1? affiliation =
-        ProjectsListCollaboratorsParameter1.all,
+    ProjectsListCollaboratorsParameter1? affiliation = .all,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -690,7 +688,7 @@ class ProjectsApi {
   Future<List<Project>> listForRepo(
     String owner,
     String repo, {
-    ProjectsListForRepoParameter2? state = ProjectsListForRepoParameter2.open,
+    ProjectsListForRepoParameter2? state = .open,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -791,7 +789,7 @@ class ProjectsApi {
   /// for more information.
   Future<List<Project>> listForUser(
     String username, {
-    ProjectsListForUserParameter1? state = ProjectsListForUserParameter1.open,
+    ProjectsListForUserParameter1? state = .open,
     int? perPage = 30,
     int? page = 1,
   }) async {

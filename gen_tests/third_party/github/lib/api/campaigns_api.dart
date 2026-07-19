@@ -28,10 +28,9 @@ class CampaignsApi {
     String org, {
     int? page = 1,
     int? perPage = 30,
-    DirectionParam? direction = DirectionParam.desc,
+    DirectionParam? direction = .desc,
     CampaignState? state,
-    CampaignsListOrgCampaignsParameter5? sort =
-        CampaignsListOrgCampaignsParameter5.created,
+    CampaignsListOrgCampaignsParameter5? sort = .created,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,

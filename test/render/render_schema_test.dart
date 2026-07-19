@@ -3890,6 +3890,38 @@ void main() {
       );
     });
 
+    test('enum default renders as a Dart 3.10 dot shorthand', () {
+      // A property whose type is a named enum and whose default is one of its
+      // members drops the type prefix in every context-typed slot: the
+      // constructor default and the `??` fallback in `fromJson`. The
+      // `maybeFromJson` static call keeps its receiver — only the value
+      // context is inferred, not the call target. See #323.
+      final schema = {
+        'type': 'object',
+        'properties': {
+          'mode': {
+            'type': 'string',
+            'enum': ['cruise', 'drift', 'burn'],
+            'default': 'cruise',
+          },
+        },
+      };
+      final result = renderTestSchema(schema);
+      // Constructor default: `this.mode = .cruise`, not `= TestMode.cruise`.
+      expect(result, contains('{ this.mode = .cruise,  }'));
+      // fromJson: the static call stays qualified, the `??` fallback is
+      // shorthand.
+      expect(
+        result,
+        contains(
+          "mode: TestMode.maybeFromJson(json['mode'] as String?) ?? .cruise,",
+        ),
+      );
+      // The qualified form must not survive at either slot.
+      expect(result, isNot(contains('= TestMode.cruise')));
+      expect(result, isNot(contains('?? TestMode.cruise')));
+    });
+
     test('empty object', () {
       final schema = {'type': 'object', 'properties': <String, dynamic>{}};
       final result = renderTestSchema(schema);

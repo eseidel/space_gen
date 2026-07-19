@@ -65,7 +65,7 @@ class PetApi {
   /// Finds Pets by status.
   /// Multiple status values can be provided with comma separated strings.
   Future<List<Pet>> findPetsByStatus({
-    FindPetsByStatusParameter0? status = FindPetsByStatusParameter0.available,
+    FindPetsByStatusParameter0? status = .available,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,

@@ -358,7 +358,7 @@ class ChecksApi {
     int checkSuiteId, {
     String? checkName,
     StatusParam? status,
-    ChecksListForSuiteParameter5? filter = ChecksListForSuiteParameter5.latest,
+    ChecksListForSuiteParameter5? filter = .latest,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -451,7 +451,7 @@ class ChecksApi {
     String ref, {
     String? checkName,
     StatusParam? status,
-    ChecksListForRefParameter5? filter = ChecksListForRefParameter5.latest,
+    ChecksListForRefParameter5? filter = .latest,
     int? perPage = 30,
     int? page = 1,
     int? appId,

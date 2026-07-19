@@ -17,7 +17,7 @@ class ReposCreateReleaseRequest {
     this.prerelease = false,
     this.discussionCategoryName,
     this.generateReleaseNotes = false,
-    this.makeLatest = ReposCreateReleaseRequestMakeLatest.true_,
+    this.makeLatest = .true_,
   });
 
   /// Converts a `Map<String, dynamic>` to a [ReposCreateReleaseRequest].
@@ -39,7 +39,7 @@ class ReposCreateReleaseRequest {
             ReposCreateReleaseRequestMakeLatest.maybeFromJson(
               json['make_latest'] as String?,
             ) ??
-            ReposCreateReleaseRequestMakeLatest.true_,
+            .true_,
       ),
     );
   }

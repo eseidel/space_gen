@@ -875,7 +875,7 @@ class OrgsApi {
     String? maxTimestamp,
     int? page = 1,
     int? perPage = 30,
-    DirectionParam? direction = DirectionParam.desc,
+    DirectionParam? direction = .desc,
     List<ApiInsightsRouteStatsSortParamInner>? sort,
     String? apiRouteSubstring,
   }) async {
@@ -922,7 +922,7 @@ class OrgsApi {
     String? maxTimestamp,
     int? page = 1,
     int? perPage = 30,
-    DirectionParam? direction = DirectionParam.desc,
+    DirectionParam? direction = .desc,
     List<ApiInsightsSortParamInner>? sort,
     String? subjectNameSubstring,
   }) async {
@@ -1189,7 +1189,7 @@ class OrgsApi {
     String? maxTimestamp,
     int? page = 1,
     int? perPage = 30,
-    DirectionParam? direction = DirectionParam.desc,
+    DirectionParam? direction = .desc,
     List<ApiInsightsSortParamInner>? sort,
     String? actorNameSubstring,
   }) async {
@@ -1276,10 +1276,8 @@ class OrgsApi {
     String org, {
     int? perPage = 30,
     int? page = 1,
-    OrgsListPendingInvitationsParameter3? role =
-        OrgsListPendingInvitationsParameter3.all,
-    OrgsListPendingInvitationsParameter4? invitationSource =
-        OrgsListPendingInvitationsParameter4.all,
+    OrgsListPendingInvitationsParameter3? role = .all,
+    OrgsListPendingInvitationsParameter4? invitationSource = .all,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,
@@ -1528,8 +1526,8 @@ class OrgsApi {
   /// public members will be returned.
   Future<List<SimpleUser>> orgsListMembers(
     String org, {
-    OrgsListMembersParameter1? filter = OrgsListMembersParameter1.all,
-    OrgsListMembersParameter2? role = OrgsListMembersParameter2.all,
+    OrgsListMembersParameter1? filter = .all,
+    OrgsListMembersParameter2? role = .all,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -2000,8 +1998,7 @@ class OrgsApi {
   /// List all users who are outside collaborators of an organization.
   Future<List<SimpleUser>> orgsListOutsideCollaborators(
     String org, {
-    OrgsListOutsideCollaboratorsParameter1? filter =
-        OrgsListOutsideCollaboratorsParameter1.all,
+    OrgsListOutsideCollaboratorsParameter1? filter = .all,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -2104,8 +2101,8 @@ class OrgsApi {
     String org, {
     int? perPage = 30,
     int? page = 1,
-    PersonalAccessTokenSortParam? sort = PersonalAccessTokenSortParam.createdAt,
-    DirectionParam? direction = DirectionParam.desc,
+    PersonalAccessTokenSortParam? sort = .createdAt,
+    DirectionParam? direction = .desc,
     List<String>? owner,
     String? repository,
     String? permission,
@@ -2259,8 +2256,8 @@ class OrgsApi {
     String org, {
     int? perPage = 30,
     int? page = 1,
-    PersonalAccessTokenSortParam? sort = PersonalAccessTokenSortParam.createdAt,
-    DirectionParam? direction = DirectionParam.desc,
+    PersonalAccessTokenSortParam? sort = .createdAt,
+    DirectionParam? direction = .desc,
     List<String>? owner,
     String? repository,
     String? permission,
