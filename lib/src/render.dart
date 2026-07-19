@@ -276,6 +276,32 @@ String renderTestSchema(
   Quirks quirks = const Quirks(),
   bool asComponent = false,
 }) {
+  final templates = TemplateProvider.defaultLocation();
+  final schemaRenderer = SchemaRenderer(templates: templates, quirks: quirks);
+  return schemaRenderer
+      .renderSchema(
+        renderTestSchemaTree(
+          schemaJson,
+          schemaName: schemaName,
+          quirks: quirks,
+          asComponent: asComponent,
+        ),
+      )
+      .body;
+}
+
+/// Parse, resolve, and name [schemaJson], stopping at the render tree.
+///
+/// The same pipeline [renderTestSchema] runs, minus the templates —
+/// for tests that ask questions of the tree itself (what a schema
+/// names, how it dispatches) rather than of the emitted text.
+@visibleForTesting
+RenderSchema renderTestSchemaTree(
+  Map<String, dynamic> schemaJson, {
+  String schemaName = 'test',
+  Quirks quirks = const Quirks(),
+  bool asComponent = false,
+}) {
   final MapContext context;
   // If asComponent is true, we need to parse the schema as though it were
   // defined in #/components/schemas/schemaName, this is used to make
@@ -299,11 +325,7 @@ String renderTestSchema(
   );
   final resolver = SpecResolver(quirks)
     ..names = assignNamesForSchema(resolvedSchema);
-  final templates = TemplateProvider.defaultLocation();
-
-  final renderSchema = resolver.toRenderSchema(resolvedSchema);
-  final schemaRenderer = SchemaRenderer(templates: templates, quirks: quirks);
-  return schemaRenderer.renderSchema(renderSchema).body;
+  return resolver.toRenderSchema(resolvedSchema);
 }
 
 /// Render a set of schemas to separate strings.
