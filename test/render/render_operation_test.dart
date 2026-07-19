@@ -792,6 +792,63 @@ void main() {
       );
     });
 
+    // The mirror of the multipart boundary: form-urlencoded accepts arrays
+    // only when their items are wire scalars. A non-scalar item (here an
+    // object) has no single-value form, so the property throws — naming it.
+    test(
+      'application/x-www-form-urlencoded rejects an array-of-objects field',
+      () {
+        final operation = {
+          'tags': ['auth'],
+          'operationId': 'createSession',
+          'requestBody': {
+            'required': true,
+            'content': {
+              'application/x-www-form-urlencoded': {
+                'schema': {
+                  'type': 'object',
+                  'required': ['items'],
+                  'properties': {
+                    'items': {
+                      'type': 'array',
+                      'items': {
+                        'type': 'object',
+                        'properties': {
+                          'name': {'type': 'string'},
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'responses': {
+            '200': {'description': 'OK'},
+          },
+        };
+        expect(
+          () => renderTestOperation(
+            path: '/session',
+            operationJson: operation,
+            serverUrl: Uri.parse('https://example.com'),
+          ),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              allOf(
+                contains(
+                  'application/x-www-form-urlencoded property must be a scalar',
+                ),
+                contains('"items"'),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
     test('application/x-www-form-urlencoded rejects non-object schema', () {
       final operation = {
         'tags': ['auth'],
