@@ -4885,25 +4885,30 @@ class RenderMap extends RenderSchema {
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) {
-    // Nothing to do if both key and value are json types.
-    if (keySchema == null && !valueSchema.shouldCallToJson) {
-      return dartName;
-    }
     const key = DartIdentifier('key');
+    const value = DartIdentifier('value');
     final keyToJson = keySchema == null
         ? key
         : const DartMethodCall(target: key, name: 'toJson');
     final valueToJson = valueSchema.toJsonExpression(
-      const DartIdentifier('value'),
+      value,
       context,
       dartIsNullable: false,
     );
+    // Nothing to do if neither side transforms — the same question, and
+    // now the same structural answer, as [fromJsonExpression]. Asking the
+    // built expression rather than predicting from the schema is what
+    // keeps the two directions from disagreeing about what counts as
+    // identity.
+    if (keyToJson == key && valueToJson == value) {
+      return dartName;
+    }
     return DartMethodCall(
       target: dartName,
       name: 'map',
       arguments: [
         DartLambda(
-          parameters: const ['key', 'value'],
+          parameters: [key.name, value.name],
           body: DartType.mapEntry.construct([keyToJson, valueToJson]),
         ),
       ],
