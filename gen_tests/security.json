@@ -3,7 +3,7 @@
     "info": {
         "title": "Security",
         "version": "1.0.0",
-        "description": "Exercises global + per-operation security. Covers the Shorebird-shaped case: globally-required bearer auth with a public endpoint that opts out via `security: []`, plus a scheme swap to apiKey."
+        "description": "Exercises global + per-operation security. Covers the Shorebird-shaped case: globally-required bearer auth with a public endpoint that opts out via `security: []`, plus a scheme swap to apiKey, in both its header and cookie locations."
     },
     "servers": [
         {
@@ -61,6 +61,22 @@
                     }
                 }
             }
+        },
+        "/session": {
+            "get": {
+                "operationId": "getSession",
+                "summary": "Uses a cookie-borne API key.",
+                "security": [
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -69,6 +85,11 @@
                 "type": "http",
                 "scheme": "bearer",
                 "bearerFormat": "JWT"
+            },
+            "cookieAuth": {
+                "type": "apiKey",
+                "name": "session",
+                "in": "cookie"
             },
             "apiKeyAuth": {
                 "type": "apiKey",
