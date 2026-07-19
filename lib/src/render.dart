@@ -120,8 +120,11 @@ Future<void> _loadExternalRefs({
       final refOr = _parseExternalTarget(ref, resolved, targetJson);
       final object = refOr.object;
       if (object == null) {
-        // The target is itself only a `$ref`; follow it transitively.
-        enqueue(docUri, [refOr.ref!]);
+        // The target is itself only a `$ref`; alias this URI to it and
+        // chase the inner ref so the object it names gets registered.
+        final inner = refOr.ref!;
+        refRegistry.registerAlias(resolved, docUri.resolveUri(inner.uri));
+        enqueue(docUri, [inner]);
       } else {
         refRegistry.register(resolved, object);
         final nestedRefs = <Ref<Parseable>>{};
