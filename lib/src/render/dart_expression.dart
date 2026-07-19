@@ -51,11 +51,47 @@ sealed class DartExpression extends Equatable {
   /// see `doc/dart_expression.md`.
   bool get canBeConst;
 
+  /// How tightly this expression binds, so the serializer can decide where
+  /// parentheses are required instead of each producer reasoning it out.
+  DartPrecedence get precedence;
+
   /// Debug form (`DartLiteral(5)`), not Dart source. Rendering goes
   /// through [DartExpressionSerializer] — an expression cannot serialize
   /// itself, because how it renders depends on where the text lands.
   @override
   bool get stringify => true;
+}
+
+/// How tightly an expression binds, loosest first.
+///
+/// Only the levels the generator actually emits, not Dart's full table —
+/// there is no arithmetic or comparison in generated `fromJson`/`toJson`
+/// code, and an unused level is a level nothing tests.
+///
+/// The point of the enum is that composition asks rather than assumes.
+/// Before it, two overrides answered "does a cast on the left of `??` need
+/// parens" independently and disagreed: `RenderNumeric` emitted
+/// `(json['x'] as int?) ?? 0` and `RenderPod` emitted
+/// `json['x'] as bool? ?? false`.
+enum DartPrecedence {
+  /// `throw x` — binds looser than everything, including a lambda body.
+  throw_,
+
+  /// `(e) => body`.
+  lambda,
+
+  /// `x ?? y`.
+  ifNull,
+
+  /// `x as T`.
+  cast,
+
+  /// Selectors: `x.y`, `x?.y`, `f(...)`. Left-associative, so a target
+  /// must already be at this level or tighter.
+  postfix,
+
+  /// Literals, identifiers, and anything else that never needs parens.
+  primary,
 }
 
 /// Renders a [DartExpression] to Dart source.
@@ -91,7 +127,23 @@ class DartExpressionSerializer extends Equatable {
   final bool isConstContext;
 
   /// The Dart source for [expression].
-  String serialize(DartExpression expression) {
+  ///
+  /// Nothing wraps the outermost expression, so it is serialized at the
+  /// loosest level.
+  String serialize(DartExpression expression) =>
+      _serializeAt(expression, DartPrecedence.throw_);
+
+  /// [serialize], parenthesizing when [expression] binds looser than the
+  /// position it is landing in requires.
+  ///
+  /// A written `const` keyword needs no accounting here: `const Foo(1)` is
+  /// a primary, so `const Foo(1).bar` already means `(const Foo(1)).bar`.
+  String _serializeAt(DartExpression expression, DartPrecedence minimum) {
+    final source = _serializeBare(expression);
+    return expression.precedence.index < minimum.index ? '($source)' : source;
+  }
+
+  String _serializeBare(DartExpression expression) {
     // A keyword written here (or a context inherited from above) makes
     // every child a constant context.
     final children = isConstContext || expression.canBeConst
@@ -111,13 +163,29 @@ class DartExpressionSerializer extends Equatable {
       DartMethodCall(
         :final target,
         :final name,
+        :final typeArguments,
         :final arguments,
         :final isNullAware,
       ) =>
-        '${children.serialize(target)}${isNullAware ? '?.' : '.'}$name'
+        '${children._serializeAt(target, DartPrecedence.postfix)}'
+            '${isNullAware ? '?.' : '.'}$name'
+            '${_typeArgumentList(typeArguments)}'
             '(${arguments.map(children.serialize).join(', ')})',
       DartPropertyAccess(:final target, :final name, :final isNullAware) =>
-        '${children.serialize(target)}${isNullAware ? '?.' : '.'}$name',
+        '${children._serializeAt(target, DartPrecedence.postfix)}'
+            '${isNullAware ? '?.' : '.'}$name',
+      DartFunctionCall(:final name, :final arguments) =>
+        '$name(${arguments.map(children.serialize).join(', ')})',
+      // `as` binds tighter than `??`, so its operand has to be at least a
+      // cast itself; `(a ?? b) as T` is where this earns the parens.
+      DartCast(:final operand, :final type) =>
+        '${children._serializeAt(operand, DartPrecedence.cast)} as $type',
+      // `??` is right-associative: the left side must bind tighter, the
+      // right side may be another `??` without parens.
+      DartIfNull(:final value, :final ifNullValue) =>
+        '${children._serializeAt(value, DartPrecedence.cast)} ?? '
+            '${children._serializeAt(ifNullValue, DartPrecedence.ifNull)}',
+      DartThrow(:final value) => 'throw ${children.serialize(value)}',
       DartLambda(:final parameters, :final body) =>
         '(${parameters.join(', ')}) => ${children.serialize(body)}',
       DartListLiteral(:final elementType, :final elements) => _maybeConst(
@@ -162,6 +230,10 @@ class DartExpressionSerializer extends Equatable {
   /// node kind can legally carry it.
   String _maybeConst(DartExpression expression, String source) =>
       !isConstContext && expression.canBeConst ? 'const $source' : source;
+
+  /// `<A, B>`, or empty when there are none to write.
+  static String _typeArgumentList(List<DartType> typeArguments) =>
+      typeArguments.isEmpty ? '' : '<${typeArguments.join(', ')}>';
 
   @override
   List<Object?> get props => [isConstContext];
@@ -235,6 +307,9 @@ class DartLiteral extends DartExpression {
   @override
   bool get canBeConst => true;
 
+  @override
+  DartPrecedence get precedence => DartPrecedence.primary;
+
   // Includes the runtime type because `5 == 5.0` in Dart, but `5` and `5.0`
   // are different literals — equality here has to agree with [toString].
   @override
@@ -263,6 +338,9 @@ class DartListLiteral extends DartExpression {
   /// A list literal is constant when every element is.
   @override
   bool get canBeConst => elements.every((element) => element.canBeConst);
+
+  @override
+  DartPrecedence get precedence => DartPrecedence.primary;
 
   @override
   List<Object?> get props => [elementType, elements];
@@ -308,6 +386,9 @@ class DartMapLiteral extends DartExpression {
   bool get canBeConst => entries.every((entry) => entry.canBeConst);
 
   @override
+  DartPrecedence get precedence => DartPrecedence.primary;
+
+  @override
   List<Object?> get props => [keyType, valueType, entries];
 }
 
@@ -328,6 +409,9 @@ class DartIdentifier extends DartExpression {
   bool get canBeConst => false;
 
   @override
+  DartPrecedence get precedence => DartPrecedence.primary;
+
+  @override
   List<Object?> get props => [name];
 }
 
@@ -339,6 +423,7 @@ class DartMethodCall extends DartExpression {
   const DartMethodCall({
     required this.target,
     required this.name,
+    this.typeArguments = const [],
     this.arguments = const [],
     this.isNullAware = false,
   });
@@ -347,6 +432,12 @@ class DartMethodCall extends DartExpression {
   final DartExpression target;
 
   final String name;
+
+  /// Explicit type arguments: the `<Foo>` in `.map<Foo>(...)` and
+  /// `.cast<Foo>()`. Written out rather than inferred because the target
+  /// is a `List<dynamic>` off the wire, where inference would land on
+  /// `dynamic`.
+  final List<DartType> typeArguments;
 
   final List<DartExpression> arguments;
 
@@ -359,7 +450,107 @@ class DartMethodCall extends DartExpression {
   bool get canBeConst => false;
 
   @override
-  List<Object?> get props => [target, name, arguments, isNullAware];
+  DartPrecedence get precedence => DartPrecedence.postfix;
+
+  @override
+  List<Object?> get props => [
+    target,
+    name,
+    typeArguments,
+    arguments,
+    isNullAware,
+  ];
+}
+
+/// A call to a top-level function: `jsonDecode(json)`,
+/// `maybeParseDateTime(v)`.
+///
+/// Distinct from [DartInvocation], which is rooted at a [DartType]. The
+/// functions this models are the generator's own `model_helpers.dart`
+/// entries plus `dart:convert`'s `jsonDecode` — free functions with no
+/// enclosing type to name.
+///
+/// The name is a plain `String` because these are fixed, known functions;
+/// there is no question a consumer asks about one beyond which it is.
+class DartFunctionCall extends DartExpression {
+  const DartFunctionCall({required this.name, this.arguments = const []});
+
+  final String name;
+
+  final List<DartExpression> arguments;
+
+  /// The generator emits no `const` functions, so a call is never constant.
+  @override
+  bool get canBeConst => false;
+
+  @override
+  DartPrecedence get precedence => DartPrecedence.postfix;
+
+  @override
+  List<Object?> get props => [name, arguments];
+}
+
+/// A cast: `json['x'] as String?`.
+class DartCast extends DartExpression {
+  const DartCast({required this.operand, required this.type});
+
+  final DartExpression operand;
+
+  final DartType type;
+
+  /// A cast of a constant is itself a constant expression, but the
+  /// generator only ever casts a runtime JSON value, so claiming const here
+  /// would be untestable. False until something needs otherwise.
+  @override
+  bool get canBeConst => false;
+
+  @override
+  DartPrecedence get precedence => DartPrecedence.cast;
+
+  @override
+  List<Object?> get props => [operand, type];
+}
+
+/// A null-coalescing expression: `json['x'] as int? ?? 0`.
+class DartIfNull extends DartExpression {
+  const DartIfNull({required this.value, required this.ifNullValue});
+
+  /// The left side, used when it is not null.
+  final DartExpression value;
+
+  /// The right side, evaluated only when [value] is null.
+  final DartExpression ifNullValue;
+
+  /// `??` evaluates at runtime — it is not a constant expression even when
+  /// both sides could be.
+  @override
+  bool get canBeConst => false;
+
+  @override
+  DartPrecedence get precedence => DartPrecedence.ifNull;
+
+  @override
+  List<Object?> get props => [value, ifNullValue];
+}
+
+/// A throw expression: `throw UnimplementedError('...')`.
+///
+/// Grammatically an expression in Dart, which is what lets it stand in for
+/// a value the generator cannot produce — the no-JSON schemas (`void`,
+/// binary) parse to one.
+class DartThrow extends DartExpression {
+  const DartThrow(this.value);
+
+  final DartExpression value;
+
+  @override
+  bool get canBeConst => false;
+
+  @override
+  DartPrecedence get precedence => DartPrecedence.throw_;
+
+  @override
+  List<Object?> get props => [value];
 }
 
 /// A property access: `entry.value`, `response.body`.
@@ -386,6 +577,9 @@ class DartPropertyAccess extends DartExpression {
   bool get canBeConst => false;
 
   @override
+  DartPrecedence get precedence => DartPrecedence.postfix;
+
+  @override
   List<Object?> get props => [target, name, isNullAware];
 }
 
@@ -404,6 +598,9 @@ class DartLambda extends DartExpression {
   /// A closure is never a constant expression.
   @override
   bool get canBeConst => false;
+
+  @override
+  DartPrecedence get precedence => DartPrecedence.lambda;
 
   @override
   List<Object?> get props => [parameters, body];
@@ -475,6 +672,9 @@ class DartInvocation extends DartExpression {
       namedArguments.values.every((argument) => argument.canBeConst);
 
   @override
+  DartPrecedence get precedence => DartPrecedence.postfix;
+
+  @override
   List<Object?> get props => [
     type,
     constructorName,
@@ -501,6 +701,9 @@ class DartStaticMember extends DartExpression {
   /// only used for members that are; a static getter would not be.
   @override
   bool get canBeConst => true;
+
+  @override
+  DartPrecedence get precedence => DartPrecedence.postfix;
 
   @override
   List<Object?> get props => [type, name];
