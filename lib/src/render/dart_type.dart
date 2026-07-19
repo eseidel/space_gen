@@ -16,10 +16,14 @@ class DartType extends Equatable {
     this.isNullable = false,
   });
 
-  /// A `List<T>` type. [element] defaults to `dynamic` (`List<dynamic>`).
+  /// A `List<T>` type, or bare `List` when [element] is omitted.
+  ///
+  /// Raw `List` and `List<dynamic>` are the same type in Dart, so the
+  /// no-argument form is spelling, not meaning: it is what a JSON array is
+  /// cast through, where there is no element type worth writing.
   DartType.list([DartType? element])
     : name = 'List',
-      typeArguments = [element ?? dynamic_],
+      typeArguments = element == null ? const [] : [element],
       isNullable = false;
 
   /// A `Map<K, V>` type.
@@ -67,14 +71,6 @@ class DartType extends Equatable {
   // of the core class (e.g. a space_gen-side constant, or built at the use
   // site) rather than living alongside the language-level types.
   static const uriTemplate = DartType('UriTemplate');
-
-  /// Bare `List`, with no type argument.
-  ///
-  /// Distinct from [DartType.list], which defaults its element to
-  /// `dynamic` and so renders `List<dynamic>`. This is the type a JSON
-  /// array is *cast through* before its items are converted, where naming
-  /// an element type would be a claim the wire value doesn't support.
-  static const rawList = DartType('List');
 
   /// `MapEntry` (`dart:core`) — built by the closure a map's `fromJson`
   /// maps through.

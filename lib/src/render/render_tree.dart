@@ -4610,11 +4610,8 @@ class RenderArray extends RenderSchema {
     required bool dartIsNullable,
   }) {
     // Cast through a bare `List` first, then convert to the item type —
-    // the wire value is a `List<dynamic>` whatever the items are.
-    final cast = DartCast(
-      operand: jsonValue,
-      type: jsonIsNullable ? DartType.rawList.asNullable() : DartType.rawList,
-    );
+    // the wire value is a list of anything whatever the items are.
+    final cast = jsonCast(jsonValue, jsonIsNullable: jsonIsNullable);
     // Only a truly json-native item (Dart type == wire type: String, int,
     // bool, num) can be cast directly. Items that need conversion — newtypes,
     // enums, and pods like `Uri`/`DateTime` whose wire type is a String —

@@ -2372,7 +2372,7 @@ void main() {
       expect(schema.typeName, 'CustomName');
     });
 
-    test('jsonStorageType: RenderArray stores as List<dynamic>', () {
+    test('jsonStorageType: RenderArray stores as a bare List', () {
       const array = RenderArray(
         common: CommonProperties.test(
           snakeName: 'a',
@@ -2387,8 +2387,11 @@ void main() {
           ),
         ),
       );
-      expect(array.jsonStorageType(isNullable: false), 'List<dynamic>');
-      expect(array.jsonStorageType(isNullable: true), 'List<dynamic>?');
+      // Raw `List` and `List<dynamic>` are the same type — `List<E>` is
+      // unbounded, so the raw form instantiates its parameter to
+      // `dynamic`. This is the spelling the cast uses.
+      expect(array.jsonStorageType(isNullable: false), 'List');
+      expect(array.jsonStorageType(isNullable: true), 'List?');
     });
 
     test('jsonStorageDartType throws for schemas with no JSON form', () {
