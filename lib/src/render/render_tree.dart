@@ -2776,6 +2776,10 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// only as an operation's return. Getting one here means the tree was
   /// built wrong, so this reports that rather than propagating a null into
   /// an expression that has nowhere to put it.
+  ///
+  /// Only [RenderMap] can actually reach the throw: [RenderArray] asks
+  /// first whether its items need conversion, and [RenderVoid] answers no,
+  /// so an array of void takes the `.cast()` branch and never calls this.
   @protected
   DartExpression requireFromJsonExpression(
     DartExpression jsonValue,
@@ -2795,6 +2799,34 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     return expression;
   }
 
+  /// This schema parsed from [jsonValue]: cast to the wire type, handed to
+  /// the schema's own `fromJson` factory, with any default substituted
+  /// after.
+  ///
+  /// The whole conversion for every schema that renders its own factory,
+  /// which is why it is one method rather than the same three calls
+  /// written out per subclass.
+  ///
+  /// Not used by [RenderOneOf] or [RenderEmptyObject]: both would be
+  /// unchanged by [orDefault] today (their default is always null), but
+  /// routing them through it would newly subject them to its
+  /// nullable-without-a-default [StateError].
+  @protected
+  DartExpression parsedFromJson(
+    DartExpression jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) => orDefault(
+    _fromJsonCall(
+      jsonCast(jsonValue, jsonIsNullable: jsonIsNullable),
+      jsonIsNullable: jsonIsNullable,
+    ),
+    context: context,
+    jsonIsNullable: jsonIsNullable,
+    dartIsNullable: dartIsNullable,
+  );
+
   /// `<Type>.fromJson(<argument>)`, or `maybeFromJson` when the JSON value
   /// can be null — the shape every schema that renders its own `fromJson`
   /// is parsed through.
@@ -2803,7 +2835,6 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// Those are the same string today, but only one of them is the type
   /// reference sites elsewhere emit, and a divergence would produce a call
   /// to a class that does not exist.
-  @protected
   DartExpression _fromJsonCall(
     DartExpression argument, {
     required bool jsonIsNullable,
@@ -2910,7 +2941,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 /// a `??` right-hand side, or a parameter default, where a `const` keyword
 /// turns an allocation into a compile-time constant.
 String _runtimeSource(DartExpression expression) =>
-    DartExpressionSerializer.runtimeContext.serialize(expression);
+    DartExpressionSerializer.serialize(expression, isConstContext: false);
 
 /// [_runtimeSource] for an expression that may be absent.
 String? _maybeRuntimeSource(DartExpression? expression) =>
@@ -3111,7 +3142,12 @@ class RenderPod extends RenderSchema {
     );
 
     if (createsNewType) {
-      return withDefault(_fromJsonCall(cast, jsonIsNullable: jsonIsNullable));
+      return parsedFromJson(
+        jsonValue,
+        context,
+        jsonIsNullable: jsonIsNullable,
+        dartIsNullable: dartIsNullable,
+      );
     }
 
     // Inline: convert the JSON string to a Dart value at the use site. A
@@ -3122,15 +3158,15 @@ class RenderPod extends RenderSchema {
       switch (type) {
         PodType.dateTime =>
           jsonIsNullable
-              ? call(ModelHelpers.maybeParseDateTime, [cast])
+              ? callFunction(ModelHelpers.maybeParseDateTime, [cast])
               : DartType.dateTime.construct([cast], name: 'parse'),
         PodType.uri =>
           jsonIsNullable
-              ? call(ModelHelpers.maybeParseUri, [cast])
+              ? callFunction(ModelHelpers.maybeParseUri, [cast])
               : DartType.uri.construct([cast], name: 'parse'),
         PodType.uriTemplate =>
           jsonIsNullable
-              ? call(ModelHelpers.maybeParseUriTemplate, [cast])
+              ? callFunction(ModelHelpers.maybeParseUriTemplate, [cast])
               : DartType.uriTemplate.construct([cast]),
         // Already JSON-native: the cast is the whole conversion.
         PodType.boolean || PodType.email || PodType.uuid => cast,
@@ -3311,21 +3347,6 @@ class RenderString extends RenderSchema {
   @override
   DartType get jsonStorageDartType => DartType.string;
 
-  DartExpression newTypeFromJsonExpression(
-    DartExpression jsonValue,
-    SchemaRenderer context, {
-    required bool jsonIsNullable,
-    required bool dartIsNullable,
-  }) => orDefault(
-    _fromJsonCall(
-      jsonCast(jsonValue, jsonIsNullable: jsonIsNullable),
-      jsonIsNullable: jsonIsNullable,
-    ),
-    context: context,
-    jsonIsNullable: jsonIsNullable,
-    dartIsNullable: dartIsNullable,
-  );
-
   @override
   DartExpression fromJsonExpression(
     DartExpression jsonValue,
@@ -3334,7 +3355,7 @@ class RenderString extends RenderSchema {
     required bool dartIsNullable,
   }) {
     if (createsNewType) {
-      return newTypeFromJsonExpression(
+      return parsedFromJson(
         jsonValue,
         context,
         jsonIsNullable: jsonIsNullable,
@@ -3579,21 +3600,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     return '${jsonIsNullable ? '?.' : '.'}$method()';
   }
 
-  DartExpression newTypeFromJsonExpression(
-    DartExpression jsonValue,
-    SchemaRenderer context, {
-    required bool jsonIsNullable,
-    required bool dartIsNullable,
-  }) => orDefault(
-    _fromJsonCall(
-      jsonCast(jsonValue, jsonIsNullable: jsonIsNullable),
-      jsonIsNullable: jsonIsNullable,
-    ),
-    context: context,
-    jsonIsNullable: jsonIsNullable,
-    dartIsNullable: dartIsNullable,
-  );
-
   @override
   DartExpression fromJsonExpression(
     DartExpression jsonValue,
@@ -3602,7 +3608,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     required bool dartIsNullable,
   }) {
     if (createsNewType) {
-      return newTypeFromJsonExpression(
+      return parsedFromJson(
         jsonValue,
         context,
         jsonIsNullable: jsonIsNullable,
@@ -4018,7 +4024,7 @@ class RenderObject extends RenderNewType {
     // `checkedKey`, which throws `FormatException` when the key is
     // absent — other combinations still read `json[key]` directly.
     final jsonRead = jsonKeyIsRequired && property.common.nullable
-        ? call(ModelHelpers.checkedKey, [
+        ? callFunction(ModelHelpers.checkedKey, [
             const DartIdentifier('json'),
             DartLiteral(jsonName),
           ])
@@ -4295,12 +4301,9 @@ class RenderObject extends RenderNewType {
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
-  }) => orDefault(
-    _fromJsonCall(
-      jsonCast(jsonValue, jsonIsNullable: jsonIsNullable),
-      jsonIsNullable: jsonIsNullable,
-    ),
-    context: context,
+  }) => parsedFromJson(
+    jsonValue,
+    context,
     jsonIsNullable: jsonIsNullable,
     dartIsNullable: dartIsNullable,
   );
@@ -5030,12 +5033,9 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
-  }) => orDefault(
-    _fromJsonCall(
-      jsonCast(jsonValue, jsonIsNullable: jsonIsNullable),
-      jsonIsNullable: jsonIsNullable,
-    ),
-    context: context,
+  }) => parsedFromJson(
+    jsonValue,
+    context,
     jsonIsNullable: jsonIsNullable,
     dartIsNullable: dartIsNullable,
   );
@@ -6546,7 +6546,7 @@ class RenderBase64Bytes extends RenderSchema {
     // null check (a ternary on a public-property `Uint8List?` doesn't
     // promote).
     return jsonIsNullable
-        ? call(ModelHelpers.maybeBase64Decode, [cast])
+        ? callFunction(ModelHelpers.maybeBase64Decode, [cast])
         : DartMethodCall(
             target: const DartIdentifier('base64'),
             name: 'decode',
@@ -6626,12 +6626,9 @@ class RenderDate extends RenderSchema {
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
-  }) => orDefault(
-    _fromJsonCall(
-      jsonCast(jsonValue, jsonIsNullable: jsonIsNullable),
-      jsonIsNullable: jsonIsNullable,
-    ),
-    context: context,
+  }) => parsedFromJson(
+    jsonValue,
+    context,
     jsonIsNullable: jsonIsNullable,
     dartIsNullable: dartIsNullable,
   );

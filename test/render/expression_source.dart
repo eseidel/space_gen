@@ -8,9 +8,10 @@ import 'package:space_gen/src/render/dart_expression.dart';
 /// whole point of separating rendering from the tree.
 extension ExpressionSource on DartExpression {
   /// Source for a destination that is already a constant context.
-  String get source => DartExpressionSerializer.constContext.serialize(this);
+  String get source =>
+      DartExpressionSerializer.serialize(this, isConstContext: true);
 
   /// Source for a destination that evaluates at runtime.
   String get runtimeSource =>
-      DartExpressionSerializer.runtimeContext.serialize(this);
+      DartExpressionSerializer.serialize(this, isConstContext: false);
 }

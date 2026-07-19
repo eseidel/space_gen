@@ -110,27 +110,51 @@ enum DartPrecedence {
 /// (`Uint8List.fromList(const <int>[0])`).
 @immutable
 class DartExpressionSerializer extends Equatable {
-  const DartExpressionSerializer({required this.isConstContext});
+  const DartExpressionSerializer._({required this.isConstContext});
 
   /// For a destination that is already a constant context: an enclosing
   /// `const` declaration, a parameter default, or inside another `const`
   /// expression. No keyword is written; one would be `unnecessary_const`.
-  static const constContext = DartExpressionSerializer(isConstContext: true);
+  static const _constContext = DartExpressionSerializer._(isConstContext: true);
 
   /// For a destination that evaluates at runtime, such as the right-hand
   /// side of a `??`. A `const` keyword is written wherever it turns an
   /// allocation into a compile-time constant.
-  static const runtimeContext = DartExpressionSerializer(
+  static const _runtimeContext = DartExpressionSerializer._(
     isConstContext: false,
   );
 
   final bool isConstContext;
 
-  /// The Dart source for [expression].
+  /// The Dart source for [expression], as the whole of whatever it is
+  /// being written into.
   ///
-  /// Nothing wraps the outermost expression, so it is serialized at the
-  /// loosest level.
-  String serialize(DartExpression expression) =>
+  /// **Static on purpose.** This is the one entry that accepts any
+  /// expression without parentheses — true at the root, false everywhere
+  /// inside. Dart forbids reaching a static through an instance, so an arm
+  /// below *cannot* call `children.serialize(...)`; it has to use
+  /// [_serializeAt] or [_serializeDelimited] and say what that position
+  /// accepts. The alternative — an instance method with a comment asking
+  /// callers not to — is a convention, and this is a compile error.
+  ///
+  /// [isConstContext] describes the destination: true for an enclosing
+  /// `const` declaration or a parameter default, false for anything that
+  /// evaluates at runtime.
+  static String serialize(
+    DartExpression expression, {
+    required bool isConstContext,
+  }) => (isConstContext ? _constContext : _runtimeContext)._serializeAt(
+    expression,
+    DartPrecedence.throw_,
+  );
+
+  /// Source for a position already closed by a delimiter — an argument, a
+  /// collection element, a map value, a lambda body.
+  ///
+  /// Nothing can bind looser than the bracket or comma that ends it, so no
+  /// expression needs parentheses. Spelled out rather than reusing
+  /// [serialize] so the claim is visible at the call site.
+  String _serializeDelimited(DartExpression expression) =>
       _serializeAt(expression, DartPrecedence.throw_);
 
   /// [serialize], parenthesizing when [expression] binds looser than the
@@ -147,8 +171,8 @@ class DartExpressionSerializer extends Equatable {
     // A keyword written here (or a context inherited from above) makes
     // every child a constant context.
     final children = isConstContext || expression.canBeConst
-        ? constContext
-        : runtimeContext;
+        ? _constContext
+        : _runtimeContext;
     return switch (expression) {
       // `const 5` and `const UserRole.admin` are syntax errors, so these
       // two arms never offer the keyword — that rule is expressed by the
@@ -170,15 +194,15 @@ class DartExpressionSerializer extends Equatable {
         '${children._serializeAt(target, DartPrecedence.postfix)}'
             '${isNullAware ? '?.' : '.'}$name'
             '${_typeArgumentList(typeArguments)}'
-            '(${arguments.map(children.serialize).join(', ')})',
+            '${children._argumentList(arguments)}',
       DartPropertyAccess(:final target, :final name, :final isNullAware) =>
         '${children._serializeAt(target, DartPrecedence.postfix)}'
             '${isNullAware ? '?.' : '.'}$name',
       DartFunctionCall(:final name, :final arguments) =>
-        '$name(${arguments.map(children.serialize).join(', ')})',
+        '$name${children._argumentList(arguments)}',
       DartIndex(:final target, :final index) =>
         '${children._serializeAt(target, DartPrecedence.postfix)}'
-            '[${children.serialize(index)}]',
+            '[${children._serializeDelimited(index)}]',
       // `as` binds tighter than `??`, so its operand has to be at least a
       // cast itself; `(a ?? b) as T` is where this earns the parens.
       DartCast(:final operand, :final type) =>
@@ -195,13 +219,13 @@ class DartExpressionSerializer extends Equatable {
       DartIfNull(:final value, :final ifNullValue) =>
         '${children._serializeAt(value, DartPrecedence.postfix)} ?? '
             '${children._serializeAt(ifNullValue, DartPrecedence.ifNull)}',
-      DartThrow(:final value) => 'throw ${children.serialize(value)}',
+      DartThrow(:final value) => 'throw ${children._serializeDelimited(value)}',
       DartLambda(:final parameters, :final body) =>
-        '(${parameters.join(', ')}) => ${children.serialize(body)}',
+        '(${parameters.join(', ')}) => ${children._serializeDelimited(body)}',
       DartListLiteral(:final elementType, :final elements) => _maybeConst(
         expression,
         '${elementType == null ? '' : '<$elementType>'}'
-        '[${elements.map(children.serialize).join(', ')}]',
+        '[${elements.map(children._serializeDelimited).join(', ')}]',
       ),
       DartMapLiteral(:final keyType, :final valueType, :final entries) =>
         _maybeConst(expression, () {
@@ -221,19 +245,13 @@ class DartExpressionSerializer extends Equatable {
           final target = constructorName == null
               ? '$type'
               : '$type.$constructorName';
-          final rendered = [
-            ...arguments.map(children.serialize),
-            ...namedArguments.entries.map(
-              (entry) => '${entry.key}: ${children.serialize(entry.value)}',
-            ),
-          ];
-          return '$target(${rendered.join(', ')})';
+          return '$target${children._argumentList(arguments, namedArguments)}';
         }()),
     };
   }
 
   String _serializeEntry(DartMapEntry entry) =>
-      '${serialize(entry.key)}: ${serialize(entry.value)}';
+      '${_serializeDelimited(entry.key)}: ${_serializeDelimited(entry.value)}';
 
   /// Prefixes `const` when the destination is not already constant and the
   /// keyword buys a compile-time constant. Only called from the arms whose
@@ -242,14 +260,33 @@ class DartExpressionSerializer extends Equatable {
       !isConstContext && expression.canBeConst ? 'const $source' : source;
 
   /// `<A, B>`, or empty when there are none to write.
+  ///
+  /// Each argument renders through [DartType.toString], so a change to how
+  /// a type spells itself reaches method-call type arguments too.
   static String _typeArgumentList(List<DartType> typeArguments) =>
       typeArguments.isEmpty ? '' : '<${typeArguments.join(', ')}>';
+
+  /// `(a, b, c: d)` — the argument list shared by every call form.
+  ///
+  /// Named arguments render in iteration order, after the positional ones.
+  String _argumentList(
+    List<DartExpression> arguments, [
+    Map<String, DartExpression> namedArguments = const {},
+  ]) {
+    final rendered = [
+      ...arguments.map(_serializeDelimited),
+      ...namedArguments.entries.map(
+        (entry) => '${entry.key}: ${_serializeDelimited(entry.value)}',
+      ),
+    ];
+    return '(${rendered.join(', ')})';
+  }
 
   @override
   List<Object?> get props => [isConstContext];
 }
 
-/// A call to a top-level function: `call('jsonDecode', [body])`.
+/// A call to a top-level function: `callFunction('jsonDecode', [body])`.
 ///
 /// The free-function counterpart to [DartTypeExpressions.construct], and
 /// here for the same reason: so a call site reads like the Dart it emits,
@@ -257,10 +294,16 @@ class DartExpressionSerializer extends Equatable {
 /// them.
 ///
 /// A function rather than an extension on `String`: an extension member
-/// named `call` would make every `String` implicitly invocable, and any
-/// other name reads worse than this does.
-DartExpression call(String name, [List<DartExpression> arguments = const []]) =>
-    DartFunctionCall(name: name, arguments: arguments);
+/// named `call` would make every `String` implicitly invocable.
+///
+/// Not named plain `call` either. This is public and top-level, so it
+/// lands in the namespace of every importer — and `render_tree.dart`
+/// already has locals named `call`, which would shadow it and turn a
+/// misuse into a confusing "String is not a function".
+DartExpression callFunction(
+  String name, [
+  List<DartExpression> arguments = const [],
+]) => DartFunctionCall(name: name, arguments: arguments);
 
 /// Expression builders for the forms that are *rooted at a type name* —
 /// `Foo(...)`, `Uri.parse(...)`, `UserRole.admin` — so a call site reads

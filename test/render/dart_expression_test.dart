@@ -498,10 +498,21 @@ void main() {
       );
     });
 
-    test('the two serializers are distinct values', () {
+    test('the two destinations render the same tree differently', () {
+      // The reason rendering is not a method on the node: a constant
+      // destination must not repeat the keyword (`unnecessary_const`),
+      // a runtime one wants it.
+      const constable = DartInvocation(
+        type: DartType('Foo'),
+        isConstConstructor: true,
+      );
       expect(
-        DartExpressionSerializer.constContext,
-        isNot(DartExpressionSerializer.runtimeContext),
+        DartExpressionSerializer.serialize(constable, isConstContext: false),
+        'const Foo()',
+      );
+      expect(
+        DartExpressionSerializer.serialize(constable, isConstContext: true),
+        'Foo()',
       );
     });
 
