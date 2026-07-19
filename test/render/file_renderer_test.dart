@@ -95,7 +95,68 @@ class _CustomLayoutRenderer extends FileRenderer {
   @override
   String modelPath(LayoutContext context) =>
       'custom/${context.schema.snakeName}.dart';
+
+  @override
+  Set<String> get generatedDirs => {'lib/custom', 'test/custom'};
 }
+
+/// Mirrors the shape of Shorebird's message layout: some schemas sit
+/// flat in a directory, others nest one level under it. Used to check
+/// that a directory we own is owned entirely — a subdirectory the spec
+/// no longer justifies goes with it, not just the files inside.
+class _NestedLayoutRenderer extends FileRenderer {
+  _NestedLayoutRenderer(super.config);
+
+  @override
+  String modelPath(LayoutContext context) {
+    final name = context.schema.snakeName;
+    return name.startsWith('a')
+        ? 'custom/$name.dart'
+        : 'custom/$name/$name.dart';
+  }
+
+  @override
+  Set<String> get generatedDirs => {'lib/custom', 'test/custom'};
+}
+
+/// A spec exposing one endpoint per named object schema, so schemas can
+/// be added and removed between regenerations.
+Map<String, dynamic> specWithSchemas(List<String> names) => {
+  'openapi': '3.1.0',
+  'info': {'title': 'T', 'version': '1.0.0'},
+  'servers': [
+    {'url': 'https://example.com'},
+  ],
+  'paths': {
+    for (final name in names)
+      '/${name.toLowerCase()}': {
+        'get': {
+          'operationId': 'get$name',
+          'responses': {
+            '200': {
+              'description': 'ok',
+              'content': {
+                'application/json': {
+                  'schema': {r'$ref': '#/components/schemas/$name'},
+                },
+              },
+            },
+          },
+        },
+      },
+  },
+  'components': {
+    'schemas': {
+      for (final name in names)
+        name: {
+          'type': 'object',
+          'properties': {
+            'id': {'type': 'string'},
+          },
+        },
+    },
+  },
+};
 
 /// True when any generated model or message file has been emitted under
 /// the package root.
@@ -128,6 +189,7 @@ void main() {
       Logger? logger,
       bool generateTests = true,
       bool clearDirectory = true,
+      FileRendererBuilder fileRendererBuilder = FileRenderer.new,
     }) async {
       final out = outDir ?? MemoryFileSystem.test().directory('spacetraders');
       final fs = out.fileSystem;
@@ -146,6 +208,7 @@ void main() {
             logSchemas: false,
             generateTests: generateTests,
             clearDirectory: clearDirectory,
+            fileRendererBuilder: fileRendererBuilder,
           ),
         ),
       );
@@ -184,39 +247,107 @@ void main() {
       await renderToDirectory(spec: spec, outDir: out, logger: logger);
       expect(extraApiFile.existsSync(), isFalse);
       expect(extraModelFile.existsSync(), isFalse);
-      // Everything, not just the directories we happen to write to:
-      // with clearing on, the output directory is ours.
-      expect(extraRootFile.existsSync(), isFalse);
+      // Only the directories we generate into. The package root holds
+      // the consumer's README, LICENSE, CI config and so on — none of
+      // which we write, none of which we may delete.
+      expect(extraRootFile.existsSync(), isTrue);
       expect(out.childFile('lib/api.dart'), exists);
       expect(out.childFile('lib/api_client.dart'), exists);
     });
 
-    test('clearing preserves build artifacts', () async {
-      // Reproducible, but re-resolving dependencies on every run is
-      // slow, and `.git` would take a repository with it.
-      final out = MemoryFileSystem.test().directory('spacetraders');
-      final spec = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-        'servers': [
-          {'url': 'https://api.spacetraders.io/v2'},
-        ],
-        'paths': <String, dynamic>{},
-        'components': <String, dynamic>{},
+    test('regen clears a schema the spec no longer defines', () async {
+      final out = MemoryFileSystem.test().directory('pkg');
+      await renderToDirectory(
+        spec: specWithSchemas(['Alpha', 'Beta']),
+        outDir: out,
+      );
+      expect(out.childFile('lib/models/beta.dart').existsSync(), isTrue);
+
+      await renderToDirectory(spec: specWithSchemas(['Alpha']), outDir: out);
+      expect(out.childFile('lib/models/alpha.dart').existsSync(), isTrue);
+      expect(
+        out.childFile('lib/models/beta.dart').existsSync(),
+        isFalse,
+        reason: 'a type the spec dropped must not survive the regen',
+      );
+    });
+
+    test('regen clears stale output under a custom layout', () async {
+      // The directories we own are derived from what we wrote, not
+      // hardcoded, because layout is a subclass hook. A consumer that
+      // moves models elsewhere — `shorebird_code_push_protocol` puts
+      // them under `lib/src/models/` — got no cleanup at all while the
+      // list named only the default layout.
+      final out = MemoryFileSystem.test().directory('pkg');
+      await renderToDirectory(
+        spec: specWithSchemas(['Alpha', 'Beta']),
+        outDir: out,
+        fileRendererBuilder: _CustomLayoutRenderer.new,
+      );
+      expect(out.childFile('lib/custom/beta.dart').existsSync(), isTrue);
+
+      await renderToDirectory(
+        spec: specWithSchemas(['Alpha']),
+        outDir: out,
+        fileRendererBuilder: _CustomLayoutRenderer.new,
+      );
+      expect(out.childFile('lib/custom/alpha.dart').existsSync(), isTrue);
+      expect(out.childFile('lib/custom/beta.dart').existsSync(), isFalse);
+    });
+
+    test('a directory we own is owned entirely', () async {
+      // Not just stale files in it: a subdirectory the spec no longer
+      // justifies goes too, so a dead operation's whole message
+      // directory cannot survive a regen.
+      //
+      // `custom/` is ours because we write `custom/alpha.dart` into it
+      // directly, the way Shorebird writes its shared messages flat
+      // beside the per-operation subdirectories. A layout that only
+      // ever writes into subdirectories never names the parent, so its
+      // stale subdirectories are not reached — see `_removeStale`.
+      final out = MemoryFileSystem.test().directory('pkg');
+      await renderToDirectory(
+        spec: specWithSchemas(['Alpha', 'Beta']),
+        outDir: out,
+        fileRendererBuilder: _NestedLayoutRenderer.new,
+      );
+      expect(out.childFile('lib/custom/beta/beta.dart').existsSync(), isTrue);
+
+      await renderToDirectory(
+        spec: specWithSchemas(['Alpha']),
+        outDir: out,
+        fileRendererBuilder: _NestedLayoutRenderer.new,
+      );
+      expect(out.childFile('lib/custom/alpha.dart').existsSync(), isTrue);
+      expect(
+        out.childDirectory('lib/custom/beta').existsSync(),
+        isFalse,
+        reason: 'the emptied directory must go, not just its contents',
+      );
+    });
+
+    test('regen leaves files we do not generate alone', () async {
+      // We write no README, LICENSE, CHANGELOG or `.github/`, and a
+      // generated client is often its own repository holding all of
+      // them. `lib/` likewise holds a consumer's files beside ours.
+      final out = MemoryFileSystem.test().directory('pkg');
+      await renderToDirectory(spec: specWithSchemas(['Alpha']), outDir: out);
+      final theirs = {
+        'README.md': '// readme',
+        'LICENSE': '// license',
+        '.github/workflows/ci.yaml': '// ci',
+        'lib/my_barrel.dart': '// barrel',
+        'lib/extensions/alpha_x.dart': '// extension',
+        'test/src/my_own_test.dart': '// mine',
       };
-      final preserved = {
-        '.dart_tool/package_config.json': '{}',
-        'pubspec.lock': '# lock',
-        '.git/HEAD': 'ref: refs/heads/main',
-      };
-      for (final entry in preserved.entries) {
+      for (final entry in theirs.entries) {
         out.childFile(entry.key)
           ..createSync(recursive: true)
           ..writeAsStringSync(entry.value);
       }
 
-      await renderToDirectory(spec: spec, outDir: out);
-      for (final entry in preserved.entries) {
+      await renderToDirectory(spec: specWithSchemas(['Alpha']), outDir: out);
+      for (final entry in theirs.entries) {
         final file = out.childFile(entry.key);
         expect(file.existsSync(), isTrue, reason: '${entry.key} was deleted');
         expect(file.readAsStringSync(), entry.value);
@@ -499,7 +630,7 @@ void main() {
       };
       final out = fs.directory('out');
       await renderToDirectory(spec: spec, outDir: out);
-      final testFile = out.childFile('test/models/widget_test.dart');
+      final testFile = out.childFile('test/gen/models/widget_test.dart');
       expect(testFile.existsSync(), isTrue);
       final body = testFile.readAsStringSync();
       expect(body, contains("import 'package:out/api.dart';"));
@@ -555,7 +686,7 @@ void main() {
       final out = fs.directory('out');
       await renderToDirectory(spec: spec, outDir: out);
       final body = out
-          .childFile('test/models/thing_test.dart')
+          .childFile('test/gen/models/thing_test.dart')
           .readAsStringSync();
       expect(body, contains('createdAt: DateTime.utc(2024)'));
       expect(body, isNot(contains('DateTime.utc(2024, 1, 1)')));
@@ -598,7 +729,7 @@ void main() {
       };
       final out = fs.directory('out');
       await renderToDirectory(spec: spec, outDir: out);
-      final testFile = out.childFile('test/models/role_test.dart');
+      final testFile = out.childFile('test/gen/models/role_test.dart');
       expect(testFile.existsSync(), isTrue);
       final body = testFile.readAsStringSync();
       // Object schemas don't get these blocks; enums do.
@@ -652,7 +783,7 @@ void main() {
         final out = fs.directory('out');
         await renderToDirectory(spec: spec, outDir: out);
         final body = out
-            .childFile('test/models/level_test.dart')
+            .childFile('test/gen/models/level_test.dart')
             .readAsStringSync();
         // The toString test is present (so toString() stays covered)...
         expect(body, contains('toString matches toJson for every value'));
@@ -707,7 +838,7 @@ void main() {
       final out = fs.directory('out');
       await renderToDirectory(spec: spec, outDir: out);
       final body = out
-          .childFile('test/models/widget_test.dart')
+          .childFile('test/gen/models/widget_test.dart')
           .readAsStringSync();
       expect(body, isNot(contains('toString matches toJson')));
       expect(body, isNot(contains('fromJson round-trips every value')));
@@ -771,7 +902,7 @@ void main() {
         final out = fs.directory('out');
         await renderToDirectory(spec: spec, outDir: out);
         final testFile = out.childFile(
-          'test/messages/create_card_request_test.dart',
+          'test/gen/messages/create_card_request_test.dart',
         );
         expect(testFile.existsSync(), isTrue);
         final body = testFile.readAsStringSync();
@@ -2408,13 +2539,13 @@ void main() {
       };
 
       await renderToDirectory(spec: specWithSchema('OldName'), outDir: out);
-      final staleTest = out.childFile('test/models/old_name_test.dart');
+      final staleTest = out.childFile('test/gen/models/old_name_test.dart');
       expect(staleTest.existsSync(), isTrue, reason: 'sanity: first regen');
 
       // Regenerate the same package with the schema renamed.
       await renderToDirectory(spec: specWithSchema('NewName'), outDir: out);
       expect(
-        out.childFile('test/models/new_name_test.dart').existsSync(),
+        out.childFile('test/gen/models/new_name_test.dart').existsSync(),
         isTrue,
       );
       expect(

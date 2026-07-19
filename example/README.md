@@ -33,7 +33,9 @@ dart run space_gen -i petstore.yaml -o petstore_api
 - `lib/api_client.dart`, `lib/api_exception.dart` — the shared runtime.
 - `lib/api.dart` — a barrel that re-exports the APIs, models, and
   runtime for consumers.
-- `test/models/` — round-trip tests for each model.
+- `test/gen/models/` — round-trip tests for each model. Generated tests
+  live under `test/gen/` so regeneration can clear them without
+  touching tests you write elsewhere in `test/`.
 - `pubspec.yaml`, `analysis_options.yaml` — ready to `dart pub get`.
 
 ## Using the generated client

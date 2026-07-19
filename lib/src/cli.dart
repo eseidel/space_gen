@@ -53,10 +53,10 @@ Future<int> _runCli(
       'clear',
       defaultsTo: true,
       help:
-          'Empty the output directory first, so a renamed or deleted '
-          'schema leaves no stale file behind. Pass --no-clear when '
-          'generating into a package that also holds hand-written '
-          'code; you then own removing stale output.',
+          'Remove files we did not generate from the directories we '
+          'generate into, so a renamed or deleted schema leaves no '
+          'stale file behind. Pass --no-clear to manage stale output '
+          'yourself.',
     );
   final results = parser.parse(arguments);
   if (results.rest.isNotEmpty) {
