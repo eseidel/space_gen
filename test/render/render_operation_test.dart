@@ -590,6 +590,59 @@ void main() {
       );
     });
 
+    // Array *fields* comma-join (above), but only when their items are
+    // themselves wire scalars. An array of objects has no single-value wire
+    // form, so it stays outside the v1-supported set and throws — naming
+    // the property, like every other unsupported multipart shape.
+    test('multipart/form-data rejects an array-of-objects field', () {
+      final operation = {
+        'tags': ['files'],
+        'operationId': 'uploadFile',
+        'requestBody': {
+          'required': true,
+          'content': {
+            'multipart/form-data': {
+              'schema': {
+                'type': 'object',
+                'required': ['items'],
+                'properties': {
+                  'items': {
+                    'type': 'array',
+                    'items': {
+                      'type': 'object',
+                      'properties': {
+                        'name': {'type': 'string'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      expect(
+        () => renderTestOperation(
+          path: '/upload',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        ),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('multipart/form-data property must be a scalar'),
+              contains('"items"'),
+            ),
+          ),
+        ),
+      );
+    });
+
     // openfoodfacts `POST /cgi/session.pl` offers only
     // application/x-www-form-urlencoded (no JSON alternative), so it's the
     // sole content type the resolver can pick. The body object renders as a

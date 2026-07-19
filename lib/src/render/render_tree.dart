@@ -1513,6 +1513,22 @@ class Endpoint implements ToTemplateContext {
     return item == element ? null : _runtimeSource(item);
   }
 
+  /// [access] (a `List<...>` expression) with each element converted to its
+  /// wire `String` — `access.map((e) => …)` — or [access] unchanged when the
+  /// elements are already `String`. The caller decides what to do with the
+  /// result: `.join(',')` for a comma-joined value (form bodies, query with
+  /// `explode: false`) or `.toList()` for repeated keys. When the return
+  /// equals [access] verbatim, no conversion was needed (see
+  /// [_elementWireConversion]).
+  static String _wireMappedElements(
+    RenderArray type,
+    String access,
+    SchemaRenderer context,
+  ) {
+    final conversion = _elementWireConversion(type, context);
+    return conversion == null ? access : '$access.map((e) => $conversion)';
+  }
+
   /// The `Map<String, List<String>>` value expression realizing [encoding]
   /// for a parameter of type [type], reading the Dart value from [access].
   ///
@@ -1582,17 +1598,15 @@ class Endpoint implements ToTemplateContext {
     if (type is! RenderArray) {
       return _scalarQueryValue(type, access, context);
     }
-    final conversion = _elementWireConversion(type, context);
-    final items = conversion == null
-        ? access
-        : '$access.map((e) => $conversion)';
+    final items = _wireMappedElements(type, access, context);
     // Comma-joining produces a single value (`?k=a,b,c`) rather than
     // repeating the key. Wrap it in a 1-element list so it flows through
     // the same `Map<String, List<String>>` shape.
     if (commaJoined) return "[$items.join(',')]";
-    // Without a conversion the value is already the `List<String>` the
-    // query map wants, so there is nothing to `.toList()`.
-    return conversion == null ? items : '$items.toList()';
+    // `items == access` means no per-element conversion happened, so the
+    // value is already the `List<String>` the query map wants — nothing to
+    // `.toList()`.
+    return items == access ? items : '$items.toList()';
   }
 
   /// A `switch` over [type]'s sealed variants, each arm producing that
@@ -2691,9 +2705,9 @@ DartExpression _wireStringFieldExpr(
 /// Source for [property] rendered as one `Map<String, String>` wire field
 /// value, reading from the Dart expression [access]. A scalar stringifies
 /// to a single value; an array of scalars comma-joins into one value — the
-/// `explode: false` form that header and query arrays already use (see
-/// [Endpoint._elementWireConversion]), and what form-shaped servers that
-/// document a "comma separated list of values" expect.
+/// `explode: false` form that header and query arrays already use (via the
+/// shared [Endpoint._wireMappedElements]), and what form-shaped servers
+/// that document a "comma separated list of values" expect.
 ///
 /// Returns null when [property] is neither shape (a nested array, an array
 /// of objects, a bare object, …), leaving the caller to throw a
@@ -2709,11 +2723,8 @@ String? _wireStringFieldSource(
     );
   }
   if (property is RenderArray && _isWireStringScalar(property.items)) {
-    final conversion = Endpoint._elementWireConversion(property, context);
-    final mapped = conversion == null
-        ? access
-        : '$access.map((e) => $conversion)';
-    return "$mapped.join(',')";
+    final items = Endpoint._wireMappedElements(property, access, context);
+    return "$items.join(',')";
   }
   return null;
 }
