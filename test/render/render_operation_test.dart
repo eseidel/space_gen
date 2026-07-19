@@ -1450,6 +1450,57 @@ void main() {
           ),
         );
       });
+
+      test('union with a smooshed object variant stays on the direct path', () {
+        // An object variant is smooshed — it extends the sealed parent
+        // directly and carries its own fields, so there is no `value` to
+        // destructure and a switch arm written against it would not
+        // compile. The union has an array variant, so only the
+        // missing-wrapper guard keeps this off the switch path.
+        final json = {
+          'summary': 'Get user',
+          'parameters': [
+            {
+              'name': 'filter',
+              'in': 'query',
+              'schema': {
+                'oneOf': [
+                  {
+                    'type': 'object',
+                    'properties': {
+                      'a': {'type': 'string'},
+                    },
+                  },
+                  {
+                    'type': 'array',
+                    'items': {'type': 'string'},
+                  },
+                ],
+              },
+            },
+          ],
+          'responses': {
+            '200': {'description': 'OK'},
+          },
+        };
+        // The object variant also makes this a shape the resolver warns
+        // about, so it needs a logger scope.
+        final result = runWithLogger(
+          _MockLogger(),
+          () => renderTestOperation(
+            path: '/users',
+            operationJson: json,
+            serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+          ),
+        );
+        expect(result, isNot(contains('switch (filter)')));
+        expect(
+          result,
+          contains(
+            "if (filter != null) 'filter': [filter.toJson().toString()]",
+          ),
+        );
+      });
     });
   });
 

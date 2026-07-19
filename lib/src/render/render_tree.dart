@@ -1556,9 +1556,21 @@ class Endpoint implements ToTemplateContext {
   /// single values (discord's `oneOf: [enum]`) already stringify correctly,
   /// so they stay on the simpler path and their output is unchanged.
   ///
-  /// Returns null when [type] isn't such a union, or when the naming pass
-  /// assigned no wrapper subclasses to switch over (a `NoDispatch` union,
-  /// which renders the `UnimplementedError` stub instead).
+  /// Returns null when [type] isn't such a union, or when any variant lacks
+  /// a wrapper subclass to switch over. That second guard is load-bearing in
+  /// two ways:
+  ///
+  /// - A `NoDispatch` union gets no wrappers at all; it renders the
+  ///   `UnimplementedError` stub instead.
+  /// - A *smooshed* variant extends the sealed parent directly and holds its
+  ///   own fields, so it has no `value` to destructure — an arm written
+  ///   against it would not compile. `_claimWrapperNames` skips the wrapper
+  ///   claim for exactly those variants, which is what surfaces here as a
+  ///   null name.
+  ///
+  /// Both fall back to the direct path, which stringifies. For a shape that
+  /// deserves better than that, the resolver's `_canBeQueryParameter` has
+  /// already warned.
   static RenderOneOf? _arityMixedUnion(RenderSchema type) {
     if (type is! RenderOneOf) return null;
     if (!type.schemas.any((v) => v is RenderArray)) return null;
