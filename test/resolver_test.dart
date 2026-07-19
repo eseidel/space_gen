@@ -586,6 +586,48 @@ void main() {
       );
     });
 
+    test('allOf admits a nested allOf member', () {
+      // An `allOf` whose member is itself an `allOf` (issue #320). The
+      // nested composition is object-shaped — its own merge is a
+      // `RenderObject` whose properties fold into the parent — so it is
+      // admitted rather than crashing with "allOf only supports objects".
+      final json = {
+        'allOf': [
+          {
+            'allOf': [
+              {
+                'type': 'object',
+                'properties': {
+                  'a': {'type': 'string'},
+                },
+              },
+              {
+                'type': 'object',
+                'properties': {
+                  'b': {'type': 'integer'},
+                },
+              },
+            ],
+          },
+          {
+            'type': 'object',
+            'properties': {
+              'c': {'type': 'boolean'},
+            },
+          },
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(schema, isA<ResolvedAllOf>());
+      final outer = schema as ResolvedAllOf;
+      expect(outer.schemas.length, 2);
+      expect(outer.schemas.first, isA<ResolvedAllOf>());
+    });
+
     test('resolve anyOf', () {
       final json = {
         'anyOf': [
