@@ -1,0 +1,28 @@
+// GENERATED — do not hand-edit.
+import 'package:github/api.dart';
+import 'package:test/test.dart';
+
+void main() {
+  group('HookDeliveryResponse', () {
+    test('round-trips via maybeFromJson/toJson', () {
+      const instance = HookDeliveryResponse(
+        headers: {'key': <String, dynamic>{}},
+        payload: 'example',
+      );
+      final parsed = HookDeliveryResponse.maybeFromJson(instance.toJson())!;
+      expect(parsed, equals(instance));
+      expect(parsed.hashCode, equals(instance.hashCode));
+    });
+
+    test('maybeFromJson returns null on null input', () {
+      expect(HookDeliveryResponse.maybeFromJson(null), isNull);
+    });
+
+    test('maybeFromJson throws FormatException on invalid input', () {
+      expect(
+        () => HookDeliveryResponse.maybeFromJson(<String, dynamic>{}),
+        throwsFormatException,
+      );
+    });
+  });
+}

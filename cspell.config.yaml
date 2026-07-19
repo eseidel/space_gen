@@ -3,6 +3,13 @@ version: "0.2"
 ignorePaths:
   - "coverage/**"
   - "*.txt" # ignore text files at the root of the project
+  # Third-party specs and everything generated from them. Their
+  # vocabulary — GitHub/Discord API terms, place names, base64 fixture
+  # data — runs to ~600 words. Admitting that to the dictionary would
+  # weaken the check on hand-written code, and spell-checking text we did
+  # not author buys nothing. The synthetic fixtures in `gen_tests/` stay
+  # checked, since those we do author.
+  - "gen_tests/third_party/**"
 words:
   # Plural of "arity" — a union whose variants differ in how many wire
   # values they produce (one vs many).
@@ -34,6 +41,7 @@ words:
   - Seidel
   - mocktail
   - pubspec
+  - pubignore
   - dartdoc
   - uncompilable
   - endtemplate

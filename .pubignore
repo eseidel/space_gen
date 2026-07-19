@@ -1,0 +1,14 @@
+# Files excluded from the published package.
+#
+# NOTE: a .pubignore takes precedence over .gitignore for publishing
+# rather than adding to it, so the .gitignore entries are repeated here.
+# Keep the two in sync.
+.dart_tool/
+coverage/
+local_dev.yaml
+
+# Golden-output fixtures: ~24 MB of specs and generated Dart that is
+# useful only when running `tool/gen_tests.dart` from a checkout. Nothing
+# in the published package references it, and shipping it would grow the
+# archive by roughly sixty times.
+gen_tests/
