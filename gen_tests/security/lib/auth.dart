@@ -22,10 +22,15 @@ class MissingSecretsException implements Exception {
 @immutable
 class ResolvedAuth {
   /// Create a new [ResolvedAuth].
-  const ResolvedAuth({required this.headers, required this.params});
+  const ResolvedAuth({
+    required this.headers,
+    required this.params,
+    required this.cookies,
+  });
 
   /// Create a new [ResolvedAuth] with no headers or parameters.
-  const ResolvedAuth.noAuth() : this(headers: const {}, params: const {});
+  const ResolvedAuth.noAuth()
+    : this(headers: const {}, params: const {}, cookies: const {});
 
   /// The headers of the resolved auth.
   final Map<String, String> headers;
@@ -33,9 +38,21 @@ class ResolvedAuth {
   /// The parameters of the resolved auth.
   final Map<String, String> params;
 
+  /// The cookies of the resolved auth, keyed by cookie name.
+  ///
+  /// Kept separate from [headers] because every cookie shares the single
+  /// `Cookie` header: merging two cookie-bearing auths has to concatenate
+  /// them rather than let the later one replace the earlier.
+  final Map<String, String> cookies;
+
   /// Apply the resolved auth to the given headers.
   void applyToHeaders(Map<String, String> headers) {
     headers.addAll(this.headers);
+    if (cookies.isNotEmpty) {
+      headers['Cookie'] = cookies.entries
+          .map((e) => '${e.key}=${e.value}')
+          .join('; ');
+    }
   }
 
   /// Apply the resolved auth to the given parameters. The generated
@@ -55,6 +72,7 @@ class ResolvedAuth {
     return ResolvedAuth(
       headers: {...headers, ...other.headers},
       params: {...params, ...other.params},
+      cookies: {...cookies, ...other.cookies},
     );
   }
 }
@@ -173,12 +191,13 @@ class HttpAuth extends SecretAuth {
     return ResolvedAuth(
       headers: {'Authorization': '$scheme $secret'},
       params: const {},
+      cookies: const {},
     );
   }
 }
 
-// Cookie is not yet supported.
-enum ApiKeyLocation { query, header }
+/// Where an API key is sent on the request.
+enum ApiKeyLocation { query, header, cookie }
 
 /// An API key authentication scheme.
 @immutable
@@ -205,10 +224,17 @@ class ApiKeyAuth extends SecretAuth {
       ApiKeyLocation.header => ResolvedAuth(
         headers: {name: secret},
         params: const {},
+        cookies: const {},
       ),
       ApiKeyLocation.query => ResolvedAuth(
         headers: const {},
         params: {name: secret},
+        cookies: const {},
+      ),
+      ApiKeyLocation.cookie => ResolvedAuth(
+        headers: const {},
+        params: const {},
+        cookies: {name: secret},
       ),
     };
   }
