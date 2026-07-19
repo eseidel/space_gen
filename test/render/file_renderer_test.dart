@@ -630,7 +630,7 @@ void main() {
       };
       final out = fs.directory('out');
       await renderToDirectory(spec: spec, outDir: out);
-      final testFile = out.childFile('test/models/widget_test.dart');
+      final testFile = out.childFile('test/gen/models/widget_test.dart');
       expect(testFile.existsSync(), isTrue);
       final body = testFile.readAsStringSync();
       expect(body, contains("import 'package:out/api.dart';"));
@@ -686,7 +686,7 @@ void main() {
       final out = fs.directory('out');
       await renderToDirectory(spec: spec, outDir: out);
       final body = out
-          .childFile('test/models/thing_test.dart')
+          .childFile('test/gen/models/thing_test.dart')
           .readAsStringSync();
       expect(body, contains('createdAt: DateTime.utc(2024)'));
       expect(body, isNot(contains('DateTime.utc(2024, 1, 1)')));
@@ -729,7 +729,7 @@ void main() {
       };
       final out = fs.directory('out');
       await renderToDirectory(spec: spec, outDir: out);
-      final testFile = out.childFile('test/models/role_test.dart');
+      final testFile = out.childFile('test/gen/models/role_test.dart');
       expect(testFile.existsSync(), isTrue);
       final body = testFile.readAsStringSync();
       // Object schemas don't get these blocks; enums do.
@@ -783,7 +783,7 @@ void main() {
         final out = fs.directory('out');
         await renderToDirectory(spec: spec, outDir: out);
         final body = out
-            .childFile('test/models/level_test.dart')
+            .childFile('test/gen/models/level_test.dart')
             .readAsStringSync();
         // The toString test is present (so toString() stays covered)...
         expect(body, contains('toString matches toJson for every value'));
@@ -838,7 +838,7 @@ void main() {
       final out = fs.directory('out');
       await renderToDirectory(spec: spec, outDir: out);
       final body = out
-          .childFile('test/models/widget_test.dart')
+          .childFile('test/gen/models/widget_test.dart')
           .readAsStringSync();
       expect(body, isNot(contains('toString matches toJson')));
       expect(body, isNot(contains('fromJson round-trips every value')));
@@ -902,7 +902,7 @@ void main() {
         final out = fs.directory('out');
         await renderToDirectory(spec: spec, outDir: out);
         final testFile = out.childFile(
-          'test/messages/create_card_request_test.dart',
+          'test/gen/messages/create_card_request_test.dart',
         );
         expect(testFile.existsSync(), isTrue);
         final body = testFile.readAsStringSync();
@@ -2539,13 +2539,13 @@ void main() {
       };
 
       await renderToDirectory(spec: specWithSchema('OldName'), outDir: out);
-      final staleTest = out.childFile('test/models/old_name_test.dart');
+      final staleTest = out.childFile('test/gen/models/old_name_test.dart');
       expect(staleTest.existsSync(), isTrue, reason: 'sanity: first regen');
 
       // Regenerate the same package with the schema renamed.
       await renderToDirectory(spec: specWithSchema('NewName'), outDir: out);
       expect(
-        out.childFile('test/models/new_name_test.dart').existsSync(),
+        out.childFile('test/gen/models/new_name_test.dart').existsSync(),
         isTrue,
       );
       expect(

@@ -378,13 +378,25 @@ class FileRenderer {
   /// package root (so the returned value includes the leading `test/`).
   /// Return `null` to skip emitting a test for this schema.
   ///
-  /// Default: mirrors [modelPath] under `test/`, with `_test` before the
-  /// `.dart` extension — so a schema at `lib/models/app.dart` gets a
-  /// test at `test/models/app_test.dart`.
+  /// Default: mirrors [modelPath] under `test/gen/`, with `_test`
+  /// before the `.dart` extension — so a schema at `lib/models/app.dart`
+  /// gets a test at `test/gen/models/app_test.dart`.
   ///
-  /// Override this hook to redirect generated tests (e.g. to
-  /// `test/generated/` so they sit alongside hand-written tests without
-  /// colliding), or return null to opt out entirely.
+  /// The `gen/` level is the point. Generated tests are cleared on
+  /// regeneration ([generatedDirs]), and `test/` is the one tree Dart
+  /// convention shares with the consumer: all of a package's tests live
+  /// there, and mirroring `lib/` is the idiomatic way to arrange them,
+  /// so writing straight to `test/models/` would claim a directory the
+  /// consumer has every reason to be using. `lib/` needs no equivalent
+  /// — a generated client's `lib/` is ours — and prefixing it would put
+  /// `gen/` in every import path.
+  ///
+  /// `dart test` recurses all of `test/`, so the extra level costs
+  /// nothing at run time.
+  ///
+  /// Override to redirect generated tests, or return null to opt out
+  /// entirely. An override needs a matching [generatedDirs] entry, or
+  /// its output is never cleaned up.
   @protected
   @visibleForOverriding
   String? testPath(LayoutContext context) {
@@ -393,7 +405,7 @@ class FileRenderer {
       RegExp(r'\.dart$'),
       '_test.dart',
     );
-    return 'test/$withSuffix';
+    return p.join('test', 'gen', withSuffix);
   }
 
   /// `lib/`-relative path to the package-level barrel that a generated
@@ -1111,10 +1123,10 @@ class FileRenderer {
     p.join('lib', 'model'),
     p.join('lib', 'models'),
     p.join('lib', 'messages'),
-    // The `test/` mirrors of the above, from [testPath].
-    p.join('test', 'model'),
-    p.join('test', 'models'),
-    p.join('test', 'messages'),
+    // Generated tests, all of them, from [testPath]. One directory
+    // rather than a `test/` mirror of the three above, because `test/`
+    // is shared with the consumer — see [testPath].
+    p.join('test', 'gen'),
   };
 
   /// Delete the contents of [generatedDirs].

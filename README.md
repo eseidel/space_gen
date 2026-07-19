@@ -91,6 +91,13 @@ after something in the spec live in `generatedDirs`. The rest —
 `pubspec.yaml`, the barrel, `model_helpers.dart` — keep the same name
 every run and are simply overwritten.
 
+Generated tests go under `test/gen/`, not `test/models/`. `test/` is
+the one tree Dart convention shares with you: all of a package's tests
+live there and mirroring `lib/` is the idiomatic way to arrange them,
+so a cleared `test/models/` would take your tests with it. `lib/` needs
+no such prefix — a generated client's `lib/` is ours — and adding one
+would put `gen/` in every import path.
+
 **If you override `modelPath` or `testPath`, override `generatedDirs`
 too.** They encode the same decision, and a layout that moves without
 it gets no cleanup at all. If you generate into a package that also
