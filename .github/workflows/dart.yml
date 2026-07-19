@@ -39,12 +39,29 @@ jobs:
 
       - name: Run end-to-end generator tests
         run: |
-          # Regenerate the `types` fixture and run its generated tests —
+          # Regenerate every fixture and run the generated tests —
           # catches runtime issues in emitted code (toJson/fromJson
           # round-tripping, hashCode consistency with ==, etc.) that
           # the unit tests above can't see.
-          dart run tool/gen_tests.dart types
+          #
+          # All fixtures, not just `types`, because the next step diffs
+          # the result: a fixture that is never regenerated can never be
+          # caught drifting.
+          dart run tool/gen_tests.dart
           cd gen_tests/types && dart pub get && dart test
+
+      - name: Verify goldens match the generator
+        run: |
+          # The step above regenerated every fixture in place. Anything
+          # it changed means the committed goldens are stale — an
+          # output-changing PR landed without a regen. Fix by running
+          # `dart run tool/gen_tests.dart` locally and committing.
+          #
+          # Without this, drift is silent: the generated tests pass
+          # against the freshly regenerated tree regardless of what is
+          # committed, so the repo and the generator can disagree
+          # indefinitely (see #280).
+          git diff --exit-code -- gen_tests/
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
