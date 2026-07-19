@@ -40,7 +40,7 @@ class RepositoryRulesetConditionsRepositoryIdTargetRepositoryId {
   /// Converts a [RepositoryRulesetConditionsRepositoryIdTargetRepositoryId]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (repositoryIds != null) 'repository_ids': repositoryIds};
+    return {'repository_ids': ?repositoryIds};
   }
 
   @override

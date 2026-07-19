@@ -33,11 +33,7 @@ class ApiResponse {
 
   /// Converts an [ApiResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (code != null) 'code': code,
-      if (type != null) 'type': type,
-      if (message != null) 'message': message,
-    };
+    return {'code': ?code, 'type': ?type, 'message': ?message};
   }
 
   @override

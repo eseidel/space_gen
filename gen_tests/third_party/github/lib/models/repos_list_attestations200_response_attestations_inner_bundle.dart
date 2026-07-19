@@ -58,10 +58,9 @@ class ReposListAttestations200ResponseAttestationsInnerBundle {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (mediaType != null) 'mediaType': mediaType,
-      if (verificationMaterial != null)
-        'verificationMaterial': verificationMaterial,
-      if (dsseEnvelope != null) 'dsseEnvelope': dsseEnvelope,
+      'mediaType': ?mediaType,
+      'verificationMaterial': ?verificationMaterial,
+      'dsseEnvelope': ?dsseEnvelope,
     };
   }
 

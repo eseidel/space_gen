@@ -53,8 +53,7 @@ class AppsListReposAccessibleToInstallation200Response {
     return {
       'total_count': totalCount,
       'repositories': repositories.map((e) => e.toJson()).toList(),
-      if (repositorySelection != null)
-        'repository_selection': repositorySelection,
+      'repository_selection': ?repositorySelection,
     };
   }
 

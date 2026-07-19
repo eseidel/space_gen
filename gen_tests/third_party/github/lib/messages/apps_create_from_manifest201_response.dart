@@ -187,7 +187,7 @@ class AppsCreateFromManifest201Response {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      if (slug != null) 'slug': slug,
+      'slug': ?slug,
       'node_id': nodeId,
       'client_id': clientId,
       'owner': owner.toJson(),
@@ -199,7 +199,7 @@ class AppsCreateFromManifest201Response {
       'updated_at': updatedAt.toIso8601String(),
       'permissions': permissions.toJson(),
       'events': events,
-      if (installationsCount != null) 'installations_count': installationsCount,
+      'installations_count': ?installationsCount,
       'client_secret': clientSecret,
       'webhook_secret': webhookSecret,
       'pem': pem,

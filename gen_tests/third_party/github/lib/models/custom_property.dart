@@ -96,10 +96,10 @@ class CustomProperty {
   Map<String, dynamic> toJson() {
     return {
       'property_name': propertyName,
-      if (url != null) 'url': url?.toString(),
-      if (sourceType != null) 'source_type': sourceType?.toJson(),
+      'url': ?url?.toString(),
+      'source_type': ?sourceType?.toJson(),
       'value_type': valueType.toJson(),
-      if (required_ != null) 'required': required_,
+      'required': ?required_,
       'default_value': defaultValue?.toJson(),
       'description': description,
       'allowed_values': allowedValues,

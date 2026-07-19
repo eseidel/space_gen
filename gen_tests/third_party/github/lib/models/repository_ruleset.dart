@@ -128,20 +128,18 @@ class RepositoryRuleset {
     return {
       'id': id,
       'name': name,
-      if (target != null) 'target': target?.toJson(),
-      if (sourceType != null) 'source_type': sourceType?.toJson(),
+      'target': ?target?.toJson(),
+      'source_type': ?sourceType?.toJson(),
       'source': source,
       'enforcement': enforcement.toJson(),
-      if (bypassActors != null)
-        'bypass_actors': bypassActors?.map((e) => e.toJson()).toList(),
-      if (currentUserCanBypass != null)
-        'current_user_can_bypass': currentUserCanBypass?.toJson(),
-      if (nodeId != null) 'node_id': nodeId,
-      if (links != null) '_links': links?.toJson(),
+      'bypass_actors': ?bypassActors?.map((e) => e.toJson()).toList(),
+      'current_user_can_bypass': ?currentUserCanBypass?.toJson(),
+      'node_id': ?nodeId,
+      '_links': ?links?.toJson(),
       'conditions': conditions?.toJson(),
-      if (rules != null) 'rules': rules?.map((e) => e.toJson()).toList(),
-      if (createdAt != null) 'created_at': createdAt?.toIso8601String(),
-      if (updatedAt != null) 'updated_at': updatedAt?.toIso8601String(),
+      'rules': ?rules?.map((e) => e.toJson()).toList(),
+      'created_at': ?createdAt?.toIso8601String(),
+      'updated_at': ?updatedAt?.toIso8601String(),
     };
   }
 

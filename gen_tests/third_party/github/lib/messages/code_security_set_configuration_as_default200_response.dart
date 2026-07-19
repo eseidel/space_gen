@@ -57,9 +57,8 @@ class CodeSecuritySetConfigurationAsDefault200Response {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (defaultForNewRepos != null)
-        'default_for_new_repos': defaultForNewRepos?.toJson(),
-      if (configuration != null) 'configuration': configuration?.toJson(),
+      'default_for_new_repos': ?defaultForNewRepos?.toJson(),
+      'configuration': ?configuration?.toJson(),
     };
   }
 

@@ -90,10 +90,9 @@ class ChecksCreateRequestOneOf1Output {
     return {
       'title': title,
       'summary': summary,
-      if (text != null) 'text': text,
-      if (annotations != null)
-        'annotations': annotations?.map((e) => e.toJson()).toList(),
-      if (images != null) 'images': images?.map((e) => e.toJson()).toList(),
+      'text': ?text,
+      'annotations': ?annotations?.map((e) => e.toJson()).toList(),
+      'images': ?images?.map((e) => e.toJson()).toList(),
     };
   }
 

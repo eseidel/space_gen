@@ -53,7 +53,7 @@ class GetStatus200ResponseStats {
   /// Converts a [GetStatus200ResponseStats] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (accounts != null) 'accounts': accounts,
+      'accounts': ?accounts,
       'agents': agents,
       'ships': ships,
       'systems': systems,

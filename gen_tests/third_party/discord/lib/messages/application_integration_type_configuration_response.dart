@@ -41,10 +41,7 @@ class ApplicationIntegrationTypeConfigurationResponse {
   /// Converts an [ApplicationIntegrationTypeConfigurationResponse]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (oauth2InstallParams != null)
-        'oauth2_install_params': oauth2InstallParams?.toJson(),
-    };
+    return {'oauth2_install_params': ?oauth2InstallParams?.toJson()};
   }
 
   @override

@@ -31,7 +31,7 @@ class FileCommitCommitTree {
 
   /// Converts a [FileCommitCommitTree] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (url != null) 'url': url, if (sha != null) 'sha': sha};
+    return {'url': ?url, 'sha': ?sha};
   }
 
   @override

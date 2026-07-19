@@ -153,11 +153,11 @@ class Release {
       'published_at': publishedAt?.toIso8601String(),
       'author': author.toJson(),
       'assets': assets.map((e) => e.toJson()).toList(),
-      if (bodyHtml != null) 'body_html': bodyHtml,
-      if (bodyText != null) 'body_text': bodyText,
-      if (mentionsCount != null) 'mentions_count': mentionsCount,
-      if (discussionUrl != null) 'discussion_url': discussionUrl?.toString(),
-      if (reactions != null) 'reactions': reactions?.toJson(),
+      'body_html': ?bodyHtml,
+      'body_text': ?bodyText,
+      'mentions_count': ?mentionsCount,
+      'discussion_url': ?discussionUrl?.toString(),
+      'reactions': ?reactions?.toJson(),
     };
   }
 

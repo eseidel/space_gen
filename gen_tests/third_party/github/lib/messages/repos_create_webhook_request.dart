@@ -56,8 +56,8 @@ class ReposCreateWebhookRequest {
   /// Converts a [ReposCreateWebhookRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (name != null) 'name': name,
-      if (config != null) 'config': config?.toJson(),
+      'name': ?name,
+      'config': ?config?.toJson(),
       'events': events,
       'active': active,
     };

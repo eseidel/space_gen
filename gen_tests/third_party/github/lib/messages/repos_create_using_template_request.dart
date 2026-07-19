@@ -60,9 +60,9 @@ class ReposCreateUsingTemplateRequest {
   /// Converts a [ReposCreateUsingTemplateRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (owner != null) 'owner': owner,
+      'owner': ?owner,
       'name': name,
-      if (description != null) 'description': description,
+      'description': ?description,
       'include_all_branches': includeAllBranches,
       'private': private,
     };

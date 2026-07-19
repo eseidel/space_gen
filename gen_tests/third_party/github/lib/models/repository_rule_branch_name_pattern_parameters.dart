@@ -57,8 +57,8 @@ class RepositoryRuleBranchNamePatternParameters {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (name != null) 'name': name,
-      if (negate != null) 'negate': negate,
+      'name': ?name,
+      'negate': ?negate,
       'operator': operator_.toJson(),
       'pattern': pattern,
     };

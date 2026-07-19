@@ -136,7 +136,7 @@ class CodeScanningAnalysis {
       'commit_sha': commitSha.toJson(),
       'analysis_key': analysisKey.toJson(),
       'environment': environment.toJson(),
-      if (category != null) 'category': category?.toJson(),
+      'category': ?category?.toJson(),
       'error': error,
       'created_at': createdAt.toJson(),
       'results_count': resultsCount,

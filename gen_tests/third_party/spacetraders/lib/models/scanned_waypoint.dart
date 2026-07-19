@@ -101,9 +101,9 @@ class ScannedWaypoint {
       'x': x,
       'y': y,
       'orbitals': orbitals.map((e) => e.toJson()).toList(),
-      if (faction != null) 'faction': faction?.toJson(),
+      'faction': ?faction?.toJson(),
       'traits': traits.map((e) => e.toJson()).toList(),
-      if (chart != null) 'chart': chart?.toJson(),
+      'chart': ?chart?.toJson(),
     };
   }
 

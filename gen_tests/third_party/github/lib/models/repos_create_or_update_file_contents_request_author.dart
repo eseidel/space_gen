@@ -55,7 +55,7 @@ class ReposCreateOrUpdateFileContentsRequestAuthor {
   /// Converts a [ReposCreateOrUpdateFileContentsRequestAuthor]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, 'email': email, if (date != null) 'date': date};
+    return {'name': name, 'email': email, 'date': ?date};
   }
 
   @override

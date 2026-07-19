@@ -93,13 +93,12 @@ class ReposUpdateOrgRulesetRequest {
   /// Converts a [ReposUpdateOrgRulesetRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (name != null) 'name': name,
-      if (target != null) 'target': target?.toJson(),
-      if (enforcement != null) 'enforcement': enforcement?.toJson(),
-      if (bypassActors != null)
-        'bypass_actors': bypassActors?.map((e) => e.toJson()).toList(),
-      if (conditions != null) 'conditions': conditions?.toJson(),
-      if (rules != null) 'rules': rules?.map((e) => e.toJson()).toList(),
+      'name': ?name,
+      'target': ?target?.toJson(),
+      'enforcement': ?enforcement?.toJson(),
+      'bypass_actors': ?bypassActors?.map((e) => e.toJson()).toList(),
+      'conditions': ?conditions?.toJson(),
+      'rules': ?rules?.map((e) => e.toJson()).toList(),
     };
   }
 

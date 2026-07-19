@@ -34,7 +34,7 @@ class ReposCreateAttestation201Response {
   /// Converts a [ReposCreateAttestation201Response]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (id != null) 'id': id};
+    return {'id': ?id};
   }
 
   @override

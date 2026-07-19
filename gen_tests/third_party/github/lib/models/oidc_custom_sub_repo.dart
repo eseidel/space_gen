@@ -41,10 +41,7 @@ class OidcCustomSubRepo {
 
   /// Converts an [OidcCustomSubRepo] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      'use_default': useDefault,
-      if (includeClaimKeys != null) 'include_claim_keys': includeClaimKeys,
-    };
+    return {'use_default': useDefault, 'include_claim_keys': ?includeClaimKeys};
   }
 
   @override

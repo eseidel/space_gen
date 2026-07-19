@@ -176,30 +176,25 @@ class PrivateApplicationResponse {
       'icon': icon,
       'description': description,
       'type': type?.toJson(),
-      if (coverImage != null) 'cover_image': coverImage,
-      if (primarySkuId != null) 'primary_sku_id': primarySkuId?.toJson(),
-      if (bot != null) 'bot': bot?.toJson(),
-      if (slug != null) 'slug': slug,
-      if (guildId != null) 'guild_id': guildId?.toJson(),
-      if (rpcOrigins != null) 'rpc_origins': rpcOrigins,
-      if (botPublic != null) 'bot_public': botPublic,
-      if (botRequireCodeGrant != null)
-        'bot_require_code_grant': botRequireCodeGrant,
-      if (termsOfServiceUrl != null)
-        'terms_of_service_url': termsOfServiceUrl?.toString(),
-      if (privacyPolicyUrl != null)
-        'privacy_policy_url': privacyPolicyUrl?.toString(),
-      if (customInstallUrl != null)
-        'custom_install_url': customInstallUrl?.toString(),
-      if (installParams != null) 'install_params': installParams?.toJson(),
-      if (integrationTypesConfig != null)
-        'integration_types_config': integrationTypesConfig?.map(
-          (key, value) => MapEntry(key, value.toJson()),
-        ),
+      'cover_image': ?coverImage,
+      'primary_sku_id': ?primarySkuId?.toJson(),
+      'bot': ?bot?.toJson(),
+      'slug': ?slug,
+      'guild_id': ?guildId?.toJson(),
+      'rpc_origins': ?rpcOrigins,
+      'bot_public': ?botPublic,
+      'bot_require_code_grant': ?botRequireCodeGrant,
+      'terms_of_service_url': ?termsOfServiceUrl?.toString(),
+      'privacy_policy_url': ?privacyPolicyUrl?.toString(),
+      'custom_install_url': ?customInstallUrl?.toString(),
+      'install_params': ?installParams?.toJson(),
+      'integration_types_config': ?integrationTypesConfig?.map(
+        (key, value) => MapEntry(key, value.toJson()),
+      ),
       'verify_key': verifyKey,
       'flags': flags,
       'max_participants': maxParticipants,
-      if (tags != null) 'tags': tags,
+      'tags': ?tags,
       'redirect_uris': redirectUris.map((e) => e.toString()).toList(),
       'interactions_endpoint_url': interactionsEndpointUrl?.toString(),
       'role_connections_verification_url': roleConnectionsVerificationUrl
@@ -209,12 +204,10 @@ class PrivateApplicationResponse {
       'approximate_user_install_count': approximateUserInstallCount,
       'approximate_user_authorization_count': approximateUserAuthorizationCount,
       'event_webhooks_url': eventWebhooksUrl?.toString(),
-      if (eventWebhooksStatus != null)
-        'event_webhooks_status': eventWebhooksStatus?.toJson(),
-      if (eventWebhooksTypes != null)
-        'event_webhooks_types': eventWebhooksTypes
-            ?.map((e) => e.toJson())
-            .toList(),
+      'event_webhooks_status': ?eventWebhooksStatus?.toJson(),
+      'event_webhooks_types': ?eventWebhooksTypes
+          ?.map((e) => e.toJson())
+          .toList(),
       'explicit_content_filter': explicitContentFilter.toJson(),
       'team': team?.toJson(),
     };

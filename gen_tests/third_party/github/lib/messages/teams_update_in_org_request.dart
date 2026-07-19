@@ -85,11 +85,10 @@ class TeamsUpdateInOrgRequest {
   /// Converts a [TeamsUpdateInOrgRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (name != null) 'name': name,
-      if (description != null) 'description': description,
-      if (privacy != null) 'privacy': privacy?.toJson(),
-      if (notificationSetting != null)
-        'notification_setting': notificationSetting?.toJson(),
+      'name': ?name,
+      'description': ?description,
+      'privacy': ?privacy?.toJson(),
+      'notification_setting': ?notificationSetting?.toJson(),
       'permission': permission.toJson(),
       'parent_team_id': parentTeamId,
     };

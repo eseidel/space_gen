@@ -59,16 +59,15 @@ class MessageEmbedImageResponse {
   /// Converts a [MessageEmbedImageResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (url != null) 'url': url,
-      if (proxyUrl != null) 'proxy_url': proxyUrl?.toString(),
-      if (width != null) 'width': width?.toJson(),
-      if (height != null) 'height': height?.toJson(),
-      if (contentType != null) 'content_type': contentType,
-      if (placeholder != null) 'placeholder': placeholder,
-      if (placeholderVersion != null)
-        'placeholder_version': placeholderVersion?.toJson(),
-      if (description != null) 'description': description,
-      if (flags != null) 'flags': flags?.toJson(),
+      'url': ?url,
+      'proxy_url': ?proxyUrl?.toString(),
+      'width': ?width?.toJson(),
+      'height': ?height?.toJson(),
+      'content_type': ?contentType,
+      'placeholder': ?placeholder,
+      'placeholder_version': ?placeholderVersion?.toJson(),
+      'description': ?description,
+      'flags': ?flags?.toJson(),
     };
   }
 

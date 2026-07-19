@@ -70,15 +70,13 @@ class ApplicationCommandInteractionMetadataResponse {
     return {
       'id': id.toJson(),
       'type': type.toJson(),
-      if (user != null) 'user': user?.toJson(),
+      'user': ?user?.toJson(),
       'authorizing_integration_owners': authorizingIntegrationOwners.map(
         (key, value) => MapEntry(key, value.toJson()),
       ),
-      if (originalResponseMessageId != null)
-        'original_response_message_id': originalResponseMessageId?.toJson(),
-      if (targetUser != null) 'target_user': targetUser?.toJson(),
-      if (targetMessageId != null)
-        'target_message_id': targetMessageId?.toJson(),
+      'original_response_message_id': ?originalResponseMessageId?.toJson(),
+      'target_user': ?targetUser?.toJson(),
+      'target_message_id': ?targetMessageId?.toJson(),
     };
   }
 

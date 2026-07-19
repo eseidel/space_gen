@@ -239,17 +239,17 @@ class ReposUpdateRequest {
   /// Converts a [ReposUpdateRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (name != null) 'name': name,
-      if (description != null) 'description': description,
-      if (homepage != null) 'homepage': homepage,
+      'name': ?name,
+      'description': ?description,
+      'homepage': ?homepage,
       'private': private,
-      if (visibility != null) 'visibility': visibility?.toJson(),
+      'visibility': ?visibility?.toJson(),
       'security_and_analysis': securityAndAnalysis?.toJson(),
       'has_issues': hasIssues,
       'has_projects': hasProjects,
       'has_wiki': hasWiki,
       'is_template': isTemplate,
-      if (defaultBranch != null) 'default_branch': defaultBranch,
+      'default_branch': ?defaultBranch,
       'allow_squash_merge': allowSquashMerge,
       'allow_merge_commit': allowMergeCommit,
       'allow_rebase_merge': allowRebaseMerge,
@@ -257,14 +257,10 @@ class ReposUpdateRequest {
       'delete_branch_on_merge': deleteBranchOnMerge,
       'allow_update_branch': allowUpdateBranch,
       'use_squash_pr_title_as_default': useSquashPrTitleAsDefault,
-      if (squashMergeCommitTitle != null)
-        'squash_merge_commit_title': squashMergeCommitTitle?.toJson(),
-      if (squashMergeCommitMessage != null)
-        'squash_merge_commit_message': squashMergeCommitMessage?.toJson(),
-      if (mergeCommitTitle != null)
-        'merge_commit_title': mergeCommitTitle?.toJson(),
-      if (mergeCommitMessage != null)
-        'merge_commit_message': mergeCommitMessage?.toJson(),
+      'squash_merge_commit_title': ?squashMergeCommitTitle?.toJson(),
+      'squash_merge_commit_message': ?squashMergeCommitMessage?.toJson(),
+      'merge_commit_title': ?mergeCommitTitle?.toJson(),
+      'merge_commit_message': ?mergeCommitMessage?.toJson(),
       'archived': archived,
       'allow_forking': allowForking,
       'web_commit_signoff_required': webCommitSignoffRequired,

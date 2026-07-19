@@ -55,7 +55,7 @@ class OrgsEnableOrDisableSecurityProductOnAllOrgReposRequest {
   /// Converts an [OrgsEnableOrDisableSecurityProductOnAllOrgReposRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (querySuite != null) 'query_suite': querySuite?.toJson()};
+    return {'query_suite': ?querySuite?.toJson()};
   }
 
   @override

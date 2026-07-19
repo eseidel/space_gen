@@ -70,10 +70,10 @@ class ReposUpdateWebhookConfigForRepoRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (url != null) 'url': url?.toJson(),
-      if (contentType != null) 'content_type': contentType?.toJson(),
-      if (secret != null) 'secret': secret?.toJson(),
-      if (insecureSsl != null) 'insecure_ssl': insecureSsl?.toJson(),
+      'url': ?url?.toJson(),
+      'content_type': ?contentType?.toJson(),
+      'secret': ?secret?.toJson(),
+      'insecure_ssl': ?insecureSsl?.toJson(),
     };
   }
 

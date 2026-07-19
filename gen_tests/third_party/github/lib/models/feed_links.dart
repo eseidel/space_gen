@@ -108,24 +108,17 @@ class FeedLinks {
     return {
       'timeline': timeline.toJson(),
       'user': user.toJson(),
-      if (securityAdvisories != null)
-        'security_advisories': securityAdvisories?.toJson(),
-      if (currentUser != null) 'current_user': currentUser?.toJson(),
-      if (currentUserPublic != null)
-        'current_user_public': currentUserPublic?.toJson(),
-      if (currentUserActor != null)
-        'current_user_actor': currentUserActor?.toJson(),
-      if (currentUserOrganization != null)
-        'current_user_organization': currentUserOrganization?.toJson(),
-      if (currentUserOrganizations != null)
-        'current_user_organizations': currentUserOrganizations
-            ?.map((e) => e.toJson())
-            .toList(),
-      if (repositoryDiscussions != null)
-        'repository_discussions': repositoryDiscussions?.toJson(),
-      if (repositoryDiscussionsCategory != null)
-        'repository_discussions_category': repositoryDiscussionsCategory
-            ?.toJson(),
+      'security_advisories': ?securityAdvisories?.toJson(),
+      'current_user': ?currentUser?.toJson(),
+      'current_user_public': ?currentUserPublic?.toJson(),
+      'current_user_actor': ?currentUserActor?.toJson(),
+      'current_user_organization': ?currentUserOrganization?.toJson(),
+      'current_user_organizations': ?currentUserOrganizations
+          ?.map((e) => e.toJson())
+          .toList(),
+      'repository_discussions': ?repositoryDiscussions?.toJson(),
+      'repository_discussions_category': ?repositoryDiscussionsCategory
+          ?.toJson(),
     };
   }
 

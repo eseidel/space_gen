@@ -69,9 +69,9 @@ class AuditLogEntryResponse {
       'action_type': actionType.toJson(),
       'user_id': userId?.toJson(),
       'target_id': targetId?.toJson(),
-      if (changes != null) 'changes': changes?.map((e) => e.toJson()).toList(),
-      if (options != null) 'options': options,
-      if (reason != null) 'reason': reason,
+      'changes': ?changes?.map((e) => e.toJson()).toList(),
+      'options': ?options,
+      'reason': ?reason,
     };
   }
 

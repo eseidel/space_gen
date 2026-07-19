@@ -95,9 +95,9 @@ class ReposCreateDeploymentStatusRequest {
       'target_url': targetUrl,
       'log_url': logUrl,
       'description': description,
-      if (environment != null) 'environment': environment,
+      'environment': ?environment,
       'environment_url': environmentUrl,
-      if (autoInactive != null) 'auto_inactive': autoInactive,
+      'auto_inactive': ?autoInactive,
     };
   }
 

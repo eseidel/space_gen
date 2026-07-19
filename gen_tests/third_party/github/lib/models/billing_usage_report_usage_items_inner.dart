@@ -99,7 +99,7 @@ class BillingUsageReportUsageItemsInner {
       'discountAmount': discountAmount,
       'netAmount': netAmount,
       'organizationName': organizationName,
-      if (repositoryName != null) 'repositoryName': repositoryName,
+      'repositoryName': ?repositoryName,
     };
   }
 

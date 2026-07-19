@@ -52,9 +52,9 @@ class DependencyGraphSpdxSbomSbomRelationshipsInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (relationshipType != null) 'relationshipType': relationshipType,
-      if (spdxElementId != null) 'spdxElementId': spdxElementId,
-      if (relatedSpdxElement != null) 'relatedSpdxElement': relatedSpdxElement,
+      'relationshipType': ?relationshipType,
+      'spdxElementId': ?spdxElementId,
+      'relatedSpdxElement': ?relatedSpdxElement,
     };
   }
 

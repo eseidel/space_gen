@@ -118,7 +118,7 @@ class ShipyardShip {
       'type': type.toJson(),
       'name': name,
       'description': description,
-      if (activity != null) 'activity': activity?.toJson(),
+      'activity': ?activity?.toJson(),
       'supply': supply.toJson(),
       'purchasePrice': purchasePrice,
       'frame': frame.toJson(),

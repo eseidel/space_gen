@@ -36,7 +36,7 @@ class ProjectsCreateForRepoRequest {
 
   /// Converts a [ProjectsCreateForRepoRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, if (body != null) 'body': body};
+    return {'name': name, 'body': ?body};
   }
 
   @override

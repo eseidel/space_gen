@@ -89,13 +89,12 @@ class ReposCreateDeploymentRequest {
       'ref': ref,
       'task': task,
       'auto_merge': autoMerge,
-      if (requiredContexts != null) 'required_contexts': requiredContexts,
-      if (payload != null) 'payload': payload?.toJson(),
+      'required_contexts': ?requiredContexts,
+      'payload': ?payload?.toJson(),
       'environment': environment,
       'description': description,
       'transient_environment': transientEnvironment,
-      if (productionEnvironment != null)
-        'production_environment': productionEnvironment,
+      'production_environment': ?productionEnvironment,
     };
   }
 

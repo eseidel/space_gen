@@ -57,11 +57,7 @@ class ReposCreateDeployKeyRequest {
 
   /// Converts a [ReposCreateDeployKeyRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (title != null) 'title': title,
-      'key': key,
-      if (readOnly != null) 'read_only': readOnly,
-    };
+    return {'title': ?title, 'key': key, 'read_only': ?readOnly};
   }
 
   @override

@@ -56,14 +56,11 @@ class InteractionResponse {
     return {
       'id': id.toJson(),
       'type': type.toJson(),
-      if (responseMessageId != null)
-        'response_message_id': responseMessageId?.toJson(),
-      if (responseMessageLoading != null)
-        'response_message_loading': responseMessageLoading,
-      if (responseMessageEphemeral != null)
-        'response_message_ephemeral': responseMessageEphemeral,
-      if (channelId != null) 'channel_id': channelId?.toJson(),
-      if (guildId != null) 'guild_id': guildId?.toJson(),
+      'response_message_id': ?responseMessageId?.toJson(),
+      'response_message_loading': ?responseMessageLoading,
+      'response_message_ephemeral': ?responseMessageEphemeral,
+      'channel_id': ?channelId?.toJson(),
+      'guild_id': ?guildId?.toJson(),
     };
   }
 

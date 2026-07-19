@@ -51,7 +51,7 @@ class ReposUpdateRequestSecurityAndAnalysisSecretScanningNonProviderPatterns {
   /// Converts a [ReposUpdateRequestSecurityAndAnalysisSecretScanningNonProviderPatterns]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (status != null) 'status': status};
+    return {'status': ?status};
   }
 
   @override

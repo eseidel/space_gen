@@ -58,8 +58,7 @@ class RemovedFromProjectIssueEventProjectCard {
       'project_id': projectId,
       'project_url': projectUrl.toString(),
       'column_name': columnName,
-      if (previousColumnName != null)
-        'previous_column_name': previousColumnName,
+      'previous_column_name': ?previousColumnName,
     };
   }
 

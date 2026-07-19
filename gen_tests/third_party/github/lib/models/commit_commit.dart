@@ -83,7 +83,7 @@ class CommitCommit {
       'message': message,
       'comment_count': commentCount,
       'tree': tree.toJson(),
-      if (verification != null) 'verification': verification?.toJson(),
+      'verification': ?verification?.toJson(),
     };
   }
 

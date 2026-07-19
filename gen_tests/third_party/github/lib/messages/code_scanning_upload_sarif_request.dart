@@ -98,10 +98,10 @@ class CodeScanningUploadSarifRequest {
       'commit_sha': commitSha.toJson(),
       'ref': ref.toJson(),
       'sarif': sarif.toJson(),
-      if (checkoutUri != null) 'checkout_uri': checkoutUri?.toString(),
-      if (startedAt != null) 'started_at': startedAt?.toIso8601String(),
-      if (toolName != null) 'tool_name': toolName,
-      if (validate != null) 'validate': validate,
+      'checkout_uri': ?checkoutUri?.toString(),
+      'started_at': ?startedAt?.toIso8601String(),
+      'tool_name': ?toolName,
+      'validate': ?validate,
     };
   }
 

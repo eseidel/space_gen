@@ -84,16 +84,15 @@ class ExternalScheduledEventPatchRequestPartial {
   Map<String, dynamic> toJson() {
     return {
       'status': status?.toJson(),
-      if (name != null) 'name': name,
+      'name': ?name,
       'description': description,
       'image': maybeBase64Encode(image),
-      if (scheduledStartTime != null)
-        'scheduled_start_time': scheduledStartTime?.toIso8601String(),
+      'scheduled_start_time': ?scheduledStartTime?.toIso8601String(),
       'scheduled_end_time': scheduledEndTime?.toIso8601String(),
       'entity_type': entityType?.toJson(),
-      if (privacyLevel != null) 'privacy_level': privacyLevel?.toJson(),
+      'privacy_level': ?privacyLevel?.toJson(),
       'channel_id': channelId?.toJson(),
-      if (entityMetadata != null) 'entity_metadata': entityMetadata?.toJson(),
+      'entity_metadata': ?entityMetadata?.toJson(),
     };
   }
 

@@ -49,7 +49,7 @@ class CodeSecurityUpdateEnterpriseConfigurationRequestDependencyGraphAutosubmitA
   /// Converts a [CodeSecurityUpdateEnterpriseConfigurationRequestDependencyGraphAutosubmitActionOptions]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (labeledRunners != null) 'labeled_runners': labeledRunners};
+    return {'labeled_runners': ?labeledRunners};
   }
 
   @override

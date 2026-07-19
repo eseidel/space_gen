@@ -87,15 +87,14 @@ class PullsCreateRequest {
   /// Converts a [PullsCreateRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (title != null) 'title': title,
+      'title': ?title,
       'head': head,
-      if (headRepo != null) 'head_repo': headRepo,
+      'head_repo': ?headRepo,
       'base': base,
-      if (body != null) 'body': body,
-      if (maintainerCanModify != null)
-        'maintainer_can_modify': maintainerCanModify,
-      if (draft != null) 'draft': draft,
-      if (issue != null) 'issue': issue,
+      'body': ?body,
+      'maintainer_can_modify': ?maintainerCanModify,
+      'draft': ?draft,
+      'issue': ?issue,
     };
   }
 

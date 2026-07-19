@@ -297,13 +297,13 @@ class TeamOrganization {
       'public_members_url': publicMembersUrl,
       'avatar_url': avatarUrl,
       'description': description,
-      if (name != null) 'name': name,
-      if (company != null) 'company': company,
-      if (blog != null) 'blog': blog?.toString(),
-      if (location != null) 'location': location,
-      if (email != null) 'email': email,
+      'name': ?name,
+      'company': ?company,
+      'blog': ?blog?.toString(),
+      'location': ?location,
+      'email': ?email,
       'twitter_username': twitterUsername,
-      if (isVerified != null) 'is_verified': isVerified,
+      'is_verified': ?isVerified,
       'has_organization_projects': hasOrganizationProjects,
       'has_repository_projects': hasRepositoryProjects,
       'public_repos': publicRepos,
@@ -313,38 +313,30 @@ class TeamOrganization {
       'html_url': htmlUrl.toString(),
       'created_at': createdAt.toIso8601String(),
       'type': type,
-      if (totalPrivateRepos != null) 'total_private_repos': totalPrivateRepos,
-      if (ownedPrivateRepos != null) 'owned_private_repos': ownedPrivateRepos,
+      'total_private_repos': ?totalPrivateRepos,
+      'owned_private_repos': ?ownedPrivateRepos,
       'private_gists': privateGists,
       'disk_usage': diskUsage,
       'collaborators': collaborators,
       'billing_email': billingEmail,
-      if (plan != null) 'plan': plan?.toJson(),
+      'plan': ?plan?.toJson(),
       'default_repository_permission': defaultRepositoryPermission,
       'members_can_create_repositories': membersCanCreateRepositories,
       'two_factor_requirement_enabled': twoFactorRequirementEnabled,
-      if (membersAllowedRepositoryCreationType != null)
-        'members_allowed_repository_creation_type':
-            membersAllowedRepositoryCreationType,
-      if (membersCanCreatePublicRepositories != null)
-        'members_can_create_public_repositories':
-            membersCanCreatePublicRepositories,
-      if (membersCanCreatePrivateRepositories != null)
-        'members_can_create_private_repositories':
-            membersCanCreatePrivateRepositories,
-      if (membersCanCreateInternalRepositories != null)
-        'members_can_create_internal_repositories':
-            membersCanCreateInternalRepositories,
-      if (membersCanCreatePages != null)
-        'members_can_create_pages': membersCanCreatePages,
-      if (membersCanCreatePublicPages != null)
-        'members_can_create_public_pages': membersCanCreatePublicPages,
-      if (membersCanCreatePrivatePages != null)
-        'members_can_create_private_pages': membersCanCreatePrivatePages,
+      'members_allowed_repository_creation_type':
+          ?membersAllowedRepositoryCreationType,
+      'members_can_create_public_repositories':
+          ?membersCanCreatePublicRepositories,
+      'members_can_create_private_repositories':
+          ?membersCanCreatePrivateRepositories,
+      'members_can_create_internal_repositories':
+          ?membersCanCreateInternalRepositories,
+      'members_can_create_pages': ?membersCanCreatePages,
+      'members_can_create_public_pages': ?membersCanCreatePublicPages,
+      'members_can_create_private_pages': ?membersCanCreatePrivatePages,
       'members_can_fork_private_repositories':
           membersCanForkPrivateRepositories,
-      if (webCommitSignoffRequired != null)
-        'web_commit_signoff_required': webCommitSignoffRequired,
+      'web_commit_signoff_required': ?webCommitSignoffRequired,
       'updated_at': updatedAt.toIso8601String(),
       'archived_at': archivedAt?.toIso8601String(),
     };

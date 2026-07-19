@@ -33,11 +33,7 @@ class FileCommitContentLinks {
 
   /// Converts a [FileCommitContentLinks] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (self != null) 'self': self,
-      if (git != null) 'git': git,
-      if (html != null) 'html': html,
-    };
+    return {'self': ?self, 'git': ?git, 'html': ?html};
   }
 
   @override

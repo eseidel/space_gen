@@ -33,10 +33,7 @@ class GpgKeySubkeysInnerEmailsInner {
 
   /// Converts a [GpgKeySubkeysInnerEmailsInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (email != null) 'email': email,
-      if (verified != null) 'verified': verified,
-    };
+    return {'email': ?email, 'verified': ?verified};
   }
 
   @override

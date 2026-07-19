@@ -47,10 +47,10 @@ class BranchRestrictionPolicyAppsInnerPermissions {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (metadata != null) 'metadata': metadata,
-      if (contents != null) 'contents': contents,
-      if (issues != null) 'issues': issues,
-      if (singleFile != null) 'single_file': singleFile,
+      'metadata': ?metadata,
+      'contents': ?contents,
+      'issues': ?issues,
+      'single_file': ?singleFile,
     };
   }
 

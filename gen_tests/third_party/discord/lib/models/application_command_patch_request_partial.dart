@@ -89,7 +89,7 @@ class ApplicationCommandPatchRequestPartial {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (name != null) 'name': name,
+      'name': ?name,
       'name_localizations': nameLocalizations,
       'description': description,
       'description_localizations': descriptionLocalizations,

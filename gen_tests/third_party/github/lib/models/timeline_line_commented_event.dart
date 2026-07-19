@@ -45,10 +45,9 @@ class TimelineLineCommentedEvent {
   /// Converts a [TimelineLineCommentedEvent] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (event != null) 'event': event,
-      if (nodeId != null) 'node_id': nodeId,
-      if (comments != null)
-        'comments': comments?.map((e) => e.toJson()).toList(),
+      'event': ?event,
+      'node_id': ?nodeId,
+      'comments': ?comments?.map((e) => e.toJson()).toList(),
     };
   }
 

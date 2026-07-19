@@ -58,9 +58,8 @@ class ThreadMetadataResponse {
       'archive_timestamp': archiveTimestamp?.toIso8601String(),
       'auto_archive_duration': autoArchiveDuration.toJson(),
       'locked': locked,
-      if (createTimestamp != null)
-        'create_timestamp': createTimestamp?.toIso8601String(),
-      if (invitable != null) 'invitable': invitable,
+      'create_timestamp': ?createTimestamp?.toIso8601String(),
+      'invitable': ?invitable,
     };
   }
 

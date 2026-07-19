@@ -105,8 +105,8 @@ class DiffEntry {
       'blob_url': blobUrl.toString(),
       'raw_url': rawUrl.toString(),
       'contents_url': contentsUrl.toString(),
-      if (patch != null) 'patch': patch,
-      if (previousFilename != null) 'previous_filename': previousFilename,
+      'patch': ?patch,
+      'previous_filename': ?previousFilename,
     };
   }
 

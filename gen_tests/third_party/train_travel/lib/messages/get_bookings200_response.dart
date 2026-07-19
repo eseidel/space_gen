@@ -38,8 +38,8 @@ class GetBookings200Response {
   /// Converts a [GetBookings200Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (data != null) 'data': data?.map((e) => e.toJson()).toList(),
-      if (links != null) 'links': links?.toJson(),
+      'data': ?data?.map((e) => e.toJson()).toList(),
+      'links': ?links?.toJson(),
     };
   }
 

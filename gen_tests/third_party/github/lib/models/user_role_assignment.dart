@@ -157,9 +157,8 @@ class UserRoleAssignment {
   /// Converts a [UserRoleAssignment] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (assignment != null) 'assignment': assignment?.toJson(),
-      if (inheritedFrom != null)
-        'inherited_from': inheritedFrom?.map((e) => e.toJson()).toList(),
+      'assignment': ?assignment?.toJson(),
+      'inherited_from': ?inheritedFrom?.map((e) => e.toJson()).toList(),
       'name': name,
       'email': email,
       'login': login,
@@ -180,8 +179,8 @@ class UserRoleAssignment {
       'received_events_url': receivedEventsUrl.toString(),
       'type': type,
       'site_admin': siteAdmin,
-      if (starredAt != null) 'starred_at': starredAt,
-      if (userViewType != null) 'user_view_type': userViewType,
+      'starred_at': ?starredAt,
+      'user_view_type': ?userViewType,
     };
   }
 

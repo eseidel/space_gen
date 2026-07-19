@@ -57,11 +57,11 @@ class CopilotDotcomChatModelsInner {
   /// Converts a [CopilotDotcomChatModelsInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (name != null) 'name': name,
-      if (isCustomModel != null) 'is_custom_model': isCustomModel,
+      'name': ?name,
+      'is_custom_model': ?isCustomModel,
       'custom_model_training_date': customModelTrainingDate,
-      if (totalEngagedUsers != null) 'total_engaged_users': totalEngagedUsers,
-      if (totalChats != null) 'total_chats': totalChats,
+      'total_engaged_users': ?totalEngagedUsers,
+      'total_chats': ?totalChats,
     };
   }
 

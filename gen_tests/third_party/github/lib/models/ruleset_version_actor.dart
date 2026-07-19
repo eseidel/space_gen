@@ -35,7 +35,7 @@ class RulesetVersionActor {
 
   /// Converts a [RulesetVersionActor] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (id != null) 'id': id, if (type != null) 'type': type};
+    return {'id': ?id, 'type': ?type};
   }
 
   @override

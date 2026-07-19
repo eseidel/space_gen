@@ -47,9 +47,9 @@ class ProjectsMoveCard403Response {
   /// Converts a [ProjectsMoveCard403Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (message != null) 'message': message,
-      if (documentationUrl != null) 'documentation_url': documentationUrl,
-      if (errors != null) 'errors': errors?.map((e) => e.toJson()).toList(),
+      'message': ?message,
+      'documentation_url': ?documentationUrl,
+      'errors': ?errors?.map((e) => e.toJson()).toList(),
     };
   }
 

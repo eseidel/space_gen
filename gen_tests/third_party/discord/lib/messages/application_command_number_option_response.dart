@@ -83,17 +83,16 @@ class ApplicationCommandNumberOptionResponse {
     return {
       'type': type.toJson(),
       'name': name,
-      if (nameLocalized != null) 'name_localized': nameLocalized,
+      'name_localized': ?nameLocalized,
       'name_localizations': nameLocalizations,
       'description': description,
-      if (descriptionLocalized != null)
-        'description_localized': descriptionLocalized,
+      'description_localized': ?descriptionLocalized,
       'description_localizations': descriptionLocalizations,
-      if (required_ != null) 'required': required_,
-      if (autocomplete != null) 'autocomplete': autocomplete,
-      if (choices != null) 'choices': choices?.map((e) => e.toJson()).toList(),
-      if (minValue != null) 'min_value': minValue,
-      if (maxValue != null) 'max_value': maxValue,
+      'required': ?required_,
+      'autocomplete': ?autocomplete,
+      'choices': ?choices?.map((e) => e.toJson()).toList(),
+      'min_value': ?minValue,
+      'max_value': ?maxValue,
     };
   }
 

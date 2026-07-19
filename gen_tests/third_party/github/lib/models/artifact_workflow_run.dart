@@ -53,11 +53,11 @@ class ArtifactWorkflowRun {
   /// Converts an [ArtifactWorkflowRun] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (id != null) 'id': id,
-      if (repositoryId != null) 'repository_id': repositoryId,
-      if (headRepositoryId != null) 'head_repository_id': headRepositoryId,
-      if (headBranch != null) 'head_branch': headBranch,
-      if (headSha != null) 'head_sha': headSha,
+      'id': ?id,
+      'repository_id': ?repositoryId,
+      'head_repository_id': ?headRepositoryId,
+      'head_branch': ?headBranch,
+      'head_sha': ?headSha,
     };
   }
 

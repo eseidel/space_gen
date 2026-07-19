@@ -67,10 +67,10 @@ class OrgsCreateInvitationRequest {
   /// Converts an [OrgsCreateInvitationRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (inviteeId != null) 'invitee_id': inviteeId,
-      if (email != null) 'email': email,
+      'invitee_id': ?inviteeId,
+      'email': ?email,
       'role': role.toJson(),
-      if (teamIds != null) 'team_ids': teamIds,
+      'team_ids': ?teamIds,
     };
   }
 

@@ -56,8 +56,8 @@ class CodespacesPreFlightWithRepoForAuthenticatedUser200Response {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (billableOwner != null) 'billable_owner': billableOwner?.toJson(),
-      if (defaults != null) 'defaults': defaults?.toJson(),
+      'billable_owner': ?billableOwner?.toJson(),
+      'defaults': ?defaults?.toJson(),
     };
   }
 

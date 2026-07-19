@@ -57,7 +57,7 @@ class PagesHttpsCertificate {
       'state': state.toJson(),
       'description': description,
       'domains': domains,
-      if (expiresAt != null) 'expires_at': expiresAt?.toJson(),
+      'expires_at': ?expiresAt?.toJson(),
     };
   }
 

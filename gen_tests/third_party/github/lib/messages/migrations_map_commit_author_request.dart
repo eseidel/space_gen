@@ -36,7 +36,7 @@ class MigrationsMapCommitAuthorRequest {
 
   /// Converts a [MigrationsMapCommitAuthorRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (email != null) 'email': email, if (name != null) 'name': name};
+    return {'email': ?email, 'name': ?name};
   }
 
   @override

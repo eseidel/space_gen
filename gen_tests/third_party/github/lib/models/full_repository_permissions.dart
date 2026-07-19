@@ -45,9 +45,9 @@ class FullRepositoryPermissions {
   Map<String, dynamic> toJson() {
     return {
       'admin': admin,
-      if (maintain != null) 'maintain': maintain,
+      'maintain': ?maintain,
       'push': push,
-      if (triage != null) 'triage': triage,
+      'triage': ?triage,
       'pull': pull,
     };
   }

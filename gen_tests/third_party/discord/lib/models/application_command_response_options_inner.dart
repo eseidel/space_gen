@@ -400,14 +400,13 @@ final class ApplicationCommandSubcommandGroupOptionResponse
     return {
       'type': type.toJson(),
       'name': name,
-      if (nameLocalized != null) 'name_localized': nameLocalized,
+      'name_localized': ?nameLocalized,
       'name_localizations': nameLocalizations,
       'description': description,
-      if (descriptionLocalized != null)
-        'description_localized': descriptionLocalized,
+      'description_localized': ?descriptionLocalized,
       'description_localizations': descriptionLocalizations,
-      if (required_ != null) 'required': required_,
-      if (options != null) 'options': options?.map((e) => e.toJson()).toList(),
+      'required': ?required_,
+      'options': ?options?.map((e) => e.toJson()).toList(),
     };
   }
 

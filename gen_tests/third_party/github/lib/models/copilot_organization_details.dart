@@ -135,11 +135,11 @@ class CopilotOrganizationDetails {
     return {
       'seat_breakdown': seatBreakdown.toJson(),
       'public_code_suggestions': publicCodeSuggestions.toJson(),
-      if (ideChat != null) 'ide_chat': ideChat?.toJson(),
-      if (platformChat != null) 'platform_chat': platformChat?.toJson(),
-      if (cli != null) 'cli': cli?.toJson(),
+      'ide_chat': ?ideChat?.toJson(),
+      'platform_chat': ?platformChat?.toJson(),
+      'cli': ?cli?.toJson(),
       'seat_management_setting': seatManagementSetting.toJson(),
-      if (planType != null) 'plan_type': planType?.toJson(),
+      'plan_type': ?planType?.toJson(),
       for (final entry in entries.entries)
         if (!const {
           'seat_breakdown',

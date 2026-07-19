@@ -68,8 +68,8 @@ class MlSpamUpsertRequestPartial {
   /// Converts a [MlSpamUpsertRequestPartial] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (name != null) 'name': name,
-      if (eventType != null) 'event_type': eventType?.toJson(),
+      'name': ?name,
+      'event_type': ?eventType?.toJson(),
       'actions': actions?.map((e) => e.toJson()).toList(),
       'enabled': enabled,
       'exempt_roles': exemptRoles?.map((e) => e.toJson()).toList(),

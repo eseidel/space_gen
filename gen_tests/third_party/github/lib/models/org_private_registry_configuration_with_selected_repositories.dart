@@ -94,10 +94,9 @@ class OrgPrivateRegistryConfigurationWithSelectedRepositories {
     return {
       'name': name,
       'registry_type': registryType.toJson(),
-      if (username != null) 'username': username,
+      'username': ?username,
       'visibility': visibility.toJson(),
-      if (selectedRepositoryIds != null)
-        'selected_repository_ids': selectedRepositoryIds,
+      'selected_repository_ids': ?selectedRepositoryIds,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };

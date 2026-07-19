@@ -71,7 +71,7 @@ class ApplicationIncomingWebhookResponse {
       'id': id.toJson(),
       'name': name,
       'type': type.toJson(),
-      if (user != null) 'user': user?.toJson(),
+      'user': ?user?.toJson(),
     };
   }
 

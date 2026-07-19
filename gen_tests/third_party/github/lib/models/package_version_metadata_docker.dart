@@ -35,7 +35,7 @@ class PackageVersionMetadataDocker {
 
   /// Converts a [PackageVersionMetadataDocker] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (tag != null) 'tag': tag};
+    return {'tag': ?tag};
   }
 
   @override

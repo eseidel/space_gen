@@ -74,8 +74,8 @@ class DependabotAlertWithRepositoryDependency {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (package != null) 'package': package?.toJson(),
-      if (manifestPath != null) 'manifest_path': manifestPath,
+      'package': ?package?.toJson(),
+      'manifest_path': ?manifestPath,
       'scope': scope?.toJson(),
       'relationship': relationship?.toJson(),
     };

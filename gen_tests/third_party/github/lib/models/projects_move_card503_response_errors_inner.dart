@@ -37,10 +37,7 @@ class ProjectsMoveCard503ResponseErrorsInner {
   /// Converts a [ProjectsMoveCard503ResponseErrorsInner]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (code != null) 'code': code,
-      if (message != null) 'message': message,
-    };
+    return {'code': ?code, 'message': ?message};
   }
 
   @override

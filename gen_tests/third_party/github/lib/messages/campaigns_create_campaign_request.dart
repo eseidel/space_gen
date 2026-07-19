@@ -87,8 +87,8 @@ class CampaignsCreateCampaignRequest {
     return {
       'name': name,
       'description': description,
-      if (managers != null) 'managers': managers,
-      if (teamManagers != null) 'team_managers': teamManagers,
+      'managers': ?managers,
+      'team_managers': ?teamManagers,
       'ends_at': endsAt.toIso8601String(),
       'contact_link': contactLink?.toString(),
       'code_scanning_alerts': codeScanningAlerts

@@ -77,7 +77,7 @@ class CustomPropertySetPayload {
   Map<String, dynamic> toJson() {
     return {
       'value_type': valueType.toJson(),
-      if (required_ != null) 'required': required_,
+      'required': ?required_,
       'default_value': defaultValue?.toJson(),
       'description': description,
       'allowed_values': allowedValues,

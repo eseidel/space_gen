@@ -257,8 +257,7 @@ class Codespace {
       'publish_url': publishUrl?.toString(),
       'pulls_url': pullsUrl?.toString(),
       'recent_folders': recentFolders,
-      if (runtimeConstraints != null)
-        'runtime_constraints': runtimeConstraints?.toJson(),
+      'runtime_constraints': ?runtimeConstraints?.toJson(),
       'pending_operation': pendingOperation,
       'pending_operation_disabled_reason': pendingOperationDisabledReason,
       'idle_timeout_notice': idleTimeoutNotice,

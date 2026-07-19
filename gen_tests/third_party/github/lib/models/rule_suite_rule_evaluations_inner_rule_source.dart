@@ -48,7 +48,7 @@ class RuleSuiteRuleEvaluationsInnerRuleSource {
   /// Converts a [RuleSuiteRuleEvaluationsInnerRuleSource]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (type != null) 'type': type, 'id': id, 'name': name};
+    return {'type': ?type, 'id': id, 'name': name};
   }
 
   @override

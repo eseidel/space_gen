@@ -40,10 +40,7 @@ class ActivityMarkRepoNotificationsAsRead202Response {
   /// Converts an [ActivityMarkRepoNotificationsAsRead202Response]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (message != null) 'message': message,
-      if (url != null) 'url': url,
-    };
+    return {'message': ?message, 'url': ?url};
   }
 
   @override

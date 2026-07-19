@@ -88,15 +88,12 @@ class ProtectedBranchPullRequestReview {
   /// Converts a [ProtectedBranchPullRequestReview] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (url != null) 'url': url?.toString(),
-      if (dismissalRestrictions != null)
-        'dismissal_restrictions': dismissalRestrictions?.toJson(),
-      if (bypassPullRequestAllowances != null)
-        'bypass_pull_request_allowances': bypassPullRequestAllowances?.toJson(),
+      'url': ?url?.toString(),
+      'dismissal_restrictions': ?dismissalRestrictions?.toJson(),
+      'bypass_pull_request_allowances': ?bypassPullRequestAllowances?.toJson(),
       'dismiss_stale_reviews': dismissStaleReviews,
       'require_code_owner_reviews': requireCodeOwnerReviews,
-      if (requiredApprovingReviewCount != null)
-        'required_approving_review_count': requiredApprovingReviewCount,
+      'required_approving_review_count': ?requiredApprovingReviewCount,
       'require_last_push_approval': requireLastPushApproval,
     };
   }

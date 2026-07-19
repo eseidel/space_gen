@@ -104,17 +104,16 @@ class CodeScanningAlertInstance {
   /// Converts a [CodeScanningAlertInstance] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (ref != null) 'ref': ref?.toJson(),
-      if (analysisKey != null) 'analysis_key': analysisKey?.toJson(),
-      if (environment != null) 'environment': environment?.toJson(),
-      if (category != null) 'category': category?.toJson(),
+      'ref': ?ref?.toJson(),
+      'analysis_key': ?analysisKey?.toJson(),
+      'environment': ?environment?.toJson(),
+      'category': ?category?.toJson(),
       'state': state?.toJson(),
-      if (commitSha != null) 'commit_sha': commitSha,
-      if (message != null) 'message': message?.toJson(),
-      if (location != null) 'location': location?.toJson(),
-      if (htmlUrl != null) 'html_url': htmlUrl,
-      if (classifications != null)
-        'classifications': classifications?.map((e) => e.toJson()).toList(),
+      'commit_sha': ?commitSha,
+      'message': ?message?.toJson(),
+      'location': ?location?.toJson(),
+      'html_url': ?htmlUrl,
+      'classifications': ?classifications?.map((e) => e.toJson()).toList(),
     };
   }
 

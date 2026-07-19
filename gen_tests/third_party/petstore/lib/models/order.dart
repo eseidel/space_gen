@@ -56,12 +56,12 @@ class Order {
   /// Converts an [Order] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (id != null) 'id': id,
-      if (petId != null) 'petId': petId,
-      if (quantity != null) 'quantity': quantity,
-      if (shipDate != null) 'shipDate': shipDate?.toIso8601String(),
-      if (status != null) 'status': status?.toJson(),
-      if (complete != null) 'complete': complete,
+      'id': ?id,
+      'petId': ?petId,
+      'quantity': ?quantity,
+      'shipDate': ?shipDate?.toIso8601String(),
+      'status': ?status?.toJson(),
+      'complete': ?complete,
     };
   }
 

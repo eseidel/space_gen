@@ -47,8 +47,8 @@ class OrganizationFullPlan {
       'name': name,
       'space': space,
       'private_repos': privateRepos,
-      if (filledSeats != null) 'filled_seats': filledSeats,
-      if (seats != null) 'seats': seats,
+      'filled_seats': ?filledSeats,
+      'seats': ?seats,
     };
   }
 

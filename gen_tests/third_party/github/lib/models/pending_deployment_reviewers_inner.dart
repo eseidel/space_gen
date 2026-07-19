@@ -39,10 +39,7 @@ class PendingDeploymentReviewersInner {
 
   /// Converts a [PendingDeploymentReviewersInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (type != null) 'type': type?.toJson(),
-      if (reviewer != null) 'reviewer': reviewer?.toJson(),
-    };
+    return {'type': ?type?.toJson(), 'reviewer': ?reviewer?.toJson()};
   }
 
   @override

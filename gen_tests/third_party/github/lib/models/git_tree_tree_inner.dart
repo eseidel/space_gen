@@ -67,8 +67,8 @@ class GitTreeTreeInner {
       'mode': mode,
       'type': type,
       'sha': sha,
-      if (size != null) 'size': size,
-      if (url != null) 'url': url,
+      'size': ?size,
+      'url': ?url,
     };
   }
 

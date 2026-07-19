@@ -145,13 +145,11 @@ class ReposUpdateBranchProtectionRequest {
       'enforce_admins': enforceAdmins,
       'required_pull_request_reviews': requiredPullRequestReviews?.toJson(),
       'restrictions': restrictions?.toJson(),
-      if (requiredLinearHistory != null)
-        'required_linear_history': requiredLinearHistory,
+      'required_linear_history': ?requiredLinearHistory,
       'allow_force_pushes': allowForcePushes,
-      if (allowDeletions != null) 'allow_deletions': allowDeletions,
-      if (blockCreations != null) 'block_creations': blockCreations,
-      if (requiredConversationResolution != null)
-        'required_conversation_resolution': requiredConversationResolution,
+      'allow_deletions': ?allowDeletions,
+      'block_creations': ?blockCreations,
+      'required_conversation_resolution': ?requiredConversationResolution,
       'lock_branch': lockBranch,
       'allow_fork_syncing': allowForkSyncing,
     };

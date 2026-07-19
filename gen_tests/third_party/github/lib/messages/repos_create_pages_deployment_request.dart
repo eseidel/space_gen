@@ -69,8 +69,8 @@ class ReposCreatePagesDeploymentRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (artifactId != null) 'artifact_id': artifactId,
-      if (artifactUrl != null) 'artifact_url': artifactUrl,
+      'artifact_id': ?artifactId,
+      'artifact_url': ?artifactUrl,
       'environment': environment,
       'pages_build_version': pagesBuildVersion,
       'oidc_token': oidcToken,

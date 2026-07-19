@@ -34,10 +34,7 @@ class UpdateGuildEmojiRequest {
 
   /// Converts a [UpdateGuildEmojiRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (name != null) 'name': name,
-      'roles': roles?.map((e) => e.toJson()).toList(),
-    };
+    return {'name': ?name, 'roles': roles?.map((e) => e.toJson()).toList()};
   }
 
   @override

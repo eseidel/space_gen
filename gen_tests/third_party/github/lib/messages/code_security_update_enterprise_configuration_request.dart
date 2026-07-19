@@ -233,45 +233,34 @@ class CodeSecurityUpdateEnterpriseConfigurationRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (name != null) 'name': name,
-      if (description != null) 'description': description,
-      if (advancedSecurity != null)
-        'advanced_security': advancedSecurity?.toJson(),
-      if (dependencyGraph != null)
-        'dependency_graph': dependencyGraph?.toJson(),
-      if (dependencyGraphAutosubmitAction != null)
-        'dependency_graph_autosubmit_action': dependencyGraphAutosubmitAction
-            ?.toJson(),
-      if (dependencyGraphAutosubmitActionOptions != null)
-        'dependency_graph_autosubmit_action_options':
-            dependencyGraphAutosubmitActionOptions?.toJson(),
-      if (dependabotAlerts != null)
-        'dependabot_alerts': dependabotAlerts?.toJson(),
-      if (dependabotSecurityUpdates != null)
-        'dependabot_security_updates': dependabotSecurityUpdates?.toJson(),
-      if (codeScanningDefaultSetup != null)
-        'code_scanning_default_setup': codeScanningDefaultSetup?.toJson(),
+      'name': ?name,
+      'description': ?description,
+      'advanced_security': ?advancedSecurity?.toJson(),
+      'dependency_graph': ?dependencyGraph?.toJson(),
+      'dependency_graph_autosubmit_action': ?dependencyGraphAutosubmitAction
+          ?.toJson(),
+      'dependency_graph_autosubmit_action_options':
+          ?dependencyGraphAutosubmitActionOptions?.toJson(),
+      'dependabot_alerts': ?dependabotAlerts?.toJson(),
+      'dependabot_security_updates': ?dependabotSecurityUpdates?.toJson(),
+      'code_scanning_default_setup': ?codeScanningDefaultSetup?.toJson(),
       'code_scanning_default_setup_options': codeScanningDefaultSetupOptions
           ?.toJson(),
       'code_scanning_delegated_alert_dismissal':
           codeScanningDelegatedAlertDismissal.toJson(),
-      if (secretScanning != null) 'secret_scanning': secretScanning?.toJson(),
-      if (secretScanningPushProtection != null)
-        'secret_scanning_push_protection': secretScanningPushProtection
-            ?.toJson(),
-      if (secretScanningValidityChecks != null)
-        'secret_scanning_validity_checks': secretScanningValidityChecks
-            ?.toJson(),
-      if (secretScanningNonProviderPatterns != null)
-        'secret_scanning_non_provider_patterns':
-            secretScanningNonProviderPatterns?.toJson(),
+      'secret_scanning': ?secretScanning?.toJson(),
+      'secret_scanning_push_protection': ?secretScanningPushProtection
+          ?.toJson(),
+      'secret_scanning_validity_checks': ?secretScanningValidityChecks
+          ?.toJson(),
+      'secret_scanning_non_provider_patterns':
+          ?secretScanningNonProviderPatterns?.toJson(),
       'secret_scanning_generic_secrets': secretScanningGenericSecrets.toJson(),
       'secret_scanning_delegated_alert_dismissal':
           secretScanningDelegatedAlertDismissal.toJson(),
-      if (privateVulnerabilityReporting != null)
-        'private_vulnerability_reporting': privateVulnerabilityReporting
-            ?.toJson(),
-      if (enforcement != null) 'enforcement': enforcement?.toJson(),
+      'private_vulnerability_reporting': ?privateVulnerabilityReporting
+          ?.toJson(),
+      'enforcement': ?enforcement?.toJson(),
     };
   }
 

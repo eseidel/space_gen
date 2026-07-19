@@ -28,7 +28,7 @@ class Tag {
 
   /// Converts a [Tag] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (id != null) 'id': id, if (name != null) 'name': name};
+    return {'id': ?id, 'name': ?name};
   }
 
   @override

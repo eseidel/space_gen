@@ -76,14 +76,14 @@ class UsersUpdateAuthenticatedRequest {
   /// Converts a [UsersUpdateAuthenticatedRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (name != null) 'name': name,
-      if (email != null) 'email': email,
-      if (blog != null) 'blog': blog,
+      'name': ?name,
+      'email': ?email,
+      'blog': ?blog,
       'twitter_username': twitterUsername,
-      if (company != null) 'company': company,
-      if (location != null) 'location': location,
-      if (hireable != null) 'hireable': hireable,
-      if (bio != null) 'bio': bio,
+      'company': ?company,
+      'location': ?location,
+      'hireable': ?hireable,
+      'bio': ?bio,
     };
   }
 

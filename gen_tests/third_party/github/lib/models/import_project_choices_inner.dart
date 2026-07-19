@@ -34,9 +34,9 @@ class ImportProjectChoicesInner {
   /// Converts an [ImportProjectChoicesInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (vcs != null) 'vcs': vcs,
-      if (tfvcProject != null) 'tfvc_project': tfvcProject,
-      if (humanName != null) 'human_name': humanName,
+      'vcs': ?vcs,
+      'tfvc_project': ?tfvcProject,
+      'human_name': ?humanName,
     };
   }
 

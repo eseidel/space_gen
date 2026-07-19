@@ -111,15 +111,14 @@ class ActionsHostedRunner {
     return {
       'id': id,
       'name': name,
-      if (runnerGroupId != null) 'runner_group_id': runnerGroupId,
+      'runner_group_id': ?runnerGroupId,
       'image_details': imageDetails?.toJson(),
       'machine_size_details': machineSizeDetails.toJson(),
       'status': status.toJson(),
       'platform': platform,
       'maximum_runners': maximumRunners,
       'public_ip_enabled': publicIpEnabled,
-      if (publicIps != null)
-        'public_ips': publicIps?.map((e) => e.toJson()).toList(),
+      'public_ips': ?publicIps?.map((e) => e.toJson()).toList(),
       'last_active_on': lastActiveOn?.toIso8601String(),
     };
   }

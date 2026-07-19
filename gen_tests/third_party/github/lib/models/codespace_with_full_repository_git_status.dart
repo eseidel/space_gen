@@ -67,13 +67,11 @@ class CodespaceWithFullRepositoryGitStatus {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (ahead != null) 'ahead': ahead,
-      if (behind != null) 'behind': behind,
-      if (hasUnpushedChanges != null)
-        'has_unpushed_changes': hasUnpushedChanges,
-      if (hasUncommittedChanges != null)
-        'has_uncommitted_changes': hasUncommittedChanges,
-      if (ref != null) 'ref': ref,
+      'ahead': ?ahead,
+      'behind': ?behind,
+      'has_unpushed_changes': ?hasUnpushedChanges,
+      'has_uncommitted_changes': ?hasUncommittedChanges,
+      'ref': ?ref,
     };
   }
 

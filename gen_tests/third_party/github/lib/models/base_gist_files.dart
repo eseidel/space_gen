@@ -50,11 +50,11 @@ class BaseGistFiles {
   /// Converts a [BaseGistFiles] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (filename != null) 'filename': filename,
-      if (type != null) 'type': type,
-      if (language != null) 'language': language,
-      if (rawUrl != null) 'raw_url': rawUrl,
-      if (size != null) 'size': size,
+      'filename': ?filename,
+      'type': ?type,
+      'language': ?language,
+      'raw_url': ?rawUrl,
+      'size': ?size,
       'encoding': encoding,
     };
   }

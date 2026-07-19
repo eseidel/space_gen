@@ -166,8 +166,8 @@ class CheckSuite {
       'head_commit': headCommit.toJson(),
       'latest_check_runs_count': latestCheckRunsCount,
       'check_runs_url': checkRunsUrl,
-      if (rerequestable != null) 'rerequestable': rerequestable,
-      if (runsRerequestable != null) 'runs_rerequestable': runsRerequestable,
+      'rerequestable': ?rerequestable,
+      'runs_rerequestable': ?runsRerequestable,
     };
   }
 

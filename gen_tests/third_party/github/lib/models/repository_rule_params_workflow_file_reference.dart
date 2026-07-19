@@ -60,9 +60,9 @@ class RepositoryRuleParamsWorkflowFileReference {
   Map<String, dynamic> toJson() {
     return {
       'path': path,
-      if (ref != null) 'ref': ref,
+      'ref': ?ref,
       'repository_id': repositoryId,
-      if (sha != null) 'sha': sha,
+      'sha': ?sha,
     };
   }
 

@@ -39,9 +39,7 @@ class RepositoryRuleViolationErrorMetadata {
   /// Converts a [RepositoryRuleViolationErrorMetadata]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (secretScanning != null) 'secret_scanning': secretScanning?.toJson(),
-    };
+    return {'secret_scanning': ?secretScanning?.toJson()};
   }
 
   @override

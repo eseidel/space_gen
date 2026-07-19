@@ -126,9 +126,9 @@ class Integration {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      if (slug != null) 'slug': slug,
+      'slug': ?slug,
       'node_id': nodeId,
-      if (clientId != null) 'client_id': clientId,
+      'client_id': ?clientId,
       'owner': owner.toJson(),
       'name': name,
       'description': description,
@@ -138,7 +138,7 @@ class Integration {
       'updated_at': updatedAt.toIso8601String(),
       'permissions': permissions.toJson(),
       'events': events,
-      if (installationsCount != null) 'installations_count': installationsCount,
+      'installations_count': ?installationsCount,
     };
   }
 

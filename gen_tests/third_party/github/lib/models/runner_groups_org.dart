@@ -94,20 +94,17 @@ class RunnerGroupsOrg {
       'name': name,
       'visibility': visibility,
       'default': default_,
-      if (selectedRepositoriesUrl != null)
-        'selected_repositories_url': selectedRepositoriesUrl,
+      'selected_repositories_url': ?selectedRepositoriesUrl,
       'runners_url': runnersUrl,
-      if (hostedRunnersUrl != null) 'hosted_runners_url': hostedRunnersUrl,
-      if (networkConfigurationId != null)
-        'network_configuration_id': networkConfigurationId,
+      'hosted_runners_url': ?hostedRunnersUrl,
+      'network_configuration_id': ?networkConfigurationId,
       'inherited': inherited,
-      if (inheritedAllowsPublicRepositories != null)
-        'inherited_allows_public_repositories':
-            inheritedAllowsPublicRepositories,
+      'inherited_allows_public_repositories':
+          ?inheritedAllowsPublicRepositories,
       'allows_public_repositories': allowsPublicRepositories,
       'workflow_restrictions_read_only': workflowRestrictionsReadOnly,
       'restricted_to_workflows': restrictedToWorkflows,
-      if (selectedWorkflows != null) 'selected_workflows': selectedWorkflows,
+      'selected_workflows': ?selectedWorkflows,
     };
   }
 

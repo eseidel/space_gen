@@ -42,9 +42,9 @@ class MergedUpstream {
   /// Converts a [MergedUpstream] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (message != null) 'message': message,
-      if (mergeType != null) 'merge_type': mergeType?.toJson(),
-      if (baseBranch != null) 'base_branch': baseBranch,
+      'message': ?message,
+      'merge_type': ?mergeType?.toJson(),
+      'base_branch': ?baseBranch,
     };
   }
 

@@ -84,10 +84,9 @@ class TeamsUpdateLegacyRequest {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      if (description != null) 'description': description,
-      if (privacy != null) 'privacy': privacy?.toJson(),
-      if (notificationSetting != null)
-        'notification_setting': notificationSetting?.toJson(),
+      'description': ?description,
+      'privacy': ?privacy?.toJson(),
+      'notification_setting': ?notificationSetting?.toJson(),
       'permission': permission.toJson(),
       'parent_team_id': parentTeamId,
     };

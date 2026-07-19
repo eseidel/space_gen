@@ -37,7 +37,7 @@ class RefuelShipRequest {
 
   /// Converts a [RefuelShipRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (units != null) 'units': units, 'fromCargo': fromCargo};
+    return {'units': ?units, 'fromCargo': fromCargo};
   }
 
   @override

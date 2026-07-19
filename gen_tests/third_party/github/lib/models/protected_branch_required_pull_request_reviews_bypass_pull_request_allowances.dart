@@ -65,7 +65,7 @@ class ProtectedBranchRequiredPullRequestReviewsBypassPullRequestAllowances {
     return {
       'users': users.map((e) => e.toJson()).toList(),
       'teams': teams.map((e) => e.toJson()).toList(),
-      if (apps != null) 'apps': apps?.map((e) => e.toJson()).toList(),
+      'apps': ?apps?.map((e) => e.toJson()).toList(),
     };
   }
 

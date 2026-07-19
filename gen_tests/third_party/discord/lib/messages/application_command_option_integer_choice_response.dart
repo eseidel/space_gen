@@ -50,7 +50,7 @@ class ApplicationCommandOptionIntegerChoiceResponse {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      if (nameLocalized != null) 'name_localized': nameLocalized,
+      'name_localized': ?nameLocalized,
       'name_localizations': nameLocalizations,
       'value': value.toJson(),
     };

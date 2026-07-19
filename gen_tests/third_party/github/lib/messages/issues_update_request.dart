@@ -104,11 +104,11 @@ class IssuesUpdateRequest {
       'title': title?.toJson(),
       'body': body,
       'assignee': assignee,
-      if (state != null) 'state': state?.toJson(),
+      'state': ?state?.toJson(),
       'state_reason': stateReason?.toJson(),
       'milestone': milestone?.toJson(),
-      if (labels != null) 'labels': labels?.map((e) => e.toJson()).toList(),
-      if (assignees != null) 'assignees': assignees,
+      'labels': ?labels?.map((e) => e.toJson()).toList(),
+      'assignees': ?assignees,
       'type': type,
     };
   }

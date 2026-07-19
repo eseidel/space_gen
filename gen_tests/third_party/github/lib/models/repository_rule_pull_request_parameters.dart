@@ -93,13 +93,11 @@ class RepositoryRulePullRequestParameters {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (allowedMergeMethods != null)
-        'allowed_merge_methods': allowedMergeMethods
-            ?.map((e) => e.toJson())
-            .toList(),
-      if (automaticCopilotCodeReviewEnabled != null)
-        'automatic_copilot_code_review_enabled':
-            automaticCopilotCodeReviewEnabled,
+      'allowed_merge_methods': ?allowedMergeMethods
+          ?.map((e) => e.toJson())
+          .toList(),
+      'automatic_copilot_code_review_enabled':
+          ?automaticCopilotCodeReviewEnabled,
       'dismiss_stale_reviews_on_push': dismissStaleReviewsOnPush,
       'require_code_owner_review': requireCodeOwnerReview,
       'require_last_push_approval': requireLastPushApproval,

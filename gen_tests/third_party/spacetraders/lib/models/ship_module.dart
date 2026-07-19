@@ -72,8 +72,8 @@ class ShipModule {
       'symbol': symbol.toJson(),
       'name': name,
       'description': description,
-      if (capacity != null) 'capacity': capacity,
-      if (range != null) 'range': range,
+      'capacity': ?capacity,
+      'range': ?range,
       'requirements': requirements.toJson(),
     };
   }

@@ -244,7 +244,7 @@ final class UpdateGuildChannelRequestPartial extends UpdateChannelRequest {
   Map<String, dynamic> toJson() {
     return {
       'type': type?.toJson(),
-      if (name != null) 'name': name,
+      'name': ?name,
       'position': position,
       'topic': topic,
       'bitrate': bitrate,

@@ -77,7 +77,7 @@ class ReposUpdateBranchProtectionRequestRequiredStatusChecks {
     return {
       'strict': strict,
       'contexts': contexts,
-      if (checks != null) 'checks': checks?.map((e) => e.toJson()).toList(),
+      'checks': ?checks?.map((e) => e.toJson()).toList(),
     };
   }
 

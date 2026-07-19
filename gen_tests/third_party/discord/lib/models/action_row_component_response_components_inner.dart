@@ -144,14 +144,12 @@ final class ChannelSelectComponentResponse
       'type': type.toJson(),
       'id': id,
       'custom_id': customId,
-      if (placeholder != null) 'placeholder': placeholder,
+      'placeholder': ?placeholder,
       'min_values': minValues,
       'max_values': maxValues,
-      if (disabled != null) 'disabled': disabled,
-      if (channelTypes != null)
-        'channel_types': channelTypes?.map((e) => e.toJson()).toList(),
-      if (defaultValues != null)
-        'default_values': defaultValues?.map((e) => e.toJson()).toList(),
+      'disabled': ?disabled,
+      'channel_types': ?channelTypes?.map((e) => e.toJson()).toList(),
+      'default_values': ?defaultValues?.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -251,12 +249,11 @@ final class MentionableSelectComponentResponse
       'type': type.toJson(),
       'id': id,
       'custom_id': customId,
-      if (placeholder != null) 'placeholder': placeholder,
+      'placeholder': ?placeholder,
       'min_values': minValues,
       'max_values': maxValues,
-      if (disabled != null) 'disabled': disabled,
-      if (defaultValues != null)
-        'default_values': defaultValues?.map((e) => e.toJson()).toList(),
+      'disabled': ?disabled,
+      'default_values': ?defaultValues?.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -348,12 +345,11 @@ final class RoleSelectComponentResponse
       'type': type.toJson(),
       'id': id,
       'custom_id': customId,
-      if (placeholder != null) 'placeholder': placeholder,
+      'placeholder': ?placeholder,
       'min_values': minValues,
       'max_values': maxValues,
-      if (disabled != null) 'disabled': disabled,
-      if (defaultValues != null)
-        'default_values': defaultValues?.map((e) => e.toJson()).toList(),
+      'disabled': ?disabled,
+      'default_values': ?defaultValues?.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -445,10 +441,10 @@ final class StringSelectComponentResponse
       'type': type.toJson(),
       'id': id,
       'custom_id': customId,
-      if (placeholder != null) 'placeholder': placeholder,
+      'placeholder': ?placeholder,
       'min_values': minValues,
       'max_values': maxValues,
-      if (disabled != null) 'disabled': disabled,
+      'disabled': ?disabled,
       'options': options.map((e) => e.toJson()).toList(),
     };
   }
@@ -541,9 +537,9 @@ final class TextInputComponentResponse
       'custom_id': customId,
       'style': style.toJson(),
       'label': label,
-      if (value != null) 'value': value,
-      if (placeholder != null) 'placeholder': placeholder,
-      if (required_ != null) 'required': required_,
+      'value': ?value,
+      'placeholder': ?placeholder,
+      'required': ?required_,
       'min_length': minLength,
       'max_length': maxLength,
     };
@@ -641,12 +637,11 @@ final class UserSelectComponentResponse
       'type': type.toJson(),
       'id': id,
       'custom_id': customId,
-      if (placeholder != null) 'placeholder': placeholder,
+      'placeholder': ?placeholder,
       'min_values': minValues,
       'max_values': maxValues,
-      if (disabled != null) 'disabled': disabled,
-      if (defaultValues != null)
-        'default_values': defaultValues?.map((e) => e.toJson()).toList(),
+      'disabled': ?disabled,
+      'default_values': ?defaultValues?.map((e) => e.toJson()).toList(),
     };
   }
 

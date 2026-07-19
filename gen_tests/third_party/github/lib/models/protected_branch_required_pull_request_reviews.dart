@@ -76,17 +76,12 @@ class ProtectedBranchRequiredPullRequestReviews {
   Map<String, dynamic> toJson() {
     return {
       'url': url.toString(),
-      if (dismissStaleReviews != null)
-        'dismiss_stale_reviews': dismissStaleReviews,
-      if (requireCodeOwnerReviews != null)
-        'require_code_owner_reviews': requireCodeOwnerReviews,
-      if (requiredApprovingReviewCount != null)
-        'required_approving_review_count': requiredApprovingReviewCount,
+      'dismiss_stale_reviews': ?dismissStaleReviews,
+      'require_code_owner_reviews': ?requireCodeOwnerReviews,
+      'required_approving_review_count': ?requiredApprovingReviewCount,
       'require_last_push_approval': requireLastPushApproval,
-      if (dismissalRestrictions != null)
-        'dismissal_restrictions': dismissalRestrictions?.toJson(),
-      if (bypassPullRequestAllowances != null)
-        'bypass_pull_request_allowances': bypassPullRequestAllowances?.toJson(),
+      'dismissal_restrictions': ?dismissalRestrictions?.toJson(),
+      'bypass_pull_request_allowances': ?bypassPullRequestAllowances?.toJson(),
     };
   }
 

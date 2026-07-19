@@ -53,7 +53,7 @@ class CodespacesSetCodespacesAccessRequest {
   Map<String, dynamic> toJson() {
     return {
       'visibility': visibility.toJson(),
-      if (selectedUsernames != null) 'selected_usernames': selectedUsernames,
+      'selected_usernames': ?selectedUsernames,
     };
   }
 

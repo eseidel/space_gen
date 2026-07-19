@@ -78,13 +78,13 @@ class Runner {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      if (runnerGroupId != null) 'runner_group_id': runnerGroupId,
+      'runner_group_id': ?runnerGroupId,
       'name': name,
       'os': os,
       'status': status,
       'busy': busy,
       'labels': labels.map((e) => e.toJson()).toList(),
-      if (ephemeral != null) 'ephemeral': ephemeral,
+      'ephemeral': ?ephemeral,
     };
   }
 

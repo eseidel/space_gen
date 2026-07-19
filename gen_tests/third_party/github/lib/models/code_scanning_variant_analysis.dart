@@ -137,19 +137,16 @@ class CodeScanningVariantAnalysis {
       'actor': actor.toJson(),
       'query_language': queryLanguage.toJson(),
       'query_pack_url': queryPackUrl,
-      if (createdAt != null) 'created_at': createdAt?.toIso8601String(),
-      if (updatedAt != null) 'updated_at': updatedAt?.toIso8601String(),
+      'created_at': ?createdAt?.toIso8601String(),
+      'updated_at': ?updatedAt?.toIso8601String(),
       'completed_at': completedAt?.toIso8601String(),
       'status': status.toJson(),
-      if (actionsWorkflowRunId != null)
-        'actions_workflow_run_id': actionsWorkflowRunId,
-      if (failureReason != null) 'failure_reason': failureReason?.toJson(),
-      if (scannedRepositories != null)
-        'scanned_repositories': scannedRepositories
-            ?.map((e) => e.toJson())
-            .toList(),
-      if (skippedRepositories != null)
-        'skipped_repositories': skippedRepositories?.toJson(),
+      'actions_workflow_run_id': ?actionsWorkflowRunId,
+      'failure_reason': ?failureReason?.toJson(),
+      'scanned_repositories': ?scannedRepositories
+          ?.map((e) => e.toJson())
+          .toList(),
+      'skipped_repositories': ?skippedRepositories?.toJson(),
     };
   }
 

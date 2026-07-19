@@ -39,8 +39,8 @@ class MessageEmbedFooterResponse {
   Map<String, dynamic> toJson() {
     return {
       'text': text,
-      if (iconUrl != null) 'icon_url': iconUrl,
-      if (proxyIconUrl != null) 'proxy_icon_url': proxyIconUrl?.toString(),
+      'icon_url': ?iconUrl,
+      'proxy_icon_url': ?proxyIconUrl?.toString(),
     };
   }
 

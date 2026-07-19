@@ -33,11 +33,7 @@ class UpdateGuildStickerRequest {
 
   /// Converts a [UpdateGuildStickerRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (name != null) 'name': name,
-      if (tags != null) 'tags': tags,
-      'description': description,
-    };
+    return {'name': ?name, 'tags': ?tags, 'description': description};
   }
 
   @override

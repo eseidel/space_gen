@@ -53,8 +53,8 @@ class RepositoryRuleViolationErrorMetadataSecretScanningBypassPlaceholdersInner 
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (placeholderId != null) 'placeholder_id': placeholderId?.toJson(),
-      if (tokenType != null) 'token_type': tokenType,
+      'placeholder_id': ?placeholderId?.toJson(),
+      'token_type': ?tokenType,
     };
   }
 

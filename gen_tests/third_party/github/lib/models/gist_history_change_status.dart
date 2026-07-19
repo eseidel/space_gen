@@ -33,11 +33,7 @@ class GistHistoryChangeStatus {
 
   /// Converts a [GistHistoryChangeStatus] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (total != null) 'total': total,
-      if (additions != null) 'additions': additions,
-      if (deletions != null) 'deletions': deletions,
-    };
+    return {'total': ?total, 'additions': ?additions, 'deletions': ?deletions};
   }
 
   @override

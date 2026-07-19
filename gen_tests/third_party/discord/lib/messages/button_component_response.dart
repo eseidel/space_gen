@@ -62,13 +62,13 @@ class ButtonComponentResponse {
     return {
       'type': type.toJson(),
       'id': id,
-      if (customId != null) 'custom_id': customId,
+      'custom_id': ?customId,
       'style': style.toJson(),
-      if (label != null) 'label': label,
-      if (disabled != null) 'disabled': disabled,
-      if (emoji != null) 'emoji': emoji?.toJson(),
+      'label': ?label,
+      'disabled': ?disabled,
+      'emoji': ?emoji?.toJson(),
       'url': url?.toString(),
-      if (skuId != null) 'sku_id': skuId?.toJson(),
+      'sku_id': ?skuId?.toJson(),
     };
   }
 

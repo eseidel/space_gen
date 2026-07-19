@@ -104,7 +104,7 @@ final class DiscordIntegrationResponse
       'id': id.toJson(),
       'application': application.toJson(),
       'scopes': scopes.map((e) => e.toJson()).toList(),
-      if (user != null) 'user': user?.toJson(),
+      'user': ?user?.toJson(),
     };
   }
 
@@ -223,15 +223,14 @@ final class ExternalConnectionIntegrationResponse
       'enabled': enabled,
       'id': id,
       'user': user.toJson(),
-      if (revoked != null) 'revoked': revoked,
-      if (expireBehavior != null) 'expire_behavior': expireBehavior?.toJson(),
-      if (expireGracePeriod != null)
-        'expire_grace_period': expireGracePeriod?.toJson(),
-      if (subscriberCount != null) 'subscriber_count': subscriberCount,
-      if (syncedAt != null) 'synced_at': syncedAt?.toIso8601String(),
+      'revoked': ?revoked,
+      'expire_behavior': ?expireBehavior?.toJson(),
+      'expire_grace_period': ?expireGracePeriod?.toJson(),
+      'subscriber_count': ?subscriberCount,
+      'synced_at': ?syncedAt?.toIso8601String(),
       'role_id': roleId?.toJson(),
-      if (syncing != null) 'syncing': syncing,
-      if (enableEmoticons != null) 'enable_emoticons': enableEmoticons,
+      'syncing': ?syncing,
+      'enable_emoticons': ?enableEmoticons,
     };
   }
 

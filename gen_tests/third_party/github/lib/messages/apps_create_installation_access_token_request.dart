@@ -63,9 +63,9 @@ class AppsCreateInstallationAccessTokenRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (repositories != null) 'repositories': repositories,
-      if (repositoryIds != null) 'repository_ids': repositoryIds,
-      if (permissions != null) 'permissions': permissions?.toJson(),
+      'repositories': ?repositories,
+      'repository_ids': ?repositoryIds,
+      'permissions': ?permissions?.toJson(),
     };
   }
 

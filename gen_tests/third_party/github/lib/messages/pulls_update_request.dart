@@ -62,12 +62,11 @@ class PullsUpdateRequest {
   /// Converts a [PullsUpdateRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (title != null) 'title': title,
-      if (body != null) 'body': body,
-      if (state != null) 'state': state?.toJson(),
-      if (base != null) 'base': base,
-      if (maintainerCanModify != null)
-        'maintainer_can_modify': maintainerCanModify,
+      'title': ?title,
+      'body': ?body,
+      'state': ?state?.toJson(),
+      'base': ?base,
+      'maintainer_can_modify': ?maintainerCanModify,
     };
   }
 

@@ -31,10 +31,7 @@ class ReposDelete403Response {
 
   /// Converts a [ReposDelete403Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (message != null) 'message': message,
-      if (documentationUrl != null) 'documentation_url': documentationUrl,
-    };
+    return {'message': ?message, 'documentation_url': ?documentationUrl};
   }
 
   @override

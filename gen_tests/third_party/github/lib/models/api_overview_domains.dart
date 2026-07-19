@@ -57,14 +57,13 @@ class ApiOverviewDomains {
   /// Converts an [ApiOverviewDomains] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (website != null) 'website': website,
-      if (codespaces != null) 'codespaces': codespaces,
-      if (copilot != null) 'copilot': copilot,
-      if (packages != null) 'packages': packages,
-      if (actions != null) 'actions': actions,
-      if (actionsInbound != null) 'actions_inbound': actionsInbound?.toJson(),
-      if (artifactAttestations != null)
-        'artifact_attestations': artifactAttestations?.toJson(),
+      'website': ?website,
+      'codespaces': ?codespaces,
+      'copilot': ?copilot,
+      'packages': ?packages,
+      'actions': ?actions,
+      'actions_inbound': ?actionsInbound?.toJson(),
+      'artifact_attestations': ?artifactAttestations?.toJson(),
     };
   }
 

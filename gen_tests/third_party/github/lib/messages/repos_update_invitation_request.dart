@@ -36,7 +36,7 @@ class ReposUpdateInvitationRequest {
 
   /// Converts a [ReposUpdateInvitationRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (permissions != null) 'permissions': permissions?.toJson()};
+    return {'permissions': ?permissions?.toJson()};
   }
 
   @override

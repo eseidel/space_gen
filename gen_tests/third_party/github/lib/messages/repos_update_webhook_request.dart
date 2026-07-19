@@ -63,10 +63,10 @@ class ReposUpdateWebhookRequest {
   /// Converts a [ReposUpdateWebhookRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (config != null) 'config': config?.toJson(),
+      'config': ?config?.toJson(),
       'events': events,
-      if (addEvents != null) 'add_events': addEvents,
-      if (removeEvents != null) 'remove_events': removeEvents,
+      'add_events': ?addEvents,
+      'remove_events': ?removeEvents,
       'active': active,
     };
   }

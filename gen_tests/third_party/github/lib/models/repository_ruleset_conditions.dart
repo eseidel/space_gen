@@ -39,7 +39,7 @@ class RepositoryRulesetConditions {
 
   /// Converts a [RepositoryRulesetConditions] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (refName != null) 'ref_name': refName?.toJson()};
+    return {'ref_name': ?refName?.toJson()};
   }
 
   @override

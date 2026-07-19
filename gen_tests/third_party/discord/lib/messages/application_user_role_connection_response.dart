@@ -46,9 +46,9 @@ class ApplicationUserRoleConnectionResponse {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (platformName != null) 'platform_name': platformName,
+      'platform_name': ?platformName,
       'platform_username': platformUsername,
-      if (metadata != null) 'metadata': metadata,
+      'metadata': ?metadata,
     };
   }
 

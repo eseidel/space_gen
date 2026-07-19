@@ -90,7 +90,7 @@ class GuildRoleResponse {
       'mentionable': mentionable,
       'icon': icon,
       'unicode_emoji': unicodeEmoji,
-      if (tags != null) 'tags': tags?.toJson(),
+      'tags': ?tags?.toJson(),
       'flags': flags,
     };
   }

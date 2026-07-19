@@ -43,9 +43,9 @@ class WorkflowUsageBillable {
   /// Converts a [WorkflowUsageBillable] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (ubuntu != null) 'UBUNTU': ubuntu?.toJson(),
-      if (macos != null) 'MACOS': macos?.toJson(),
-      if (windows != null) 'WINDOWS': windows?.toJson(),
+      'UBUNTU': ?ubuntu?.toJson(),
+      'MACOS': ?macos?.toJson(),
+      'WINDOWS': ?windows?.toJson(),
     };
   }
 

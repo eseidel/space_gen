@@ -29,7 +29,7 @@ class WorkflowUsageBillableUbuntu {
 
   /// Converts a [WorkflowUsageBillableUbuntu] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (totalMs != null) 'total_ms': totalMs};
+    return {'total_ms': ?totalMs};
   }
 
   @override

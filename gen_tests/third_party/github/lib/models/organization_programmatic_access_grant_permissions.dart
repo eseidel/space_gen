@@ -54,9 +54,9 @@ class OrganizationProgrammaticAccessGrantPermissions {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (organization != null) 'organization': organization,
-      if (repository != null) 'repository': repository,
-      if (other != null) 'other': other,
+      'organization': ?organization,
+      'repository': ?repository,
+      'other': ?other,
     };
   }
 

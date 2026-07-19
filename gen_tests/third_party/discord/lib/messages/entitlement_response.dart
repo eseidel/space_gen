@@ -90,7 +90,7 @@ class EntitlementResponse {
       'type': type.toJson(),
       'fulfilled_at': fulfilledAt?.toIso8601String(),
       'fulfillment_status': fulfillmentStatus?.toJson(),
-      if (consumed != null) 'consumed': consumed,
+      'consumed': ?consumed,
       'gifter_user_id': gifterUserId?.toJson(),
       'parent_id': parentId?.toJson(),
     };

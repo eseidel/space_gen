@@ -80,8 +80,7 @@ class ActionsCreateOrUpdateOrgSecretRequest {
       'encrypted_value': encryptedValue,
       'key_id': keyId,
       'visibility': visibility.toJson(),
-      if (selectedRepositoryIds != null)
-        'selected_repository_ids': selectedRepositoryIds,
+      'selected_repository_ids': ?selectedRepositoryIds,
     };
   }
 

@@ -73,7 +73,7 @@ class DeployKey {
       'read_only': readOnly,
       'added_by': addedBy,
       'last_used': lastUsed,
-      if (enabled != null) 'enabled': enabled,
+      'enabled': ?enabled,
     };
   }
 

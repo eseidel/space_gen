@@ -71,8 +71,7 @@ class CommunityProfile {
       'documentation': documentation,
       'files': files.toJson(),
       'updated_at': updatedAt?.toIso8601String(),
-      if (contentReportsEnabled != null)
-        'content_reports_enabled': contentReportsEnabled,
+      'content_reports_enabled': ?contentReportsEnabled,
     };
   }
 

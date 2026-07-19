@@ -599,7 +599,7 @@ class Repository {
       'full_name': fullName,
       'license': license?.toJson(),
       'forks': forks,
-      if (permissions != null) 'permissions': permissions?.toJson(),
+      'permissions': ?permissions?.toJson(),
       'owner': owner.toJson(),
       'private': private,
       'html_url': htmlUrl.toString(),
@@ -656,7 +656,7 @@ class Repository {
       'default_branch': defaultBranch,
       'open_issues_count': openIssuesCount,
       'is_template': isTemplate,
-      if (topics != null) 'topics': topics,
+      'topics': ?topics,
       'has_issues': hasIssues,
       'has_projects': hasProjects,
       'has_wiki': hasWiki,
@@ -670,31 +670,25 @@ class Repository {
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'allow_rebase_merge': allowRebaseMerge,
-      if (tempCloneToken != null) 'temp_clone_token': tempCloneToken,
+      'temp_clone_token': ?tempCloneToken,
       'allow_squash_merge': allowSquashMerge,
       'allow_auto_merge': allowAutoMerge,
       'delete_branch_on_merge': deleteBranchOnMerge,
       'allow_update_branch': allowUpdateBranch,
       'use_squash_pr_title_as_default': useSquashPrTitleAsDefault,
-      if (squashMergeCommitTitle != null)
-        'squash_merge_commit_title': squashMergeCommitTitle?.toJson(),
-      if (squashMergeCommitMessage != null)
-        'squash_merge_commit_message': squashMergeCommitMessage?.toJson(),
-      if (mergeCommitTitle != null)
-        'merge_commit_title': mergeCommitTitle?.toJson(),
-      if (mergeCommitMessage != null)
-        'merge_commit_message': mergeCommitMessage?.toJson(),
+      'squash_merge_commit_title': ?squashMergeCommitTitle?.toJson(),
+      'squash_merge_commit_message': ?squashMergeCommitMessage?.toJson(),
+      'merge_commit_title': ?mergeCommitTitle?.toJson(),
+      'merge_commit_message': ?mergeCommitMessage?.toJson(),
       'allow_merge_commit': allowMergeCommit,
-      if (allowForking != null) 'allow_forking': allowForking,
+      'allow_forking': ?allowForking,
       'web_commit_signoff_required': webCommitSignoffRequired,
       'open_issues': openIssues,
       'watchers': watchers,
-      if (masterBranch != null) 'master_branch': masterBranch,
-      if (starredAt != null) 'starred_at': starredAt,
-      if (anonymousAccessEnabled != null)
-        'anonymous_access_enabled': anonymousAccessEnabled,
-      if (codeSearchIndexStatus != null)
-        'code_search_index_status': codeSearchIndexStatus?.toJson(),
+      'master_branch': ?masterBranch,
+      'starred_at': ?starredAt,
+      'anonymous_access_enabled': ?anonymousAccessEnabled,
+      'code_search_index_status': ?codeSearchIndexStatus?.toJson(),
     };
   }
 

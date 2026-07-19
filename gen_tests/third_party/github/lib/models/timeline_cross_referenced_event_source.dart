@@ -42,10 +42,7 @@ class TimelineCrossReferencedEventSource {
   /// Converts a [TimelineCrossReferencedEventSource]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (type != null) 'type': type,
-      if (issue != null) 'issue': issue?.toJson(),
-    };
+    return {'type': ?type, 'issue': ?issue?.toJson()};
   }
 
   @override

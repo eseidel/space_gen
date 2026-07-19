@@ -51,8 +51,7 @@ class AppsListInstallationReposForAuthenticatedUser200Response {
   Map<String, dynamic> toJson() {
     return {
       'total_count': totalCount,
-      if (repositorySelection != null)
-        'repository_selection': repositorySelection,
+      'repository_selection': ?repositorySelection,
       'repositories': repositories.map((e) => e.toJson()).toList(),
     };
   }

@@ -150,30 +150,23 @@ class BranchProtection {
   /// Converts a [BranchProtection] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (url != null) 'url': url,
-      if (enabled != null) 'enabled': enabled,
-      if (requiredStatusChecks != null)
-        'required_status_checks': requiredStatusChecks?.toJson(),
-      if (enforceAdmins != null) 'enforce_admins': enforceAdmins?.toJson(),
-      if (requiredPullRequestReviews != null)
-        'required_pull_request_reviews': requiredPullRequestReviews?.toJson(),
-      if (restrictions != null) 'restrictions': restrictions?.toJson(),
-      if (requiredLinearHistory != null)
-        'required_linear_history': requiredLinearHistory?.toJson(),
-      if (allowForcePushes != null)
-        'allow_force_pushes': allowForcePushes?.toJson(),
-      if (allowDeletions != null) 'allow_deletions': allowDeletions?.toJson(),
-      if (blockCreations != null) 'block_creations': blockCreations?.toJson(),
-      if (requiredConversationResolution != null)
-        'required_conversation_resolution': requiredConversationResolution
-            ?.toJson(),
-      if (name != null) 'name': name,
-      if (protectionUrl != null) 'protection_url': protectionUrl,
-      if (requiredSignatures != null)
-        'required_signatures': requiredSignatures?.toJson(),
-      if (lockBranch != null) 'lock_branch': lockBranch?.toJson(),
-      if (allowForkSyncing != null)
-        'allow_fork_syncing': allowForkSyncing?.toJson(),
+      'url': ?url,
+      'enabled': ?enabled,
+      'required_status_checks': ?requiredStatusChecks?.toJson(),
+      'enforce_admins': ?enforceAdmins?.toJson(),
+      'required_pull_request_reviews': ?requiredPullRequestReviews?.toJson(),
+      'restrictions': ?restrictions?.toJson(),
+      'required_linear_history': ?requiredLinearHistory?.toJson(),
+      'allow_force_pushes': ?allowForcePushes?.toJson(),
+      'allow_deletions': ?allowDeletions?.toJson(),
+      'block_creations': ?blockCreations?.toJson(),
+      'required_conversation_resolution': ?requiredConversationResolution
+          ?.toJson(),
+      'name': ?name,
+      'protection_url': ?protectionUrl,
+      'required_signatures': ?requiredSignatures?.toJson(),
+      'lock_branch': ?lockBranch?.toJson(),
+      'allow_fork_syncing': ?allowForkSyncing?.toJson(),
     };
   }
 

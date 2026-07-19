@@ -86,8 +86,7 @@ class OrganizationActionsVariable {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'visibility': visibility.toJson(),
-      if (selectedRepositoriesUrl != null)
-        'selected_repositories_url': selectedRepositoriesUrl?.toString(),
+      'selected_repositories_url': ?selectedRepositoriesUrl?.toString(),
     };
   }
 

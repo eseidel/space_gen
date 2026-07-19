@@ -51,7 +51,7 @@ class AgentEvent {
       'id': id,
       'type': type,
       'message': message,
-      if (data != null) 'data': data,
+      'data': ?data,
       'createdAt': createdAt.toIso8601String(),
     };
   }

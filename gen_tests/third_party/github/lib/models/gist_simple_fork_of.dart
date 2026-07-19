@@ -126,13 +126,13 @@ class GistSimpleForkOf {
       'updated_at': updatedAt.toIso8601String(),
       'description': description,
       'comments': comments,
-      if (commentsEnabled != null) 'comments_enabled': commentsEnabled,
+      'comments_enabled': ?commentsEnabled,
       'user': user?.toJson(),
       'comments_url': commentsUrl.toString(),
       'owner': owner?.toJson(),
-      if (truncated != null) 'truncated': truncated,
-      if (forks != null) 'forks': forks,
-      if (history != null) 'history': history,
+      'truncated': ?truncated,
+      'forks': ?forks,
+      'history': ?history,
     };
   }
 

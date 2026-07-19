@@ -38,10 +38,7 @@ class OrgsListAttestations200Response {
 
   /// Converts an [OrgsListAttestations200Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (attestations != null)
-        'attestations': attestations?.map((e) => e.toJson()).toList(),
-    };
+    return {'attestations': ?attestations?.map((e) => e.toJson()).toList()};
   }
 
   @override

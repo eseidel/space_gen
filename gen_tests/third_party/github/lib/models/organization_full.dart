@@ -476,13 +476,13 @@ class OrganizationFull {
       'public_members_url': publicMembersUrl,
       'avatar_url': avatarUrl,
       'description': description,
-      if (name != null) 'name': name,
-      if (company != null) 'company': company,
-      if (blog != null) 'blog': blog?.toString(),
-      if (location != null) 'location': location,
-      if (email != null) 'email': email,
+      'name': ?name,
+      'company': ?company,
+      'blog': ?blog?.toString(),
+      'location': ?location,
+      'email': ?email,
       'twitter_username': twitterUsername,
-      if (isVerified != null) 'is_verified': isVerified,
+      'is_verified': ?isVerified,
       'has_organization_projects': hasOrganizationProjects,
       'has_repository_projects': hasRepositoryProjects,
       'public_repos': publicRepos,
@@ -491,87 +491,61 @@ class OrganizationFull {
       'following': following,
       'html_url': htmlUrl.toString(),
       'type': type,
-      if (totalPrivateRepos != null) 'total_private_repos': totalPrivateRepos,
-      if (ownedPrivateRepos != null) 'owned_private_repos': ownedPrivateRepos,
+      'total_private_repos': ?totalPrivateRepos,
+      'owned_private_repos': ?ownedPrivateRepos,
       'private_gists': privateGists,
       'disk_usage': diskUsage,
       'collaborators': collaborators,
       'billing_email': billingEmail,
-      if (plan != null) 'plan': plan?.toJson(),
+      'plan': ?plan?.toJson(),
       'default_repository_permission': defaultRepositoryPermission,
       'default_repository_branch': defaultRepositoryBranch,
       'members_can_create_repositories': membersCanCreateRepositories,
       'two_factor_requirement_enabled': twoFactorRequirementEnabled,
-      if (membersAllowedRepositoryCreationType != null)
-        'members_allowed_repository_creation_type':
-            membersAllowedRepositoryCreationType,
-      if (membersCanCreatePublicRepositories != null)
-        'members_can_create_public_repositories':
-            membersCanCreatePublicRepositories,
-      if (membersCanCreatePrivateRepositories != null)
-        'members_can_create_private_repositories':
-            membersCanCreatePrivateRepositories,
-      if (membersCanCreateInternalRepositories != null)
-        'members_can_create_internal_repositories':
-            membersCanCreateInternalRepositories,
-      if (membersCanCreatePages != null)
-        'members_can_create_pages': membersCanCreatePages,
-      if (membersCanCreatePublicPages != null)
-        'members_can_create_public_pages': membersCanCreatePublicPages,
-      if (membersCanCreatePrivatePages != null)
-        'members_can_create_private_pages': membersCanCreatePrivatePages,
-      if (membersCanDeleteRepositories != null)
-        'members_can_delete_repositories': membersCanDeleteRepositories,
-      if (membersCanChangeRepoVisibility != null)
-        'members_can_change_repo_visibility': membersCanChangeRepoVisibility,
-      if (membersCanInviteOutsideCollaborators != null)
-        'members_can_invite_outside_collaborators':
-            membersCanInviteOutsideCollaborators,
-      if (membersCanDeleteIssues != null)
-        'members_can_delete_issues': membersCanDeleteIssues,
-      if (displayCommenterFullNameSettingEnabled != null)
-        'display_commenter_full_name_setting_enabled':
-            displayCommenterFullNameSettingEnabled,
-      if (readersCanCreateDiscussions != null)
-        'readers_can_create_discussions': readersCanCreateDiscussions,
-      if (membersCanCreateTeams != null)
-        'members_can_create_teams': membersCanCreateTeams,
-      if (membersCanViewDependencyInsights != null)
-        'members_can_view_dependency_insights':
-            membersCanViewDependencyInsights,
+      'members_allowed_repository_creation_type':
+          ?membersAllowedRepositoryCreationType,
+      'members_can_create_public_repositories':
+          ?membersCanCreatePublicRepositories,
+      'members_can_create_private_repositories':
+          ?membersCanCreatePrivateRepositories,
+      'members_can_create_internal_repositories':
+          ?membersCanCreateInternalRepositories,
+      'members_can_create_pages': ?membersCanCreatePages,
+      'members_can_create_public_pages': ?membersCanCreatePublicPages,
+      'members_can_create_private_pages': ?membersCanCreatePrivatePages,
+      'members_can_delete_repositories': ?membersCanDeleteRepositories,
+      'members_can_change_repo_visibility': ?membersCanChangeRepoVisibility,
+      'members_can_invite_outside_collaborators':
+          ?membersCanInviteOutsideCollaborators,
+      'members_can_delete_issues': ?membersCanDeleteIssues,
+      'display_commenter_full_name_setting_enabled':
+          ?displayCommenterFullNameSettingEnabled,
+      'readers_can_create_discussions': ?readersCanCreateDiscussions,
+      'members_can_create_teams': ?membersCanCreateTeams,
+      'members_can_view_dependency_insights': ?membersCanViewDependencyInsights,
       'members_can_fork_private_repositories':
           membersCanForkPrivateRepositories,
-      if (webCommitSignoffRequired != null)
-        'web_commit_signoff_required': webCommitSignoffRequired,
-      if (advancedSecurityEnabledForNewRepositories != null)
-        'advanced_security_enabled_for_new_repositories':
-            advancedSecurityEnabledForNewRepositories,
-      if (dependabotAlertsEnabledForNewRepositories != null)
-        'dependabot_alerts_enabled_for_new_repositories':
-            dependabotAlertsEnabledForNewRepositories,
-      if (dependabotSecurityUpdatesEnabledForNewRepositories != null)
-        'dependabot_security_updates_enabled_for_new_repositories':
-            dependabotSecurityUpdatesEnabledForNewRepositories,
-      if (dependencyGraphEnabledForNewRepositories != null)
-        'dependency_graph_enabled_for_new_repositories':
-            dependencyGraphEnabledForNewRepositories,
-      if (secretScanningEnabledForNewRepositories != null)
-        'secret_scanning_enabled_for_new_repositories':
-            secretScanningEnabledForNewRepositories,
-      if (secretScanningPushProtectionEnabledForNewRepositories != null)
-        'secret_scanning_push_protection_enabled_for_new_repositories':
-            secretScanningPushProtectionEnabledForNewRepositories,
-      if (secretScanningPushProtectionCustomLinkEnabled != null)
-        'secret_scanning_push_protection_custom_link_enabled':
-            secretScanningPushProtectionCustomLinkEnabled,
+      'web_commit_signoff_required': ?webCommitSignoffRequired,
+      'advanced_security_enabled_for_new_repositories':
+          ?advancedSecurityEnabledForNewRepositories,
+      'dependabot_alerts_enabled_for_new_repositories':
+          ?dependabotAlertsEnabledForNewRepositories,
+      'dependabot_security_updates_enabled_for_new_repositories':
+          ?dependabotSecurityUpdatesEnabledForNewRepositories,
+      'dependency_graph_enabled_for_new_repositories':
+          ?dependencyGraphEnabledForNewRepositories,
+      'secret_scanning_enabled_for_new_repositories':
+          ?secretScanningEnabledForNewRepositories,
+      'secret_scanning_push_protection_enabled_for_new_repositories':
+          ?secretScanningPushProtectionEnabledForNewRepositories,
+      'secret_scanning_push_protection_custom_link_enabled':
+          ?secretScanningPushProtectionCustomLinkEnabled,
       'secret_scanning_push_protection_custom_link':
           secretScanningPushProtectionCustomLink,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'archived_at': archivedAt?.toIso8601String(),
-      if (deployKeysEnabledForRepositories != null)
-        'deploy_keys_enabled_for_repositories':
-            deployKeysEnabledForRepositories,
+      'deploy_keys_enabled_for_repositories': ?deployKeysEnabledForRepositories,
     };
   }
 

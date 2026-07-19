@@ -36,10 +36,7 @@ class EntitiesQueryResponsePageInfo {
 
   /// Converts an [EntitiesQueryResponsePageInfo] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (nextCursor != null) 'nextCursor': nextCursor,
-      if (prevCursor != null) 'prevCursor': prevCursor,
-    };
+    return {'nextCursor': ?nextCursor, 'prevCursor': ?prevCursor};
   }
 
   @override

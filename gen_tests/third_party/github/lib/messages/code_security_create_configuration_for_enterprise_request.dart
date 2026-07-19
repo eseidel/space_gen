@@ -286,9 +286,8 @@ class CodeSecurityCreateConfigurationForEnterpriseRequest {
       'dependency_graph': dependencyGraph.toJson(),
       'dependency_graph_autosubmit_action': dependencyGraphAutosubmitAction
           .toJson(),
-      if (dependencyGraphAutosubmitActionOptions != null)
-        'dependency_graph_autosubmit_action_options':
-            dependencyGraphAutosubmitActionOptions?.toJson(),
+      'dependency_graph_autosubmit_action_options':
+          ?dependencyGraphAutosubmitActionOptions?.toJson(),
       'dependabot_alerts': dependabotAlerts.toJson(),
       'dependabot_security_updates': dependabotSecurityUpdates.toJson(),
       'code_scanning_default_setup': codeScanningDefaultSetup.toJson(),

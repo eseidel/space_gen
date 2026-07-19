@@ -75,14 +75,14 @@ class QueryEntitiesByPredicateRequest {
   /// Converts a [QueryEntitiesByPredicateRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (cursor != null) 'cursor': cursor,
-      if (limit != null) 'limit': limit,
-      if (offset != null) 'offset': offset,
-      if (orderBy != null) 'orderBy': orderBy?.map((e) => e.toJson()).toList(),
-      if (fullTextFilter != null) 'fullTextFilter': fullTextFilter?.toJson(),
-      if (fields != null) 'fields': fields,
-      if (totalItems != null) 'totalItems': totalItems?.toJson(),
-      if (query != null) 'query': query,
+      'cursor': ?cursor,
+      'limit': ?limit,
+      'offset': ?offset,
+      'orderBy': ?orderBy?.map((e) => e.toJson()).toList(),
+      'fullTextFilter': ?fullTextFilter?.toJson(),
+      'fields': ?fields,
+      'totalItems': ?totalItems?.toJson(),
+      'query': ?query,
     };
   }
 

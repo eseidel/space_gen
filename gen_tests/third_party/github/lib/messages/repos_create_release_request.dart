@@ -99,13 +99,12 @@ class ReposCreateReleaseRequest {
   Map<String, dynamic> toJson() {
     return {
       'tag_name': tagName,
-      if (targetCommitish != null) 'target_commitish': targetCommitish,
-      if (name != null) 'name': name,
-      if (body != null) 'body': body,
+      'target_commitish': ?targetCommitish,
+      'name': ?name,
+      'body': ?body,
       'draft': draft,
       'prerelease': prerelease,
-      if (discussionCategoryName != null)
-        'discussion_category_name': discussionCategoryName,
+      'discussion_category_name': ?discussionCategoryName,
       'generate_release_notes': generateReleaseNotes,
       'make_latest': makeLatest.toJson(),
     };

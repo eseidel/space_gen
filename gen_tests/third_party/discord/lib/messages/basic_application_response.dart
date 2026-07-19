@@ -63,9 +63,9 @@ class BasicApplicationResponse {
       'icon': icon,
       'description': description,
       'type': type?.toJson(),
-      if (coverImage != null) 'cover_image': coverImage,
-      if (primarySkuId != null) 'primary_sku_id': primarySkuId?.toJson(),
-      if (bot != null) 'bot': bot?.toJson(),
+      'cover_image': ?coverImage,
+      'primary_sku_id': ?primarySkuId?.toJson(),
+      'bot': ?bot?.toJson(),
     };
   }
 

@@ -53,11 +53,10 @@ class TimelineCommitCommentedEvent {
   /// Converts a [TimelineCommitCommentedEvent] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (event != null) 'event': event,
-      if (nodeId != null) 'node_id': nodeId,
-      if (commitId != null) 'commit_id': commitId,
-      if (comments != null)
-        'comments': comments?.map((e) => e.toJson()).toList(),
+      'event': ?event,
+      'node_id': ?nodeId,
+      'commit_id': ?commitId,
+      'comments': ?comments?.map((e) => e.toJson()).toList(),
     };
   }
 

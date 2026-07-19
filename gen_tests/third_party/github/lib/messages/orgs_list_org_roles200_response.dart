@@ -42,8 +42,8 @@ class OrgsListOrgRoles200Response {
   /// Converts an [OrgsListOrgRoles200Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (totalCount != null) 'total_count': totalCount,
-      if (roles != null) 'roles': roles?.map((e) => e.toJson()).toList(),
+      'total_count': ?totalCount,
+      'roles': ?roles?.map((e) => e.toJson()).toList(),
     };
   }
 

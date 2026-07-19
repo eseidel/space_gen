@@ -40,9 +40,9 @@ class GetBookings200ResponseAllOf2Links {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (self != null) 'self': self?.toString(),
-      if (next != null) 'next': next?.toString(),
-      if (prev != null) 'prev': prev?.toString(),
+      'self': ?self?.toString(),
+      'next': ?next?.toString(),
+      'prev': ?prev?.toString(),
     };
   }
 

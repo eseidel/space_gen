@@ -59,8 +59,8 @@ class IssuesCreateMilestoneRequest {
     return {
       'title': title,
       'state': state.toJson(),
-      if (description != null) 'description': description,
-      if (dueOn != null) 'due_on': dueOn?.toIso8601String(),
+      'description': ?description,
+      'due_on': ?dueOn?.toIso8601String(),
     };
   }
 

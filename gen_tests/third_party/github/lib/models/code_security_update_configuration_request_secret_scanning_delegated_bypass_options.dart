@@ -60,10 +60,7 @@ class CodeSecurityUpdateConfigurationRequestSecretScanningDelegatedBypassOptions
   /// Converts a [CodeSecurityUpdateConfigurationRequestSecretScanningDelegatedBypassOptions]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (reviewers != null)
-        'reviewers': reviewers?.map((e) => e.toJson()).toList(),
-    };
+    return {'reviewers': ?reviewers?.map((e) => e.toJson()).toList()};
   }
 
   @override

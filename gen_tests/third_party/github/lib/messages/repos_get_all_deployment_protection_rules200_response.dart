@@ -58,11 +58,10 @@ class ReposGetAllDeploymentProtectionRules200Response {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (totalCount != null) 'total_count': totalCount,
-      if (customDeploymentProtectionRules != null)
-        'custom_deployment_protection_rules': customDeploymentProtectionRules
-            ?.map((e) => e.toJson())
-            .toList(),
+      'total_count': ?totalCount,
+      'custom_deployment_protection_rules': ?customDeploymentProtectionRules
+          ?.map((e) => e.toJson())
+          .toList(),
     };
   }
 

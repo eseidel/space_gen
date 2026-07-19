@@ -56,8 +56,8 @@ class NewMemberActionResponse {
       'action_type': actionType.toJson(),
       'title': title,
       'description': description,
-      if (emoji != null) 'emoji': emoji?.toJson(),
-      if (icon != null) 'icon': icon,
+      'emoji': ?emoji?.toJson(),
+      'icon': ?icon,
     };
   }
 

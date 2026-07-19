@@ -53,10 +53,7 @@ class CodeSecurityConfigurationRepositories {
   /// Converts a [CodeSecurityConfigurationRepositories]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (status != null) 'status': status?.toJson(),
-      if (repository != null) 'repository': repository?.toJson(),
-    };
+    return {'status': ?status?.toJson(), 'repository': ?repository?.toJson()};
   }
 
   @override

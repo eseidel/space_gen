@@ -48,11 +48,7 @@ class IssuesUpdateLabelRequest {
 
   /// Converts an [IssuesUpdateLabelRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (newName != null) 'new_name': newName,
-      if (color != null) 'color': color,
-      if (description != null) 'description': description,
-    };
+    return {'new_name': ?newName, 'color': ?color, 'description': ?description};
   }
 
   @override

@@ -149,7 +149,7 @@ final class IssuesAddLabelsRequestOneOf0 extends IssuesAddLabelsRequest {
   /// Converts an [IssuesAddLabelsRequestOneOf0] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {if (labels != null) 'labels': labels};
+    return {'labels': ?labels};
   }
 
   @override
@@ -200,9 +200,7 @@ final class IssuesAddLabelsRequestOneOf2 extends IssuesAddLabelsRequest {
   /// Converts an [IssuesAddLabelsRequestOneOf2] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      if (labels != null) 'labels': labels?.map((e) => e.toJson()).toList(),
-    };
+    return {'labels': ?labels?.map((e) => e.toJson()).toList()};
   }
 
   @override

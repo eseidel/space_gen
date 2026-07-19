@@ -35,7 +35,7 @@ class ActivityMarkNotificationsAsRead202Response {
   /// Converts an [ActivityMarkNotificationsAsRead202Response]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (message != null) 'message': message};
+    return {'message': ?message};
   }
 
   @override

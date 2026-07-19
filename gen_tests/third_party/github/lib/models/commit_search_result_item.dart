@@ -118,8 +118,7 @@ class CommitSearchResultItem {
       'repository': repository.toJson(),
       'score': score,
       'node_id': nodeId,
-      if (textMatches != null)
-        'text_matches': textMatches?.map((e) => e.toJson()).toList(),
+      'text_matches': ?textMatches?.map((e) => e.toJson()).toList(),
     };
   }
 

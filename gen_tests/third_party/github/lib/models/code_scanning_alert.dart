@@ -146,7 +146,7 @@ class CodeScanningAlert {
     return {
       'number': number.toJson(),
       'created_at': createdAt.toJson(),
-      if (updatedAt != null) 'updated_at': updatedAt?.toJson(),
+      'updated_at': ?updatedAt?.toJson(),
       'url': url.toJson(),
       'html_url': htmlUrl.toJson(),
       'instances_url': instancesUrl.toJson(),

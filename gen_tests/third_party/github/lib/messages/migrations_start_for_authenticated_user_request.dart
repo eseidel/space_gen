@@ -101,15 +101,14 @@ class MigrationsStartForAuthenticatedUserRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (lockRepositories != null) 'lock_repositories': lockRepositories,
-      if (excludeMetadata != null) 'exclude_metadata': excludeMetadata,
-      if (excludeGitData != null) 'exclude_git_data': excludeGitData,
-      if (excludeAttachments != null) 'exclude_attachments': excludeAttachments,
-      if (excludeReleases != null) 'exclude_releases': excludeReleases,
-      if (excludeOwnerProjects != null)
-        'exclude_owner_projects': excludeOwnerProjects,
+      'lock_repositories': ?lockRepositories,
+      'exclude_metadata': ?excludeMetadata,
+      'exclude_git_data': ?excludeGitData,
+      'exclude_attachments': ?excludeAttachments,
+      'exclude_releases': ?excludeReleases,
+      'exclude_owner_projects': ?excludeOwnerProjects,
       'org_metadata_only': orgMetadataOnly,
-      if (exclude != null) 'exclude': exclude?.map((e) => e.toJson()).toList(),
+      'exclude': ?exclude?.map((e) => e.toJson()).toList(),
       'repositories': repositories,
     };
   }

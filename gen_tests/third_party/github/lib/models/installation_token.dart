@@ -90,15 +90,12 @@ class InstallationToken {
     return {
       'token': token,
       'expires_at': expiresAt,
-      if (permissions != null) 'permissions': permissions?.toJson(),
-      if (repositorySelection != null)
-        'repository_selection': repositorySelection?.toJson(),
-      if (repositories != null)
-        'repositories': repositories?.map((e) => e.toJson()).toList(),
-      if (singleFile != null) 'single_file': singleFile,
-      if (hasMultipleSingleFiles != null)
-        'has_multiple_single_files': hasMultipleSingleFiles,
-      if (singleFilePaths != null) 'single_file_paths': singleFilePaths,
+      'permissions': ?permissions?.toJson(),
+      'repository_selection': ?repositorySelection?.toJson(),
+      'repositories': ?repositories?.map((e) => e.toJson()).toList(),
+      'single_file': ?singleFile,
+      'has_multiple_single_files': ?hasMultipleSingleFiles,
+      'single_file_paths': ?singleFilePaths,
     };
   }
 

@@ -38,10 +38,9 @@ class ApiInsightsTimeStatsInner {
   /// Converts an [ApiInsightsTimeStatsInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (timestamp != null) 'timestamp': timestamp,
-      if (totalRequestCount != null) 'total_request_count': totalRequestCount,
-      if (rateLimitedRequestCount != null)
-        'rate_limited_request_count': rateLimitedRequestCount,
+      'timestamp': ?timestamp,
+      'total_request_count': ?totalRequestCount,
+      'rate_limited_request_count': ?rateLimitedRequestCount,
     };
   }
 

@@ -41,7 +41,7 @@ class TeamsAddOrUpdateRepoPermissionsInOrgRequest {
   /// Converts a [TeamsAddOrUpdateRepoPermissionsInOrgRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (permission != null) 'permission': permission};
+    return {'permission': ?permission};
   }
 
   @override

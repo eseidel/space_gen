@@ -102,23 +102,16 @@ class Feed {
     return {
       'timeline_url': timelineUrl,
       'user_url': userUrl,
-      if (currentUserPublicUrl != null)
-        'current_user_public_url': currentUserPublicUrl,
-      if (currentUserUrl != null) 'current_user_url': currentUserUrl,
-      if (currentUserActorUrl != null)
-        'current_user_actor_url': currentUserActorUrl,
-      if (currentUserOrganizationUrl != null)
-        'current_user_organization_url': currentUserOrganizationUrl,
-      if (currentUserOrganizationUrls != null)
-        'current_user_organization_urls': currentUserOrganizationUrls
-            ?.map((e) => e.toString())
-            .toList(),
-      if (securityAdvisoriesUrl != null)
-        'security_advisories_url': securityAdvisoriesUrl,
-      if (repositoryDiscussionsUrl != null)
-        'repository_discussions_url': repositoryDiscussionsUrl,
-      if (repositoryDiscussionsCategoryUrl != null)
-        'repository_discussions_category_url': repositoryDiscussionsCategoryUrl,
+      'current_user_public_url': ?currentUserPublicUrl,
+      'current_user_url': ?currentUserUrl,
+      'current_user_actor_url': ?currentUserActorUrl,
+      'current_user_organization_url': ?currentUserOrganizationUrl,
+      'current_user_organization_urls': ?currentUserOrganizationUrls
+          ?.map((e) => e.toString())
+          .toList(),
+      'security_advisories_url': ?securityAdvisoriesUrl,
+      'repository_discussions_url': ?repositoryDiscussionsUrl,
+      'repository_discussions_category_url': ?repositoryDiscussionsCategoryUrl,
       '_links': links.toJson(),
     };
   }

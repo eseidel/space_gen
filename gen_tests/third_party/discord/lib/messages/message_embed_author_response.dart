@@ -42,9 +42,9 @@ class MessageEmbedAuthorResponse {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      if (url != null) 'url': url,
-      if (iconUrl != null) 'icon_url': iconUrl,
-      if (proxyIconUrl != null) 'proxy_icon_url': proxyIconUrl?.toString(),
+      'url': ?url,
+      'icon_url': ?iconUrl,
+      'proxy_icon_url': ?proxyIconUrl?.toString(),
     };
   }
 

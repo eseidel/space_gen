@@ -36,10 +36,7 @@ class SecurityAdvisoryEpss {
 
   /// Converts a [SecurityAdvisoryEpss] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (percentage != null) 'percentage': percentage,
-      if (percentile != null) 'percentile': percentile,
-    };
+    return {'percentage': ?percentage, 'percentile': ?percentile};
   }
 
   @override

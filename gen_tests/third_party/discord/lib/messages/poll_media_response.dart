@@ -34,10 +34,7 @@ class PollMediaResponse {
 
   /// Converts a [PollMediaResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (text != null) 'text': text,
-      if (emoji != null) 'emoji': emoji?.toJson(),
-    };
+    return {'text': ?text, 'emoji': ?emoji?.toJson()};
   }
 
   @override

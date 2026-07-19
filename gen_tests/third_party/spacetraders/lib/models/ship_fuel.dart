@@ -54,7 +54,7 @@ class ShipFuel {
     return {
       'current': current,
       'capacity': capacity,
-      if (consumed != null) 'consumed': consumed?.toJson(),
+      'consumed': ?consumed?.toJson(),
     };
   }
 

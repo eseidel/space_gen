@@ -32,7 +32,7 @@ class MessageActivityResponse {
 
   /// Converts a [MessageActivityResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), if (partyId != null) 'party_id': partyId};
+    return {'type': type.toJson(), 'party_id': ?partyId};
   }
 
   @override

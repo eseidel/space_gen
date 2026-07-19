@@ -28,7 +28,7 @@ class RepositoryRulesetLinksSelf {
 
   /// Converts a [RepositoryRulesetLinksSelf] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (href != null) 'href': href};
+    return {'href': ?href};
   }
 
   @override

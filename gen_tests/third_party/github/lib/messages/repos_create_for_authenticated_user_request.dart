@@ -210,30 +210,26 @@ class ReposCreateForAuthenticatedUserRequest {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      if (description != null) 'description': description,
-      if (homepage != null) 'homepage': homepage,
+      'description': ?description,
+      'homepage': ?homepage,
       'private': private,
       'has_issues': hasIssues,
       'has_projects': hasProjects,
       'has_wiki': hasWiki,
       'has_discussions': hasDiscussions,
-      if (teamId != null) 'team_id': teamId,
+      'team_id': ?teamId,
       'auto_init': autoInit,
-      if (gitignoreTemplate != null) 'gitignore_template': gitignoreTemplate,
-      if (licenseTemplate != null) 'license_template': licenseTemplate,
+      'gitignore_template': ?gitignoreTemplate,
+      'license_template': ?licenseTemplate,
       'allow_squash_merge': allowSquashMerge,
       'allow_merge_commit': allowMergeCommit,
       'allow_rebase_merge': allowRebaseMerge,
       'allow_auto_merge': allowAutoMerge,
       'delete_branch_on_merge': deleteBranchOnMerge,
-      if (squashMergeCommitTitle != null)
-        'squash_merge_commit_title': squashMergeCommitTitle?.toJson(),
-      if (squashMergeCommitMessage != null)
-        'squash_merge_commit_message': squashMergeCommitMessage?.toJson(),
-      if (mergeCommitTitle != null)
-        'merge_commit_title': mergeCommitTitle?.toJson(),
-      if (mergeCommitMessage != null)
-        'merge_commit_message': mergeCommitMessage?.toJson(),
+      'squash_merge_commit_title': ?squashMergeCommitTitle?.toJson(),
+      'squash_merge_commit_message': ?squashMergeCommitMessage?.toJson(),
+      'merge_commit_title': ?mergeCommitTitle?.toJson(),
+      'merge_commit_message': ?mergeCommitMessage?.toJson(),
       'has_downloads': hasDownloads,
       'is_template': isTemplate,
     };

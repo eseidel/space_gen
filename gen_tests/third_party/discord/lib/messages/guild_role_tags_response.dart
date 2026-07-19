@@ -52,14 +52,12 @@ class GuildRoleTagsResponse {
   /// Converts a [GuildRoleTagsResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (premiumSubscriber != null) 'premium_subscriber': premiumSubscriber,
-      if (botId != null) 'bot_id': botId?.toJson(),
-      if (integrationId != null) 'integration_id': integrationId?.toJson(),
-      if (subscriptionListingId != null)
-        'subscription_listing_id': subscriptionListingId?.toJson(),
-      if (availableForPurchase != null)
-        'available_for_purchase': availableForPurchase,
-      if (guildConnections != null) 'guild_connections': guildConnections,
+      'premium_subscriber': ?premiumSubscriber,
+      'bot_id': ?botId?.toJson(),
+      'integration_id': ?integrationId?.toJson(),
+      'subscription_listing_id': ?subscriptionListingId?.toJson(),
+      'available_for_purchase': ?availableForPurchase,
+      'guild_connections': ?guildConnections,
     };
   }
 

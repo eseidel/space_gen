@@ -169,7 +169,7 @@ class PublicUser {
     return {
       'login': login,
       'id': id,
-      if (userViewType != null) 'user_view_type': userViewType,
+      'user_view_type': ?userViewType,
       'node_id': nodeId,
       'avatar_url': avatarUrl.toString(),
       'gravatar_id': gravatarId,
@@ -201,12 +201,12 @@ class PublicUser {
       'following': following,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
-      if (plan != null) 'plan': plan?.toJson(),
-      if (privateGists != null) 'private_gists': privateGists,
-      if (totalPrivateRepos != null) 'total_private_repos': totalPrivateRepos,
-      if (ownedPrivateRepos != null) 'owned_private_repos': ownedPrivateRepos,
-      if (diskUsage != null) 'disk_usage': diskUsage,
-      if (collaborators != null) 'collaborators': collaborators,
+      'plan': ?plan?.toJson(),
+      'private_gists': ?privateGists,
+      'total_private_repos': ?totalPrivateRepos,
+      'owned_private_repos': ?ownedPrivateRepos,
+      'disk_usage': ?diskUsage,
+      'collaborators': ?collaborators,
     };
   }
 

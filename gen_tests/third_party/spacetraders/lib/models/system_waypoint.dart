@@ -77,7 +77,7 @@ class SystemWaypoint {
       'x': x,
       'y': y,
       'orbitals': orbitals.map((e) => e.toJson()).toList(),
-      if (orbits != null) 'orbits': orbits,
+      'orbits': ?orbits,
     };
   }
 

@@ -96,7 +96,7 @@ class TimelineCommittedEvent {
   /// Converts a [TimelineCommittedEvent] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (event != null) 'event': event,
+      'event': ?event,
       'sha': sha,
       'node_id': nodeId,
       'url': url.toString(),

@@ -158,8 +158,8 @@ class SimpleUser {
       'received_events_url': receivedEventsUrl.toString(),
       'type': type,
       'site_admin': siteAdmin,
-      if (starredAt != null) 'starred_at': starredAt,
-      if (userViewType != null) 'user_view_type': userViewType,
+      'starred_at': ?starredAt,
+      'user_view_type': ?userViewType,
     };
   }
 

@@ -83,12 +83,10 @@ class AuthenticationToken {
     return {
       'token': token,
       'expires_at': expiresAt.toIso8601String(),
-      if (permissions != null) 'permissions': permissions,
-      if (repositories != null)
-        'repositories': repositories?.map((e) => e.toJson()).toList(),
+      'permissions': ?permissions,
+      'repositories': ?repositories?.map((e) => e.toJson()).toList(),
       'single_file': singleFile,
-      if (repositorySelection != null)
-        'repository_selection': repositorySelection?.toJson(),
+      'repository_selection': ?repositorySelection?.toJson(),
     };
   }
 

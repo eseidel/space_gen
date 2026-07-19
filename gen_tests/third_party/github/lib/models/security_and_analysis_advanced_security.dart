@@ -38,7 +38,7 @@ class SecurityAndAnalysisAdvancedSecurity {
   /// Converts a [SecurityAndAnalysisAdvancedSecurity]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (status != null) 'status': status?.toJson()};
+    return {'status': ?status?.toJson()};
   }
 
   @override

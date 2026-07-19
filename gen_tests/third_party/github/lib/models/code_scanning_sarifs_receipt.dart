@@ -36,10 +36,7 @@ class CodeScanningSarifsReceipt {
 
   /// Converts a [CodeScanningSarifsReceipt] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (id != null) 'id': id?.toJson(),
-      if (url != null) 'url': url?.toString(),
-    };
+    return {'id': ?id?.toJson(), 'url': ?url?.toString()};
   }
 
   @override

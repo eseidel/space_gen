@@ -49,7 +49,7 @@ class TeamsAddOrUpdateProjectPermissionsInOrgRequest {
   /// Converts a [TeamsAddOrUpdateProjectPermissionsInOrgRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (permission != null) 'permission': permission?.toJson()};
+    return {'permission': ?permission?.toJson()};
   }
 
   @override

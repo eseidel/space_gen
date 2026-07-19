@@ -54,9 +54,9 @@ class CopilotIdeChatEditorsInner {
   /// Converts a [CopilotIdeChatEditorsInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (name != null) 'name': name,
-      if (totalEngagedUsers != null) 'total_engaged_users': totalEngagedUsers,
-      if (models != null) 'models': models?.map((e) => e.toJson()).toList(),
+      'name': ?name,
+      'total_engaged_users': ?totalEngagedUsers,
+      'models': ?models?.map((e) => e.toJson()).toList(),
     };
   }
 

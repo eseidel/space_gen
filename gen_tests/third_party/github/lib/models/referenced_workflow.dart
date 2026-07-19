@@ -38,7 +38,7 @@ class ReferencedWorkflow {
 
   /// Converts a [ReferencedWorkflow] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'path': path, 'sha': sha, if (ref != null) 'ref': ref};
+    return {'path': path, 'sha': sha, 'ref': ?ref};
   }
 
   @override

@@ -49,11 +49,7 @@ class MarkdownRenderRequest {
 
   /// Converts a [MarkdownRenderRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      'text': text,
-      'mode': mode.toJson(),
-      if (context != null) 'context': context,
-    };
+    return {'text': text, 'mode': mode.toJson(), 'context': ?context};
   }
 
   @override

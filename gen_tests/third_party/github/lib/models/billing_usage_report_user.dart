@@ -36,10 +36,7 @@ class BillingUsageReportUser {
 
   /// Converts a [BillingUsageReportUser] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (usageItems != null)
-        'usageItems': usageItems?.map((e) => e.toJson()).toList(),
-    };
+    return {'usageItems': ?usageItems?.map((e) => e.toJson()).toList()};
   }
 
   @override

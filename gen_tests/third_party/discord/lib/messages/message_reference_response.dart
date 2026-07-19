@@ -45,8 +45,8 @@ class MessageReferenceResponse {
     return {
       'type': type.toJson(),
       'channel_id': channelId.toJson(),
-      if (messageId != null) 'message_id': messageId?.toJson(),
-      if (guildId != null) 'guild_id': guildId?.toJson(),
+      'message_id': ?messageId?.toJson(),
+      'guild_id': ?guildId?.toJson(),
     };
   }
 

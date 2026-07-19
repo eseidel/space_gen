@@ -89,15 +89,14 @@ class ReposUpdateReleaseRequest {
   /// Converts a [ReposUpdateReleaseRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (tagName != null) 'tag_name': tagName,
-      if (targetCommitish != null) 'target_commitish': targetCommitish,
-      if (name != null) 'name': name,
-      if (body != null) 'body': body,
-      if (draft != null) 'draft': draft,
-      if (prerelease != null) 'prerelease': prerelease,
+      'tag_name': ?tagName,
+      'target_commitish': ?targetCommitish,
+      'name': ?name,
+      'body': ?body,
+      'draft': ?draft,
+      'prerelease': ?prerelease,
       'make_latest': makeLatest.toJson(),
-      if (discussionCategoryName != null)
-        'discussion_category_name': discussionCategoryName,
+      'discussion_category_name': ?discussionCategoryName,
     };
   }
 

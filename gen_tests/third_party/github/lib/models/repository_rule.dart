@@ -185,10 +185,7 @@ final class RepositoryRuleUpdate extends RepositoryRule {
   /// Converts a [RepositoryRuleUpdate] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -343,10 +340,7 @@ final class RepositoryRuleMergeQueue extends RepositoryRule {
   /// Converts a [RepositoryRuleMergeQueue] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -411,10 +405,7 @@ final class RepositoryRuleRequiredDeployments extends RepositoryRule {
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -519,10 +510,7 @@ final class RepositoryRulePullRequest extends RepositoryRule {
   /// Converts a [RepositoryRulePullRequest] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -587,10 +575,7 @@ final class RepositoryRuleRequiredStatusChecks extends RepositoryRule {
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -703,10 +688,7 @@ final class RepositoryRuleCommitMessagePattern extends RepositoryRule {
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -771,10 +753,7 @@ final class RepositoryRuleCommitAuthorEmailPattern extends RepositoryRule {
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -838,10 +817,7 @@ final class RepositoryRuleCommitterEmailPattern extends RepositoryRule {
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -898,10 +874,7 @@ final class RepositoryRuleBranchNamePattern extends RepositoryRule {
   /// Converts a [RepositoryRuleBranchNamePattern] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -956,10 +929,7 @@ final class RepositoryRuleTagNamePattern extends RepositoryRule {
   /// Converts a [RepositoryRuleTagNamePattern] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -1025,10 +995,7 @@ final class RepositoryRuleFilePathRestriction extends RepositoryRule {
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -1086,10 +1053,7 @@ final class RepositoryRuleMaxFilePathLength extends RepositoryRule {
   /// Converts a [RepositoryRuleMaxFilePathLength] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -1155,10 +1119,7 @@ final class RepositoryRuleFileExtensionRestriction extends RepositoryRule {
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -1212,10 +1173,7 @@ final class RepositoryRuleMaxFileSize extends RepositoryRule {
   /// Converts a [RepositoryRuleMaxFileSize] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -1269,10 +1227,7 @@ final class RepositoryRuleWorkflows extends RepositoryRule {
   /// Converts a [RepositoryRuleWorkflows] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override
@@ -1327,10 +1282,7 @@ final class RepositoryRuleCodeScanning extends RepositoryRule {
   /// Converts a [RepositoryRuleCodeScanning] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-    };
+    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
   }
 
   @override

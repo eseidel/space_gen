@@ -166,9 +166,8 @@ class Installation {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'single_file_name': singleFileName,
-      if (hasMultipleSingleFiles != null)
-        'has_multiple_single_files': hasMultipleSingleFiles,
-      if (singleFilePaths != null) 'single_file_paths': singleFilePaths,
+      'has_multiple_single_files': ?hasMultipleSingleFiles,
+      'single_file_paths': ?singleFilePaths,
       'app_slug': appSlug,
       'suspended_by': suspendedBy?.toJson(),
       'suspended_at': suspendedAt?.toIso8601String(),

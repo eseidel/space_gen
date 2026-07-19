@@ -71,8 +71,7 @@ class NetworkSettings {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      if (networkConfigurationId != null)
-        'network_configuration_id': networkConfigurationId,
+      'network_configuration_id': ?networkConfigurationId,
       'name': name,
       'subnet_id': subnetId,
       'region': region,

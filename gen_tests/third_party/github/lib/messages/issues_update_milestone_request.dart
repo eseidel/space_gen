@@ -57,10 +57,10 @@ class IssuesUpdateMilestoneRequest {
   /// Converts an [IssuesUpdateMilestoneRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (title != null) 'title': title,
+      'title': ?title,
       'state': state.toJson(),
-      if (description != null) 'description': description,
-      if (dueOn != null) 'due_on': dueOn?.toIso8601String(),
+      'description': ?description,
+      'due_on': ?dueOn?.toIso8601String(),
     };
   }
 

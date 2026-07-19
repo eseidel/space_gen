@@ -105,21 +105,20 @@ class MessageEmbedResponse {
   Map<String, dynamic> toJson() {
     return {
       'type': type,
-      if (url != null) 'url': url?.toString(),
-      if (title != null) 'title': title,
-      if (description != null) 'description': description,
-      if (color != null) 'color': color,
-      if (timestamp != null) 'timestamp': timestamp?.toIso8601String(),
-      if (fields != null) 'fields': fields?.map((e) => e.toJson()).toList(),
-      if (author != null) 'author': author?.toJson(),
-      if (provider != null) 'provider': provider?.toJson(),
-      if (image != null) 'image': image?.toJson(),
-      if (thumbnail != null) 'thumbnail': thumbnail?.toJson(),
-      if (video != null) 'video': video?.toJson(),
-      if (footer != null) 'footer': footer?.toJson(),
+      'url': ?url?.toString(),
+      'title': ?title,
+      'description': ?description,
+      'color': ?color,
+      'timestamp': ?timestamp?.toIso8601String(),
+      'fields': ?fields?.map((e) => e.toJson()).toList(),
+      'author': ?author?.toJson(),
+      'provider': ?provider?.toJson(),
+      'image': ?image?.toJson(),
+      'thumbnail': ?thumbnail?.toJson(),
+      'video': ?video?.toJson(),
+      'footer': ?footer?.toJson(),
       'flags': flags,
-      if (components != null)
-        'components': components?.map((e) => e.toJson()).toList(),
+      'components': ?components?.map((e) => e.toJson()).toList(),
     };
   }
 

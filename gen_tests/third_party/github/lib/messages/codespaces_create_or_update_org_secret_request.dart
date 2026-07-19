@@ -77,11 +77,10 @@ class CodespacesCreateOrUpdateOrgSecretRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (encryptedValue != null) 'encrypted_value': encryptedValue,
-      if (keyId != null) 'key_id': keyId,
+      'encrypted_value': ?encryptedValue,
+      'key_id': ?keyId,
       'visibility': visibility.toJson(),
-      if (selectedRepositoryIds != null)
-        'selected_repository_ids': selectedRepositoryIds,
+      'selected_repository_ids': ?selectedRepositoryIds,
     };
   }
 

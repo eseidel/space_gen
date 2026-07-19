@@ -71,9 +71,8 @@ class NetworkConfiguration {
     return {
       'id': id,
       'name': name,
-      if (computeService != null) 'compute_service': computeService?.toJson(),
-      if (networkSettingsIds != null)
-        'network_settings_ids': networkSettingsIds,
+      'compute_service': ?computeService?.toJson(),
+      'network_settings_ids': ?networkSettingsIds,
       'created_on': createdOn?.toIso8601String(),
     };
   }

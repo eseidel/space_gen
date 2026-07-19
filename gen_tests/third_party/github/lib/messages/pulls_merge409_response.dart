@@ -31,10 +31,7 @@ class PullsMerge409Response {
 
   /// Converts a [PullsMerge409Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (message != null) 'message': message,
-      if (documentationUrl != null) 'documentation_url': documentationUrl,
-    };
+    return {'message': ?message, 'documentation_url': ?documentationUrl};
   }
 
   @override

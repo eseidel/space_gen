@@ -70,7 +70,7 @@ class Error {
   Map<String, dynamic> toJson() {
     return {
       'error': error.toJson(),
-      if (request != null) 'request': request?.toJson(),
+      'request': ?request?.toJson(),
       'response': response.toJson(),
       for (final entry in entries.entries)
         if (!const {'error', 'request', 'response'}.contains(entry.key))

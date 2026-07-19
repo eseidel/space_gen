@@ -56,11 +56,7 @@ class RepositoryRulesetConditionsRepositoryNameTargetRepositoryName {
   /// Converts a [RepositoryRulesetConditionsRepositoryNameTargetRepositoryName]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (include != null) 'include': include,
-      if (exclude != null) 'exclude': exclude,
-      if (protected != null) 'protected': protected,
-    };
+    return {'include': ?include, 'exclude': ?exclude, 'protected': ?protected};
   }
 
   @override

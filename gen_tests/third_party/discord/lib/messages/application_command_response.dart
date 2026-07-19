@@ -110,19 +110,17 @@ class ApplicationCommandResponse {
       'default_member_permissions': defaultMemberPermissions,
       'type': type.toJson(),
       'name': name,
-      if (nameLocalized != null) 'name_localized': nameLocalized,
+      'name_localized': ?nameLocalized,
       'name_localizations': nameLocalizations,
       'description': description,
-      if (descriptionLocalized != null)
-        'description_localized': descriptionLocalized,
+      'description_localized': ?descriptionLocalized,
       'description_localizations': descriptionLocalizations,
-      if (guildId != null) 'guild_id': guildId?.toJson(),
-      if (dmPermission != null) 'dm_permission': dmPermission,
+      'guild_id': ?guildId?.toJson(),
+      'dm_permission': ?dmPermission,
       'contexts': contexts?.map((e) => e.toJson()).toList(),
-      if (integrationTypes != null)
-        'integration_types': integrationTypes?.map((e) => e.toJson()).toList(),
-      if (options != null) 'options': options?.map((e) => e.toJson()).toList(),
-      if (nsfw != null) 'nsfw': nsfw,
+      'integration_types': ?integrationTypes?.map((e) => e.toJson()).toList(),
+      'options': ?options?.map((e) => e.toJson()).toList(),
+      'nsfw': ?nsfw,
     };
   }
 

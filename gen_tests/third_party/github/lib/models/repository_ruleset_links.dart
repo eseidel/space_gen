@@ -37,7 +37,7 @@ class RepositoryRulesetLinks {
 
   /// Converts a [RepositoryRulesetLinks] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (self != null) 'self': self?.toJson(), 'html': html?.toJson()};
+    return {'self': ?self?.toJson(), 'html': html?.toJson()};
   }
 
   @override

@@ -56,9 +56,8 @@ class InviteChannelResponse {
       'id': id.toJson(),
       'type': type.toJson(),
       'name': name,
-      if (icon != null) 'icon': icon,
-      if (recipients != null)
-        'recipients': recipients?.map((e) => e.toJson()).toList(),
+      'icon': ?icon,
+      'recipients': ?recipients?.map((e) => e.toJson()).toList(),
     };
   }
 

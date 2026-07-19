@@ -73,7 +73,7 @@ class Event {
       'type': type,
       'actor': actor.toJson(),
       'repo': repo.toJson(),
-      if (org != null) 'org': org?.toJson(),
+      'org': ?org?.toJson(),
       'payload': payload.toJson(),
       'public': public,
       'created_at': createdAt?.toIso8601String(),

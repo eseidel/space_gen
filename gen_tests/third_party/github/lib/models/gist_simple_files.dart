@@ -56,13 +56,13 @@ class GistSimpleFiles {
   /// Converts a [GistSimpleFiles] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (filename != null) 'filename': filename,
-      if (type != null) 'type': type,
-      if (language != null) 'language': language,
-      if (rawUrl != null) 'raw_url': rawUrl,
-      if (size != null) 'size': size,
-      if (truncated != null) 'truncated': truncated,
-      if (content != null) 'content': content,
+      'filename': ?filename,
+      'type': ?type,
+      'language': ?language,
+      'raw_url': ?rawUrl,
+      'size': ?size,
+      'truncated': ?truncated,
+      'content': ?content,
       'encoding': encoding,
     };
   }

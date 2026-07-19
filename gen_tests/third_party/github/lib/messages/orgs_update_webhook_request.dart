@@ -55,10 +55,10 @@ class OrgsUpdateWebhookRequest {
   /// Converts an [OrgsUpdateWebhookRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (config != null) 'config': config?.toJson(),
+      'config': ?config?.toJson(),
       'events': events,
       'active': active,
-      if (name != null) 'name': name,
+      'name': ?name,
     };
   }
 

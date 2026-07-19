@@ -62,8 +62,7 @@ class ThreadSearchResponse {
       'threads': threads.map((e) => e.toJson()).toList(),
       'members': members.map((e) => e.toJson()).toList(),
       'has_more': hasMore,
-      if (firstMessages != null)
-        'first_messages': firstMessages?.map((e) => e.toJson()).toList(),
+      'first_messages': ?firstMessages?.map((e) => e.toJson()).toList(),
       'total_results': totalResults,
     };
   }

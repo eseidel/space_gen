@@ -76,12 +76,12 @@ class CreateBookingPayment200Response {
   /// Converts a [CreateBookingPayment200Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (id != null) 'id': id,
-      if (amount != null) 'amount': amount,
-      if (currency != null) 'currency': currency?.toJson(),
-      if (source != null) 'source': source?.toJson(),
-      if (status != null) 'status': status?.toJson(),
-      if (links != null) 'links': links?.toJson(),
+      'id': ?id,
+      'amount': ?amount,
+      'currency': ?currency?.toJson(),
+      'source': ?source?.toJson(),
+      'status': ?status?.toJson(),
+      'links': ?links?.toJson(),
     };
   }
 

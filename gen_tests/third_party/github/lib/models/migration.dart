@@ -135,8 +135,8 @@ class Migration {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'node_id': nodeId,
-      if (archiveUrl != null) 'archive_url': archiveUrl?.toString(),
-      if (exclude != null) 'exclude': exclude,
+      'archive_url': ?archiveUrl?.toString(),
+      'exclude': ?exclude,
     };
   }
 

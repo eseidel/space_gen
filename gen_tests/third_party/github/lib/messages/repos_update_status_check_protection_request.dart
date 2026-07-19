@@ -62,9 +62,9 @@ class ReposUpdateStatusCheckProtectionRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (strict != null) 'strict': strict,
-      if (contexts != null) 'contexts': contexts,
-      if (checks != null) 'checks': checks?.map((e) => e.toJson()).toList(),
+      'strict': ?strict,
+      'contexts': ?contexts,
+      'checks': ?checks?.map((e) => e.toJson()).toList(),
     };
   }
 

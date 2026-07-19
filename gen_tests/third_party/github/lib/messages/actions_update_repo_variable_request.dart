@@ -38,7 +38,7 @@ class ActionsUpdateRepoVariableRequest {
   /// Converts an [ActionsUpdateRepoVariableRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (name != null) 'name': name, if (value != null) 'value': value};
+    return {'name': ?name, 'value': ?value};
   }
 
   @override

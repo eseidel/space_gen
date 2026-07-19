@@ -80,10 +80,10 @@ class ActionsUpdateSelfHostedRunnerGroupForOrgRequest {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      if (visibility != null) 'visibility': visibility?.toJson(),
+      'visibility': ?visibility?.toJson(),
       'allows_public_repositories': allowsPublicRepositories,
       'restricted_to_workflows': restrictedToWorkflows,
-      if (selectedWorkflows != null) 'selected_workflows': selectedWorkflows,
+      'selected_workflows': ?selectedWorkflows,
       'network_configuration_id': networkConfigurationId,
     };
   }

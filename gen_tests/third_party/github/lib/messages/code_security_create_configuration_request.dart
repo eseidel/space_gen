@@ -292,9 +292,8 @@ class CodeSecurityCreateConfigurationRequest {
       'dependency_graph': dependencyGraph.toJson(),
       'dependency_graph_autosubmit_action': dependencyGraphAutosubmitAction
           .toJson(),
-      if (dependencyGraphAutosubmitActionOptions != null)
-        'dependency_graph_autosubmit_action_options':
-            dependencyGraphAutosubmitActionOptions?.toJson(),
+      'dependency_graph_autosubmit_action_options':
+          ?dependencyGraphAutosubmitActionOptions?.toJson(),
       'dependabot_alerts': dependabotAlerts.toJson(),
       'dependabot_security_updates': dependabotSecurityUpdates.toJson(),
       'code_scanning_default_setup': codeScanningDefaultSetup.toJson(),
@@ -306,16 +305,14 @@ class CodeSecurityCreateConfigurationRequest {
       'secret_scanning_push_protection': secretScanningPushProtection.toJson(),
       'secret_scanning_delegated_bypass': secretScanningDelegatedBypass
           .toJson(),
-      if (secretScanningDelegatedBypassOptions != null)
-        'secret_scanning_delegated_bypass_options':
-            secretScanningDelegatedBypassOptions?.toJson(),
+      'secret_scanning_delegated_bypass_options':
+          ?secretScanningDelegatedBypassOptions?.toJson(),
       'secret_scanning_validity_checks': secretScanningValidityChecks.toJson(),
       'secret_scanning_non_provider_patterns': secretScanningNonProviderPatterns
           .toJson(),
       'secret_scanning_generic_secrets': secretScanningGenericSecrets.toJson(),
-      if (secretScanningDelegatedAlertDismissal != null)
-        'secret_scanning_delegated_alert_dismissal':
-            secretScanningDelegatedAlertDismissal?.toJson(),
+      'secret_scanning_delegated_alert_dismissal':
+          ?secretScanningDelegatedAlertDismissal?.toJson(),
       'private_vulnerability_reporting': privateVulnerabilityReporting.toJson(),
       'enforcement': enforcement.toJson(),
     };

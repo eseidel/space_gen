@@ -71,11 +71,11 @@ class GitCreateTreeRequestTreeInner {
   /// Converts a [GitCreateTreeRequestTreeInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (path != null) 'path': path,
-      if (mode != null) 'mode': mode?.toJson(),
-      if (type != null) 'type': type?.toJson(),
+      'path': ?path,
+      'mode': ?mode?.toJson(),
+      'type': ?type?.toJson(),
       'sha': sha,
-      if (content != null) 'content': content,
+      'content': ?content,
     };
   }
 

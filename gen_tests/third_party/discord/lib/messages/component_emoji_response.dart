@@ -34,11 +34,7 @@ class ComponentEmojiResponse {
 
   /// Converts a [ComponentEmojiResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (id != null) 'id': id?.toJson(),
-      'name': name,
-      if (animated != null) 'animated': animated,
-    };
+    return {'id': ?id?.toJson(), 'name': name, 'animated': ?animated};
   }
 
   @override

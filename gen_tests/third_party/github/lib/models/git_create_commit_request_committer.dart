@@ -48,11 +48,7 @@ class GitCreateCommitRequestCommitter {
 
   /// Converts a [GitCreateCommitRequestCommitter] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (name != null) 'name': name,
-      if (email != null) 'email': email,
-      if (date != null) 'date': date?.toIso8601String(),
-    };
+    return {'name': ?name, 'email': ?email, 'date': ?date?.toIso8601String()};
   }
 
   @override

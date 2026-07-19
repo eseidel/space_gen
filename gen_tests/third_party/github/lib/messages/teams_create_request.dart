@@ -96,14 +96,13 @@ class TeamsCreateRequest {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      if (description != null) 'description': description,
-      if (maintainers != null) 'maintainers': maintainers,
-      if (repoNames != null) 'repo_names': repoNames,
-      if (privacy != null) 'privacy': privacy?.toJson(),
-      if (notificationSetting != null)
-        'notification_setting': notificationSetting?.toJson(),
+      'description': ?description,
+      'maintainers': ?maintainers,
+      'repo_names': ?repoNames,
+      'privacy': ?privacy?.toJson(),
+      'notification_setting': ?notificationSetting?.toJson(),
       'permission': permission.toJson(),
-      if (parentTeamId != null) 'parent_team_id': parentTeamId,
+      'parent_team_id': ?parentTeamId,
     };
   }
 

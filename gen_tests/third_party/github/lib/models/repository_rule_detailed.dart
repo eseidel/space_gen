@@ -144,10 +144,9 @@ final class RepositoryRuleDetailedOneOf0 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -224,11 +223,10 @@ final class RepositoryRuleDetailedOneOf1 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -306,10 +304,9 @@ final class RepositoryRuleDetailedOneOf2 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -383,10 +380,9 @@ final class RepositoryRuleDetailedOneOf3 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -463,11 +459,10 @@ final class RepositoryRuleDetailedOneOf4 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -552,11 +547,10 @@ final class RepositoryRuleDetailedOneOf5 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -636,10 +630,9 @@ final class RepositoryRuleDetailedOneOf6 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -716,11 +709,10 @@ final class RepositoryRuleDetailedOneOf7 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -805,11 +797,10 @@ final class RepositoryRuleDetailedOneOf8 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -887,10 +878,9 @@ final class RepositoryRuleDetailedOneOf9 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -969,11 +959,10 @@ final class RepositoryRuleDetailedOneOf10 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -1059,11 +1048,10 @@ final class RepositoryRuleDetailedOneOf11 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -1148,11 +1136,10 @@ final class RepositoryRuleDetailedOneOf12 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -1237,11 +1224,10 @@ final class RepositoryRuleDetailedOneOf13 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -1324,11 +1310,10 @@ final class RepositoryRuleDetailedOneOf14 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -1413,11 +1398,10 @@ final class RepositoryRuleDetailedOneOf15 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -1502,11 +1486,10 @@ final class RepositoryRuleDetailedOneOf16 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -1592,11 +1575,10 @@ final class RepositoryRuleDetailedOneOf17 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -1679,11 +1661,10 @@ final class RepositoryRuleDetailedOneOf18 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -1766,11 +1747,10 @@ final class RepositoryRuleDetailedOneOf19 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 
@@ -1853,11 +1833,10 @@ final class RepositoryRuleDetailedOneOf20 extends RepositoryRuleDetailed {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      if (parameters != null) 'parameters': parameters?.toJson(),
-      if (rulesetSourceType != null)
-        'ruleset_source_type': rulesetSourceType?.toJson(),
-      if (rulesetSource != null) 'ruleset_source': rulesetSource,
-      if (rulesetId != null) 'ruleset_id': rulesetId,
+      'parameters': ?parameters?.toJson(),
+      'ruleset_source_type': ?rulesetSourceType?.toJson(),
+      'ruleset_source': ?rulesetSource,
+      'ruleset_id': ?rulesetId,
     };
   }
 

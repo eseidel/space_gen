@@ -101,8 +101,8 @@ final class IssuesUpdateRequestLabelsInnerOneOf1
   @override
   Map<String, dynamic> toJson() {
     return {
-      if (id != null) 'id': id,
-      if (name != null) 'name': name,
+      'id': ?id,
+      'name': ?name,
       'description': description,
       'color': color,
     };

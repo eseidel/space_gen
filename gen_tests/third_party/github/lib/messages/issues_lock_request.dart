@@ -38,7 +38,7 @@ class IssuesLockRequest {
 
   /// Converts an [IssuesLockRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (lockReason != null) 'lock_reason': lockReason?.toJson()};
+    return {'lock_reason': ?lockReason?.toJson()};
   }
 
   @override

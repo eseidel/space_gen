@@ -39,9 +39,7 @@ class TopicSearchResultItemAliasesInner {
   /// Converts a [TopicSearchResultItemAliasesInner]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (topicRelation != null) 'topic_relation': topicRelation?.toJson(),
-    };
+    return {'topic_relation': ?topicRelation?.toJson()};
   }
 
   @override

@@ -77,9 +77,8 @@ class ReposCreateOrUpdateEnvironmentRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (waitTimer != null) 'wait_timer': waitTimer?.toJson(),
-      if (preventSelfReview != null)
-        'prevent_self_review': preventSelfReview?.toJson(),
+      'wait_timer': ?waitTimer?.toJson(),
+      'prevent_self_review': ?preventSelfReview?.toJson(),
       'reviewers': reviewers?.map((e) => e.toJson()).toList(),
       'deployment_branch_policy': deploymentBranchPolicy?.toJson(),
     };

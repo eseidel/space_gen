@@ -62,7 +62,7 @@ class GuildHomeSettingsResponse {
     return {
       'guild_id': guildId.toJson(),
       'enabled': enabled,
-      if (welcomeMessage != null) 'welcome_message': welcomeMessage?.toJson(),
+      'welcome_message': ?welcomeMessage?.toJson(),
       'new_member_actions': newMemberActions.map((e) => e.toJson()).toList(),
       'resource_channels': resourceChannels.map((e) => e.toJson()).toList(),
     };

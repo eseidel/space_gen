@@ -30,7 +30,7 @@ class GetStatus200ResponseHealth {
 
   /// Converts a [GetStatus200ResponseHealth] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (lastMarketUpdate != null) 'lastMarketUpdate': lastMarketUpdate};
+    return {'lastMarketUpdate': ?lastMarketUpdate};
   }
 
   @override

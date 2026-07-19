@@ -29,7 +29,7 @@ class CodeScanningAlertInstanceMessage {
 
   /// Converts a [CodeScanningAlertInstanceMessage] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (text != null) 'text': text};
+    return {'text': ?text};
   }
 
   @override

@@ -57,7 +57,7 @@ class MarketplaceAccount {
       'url': url.toString(),
       'id': id,
       'type': type,
-      if (nodeId != null) 'node_id': nodeId,
+      'node_id': ?nodeId,
       'login': login,
       'email': email,
       'organization_billing_email': organizationBillingEmail,

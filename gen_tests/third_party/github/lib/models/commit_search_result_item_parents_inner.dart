@@ -39,11 +39,7 @@ class CommitSearchResultItemParentsInner {
   /// Converts a [CommitSearchResultItemParentsInner]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      if (url != null) 'url': url,
-      if (htmlUrl != null) 'html_url': htmlUrl,
-      if (sha != null) 'sha': sha,
-    };
+    return {'url': ?url, 'html_url': ?htmlUrl, 'sha': ?sha};
   }
 
   @override

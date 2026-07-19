@@ -84,17 +84,16 @@ class ApplicationCommandIntegerOptionResponse {
     return {
       'type': type.toJson(),
       'name': name,
-      if (nameLocalized != null) 'name_localized': nameLocalized,
+      'name_localized': ?nameLocalized,
       'name_localizations': nameLocalizations,
       'description': description,
-      if (descriptionLocalized != null)
-        'description_localized': descriptionLocalized,
+      'description_localized': ?descriptionLocalized,
       'description_localizations': descriptionLocalizations,
-      if (required_ != null) 'required': required_,
-      if (autocomplete != null) 'autocomplete': autocomplete,
-      if (choices != null) 'choices': choices?.map((e) => e.toJson()).toList(),
-      if (minValue != null) 'min_value': minValue?.toJson(),
-      if (maxValue != null) 'max_value': maxValue?.toJson(),
+      'required': ?required_,
+      'autocomplete': ?autocomplete,
+      'choices': ?choices?.map((e) => e.toJson()).toList(),
+      'min_value': ?minValue?.toJson(),
+      'max_value': ?maxValue?.toJson(),
     };
   }
 

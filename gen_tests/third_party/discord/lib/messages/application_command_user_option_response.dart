@@ -64,13 +64,12 @@ class ApplicationCommandUserOptionResponse {
     return {
       'type': type.toJson(),
       'name': name,
-      if (nameLocalized != null) 'name_localized': nameLocalized,
+      'name_localized': ?nameLocalized,
       'name_localizations': nameLocalizations,
       'description': description,
-      if (descriptionLocalized != null)
-        'description_localized': descriptionLocalized,
+      'description_localized': ?descriptionLocalized,
       'description_localizations': descriptionLocalizations,
-      if (required_ != null) 'required': required_,
+      'required': ?required_,
     };
   }
 

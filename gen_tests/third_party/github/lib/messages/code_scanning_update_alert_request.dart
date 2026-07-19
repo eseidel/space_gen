@@ -65,7 +65,7 @@ class CodeScanningUpdateAlertRequest {
       'state': state.toJson(),
       'dismissed_reason': dismissedReason?.toJson(),
       'dismissed_comment': dismissedComment?.toJson(),
-      if (createRequest != null) 'create_request': createRequest?.toJson(),
+      'create_request': ?createRequest?.toJson(),
     };
   }
 

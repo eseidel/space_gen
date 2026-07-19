@@ -4292,7 +4292,8 @@ class RenderObject extends RenderNewType {
       'hashCode': property.hashCodeExpression(dartName),
       // A nullable slot whose schema forbids null holds null to mean "the
       // key was absent", so emitting it would produce `{"x": null}` — a
-      // value the spec rejects. Omit the key instead. When the schema does
+      // value the spec rejects. The template drops the key with a
+      // null-aware map entry (`'x': ?value`) instead. When the schema does
       // permit null there is nothing to hide: null is a legal value and
       // the key is always emitted.
       'omitWhenNull': dartIsNullable && !property.common.nullable,

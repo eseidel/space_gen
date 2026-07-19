@@ -94,14 +94,12 @@ class ActionsCreateSelfHostedRunnerGroupForOrgRequest {
     return {
       'name': name,
       'visibility': visibility.toJson(),
-      if (selectedRepositoryIds != null)
-        'selected_repository_ids': selectedRepositoryIds,
-      if (runners != null) 'runners': runners,
+      'selected_repository_ids': ?selectedRepositoryIds,
+      'runners': ?runners,
       'allows_public_repositories': allowsPublicRepositories,
       'restricted_to_workflows': restrictedToWorkflows,
-      if (selectedWorkflows != null) 'selected_workflows': selectedWorkflows,
-      if (networkConfigurationId != null)
-        'network_configuration_id': networkConfigurationId,
+      'selected_workflows': ?selectedWorkflows,
+      'network_configuration_id': ?networkConfigurationId,
     };
   }
 

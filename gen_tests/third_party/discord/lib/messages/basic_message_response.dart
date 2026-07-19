@@ -243,41 +243,32 @@ class BasicMessageResponse {
       'edited_timestamp': editedTimestamp?.toIso8601String(),
       'flags': flags,
       'components': components.map((e) => e.toJson()).toList(),
-      if (stickers != null)
-        'stickers': stickers?.map((e) => e.toJson()).toList(),
-      if (stickerItems != null)
-        'sticker_items': stickerItems?.map((e) => e.toJson()).toList(),
+      'stickers': ?stickers?.map((e) => e.toJson()).toList(),
+      'sticker_items': ?stickerItems?.map((e) => e.toJson()).toList(),
       'id': id.toJson(),
       'channel_id': channelId.toJson(),
       'author': author.toJson(),
       'pinned': pinned,
       'mention_everyone': mentionEveryone,
       'tts': tts,
-      if (call != null) 'call': call?.toJson(),
-      if (activity != null) 'activity': activity?.toJson(),
-      if (application != null) 'application': application?.toJson(),
-      if (applicationId != null) 'application_id': applicationId?.toJson(),
-      if (interaction != null) 'interaction': interaction?.toJson(),
-      if (nonce != null) 'nonce': nonce?.toJson(),
-      if (webhookId != null) 'webhook_id': webhookId?.toJson(),
-      if (messageReference != null)
-        'message_reference': messageReference?.toJson(),
-      if (thread != null) 'thread': thread?.toJson(),
-      if (mentionChannels != null)
-        'mention_channels': mentionChannels?.map((e) => e.toJson()).toList(),
-      if (roleSubscriptionData != null)
-        'role_subscription_data': roleSubscriptionData?.toJson(),
-      if (purchaseNotification != null)
-        'purchase_notification': purchaseNotification?.toJson(),
-      if (position != null) 'position': position,
-      if (resolved != null) 'resolved': resolved?.toJson(),
-      if (poll != null) 'poll': poll?.toJson(),
-      if (sharedClientTheme != null)
-        'shared_client_theme': sharedClientTheme?.toJson(),
-      if (interactionMetadata != null)
-        'interaction_metadata': interactionMetadata?.toJson(),
-      if (messageSnapshots != null)
-        'message_snapshots': messageSnapshots?.map((e) => e.toJson()).toList(),
+      'call': ?call?.toJson(),
+      'activity': ?activity?.toJson(),
+      'application': ?application?.toJson(),
+      'application_id': ?applicationId?.toJson(),
+      'interaction': ?interaction?.toJson(),
+      'nonce': ?nonce?.toJson(),
+      'webhook_id': ?webhookId?.toJson(),
+      'message_reference': ?messageReference?.toJson(),
+      'thread': ?thread?.toJson(),
+      'mention_channels': ?mentionChannels?.map((e) => e.toJson()).toList(),
+      'role_subscription_data': ?roleSubscriptionData?.toJson(),
+      'purchase_notification': ?purchaseNotification?.toJson(),
+      'position': ?position,
+      'resolved': ?resolved?.toJson(),
+      'poll': ?poll?.toJson(),
+      'shared_client_theme': ?sharedClientTheme?.toJson(),
+      'interaction_metadata': ?interactionMetadata?.toJson(),
+      'message_snapshots': ?messageSnapshots?.map((e) => e.toJson()).toList(),
     };
   }
 

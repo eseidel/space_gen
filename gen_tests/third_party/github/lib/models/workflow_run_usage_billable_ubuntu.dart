@@ -49,7 +49,7 @@ class WorkflowRunUsageBillableUbuntu {
     return {
       'total_ms': totalMs,
       'jobs': jobs,
-      if (jobRuns != null) 'job_runs': jobRuns?.map((e) => e.toJson()).toList(),
+      'job_runs': ?jobRuns?.map((e) => e.toJson()).toList(),
     };
   }
 

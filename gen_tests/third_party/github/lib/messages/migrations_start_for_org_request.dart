@@ -104,7 +104,7 @@ class MigrationsStartForOrgRequest {
       'exclude_releases': excludeReleases,
       'exclude_owner_projects': excludeOwnerProjects,
       'org_metadata_only': orgMetadataOnly,
-      if (exclude != null) 'exclude': exclude?.map((e) => e.toJson()).toList(),
+      'exclude': ?exclude?.map((e) => e.toJson()).toList(),
     };
   }
 

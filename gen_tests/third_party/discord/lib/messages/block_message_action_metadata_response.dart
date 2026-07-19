@@ -35,7 +35,7 @@ class BlockMessageActionMetadataResponse {
   /// Converts a [BlockMessageActionMetadataResponse]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (customMessage != null) 'custom_message': customMessage};
+    return {'custom_message': ?customMessage};
   }
 
   @override

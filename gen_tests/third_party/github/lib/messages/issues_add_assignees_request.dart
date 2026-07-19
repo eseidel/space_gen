@@ -32,7 +32,7 @@ class IssuesAddAssigneesRequest {
 
   /// Converts an [IssuesAddAssigneesRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {if (assignees != null) 'assignees': assignees};
+    return {'assignees': ?assignees};
   }
 
   @override

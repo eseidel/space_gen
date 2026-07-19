@@ -51,7 +51,7 @@ class CommitParentsInner {
     return {
       'sha': sha,
       'url': url.toString(),
-      if (htmlUrl != null) 'html_url': htmlUrl?.toString(),
+      'html_url': ?htmlUrl?.toString(),
     };
   }
 

@@ -43,7 +43,7 @@ class OrgsListAttestationsBulkRequest {
   Map<String, dynamic> toJson() {
     return {
       'subject_digests': subjectDigests,
-      if (predicateType != null) 'predicate_type': predicateType,
+      'predicate_type': ?predicateType,
     };
   }
 

@@ -40,11 +40,7 @@ class MessageReactionEmojiResponse {
 
   /// Converts a [MessageReactionEmojiResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      'id': id?.toJson(),
-      'name': name,
-      if (animated != null) 'animated': animated,
-    };
+    return {'id': id?.toJson(), 'name': name, 'animated': ?animated};
   }
 
   @override

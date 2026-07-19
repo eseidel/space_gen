@@ -273,13 +273,13 @@ class WorkflowRun {
       'id': id,
       'name': name,
       'node_id': nodeId,
-      if (checkSuiteId != null) 'check_suite_id': checkSuiteId,
-      if (checkSuiteNodeId != null) 'check_suite_node_id': checkSuiteNodeId,
+      'check_suite_id': ?checkSuiteId,
+      'check_suite_node_id': ?checkSuiteNodeId,
       'head_branch': headBranch,
       'head_sha': headSha,
       'path': path,
       'run_number': runNumber,
-      if (runAttempt != null) 'run_attempt': runAttempt,
+      'run_attempt': ?runAttempt,
       'referenced_workflows': referencedWorkflows
           ?.map((e) => e.toJson())
           .toList(),
@@ -292,11 +292,9 @@ class WorkflowRun {
       'pull_requests': pullRequests?.map((e) => e.toJson()).toList(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
-      if (actor != null) 'actor': actor?.toJson(),
-      if (triggeringActor != null)
-        'triggering_actor': triggeringActor?.toJson(),
-      if (runStartedAt != null)
-        'run_started_at': runStartedAt?.toIso8601String(),
+      'actor': ?actor?.toJson(),
+      'triggering_actor': ?triggeringActor?.toJson(),
+      'run_started_at': ?runStartedAt?.toIso8601String(),
       'jobs_url': jobsUrl,
       'logs_url': logsUrl,
       'check_suite_url': checkSuiteUrl,
@@ -308,7 +306,7 @@ class WorkflowRun {
       'head_commit': headCommit?.toJson(),
       'repository': repository.toJson(),
       'head_repository': headRepository.toJson(),
-      if (headRepositoryId != null) 'head_repository_id': headRepositoryId,
+      'head_repository_id': ?headRepositoryId,
       'display_title': displayTitle,
     };
   }

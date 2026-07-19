@@ -48,7 +48,7 @@ void main() {
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            if (foo != null) 'foo': foo,\n"
+        "            'foo': ?foo,\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -106,7 +106,7 @@ void main() {
       // in toJson/fromJson.
       expect(result, contains('final dynamic placeholder;'));
       expect(result, contains("placeholder: json['placeholder'],"));
-      expect(result, contains("'placeholder': placeholder,"));
+      expect(result, contains("'placeholder': ?placeholder,"));
     });
 
     test('property description emits dartdoc on the field', () {
@@ -246,7 +246,7 @@ void main() {
           result,
           contains("avatar: maybeBase64Decode(json['avatar'] as String?)"),
         );
-        expect(result, contains("'avatar': maybeBase64Encode(avatar)"));
+        expect(result, contains("'avatar': ?maybeBase64Encode(avatar)"));
       },
     );
 
@@ -739,8 +739,8 @@ void main() {
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            if (foo != null) 'foo': foo,\n"
-        "            if (bar != null) 'bar': bar,\n"
+        "            'foo': ?foo,\n"
+        "            'bar': ?bar,\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -3552,7 +3552,7 @@ void main() {
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            if (map != null) 'map': map,\n"
+        "            'map': ?map,\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -3666,15 +3666,15 @@ void main() {
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            if (mString != null) 'm_string': mString,\n"
-        "            if (mInt != null) 'm_int': mInt,\n"
-        "            if (mNumber != null) 'm_number': mNumber,\n"
-        "            if (mBoolean != null) 'm_boolean': mBoolean,\n"
-        "            if (mDateTime != null) 'm_date_time': mDateTime?.map((key, value) => MapEntry(key, value.toIso8601String())),\n"
-        "            if (mUri != null) 'm_uri': mUri?.map((key, value) => MapEntry(key, value.toString())),\n"
-        "            if (mMapOfString != null) 'm_map_of_string': mMapOfString,\n"
-        "            if (mEnum != null) 'm_enum': mEnum?.map((key, value) => MapEntry(key, value.toJson())),\n"
-        "            if (mUnknown != null) 'm_unknown': mUnknown,\n"
+        "            'm_string': ?mString,\n"
+        "            'm_int': ?mInt,\n"
+        "            'm_number': ?mNumber,\n"
+        "            'm_boolean': ?mBoolean,\n"
+        "            'm_date_time': ?mDateTime?.map((key, value) => MapEntry(key, value.toIso8601String())),\n"
+        "            'm_uri': ?mUri?.map((key, value) => MapEntry(key, value.toString())),\n"
+        "            'm_map_of_string': ?mMapOfString,\n"
+        "            'm_enum': ?mEnum?.map((key, value) => MapEntry(key, value.toJson())),\n"
+        "            'm_unknown': ?mUnknown,\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -3917,7 +3917,7 @@ void main() {
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            if (a != null) 'a': a?.toJson(),\n"
+        "            'a': ?a?.toJson(),\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -3957,7 +3957,7 @@ void main() {
             "a: TestA.maybeFromJson(json['a'] as Map<String, dynamic>?),",
           ),
         );
-        expect(result, contains("'a': a?.toJson(),"));
+        expect(result, contains("'a': ?a?.toJson(),"));
         expect(result, isNot(contains('const TestA()')));
         expect(result, isNot(contains('const <String, dynamic>{}')));
       },
@@ -4317,14 +4317,14 @@ void main() {
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            if (fooBar != null) 'foo-bar': fooBar,\n"
-        "            if (notPrivate != null) '_not_private': notPrivate,\n"
-        "            if (barBaz != null) 'bar baz': barBaz,\n"
-        "            if (n123 != null) '123': n123,\n"
-        "            if (plus1 != null) '+1': plus1,\n"
-        "            if (minus1 != null) '-1': minus1,\n"
-        "            if (dont != null) 'don\\'t': dont,\n"
-        "            if (default_ != null) 'default': default_,\n"
+        "            'foo-bar': ?fooBar,\n"
+        "            '_not_private': ?notPrivate,\n"
+        "            'bar baz': ?barBaz,\n"
+        "            '123': ?n123,\n"
+        "            '+1': ?plus1,\n"
+        "            '-1': ?minus1,\n"
+        "            'don\\'t': ?dont,\n"
+        "            'default': ?default_,\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -4886,8 +4886,8 @@ void main() {
           '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
           '    Map<String, dynamic> toJson() {\n'
           '        return {\n'
-          "            if (a != null) 'a': a,\n"
-          "            if (b != null) 'b': b,\n"
+          "            'a': ?a,\n"
+          "            'b': ?b,\n"
           '        };\n'
           '    }\n'
           '\n'
@@ -4951,7 +4951,7 @@ void main() {
           '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
           '    Map<String, dynamic> toJson() {\n'
           '        return {\n'
-          "            if (a != null) 'a': a,\n"
+          "            'a': ?a,\n"
           '        };\n'
           '    }\n'
           '\n'
@@ -5023,7 +5023,7 @@ void main() {
           "            'req_null': reqNull,\n"
           "            'opt_null': optNull,\n"
           "            'req': req,\n"
-          "            if (opt != null) 'opt': opt,\n"
+          "            'opt': ?opt,\n"
           '        };\n'
           '    }\n'
           '\n'
@@ -5102,7 +5102,7 @@ void main() {
           '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
           '    Map<String, dynamic> toJson() {\n'
           '        return {\n'
-          "            if (a != null) 'a': a?.toJson(),\n"
+          "            'a': ?a?.toJson(),\n"
           '        };\n'
           '    }\n'
           '\n'
@@ -5536,7 +5536,7 @@ void main() {
       expect(result, contains("x: json['x'] as String?,"));
       // null here means "absent". Emitting it would produce `{"x": null}`,
       // which `type: string` rejects.
-      expect(result, contains("if (x != null) 'x': x,"));
+      expect(result, contains("'x': ?x,"));
     });
 
     test('6. optional, non-nullable, default is non-nullable storage', () {

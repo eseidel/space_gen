@@ -79,8 +79,8 @@ class ActionsCreateHostedRunnerForOrgRequest {
       'image': image.toJson(),
       'size': size,
       'runner_group_id': runnerGroupId,
-      if (maximumRunners != null) 'maximum_runners': maximumRunners,
-      if (enableStaticIp != null) 'enable_static_ip': enableStaticIp,
+      'maximum_runners': ?maximumRunners,
+      'enable_static_ip': ?enableStaticIp,
     };
   }
 

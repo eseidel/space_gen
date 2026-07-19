@@ -46,9 +46,9 @@ class TeamRepositoryPermissions {
     return {
       'admin': admin,
       'pull': pull,
-      if (triage != null) 'triage': triage,
+      'triage': ?triage,
       'push': push,
-      if (maintain != null) 'maintain': maintain,
+      'maintain': ?maintain,
     };
   }
 

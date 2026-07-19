@@ -80,12 +80,11 @@ class CodespacesCreateOrUpdateSecretForAuthenticatedUserRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (encryptedValue != null) 'encrypted_value': encryptedValue,
+      'encrypted_value': ?encryptedValue,
       'key_id': keyId,
-      if (selectedRepositoryIds != null)
-        'selected_repository_ids': selectedRepositoryIds
-            ?.map((e) => e.toJson())
-            .toList(),
+      'selected_repository_ids': ?selectedRepositoryIds
+          ?.map((e) => e.toJson())
+          .toList(),
     };
   }
 

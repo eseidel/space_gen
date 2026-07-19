@@ -486,84 +486,59 @@ class AppPermissions {
   /// Converts an [AppPermissions] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (actions != null) 'actions': actions?.toJson(),
-      if (administration != null) 'administration': administration?.toJson(),
-      if (checks != null) 'checks': checks?.toJson(),
-      if (codespaces != null) 'codespaces': codespaces?.toJson(),
-      if (contents != null) 'contents': contents?.toJson(),
-      if (dependabotSecrets != null)
-        'dependabot_secrets': dependabotSecrets?.toJson(),
-      if (deployments != null) 'deployments': deployments?.toJson(),
-      if (environments != null) 'environments': environments?.toJson(),
-      if (issues != null) 'issues': issues?.toJson(),
-      if (metadata != null) 'metadata': metadata?.toJson(),
-      if (packages != null) 'packages': packages?.toJson(),
-      if (pages != null) 'pages': pages?.toJson(),
-      if (pullRequests != null) 'pull_requests': pullRequests?.toJson(),
-      if (repositoryCustomProperties != null)
-        'repository_custom_properties': repositoryCustomProperties?.toJson(),
-      if (repositoryHooks != null)
-        'repository_hooks': repositoryHooks?.toJson(),
-      if (repositoryProjects != null)
-        'repository_projects': repositoryProjects?.toJson(),
-      if (secretScanningAlerts != null)
-        'secret_scanning_alerts': secretScanningAlerts?.toJson(),
-      if (secrets != null) 'secrets': secrets?.toJson(),
-      if (securityEvents != null) 'security_events': securityEvents?.toJson(),
-      if (singleFile != null) 'single_file': singleFile?.toJson(),
-      if (statuses != null) 'statuses': statuses?.toJson(),
-      if (vulnerabilityAlerts != null)
-        'vulnerability_alerts': vulnerabilityAlerts?.toJson(),
-      if (workflows != null) 'workflows': workflows?.toJson(),
-      if (members != null) 'members': members?.toJson(),
-      if (organizationAdministration != null)
-        'organization_administration': organizationAdministration?.toJson(),
-      if (organizationCustomRoles != null)
-        'organization_custom_roles': organizationCustomRoles?.toJson(),
-      if (organizationCustomOrgRoles != null)
-        'organization_custom_org_roles': organizationCustomOrgRoles?.toJson(),
-      if (organizationCustomProperties != null)
-        'organization_custom_properties': organizationCustomProperties
-            ?.toJson(),
-      if (organizationCopilotSeatManagement != null)
-        'organization_copilot_seat_management':
-            organizationCopilotSeatManagement?.toJson(),
-      if (organizationAnnouncementBanners != null)
-        'organization_announcement_banners': organizationAnnouncementBanners
-            ?.toJson(),
-      if (organizationEvents != null)
-        'organization_events': organizationEvents?.toJson(),
-      if (organizationHooks != null)
-        'organization_hooks': organizationHooks?.toJson(),
-      if (organizationPersonalAccessTokens != null)
-        'organization_personal_access_tokens': organizationPersonalAccessTokens
-            ?.toJson(),
-      if (organizationPersonalAccessTokenRequests != null)
-        'organization_personal_access_token_requests':
-            organizationPersonalAccessTokenRequests?.toJson(),
-      if (organizationPlan != null)
-        'organization_plan': organizationPlan?.toJson(),
-      if (organizationProjects != null)
-        'organization_projects': organizationProjects?.toJson(),
-      if (organizationPackages != null)
-        'organization_packages': organizationPackages?.toJson(),
-      if (organizationSecrets != null)
-        'organization_secrets': organizationSecrets?.toJson(),
-      if (organizationSelfHostedRunners != null)
-        'organization_self_hosted_runners': organizationSelfHostedRunners
-            ?.toJson(),
-      if (organizationUserBlocking != null)
-        'organization_user_blocking': organizationUserBlocking?.toJson(),
-      if (teamDiscussions != null)
-        'team_discussions': teamDiscussions?.toJson(),
-      if (emailAddresses != null) 'email_addresses': emailAddresses?.toJson(),
-      if (followers != null) 'followers': followers?.toJson(),
-      if (gitSshKeys != null) 'git_ssh_keys': gitSshKeys?.toJson(),
-      if (gpgKeys != null) 'gpg_keys': gpgKeys?.toJson(),
-      if (interactionLimits != null)
-        'interaction_limits': interactionLimits?.toJson(),
-      if (profile != null) 'profile': profile?.toJson(),
-      if (starring != null) 'starring': starring?.toJson(),
+      'actions': ?actions?.toJson(),
+      'administration': ?administration?.toJson(),
+      'checks': ?checks?.toJson(),
+      'codespaces': ?codespaces?.toJson(),
+      'contents': ?contents?.toJson(),
+      'dependabot_secrets': ?dependabotSecrets?.toJson(),
+      'deployments': ?deployments?.toJson(),
+      'environments': ?environments?.toJson(),
+      'issues': ?issues?.toJson(),
+      'metadata': ?metadata?.toJson(),
+      'packages': ?packages?.toJson(),
+      'pages': ?pages?.toJson(),
+      'pull_requests': ?pullRequests?.toJson(),
+      'repository_custom_properties': ?repositoryCustomProperties?.toJson(),
+      'repository_hooks': ?repositoryHooks?.toJson(),
+      'repository_projects': ?repositoryProjects?.toJson(),
+      'secret_scanning_alerts': ?secretScanningAlerts?.toJson(),
+      'secrets': ?secrets?.toJson(),
+      'security_events': ?securityEvents?.toJson(),
+      'single_file': ?singleFile?.toJson(),
+      'statuses': ?statuses?.toJson(),
+      'vulnerability_alerts': ?vulnerabilityAlerts?.toJson(),
+      'workflows': ?workflows?.toJson(),
+      'members': ?members?.toJson(),
+      'organization_administration': ?organizationAdministration?.toJson(),
+      'organization_custom_roles': ?organizationCustomRoles?.toJson(),
+      'organization_custom_org_roles': ?organizationCustomOrgRoles?.toJson(),
+      'organization_custom_properties': ?organizationCustomProperties?.toJson(),
+      'organization_copilot_seat_management': ?organizationCopilotSeatManagement
+          ?.toJson(),
+      'organization_announcement_banners': ?organizationAnnouncementBanners
+          ?.toJson(),
+      'organization_events': ?organizationEvents?.toJson(),
+      'organization_hooks': ?organizationHooks?.toJson(),
+      'organization_personal_access_tokens': ?organizationPersonalAccessTokens
+          ?.toJson(),
+      'organization_personal_access_token_requests':
+          ?organizationPersonalAccessTokenRequests?.toJson(),
+      'organization_plan': ?organizationPlan?.toJson(),
+      'organization_projects': ?organizationProjects?.toJson(),
+      'organization_packages': ?organizationPackages?.toJson(),
+      'organization_secrets': ?organizationSecrets?.toJson(),
+      'organization_self_hosted_runners': ?organizationSelfHostedRunners
+          ?.toJson(),
+      'organization_user_blocking': ?organizationUserBlocking?.toJson(),
+      'team_discussions': ?teamDiscussions?.toJson(),
+      'email_addresses': ?emailAddresses?.toJson(),
+      'followers': ?followers?.toJson(),
+      'git_ssh_keys': ?gitSshKeys?.toJson(),
+      'gpg_keys': ?gpgKeys?.toJson(),
+      'interaction_limits': ?interactionLimits?.toJson(),
+      'profile': ?profile?.toJson(),
+      'starring': ?starring?.toJson(),
     };
   }
 

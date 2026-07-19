@@ -52,11 +52,7 @@ class IssuesCreateLabelRequest {
 
   /// Converts an [IssuesCreateLabelRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      if (color != null) 'color': color,
-      if (description != null) 'description': description,
-    };
+    return {'name': name, 'color': ?color, 'description': ?description};
   }
 
   @override

@@ -43,11 +43,7 @@ class ReposTransferRequest {
 
   /// Converts a [ReposTransferRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      'new_owner': newOwner,
-      if (newName != null) 'new_name': newName,
-      if (teamIds != null) 'team_ids': teamIds,
-    };
+    return {'new_owner': newOwner, 'new_name': ?newName, 'team_ids': ?teamIds};
   }
 
   @override

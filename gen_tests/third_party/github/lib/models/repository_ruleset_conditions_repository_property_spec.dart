@@ -65,7 +65,7 @@ class RepositoryRulesetConditionsRepositoryPropertySpec {
     return {
       'name': name,
       'property_values': propertyValues,
-      if (source != null) 'source': source?.toJson(),
+      'source': ?source?.toJson(),
     };
   }
 

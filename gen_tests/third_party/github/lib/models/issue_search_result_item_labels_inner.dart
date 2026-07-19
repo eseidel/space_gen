@@ -54,12 +54,12 @@ class IssueSearchResultItemLabelsInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      if (id != null) 'id': id,
-      if (nodeId != null) 'node_id': nodeId,
-      if (url != null) 'url': url,
-      if (name != null) 'name': name,
-      if (color != null) 'color': color,
-      if (default_ != null) 'default': default_,
+      'id': ?id,
+      'node_id': ?nodeId,
+      'url': ?url,
+      'name': ?name,
+      'color': ?color,
+      'default': ?default_,
       'description': description,
     };
   }

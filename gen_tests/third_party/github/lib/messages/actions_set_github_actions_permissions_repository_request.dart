@@ -50,7 +50,7 @@ class ActionsSetGithubActionsPermissionsRepositoryRequest {
   Map<String, dynamic> toJson() {
     return {
       'enabled': enabled.toJson(),
-      if (allowedActions != null) 'allowed_actions': allowedActions?.toJson(),
+      'allowed_actions': ?allowedActions?.toJson(),
     };
   }
 
