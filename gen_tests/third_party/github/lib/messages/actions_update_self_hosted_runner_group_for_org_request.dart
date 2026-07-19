@@ -61,11 +61,11 @@ class ActionsUpdateSelfHostedRunnerGroupForOrgRequest {
   final ActionsUpdateSelfHostedRunnerGroupForOrgRequestVisibility? visibility;
 
   /// Whether the runner group can be used by `public` repositories.
-  final bool? allowsPublicRepositories;
+  final bool allowsPublicRepositories;
 
   /// If `true`, the runner group will be restricted to running only the
   /// workflows specified in the `selected_workflows` array.
-  final bool? restrictedToWorkflows;
+  final bool restrictedToWorkflows;
 
   /// List of workflows the runner group should be allowed to run. This
   /// setting will be ignored unless `restricted_to_workflows` is set to

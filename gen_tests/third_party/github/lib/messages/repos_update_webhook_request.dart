@@ -46,7 +46,7 @@ class ReposUpdateWebhookRequest {
   /// Determines what
   /// [events](https://docs.github.com/webhooks/event-payloads) the hook is
   /// triggered for. This replaces the entire array of events.
-  final List<String>? events;
+  final List<String> events;
 
   /// Determines a list of events to be added to the list of events that the
   /// Hook triggers for.
@@ -58,7 +58,7 @@ class ReposUpdateWebhookRequest {
 
   /// Determines if notifications are sent when the webhook is triggered. Set
   /// to `true` to send notifications.
-  final bool? active;
+  final bool active;
 
   /// Converts a [ReposUpdateWebhookRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

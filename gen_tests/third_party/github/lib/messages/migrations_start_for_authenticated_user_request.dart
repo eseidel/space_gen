@@ -90,7 +90,7 @@ class MigrationsStartForAuthenticatedUserRequest {
   /// Indicates whether this should only include organization metadata
   /// (repositories array should be empty and will ignore other flags).
   /// Example: `true`
-  final bool? orgMetadataOnly;
+  final bool orgMetadataOnly;
 
   /// Exclude attributes from the API response to improve performance
   /// Example: `'repositories'`

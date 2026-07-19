@@ -65,7 +65,7 @@ class ActionsCreateSelfHostedRunnerGroupForOrgRequest {
 
   /// Visibility of a runner group. You can select all repositories, select
   /// individual repositories, or limit access to private repositories.
-  final ActionsCreateSelfHostedRunnerGroupForOrgRequestVisibility? visibility;
+  final ActionsCreateSelfHostedRunnerGroupForOrgRequestVisibility visibility;
 
   /// List of repository IDs that can access the runner group.
   final List<int>? selectedRepositoryIds;
@@ -74,11 +74,11 @@ class ActionsCreateSelfHostedRunnerGroupForOrgRequest {
   final List<int>? runners;
 
   /// Whether the runner group can be used by `public` repositories.
-  final bool? allowsPublicRepositories;
+  final bool allowsPublicRepositories;
 
   /// If `true`, the runner group will be restricted to running only the
   /// workflows specified in the `selected_workflows` array.
-  final bool? restrictedToWorkflows;
+  final bool restrictedToWorkflows;
 
   /// List of workflows the runner group should be allowed to run. This
   /// setting will be ignored unless `restricted_to_workflows` is set to
@@ -93,7 +93,7 @@ class ActionsCreateSelfHostedRunnerGroupForOrgRequest {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'visibility': visibility?.toJson(),
+      'visibility': visibility.toJson(),
       'selected_repository_ids': selectedRepositoryIds,
       'runners': runners,
       'allows_public_repositories': allowsPublicRepositories,

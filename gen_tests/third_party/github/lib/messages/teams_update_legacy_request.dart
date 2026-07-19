@@ -75,7 +75,7 @@ class TeamsUpdateLegacyRequest {
 
   /// **Closing down notice**. The permission that new repositories will be
   /// added to the team with when none is specified.
-  final TeamsUpdateLegacyRequestPermission? permission;
+  final TeamsUpdateLegacyRequestPermission permission;
 
   /// The ID of a team to set as the parent team.
   final int? parentTeamId;
@@ -87,7 +87,7 @@ class TeamsUpdateLegacyRequest {
       'description': description,
       'privacy': privacy?.toJson(),
       'notification_setting': notificationSetting?.toJson(),
-      'permission': permission?.toJson(),
+      'permission': permission.toJson(),
       'parent_team_id': parentTeamId,
     };
   }

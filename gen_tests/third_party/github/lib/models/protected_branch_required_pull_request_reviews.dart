@@ -65,7 +65,7 @@ class ProtectedBranchRequiredPullRequestReviews {
 
   /// Whether the most recent push must be approved by someone other than the
   /// person who pushed it.
-  final bool? requireLastPushApproval;
+  final bool requireLastPushApproval;
   final ProtectedBranchRequiredPullRequestReviewsDismissalRestrictions?
   dismissalRestrictions;
   final ProtectedBranchRequiredPullRequestReviewsBypassPullRequestAllowances?

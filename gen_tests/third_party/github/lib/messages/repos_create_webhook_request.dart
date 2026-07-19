@@ -47,11 +47,11 @@ class ReposCreateWebhookRequest {
   /// Determines what
   /// [events](https://docs.github.com/webhooks/event-payloads) the hook is
   /// triggered for.
-  final List<String>? events;
+  final List<String> events;
 
   /// Determines if notifications are sent when the webhook is triggered. Set
   /// to `true` to send notifications.
-  final bool? active;
+  final bool active;
 
   /// Converts a [ReposCreateWebhookRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

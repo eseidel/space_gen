@@ -177,7 +177,7 @@ class ReviewComment {
   final ReactionRollup? reactions;
 
   /// The side of the first line of the range for a multi-line comment.
-  final ReviewCommentSide? side;
+  final ReviewCommentSide side;
 
   /// The side of the first line of the range for a multi-line comment.
   final ReviewCommentStartSide? startSide;
@@ -229,7 +229,7 @@ class ReviewComment {
       'body_text': bodyText,
       'body_html': bodyHtml,
       'reactions': reactions?.toJson(),
-      'side': side?.toJson(),
+      'side': side.toJson(),
       'start_side': startSide?.toJson(),
       'line': line,
       'original_line': originalLine,

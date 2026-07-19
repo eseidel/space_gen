@@ -83,7 +83,7 @@ class ProtectedBranchPullRequestReview {
   /// Whether the most recent push must be approved by someone other than the
   /// person who pushed it.
   /// Example: `true`
-  final bool? requireLastPushApproval;
+  final bool requireLastPushApproval;
 
   /// Converts a [ProtectedBranchPullRequestReview] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

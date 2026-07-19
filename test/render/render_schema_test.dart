@@ -383,7 +383,7 @@ void main() {
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
         "        return parseFromJson('Test', json, () => Test(\n"
-        "            foo: maybeParseDateTime(json['foo'] as String?),\n"
+        "            foo: maybeParseDateTime(json['foo'] as String?) ?? DateTime.parse('2012-04-23T18:25:43.511Z'),\n"
         '        ));\n'
         '    }\n'
         '\n'
@@ -396,12 +396,12 @@ void main() {
         '        return Test.fromJson(json);\n'
         '    }\n'
         '\n'
-        '    final DateTime? foo;\n'
+        '    final DateTime foo;\n'
         '\n'
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            'foo': foo?.toIso8601String(),\n"
+        "            'foo': foo.toIso8601String(),\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -421,7 +421,7 @@ void main() {
     });
 
     group('uri', () {
-      test('nullable', () {
+      test('optional with a default is non-nullable', () {
         final schema = {
           'type': 'object',
           'properties': {
@@ -445,7 +445,7 @@ void main() {
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           "        return parseFromJson('Test', json, () => Test(\n"
-          "            foo: maybeParseUri(json['foo'] as String?),\n"
+          "            foo: maybeParseUri(json['foo'] as String?) ?? Uri.parse('https://example.com'),\n"
           '        ));\n'
           '    }\n'
           '\n'
@@ -458,12 +458,12 @@ void main() {
           '        return Test.fromJson(json);\n'
           '    }\n'
           '\n'
-          '    final Uri? foo;\n'
+          '    final Uri foo;\n'
           '\n'
           '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
           '    Map<String, dynamic> toJson() {\n'
           '        return {\n'
-          "            'foo': foo?.toString(),\n"
+          "            'foo': foo.toString(),\n"
           '        };\n'
           '    }\n'
           '\n'
@@ -568,7 +568,7 @@ void main() {
     });
 
     group('uriTemplate', () {
-      test('nullable', () {
+      test('optional with a default is non-nullable', () {
         final schema = {
           'type': 'object',
           'properties': {
@@ -592,7 +592,7 @@ void main() {
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           "        return parseFromJson('Test', json, () => Test(\n"
-          "            foo: maybeParseUriTemplate(json['foo'] as String?),\n"
+          "            foo: maybeParseUriTemplate(json['foo'] as String?) ?? UriTemplate('https://example.com/{foo}'),\n"
           '        ));\n'
           '    }\n'
           '\n'
@@ -605,12 +605,12 @@ void main() {
           '        return Test.fromJson(json);\n'
           '    }\n'
           '\n'
-          '    final UriTemplate? foo;\n'
+          '    final UriTemplate foo;\n'
           '\n'
           '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
           '    Map<String, dynamic> toJson() {\n'
           '        return {\n'
-          "            'foo': foo?.toString(),\n"
+          "            'foo': foo.toString(),\n"
           '        };\n'
           '    }\n'
           '\n'
@@ -3724,15 +3724,15 @@ void main() {
         '        return Test.fromJson(json);\n'
         '    }\n'
         '\n'
-        '    final List<String>? aString;\n'
-        'final List<int>? aInt;\n'
-        'final List<double>? aNumber;\n'
-        'final List<bool>? aBoolean;\n'
-        'final List<DateTime>? aDateTime;\n'
-        'final List<Uri>? aUri;\n'
-        'final List<List<String>>? aArrayOfString;\n'
-        'final List<TestAEnumInner>? aEnum;\n'
-        'final List<dynamic>? aUnknown;\n'
+        '    final List<String> aString;\n'
+        'final List<int> aInt;\n'
+        'final List<double> aNumber;\n'
+        'final List<bool> aBoolean;\n'
+        'final List<DateTime> aDateTime;\n'
+        'final List<Uri> aUri;\n'
+        'final List<List<String>> aArrayOfString;\n'
+        'final List<TestAEnumInner> aEnum;\n'
+        'final List<dynamic> aUnknown;\n'
         '\n'
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
@@ -3741,10 +3741,10 @@ void main() {
         "            'a_int': aInt,\n"
         "            'a_number': aNumber,\n"
         "            'a_boolean': aBoolean,\n"
-        "            'a_date_time': aDateTime?.map((e) => e.toIso8601String()).toList(),\n"
-        "            'a_uri': aUri?.map((e) => e.toString()).toList(),\n"
+        "            'a_date_time': aDateTime.map((e) => e.toIso8601String()).toList(),\n"
+        "            'a_uri': aUri.map((e) => e.toString()).toList(),\n"
         "            'a_array_of_string': aArrayOfString,\n"
-        "            'a_enum': aEnum?.map((e) => e.toJson()).toList(),\n"
+        "            'a_enum': aEnum.map((e) => e.toJson()).toList(),\n"
         "            'a_unknown': aUnknown,\n"
         '        };\n'
         '    }\n'
@@ -4039,7 +4039,7 @@ void main() {
         '        return Test.fromJson(json);\n'
         '    }\n'
         '\n'
-        '    final List<String>? a;\n'
+        '    final List<String> a;\n'
         '\n'
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
@@ -4451,7 +4451,7 @@ void main() {
           '        return Test.fromJson(json);\n'
           '    }\n'
           '\n'
-          '    final double? a;\n'
+          '    final double a;\n'
           '\n'
           '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
           '    Map<String, dynamic> toJson() {\n'
@@ -4501,13 +4501,12 @@ void main() {
       });
 
       test(
-        'optional property with const default under openapi quirks emits '
-        '?? default in fromJson and non-nullable field',
+        'optional property with const default emits ?? default in fromJson '
+        'and a non-nullable field',
         () {
-          // Covers the `!dartIsNullable` arm of `orDefaultExpression`:
-          // `nonNullableDefaultValues` makes the Dart field non-null
-          // when a default is present, and `as int? ?? 1` is what
-          // populates the field on a missing JSON key. Mirrors github's
+          // Covers the `!dartIsNullable` arm of `orDefaultExpression`: a
+          // default makes the Dart field non-null, and `as int? ?? 1` is
+          // what populates it on a missing JSON key. Mirrors github's
           // `repository.private = false` shape.
           final json = {
             'type': 'object',
@@ -4515,14 +4514,28 @@ void main() {
               'count': {'type': 'integer', 'default': 1},
             },
           };
-          final result = renderTestSchema(
-            json,
-            quirks: const Quirks.openapi(),
-          );
+          final result = renderTestSchema(json);
           expect(result, contains('int count;'));
           expect(result, contains("count: (json['count'] as int?) ?? 1,"));
         },
       );
+
+      test('a nullable property keeps its nullability despite a default', () {
+        // The schema permits null, so the field stays nullable and the
+        // caller can still send an explicit null. Nullability comes from
+        // the property's own type, not from whether it has a default.
+        final json = {
+          'type': 'object',
+          'properties': {
+            'name': {
+              'type': ['string', 'null'],
+              'default': 'anon',
+            },
+          },
+        };
+        final result = renderTestSchema(json);
+        expect(result, contains('String? name;'));
+      });
 
       test(
         'reference to a number-newtype WITH a default emits T(value) at '
@@ -4620,7 +4633,7 @@ void main() {
           '        return Test.fromJson(json);\n'
           '    }\n'
           '\n'
-          '    final int? a;\n'
+          '    final int a;\n'
           '\n'
           '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
           '    Map<String, dynamic> toJson() {\n'

@@ -38,7 +38,7 @@ class CodespacesPublishForAuthenticatedUserRequest {
   final String? name;
 
   /// Whether the new repository should be private.
-  final bool? private;
+  final bool private;
 
   /// Converts a [CodespacesPublishForAuthenticatedUserRequest]
   /// to a `Map<String, dynamic>`.

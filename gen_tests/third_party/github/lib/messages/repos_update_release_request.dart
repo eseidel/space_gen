@@ -76,7 +76,7 @@ class ReposUpdateReleaseRequest {
   /// to `true` for newly published releases. `legacy` specifies that the
   /// latest release should be determined based on the release creation date
   /// and higher semantic version.
-  final ReposUpdateReleaseRequestMakeLatest? makeLatest;
+  final ReposUpdateReleaseRequestMakeLatest makeLatest;
 
   /// If specified, a discussion of the specified category is created and
   /// linked to the release. The value must be a category that already exists
@@ -95,7 +95,7 @@ class ReposUpdateReleaseRequest {
       'body': body,
       'draft': draft,
       'prerelease': prerelease,
-      'make_latest': makeLatest?.toJson(),
+      'make_latest': makeLatest.toJson(),
       'discussion_category_name': discussionCategoryName,
     };
   }

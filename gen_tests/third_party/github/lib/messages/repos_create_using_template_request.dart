@@ -51,11 +51,11 @@ class ReposCreateUsingTemplateRequest {
   /// Set to `true` to include the directory structure and files from all
   /// branches in the template repository, and not just the default branch.
   /// Default: `false`.
-  final bool? includeAllBranches;
+  final bool includeAllBranches;
 
   /// Either `true` to create a new private repository or `false` to create a
   /// new public one.
-  final bool? private;
+  final bool private;
 
   /// Converts a [ReposCreateUsingTemplateRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

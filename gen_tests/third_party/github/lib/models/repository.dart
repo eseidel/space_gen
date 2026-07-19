@@ -468,7 +468,7 @@ class Repository {
   /// Whether this repository acts as a template that can be used to generate
   /// new repositories.
   /// Example: `true`
-  final bool? isTemplate;
+  final bool isTemplate;
   final List<String>? topics;
 
   /// Whether issues are enabled.
@@ -491,7 +491,7 @@ class Repository {
 
   /// Whether discussions are enabled.
   /// Example: `true`
-  final bool? hasDiscussions;
+  final bool hasDiscussions;
 
   /// Whether the repository is archived.
   final bool archived;
@@ -500,7 +500,7 @@ class Repository {
   final bool disabled;
 
   /// The repository visibility: public, private, or internal.
-  final String? visibility;
+  final String visibility;
 
   /// Example: `'2011-01-26T19:06:43Z'`
   final DateTime? pushedAt;
@@ -513,32 +513,32 @@ class Repository {
 
   /// Whether to allow rebase merges for pull requests.
   /// Example: `true`
-  final bool? allowRebaseMerge;
+  final bool allowRebaseMerge;
   final String? tempCloneToken;
 
   /// Whether to allow squash merges for pull requests.
   /// Example: `true`
-  final bool? allowSquashMerge;
+  final bool allowSquashMerge;
 
   /// Whether to allow Auto-merge to be used on pull requests.
   /// Example: `false`
-  final bool? allowAutoMerge;
+  final bool allowAutoMerge;
 
   /// Whether to delete head branches when pull requests are merged
   /// Example: `false`
-  final bool? deleteBranchOnMerge;
+  final bool deleteBranchOnMerge;
 
   /// Whether or not a pull request head branch that is behind its base branch
   /// can always be updated even if it is not required to be up to date before
   /// merging.
   /// Example: `false`
-  final bool? allowUpdateBranch;
+  final bool allowUpdateBranch;
 
   /// Whether a squash merge commit can use the pull request title as default.
   /// **This property is closing down. Please use `squash_merge_commit_title`
   /// instead.
   @deprecated
-  final bool? useSquashPrTitleAsDefault;
+  final bool useSquashPrTitleAsDefault;
 
   /// The default value for a squash merge commit title:
   ///
@@ -570,13 +570,13 @@ class Repository {
 
   /// Whether to allow merge commits for pull requests.
   /// Example: `true`
-  final bool? allowMergeCommit;
+  final bool allowMergeCommit;
 
   /// Whether to allow forking this repo
   final bool? allowForking;
 
   /// Whether to require contributors to sign off on web-based commits
-  final bool? webCommitSignoffRequired;
+  final bool webCommitSignoffRequired;
   final int openIssues;
   final int watchers;
   final String? masterBranch;

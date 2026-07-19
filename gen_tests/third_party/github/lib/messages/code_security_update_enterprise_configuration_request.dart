@@ -194,7 +194,7 @@ class CodeSecurityUpdateEnterpriseConfigurationRequest {
   final CodeScanningDefaultSetupOptions? codeScanningDefaultSetupOptions;
 
   /// The enablement status of code scanning delegated alert dismissal
-  final CodeSecurityUpdateEnterpriseConfigurationRequestCodeScanningDelegatedAlertDismissal?
+  final CodeSecurityUpdateEnterpriseConfigurationRequestCodeScanningDelegatedAlertDismissal
   codeScanningDelegatedAlertDismissal;
 
   /// The enablement status of secret scanning
@@ -214,11 +214,11 @@ class CodeSecurityUpdateEnterpriseConfigurationRequest {
   secretScanningNonProviderPatterns;
 
   /// The enablement status of Copilot secret scanning
-  final CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanningGenericSecrets?
+  final CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanningGenericSecrets
   secretScanningGenericSecrets;
 
   /// The enablement status of secret scanning delegated alert dismissal
-  final CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanningDelegatedAlertDismissal?
+  final CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanningDelegatedAlertDismissal
   secretScanningDelegatedAlertDismissal;
 
   /// The enablement status of private vulnerability reporting
@@ -247,15 +247,15 @@ class CodeSecurityUpdateEnterpriseConfigurationRequest {
       'code_scanning_default_setup_options': codeScanningDefaultSetupOptions
           ?.toJson(),
       'code_scanning_delegated_alert_dismissal':
-          codeScanningDelegatedAlertDismissal?.toJson(),
+          codeScanningDelegatedAlertDismissal.toJson(),
       'secret_scanning': secretScanning?.toJson(),
       'secret_scanning_push_protection': secretScanningPushProtection?.toJson(),
       'secret_scanning_validity_checks': secretScanningValidityChecks?.toJson(),
       'secret_scanning_non_provider_patterns': secretScanningNonProviderPatterns
           ?.toJson(),
-      'secret_scanning_generic_secrets': secretScanningGenericSecrets?.toJson(),
+      'secret_scanning_generic_secrets': secretScanningGenericSecrets.toJson(),
       'secret_scanning_delegated_alert_dismissal':
-          secretScanningDelegatedAlertDismissal?.toJson(),
+          secretScanningDelegatedAlertDismissal.toJson(),
       'private_vulnerability_reporting': privateVulnerabilityReporting
           ?.toJson(),
       'enforcement': enforcement?.toJson(),

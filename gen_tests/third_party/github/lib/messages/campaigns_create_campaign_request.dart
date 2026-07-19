@@ -80,7 +80,7 @@ class CampaignsCreateCampaignRequest {
 
   /// If true, will automatically generate issues for the campaign. The
   /// default is false.
-  final bool? generateIssues;
+  final bool generateIssues;
 
   /// Converts a [CampaignsCreateCampaignRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

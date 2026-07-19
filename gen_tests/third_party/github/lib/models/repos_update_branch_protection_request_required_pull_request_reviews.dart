@@ -84,7 +84,7 @@ class ReposUpdateBranchProtectionRequestRequiredPullRequestReviews {
 
   /// Whether the most recent push must be approved by someone other than the
   /// person who pushed it. Default: `false`.
-  final bool? requireLastPushApproval;
+  final bool requireLastPushApproval;
 
   /// Allow specific users, teams, or apps to bypass pull request
   /// requirements.

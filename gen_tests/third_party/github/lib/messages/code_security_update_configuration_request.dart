@@ -198,7 +198,7 @@ class CodeSecurityUpdateConfigurationRequest {
   final CodeScanningDefaultSetupOptions? codeScanningDefaultSetupOptions;
 
   /// The enablement status of code scanning delegated alert dismissal
-  final CodeSecurityUpdateConfigurationRequestCodeScanningDelegatedAlertDismissal?
+  final CodeSecurityUpdateConfigurationRequestCodeScanningDelegatedAlertDismissal
   codeScanningDelegatedAlertDismissal;
 
   /// The enablement status of secret scanning
@@ -257,7 +257,7 @@ class CodeSecurityUpdateConfigurationRequest {
       'code_scanning_default_setup_options': codeScanningDefaultSetupOptions
           ?.toJson(),
       'code_scanning_delegated_alert_dismissal':
-          codeScanningDelegatedAlertDismissal?.toJson(),
+          codeScanningDelegatedAlertDismissal.toJson(),
       'secret_scanning': secretScanning?.toJson(),
       'secret_scanning_push_protection': secretScanningPushProtection?.toJson(),
       'secret_scanning_delegated_bypass': secretScanningDelegatedBypass

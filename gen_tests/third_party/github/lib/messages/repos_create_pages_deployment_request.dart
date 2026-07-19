@@ -55,7 +55,7 @@ class ReposCreatePagesDeploymentRequest {
   final String? artifactUrl;
 
   /// The target environment for this GitHub Pages deployment.
-  final String? environment;
+  final String environment;
 
   /// A unique string that represents the version of the build for this
   /// deployment.

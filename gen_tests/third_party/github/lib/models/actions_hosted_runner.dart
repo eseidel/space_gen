@@ -93,7 +93,7 @@ class ActionsHostedRunner {
   /// The maximum amount of hosted runners. Runners will not scale
   /// automatically above this number. Use this setting to limit your cost.
   /// Example: `5`
-  final int? maximumRunners;
+  final int maximumRunners;
 
   /// Whether public IP is enabled for the hosted runners.
   /// Example: `true`

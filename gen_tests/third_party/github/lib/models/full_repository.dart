@@ -611,7 +611,7 @@ class FullRepository {
   final int watchers;
 
   /// Whether anonymous git access is allowed.
-  final bool? anonymousAccessEnabled;
+  final bool anonymousAccessEnabled;
 
   /// Code Of Conduct Simple
   /// Code of Conduct Simple

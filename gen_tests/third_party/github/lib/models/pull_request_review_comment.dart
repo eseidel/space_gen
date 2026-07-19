@@ -211,7 +211,7 @@ class PullRequestReviewComment {
 
   /// The side of the diff to which the comment applies. The side of the last
   /// line of the range for a multi-line comment
-  final PullRequestReviewCommentSide? side;
+  final PullRequestReviewCommentSide side;
 
   /// The level at which the comment is targeted, can be a diff line or a
   /// file.
@@ -253,7 +253,7 @@ class PullRequestReviewComment {
       'start_side': startSide?.toJson(),
       'line': line,
       'original_line': originalLine,
-      'side': side?.toJson(),
+      'side': side.toJson(),
       'subject_type': subjectType?.toJson(),
       'reactions': reactions?.toJson(),
       'body_html': bodyHtml,

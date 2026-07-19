@@ -59,7 +59,7 @@ class OrgsCreateInvitationRequest {
   /// were removed from your organization. Can be one of the roles listed
   /// above. Only works if the invitee was previously part of your
   /// organization.
-  final OrgsCreateInvitationRequestRole? role;
+  final OrgsCreateInvitationRequestRole role;
 
   /// Specify IDs for the teams you want to invite new members to.
   final List<int>? teamIds;
@@ -69,7 +69,7 @@ class OrgsCreateInvitationRequest {
     return {
       'invitee_id': inviteeId,
       'email': email,
-      'role': role?.toJson(),
+      'role': role.toJson(),
       'team_ids': teamIds,
     };
   }

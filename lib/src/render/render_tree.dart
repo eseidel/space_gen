@@ -4113,16 +4113,24 @@ class RenderObject extends RenderNewType {
   // genuinely needs meta comes from `SchemaUsage.usesMetaAnnotations`.
 
   // isNullable means it's optional for the server, use nullable storage.
+  //
+  // A property with a default is non-nullable. For a spec-declared
+  // default the schema forbids null outright, so a nullable field would
+  // invite a caller to build `{"name": null}` and send a payload the spec
+  // rejects. For the default [Quirks.allListsDefaultToEmpty] synthesizes
+  // the schema says nothing, but that quirk's whole premise is that a
+  // list is never null, so the same conclusion holds.
+  //
+  // A schema that genuinely permits null keeps its nullability: that
+  // comes from the property's own type, not from here, so `nullable:
+  // true` and `type: [..., "null"]` still win over a default.
   bool propertyDartIsNullable({
     required String jsonName,
     required SchemaRenderer context,
     required bool propertyHasDefaultValue,
   }) {
     final inRequiredList = requiredProperties.contains(jsonName);
-    if (context.quirks.nonNullableDefaultValues) {
-      return !inRequiredList && !propertyHasDefaultValue;
-    }
-    return !inRequiredList;
+    return !inRequiredList && !propertyHasDefaultValue;
   }
 
   @visibleForTesting

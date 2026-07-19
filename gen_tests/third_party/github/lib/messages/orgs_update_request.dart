@@ -149,13 +149,13 @@ class OrgsUpdateRequest {
   final bool? hasRepositoryProjects;
 
   /// Default permission level members have for organization repositories.
-  final OrgsUpdateRequestDefaultRepositoryPermission?
+  final OrgsUpdateRequestDefaultRepositoryPermission
   defaultRepositoryPermission;
 
   /// Whether of non-admin organization members can create repositories.
   /// **Note:** A parameter can override this parameter. See
   /// `members_allowed_repository_creation_type` in this table for details.
-  final bool? membersCanCreateRepositories;
+  final bool membersCanCreateRepositories;
 
   /// Whether organization members can create internal repositories, which are
   /// visible to all enterprise members. You can only allow members to create
@@ -194,22 +194,22 @@ class OrgsUpdateRequest {
 
   /// Whether organization members can create GitHub Pages sites. Existing
   /// published sites will not be impacted.
-  final bool? membersCanCreatePages;
+  final bool membersCanCreatePages;
 
   /// Whether organization members can create public GitHub Pages sites.
   /// Existing published sites will not be impacted.
-  final bool? membersCanCreatePublicPages;
+  final bool membersCanCreatePublicPages;
 
   /// Whether organization members can create private GitHub Pages sites.
   /// Existing published sites will not be impacted.
-  final bool? membersCanCreatePrivatePages;
+  final bool membersCanCreatePrivatePages;
 
   /// Whether organization members can fork private organization repositories.
-  final bool? membersCanForkPrivateRepositories;
+  final bool membersCanForkPrivateRepositories;
 
   /// Whether contributors to organization repositories are required to sign
   /// off on commits they make through GitHub's web interface.
-  final bool? webCommitSignoffRequired;
+  final bool webCommitSignoffRequired;
 
   /// Example: `'"http://github.blog"'`
   final String? blog;
@@ -347,7 +347,7 @@ class OrgsUpdateRequest {
       'description': description,
       'has_organization_projects': hasOrganizationProjects,
       'has_repository_projects': hasRepositoryProjects,
-      'default_repository_permission': defaultRepositoryPermission?.toJson(),
+      'default_repository_permission': defaultRepositoryPermission.toJson(),
       'members_can_create_repositories': membersCanCreateRepositories,
       'members_can_create_internal_repositories':
           membersCanCreateInternalRepositories,

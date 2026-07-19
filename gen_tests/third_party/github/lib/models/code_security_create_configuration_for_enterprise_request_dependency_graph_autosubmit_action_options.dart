@@ -44,7 +44,7 @@ class CodeSecurityCreateConfigurationForEnterpriseRequestDependencyGraphAutosubm
 
   /// Whether to use runners labeled with 'dependency-submission' or standard
   /// GitHub runners.
-  final bool? labeledRunners;
+  final bool labeledRunners;
 
   /// Converts a [CodeSecurityCreateConfigurationForEnterpriseRequestDependencyGraphAutosubmitActionOptions]
   /// to a `Map<String, dynamic>`.

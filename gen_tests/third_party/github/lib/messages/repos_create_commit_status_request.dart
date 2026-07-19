@@ -55,7 +55,7 @@ class ReposCreateCommitStatusRequest {
 
   /// A string label to differentiate this status from the status of other
   /// systems. This field is case-insensitive.
-  final String? context;
+  final String context;
 
   /// Converts a [ReposCreateCommitStatusRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

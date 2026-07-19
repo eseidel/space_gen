@@ -38,12 +38,12 @@ class TeamsAddOrUpdateMembershipForUserLegacyRequest {
   }
 
   /// The role that this user should have in the team.
-  final TeamsAddOrUpdateMembershipForUserLegacyRequestRole? role;
+  final TeamsAddOrUpdateMembershipForUserLegacyRequestRole role;
 
   /// Converts a [TeamsAddOrUpdateMembershipForUserLegacyRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'role': role?.toJson()};
+    return {'role': role.toJson()};
   }
 
   @override
