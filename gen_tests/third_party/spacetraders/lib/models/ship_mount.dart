@@ -76,8 +76,8 @@ class ShipMount {
       'symbol': symbol.toJson(),
       'name': name,
       'description': description,
-      'strength': strength,
-      'deposits': deposits?.map((e) => e.toJson()).toList(),
+      'strength': ?strength,
+      'deposits': ?deposits?.map((e) => e.toJson()).toList(),
       'requirements': requirements.toJson(),
     };
   }

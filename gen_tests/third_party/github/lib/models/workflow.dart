@@ -105,7 +105,7 @@ class Workflow {
       'url': url,
       'html_url': htmlUrl,
       'badge_url': badgeUrl,
-      'deleted_at': deletedAt?.toIso8601String(),
+      'deleted_at': ?deletedAt?.toIso8601String(),
     };
   }
 

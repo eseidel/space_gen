@@ -62,9 +62,9 @@ class SoundboardSoundResponse {
       'volume': volume,
       'emoji_id': emojiId?.toJson(),
       'emoji_name': emojiName,
-      'guild_id': guildId?.toJson(),
+      'guild_id': ?guildId?.toJson(),
       'available': available,
-      'user': user?.toJson(),
+      'user': ?user?.toJson(),
     };
   }
 

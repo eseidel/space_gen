@@ -48,12 +48,12 @@ class ReposCreatePagesSiteRequestSource {
 
   /// The repository directory that includes the source files for the Pages
   /// site. Allowed paths are `/` or `/docs`. Default: `/`
-  final ReposCreatePagesSiteRequestSourcePath? path;
+  final ReposCreatePagesSiteRequestSourcePath path;
 
   /// Converts a [ReposCreatePagesSiteRequestSource]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'branch': branch, 'path': path?.toJson()};
+    return {'branch': branch, 'path': path.toJson()};
   }
 
   @override

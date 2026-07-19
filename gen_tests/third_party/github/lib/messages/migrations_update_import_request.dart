@@ -55,10 +55,10 @@ class MigrationsUpdateImportRequest {
   /// Converts a [MigrationsUpdateImportRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'vcs_username': vcsUsername,
-      'vcs_password': vcsPassword,
-      'vcs': vcs?.toJson(),
-      'tfvc_project': tfvcProject,
+      'vcs_username': ?vcsUsername,
+      'vcs_password': ?vcsPassword,
+      'vcs': ?vcs?.toJson(),
+      'tfvc_project': ?tfvcProject,
     };
   }
 

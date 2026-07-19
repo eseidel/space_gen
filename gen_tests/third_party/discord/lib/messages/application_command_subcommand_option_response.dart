@@ -80,13 +80,13 @@ class ApplicationCommandSubcommandOptionResponse {
     return {
       'type': type.toJson(),
       'name': name,
-      'name_localized': nameLocalized,
+      'name_localized': ?nameLocalized,
       'name_localizations': nameLocalizations,
       'description': description,
-      'description_localized': descriptionLocalized,
+      'description_localized': ?descriptionLocalized,
       'description_localizations': descriptionLocalizations,
-      'required': required_,
-      'options': options?.map((e) => e.toJson()).toList(),
+      'required': ?required_,
+      'options': ?options?.map((e) => e.toJson()).toList(),
     };
   }
 

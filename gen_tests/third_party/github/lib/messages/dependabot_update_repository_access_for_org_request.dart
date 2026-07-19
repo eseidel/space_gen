@@ -58,8 +58,8 @@ class DependabotUpdateRepositoryAccessForOrgRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'repository_ids_to_add': repositoryIdsToAdd,
-      'repository_ids_to_remove': repositoryIdsToRemove,
+      'repository_ids_to_add': ?repositoryIdsToAdd,
+      'repository_ids_to_remove': ?repositoryIdsToRemove,
     };
   }
 

@@ -48,7 +48,11 @@ class CommitParentsInner {
 
   /// Converts a [CommitParentsInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'sha': sha, 'url': url.toString(), 'html_url': htmlUrl?.toString()};
+    return {
+      'sha': sha,
+      'url': url.toString(),
+      'html_url': ?htmlUrl?.toString(),
+    };
   }
 
   @override

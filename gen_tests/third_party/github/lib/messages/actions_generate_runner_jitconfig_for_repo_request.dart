@@ -50,7 +50,7 @@ class ActionsGenerateRunnerJitconfigForRepoRequest {
 
   /// The working directory to be used for job execution, relative to the
   /// runner install directory.
-  final String? workFolder;
+  final String workFolder;
 
   /// Converts an [ActionsGenerateRunnerJitconfigForRepoRequest]
   /// to a `Map<String, dynamic>`.

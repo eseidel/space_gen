@@ -35,7 +35,7 @@ class GetLocationsByQueryRequest {
 
   /// Converts a [GetLocationsByQueryRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'cursor': cursor, 'limit': limit, 'query': query};
+    return {'cursor': ?cursor, 'limit': ?limit, 'query': ?query};
   }
 
   @override

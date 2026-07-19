@@ -124,11 +124,11 @@ final class Card extends BookingPaymentSource {
       'cvc': cvc,
       'exp_month': expMonth,
       'exp_year': expYear,
-      'address_line1': addressLine1,
-      'address_line2': addressLine2,
-      'address_city': addressCity,
+      'address_line1': ?addressLine1,
+      'address_line2': ?addressLine2,
+      'address_city': ?addressCity,
       'address_country': addressCountry,
-      'address_post_code': addressPostCode,
+      'address_post_code': ?addressPostCode,
     };
   }
 
@@ -236,7 +236,7 @@ final class BankAccount extends BookingPaymentSource {
       'object': object,
       'name': name,
       'number': number,
-      'sort_code': sortCode,
+      'sort_code': ?sortCode,
       'account_type': accountType.toJson(),
       'bank_name': bankName,
       'country': country,

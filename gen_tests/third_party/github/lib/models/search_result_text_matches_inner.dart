@@ -53,11 +53,11 @@ class SearchResultTextMatchesInner {
   /// Converts a [SearchResultTextMatchesInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'object_url': objectUrl,
+      'object_url': ?objectUrl,
       'object_type': objectType,
-      'property': property,
-      'fragment': fragment,
-      'matches': matches?.map((e) => e.toJson()).toList(),
+      'property': ?property,
+      'fragment': ?fragment,
+      'matches': ?matches?.map((e) => e.toJson()).toList(),
     };
   }
 

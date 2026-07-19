@@ -46,9 +46,9 @@ class RepositoryPermissions {
     return {
       'admin': admin,
       'pull': pull,
-      'triage': triage,
+      'triage': ?triage,
       'push': push,
-      'maintain': maintain,
+      'maintain': ?maintain,
     };
   }
 

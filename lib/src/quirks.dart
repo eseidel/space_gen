@@ -4,7 +4,6 @@ class Quirks {
     this.dynamicJson = false,
     this.mutableModels = false,
     this.allListsDefaultToEmpty = false,
-    this.nonNullableDefaultValues = false,
     this.screamingCapsEnums = false,
     this.flatModelDir = false,
   });
@@ -13,7 +12,6 @@ class Quirks {
     : this(
         dynamicJson: true,
         mutableModels: true,
-        nonNullableDefaultValues: true,
         allListsDefaultToEmpty: true,
         screamingCapsEnums: true,
         flatModelDir: true,
@@ -29,11 +27,6 @@ class Quirks {
   /// OpenAPI seems to have the behavior whereby all Lists default to empty
   /// lists.
   final bool allListsDefaultToEmpty;
-
-  /// OpenAPI seems to have the behavior whereby if a property has a default
-  /// value it can never be nullable.  Since OpenAPI also makes all Lists
-  /// default to empty lists, this means that all Lists are non-nullable.
-  final bool nonNullableDefaultValues;
 
   /// OpenAPI uses SCREAMING_CAPS for enum values, but that's not Dart style.
   final bool screamingCapsEnums;

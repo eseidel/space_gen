@@ -50,10 +50,10 @@ class ProjectsCreateCard503Response {
   /// Converts a [ProjectsCreateCard503Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'code': code,
-      'message': message,
-      'documentation_url': documentationUrl,
-      'errors': errors?.map((e) => e.toJson()).toList(),
+      'code': ?code,
+      'message': ?message,
+      'documentation_url': ?documentationUrl,
+      'errors': ?errors?.map((e) => e.toJson()).toList(),
     };
   }
 

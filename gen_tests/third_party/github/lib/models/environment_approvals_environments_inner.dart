@@ -79,13 +79,13 @@ class EnvironmentApprovalsEnvironmentsInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'node_id': nodeId,
-      'name': name,
-      'url': url,
-      'html_url': htmlUrl,
-      'created_at': createdAt?.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
+      'id': ?id,
+      'node_id': ?nodeId,
+      'name': ?name,
+      'url': ?url,
+      'html_url': ?htmlUrl,
+      'created_at': ?createdAt?.toIso8601String(),
+      'updated_at': ?updatedAt?.toIso8601String(),
     };
   }
 

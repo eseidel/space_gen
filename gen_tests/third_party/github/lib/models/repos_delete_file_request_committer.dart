@@ -40,7 +40,7 @@ class ReposDeleteFileRequestCommitter {
 
   /// Converts a [ReposDeleteFileRequestCommitter] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, 'email': email};
+    return {'name': ?name, 'email': ?email};
   }
 
   @override

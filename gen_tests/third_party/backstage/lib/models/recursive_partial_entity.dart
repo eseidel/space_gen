@@ -66,11 +66,11 @@ class RecursivePartialEntity {
   /// Converts a [RecursivePartialEntity] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'apiVersion': apiVersion,
-      'kind': kind,
-      'metadata': metadata?.toJson(),
-      'spec': spec,
-      'relations': relations?.map((e) => e.toJson()).toList(),
+      'apiVersion': ?apiVersion,
+      'kind': ?kind,
+      'metadata': ?metadata?.toJson(),
+      'spec': ?spec,
+      'relations': ?relations?.map((e) => e.toJson()).toList(),
     };
   }
 

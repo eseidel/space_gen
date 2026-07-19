@@ -78,20 +78,20 @@ class GpgKeySubkeysInner {
   /// Converts a [GpgKeySubkeysInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'primary_key_id': primaryKeyId,
-      'key_id': keyId,
-      'public_key': publicKey,
-      'emails': emails?.map((e) => e.toJson()).toList(),
-      'subkeys': subkeys,
-      'can_sign': canSign,
-      'can_encrypt_comms': canEncryptComms,
-      'can_encrypt_storage': canEncryptStorage,
-      'can_certify': canCertify,
-      'created_at': createdAt,
+      'id': ?id,
+      'primary_key_id': ?primaryKeyId,
+      'key_id': ?keyId,
+      'public_key': ?publicKey,
+      'emails': ?emails?.map((e) => e.toJson()).toList(),
+      'subkeys': ?subkeys,
+      'can_sign': ?canSign,
+      'can_encrypt_comms': ?canEncryptComms,
+      'can_encrypt_storage': ?canEncryptStorage,
+      'can_certify': ?canCertify,
+      'created_at': ?createdAt,
       'expires_at': expiresAt,
       'raw_key': rawKey,
-      'revoked': revoked,
+      'revoked': ?revoked,
     };
   }
 

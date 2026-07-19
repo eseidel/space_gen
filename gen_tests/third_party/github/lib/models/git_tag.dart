@@ -90,7 +90,7 @@ class GitTag {
       'message': message,
       'tagger': tagger.toJson(),
       'object': object.toJson(),
-      'verification': verification?.toJson(),
+      'verification': ?verification?.toJson(),
     };
   }
 

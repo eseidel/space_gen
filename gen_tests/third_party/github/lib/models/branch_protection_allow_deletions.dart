@@ -29,7 +29,7 @@ class BranchProtectionAllowDeletions {
 
   /// Converts a [BranchProtectionAllowDeletions] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'enabled': enabled};
+    return {'enabled': ?enabled};
   }
 
   @override

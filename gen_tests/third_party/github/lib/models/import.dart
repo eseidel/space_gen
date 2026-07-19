@@ -113,10 +113,10 @@ class Import {
   Map<String, dynamic> toJson() {
     return {
       'vcs': vcs,
-      'use_lfs': useLfs,
+      'use_lfs': ?useLfs,
       'vcs_url': vcsUrl,
-      'svc_root': svcRoot,
-      'tfvc_project': tfvcProject,
+      'svc_root': ?svcRoot,
+      'tfvc_project': ?tfvcProject,
       'status': status.toJson(),
       'status_text': statusText,
       'failed_step': failedStep,
@@ -124,17 +124,17 @@ class Import {
       'import_percent': importPercent,
       'commit_count': commitCount,
       'push_percent': pushPercent,
-      'has_large_files': hasLargeFiles,
-      'large_files_size': largeFilesSize,
-      'large_files_count': largeFilesCount,
-      'project_choices': projectChoices?.map((e) => e.toJson()).toList(),
-      'message': message,
+      'has_large_files': ?hasLargeFiles,
+      'large_files_size': ?largeFilesSize,
+      'large_files_count': ?largeFilesCount,
+      'project_choices': ?projectChoices?.map((e) => e.toJson()).toList(),
+      'message': ?message,
       'authors_count': authorsCount,
       'url': url.toString(),
       'html_url': htmlUrl.toString(),
       'authors_url': authorsUrl.toString(),
       'repository_url': repositoryUrl.toString(),
-      'svn_root': svnRoot,
+      'svn_root': ?svnRoot,
     };
   }
 

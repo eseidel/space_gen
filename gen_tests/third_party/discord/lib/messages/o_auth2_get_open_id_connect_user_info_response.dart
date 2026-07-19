@@ -58,11 +58,11 @@ class OAuth2GetOpenIdConnectUserInfoResponse {
     return {
       'sub': sub,
       'email': email,
-      'email_verified': emailVerified,
-      'preferred_username': preferredUsername,
+      'email_verified': ?emailVerified,
+      'preferred_username': ?preferredUsername,
       'nickname': nickname,
-      'picture': picture,
-      'locale': locale,
+      'picture': ?picture,
+      'locale': ?locale,
     };
   }
 

@@ -102,16 +102,16 @@ class Feed {
     return {
       'timeline_url': timelineUrl,
       'user_url': userUrl,
-      'current_user_public_url': currentUserPublicUrl,
-      'current_user_url': currentUserUrl,
-      'current_user_actor_url': currentUserActorUrl,
-      'current_user_organization_url': currentUserOrganizationUrl,
-      'current_user_organization_urls': currentUserOrganizationUrls
+      'current_user_public_url': ?currentUserPublicUrl,
+      'current_user_url': ?currentUserUrl,
+      'current_user_actor_url': ?currentUserActorUrl,
+      'current_user_organization_url': ?currentUserOrganizationUrl,
+      'current_user_organization_urls': ?currentUserOrganizationUrls
           ?.map((e) => e.toString())
           .toList(),
-      'security_advisories_url': securityAdvisoriesUrl,
-      'repository_discussions_url': repositoryDiscussionsUrl,
-      'repository_discussions_category_url': repositoryDiscussionsCategoryUrl,
+      'security_advisories_url': ?securityAdvisoriesUrl,
+      'repository_discussions_url': ?repositoryDiscussionsUrl,
+      'repository_discussions_category_url': ?repositoryDiscussionsCategoryUrl,
       '_links': links.toJson(),
     };
   }

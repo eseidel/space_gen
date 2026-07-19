@@ -60,7 +60,7 @@ class RepositoryRuleRequiredStatusChecksParameters {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'do_not_enforce_on_create': doNotEnforceOnCreate,
+      'do_not_enforce_on_create': ?doNotEnforceOnCreate,
       'required_status_checks': requiredStatusChecks
           .map((e) => e.toJson())
           .toList(),

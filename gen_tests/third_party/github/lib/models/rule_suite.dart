@@ -108,18 +108,18 @@ class RuleSuite {
   /// Converts a [RuleSuite] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'id': ?id,
       'actor_id': actorId,
       'actor_name': actorName,
-      'before_sha': beforeSha,
-      'after_sha': afterSha,
-      'ref': ref,
-      'repository_id': repositoryId,
-      'repository_name': repositoryName,
-      'pushed_at': pushedAt?.toIso8601String(),
-      'result': result?.toJson(),
+      'before_sha': ?beforeSha,
+      'after_sha': ?afterSha,
+      'ref': ?ref,
+      'repository_id': ?repositoryId,
+      'repository_name': ?repositoryName,
+      'pushed_at': ?pushedAt?.toIso8601String(),
+      'result': ?result?.toJson(),
       'evaluation_result': evaluationResult?.toJson(),
-      'rule_evaluations': ruleEvaluations?.map((e) => e.toJson()).toList(),
+      'rule_evaluations': ?ruleEvaluations?.map((e) => e.toJson()).toList(),
     };
   }
 

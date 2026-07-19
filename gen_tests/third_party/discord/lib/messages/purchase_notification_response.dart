@@ -42,7 +42,7 @@ class PurchaseNotificationResponse {
   Map<String, dynamic> toJson() {
     return {
       'type': type.toJson(),
-      'guild_product_purchase': guildProductPurchase?.toJson(),
+      'guild_product_purchase': ?guildProductPurchase?.toJson(),
     };
   }
 

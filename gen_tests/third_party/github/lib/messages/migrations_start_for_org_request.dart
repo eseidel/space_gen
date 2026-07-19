@@ -59,35 +59,35 @@ class MigrationsStartForOrgRequest {
   /// Indicates whether repositories should be locked (to prevent
   /// manipulation) while migrating data.
   /// Example: `true`
-  final bool? lockRepositories;
+  final bool lockRepositories;
 
   /// Indicates whether metadata should be excluded and only git source should
   /// be included for the migration.
-  final bool? excludeMetadata;
+  final bool excludeMetadata;
 
   /// Indicates whether the repository git data should be excluded from the
   /// migration.
-  final bool? excludeGitData;
+  final bool excludeGitData;
 
   /// Indicates whether attachments should be excluded from the migration (to
   /// reduce migration archive file size).
   /// Example: `true`
-  final bool? excludeAttachments;
+  final bool excludeAttachments;
 
   /// Indicates whether releases should be excluded from the migration (to
   /// reduce migration archive file size).
   /// Example: `true`
-  final bool? excludeReleases;
+  final bool excludeReleases;
 
   /// Indicates whether projects owned by the organization or users should be
   /// excluded. from the migration.
   /// Example: `true`
-  final bool? excludeOwnerProjects;
+  final bool excludeOwnerProjects;
 
   /// Indicates whether this should only include organization metadata
   /// (repositories array should be empty and will ignore other flags).
   /// Example: `true`
-  final bool? orgMetadataOnly;
+  final bool orgMetadataOnly;
 
   /// Exclude related items from being returned in the response in order to
   /// improve performance of the request.
@@ -104,7 +104,7 @@ class MigrationsStartForOrgRequest {
       'exclude_releases': excludeReleases,
       'exclude_owner_projects': excludeOwnerProjects,
       'org_metadata_only': orgMetadataOnly,
-      'exclude': exclude?.map((e) => e.toJson()).toList(),
+      'exclude': ?exclude?.map((e) => e.toJson()).toList(),
     };
   }
 

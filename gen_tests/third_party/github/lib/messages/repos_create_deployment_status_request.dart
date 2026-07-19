@@ -58,18 +58,18 @@ class ReposCreateDeploymentStatusRequest {
   /// > [!NOTE]
   /// > It's recommended to use the `log_url` parameter, which replaces
   /// `target_url`.
-  final String? targetUrl;
+  final String targetUrl;
 
   /// The full URL of the deployment's output. This parameter replaces
   /// `target_url`. We will continue to accept `target_url` to support legacy
   /// uses, but we recommend replacing `target_url` with `log_url`. Setting
   /// `log_url` will automatically set `target_url` to the same value.
   /// Default: `""`
-  final String? logUrl;
+  final String logUrl;
 
   /// A short description of the status. The maximum description length is 140
   /// characters.
-  final String? description;
+  final String description;
 
   /// Name for the target deployment environment, which can be changed when
   /// setting a deploy status. For example, `production`, `staging`, or `qa`.
@@ -79,7 +79,7 @@ class ReposCreateDeploymentStatusRequest {
   final String? environment;
 
   /// Sets the URL for accessing your environment. Default: `""`
-  final String? environmentUrl;
+  final String environmentUrl;
 
   /// Adds a new `inactive` status to all prior non-transient, non-production
   /// environment deployments with the same repository and `environment` name
@@ -95,9 +95,9 @@ class ReposCreateDeploymentStatusRequest {
       'target_url': targetUrl,
       'log_url': logUrl,
       'description': description,
-      'environment': environment,
+      'environment': ?environment,
       'environment_url': environmentUrl,
-      'auto_inactive': autoInactive,
+      'auto_inactive': ?autoInactive,
     };
   }
 

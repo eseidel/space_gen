@@ -126,13 +126,13 @@ class BaseGist {
       'updated_at': updatedAt.toIso8601String(),
       'description': description,
       'comments': comments,
-      'comments_enabled': commentsEnabled,
+      'comments_enabled': ?commentsEnabled,
       'user': user?.toJson(),
       'comments_url': commentsUrl.toString(),
-      'owner': owner?.toJson(),
-      'truncated': truncated,
-      'forks': forks,
-      'history': history,
+      'owner': ?owner?.toJson(),
+      'truncated': ?truncated,
+      'forks': ?forks,
+      'history': ?history,
     };
   }
 

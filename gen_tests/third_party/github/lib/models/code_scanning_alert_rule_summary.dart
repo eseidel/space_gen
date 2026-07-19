@@ -84,11 +84,11 @@ class CodeScanningAlertRuleSummary {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
+      'name': ?name,
       'severity': severity?.toJson(),
       'security_severity_level': securitySeverityLevel?.toJson(),
-      'description': description,
-      'full_description': fullDescription,
+      'description': ?description,
+      'full_description': ?fullDescription,
       'tags': tags,
       'help': help,
       'help_uri': helpUri,

@@ -117,16 +117,16 @@ class CampaignSummary {
       'number': number,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
-      'name': name,
+      'name': ?name,
       'description': description,
       'managers': managers.map((e) => e.toJson()).toList(),
-      'team_managers': teamManagers?.map((e) => e.toJson()).toList(),
-      'published_at': publishedAt?.toIso8601String(),
+      'team_managers': ?teamManagers?.map((e) => e.toJson()).toList(),
+      'published_at': ?publishedAt?.toIso8601String(),
       'ends_at': endsAt.toIso8601String(),
       'closed_at': closedAt?.toIso8601String(),
       'state': state.toJson(),
       'contact_link': contactLink?.toString(),
-      'alert_stats': alertStats?.toJson(),
+      'alert_stats': ?alertStats?.toJson(),
     };
   }
 

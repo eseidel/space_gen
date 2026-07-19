@@ -46,7 +46,7 @@ class ReposCreateOrUpdateEnvironmentRequestReviewersInner {
   /// Converts a [ReposCreateOrUpdateEnvironmentRequestReviewersInner]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'type': type?.toJson(), 'id': id};
+    return {'type': ?type?.toJson(), 'id': ?id};
   }
 
   @override

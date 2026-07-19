@@ -55,8 +55,8 @@ class ActionsRepositoryPermissions {
   Map<String, dynamic> toJson() {
     return {
       'enabled': enabled.toJson(),
-      'allowed_actions': allowedActions?.toJson(),
-      'selected_actions_url': selectedActionsUrl?.toJson(),
+      'allowed_actions': ?allowedActions?.toJson(),
+      'selected_actions_url': ?selectedActionsUrl?.toJson(),
     };
   }
 

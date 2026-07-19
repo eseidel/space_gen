@@ -41,9 +41,9 @@ class ForbiddenGistResponse {
   /// Converts a [ForbiddenGistResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'block': block?.toJson(),
-      'message': message,
-      'documentation_url': documentationUrl,
+      'block': ?block?.toJson(),
+      'message': ?message,
+      'documentation_url': ?documentationUrl,
     };
   }
 

@@ -33,7 +33,7 @@ class PullsUpdateBranch202Response {
 
   /// Converts a [PullsUpdateBranch202Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'message': message, 'url': url};
+    return {'message': ?message, 'url': ?url};
   }
 
   @override

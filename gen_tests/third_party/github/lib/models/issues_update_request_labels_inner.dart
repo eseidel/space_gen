@@ -100,7 +100,12 @@ final class IssuesUpdateRequestLabelsInnerOneOf1
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'id': id, 'name': name, 'description': description, 'color': color};
+    return {
+      'id': ?id,
+      'name': ?name,
+      'description': description,
+      'color': color,
+    };
   }
 
   @override

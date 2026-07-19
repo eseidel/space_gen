@@ -49,9 +49,9 @@ class StringSelectOptionResponse {
     return {
       'label': label,
       'value': value,
-      'description': description,
-      'emoji': emoji?.toJson(),
-      'default': default_,
+      'description': ?description,
+      'emoji': ?emoji?.toJson(),
+      'default': ?default_,
     };
   }
 

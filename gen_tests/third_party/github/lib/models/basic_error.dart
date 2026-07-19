@@ -46,10 +46,10 @@ class BasicError {
   /// Converts a [BasicError] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'message': message,
-      'documentation_url': documentationUrl,
-      'url': url,
-      'status': status,
+      'message': ?message,
+      'documentation_url': ?documentationUrl,
+      'url': ?url,
+      'status': ?status,
     };
   }
 

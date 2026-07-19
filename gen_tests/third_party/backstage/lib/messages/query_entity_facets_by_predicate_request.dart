@@ -39,7 +39,7 @@ class QueryEntityFacetsByPredicateRequest {
   /// Converts a [QueryEntityFacetsByPredicateRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'facets': facets, 'query': query};
+    return {'facets': facets, 'query': ?query};
   }
 
   @override

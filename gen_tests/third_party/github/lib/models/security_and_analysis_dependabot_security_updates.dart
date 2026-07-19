@@ -44,7 +44,7 @@ class SecurityAndAnalysisDependabotSecurityUpdates {
   /// Converts a [SecurityAndAnalysisDependabotSecurityUpdates]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'status': status?.toJson()};
+    return {'status': ?status?.toJson()};
   }
 
   @override

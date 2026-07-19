@@ -99,12 +99,12 @@ class ChecksCreateRequestOneOf0OutputAnnotationsInner {
       'path': path,
       'start_line': startLine,
       'end_line': endLine,
-      'start_column': startColumn,
-      'end_column': endColumn,
+      'start_column': ?startColumn,
+      'end_column': ?endColumn,
       'annotation_level': annotationLevel.toJson(),
       'message': message,
-      'title': title,
-      'raw_details': rawDetails,
+      'title': ?title,
+      'raw_details': ?rawDetails,
     };
   }
 

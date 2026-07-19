@@ -127,19 +127,19 @@ class ProtectedBranch {
   Map<String, dynamic> toJson() {
     return {
       'url': url.toString(),
-      'required_status_checks': requiredStatusChecks?.toJson(),
-      'required_pull_request_reviews': requiredPullRequestReviews?.toJson(),
-      'required_signatures': requiredSignatures?.toJson(),
-      'enforce_admins': enforceAdmins?.toJson(),
-      'required_linear_history': requiredLinearHistory?.toJson(),
-      'allow_force_pushes': allowForcePushes?.toJson(),
-      'allow_deletions': allowDeletions?.toJson(),
-      'restrictions': restrictions?.toJson(),
-      'required_conversation_resolution': requiredConversationResolution
+      'required_status_checks': ?requiredStatusChecks?.toJson(),
+      'required_pull_request_reviews': ?requiredPullRequestReviews?.toJson(),
+      'required_signatures': ?requiredSignatures?.toJson(),
+      'enforce_admins': ?enforceAdmins?.toJson(),
+      'required_linear_history': ?requiredLinearHistory?.toJson(),
+      'allow_force_pushes': ?allowForcePushes?.toJson(),
+      'allow_deletions': ?allowDeletions?.toJson(),
+      'restrictions': ?restrictions?.toJson(),
+      'required_conversation_resolution': ?requiredConversationResolution
           ?.toJson(),
-      'block_creations': blockCreations?.toJson(),
-      'lock_branch': lockBranch?.toJson(),
-      'allow_fork_syncing': allowForkSyncing?.toJson(),
+      'block_creations': ?blockCreations?.toJson(),
+      'lock_branch': ?lockBranch?.toJson(),
+      'allow_fork_syncing': ?allowForkSyncing?.toJson(),
     };
   }
 

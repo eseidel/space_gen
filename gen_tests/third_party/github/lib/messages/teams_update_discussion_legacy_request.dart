@@ -40,7 +40,7 @@ class TeamsUpdateDiscussionLegacyRequest {
   /// Converts a [TeamsUpdateDiscussionLegacyRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'title': title, 'body': body};
+    return {'title': ?title, 'body': ?body};
   }
 
   @override

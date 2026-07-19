@@ -104,7 +104,7 @@ class RepositoryInvitation {
       'inviter': inviter?.toJson(),
       'permissions': permissions.toJson(),
       'created_at': createdAt.toIso8601String(),
-      'expired': expired,
+      'expired': ?expired,
       'url': url,
       'html_url': htmlUrl,
       'node_id': nodeId,

@@ -80,6 +80,9 @@ enum DartPrecedence {
   /// `(e) => body`.
   lambda,
 
+  /// `c ? x : y` — binds looser than `??`, tighter than a lambda body.
+  conditional,
+
   /// `x ?? y`.
   ifNull,
 
@@ -218,6 +221,13 @@ class _ExpressionSerializer extends Equatable {
       DartIfNull(:final value, :final ifNullValue) =>
         '${children._serializeAt(value, DartPrecedence.postfix)} ?? '
             '${children._serializeAt(ifNullValue, DartPrecedence.ifNull)}',
+      // `?:` is right-associative: the else branch may be another
+      // conditional without parens, while the condition and then-branch
+      // have to bind tighter.
+      DartConditional(:final condition, :final thenValue, :final elseValue) =>
+        '${children._serializeAt(condition, DartPrecedence.ifNull)} ? '
+            '${children._serializeAt(thenValue, DartPrecedence.ifNull)} : '
+            '${children._serializeAt(elseValue, DartPrecedence.conditional)}',
       DartThrow(:final value) => 'throw ${children._serializeDelimited(value)}',
       DartLambda(:final parameters, :final body) =>
         '(${parameters.join(', ')}) => ${children._serializeDelimited(body)}',
@@ -616,6 +626,39 @@ class DartIfNull extends DartExpression {
 
   @override
   List<Object?> get props => [value, ifNullValue];
+}
+
+/// A conditional expression: `json.containsKey('x') ? json['x'] as T? : d`.
+///
+/// Distinguishes an absent JSON key from a present-but-null one, which
+/// `??` cannot: `??` fires on both. Needed where a schema permits null and
+/// declares a default, since `default` applies to absence only.
+class DartConditional extends DartExpression {
+  const DartConditional({
+    required this.condition,
+    required this.thenValue,
+    required this.elseValue,
+  });
+
+  /// The test, evaluated first.
+  final DartExpression condition;
+
+  /// Evaluated when [condition] is true.
+  final DartExpression thenValue;
+
+  /// Evaluated when [condition] is false.
+  final DartExpression elseValue;
+
+  /// `?:` evaluates at runtime — not a constant expression even when every
+  /// branch could be.
+  @override
+  bool get canBeConst => false;
+
+  @override
+  DartPrecedence get precedence => DartPrecedence.conditional;
+
+  @override
+  List<Object?> get props => [condition, thenValue, elseValue];
 }
 
 /// A throw expression: `throw UnimplementedError('...')`.

@@ -49,7 +49,7 @@ class CodespacesListDevcontainersInRepositoryForAuthenticatedUser200ResponseDevc
   /// Converts a [CodespacesListDevcontainersInRepositoryForAuthenticatedUser200ResponseDevcontainersInner]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'path': path, 'name': name, 'display_name': displayName};
+    return {'path': path, 'name': ?name, 'display_name': ?displayName};
   }
 
   @override

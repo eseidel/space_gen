@@ -66,7 +66,7 @@ class ReposCreateRepoRulesetRequest {
   final String name;
 
   /// The target of the ruleset
-  final ReposCreateRepoRulesetRequestTarget? target;
+  final ReposCreateRepoRulesetRequestTarget target;
 
   /// The enforcement level of the ruleset. `evaluate` allows admins to test
   /// rules before enforcing them. Admins can view insights on the Rule
@@ -87,11 +87,11 @@ class ReposCreateRepoRulesetRequest {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'target': target?.toJson(),
+      'target': target.toJson(),
       'enforcement': enforcement.toJson(),
-      'bypass_actors': bypassActors?.map((e) => e.toJson()).toList(),
-      'conditions': conditions?.toJson(),
-      'rules': rules?.map((e) => e.toJson()).toList(),
+      'bypass_actors': ?bypassActors?.map((e) => e.toJson()).toList(),
+      'conditions': ?conditions?.toJson(),
+      'rules': ?rules?.map((e) => e.toJson()).toList(),
     };
   }
 

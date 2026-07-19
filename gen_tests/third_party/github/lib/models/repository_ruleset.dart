@@ -128,18 +128,18 @@ class RepositoryRuleset {
     return {
       'id': id,
       'name': name,
-      'target': target?.toJson(),
-      'source_type': sourceType?.toJson(),
+      'target': ?target?.toJson(),
+      'source_type': ?sourceType?.toJson(),
       'source': source,
       'enforcement': enforcement.toJson(),
-      'bypass_actors': bypassActors?.map((e) => e.toJson()).toList(),
-      'current_user_can_bypass': currentUserCanBypass?.toJson(),
-      'node_id': nodeId,
-      '_links': links?.toJson(),
+      'bypass_actors': ?bypassActors?.map((e) => e.toJson()).toList(),
+      'current_user_can_bypass': ?currentUserCanBypass?.toJson(),
+      'node_id': ?nodeId,
+      '_links': ?links?.toJson(),
       'conditions': conditions?.toJson(),
-      'rules': rules?.map((e) => e.toJson()).toList(),
-      'created_at': createdAt?.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
+      'rules': ?rules?.map((e) => e.toJson()).toList(),
+      'created_at': ?createdAt?.toIso8601String(),
+      'updated_at': ?updatedAt?.toIso8601String(),
     };
   }
 

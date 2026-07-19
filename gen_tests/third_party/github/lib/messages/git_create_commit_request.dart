@@ -82,10 +82,10 @@ class GitCreateCommitRequest {
     return {
       'message': message,
       'tree': tree,
-      'parents': parents,
-      'author': author?.toJson(),
-      'committer': committer?.toJson(),
-      'signature': signature,
+      'parents': ?parents,
+      'author': ?author?.toJson(),
+      'committer': ?committer?.toJson(),
+      'signature': ?signature,
     };
   }
 

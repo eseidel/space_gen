@@ -40,7 +40,7 @@ class TeamsUpdateDiscussionInOrgRequest {
   /// Converts a [TeamsUpdateDiscussionInOrgRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'title': title, 'body': body};
+    return {'title': ?title, 'body': ?body};
   }
 
   @override

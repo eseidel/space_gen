@@ -93,8 +93,8 @@ class Market {
       'exports': exports.map((e) => e.toJson()).toList(),
       'imports': imports.map((e) => e.toJson()).toList(),
       'exchange': exchange.map((e) => e.toJson()).toList(),
-      'transactions': transactions?.map((e) => e.toJson()).toList(),
-      'tradeGoods': tradeGoods?.map((e) => e.toJson()).toList(),
+      'transactions': ?transactions?.map((e) => e.toJson()).toList(),
+      'tradeGoods': ?tradeGoods?.map((e) => e.toJson()).toList(),
     };
   }
 

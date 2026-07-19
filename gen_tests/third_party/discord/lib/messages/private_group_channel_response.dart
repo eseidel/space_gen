@@ -84,8 +84,8 @@ class PrivateGroupChannelResponse {
       'name': name,
       'icon': icon,
       'owner_id': ownerId.toJson(),
-      'managed': managed,
-      'application_id': applicationId?.toJson(),
+      'managed': ?managed,
+      'application_id': ?applicationId?.toJson(),
     };
   }
 

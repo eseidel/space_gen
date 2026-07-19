@@ -35,7 +35,7 @@ class BranchProtectionRequiredLinearHistory {
   /// Converts a [BranchProtectionRequiredLinearHistory]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'enabled': enabled};
+    return {'enabled': ?enabled};
   }
 
   @override

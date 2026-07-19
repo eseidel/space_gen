@@ -70,11 +70,11 @@ class BookingPayment {
   /// Converts a [BookingPayment] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'amount': amount,
-      'currency': currency?.toJson(),
-      'source': source?.toJson(),
-      'status': status?.toJson(),
+      'id': ?id,
+      'amount': ?amount,
+      'currency': ?currency?.toJson(),
+      'source': ?source?.toJson(),
+      'status': ?status?.toJson(),
     };
   }
 

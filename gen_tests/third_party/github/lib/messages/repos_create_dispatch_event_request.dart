@@ -41,7 +41,7 @@ class ReposCreateDispatchEventRequest {
 
   /// Converts a [ReposCreateDispatchEventRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'event_type': eventType, 'client_payload': clientPayload};
+    return {'event_type': eventType, 'client_payload': ?clientPayload};
   }
 
   @override

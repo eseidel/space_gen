@@ -76,19 +76,19 @@ class BranchRestrictionPolicyAppsInner {
   /// Converts a [BranchRestrictionPolicyAppsInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'slug': slug,
-      'node_id': nodeId,
-      'owner': owner?.toJson(),
-      'name': name,
-      'client_id': clientId,
-      'description': description,
-      'external_url': externalUrl,
-      'html_url': htmlUrl,
-      'created_at': createdAt,
-      'updated_at': updatedAt,
-      'permissions': permissions?.toJson(),
-      'events': events,
+      'id': ?id,
+      'slug': ?slug,
+      'node_id': ?nodeId,
+      'owner': ?owner?.toJson(),
+      'name': ?name,
+      'client_id': ?clientId,
+      'description': ?description,
+      'external_url': ?externalUrl,
+      'html_url': ?htmlUrl,
+      'created_at': ?createdAt,
+      'updated_at': ?updatedAt,
+      'permissions': ?permissions?.toJson(),
+      'events': ?events,
     };
   }
 

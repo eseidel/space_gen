@@ -121,7 +121,7 @@ class Hook {
       'url': url.toString(),
       'test_url': testUrl.toString(),
       'ping_url': pingUrl.toString(),
-      'deliveries_url': deliveriesUrl?.toString(),
+      'deliveries_url': ?deliveriesUrl?.toString(),
       'last_response': lastResponse.toJson(),
     };
   }

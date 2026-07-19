@@ -87,11 +87,11 @@ class IntegrationPermissions {
   /// Converts an [IntegrationPermissions] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'issues': issues,
-      'checks': checks,
-      'metadata': metadata,
-      'contents': contents,
-      'deployments': deployments,
+      'issues': ?issues,
+      'checks': ?checks,
+      'metadata': ?metadata,
+      'contents': ?contents,
+      'deployments': ?deployments,
       for (final entry in entries.entries)
         if (!const {
           'issues',

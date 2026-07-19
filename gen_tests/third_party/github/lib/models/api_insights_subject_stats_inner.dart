@@ -53,13 +53,13 @@ class ApiInsightsSubjectStatsInner {
   /// Converts an [ApiInsightsSubjectStatsInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'subject_type': subjectType,
-      'subject_name': subjectName,
-      'subject_id': subjectId,
-      'total_request_count': totalRequestCount,
-      'rate_limited_request_count': rateLimitedRequestCount,
+      'subject_type': ?subjectType,
+      'subject_name': ?subjectName,
+      'subject_id': ?subjectId,
+      'total_request_count': ?totalRequestCount,
+      'rate_limited_request_count': ?rateLimitedRequestCount,
       'last_rate_limited_timestamp': lastRateLimitedTimestamp,
-      'last_request_timestamp': lastRequestTimestamp,
+      'last_request_timestamp': ?lastRequestTimestamp,
     };
   }
 

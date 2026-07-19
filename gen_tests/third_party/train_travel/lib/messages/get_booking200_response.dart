@@ -62,12 +62,12 @@ class GetBooking200Response {
   /// Converts a [GetBooking200Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'trip_id': tripId,
-      'passenger_name': passengerName,
-      'has_bicycle': hasBicycle,
-      'has_dog': hasDog,
-      'links': links?.toJson(),
+      'id': ?id,
+      'trip_id': ?tripId,
+      'passenger_name': ?passengerName,
+      'has_bicycle': ?hasBicycle,
+      'has_dog': ?hasDog,
+      'links': ?links?.toJson(),
     };
   }
 

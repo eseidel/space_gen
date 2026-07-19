@@ -129,7 +129,7 @@ class TeamDiscussionComment {
       'number': number,
       'updated_at': updatedAt.toIso8601String(),
       'url': url.toString(),
-      'reactions': reactions?.toJson(),
+      'reactions': ?reactions?.toJson(),
     };
   }
 

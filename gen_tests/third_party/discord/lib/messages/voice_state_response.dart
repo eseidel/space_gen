@@ -81,7 +81,7 @@ class VoiceStateResponse {
       'channel_id': channelId?.toJson(),
       'deaf': deaf,
       'guild_id': guildId?.toJson(),
-      'member': member?.toJson(),
+      'member': ?member?.toJson(),
       'mute': mute,
       'request_to_speak_timestamp': requestToSpeakTimestamp?.toIso8601String(),
       'suppress': suppress,

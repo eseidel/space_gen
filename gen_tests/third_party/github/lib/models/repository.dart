@@ -468,7 +468,7 @@ class Repository {
   /// Whether this repository acts as a template that can be used to generate
   /// new repositories.
   /// Example: `true`
-  final bool? isTemplate;
+  final bool isTemplate;
   final List<String>? topics;
 
   /// Whether issues are enabled.
@@ -491,7 +491,7 @@ class Repository {
 
   /// Whether discussions are enabled.
   /// Example: `true`
-  final bool? hasDiscussions;
+  final bool hasDiscussions;
 
   /// Whether the repository is archived.
   final bool archived;
@@ -500,7 +500,7 @@ class Repository {
   final bool disabled;
 
   /// The repository visibility: public, private, or internal.
-  final String? visibility;
+  final String visibility;
 
   /// Example: `'2011-01-26T19:06:43Z'`
   final DateTime? pushedAt;
@@ -513,32 +513,32 @@ class Repository {
 
   /// Whether to allow rebase merges for pull requests.
   /// Example: `true`
-  final bool? allowRebaseMerge;
+  final bool allowRebaseMerge;
   final String? tempCloneToken;
 
   /// Whether to allow squash merges for pull requests.
   /// Example: `true`
-  final bool? allowSquashMerge;
+  final bool allowSquashMerge;
 
   /// Whether to allow Auto-merge to be used on pull requests.
   /// Example: `false`
-  final bool? allowAutoMerge;
+  final bool allowAutoMerge;
 
   /// Whether to delete head branches when pull requests are merged
   /// Example: `false`
-  final bool? deleteBranchOnMerge;
+  final bool deleteBranchOnMerge;
 
   /// Whether or not a pull request head branch that is behind its base branch
   /// can always be updated even if it is not required to be up to date before
   /// merging.
   /// Example: `false`
-  final bool? allowUpdateBranch;
+  final bool allowUpdateBranch;
 
   /// Whether a squash merge commit can use the pull request title as default.
   /// **This property is closing down. Please use `squash_merge_commit_title`
   /// instead.
   @deprecated
-  final bool? useSquashPrTitleAsDefault;
+  final bool useSquashPrTitleAsDefault;
 
   /// The default value for a squash merge commit title:
   ///
@@ -570,13 +570,13 @@ class Repository {
 
   /// Whether to allow merge commits for pull requests.
   /// Example: `true`
-  final bool? allowMergeCommit;
+  final bool allowMergeCommit;
 
   /// Whether to allow forking this repo
   final bool? allowForking;
 
   /// Whether to require contributors to sign off on web-based commits
-  final bool? webCommitSignoffRequired;
+  final bool webCommitSignoffRequired;
   final int openIssues;
   final int watchers;
   final String? masterBranch;
@@ -599,7 +599,7 @@ class Repository {
       'full_name': fullName,
       'license': license?.toJson(),
       'forks': forks,
-      'permissions': permissions?.toJson(),
+      'permissions': ?permissions?.toJson(),
       'owner': owner.toJson(),
       'private': private,
       'html_url': htmlUrl.toString(),
@@ -656,7 +656,7 @@ class Repository {
       'default_branch': defaultBranch,
       'open_issues_count': openIssuesCount,
       'is_template': isTemplate,
-      'topics': topics,
+      'topics': ?topics,
       'has_issues': hasIssues,
       'has_projects': hasProjects,
       'has_wiki': hasWiki,
@@ -670,25 +670,25 @@ class Repository {
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'allow_rebase_merge': allowRebaseMerge,
-      'temp_clone_token': tempCloneToken,
+      'temp_clone_token': ?tempCloneToken,
       'allow_squash_merge': allowSquashMerge,
       'allow_auto_merge': allowAutoMerge,
       'delete_branch_on_merge': deleteBranchOnMerge,
       'allow_update_branch': allowUpdateBranch,
       'use_squash_pr_title_as_default': useSquashPrTitleAsDefault,
-      'squash_merge_commit_title': squashMergeCommitTitle?.toJson(),
-      'squash_merge_commit_message': squashMergeCommitMessage?.toJson(),
-      'merge_commit_title': mergeCommitTitle?.toJson(),
-      'merge_commit_message': mergeCommitMessage?.toJson(),
+      'squash_merge_commit_title': ?squashMergeCommitTitle?.toJson(),
+      'squash_merge_commit_message': ?squashMergeCommitMessage?.toJson(),
+      'merge_commit_title': ?mergeCommitTitle?.toJson(),
+      'merge_commit_message': ?mergeCommitMessage?.toJson(),
       'allow_merge_commit': allowMergeCommit,
-      'allow_forking': allowForking,
+      'allow_forking': ?allowForking,
       'web_commit_signoff_required': webCommitSignoffRequired,
       'open_issues': openIssues,
       'watchers': watchers,
-      'master_branch': masterBranch,
-      'starred_at': starredAt,
-      'anonymous_access_enabled': anonymousAccessEnabled,
-      'code_search_index_status': codeSearchIndexStatus?.toJson(),
+      'master_branch': ?masterBranch,
+      'starred_at': ?starredAt,
+      'anonymous_access_enabled': ?anonymousAccessEnabled,
+      'code_search_index_status': ?codeSearchIndexStatus?.toJson(),
     };
   }
 

@@ -93,7 +93,7 @@ final class RepositoryNameAndRefName extends OrgRulesetConditions {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'ref_name': refName?.toJson(),
+      'ref_name': ?refName?.toJson(),
       'repository_name': repositoryName.toJson(),
     };
   }
@@ -152,7 +152,7 @@ final class RepositoryIdAndRefName extends OrgRulesetConditions {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'ref_name': refName?.toJson(),
+      'ref_name': ?refName?.toJson(),
       'repository_id': repositoryId.toJson(),
     };
   }
@@ -217,7 +217,7 @@ final class RepositoryPropertyAndRefName extends OrgRulesetConditions {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'ref_name': refName?.toJson(),
+      'ref_name': ?refName?.toJson(),
       'repository_property': repositoryProperty.toJson(),
     };
   }

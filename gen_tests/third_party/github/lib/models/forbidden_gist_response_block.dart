@@ -33,7 +33,7 @@ class ForbiddenGistResponseBlock {
 
   /// Converts a [ForbiddenGistResponseBlock] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'reason': reason, 'created_at': createdAt, 'html_url': htmlUrl};
+    return {'reason': ?reason, 'created_at': ?createdAt, 'html_url': htmlUrl};
   }
 
   @override

@@ -117,10 +117,10 @@ class TimelineReviewedEvent {
       'html_url': htmlUrl.toString(),
       'pull_request_url': pullRequestUrl.toString(),
       '_links': links.toJson(),
-      'submitted_at': submittedAt?.toIso8601String(),
+      'submitted_at': ?submittedAt?.toIso8601String(),
       'commit_id': commitId,
-      'body_html': bodyHtml,
-      'body_text': bodyText,
+      'body_html': ?bodyHtml,
+      'body_text': ?bodyText,
       'author_association': authorAssociation.toJson(),
     };
   }

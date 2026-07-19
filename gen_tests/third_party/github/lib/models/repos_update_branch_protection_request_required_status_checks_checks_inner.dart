@@ -51,7 +51,7 @@ class ReposUpdateBranchProtectionRequestRequiredStatusChecksChecksInner {
   /// Converts a [ReposUpdateBranchProtectionRequestRequiredStatusChecksChecksInner]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'context': context, 'app_id': appId};
+    return {'context': context, 'app_id': ?appId};
   }
 
   @override

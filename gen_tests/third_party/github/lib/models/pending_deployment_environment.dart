@@ -63,11 +63,11 @@ class PendingDeploymentEnvironment {
   /// Converts a [PendingDeploymentEnvironment] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'node_id': nodeId,
-      'name': name,
-      'url': url,
-      'html_url': htmlUrl,
+      'id': ?id,
+      'node_id': ?nodeId,
+      'name': ?name,
+      'url': ?url,
+      'html_url': ?htmlUrl,
     };
   }
 

@@ -37,7 +37,7 @@ class ContributorActivityWeeksInner {
 
   /// Converts a [ContributorActivityWeeksInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'w': w, 'a': a, 'd': d, 'c': c};
+    return {'w': ?w, 'a': ?a, 'd': ?d, 'c': ?c};
   }
 
   @override

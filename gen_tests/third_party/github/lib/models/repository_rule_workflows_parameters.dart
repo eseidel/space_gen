@@ -52,7 +52,7 @@ class RepositoryRuleWorkflowsParameters {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'do_not_enforce_on_create': doNotEnforceOnCreate,
+      'do_not_enforce_on_create': ?doNotEnforceOnCreate,
       'workflows': workflows.map((e) => e.toJson()).toList(),
     };
   }

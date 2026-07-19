@@ -78,8 +78,8 @@ class Shipyard {
     return {
       'symbol': symbol,
       'shipTypes': shipTypes.map((e) => e.toJson()).toList(),
-      'transactions': transactions?.map((e) => e.toJson()).toList(),
-      'ships': ships?.map((e) => e.toJson()).toList(),
+      'transactions': ?transactions?.map((e) => e.toJson()).toList(),
+      'ships': ?ships?.map((e) => e.toJson()).toList(),
       'modificationsFee': modificationsFee,
     };
   }

@@ -43,7 +43,7 @@ class GitUser {
 
   /// Converts a [GitUser] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, 'email': email, 'date': date};
+    return {'name': ?name, 'email': ?email, 'date': ?date};
   }
 
   @override

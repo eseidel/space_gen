@@ -90,12 +90,12 @@ class InstallationToken {
     return {
       'token': token,
       'expires_at': expiresAt,
-      'permissions': permissions?.toJson(),
-      'repository_selection': repositorySelection?.toJson(),
-      'repositories': repositories?.map((e) => e.toJson()).toList(),
-      'single_file': singleFile,
-      'has_multiple_single_files': hasMultipleSingleFiles,
-      'single_file_paths': singleFilePaths,
+      'permissions': ?permissions?.toJson(),
+      'repository_selection': ?repositorySelection?.toJson(),
+      'repositories': ?repositories?.map((e) => e.toJson()).toList(),
+      'single_file': ?singleFile,
+      'has_multiple_single_files': ?hasMultipleSingleFiles,
+      'single_file_paths': ?singleFilePaths,
     };
   }
 

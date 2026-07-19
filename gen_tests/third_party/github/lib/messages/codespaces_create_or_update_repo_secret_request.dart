@@ -51,7 +51,7 @@ class CodespacesCreateOrUpdateRepoSecretRequest {
   /// Converts a [CodespacesCreateOrUpdateRepoSecretRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'encrypted_value': encryptedValue, 'key_id': keyId};
+    return {'encrypted_value': ?encryptedValue, 'key_id': ?keyId};
   }
 
   @override

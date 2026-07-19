@@ -38,11 +38,11 @@ class OrgsSetMembershipForUserRequest {
   ///  * `admin` - The user will become an owner of the organization.
   /// * `member` - The user will become a non-owner member of the
   /// organization.
-  final OrgsSetMembershipForUserRequestRole? role;
+  final OrgsSetMembershipForUserRequestRole role;
 
   /// Converts an [OrgsSetMembershipForUserRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'role': role?.toJson()};
+    return {'role': role.toJson()};
   }
 
   @override

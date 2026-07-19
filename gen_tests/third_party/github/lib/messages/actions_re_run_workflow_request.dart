@@ -28,7 +28,7 @@ class ActionsReRunWorkflowRequest {
   }
 
   /// Whether to enable debug logging for the re-run.
-  final bool? enableDebugLogging;
+  final bool enableDebugLogging;
 
   /// Converts an [ActionsReRunWorkflowRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

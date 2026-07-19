@@ -41,7 +41,7 @@ class CodeScanningAutofixCommits {
 
   /// Converts a [CodeScanningAutofixCommits] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'target_ref': targetRef, 'message': message};
+    return {'target_ref': ?targetRef, 'message': ?message};
   }
 
   @override

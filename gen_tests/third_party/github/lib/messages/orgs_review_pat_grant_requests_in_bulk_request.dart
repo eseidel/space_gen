@@ -54,7 +54,7 @@ class OrgsReviewPatGrantRequestsInBulkRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'pat_request_ids': patRequestIds,
+      'pat_request_ids': ?patRequestIds,
       'action': action.toJson(),
       'reason': reason,
     };

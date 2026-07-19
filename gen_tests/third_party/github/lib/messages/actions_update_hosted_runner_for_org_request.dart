@@ -61,10 +61,10 @@ class ActionsUpdateHostedRunnerForOrgRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'runner_group_id': runnerGroupId,
-      'maximum_runners': maximumRunners,
-      'enable_static_ip': enableStaticIp,
+      'name': ?name,
+      'runner_group_id': ?runnerGroupId,
+      'maximum_runners': ?maximumRunners,
+      'enable_static_ip': ?enableStaticIp,
     };
   }
 

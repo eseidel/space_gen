@@ -28,7 +28,7 @@ class RepositoryRulesetLinksHtml {
 
   /// Converts a [RepositoryRulesetLinksHtml] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'href': href};
+    return {'href': ?href};
   }
 
   @override

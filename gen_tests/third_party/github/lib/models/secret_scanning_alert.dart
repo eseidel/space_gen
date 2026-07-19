@@ -211,20 +211,20 @@ class SecretScanningAlert {
   /// Converts a [SecretScanningAlert] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'number': number?.toJson(),
-      'created_at': createdAt?.toJson(),
+      'number': ?number?.toJson(),
+      'created_at': ?createdAt?.toJson(),
       'updated_at': updatedAt?.toJson(),
-      'url': url?.toJson(),
-      'html_url': htmlUrl?.toJson(),
-      'locations_url': locationsUrl?.toString(),
-      'state': state?.toJson(),
+      'url': ?url?.toJson(),
+      'html_url': ?htmlUrl?.toJson(),
+      'locations_url': ?locationsUrl?.toString(),
+      'state': ?state?.toJson(),
       'resolution': resolution?.toJson(),
       'resolved_at': resolvedAt?.toIso8601String(),
       'resolved_by': resolvedBy?.toJson(),
       'resolution_comment': resolutionComment,
-      'secret_type': secretType,
-      'secret_type_display_name': secretTypeDisplayName,
-      'secret': secret,
+      'secret_type': ?secretType,
+      'secret_type_display_name': ?secretTypeDisplayName,
+      'secret': ?secret,
       'push_protection_bypassed': pushProtectionBypassed,
       'push_protection_bypassed_by': pushProtectionBypassedBy?.toJson(),
       'push_protection_bypassed_at': pushProtectionBypassedAt
@@ -237,12 +237,12 @@ class SecretScanningAlert {
           pushProtectionBypassRequestComment,
       'push_protection_bypass_request_html_url':
           pushProtectionBypassRequestHtmlUrl?.toString(),
-      'validity': validity?.toJson(),
+      'validity': ?validity?.toJson(),
       'publicly_leaked': publiclyLeaked,
       'multi_repo': multiRepo,
       'is_base64_encoded': isBase64Encoded,
       'first_location_detected': firstLocationDetected?.toJson(),
-      'has_more_locations': hasMoreLocations,
+      'has_more_locations': ?hasMoreLocations,
     };
   }
 

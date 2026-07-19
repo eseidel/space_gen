@@ -73,9 +73,9 @@ class GuildIncomingWebhookResponse {
       'id': id.toJson(),
       'name': name,
       'type': type.toJson(),
-      'user': user?.toJson(),
-      'token': token,
-      'url': url?.toString(),
+      'user': ?user?.toJson(),
+      'token': ?token,
+      'url': ?url?.toString(),
     };
   }
 

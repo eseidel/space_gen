@@ -47,7 +47,7 @@ class ReposCreatePagesSiteRequest {
 
   /// Converts a [ReposCreatePagesSiteRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'build_type': buildType?.toJson(), 'source': source?.toJson()};
+    return {'build_type': ?buildType?.toJson(), 'source': ?source?.toJson()};
   }
 
   @override

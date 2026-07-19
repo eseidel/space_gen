@@ -36,7 +36,7 @@ class PullsUpdateBranchRequest {
 
   /// Converts a [PullsUpdateBranchRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'expected_head_sha': expectedHeadSha};
+    return {'expected_head_sha': ?expectedHeadSha};
   }
 
   @override

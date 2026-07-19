@@ -32,7 +32,7 @@ class ReposAddCollaboratorRequest {
   /// to be set: `pull`, `triage`, `push`, `maintain`, `admin` and you can
   /// also specify a custom repository role name, if the owning organization
   /// has defined any.
-  final String? permission;
+  final String permission;
 
   /// Converts a [ReposAddCollaboratorRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

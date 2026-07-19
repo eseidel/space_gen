@@ -77,8 +77,8 @@ class CopilotDotcomPullRequests {
   /// Converts a [CopilotDotcomPullRequests] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'total_engaged_users': totalEngagedUsers,
-      'repositories': repositories?.map((e) => e.toJson()).toList(),
+      'total_engaged_users': ?totalEngagedUsers,
+      'repositories': ?repositories?.map((e) => e.toJson()).toList(),
       for (final entry in entries.entries)
         if (!const {'total_engaged_users', 'repositories'}.contains(entry.key))
           entry.key: entry.value,

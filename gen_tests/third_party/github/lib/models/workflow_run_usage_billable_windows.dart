@@ -49,7 +49,7 @@ class WorkflowRunUsageBillableWindows {
     return {
       'total_ms': totalMs,
       'jobs': jobs,
-      'job_runs': jobRuns?.map((e) => e.toJson()).toList(),
+      'job_runs': ?jobRuns?.map((e) => e.toJson()).toList(),
     };
   }
 

@@ -72,10 +72,10 @@ class PullsCreateReviewRequest {
   /// Converts a [PullsCreateReviewRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'commit_id': commitId,
-      'body': body,
-      'event': event?.toJson(),
-      'comments': comments?.map((e) => e.toJson()).toList(),
+      'commit_id': ?commitId,
+      'body': ?body,
+      'event': ?event?.toJson(),
+      'comments': ?comments?.map((e) => e.toJson()).toList(),
     };
   }
 

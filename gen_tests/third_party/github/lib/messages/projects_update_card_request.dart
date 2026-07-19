@@ -36,7 +36,7 @@ class ProjectsUpdateCardRequest {
 
   /// Converts a [ProjectsUpdateCardRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'note': note, 'archived': archived};
+    return {'note': note, 'archived': ?archived};
   }
 
   @override

@@ -61,11 +61,11 @@ class CodespaceGitStatus {
   /// Converts a [CodespaceGitStatus] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'ahead': ahead,
-      'behind': behind,
-      'has_unpushed_changes': hasUnpushedChanges,
-      'has_uncommitted_changes': hasUncommittedChanges,
-      'ref': ref,
+      'ahead': ?ahead,
+      'behind': ?behind,
+      'has_unpushed_changes': ?hasUnpushedChanges,
+      'has_uncommitted_changes': ?hasUncommittedChanges,
+      'ref': ?ref,
     };
   }
 

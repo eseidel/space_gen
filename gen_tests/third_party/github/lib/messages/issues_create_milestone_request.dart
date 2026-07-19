@@ -44,7 +44,7 @@ class IssuesCreateMilestoneRequest {
   final String title;
 
   /// The state of the milestone. Either `open` or `closed`.
-  final IssuesCreateMilestoneRequestState? state;
+  final IssuesCreateMilestoneRequestState state;
 
   /// A description of the milestone.
   final String? description;
@@ -58,9 +58,9 @@ class IssuesCreateMilestoneRequest {
   Map<String, dynamic> toJson() {
     return {
       'title': title,
-      'state': state?.toJson(),
-      'description': description,
-      'due_on': dueOn?.toIso8601String(),
+      'state': state.toJson(),
+      'description': ?description,
+      'due_on': ?dueOn?.toIso8601String(),
     };
   }
 

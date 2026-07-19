@@ -76,12 +76,12 @@ class PullsCreateReviewRequestCommentsInner {
   Map<String, dynamic> toJson() {
     return {
       'path': path,
-      'position': position,
+      'position': ?position,
       'body': body,
-      'line': line,
-      'side': side,
-      'start_line': startLine,
-      'start_side': startSide,
+      'line': ?line,
+      'side': ?side,
+      'start_line': ?startLine,
+      'start_side': ?startSide,
     };
   }
 

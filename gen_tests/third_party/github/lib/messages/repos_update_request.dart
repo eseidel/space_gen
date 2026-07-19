@@ -118,7 +118,7 @@ class ReposUpdateRequest {
   /// visibility](https://docs.github.com/articles/repository-permission-levels-for-an-organization#changing-the-visibility-of-repositories)
   /// to organization owners and a non-owner tries to change the value of
   /// private.
-  final bool? private;
+  final bool private;
 
   /// The visibility of the repository.
   final ReposUpdateRequestVisibility? visibility;
@@ -142,55 +142,55 @@ class ReposUpdateRequest {
 
   /// Either `true` to enable issues for this repository or `false` to disable
   /// them.
-  final bool? hasIssues;
+  final bool hasIssues;
 
   /// Either `true` to enable projects for this repository or `false` to
   /// disable them. **Note:** If you're creating a repository in an
   /// organization that has disabled repository projects, the default is
   /// `false`, and if you pass `true`, the API returns an error.
-  final bool? hasProjects;
+  final bool hasProjects;
 
   /// Either `true` to enable the wiki for this repository or `false` to
   /// disable it.
-  final bool? hasWiki;
+  final bool hasWiki;
 
   /// Either `true` to make this repo available as a template repository or
   /// `false` to prevent it.
-  final bool? isTemplate;
+  final bool isTemplate;
 
   /// Updates the default branch for this repository.
   final String? defaultBranch;
 
   /// Either `true` to allow squash-merging pull requests, or `false` to
   /// prevent squash-merging.
-  final bool? allowSquashMerge;
+  final bool allowSquashMerge;
 
   /// Either `true` to allow merging pull requests with a merge commit, or
   /// `false` to prevent merging pull requests with merge commits.
-  final bool? allowMergeCommit;
+  final bool allowMergeCommit;
 
   /// Either `true` to allow rebase-merging pull requests, or `false` to
   /// prevent rebase-merging.
-  final bool? allowRebaseMerge;
+  final bool allowRebaseMerge;
 
   /// Either `true` to allow auto-merge on pull requests, or `false` to
   /// disallow auto-merge.
-  final bool? allowAutoMerge;
+  final bool allowAutoMerge;
 
   /// Either `true` to allow automatically deleting head branches when pull
   /// requests are merged, or `false` to prevent automatic deletion.
-  final bool? deleteBranchOnMerge;
+  final bool deleteBranchOnMerge;
 
   /// Either `true` to always allow a pull request head branch that is behind
   /// its base branch to be updated even if it is not required to be up to
   /// date before merging, or false otherwise.
-  final bool? allowUpdateBranch;
+  final bool allowUpdateBranch;
 
   /// Either `true` to allow squash-merge commits to use pull request title,
   /// or `false` to use commit message. **This property is closing down.
   /// Please use `squash_merge_commit_title` instead.
   @deprecated
-  final bool? useSquashPrTitleAsDefault;
+  final bool useSquashPrTitleAsDefault;
 
   /// Required when using `squash_merge_commit_message`.
   ///
@@ -226,30 +226,30 @@ class ReposUpdateRequest {
 
   /// Whether to archive this repository. `false` will unarchive a previously
   /// archived repository.
-  final bool? archived;
+  final bool archived;
 
   /// Either `true` to allow private forks, or `false` to prevent private
   /// forks.
-  final bool? allowForking;
+  final bool allowForking;
 
   /// Either `true` to require contributors to sign off on web-based commits,
   /// or `false` to not require contributors to sign off on web-based commits.
-  final bool? webCommitSignoffRequired;
+  final bool webCommitSignoffRequired;
 
   /// Converts a [ReposUpdateRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'description': description,
-      'homepage': homepage,
+      'name': ?name,
+      'description': ?description,
+      'homepage': ?homepage,
       'private': private,
-      'visibility': visibility?.toJson(),
+      'visibility': ?visibility?.toJson(),
       'security_and_analysis': securityAndAnalysis?.toJson(),
       'has_issues': hasIssues,
       'has_projects': hasProjects,
       'has_wiki': hasWiki,
       'is_template': isTemplate,
-      'default_branch': defaultBranch,
+      'default_branch': ?defaultBranch,
       'allow_squash_merge': allowSquashMerge,
       'allow_merge_commit': allowMergeCommit,
       'allow_rebase_merge': allowRebaseMerge,
@@ -257,10 +257,10 @@ class ReposUpdateRequest {
       'delete_branch_on_merge': deleteBranchOnMerge,
       'allow_update_branch': allowUpdateBranch,
       'use_squash_pr_title_as_default': useSquashPrTitleAsDefault,
-      'squash_merge_commit_title': squashMergeCommitTitle?.toJson(),
-      'squash_merge_commit_message': squashMergeCommitMessage?.toJson(),
-      'merge_commit_title': mergeCommitTitle?.toJson(),
-      'merge_commit_message': mergeCommitMessage?.toJson(),
+      'squash_merge_commit_title': ?squashMergeCommitTitle?.toJson(),
+      'squash_merge_commit_message': ?squashMergeCommitMessage?.toJson(),
+      'merge_commit_title': ?mergeCommitTitle?.toJson(),
+      'merge_commit_message': ?mergeCommitMessage?.toJson(),
       'archived': archived,
       'allow_forking': allowForking,
       'web_commit_signoff_required': webCommitSignoffRequired,

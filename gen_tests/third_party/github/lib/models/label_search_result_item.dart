@@ -78,7 +78,7 @@ class LabelSearchResultItem {
       'default': default_,
       'description': description,
       'score': score,
-      'text_matches': textMatches?.map((e) => e.toJson()).toList(),
+      'text_matches': ?textMatches?.map((e) => e.toJson()).toList(),
     };
   }
 

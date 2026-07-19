@@ -71,9 +71,9 @@ class CodeScanningCreateVariantAnalysisRequest {
     return {
       'language': language.toJson(),
       'query_pack': queryPack,
-      'repositories': repositories,
-      'repository_lists': repositoryLists,
-      'repository_owners': repositoryOwners,
+      'repositories': ?repositories,
+      'repository_lists': ?repositoryLists,
+      'repository_owners': ?repositoryOwners,
     };
   }
 

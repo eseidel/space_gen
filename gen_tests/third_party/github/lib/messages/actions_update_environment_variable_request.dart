@@ -40,7 +40,7 @@ class ActionsUpdateEnvironmentVariableRequest {
   /// Converts an [ActionsUpdateEnvironmentVariableRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, 'value': value};
+    return {'name': ?name, 'value': ?value};
   }
 
   @override

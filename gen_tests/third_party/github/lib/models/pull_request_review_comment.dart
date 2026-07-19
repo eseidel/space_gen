@@ -79,11 +79,11 @@ class PullRequestReviewComment {
         ),
         startLine: json['start_line'] as int?,
         originalStartLine: json['original_start_line'] as int?,
-        startSide:
-            PullRequestReviewCommentStartSide.maybeFromJson(
-              json['start_side'] as String?,
-            ) ??
-            PullRequestReviewCommentStartSide.right,
+        startSide: json.containsKey('start_side')
+            ? PullRequestReviewCommentStartSide.maybeFromJson(
+                json['start_side'] as String?,
+              )
+            : PullRequestReviewCommentStartSide.right,
         line: json['line'] as int?,
         originalLine: json['original_line'] as int?,
         side:
@@ -211,7 +211,7 @@ class PullRequestReviewComment {
 
   /// The side of the diff to which the comment applies. The side of the last
   /// line of the range for a multi-line comment
-  final PullRequestReviewCommentSide? side;
+  final PullRequestReviewCommentSide side;
 
   /// The level at which the comment is targeted, can be a diff line or a
   /// file.
@@ -235,11 +235,11 @@ class PullRequestReviewComment {
       'node_id': nodeId,
       'diff_hunk': diffHunk,
       'path': path,
-      'position': position,
-      'original_position': originalPosition,
+      'position': ?position,
+      'original_position': ?originalPosition,
       'commit_id': commitId,
       'original_commit_id': originalCommitId,
-      'in_reply_to_id': inReplyToId,
+      'in_reply_to_id': ?inReplyToId,
       'user': user.toJson(),
       'body': body,
       'created_at': createdAt.toIso8601String(),
@@ -251,13 +251,13 @@ class PullRequestReviewComment {
       'start_line': startLine,
       'original_start_line': originalStartLine,
       'start_side': startSide?.toJson(),
-      'line': line,
-      'original_line': originalLine,
-      'side': side?.toJson(),
-      'subject_type': subjectType?.toJson(),
-      'reactions': reactions?.toJson(),
-      'body_html': bodyHtml,
-      'body_text': bodyText,
+      'line': ?line,
+      'original_line': ?originalLine,
+      'side': side.toJson(),
+      'subject_type': ?subjectType?.toJson(),
+      'reactions': ?reactions?.toJson(),
+      'body_html': ?bodyHtml,
+      'body_text': ?bodyText,
     };
   }
 

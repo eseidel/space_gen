@@ -67,10 +67,10 @@ class CodespacesPublicKey {
     return {
       'key_id': keyId,
       'key': key,
-      'id': id,
-      'url': url,
-      'title': title,
-      'created_at': createdAt,
+      'id': ?id,
+      'url': ?url,
+      'title': ?title,
+      'created_at': ?createdAt,
     };
   }
 

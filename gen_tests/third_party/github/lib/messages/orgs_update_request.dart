@@ -149,13 +149,13 @@ class OrgsUpdateRequest {
   final bool? hasRepositoryProjects;
 
   /// Default permission level members have for organization repositories.
-  final OrgsUpdateRequestDefaultRepositoryPermission?
+  final OrgsUpdateRequestDefaultRepositoryPermission
   defaultRepositoryPermission;
 
   /// Whether of non-admin organization members can create repositories.
   /// **Note:** A parameter can override this parameter. See
   /// `members_allowed_repository_creation_type` in this table for details.
-  final bool? membersCanCreateRepositories;
+  final bool membersCanCreateRepositories;
 
   /// Whether organization members can create internal repositories, which are
   /// visible to all enterprise members. You can only allow members to create
@@ -194,22 +194,22 @@ class OrgsUpdateRequest {
 
   /// Whether organization members can create GitHub Pages sites. Existing
   /// published sites will not be impacted.
-  final bool? membersCanCreatePages;
+  final bool membersCanCreatePages;
 
   /// Whether organization members can create public GitHub Pages sites.
   /// Existing published sites will not be impacted.
-  final bool? membersCanCreatePublicPages;
+  final bool membersCanCreatePublicPages;
 
   /// Whether organization members can create private GitHub Pages sites.
   /// Existing published sites will not be impacted.
-  final bool? membersCanCreatePrivatePages;
+  final bool membersCanCreatePrivatePages;
 
   /// Whether organization members can fork private organization repositories.
-  final bool? membersCanForkPrivateRepositories;
+  final bool membersCanForkPrivateRepositories;
 
   /// Whether contributors to organization repositories are required to sign
   /// off on commits they make through GitHub's web interface.
-  final bool? webCommitSignoffRequired;
+  final bool webCommitSignoffRequired;
 
   /// Example: `'"http://github.blog"'`
   final String? blog;
@@ -338,49 +338,49 @@ class OrgsUpdateRequest {
   /// Converts an [OrgsUpdateRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'billing_email': billingEmail,
-      'company': company,
-      'email': email,
-      'twitter_username': twitterUsername,
-      'location': location,
-      'name': name,
-      'description': description,
-      'has_organization_projects': hasOrganizationProjects,
-      'has_repository_projects': hasRepositoryProjects,
-      'default_repository_permission': defaultRepositoryPermission?.toJson(),
+      'billing_email': ?billingEmail,
+      'company': ?company,
+      'email': ?email,
+      'twitter_username': ?twitterUsername,
+      'location': ?location,
+      'name': ?name,
+      'description': ?description,
+      'has_organization_projects': ?hasOrganizationProjects,
+      'has_repository_projects': ?hasRepositoryProjects,
+      'default_repository_permission': defaultRepositoryPermission.toJson(),
       'members_can_create_repositories': membersCanCreateRepositories,
       'members_can_create_internal_repositories':
-          membersCanCreateInternalRepositories,
+          ?membersCanCreateInternalRepositories,
       'members_can_create_private_repositories':
-          membersCanCreatePrivateRepositories,
+          ?membersCanCreatePrivateRepositories,
       'members_can_create_public_repositories':
-          membersCanCreatePublicRepositories,
+          ?membersCanCreatePublicRepositories,
       'members_allowed_repository_creation_type':
-          membersAllowedRepositoryCreationType?.toJson(),
+          ?membersAllowedRepositoryCreationType?.toJson(),
       'members_can_create_pages': membersCanCreatePages,
       'members_can_create_public_pages': membersCanCreatePublicPages,
       'members_can_create_private_pages': membersCanCreatePrivatePages,
       'members_can_fork_private_repositories':
           membersCanForkPrivateRepositories,
       'web_commit_signoff_required': webCommitSignoffRequired,
-      'blog': blog,
+      'blog': ?blog,
       'advanced_security_enabled_for_new_repositories':
-          advancedSecurityEnabledForNewRepositories,
+          ?advancedSecurityEnabledForNewRepositories,
       'dependabot_alerts_enabled_for_new_repositories':
-          dependabotAlertsEnabledForNewRepositories,
+          ?dependabotAlertsEnabledForNewRepositories,
       'dependabot_security_updates_enabled_for_new_repositories':
-          dependabotSecurityUpdatesEnabledForNewRepositories,
+          ?dependabotSecurityUpdatesEnabledForNewRepositories,
       'dependency_graph_enabled_for_new_repositories':
-          dependencyGraphEnabledForNewRepositories,
+          ?dependencyGraphEnabledForNewRepositories,
       'secret_scanning_enabled_for_new_repositories':
-          secretScanningEnabledForNewRepositories,
+          ?secretScanningEnabledForNewRepositories,
       'secret_scanning_push_protection_enabled_for_new_repositories':
-          secretScanningPushProtectionEnabledForNewRepositories,
+          ?secretScanningPushProtectionEnabledForNewRepositories,
       'secret_scanning_push_protection_custom_link_enabled':
-          secretScanningPushProtectionCustomLinkEnabled,
+          ?secretScanningPushProtectionCustomLinkEnabled,
       'secret_scanning_push_protection_custom_link':
-          secretScanningPushProtectionCustomLink,
-      'deploy_keys_enabled_for_repositories': deployKeysEnabledForRepositories,
+          ?secretScanningPushProtectionCustomLink,
+      'deploy_keys_enabled_for_repositories': ?deployKeysEnabledForRepositories,
     };
   }
 

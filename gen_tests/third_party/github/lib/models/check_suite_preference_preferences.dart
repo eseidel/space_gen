@@ -45,7 +45,9 @@ class CheckSuitePreferencePreferences {
   /// Converts a [CheckSuitePreferencePreferences] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'auto_trigger_checks': autoTriggerChecks?.map((e) => e.toJson()).toList(),
+      'auto_trigger_checks': ?autoTriggerChecks
+          ?.map((e) => e.toJson())
+          .toList(),
     };
   }
 

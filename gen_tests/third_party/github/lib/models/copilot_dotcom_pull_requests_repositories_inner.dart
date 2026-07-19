@@ -62,9 +62,9 @@ class CopilotDotcomPullRequestsRepositoriesInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'total_engaged_users': totalEngagedUsers,
-      'models': models?.map((e) => e.toJson()).toList(),
+      'name': ?name,
+      'total_engaged_users': ?totalEngagedUsers,
+      'models': ?models?.map((e) => e.toJson()).toList(),
     };
   }
 

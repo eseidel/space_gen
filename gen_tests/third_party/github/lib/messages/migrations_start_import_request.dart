@@ -61,10 +61,10 @@ class MigrationsStartImportRequest {
   Map<String, dynamic> toJson() {
     return {
       'vcs_url': vcsUrl,
-      'vcs': vcs?.toJson(),
-      'vcs_username': vcsUsername,
-      'vcs_password': vcsPassword,
-      'tfvc_project': tfvcProject,
+      'vcs': ?vcs?.toJson(),
+      'vcs_username': ?vcsUsername,
+      'vcs_password': ?vcsPassword,
+      'tfvc_project': ?tfvcProject,
     };
   }
 

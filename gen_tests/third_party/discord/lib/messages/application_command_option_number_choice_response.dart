@@ -49,7 +49,7 @@ class ApplicationCommandOptionNumberChoiceResponse {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'name_localized': nameLocalized,
+      'name_localized': ?nameLocalized,
       'name_localizations': nameLocalizations,
       'value': value,
     };

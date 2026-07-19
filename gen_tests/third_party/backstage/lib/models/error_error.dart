@@ -40,7 +40,7 @@ class ErrorError {
 
   /// Converts an [ErrorError] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, 'message': message, 'stack': stack, 'code': code};
+    return {'name': name, 'message': message, 'stack': ?stack, 'code': ?code};
   }
 
   @override

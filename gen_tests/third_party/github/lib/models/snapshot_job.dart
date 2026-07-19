@@ -50,7 +50,7 @@ class SnapshotJob {
 
   /// Converts a [SnapshotJob] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'id': id, 'correlator': correlator, 'html_url': htmlUrl};
+    return {'id': id, 'correlator': correlator, 'html_url': ?htmlUrl};
   }
 
   @override

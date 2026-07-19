@@ -98,7 +98,7 @@ class ClassroomAssignmentGrade {
       'submission_timestamp': submissionTimestamp,
       'points_awarded': pointsAwarded,
       'points_available': pointsAvailable,
-      'group_name': groupName,
+      'group_name': ?groupName,
     };
   }
 

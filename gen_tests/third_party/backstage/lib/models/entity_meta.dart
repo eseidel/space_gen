@@ -164,16 +164,16 @@ class EntityMeta {
   /// Converts an [EntityMeta] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'links': links?.map((e) => e.toJson()).toList(),
-      'tags': tags,
-      'annotations': annotations,
-      'labels': labels,
-      'description': description,
-      'title': title,
-      'namespace': namespace,
+      'links': ?links?.map((e) => e.toJson()).toList(),
+      'tags': ?tags,
+      'annotations': ?annotations,
+      'labels': ?labels,
+      'description': ?description,
+      'title': ?title,
+      'namespace': ?namespace,
       'name': name,
-      'etag': etag,
-      'uid': uid,
+      'etag': ?etag,
+      'uid': ?uid,
       for (final entry in entries.entries)
         if (!const {
           'links',

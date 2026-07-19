@@ -79,7 +79,7 @@ class MarketTradeGood {
       'type': type.toJson(),
       'tradeVolume': tradeVolume,
       'supply': supply.toJson(),
-      'activity': activity?.toJson(),
+      'activity': ?activity?.toJson(),
       'purchasePrice': purchasePrice,
       'sellPrice': sellPrice,
     };

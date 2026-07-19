@@ -108,16 +108,16 @@ class FeedLinks {
     return {
       'timeline': timeline.toJson(),
       'user': user.toJson(),
-      'security_advisories': securityAdvisories?.toJson(),
-      'current_user': currentUser?.toJson(),
-      'current_user_public': currentUserPublic?.toJson(),
-      'current_user_actor': currentUserActor?.toJson(),
-      'current_user_organization': currentUserOrganization?.toJson(),
-      'current_user_organizations': currentUserOrganizations
+      'security_advisories': ?securityAdvisories?.toJson(),
+      'current_user': ?currentUser?.toJson(),
+      'current_user_public': ?currentUserPublic?.toJson(),
+      'current_user_actor': ?currentUserActor?.toJson(),
+      'current_user_organization': ?currentUserOrganization?.toJson(),
+      'current_user_organizations': ?currentUserOrganizations
           ?.map((e) => e.toJson())
           .toList(),
-      'repository_discussions': repositoryDiscussions?.toJson(),
-      'repository_discussions_category': repositoryDiscussionsCategory
+      'repository_discussions': ?repositoryDiscussions?.toJson(),
+      'repository_discussions_category': ?repositoryDiscussionsCategory
           ?.toJson(),
     };
   }
