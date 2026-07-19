@@ -1,0 +1,31 @@
+// GENERATED — do not hand-edit.
+import 'package:github/api.dart';
+import 'package:test/test.dart';
+
+void main() {
+  group('ReposAddUserAccessRestrictionsRequest', () {
+    test('round-trips via maybeFromJson/toJson', () {
+      const instance = ReposAddUserAccessRestrictionsRequest(
+        users: <String>['example'],
+      );
+      final parsed = ReposAddUserAccessRestrictionsRequest.maybeFromJson(
+        instance.toJson(),
+      )!;
+      expect(parsed, equals(instance));
+      expect(parsed.hashCode, equals(instance.hashCode));
+    });
+
+    test('maybeFromJson returns null on null input', () {
+      expect(ReposAddUserAccessRestrictionsRequest.maybeFromJson(null), isNull);
+    });
+
+    test('maybeFromJson throws FormatException on invalid input', () {
+      expect(
+        () => ReposAddUserAccessRestrictionsRequest.maybeFromJson(
+          <String, dynamic>{},
+        ),
+        throwsFormatException,
+      );
+    });
+  });
+}
