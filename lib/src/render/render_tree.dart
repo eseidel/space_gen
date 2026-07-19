@@ -2916,19 +2916,6 @@ String _runtimeSource(DartExpression expression) =>
 String? _maybeRuntimeSource(DartExpression? expression) =>
     expression == null ? null : _runtimeSource(expression);
 
-/// Bare `List`, the wire shape of any array before its items are
-/// converted. Deliberately unparameterized — `DartType.list` builds
-/// `List<T>`, which is what the *result* is, not what the cast goes
-/// through.
-const _list = DartType('List');
-const _nullableList = DartType('List', isNullable: true);
-
-/// `MapEntry`, built by the closure a map's `fromJson` maps through.
-const _mapEntry = DartType('MapEntry');
-
-/// `UnimplementedError`, thrown where a schema has no JSON form.
-const _unimplementedError = DartType('UnimplementedError');
-
 /// `DateTime.utc(2024)`.
 DartExpression _dateTimeUtc(int year) =>
     DartType.dateTime.construct([DartLiteral(year)], name: 'utc');
@@ -4626,7 +4613,7 @@ class RenderArray extends RenderSchema {
     // the wire value is a `List<dynamic>` whatever the items are.
     final cast = DartCast(
       operand: jsonValue,
-      type: jsonIsNullable ? _nullableList : _list,
+      type: jsonIsNullable ? DartType.rawList.asNullable() : DartType.rawList,
     );
     // Only a truly json-native item (Dart type == wire type: String, int,
     // bool, num) can be cast directly. Items that need conversion — newtypes,
@@ -4820,7 +4807,7 @@ class RenderMap extends RenderSchema {
       arguments: [
         DartLambda(
           parameters: const ['key', 'value'],
-          body: const DartType('MapEntry').construct([keyToJson, valueToJson]),
+          body: DartType.mapEntry.construct([keyToJson, valueToJson]),
         ),
       ],
       isNullAware: dartIsNullable,
@@ -4865,11 +4852,11 @@ class RenderMap extends RenderSchema {
       name: 'map',
       arguments: [
         if (isIdentity)
-          _mapEntry.member('new')
+          DartType.mapEntry.member('new')
         else
           DartLambda(
             parameters: [key.name, value.name],
-            body: _mapEntry.construct([keyFromJson, valueFromJson]),
+            body: DartType.mapEntry.construct([keyFromJson, valueFromJson]),
           ),
       ],
       isNullAware: jsonIsNullable,
@@ -6455,7 +6442,11 @@ abstract class RenderNoJson extends RenderSchema {
     DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
-  }) => DartIdentifier('throw UnimplementedError("$runtimeType.toJson")');
+  }) => DartThrow(
+    DartType.unimplementedError.construct([
+      DartLiteral('$runtimeType.toJson'),
+    ]),
+  );
 
   @override
   DartExpression? fromJsonExpression(
@@ -6464,7 +6455,7 @@ abstract class RenderNoJson extends RenderSchema {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) => DartThrow(
-    _unimplementedError.construct([
+    DartType.unimplementedError.construct([
       DartLiteral('$runtimeType.fromJson'),
     ]),
   );

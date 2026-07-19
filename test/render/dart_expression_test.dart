@@ -378,7 +378,7 @@ void main() {
       expect(
         DartLambda(
           parameters: const ['key', 'value'],
-          body: const DartType('MapEntry').construct(const [
+          body: DartType.mapEntry.construct(const [
             DartIdentifier('key'),
             DartIdentifier('value'),
           ]),
@@ -647,7 +647,7 @@ void main() {
     test('DartThrow renders a throw expression', () {
       const thrown = DartThrow(
         DartInvocation(
-          type: DartType('UnimplementedError'),
+          type: DartType.unimplementedError,
           isConstConstructor: false,
           arguments: [DartLiteral('nope')],
         ),

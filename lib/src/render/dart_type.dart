@@ -68,6 +68,22 @@ class DartType extends Equatable {
   // site) rather than living alongside the language-level types.
   static const uriTemplate = DartType('UriTemplate');
 
+  /// Bare `List`, with no type argument.
+  ///
+  /// Distinct from [DartType.list], which defaults its element to
+  /// `dynamic` and so renders `List<dynamic>`. This is the type a JSON
+  /// array is *cast through* before its items are converted, where naming
+  /// an element type would be a claim the wire value doesn't support.
+  static const rawList = DartType('List');
+
+  /// `MapEntry` (`dart:core`) — built by the closure a map's `fromJson`
+  /// maps through.
+  static const mapEntry = DartType('MapEntry');
+
+  /// `UnimplementedError` (`dart:core`) — thrown where a schema has no
+  /// JSON form.
+  static const unimplementedError = DartType('UnimplementedError');
+
   /// The `String` type.
   static const string = DartType('String');
 
