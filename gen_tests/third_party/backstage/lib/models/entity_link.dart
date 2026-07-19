@@ -46,7 +46,7 @@ class EntityLink {
 
   /// Converts an [EntityLink] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'type': type, 'icon': icon, 'title': title, 'url': url};
+    return {'type': ?type, 'icon': ?icon, 'title': ?title, 'url': url};
   }
 
   @override

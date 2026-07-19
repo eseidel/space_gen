@@ -101,16 +101,16 @@ class RateLimitOverviewResources {
   Map<String, dynamic> toJson() {
     return {
       'core': core.toJson(),
-      'graphql': graphql?.toJson(),
+      'graphql': ?graphql?.toJson(),
       'search': search.toJson(),
-      'code_search': codeSearch?.toJson(),
-      'source_import': sourceImport?.toJson(),
-      'integration_manifest': integrationManifest?.toJson(),
-      'code_scanning_upload': codeScanningUpload?.toJson(),
-      'actions_runner_registration': actionsRunnerRegistration?.toJson(),
-      'scim': scim?.toJson(),
-      'dependency_snapshots': dependencySnapshots?.toJson(),
-      'code_scanning_autofix': codeScanningAutofix?.toJson(),
+      'code_search': ?codeSearch?.toJson(),
+      'source_import': ?sourceImport?.toJson(),
+      'integration_manifest': ?integrationManifest?.toJson(),
+      'code_scanning_upload': ?codeScanningUpload?.toJson(),
+      'actions_runner_registration': ?actionsRunnerRegistration?.toJson(),
+      'scim': ?scim?.toJson(),
+      'dependency_snapshots': ?dependencySnapshots?.toJson(),
+      'code_scanning_autofix': ?codeScanningAutofix?.toJson(),
     };
   }
 

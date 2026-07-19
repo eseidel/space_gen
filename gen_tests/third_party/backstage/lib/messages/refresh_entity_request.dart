@@ -40,7 +40,7 @@ class RefreshEntityRequest {
 
   /// Converts a [RefreshEntityRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'authorizationToken': authorizationToken, 'entityRef': entityRef};
+    return {'authorizationToken': ?authorizationToken, 'entityRef': entityRef};
   }
 
   @override

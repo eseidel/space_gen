@@ -51,8 +51,9 @@ class DeploymentStatus {
         updatedAt: DateTime.parse(json['updated_at'] as String),
         deploymentUrl: Uri.parse(json['deployment_url'] as String),
         repositoryUrl: Uri.parse(json['repository_url'] as String),
-        environmentUrl: maybeParseUri(json['environment_url'] as String?),
-        logUrl: maybeParseUri(json['log_url'] as String?),
+        environmentUrl:
+            maybeParseUri(json['environment_url'] as String?) ?? Uri.parse(''),
+        logUrl: maybeParseUri(json['log_url'] as String?) ?? Uri.parse(''),
         performedViaGithubApp: Integration.maybeFromJson(
           json['performed_via_github_app'] as Map<String, dynamic>?,
         ),
@@ -93,7 +94,7 @@ class DeploymentStatus {
 
   /// The environment of the deployment that the status is for.
   /// Example: `'production'`
-  final String? environment;
+  final String environment;
 
   /// Closing down notice: the URL to associate with this status.
   /// Example: `'https://example.com/deployment/42/output'`
@@ -113,11 +114,11 @@ class DeploymentStatus {
 
   /// The URL for accessing your environment.
   /// Example: `'https://staging.example.com/'`
-  final Uri? environmentUrl;
+  final Uri environmentUrl;
 
   /// The URL to associate with this status.
   /// Example: `'https://example.com/deployment/42/output'`
-  final Uri? logUrl;
+  final Uri logUrl;
 
   /// GitHub app
   /// GitHub apps are a new way to extend GitHub. They can be installed
@@ -141,8 +142,8 @@ class DeploymentStatus {
       'updated_at': updatedAt.toIso8601String(),
       'deployment_url': deploymentUrl.toString(),
       'repository_url': repositoryUrl.toString(),
-      'environment_url': environmentUrl?.toString(),
-      'log_url': logUrl?.toString(),
+      'environment_url': environmentUrl.toString(),
+      'log_url': logUrl.toString(),
       'performed_via_github_app': performedViaGithubApp?.toJson(),
     };
   }

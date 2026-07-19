@@ -62,16 +62,16 @@ class FileCommitContent {
   /// Converts a [FileCommitContent] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'path': path,
-      'sha': sha,
-      'size': size,
-      'url': url,
-      'html_url': htmlUrl,
-      'git_url': gitUrl,
-      'download_url': downloadUrl,
-      'type': type,
-      '_links': links?.toJson(),
+      'name': ?name,
+      'path': ?path,
+      'sha': ?sha,
+      'size': ?size,
+      'url': ?url,
+      'html_url': ?htmlUrl,
+      'git_url': ?gitUrl,
+      'download_url': ?downloadUrl,
+      'type': ?type,
+      '_links': ?links?.toJson(),
     };
   }
 

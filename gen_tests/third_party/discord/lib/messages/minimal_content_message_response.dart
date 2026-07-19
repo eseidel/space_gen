@@ -120,8 +120,8 @@ class MinimalContentMessageResponse {
       'edited_timestamp': editedTimestamp?.toIso8601String(),
       'flags': flags,
       'components': components.map((e) => e.toJson()).toList(),
-      'stickers': stickers?.map((e) => e.toJson()).toList(),
-      'sticker_items': stickerItems?.map((e) => e.toJson()).toList(),
+      'stickers': ?stickers?.map((e) => e.toJson()).toList(),
+      'sticker_items': ?stickerItems?.map((e) => e.toJson()).toList(),
     };
   }
 

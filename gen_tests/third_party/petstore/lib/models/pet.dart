@@ -59,12 +59,12 @@ class Pet {
   /// Converts a [Pet] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'id': ?id,
       'name': name,
-      'category': category?.toJson(),
+      'category': ?category?.toJson(),
       'photoUrls': photoUrls,
-      'tags': tags?.map((e) => e.toJson()).toList(),
-      'status': status?.toJson(),
+      'tags': ?tags?.map((e) => e.toJson()).toList(),
+      'status': ?status?.toJson(),
     };
   }
 

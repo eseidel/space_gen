@@ -34,7 +34,7 @@ class SecurityAndAnalysisCodeSecurity {
 
   /// Converts a [SecurityAndAnalysisCodeSecurity] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'status': status?.toJson()};
+    return {'status': ?status?.toJson()};
   }
 
   @override

@@ -47,12 +47,12 @@ class EventPayloadPagesInner {
   /// Converts an [EventPayloadPagesInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'page_name': pageName,
-      'title': title,
+      'page_name': ?pageName,
+      'title': ?title,
       'summary': summary,
-      'action': action,
-      'sha': sha,
-      'html_url': htmlUrl,
+      'action': ?action,
+      'sha': ?sha,
+      'html_url': ?htmlUrl,
     };
   }
 

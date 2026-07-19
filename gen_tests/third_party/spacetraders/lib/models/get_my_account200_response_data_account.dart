@@ -49,7 +49,7 @@ class GetMyAccount200ResponseDataAccount {
     return {
       'id': id,
       'email': email,
-      'token': token,
+      'token': ?token,
       'createdAt': createdAt.toIso8601String(),
     };
   }

@@ -51,10 +51,10 @@ class PullsMergeRequest {
   /// Converts a [PullsMergeRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'commit_title': commitTitle,
-      'commit_message': commitMessage,
-      'sha': sha,
-      'merge_method': mergeMethod?.toJson(),
+      'commit_title': ?commitTitle,
+      'commit_message': ?commitMessage,
+      'sha': ?sha,
+      'merge_method': ?mergeMethod?.toJson(),
     };
   }
 

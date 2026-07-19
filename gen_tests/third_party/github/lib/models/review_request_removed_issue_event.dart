@@ -112,8 +112,8 @@ class ReviewRequestRemovedIssueEvent {
       'created_at': createdAt,
       'performed_via_github_app': performedViaGithubApp?.toJson(),
       'review_requester': reviewRequester.toJson(),
-      'requested_team': requestedTeam?.toJson(),
-      'requested_reviewer': requestedReviewer?.toJson(),
+      'requested_team': ?requestedTeam?.toJson(),
+      'requested_reviewer': ?requestedReviewer?.toJson(),
     };
   }
 

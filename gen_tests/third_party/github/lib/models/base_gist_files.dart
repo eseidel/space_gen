@@ -45,16 +45,16 @@ class BaseGistFiles {
 
   /// The encoding used for `content`. Currently, `"utf-8"` and `"base64"` are
   /// supported.
-  final String? encoding;
+  final String encoding;
 
   /// Converts a [BaseGistFiles] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'filename': filename,
-      'type': type,
-      'language': language,
-      'raw_url': rawUrl,
-      'size': size,
+      'filename': ?filename,
+      'type': ?type,
+      'language': ?language,
+      'raw_url': ?rawUrl,
+      'size': ?size,
       'encoding': encoding,
     };
   }

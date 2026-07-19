@@ -58,10 +58,10 @@ class ActionsUpdateOrgVariableRequest {
   /// Converts an [ActionsUpdateOrgVariableRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'value': value,
-      'visibility': visibility?.toJson(),
-      'selected_repository_ids': selectedRepositoryIds,
+      'name': ?name,
+      'value': ?value,
+      'visibility': ?visibility?.toJson(),
+      'selected_repository_ids': ?selectedRepositoryIds,
     };
   }
 

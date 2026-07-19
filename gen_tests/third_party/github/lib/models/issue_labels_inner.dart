@@ -96,13 +96,13 @@ final class IssueLabelsInnerOneOf1 extends IssueLabelsInner {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'node_id': nodeId,
-      'url': url?.toString(),
-      'name': name,
+      'id': ?id,
+      'node_id': ?nodeId,
+      'url': ?url?.toString(),
+      'name': ?name,
       'description': description,
       'color': color,
-      'default': default_,
+      'default': ?default_,
     };
   }
 

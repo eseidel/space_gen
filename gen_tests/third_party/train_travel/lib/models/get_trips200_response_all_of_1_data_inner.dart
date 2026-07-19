@@ -92,16 +92,16 @@ class GetTrips200ResponseAllOf1DataInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'origin': origin,
-      'destination': destination,
-      'departure_time': departureTime?.toIso8601String(),
-      'arrival_time': arrivalTime?.toIso8601String(),
-      'operator': operator_,
-      'price': price,
-      'bicycles_allowed': bicyclesAllowed,
-      'dogs_allowed': dogsAllowed,
-      'self': self?.toString(),
+      'id': ?id,
+      'origin': ?origin,
+      'destination': ?destination,
+      'departure_time': ?departureTime?.toIso8601String(),
+      'arrival_time': ?arrivalTime?.toIso8601String(),
+      'operator': ?operator_,
+      'price': ?price,
+      'bicycles_allowed': ?bicyclesAllowed,
+      'dogs_allowed': ?dogsAllowed,
+      'self': ?self?.toString(),
     };
   }
 

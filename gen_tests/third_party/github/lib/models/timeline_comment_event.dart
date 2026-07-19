@@ -132,9 +132,9 @@ class TimelineCommentEvent {
       'id': id,
       'node_id': nodeId,
       'url': url.toString(),
-      'body': body,
-      'body_text': bodyText,
-      'body_html': bodyHtml,
+      'body': ?body,
+      'body_text': ?bodyText,
+      'body_html': ?bodyHtml,
       'html_url': htmlUrl.toString(),
       'user': user.toJson(),
       'created_at': createdAt.toIso8601String(),
@@ -142,7 +142,7 @@ class TimelineCommentEvent {
       'issue_url': issueUrl.toString(),
       'author_association': authorAssociation.toJson(),
       'performed_via_github_app': performedViaGithubApp?.toJson(),
-      'reactions': reactions?.toJson(),
+      'reactions': ?reactions?.toJson(),
     };
   }
 

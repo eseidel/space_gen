@@ -52,7 +52,7 @@ class GitCreateCommitRequestAuthor {
 
   /// Converts a [GitCreateCommitRequestAuthor] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, 'email': email, 'date': date?.toIso8601String()};
+    return {'name': name, 'email': email, 'date': ?date?.toIso8601String()};
   }
 
   @override

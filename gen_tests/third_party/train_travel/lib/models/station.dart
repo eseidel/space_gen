@@ -72,7 +72,7 @@ class Station {
       'name': name,
       'address': address,
       'country_code': countryCode,
-      'timezone': timezone,
+      'timezone': ?timezone,
     };
   }
 

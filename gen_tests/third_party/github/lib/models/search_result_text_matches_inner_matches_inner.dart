@@ -37,7 +37,7 @@ class SearchResultTextMatchesInnerMatchesInner {
   /// Converts a [SearchResultTextMatchesInnerMatchesInner]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'text': text, 'indices': indices};
+    return {'text': ?text, 'indices': ?indices};
   }
 
   @override

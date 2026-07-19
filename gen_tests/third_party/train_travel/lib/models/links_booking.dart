@@ -33,7 +33,7 @@ class LinksBooking {
 
   /// Converts a [LinksBooking] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'booking': booking?.toString()};
+    return {'booking': ?booking?.toString()};
   }
 
   @override

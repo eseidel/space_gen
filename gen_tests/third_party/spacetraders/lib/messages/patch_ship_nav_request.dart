@@ -29,11 +29,11 @@ class PatchShipNavRequest {
   }
 
   /// The ship's set speed when traveling between waypoints or systems.
-  final ShipNavFlightMode? flightMode;
+  final ShipNavFlightMode flightMode;
 
   /// Converts a [PatchShipNavRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'flightMode': flightMode?.toJson()};
+    return {'flightMode': flightMode.toJson()};
   }
 
   @override

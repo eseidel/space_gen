@@ -90,12 +90,12 @@ class PrivateRegistriesUpdateOrgPrivateRegistryRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'registry_type': registryType?.toJson(),
+      'registry_type': ?registryType?.toJson(),
       'username': username,
-      'encrypted_value': encryptedValue,
-      'key_id': keyId,
-      'visibility': visibility?.toJson(),
-      'selected_repository_ids': selectedRepositoryIds,
+      'encrypted_value': ?encryptedValue,
+      'key_id': ?keyId,
+      'visibility': ?visibility?.toJson(),
+      'selected_repository_ids': ?selectedRepositoryIds,
     };
   }
 

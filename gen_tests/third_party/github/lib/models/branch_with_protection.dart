@@ -82,8 +82,8 @@ class BranchWithProtection {
       'protected': protected,
       'protection': protection.toJson(),
       'protection_url': protectionUrl.toString(),
-      'pattern': pattern,
-      'required_approving_review_count': requiredApprovingReviewCount,
+      'pattern': ?pattern,
+      'required_approving_review_count': ?requiredApprovingReviewCount,
     };
   }
 

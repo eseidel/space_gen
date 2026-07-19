@@ -62,7 +62,7 @@ class GitCreateTagRequest {
       'message': message,
       'object': object,
       'type': type.toJson(),
-      'tagger': tagger?.toJson(),
+      'tagger': ?tagger?.toJson(),
     };
   }
 

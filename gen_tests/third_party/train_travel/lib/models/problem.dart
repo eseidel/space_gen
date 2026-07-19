@@ -62,11 +62,11 @@ class Problem {
   /// Converts a [Problem] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'type': type,
-      'title': title,
-      'detail': detail,
-      'instance': instance,
-      'status': status,
+      'type': ?type,
+      'title': ?title,
+      'detail': ?detail,
+      'instance': ?instance,
+      'status': ?status,
     };
   }
 

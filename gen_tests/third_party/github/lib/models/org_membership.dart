@@ -88,7 +88,7 @@ class OrgMembership {
       'organization_url': organizationUrl.toString(),
       'organization': organization.toJson(),
       'user': user?.toJson(),
-      'permissions': permissions?.toJson(),
+      'permissions': ?permissions?.toJson(),
     };
   }
 

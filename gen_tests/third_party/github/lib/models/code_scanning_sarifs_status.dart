@@ -49,7 +49,7 @@ class CodeScanningSarifsStatus {
   /// Converts a [CodeScanningSarifsStatus] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'processing_status': processingStatus?.toJson(),
+      'processing_status': ?processingStatus?.toJson(),
       'analyses_url': analysesUrl?.toString(),
       'errors': errors,
     };

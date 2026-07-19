@@ -273,13 +273,13 @@ class WorkflowRun {
       'id': id,
       'name': name,
       'node_id': nodeId,
-      'check_suite_id': checkSuiteId,
-      'check_suite_node_id': checkSuiteNodeId,
+      'check_suite_id': ?checkSuiteId,
+      'check_suite_node_id': ?checkSuiteNodeId,
       'head_branch': headBranch,
       'head_sha': headSha,
       'path': path,
       'run_number': runNumber,
-      'run_attempt': runAttempt,
+      'run_attempt': ?runAttempt,
       'referenced_workflows': referencedWorkflows
           ?.map((e) => e.toJson())
           .toList(),
@@ -292,9 +292,9 @@ class WorkflowRun {
       'pull_requests': pullRequests?.map((e) => e.toJson()).toList(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
-      'actor': actor?.toJson(),
-      'triggering_actor': triggeringActor?.toJson(),
-      'run_started_at': runStartedAt?.toIso8601String(),
+      'actor': ?actor?.toJson(),
+      'triggering_actor': ?triggeringActor?.toJson(),
+      'run_started_at': ?runStartedAt?.toIso8601String(),
       'jobs_url': jobsUrl,
       'logs_url': logsUrl,
       'check_suite_url': checkSuiteUrl,
@@ -306,7 +306,7 @@ class WorkflowRun {
       'head_commit': headCommit?.toJson(),
       'repository': repository.toJson(),
       'head_repository': headRepository.toJson(),
-      'head_repository_id': headRepositoryId,
+      'head_repository_id': ?headRepositoryId,
       'display_title': displayTitle,
     };
   }

@@ -71,9 +71,9 @@ class OrgsUpdateWebhookRequestConfig {
   Map<String, dynamic> toJson() {
     return {
       'url': url.toJson(),
-      'content_type': contentType?.toJson(),
-      'secret': secret?.toJson(),
-      'insecure_ssl': insecureSsl?.toJson(),
+      'content_type': ?contentType?.toJson(),
+      'secret': ?secret?.toJson(),
+      'insecure_ssl': ?insecureSsl?.toJson(),
     };
   }
 

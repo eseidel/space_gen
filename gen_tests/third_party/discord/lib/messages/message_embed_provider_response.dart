@@ -33,7 +33,7 @@ class MessageEmbedProviderResponse {
 
   /// Converts a [MessageEmbedProviderResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, 'url': url?.toString()};
+    return {'name': name, 'url': ?url?.toString()};
   }
 
   @override

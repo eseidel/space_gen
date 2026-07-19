@@ -34,7 +34,7 @@ class UpdateStageInstanceRequest {
 
   /// Converts a [UpdateStageInstanceRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'topic': topic, 'privacy_level': privacyLevel?.toJson()};
+    return {'topic': ?topic, 'privacy_level': ?privacyLevel?.toJson()};
   }
 
   @override

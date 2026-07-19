@@ -57,8 +57,8 @@ class PackageVersionMetadata {
   Map<String, dynamic> toJson() {
     return {
       'package_type': packageType.toJson(),
-      'container': container?.toJson(),
-      'docker': docker?.toJson(),
+      'container': ?container?.toJson(),
+      'docker': ?docker?.toJson(),
     };
   }
 

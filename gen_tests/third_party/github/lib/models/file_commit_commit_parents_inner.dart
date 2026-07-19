@@ -35,7 +35,7 @@ class FileCommitCommitParentsInner {
 
   /// Converts a [FileCommitCommitParentsInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'url': url, 'html_url': htmlUrl, 'sha': sha};
+    return {'url': ?url, 'html_url': ?htmlUrl, 'sha': ?sha};
   }
 
   @override

@@ -54,7 +54,7 @@ class ReposCreateOrUpdateFileContentsRequestCommitter {
   /// Converts a [ReposCreateOrUpdateFileContentsRequestCommitter]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, 'email': email, 'date': date};
+    return {'name': name, 'email': email, 'date': ?date};
   }
 
   @override

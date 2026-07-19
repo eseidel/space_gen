@@ -70,7 +70,7 @@ class ContentDirectoryInner {
       'size': size,
       'name': name,
       'path': path,
-      'content': content,
+      'content': ?content,
       'sha': sha,
       'url': url.toString(),
       'git_url': gitUrl?.toString(),

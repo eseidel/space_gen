@@ -57,7 +57,7 @@ class RefuelShip200ResponseData {
     return {
       'agent': agent.toJson(),
       'fuel': fuel.toJson(),
-      'cargo': cargo?.toJson(),
+      'cargo': ?cargo?.toJson(),
       'transaction': transaction.toJson(),
     };
   }

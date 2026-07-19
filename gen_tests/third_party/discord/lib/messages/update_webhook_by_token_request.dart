@@ -34,7 +34,7 @@ class UpdateWebhookByTokenRequest {
 
   /// Converts a [UpdateWebhookByTokenRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, 'avatar': maybeBase64Encode(avatar)};
+    return {'name': ?name, 'avatar': maybeBase64Encode(avatar)};
   }
 
   @override

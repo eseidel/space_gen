@@ -143,17 +143,17 @@ final class CodespacesCreateForAuthenticatedUserRequestOneOf0
   Map<String, dynamic> toJson() {
     return {
       'repository_id': repositoryId,
-      'ref': ref,
-      'location': location,
-      'geo': geo?.toJson(),
-      'client_ip': clientIp,
-      'machine': machine,
-      'devcontainer_path': devcontainerPath,
-      'multi_repo_permissions_opt_out': multiRepoPermissionsOptOut,
-      'working_directory': workingDirectory,
-      'idle_timeout_minutes': idleTimeoutMinutes,
-      'display_name': displayName,
-      'retention_period_minutes': retentionPeriodMinutes,
+      'ref': ?ref,
+      'location': ?location,
+      'geo': ?geo?.toJson(),
+      'client_ip': ?clientIp,
+      'machine': ?machine,
+      'devcontainer_path': ?devcontainerPath,
+      'multi_repo_permissions_opt_out': ?multiRepoPermissionsOptOut,
+      'working_directory': ?workingDirectory,
+      'idle_timeout_minutes': ?idleTimeoutMinutes,
+      'display_name': ?displayName,
+      'retention_period_minutes': ?retentionPeriodMinutes,
     };
   }
 
@@ -272,12 +272,12 @@ final class CodespacesCreateForAuthenticatedUserRequestOneOf1
   Map<String, dynamic> toJson() {
     return {
       'pull_request': pullRequest.toJson(),
-      'location': location,
-      'geo': geo?.toJson(),
-      'machine': machine,
-      'devcontainer_path': devcontainerPath,
-      'working_directory': workingDirectory,
-      'idle_timeout_minutes': idleTimeoutMinutes,
+      'location': ?location,
+      'geo': ?geo?.toJson(),
+      'machine': ?machine,
+      'devcontainer_path': ?devcontainerPath,
+      'working_directory': ?workingDirectory,
+      'idle_timeout_minutes': ?idleTimeoutMinutes,
     };
   }
 

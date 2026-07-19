@@ -70,9 +70,9 @@ class ReposUpdateInformationAboutPagesSiteRequest {
   Map<String, dynamic> toJson() {
     return {
       'cname': cname,
-      'https_enforced': httpsEnforced,
-      'build_type': buildType?.toJson(),
-      'source': source?.toJson(),
+      'https_enforced': ?httpsEnforced,
+      'build_type': ?buildType?.toJson(),
+      'source': ?source?.toJson(),
     };
   }
 

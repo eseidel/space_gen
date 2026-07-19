@@ -48,7 +48,7 @@ class RepositoryRuleParamsStatusCheckConfiguration {
   /// Converts a [RepositoryRuleParamsStatusCheckConfiguration]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'context': context, 'integration_id': integrationId};
+    return {'context': context, 'integration_id': ?integrationId};
   }
 
   @override

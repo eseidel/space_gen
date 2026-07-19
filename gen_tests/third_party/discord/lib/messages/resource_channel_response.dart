@@ -50,8 +50,8 @@ class ResourceChannelResponse {
     return {
       'channel_id': channelId.toJson(),
       'title': title,
-      'emoji': emoji?.toJson(),
-      'icon': icon,
+      'emoji': ?emoji?.toJson(),
+      'icon': ?icon,
       'description': description,
     };
   }

@@ -67,12 +67,12 @@ class SecretScanningScanHistory {
   /// Converts a [SecretScanningScanHistory] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'incremental_scans': incrementalScans?.map((e) => e.toJson()).toList(),
-      'pattern_update_scans': patternUpdateScans
+      'incremental_scans': ?incrementalScans?.map((e) => e.toJson()).toList(),
+      'pattern_update_scans': ?patternUpdateScans
           ?.map((e) => e.toJson())
           .toList(),
-      'backfill_scans': backfillScans?.map((e) => e.toJson()).toList(),
-      'custom_pattern_backfill_scans': customPatternBackfillScans
+      'backfill_scans': ?backfillScans?.map((e) => e.toJson()).toList(),
+      'custom_pattern_backfill_scans': ?customPatternBackfillScans
           ?.map((e) => e.toJson())
           .toList(),
     };

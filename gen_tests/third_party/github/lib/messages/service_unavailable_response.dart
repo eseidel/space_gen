@@ -38,9 +38,9 @@ class ServiceUnavailableResponse {
   /// Converts a [ServiceUnavailableResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'code': code,
-      'message': message,
-      'documentation_url': documentationUrl,
+      'code': ?code,
+      'message': ?message,
+      'documentation_url': ?documentationUrl,
     };
   }
 

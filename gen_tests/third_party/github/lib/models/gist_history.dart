@@ -56,10 +56,10 @@ class GistHistory {
   Map<String, dynamic> toJson() {
     return {
       'user': user?.toJson(),
-      'version': version,
-      'committed_at': committedAt?.toIso8601String(),
-      'change_status': changeStatus?.toJson(),
-      'url': url?.toString(),
+      'version': ?version,
+      'committed_at': ?committedAt?.toIso8601String(),
+      'change_status': ?changeStatus?.toJson(),
+      'url': ?url?.toString(),
     };
   }
 

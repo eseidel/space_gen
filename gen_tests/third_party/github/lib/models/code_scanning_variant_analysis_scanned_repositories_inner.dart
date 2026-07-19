@@ -71,9 +71,9 @@ class CodeScanningVariantAnalysisScannedRepositoriesInner {
     return {
       'repository': repository.toJson(),
       'analysis_status': analysisStatus.toJson(),
-      'result_count': resultCount,
-      'artifact_size_in_bytes': artifactSizeInBytes,
-      'failure_message': failureMessage,
+      'result_count': ?resultCount,
+      'artifact_size_in_bytes': ?artifactSizeInBytes,
+      'failure_message': ?failureMessage,
     };
   }
 

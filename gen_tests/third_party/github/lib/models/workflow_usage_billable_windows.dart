@@ -29,7 +29,7 @@ class WorkflowUsageBillableWindows {
 
   /// Converts a [WorkflowUsageBillableWindows] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'total_ms': totalMs};
+    return {'total_ms': ?totalMs};
   }
 
   @override

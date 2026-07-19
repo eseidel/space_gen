@@ -55,9 +55,9 @@ class OrgsListAttestationsBulk200ResponseAttestationsSubjectDigestsInnerBundle {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'mediaType': mediaType,
-      'verificationMaterial': verificationMaterial,
-      'dsseEnvelope': dsseEnvelope,
+      'mediaType': ?mediaType,
+      'verificationMaterial': ?verificationMaterial,
+      'dsseEnvelope': ?dsseEnvelope,
     };
   }
 

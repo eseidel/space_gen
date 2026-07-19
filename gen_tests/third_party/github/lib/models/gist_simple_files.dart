@@ -51,18 +51,18 @@ class GistSimpleFiles {
 
   /// The encoding used for `content`. Currently, `"utf-8"` and `"base64"` are
   /// supported.
-  final String? encoding;
+  final String encoding;
 
   /// Converts a [GistSimpleFiles] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'filename': filename,
-      'type': type,
-      'language': language,
-      'raw_url': rawUrl,
-      'size': size,
-      'truncated': truncated,
-      'content': content,
+      'filename': ?filename,
+      'type': ?type,
+      'language': ?language,
+      'raw_url': ?rawUrl,
+      'size': ?size,
+      'truncated': ?truncated,
+      'content': ?content,
       'encoding': encoding,
     };
   }

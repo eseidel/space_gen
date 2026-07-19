@@ -50,7 +50,7 @@ class CopilotIdeCodeCompletionsLanguagesInner {
   /// Converts a [CopilotIdeCodeCompletionsLanguagesInner]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, 'total_engaged_users': totalEngagedUsers};
+    return {'name': ?name, 'total_engaged_users': ?totalEngagedUsers};
   }
 
   @override

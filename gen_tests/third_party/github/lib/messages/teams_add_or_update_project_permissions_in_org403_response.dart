@@ -40,7 +40,7 @@ class TeamsAddOrUpdateProjectPermissionsInOrg403Response {
   /// Converts a [TeamsAddOrUpdateProjectPermissionsInOrg403Response]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'message': message, 'documentation_url': documentationUrl};
+    return {'message': ?message, 'documentation_url': ?documentationUrl};
   }
 
   @override

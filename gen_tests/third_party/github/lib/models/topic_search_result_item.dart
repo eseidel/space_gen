@@ -118,7 +118,7 @@ class TopicSearchResultItem {
       'score': score,
       'repository_count': repositoryCount,
       'logo_url': logoUrl?.toString(),
-      'text_matches': textMatches?.map((e) => e.toJson()).toList(),
+      'text_matches': ?textMatches?.map((e) => e.toJson()).toList(),
       'related': related?.map((e) => e.toJson()).toList(),
       'aliases': aliases?.map((e) => e.toJson()).toList(),
     };

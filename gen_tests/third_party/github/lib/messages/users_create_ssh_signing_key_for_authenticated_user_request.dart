@@ -50,7 +50,7 @@ class UsersCreateSshSigningKeyForAuthenticatedUserRequest {
   /// Converts a [UsersCreateSshSigningKeyForAuthenticatedUserRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'title': title, 'key': key};
+    return {'title': ?title, 'key': key};
   }
 
   @override

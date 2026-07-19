@@ -50,9 +50,9 @@ class CodespacesUpdateForAuthenticatedUserRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'machine': machine,
-      'display_name': displayName,
-      'recent_folders': recentFolders,
+      'machine': ?machine,
+      'display_name': ?displayName,
+      'recent_folders': ?recentFolders,
     };
   }
 

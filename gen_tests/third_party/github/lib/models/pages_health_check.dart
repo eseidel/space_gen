@@ -42,7 +42,7 @@ class PagesHealthCheck {
 
   /// Converts a [PagesHealthCheck] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'domain': domain?.toJson(), 'alt_domain': altDomain?.toJson()};
+    return {'domain': ?domain?.toJson(), 'alt_domain': altDomain?.toJson()};
   }
 
   @override

@@ -67,8 +67,8 @@ class DependabotAlertDependency {
   /// Converts a [DependabotAlertDependency] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'package': package?.toJson(),
-      'manifest_path': manifestPath,
+      'package': ?package?.toJson(),
+      'manifest_path': ?manifestPath,
       'scope': scope?.toJson(),
       'relationship': relationship?.toJson(),
     };

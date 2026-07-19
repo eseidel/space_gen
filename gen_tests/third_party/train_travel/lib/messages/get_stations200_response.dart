@@ -38,8 +38,8 @@ class GetStations200Response {
   /// Converts a [GetStations200Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'data': data?.map((e) => e.toJson()).toList(),
-      'links': links?.toJson(),
+      'data': ?data?.map((e) => e.toJson()).toList(),
+      'links': ?links?.toJson(),
     };
   }
 

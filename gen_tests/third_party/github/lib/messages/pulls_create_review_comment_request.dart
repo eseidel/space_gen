@@ -130,13 +130,13 @@ class PullsCreateReviewCommentRequest {
       'body': body,
       'commit_id': commitId,
       'path': path,
-      'position': position,
-      'side': side?.toJson(),
-      'line': line,
-      'start_line': startLine,
-      'start_side': startSide?.toJson(),
-      'in_reply_to': inReplyTo,
-      'subject_type': subjectType?.toJson(),
+      'position': ?position,
+      'side': ?side?.toJson(),
+      'line': ?line,
+      'start_line': ?startLine,
+      'start_side': ?startSide?.toJson(),
+      'in_reply_to': ?inReplyTo,
+      'subject_type': ?subjectType?.toJson(),
     };
   }
 

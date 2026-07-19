@@ -70,10 +70,10 @@ class ReposCreateWebhookRequestConfig {
   /// Converts a [ReposCreateWebhookRequestConfig] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'url': url?.toJson(),
-      'content_type': contentType?.toJson(),
-      'secret': secret?.toJson(),
-      'insecure_ssl': insecureSsl?.toJson(),
+      'url': ?url?.toJson(),
+      'content_type': ?contentType?.toJson(),
+      'secret': ?secret?.toJson(),
+      'insecure_ssl': ?insecureSsl?.toJson(),
     };
   }
 

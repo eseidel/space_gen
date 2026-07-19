@@ -150,23 +150,23 @@ class BranchProtection {
   /// Converts a [BranchProtection] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'url': url,
-      'enabled': enabled,
-      'required_status_checks': requiredStatusChecks?.toJson(),
-      'enforce_admins': enforceAdmins?.toJson(),
-      'required_pull_request_reviews': requiredPullRequestReviews?.toJson(),
-      'restrictions': restrictions?.toJson(),
-      'required_linear_history': requiredLinearHistory?.toJson(),
-      'allow_force_pushes': allowForcePushes?.toJson(),
-      'allow_deletions': allowDeletions?.toJson(),
-      'block_creations': blockCreations?.toJson(),
-      'required_conversation_resolution': requiredConversationResolution
+      'url': ?url,
+      'enabled': ?enabled,
+      'required_status_checks': ?requiredStatusChecks?.toJson(),
+      'enforce_admins': ?enforceAdmins?.toJson(),
+      'required_pull_request_reviews': ?requiredPullRequestReviews?.toJson(),
+      'restrictions': ?restrictions?.toJson(),
+      'required_linear_history': ?requiredLinearHistory?.toJson(),
+      'allow_force_pushes': ?allowForcePushes?.toJson(),
+      'allow_deletions': ?allowDeletions?.toJson(),
+      'block_creations': ?blockCreations?.toJson(),
+      'required_conversation_resolution': ?requiredConversationResolution
           ?.toJson(),
-      'name': name,
-      'protection_url': protectionUrl,
-      'required_signatures': requiredSignatures?.toJson(),
-      'lock_branch': lockBranch?.toJson(),
-      'allow_fork_syncing': allowForkSyncing?.toJson(),
+      'name': ?name,
+      'protection_url': ?protectionUrl,
+      'required_signatures': ?requiredSignatures?.toJson(),
+      'lock_branch': ?lockBranch?.toJson(),
+      'allow_fork_syncing': ?allowForkSyncing?.toJson(),
     };
   }
 

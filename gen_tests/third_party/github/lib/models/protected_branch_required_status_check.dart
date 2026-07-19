@@ -65,12 +65,12 @@ class ProtectedBranchRequiredStatusCheck {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'url': url,
-      'enforcement_level': enforcementLevel,
+      'url': ?url,
+      'enforcement_level': ?enforcementLevel,
       'contexts': contexts,
       'checks': checks.map((e) => e.toJson()).toList(),
-      'contexts_url': contextsUrl,
-      'strict': strict,
+      'contexts_url': ?contextsUrl,
+      'strict': ?strict,
     };
   }
 

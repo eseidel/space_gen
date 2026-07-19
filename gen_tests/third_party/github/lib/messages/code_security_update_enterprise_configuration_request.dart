@@ -194,7 +194,7 @@ class CodeSecurityUpdateEnterpriseConfigurationRequest {
   final CodeScanningDefaultSetupOptions? codeScanningDefaultSetupOptions;
 
   /// The enablement status of code scanning delegated alert dismissal
-  final CodeSecurityUpdateEnterpriseConfigurationRequestCodeScanningDelegatedAlertDismissal?
+  final CodeSecurityUpdateEnterpriseConfigurationRequestCodeScanningDelegatedAlertDismissal
   codeScanningDelegatedAlertDismissal;
 
   /// The enablement status of secret scanning
@@ -214,11 +214,11 @@ class CodeSecurityUpdateEnterpriseConfigurationRequest {
   secretScanningNonProviderPatterns;
 
   /// The enablement status of Copilot secret scanning
-  final CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanningGenericSecrets?
+  final CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanningGenericSecrets
   secretScanningGenericSecrets;
 
   /// The enablement status of secret scanning delegated alert dismissal
-  final CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanningDelegatedAlertDismissal?
+  final CodeSecurityUpdateEnterpriseConfigurationRequestSecretScanningDelegatedAlertDismissal
   secretScanningDelegatedAlertDismissal;
 
   /// The enablement status of private vulnerability reporting
@@ -233,32 +233,34 @@ class CodeSecurityUpdateEnterpriseConfigurationRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'description': description,
-      'advanced_security': advancedSecurity?.toJson(),
-      'dependency_graph': dependencyGraph?.toJson(),
-      'dependency_graph_autosubmit_action': dependencyGraphAutosubmitAction
+      'name': ?name,
+      'description': ?description,
+      'advanced_security': ?advancedSecurity?.toJson(),
+      'dependency_graph': ?dependencyGraph?.toJson(),
+      'dependency_graph_autosubmit_action': ?dependencyGraphAutosubmitAction
           ?.toJson(),
       'dependency_graph_autosubmit_action_options':
-          dependencyGraphAutosubmitActionOptions?.toJson(),
-      'dependabot_alerts': dependabotAlerts?.toJson(),
-      'dependabot_security_updates': dependabotSecurityUpdates?.toJson(),
-      'code_scanning_default_setup': codeScanningDefaultSetup?.toJson(),
+          ?dependencyGraphAutosubmitActionOptions?.toJson(),
+      'dependabot_alerts': ?dependabotAlerts?.toJson(),
+      'dependabot_security_updates': ?dependabotSecurityUpdates?.toJson(),
+      'code_scanning_default_setup': ?codeScanningDefaultSetup?.toJson(),
       'code_scanning_default_setup_options': codeScanningDefaultSetupOptions
           ?.toJson(),
       'code_scanning_delegated_alert_dismissal':
-          codeScanningDelegatedAlertDismissal?.toJson(),
-      'secret_scanning': secretScanning?.toJson(),
-      'secret_scanning_push_protection': secretScanningPushProtection?.toJson(),
-      'secret_scanning_validity_checks': secretScanningValidityChecks?.toJson(),
-      'secret_scanning_non_provider_patterns': secretScanningNonProviderPatterns
+          codeScanningDelegatedAlertDismissal.toJson(),
+      'secret_scanning': ?secretScanning?.toJson(),
+      'secret_scanning_push_protection': ?secretScanningPushProtection
           ?.toJson(),
-      'secret_scanning_generic_secrets': secretScanningGenericSecrets?.toJson(),
+      'secret_scanning_validity_checks': ?secretScanningValidityChecks
+          ?.toJson(),
+      'secret_scanning_non_provider_patterns':
+          ?secretScanningNonProviderPatterns?.toJson(),
+      'secret_scanning_generic_secrets': secretScanningGenericSecrets.toJson(),
       'secret_scanning_delegated_alert_dismissal':
-          secretScanningDelegatedAlertDismissal?.toJson(),
-      'private_vulnerability_reporting': privateVulnerabilityReporting
+          secretScanningDelegatedAlertDismissal.toJson(),
+      'private_vulnerability_reporting': ?privateVulnerabilityReporting
           ?.toJson(),
-      'enforcement': enforcement?.toJson(),
+      'enforcement': ?enforcement?.toJson(),
     };
   }
 

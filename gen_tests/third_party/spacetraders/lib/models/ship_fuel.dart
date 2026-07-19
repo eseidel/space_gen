@@ -54,7 +54,7 @@ class ShipFuel {
     return {
       'current': current,
       'capacity': capacity,
-      'consumed': consumed?.toJson(),
+      'consumed': ?consumed?.toJson(),
     };
   }
 

@@ -39,7 +39,7 @@ class RepositoryAdvisoryCreditsInner {
 
   /// Converts a [RepositoryAdvisoryCreditsInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'login': login, 'type': type?.toJson()};
+    return {'login': ?login, 'type': ?type?.toJson()};
   }
 
   @override

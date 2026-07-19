@@ -71,8 +71,8 @@ class ThreadSubscription {
       'reason': reason,
       'created_at': createdAt?.toIso8601String(),
       'url': url.toString(),
-      'thread_url': threadUrl?.toString(),
-      'repository_url': repositoryUrl?.toString(),
+      'thread_url': ?threadUrl?.toString(),
+      'repository_url': ?repositoryUrl?.toString(),
     };
   }
 

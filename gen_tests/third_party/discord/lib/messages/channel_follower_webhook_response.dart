@@ -79,9 +79,9 @@ class ChannelFollowerWebhookResponse {
       'id': id.toJson(),
       'name': name,
       'type': type.toJson(),
-      'user': user?.toJson(),
-      'source_guild': sourceGuild?.toJson(),
-      'source_channel': sourceChannel?.toJson(),
+      'user': ?user?.toJson(),
+      'source_guild': ?sourceGuild?.toJson(),
+      'source_channel': ?sourceChannel?.toJson(),
     };
   }
 

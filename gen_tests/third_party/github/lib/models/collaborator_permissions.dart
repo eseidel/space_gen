@@ -45,9 +45,9 @@ class CollaboratorPermissions {
   Map<String, dynamic> toJson() {
     return {
       'pull': pull,
-      'triage': triage,
+      'triage': ?triage,
       'push': push,
-      'maintain': maintain,
+      'maintain': ?maintain,
       'admin': admin,
     };
   }

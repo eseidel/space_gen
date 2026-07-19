@@ -85,11 +85,11 @@ class ChecksUpdateRequestAnyOf0Output {
   /// Converts a [ChecksUpdateRequestAnyOf0Output] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'title': title,
+      'title': ?title,
       'summary': summary,
-      'text': text,
-      'annotations': annotations?.map((e) => e.toJson()).toList(),
-      'images': images?.map((e) => e.toJson()).toList(),
+      'text': ?text,
+      'annotations': ?annotations?.map((e) => e.toJson()).toList(),
+      'images': ?images?.map((e) => e.toJson()).toList(),
     };
   }
 

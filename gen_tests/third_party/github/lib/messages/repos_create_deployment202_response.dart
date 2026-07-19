@@ -30,7 +30,7 @@ class ReposCreateDeployment202Response {
 
   /// Converts a [ReposCreateDeployment202Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'message': message};
+    return {'message': ?message};
   }
 
   @override

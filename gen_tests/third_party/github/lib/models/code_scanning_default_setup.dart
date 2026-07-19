@@ -98,12 +98,12 @@ class CodeScanningDefaultSetup {
   /// Converts a [CodeScanningDefaultSetup] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'state': state?.toJson(),
-      'languages': languages?.map((e) => e.toJson()).toList(),
+      'state': ?state?.toJson(),
+      'languages': ?languages?.map((e) => e.toJson()).toList(),
       'runner_type': runnerType?.toJson(),
       'runner_label': runnerLabel,
-      'query_suite': querySuite?.toJson(),
-      'threat_model': threatModel?.toJson(),
+      'query_suite': ?querySuite?.toJson(),
+      'threat_model': ?threatModel?.toJson(),
       'updated_at': updatedAt?.toIso8601String(),
       'schedule': schedule?.toJson(),
     };

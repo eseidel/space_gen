@@ -64,8 +64,8 @@ class RepositoryRulesetConditionsRepositoryPropertyTargetRepositoryProperty {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'include': include?.map((e) => e.toJson()).toList(),
-      'exclude': exclude?.map((e) => e.toJson()).toList(),
+      'include': ?include?.map((e) => e.toJson()).toList(),
+      'exclude': ?exclude?.map((e) => e.toJson()).toList(),
     };
   }
 

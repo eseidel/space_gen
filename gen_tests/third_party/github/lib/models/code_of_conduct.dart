@@ -70,7 +70,7 @@ class CodeOfConduct {
       'key': key,
       'name': name,
       'url': url.toString(),
-      'body': body,
+      'body': ?body,
       'html_url': htmlUrl?.toString(),
     };
   }

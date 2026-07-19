@@ -81,13 +81,13 @@ class WidgetMember {
       'avatar': avatar,
       'status': status,
       'avatar_url': avatarUrl.toString(),
-      'activity': activity?.toJson(),
-      'deaf': deaf,
-      'mute': mute,
-      'self_deaf': selfDeaf,
-      'self_mute': selfMute,
-      'suppress': suppress,
-      'channel_id': channelId?.toJson(),
+      'activity': ?activity?.toJson(),
+      'deaf': ?deaf,
+      'mute': ?mute,
+      'self_deaf': ?selfDeaf,
+      'self_mute': ?selfMute,
+      'suppress': ?suppress,
+      'channel_id': ?channelId?.toJson(),
     };
   }
 

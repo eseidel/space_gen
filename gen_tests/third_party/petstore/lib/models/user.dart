@@ -69,14 +69,14 @@ class User {
   /// Converts a [User] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'username': username,
-      'firstName': firstName,
-      'lastName': lastName,
-      'email': email,
-      'password': password,
-      'phone': phone,
-      'userStatus': userStatus,
+      'id': ?id,
+      'username': ?username,
+      'firstName': ?firstName,
+      'lastName': ?lastName,
+      'email': ?email,
+      'password': ?password,
+      'phone': ?phone,
+      'userStatus': ?userStatus,
     };
   }
 

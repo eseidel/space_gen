@@ -33,7 +33,7 @@ class FileCommitCommitAuthor {
 
   /// Converts a [FileCommitCommitAuthor] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'date': date, 'name': name, 'email': email};
+    return {'date': ?date, 'name': ?name, 'email': ?email};
   }
 
   @override

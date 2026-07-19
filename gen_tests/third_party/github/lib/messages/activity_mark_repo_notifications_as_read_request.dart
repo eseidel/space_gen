@@ -40,7 +40,7 @@ class ActivityMarkRepoNotificationsAsReadRequest {
   /// Converts an [ActivityMarkRepoNotificationsAsReadRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'last_read_at': lastReadAt?.toIso8601String()};
+    return {'last_read_at': ?lastReadAt?.toIso8601String()};
   }
 
   @override

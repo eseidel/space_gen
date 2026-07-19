@@ -65,12 +65,12 @@ class ApplicationCommandAttachmentOptionResponse {
     return {
       'type': type.toJson(),
       'name': name,
-      'name_localized': nameLocalized,
+      'name_localized': ?nameLocalized,
       'name_localizations': nameLocalizations,
       'description': description,
-      'description_localized': descriptionLocalized,
+      'description_localized': ?descriptionLocalized,
       'description_localizations': descriptionLocalizations,
-      'required': required_,
+      'required': ?required_,
     };
   }
 

@@ -66,7 +66,7 @@ class LicenseSimple {
       'url': url?.toString(),
       'spdx_id': spdxId,
       'node_id': nodeId,
-      'html_url': htmlUrl?.toString(),
+      'html_url': ?htmlUrl?.toString(),
     };
   }
 

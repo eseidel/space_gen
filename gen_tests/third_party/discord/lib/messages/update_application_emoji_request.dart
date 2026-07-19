@@ -29,7 +29,7 @@ class UpdateApplicationEmojiRequest {
 
   /// Converts a [UpdateApplicationEmojiRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name};
+    return {'name': ?name};
   }
 
   @override

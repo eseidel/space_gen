@@ -65,14 +65,14 @@ class MarketplacePurchaseMarketplacePurchase {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'billing_cycle': billingCycle,
+      'billing_cycle': ?billingCycle,
       'next_billing_date': nextBillingDate,
-      'is_installed': isInstalled,
+      'is_installed': ?isInstalled,
       'unit_count': unitCount,
-      'on_free_trial': onFreeTrial,
+      'on_free_trial': ?onFreeTrial,
       'free_trial_ends_on': freeTrialEndsOn,
-      'updated_at': updatedAt,
-      'plan': plan?.toJson(),
+      'updated_at': ?updatedAt,
+      'plan': ?plan?.toJson(),
     };
   }
 

@@ -84,12 +84,12 @@ class ProtectedBranchPullRequestReviewDismissalRestrictions {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'users': users?.map((e) => e.toJson()).toList(),
-      'teams': teams?.map((e) => e.toJson()).toList(),
-      'apps': apps?.map((e) => e.toJson()).toList(),
-      'url': url,
-      'users_url': usersUrl,
-      'teams_url': teamsUrl,
+      'users': ?users?.map((e) => e.toJson()).toList(),
+      'teams': ?teams?.map((e) => e.toJson()).toList(),
+      'apps': ?apps?.map((e) => e.toJson()).toList(),
+      'url': ?url,
+      'users_url': ?usersUrl,
+      'teams_url': ?teamsUrl,
     };
   }
 

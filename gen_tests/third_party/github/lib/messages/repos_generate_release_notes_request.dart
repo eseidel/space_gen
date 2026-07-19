@@ -59,9 +59,9 @@ class ReposGenerateReleaseNotesRequest {
   Map<String, dynamic> toJson() {
     return {
       'tag_name': tagName,
-      'target_commitish': targetCommitish,
-      'previous_tag_name': previousTagName,
-      'configuration_file_path': configurationFilePath,
+      'target_commitish': ?targetCommitish,
+      'previous_tag_name': ?previousTagName,
+      'configuration_file_path': ?configurationFilePath,
     };
   }
 

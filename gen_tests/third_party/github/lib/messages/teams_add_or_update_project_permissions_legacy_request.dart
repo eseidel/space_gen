@@ -49,7 +49,7 @@ class TeamsAddOrUpdateProjectPermissionsLegacyRequest {
   /// Converts a [TeamsAddOrUpdateProjectPermissionsLegacyRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'permission': permission?.toJson()};
+    return {'permission': ?permission?.toJson()};
   }
 
   @override

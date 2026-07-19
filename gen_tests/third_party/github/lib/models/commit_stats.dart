@@ -33,7 +33,7 @@ class CommitStats {
 
   /// Converts a [CommitStats] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'additions': additions, 'deletions': deletions, 'total': total};
+    return {'additions': ?additions, 'deletions': ?deletions, 'total': ?total};
   }
 
   @override

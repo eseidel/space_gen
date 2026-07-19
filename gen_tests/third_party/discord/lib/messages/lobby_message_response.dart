@@ -75,10 +75,10 @@ class LobbyMessageResponse {
       'lobby_id': lobbyId.toJson(),
       'channel_id': channelId.toJson(),
       'author': author.toJson(),
-      'metadata': metadata,
-      'moderation_metadata': moderationMetadata,
+      'metadata': ?metadata,
+      'moderation_metadata': ?moderationMetadata,
       'flags': flags,
-      'application_id': applicationId?.toJson(),
+      'application_id': ?applicationId?.toJson(),
     };
   }
 

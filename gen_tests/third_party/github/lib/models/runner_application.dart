@@ -58,8 +58,8 @@ class RunnerApplication {
       'architecture': architecture,
       'download_url': downloadUrl,
       'filename': filename,
-      'temp_download_token': tempDownloadToken,
-      'sha256_checksum': sha256Checksum,
+      'temp_download_token': ?tempDownloadToken,
+      'sha256_checksum': ?sha256Checksum,
     };
   }
 

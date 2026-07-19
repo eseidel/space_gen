@@ -45,7 +45,7 @@ class ValidationErrorSimple {
     return {
       'message': message,
       'documentation_url': documentationUrl,
-      'errors': errors,
+      'errors': ?errors,
     };
   }
 

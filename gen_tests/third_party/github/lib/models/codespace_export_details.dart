@@ -80,8 +80,8 @@ class CodespaceExportDetails {
       'completed_at': completedAt?.toIso8601String(),
       'branch': branch,
       'sha': sha,
-      'id': id,
-      'export_url': exportUrl,
+      'id': ?id,
+      'export_url': ?exportUrl,
       'html_url': htmlUrl,
     };
   }

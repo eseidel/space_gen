@@ -52,7 +52,7 @@ class CodeSecurityAttachConfigurationRequest {
   Map<String, dynamic> toJson() {
     return {
       'scope': scope.toJson(),
-      'selected_repository_ids': selectedRepositoryIds,
+      'selected_repository_ids': ?selectedRepositoryIds,
     };
   }
 

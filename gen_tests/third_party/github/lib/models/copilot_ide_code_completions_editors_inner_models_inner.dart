@@ -77,11 +77,11 @@ class CopilotIdeCodeCompletionsEditorsInnerModelsInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'is_custom_model': isCustomModel,
+      'name': ?name,
+      'is_custom_model': ?isCustomModel,
       'custom_model_training_date': customModelTrainingDate,
-      'total_engaged_users': totalEngagedUsers,
-      'languages': languages?.map((e) => e.toJson()).toList(),
+      'total_engaged_users': ?totalEngagedUsers,
+      'languages': ?languages?.map((e) => e.toJson()).toList(),
     };
   }
 

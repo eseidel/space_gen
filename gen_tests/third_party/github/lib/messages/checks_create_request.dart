@@ -194,14 +194,14 @@ final class ChecksCreateRequestOneOf0 extends ChecksCreateRequest {
     return {
       'name': name,
       'head_sha': headSha,
-      'details_url': detailsUrl,
-      'external_id': externalId,
+      'details_url': ?detailsUrl,
+      'external_id': ?externalId,
       'status': status.toJson(),
-      'started_at': startedAt?.toIso8601String(),
+      'started_at': ?startedAt?.toIso8601String(),
       'conclusion': conclusion.toJson(),
-      'completed_at': completedAt?.toIso8601String(),
-      'output': output?.toJson(),
-      'actions': actions?.map((e) => e.toJson()).toList(),
+      'completed_at': ?completedAt?.toIso8601String(),
+      'output': ?output?.toJson(),
+      'actions': ?actions?.map((e) => e.toJson()).toList(),
       for (final entry in entries.entries)
         if (!const {
           'name',
@@ -399,14 +399,14 @@ final class ChecksCreateRequestOneOf1 extends ChecksCreateRequest {
     return {
       'name': name,
       'head_sha': headSha,
-      'details_url': detailsUrl,
-      'external_id': externalId,
-      'status': status?.toJson(),
-      'started_at': startedAt?.toIso8601String(),
-      'conclusion': conclusion?.toJson(),
-      'completed_at': completedAt?.toIso8601String(),
-      'output': output?.toJson(),
-      'actions': actions?.map((e) => e.toJson()).toList(),
+      'details_url': ?detailsUrl,
+      'external_id': ?externalId,
+      'status': ?status?.toJson(),
+      'started_at': ?startedAt?.toIso8601String(),
+      'conclusion': ?conclusion?.toJson(),
+      'completed_at': ?completedAt?.toIso8601String(),
+      'output': ?output?.toJson(),
+      'actions': ?actions?.map((e) => e.toJson()).toList(),
       for (final entry in entries.entries)
         if (!const {
           'name',

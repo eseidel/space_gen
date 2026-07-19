@@ -44,8 +44,8 @@ class ApiInsightsSummaryStats {
   /// Converts an [ApiInsightsSummaryStats] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'total_request_count': totalRequestCount,
-      'rate_limited_request_count': rateLimitedRequestCount,
+      'total_request_count': ?totalRequestCount,
+      'rate_limited_request_count': ?rateLimitedRequestCount,
     };
   }
 

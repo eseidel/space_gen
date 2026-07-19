@@ -70,13 +70,13 @@ class ActionsCacheListActionsCachesInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'ref': ref,
-      'key': key,
-      'version': version,
-      'last_accessed_at': lastAccessedAt?.toIso8601String(),
-      'created_at': createdAt?.toIso8601String(),
-      'size_in_bytes': sizeInBytes,
+      'id': ?id,
+      'ref': ?ref,
+      'key': ?key,
+      'version': ?version,
+      'last_accessed_at': ?lastAccessedAt?.toIso8601String(),
+      'created_at': ?createdAt?.toIso8601String(),
+      'size_in_bytes': ?sizeInBytes,
     };
   }
 

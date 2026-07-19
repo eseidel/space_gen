@@ -71,9 +71,9 @@ class ProtectedBranchPullRequestReviewBypassPullRequestAllowances {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'users': users?.map((e) => e.toJson()).toList(),
-      'teams': teams?.map((e) => e.toJson()).toList(),
-      'apps': apps?.map((e) => e.toJson()).toList(),
+      'users': ?users?.map((e) => e.toJson()).toList(),
+      'teams': ?teams?.map((e) => e.toJson()).toList(),
+      'apps': ?apps?.map((e) => e.toJson()).toList(),
     };
   }
 

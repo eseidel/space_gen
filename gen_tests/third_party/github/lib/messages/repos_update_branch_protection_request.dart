@@ -130,12 +130,12 @@ class ReposUpdateBranchProtectionRequest {
 
   /// Whether to set the branch as read-only. If this is true, users will not
   /// be able to push to the branch. Default: `false`.
-  final bool? lockBranch;
+  final bool lockBranch;
 
   /// Whether users can pull changes from upstream when the branch is locked.
   /// Set to `true` to allow fork syncing. Set to `false` to prevent fork
   /// syncing. Default: `false`.
-  final bool? allowForkSyncing;
+  final bool allowForkSyncing;
 
   /// Converts a [ReposUpdateBranchProtectionRequest]
   /// to a `Map<String, dynamic>`.
@@ -145,11 +145,11 @@ class ReposUpdateBranchProtectionRequest {
       'enforce_admins': enforceAdmins,
       'required_pull_request_reviews': requiredPullRequestReviews?.toJson(),
       'restrictions': restrictions?.toJson(),
-      'required_linear_history': requiredLinearHistory,
+      'required_linear_history': ?requiredLinearHistory,
       'allow_force_pushes': allowForcePushes,
-      'allow_deletions': allowDeletions,
-      'block_creations': blockCreations,
-      'required_conversation_resolution': requiredConversationResolution,
+      'allow_deletions': ?allowDeletions,
+      'block_creations': ?blockCreations,
+      'required_conversation_resolution': ?requiredConversationResolution,
       'lock_branch': lockBranch,
       'allow_fork_syncing': allowForkSyncing,
     };

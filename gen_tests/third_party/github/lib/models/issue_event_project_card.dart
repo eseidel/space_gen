@@ -57,7 +57,7 @@ class IssueEventProjectCard {
       'project_url': projectUrl.toString(),
       'project_id': projectId,
       'column_name': columnName,
-      'previous_column_name': previousColumnName,
+      'previous_column_name': ?previousColumnName,
     };
   }
 

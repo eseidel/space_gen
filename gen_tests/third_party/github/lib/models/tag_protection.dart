@@ -58,10 +58,10 @@ class TagProtection {
   /// Converts a [TagProtection] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'created_at': createdAt,
-      'updated_at': updatedAt,
-      'enabled': enabled,
+      'id': ?id,
+      'created_at': ?createdAt,
+      'updated_at': ?updatedAt,
+      'enabled': ?enabled,
       'pattern': pattern,
     };
   }

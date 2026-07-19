@@ -47,10 +47,10 @@ class TopicSearchResultItemAliasesInnerTopicRelation {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'name': name,
-      'topic_id': topicId,
-      'relation_type': relationType,
+      'id': ?id,
+      'name': ?name,
+      'topic_id': ?topicId,
+      'relation_type': ?relationType,
     };
   }
 

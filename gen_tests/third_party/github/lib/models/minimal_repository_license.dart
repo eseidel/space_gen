@@ -44,11 +44,11 @@ class MinimalRepositoryLicense {
   /// Converts a [MinimalRepositoryLicense] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'key': key,
-      'name': name,
-      'spdx_id': spdxId,
-      'url': url,
-      'node_id': nodeId,
+      'key': ?key,
+      'name': ?name,
+      'spdx_id': ?spdxId,
+      'url': ?url,
+      'node_id': ?nodeId,
     };
   }
 

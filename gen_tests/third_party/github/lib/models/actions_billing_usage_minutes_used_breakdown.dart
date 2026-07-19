@@ -109,21 +109,21 @@ class ActionsBillingUsageMinutesUsedBreakdown {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'UBUNTU': ubuntu,
-      'MACOS': macos,
-      'WINDOWS': windows,
-      'ubuntu_4_core': ubuntu4Core,
-      'ubuntu_8_core': ubuntu8Core,
-      'ubuntu_16_core': ubuntu16Core,
-      'ubuntu_32_core': ubuntu32Core,
-      'ubuntu_64_core': ubuntu64Core,
-      'windows_4_core': windows4Core,
-      'windows_8_core': windows8Core,
-      'windows_16_core': windows16Core,
-      'windows_32_core': windows32Core,
-      'windows_64_core': windows64Core,
-      'macos_12_core': macos12Core,
-      'total': total,
+      'UBUNTU': ?ubuntu,
+      'MACOS': ?macos,
+      'WINDOWS': ?windows,
+      'ubuntu_4_core': ?ubuntu4Core,
+      'ubuntu_8_core': ?ubuntu8Core,
+      'ubuntu_16_core': ?ubuntu16Core,
+      'ubuntu_32_core': ?ubuntu32Core,
+      'ubuntu_64_core': ?ubuntu64Core,
+      'windows_4_core': ?windows4Core,
+      'windows_8_core': ?windows8Core,
+      'windows_16_core': ?windows16Core,
+      'windows_32_core': ?windows32Core,
+      'windows_64_core': ?windows64Core,
+      'macos_12_core': ?macos12Core,
+      'total': ?total,
     };
   }
 

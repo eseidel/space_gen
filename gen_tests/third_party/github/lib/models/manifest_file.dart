@@ -30,7 +30,7 @@ class ManifestFile {
 
   /// Converts a [ManifestFile] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'source_location': sourceLocation};
+    return {'source_location': ?sourceLocation};
   }
 
   @override

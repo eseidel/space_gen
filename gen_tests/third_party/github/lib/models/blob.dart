@@ -61,7 +61,7 @@ class Blob {
       'sha': sha,
       'size': size,
       'node_id': nodeId,
-      'highlighted_content': highlightedContent,
+      'highlighted_content': ?highlightedContent,
     };
   }
 

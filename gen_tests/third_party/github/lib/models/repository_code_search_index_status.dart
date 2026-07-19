@@ -41,8 +41,8 @@ class RepositoryCodeSearchIndexStatus {
   /// Converts a [RepositoryCodeSearchIndexStatus] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'lexical_search_ok': lexicalSearchOk,
-      'lexical_commit_sha': lexicalCommitSha,
+      'lexical_search_ok': ?lexicalSearchOk,
+      'lexical_commit_sha': ?lexicalCommitSha,
     };
   }
 

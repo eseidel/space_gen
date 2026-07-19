@@ -84,7 +84,7 @@ class ReposUpdateBranchProtectionRequestRequiredPullRequestReviews {
 
   /// Whether the most recent push must be approved by someone other than the
   /// person who pushed it. Default: `false`.
-  final bool? requireLastPushApproval;
+  final bool requireLastPushApproval;
 
   /// Allow specific users, teams, or apps to bypass pull request
   /// requirements.
@@ -95,12 +95,12 @@ class ReposUpdateBranchProtectionRequestRequiredPullRequestReviews {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'dismissal_restrictions': dismissalRestrictions?.toJson(),
-      'dismiss_stale_reviews': dismissStaleReviews,
-      'require_code_owner_reviews': requireCodeOwnerReviews,
-      'required_approving_review_count': requiredApprovingReviewCount,
+      'dismissal_restrictions': ?dismissalRestrictions?.toJson(),
+      'dismiss_stale_reviews': ?dismissStaleReviews,
+      'require_code_owner_reviews': ?requireCodeOwnerReviews,
+      'required_approving_review_count': ?requiredApprovingReviewCount,
       'require_last_push_approval': requireLastPushApproval,
-      'bypass_pull_request_allowances': bypassPullRequestAllowances?.toJson(),
+      'bypass_pull_request_allowances': ?bypassPullRequestAllowances?.toJson(),
     };
   }
 

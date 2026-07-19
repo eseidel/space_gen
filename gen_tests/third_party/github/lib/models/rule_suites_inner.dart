@@ -90,17 +90,17 @@ class RuleSuitesInner {
   /// Converts a [RuleSuitesInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'actor_id': actorId,
-      'actor_name': actorName,
-      'before_sha': beforeSha,
-      'after_sha': afterSha,
-      'ref': ref,
-      'repository_id': repositoryId,
-      'repository_name': repositoryName,
-      'pushed_at': pushedAt?.toIso8601String(),
-      'result': result?.toJson(),
-      'evaluation_result': evaluationResult?.toJson(),
+      'id': ?id,
+      'actor_id': ?actorId,
+      'actor_name': ?actorName,
+      'before_sha': ?beforeSha,
+      'after_sha': ?afterSha,
+      'ref': ?ref,
+      'repository_id': ?repositoryId,
+      'repository_name': ?repositoryName,
+      'pushed_at': ?pushedAt?.toIso8601String(),
+      'result': ?result?.toJson(),
+      'evaluation_result': ?evaluationResult?.toJson(),
     };
   }
 

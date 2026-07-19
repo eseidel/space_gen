@@ -43,7 +43,7 @@ class UsersCreateGpgKeyForAuthenticatedUserRequest {
   /// Converts a [UsersCreateGpgKeyForAuthenticatedUserRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, 'armored_public_key': armoredPublicKey};
+    return {'name': ?name, 'armored_public_key': armoredPublicKey};
   }
 
   @override

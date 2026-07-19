@@ -37,7 +37,7 @@ class QueryEntitiesByPredicateRequestFullTextFilter {
   /// Converts a [QueryEntitiesByPredicateRequestFullTextFilter]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'term': term, 'fields': fields};
+    return {'term': ?term, 'fields': ?fields};
   }
 
   @override

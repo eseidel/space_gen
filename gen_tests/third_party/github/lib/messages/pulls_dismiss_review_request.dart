@@ -37,7 +37,7 @@ class PullsDismissReviewRequest {
 
   /// Converts a [PullsDismissReviewRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'message': message, 'event': event?.toJson()};
+    return {'message': message, 'event': ?event?.toJson()};
   }
 
   @override

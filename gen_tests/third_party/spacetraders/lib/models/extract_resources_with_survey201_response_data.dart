@@ -74,7 +74,7 @@ class ExtractResourcesWithSurvey201ResponseData {
       'extraction': extraction.toJson(),
       'cooldown': cooldown.toJson(),
       'cargo': cargo.toJson(),
-      'modifiers': modifiers?.map((e) => e.toJson()).toList(),
+      'modifiers': ?modifiers?.map((e) => e.toJson()).toList(),
       'events': events.map((e) => e.toJson()).toList(),
     };
   }

@@ -125,11 +125,11 @@ class Waypoint {
       'x': x,
       'y': y,
       'orbitals': orbitals.map((e) => e.toJson()).toList(),
-      'orbits': orbits,
-      'faction': faction?.toJson(),
+      'orbits': ?orbits,
+      'faction': ?faction?.toJson(),
       'traits': traits.map((e) => e.toJson()).toList(),
-      'modifiers': modifiers?.map((e) => e.toJson()).toList(),
-      'chart': chart?.toJson(),
+      'modifiers': ?modifiers?.map((e) => e.toJson()).toList(),
+      'chart': ?chart?.toJson(),
       'isUnderConstruction': isUnderConstruction,
     };
   }

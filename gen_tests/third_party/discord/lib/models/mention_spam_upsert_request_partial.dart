@@ -70,8 +70,8 @@ class MentionSpamUpsertRequestPartial {
   /// Converts a [MentionSpamUpsertRequestPartial] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'event_type': eventType?.toJson(),
+      'name': ?name,
+      'event_type': ?eventType?.toJson(),
       'actions': actions?.map((e) => e.toJson()).toList(),
       'enabled': enabled,
       'exempt_roles': exemptRoles?.map((e) => e.toJson()).toList(),

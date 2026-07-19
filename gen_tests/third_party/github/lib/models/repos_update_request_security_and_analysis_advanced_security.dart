@@ -46,7 +46,7 @@ class ReposUpdateRequestSecurityAndAnalysisAdvancedSecurity {
   /// Converts a [ReposUpdateRequestSecurityAndAnalysisAdvancedSecurity]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'status': status};
+    return {'status': ?status};
   }
 
   @override

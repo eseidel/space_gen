@@ -36,7 +36,7 @@ class PullsRequestReviewersRequest {
 
   /// Converts a [PullsRequestReviewersRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'reviewers': reviewers, 'team_reviewers': teamReviewers};
+    return {'reviewers': ?reviewers, 'team_reviewers': ?teamReviewers};
   }
 
   @override

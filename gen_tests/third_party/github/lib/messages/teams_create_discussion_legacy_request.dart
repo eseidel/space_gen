@@ -45,7 +45,7 @@ class TeamsCreateDiscussionLegacyRequest {
   /// Private posts are only visible to team members, organization owners, and
   /// team maintainers. Public posts are visible to all members of the
   /// organization. Set to `true` to create a private post.
-  final bool? private;
+  final bool private;
 
   /// Converts a [TeamsCreateDiscussionLegacyRequest]
   /// to a `Map<String, dynamic>`.

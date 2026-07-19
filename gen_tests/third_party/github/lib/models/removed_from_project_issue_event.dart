@@ -91,7 +91,7 @@ class RemovedFromProjectIssueEvent {
       'commit_url': commitUrl,
       'created_at': createdAt,
       'performed_via_github_app': performedViaGithubApp?.toJson(),
-      'project_card': projectCard?.toJson(),
+      'project_card': ?projectCard?.toJson(),
     };
   }
 

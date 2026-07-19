@@ -107,30 +107,30 @@ class ReposCreateForAuthenticatedUserRequest {
   final String? homepage;
 
   /// Whether the repository is private.
-  final bool? private;
+  final bool private;
 
   /// Whether issues are enabled.
   /// Example: `true`
-  final bool? hasIssues;
+  final bool hasIssues;
 
   /// Whether projects are enabled.
   /// Example: `true`
-  final bool? hasProjects;
+  final bool hasProjects;
 
   /// Whether the wiki is enabled.
   /// Example: `true`
-  final bool? hasWiki;
+  final bool hasWiki;
 
   /// Whether discussions are enabled.
   /// Example: `true`
-  final bool? hasDiscussions;
+  final bool hasDiscussions;
 
   /// The id of the team that will be granted access to this repository. This
   /// is only valid when creating a repository in an organization.
   final int? teamId;
 
   /// Whether the repository is initialized with a minimal README.
-  final bool? autoInit;
+  final bool autoInit;
 
   /// The desired language or platform to apply to the .gitignore.
   /// Example: `'Haskell'`
@@ -142,23 +142,23 @@ class ReposCreateForAuthenticatedUserRequest {
 
   /// Whether to allow squash merges for pull requests.
   /// Example: `true`
-  final bool? allowSquashMerge;
+  final bool allowSquashMerge;
 
   /// Whether to allow merge commits for pull requests.
   /// Example: `true`
-  final bool? allowMergeCommit;
+  final bool allowMergeCommit;
 
   /// Whether to allow rebase merges for pull requests.
   /// Example: `true`
-  final bool? allowRebaseMerge;
+  final bool allowRebaseMerge;
 
   /// Whether to allow Auto-merge to be used on pull requests.
   /// Example: `false`
-  final bool? allowAutoMerge;
+  final bool allowAutoMerge;
 
   /// Whether to delete head branches when pull requests are merged
   /// Example: `false`
-  final bool? deleteBranchOnMerge;
+  final bool deleteBranchOnMerge;
 
   /// Required when using `squash_merge_commit_message`.
   ///
@@ -198,38 +198,38 @@ class ReposCreateForAuthenticatedUserRequest {
 
   /// Whether downloads are enabled.
   /// Example: `true`
-  final bool? hasDownloads;
+  final bool hasDownloads;
 
   /// Whether this repository acts as a template that can be used to generate
   /// new repositories.
   /// Example: `true`
-  final bool? isTemplate;
+  final bool isTemplate;
 
   /// Converts a [ReposCreateForAuthenticatedUserRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'description': description,
-      'homepage': homepage,
+      'description': ?description,
+      'homepage': ?homepage,
       'private': private,
       'has_issues': hasIssues,
       'has_projects': hasProjects,
       'has_wiki': hasWiki,
       'has_discussions': hasDiscussions,
-      'team_id': teamId,
+      'team_id': ?teamId,
       'auto_init': autoInit,
-      'gitignore_template': gitignoreTemplate,
-      'license_template': licenseTemplate,
+      'gitignore_template': ?gitignoreTemplate,
+      'license_template': ?licenseTemplate,
       'allow_squash_merge': allowSquashMerge,
       'allow_merge_commit': allowMergeCommit,
       'allow_rebase_merge': allowRebaseMerge,
       'allow_auto_merge': allowAutoMerge,
       'delete_branch_on_merge': deleteBranchOnMerge,
-      'squash_merge_commit_title': squashMergeCommitTitle?.toJson(),
-      'squash_merge_commit_message': squashMergeCommitMessage?.toJson(),
-      'merge_commit_title': mergeCommitTitle?.toJson(),
-      'merge_commit_message': mergeCommitMessage?.toJson(),
+      'squash_merge_commit_title': ?squashMergeCommitTitle?.toJson(),
+      'squash_merge_commit_message': ?squashMergeCommitMessage?.toJson(),
+      'merge_commit_title': ?mergeCommitTitle?.toJson(),
+      'merge_commit_message': ?mergeCommitMessage?.toJson(),
       'has_downloads': hasDownloads,
       'is_template': isTemplate,
     };

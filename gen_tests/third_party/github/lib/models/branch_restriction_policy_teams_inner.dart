@@ -74,18 +74,18 @@ class BranchRestrictionPolicyTeamsInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'node_id': nodeId,
-      'url': url,
-      'html_url': htmlUrl,
-      'name': name,
-      'slug': slug,
+      'id': ?id,
+      'node_id': ?nodeId,
+      'url': ?url,
+      'html_url': ?htmlUrl,
+      'name': ?name,
+      'slug': ?slug,
       'description': description,
-      'privacy': privacy,
-      'notification_setting': notificationSetting,
-      'permission': permission,
-      'members_url': membersUrl,
-      'repositories_url': repositoriesUrl,
+      'privacy': ?privacy,
+      'notification_setting': ?notificationSetting,
+      'permission': ?permission,
+      'members_url': ?membersUrl,
+      'repositories_url': ?repositoriesUrl,
       'parent': parent,
     };
   }

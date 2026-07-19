@@ -55,7 +55,7 @@ class RepositoryRuleViolationErrorMetadataSecretScanning {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'bypass_placeholders': bypassPlaceholders
+      'bypass_placeholders': ?bypassPlaceholders
           ?.map((e) => e.toJson())
           .toList(),
     };

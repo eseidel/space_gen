@@ -75,7 +75,7 @@ class CommitSearchResultItemCommit {
       'message': message,
       'tree': tree.toJson(),
       'url': url.toString(),
-      'verification': verification?.toJson(),
+      'verification': ?verification?.toJson(),
     };
   }
 

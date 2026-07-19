@@ -70,8 +70,8 @@ class CopilotIdeChat {
   /// Converts a [CopilotIdeChat] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'total_engaged_users': totalEngagedUsers,
-      'editors': editors?.map((e) => e.toJson()).toList(),
+      'total_engaged_users': ?totalEngagedUsers,
+      'editors': ?editors?.map((e) => e.toJson()).toList(),
       for (final entry in entries.entries)
         if (!const {'total_engaged_users', 'editors'}.contains(entry.key))
           entry.key: entry.value,

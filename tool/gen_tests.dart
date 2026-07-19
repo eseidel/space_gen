@@ -19,9 +19,9 @@ class TestCase {
 
   /// Generation settings for this spec.
   ///
-  /// Not a constant across all test dirs: `Quirks.openapi()` flips six
+  /// Not a constant across all test dirs: `Quirks.openapi()` flips five
   /// flags that change emitted *semantics* (`dynamicJson`,
-  /// `mutableModels`, `nonNullableDefaultValues`, …), not just the
+  /// `mutableModels`, `allListsDefaultToEmpty`, …), not just the
   /// `lib/model/` vs `lib/models/` layout. This repo's fixtures are
   /// generated with it; the parallel spec repo is generated without.
   /// Hardcoding either one silently rewrites the other's output.

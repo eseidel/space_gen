@@ -130,7 +130,7 @@ class CommitComparison {
       'behind_by': behindBy,
       'total_commits': totalCommits,
       'commits': commits.map((e) => e.toJson()).toList(),
-      'files': files?.map((e) => e.toJson()).toList(),
+      'files': ?files?.map((e) => e.toJson()).toList(),
     };
   }
 

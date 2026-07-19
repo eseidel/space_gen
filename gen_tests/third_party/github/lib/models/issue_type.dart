@@ -79,9 +79,9 @@ class IssueType {
       'name': name,
       'description': description,
       'color': color?.toJson(),
-      'created_at': createdAt?.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
-      'is_enabled': isEnabled,
+      'created_at': ?createdAt?.toIso8601String(),
+      'updated_at': ?updatedAt?.toIso8601String(),
+      'is_enabled': ?isEnabled,
     };
   }
 

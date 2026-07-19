@@ -102,17 +102,17 @@ class CodespacesCreateWithRepoForAuthenticatedUserRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'ref': ref,
-      'location': location,
-      'geo': geo?.toJson(),
-      'client_ip': clientIp,
-      'machine': machine,
-      'devcontainer_path': devcontainerPath,
-      'multi_repo_permissions_opt_out': multiRepoPermissionsOptOut,
-      'working_directory': workingDirectory,
-      'idle_timeout_minutes': idleTimeoutMinutes,
-      'display_name': displayName,
-      'retention_period_minutes': retentionPeriodMinutes,
+      'ref': ?ref,
+      'location': ?location,
+      'geo': ?geo?.toJson(),
+      'client_ip': ?clientIp,
+      'machine': ?machine,
+      'devcontainer_path': ?devcontainerPath,
+      'multi_repo_permissions_opt_out': ?multiRepoPermissionsOptOut,
+      'working_directory': ?workingDirectory,
+      'idle_timeout_minutes': ?idleTimeoutMinutes,
+      'display_name': ?displayName,
+      'retention_period_minutes': ?retentionPeriodMinutes,
     };
   }
 

@@ -57,8 +57,8 @@ class CodeSecurityDefaultConfigurationsInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'default_for_new_repos': defaultForNewRepos?.toJson(),
-      'configuration': configuration?.toJson(),
+      'default_for_new_repos': ?defaultForNewRepos?.toJson(),
+      'configuration': ?configuration?.toJson(),
     };
   }
 

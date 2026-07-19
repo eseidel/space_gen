@@ -56,9 +56,9 @@ class OrgsListAttestations200ResponseAttestationsInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'bundle': bundle?.toJson(),
-      'repository_id': repositoryId,
-      'bundle_url': bundleUrl,
+      'bundle': ?bundle?.toJson(),
+      'repository_id': ?repositoryId,
+      'bundle_url': ?bundleUrl,
     };
   }
 

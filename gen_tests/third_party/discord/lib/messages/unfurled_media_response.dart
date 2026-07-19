@@ -59,7 +59,7 @@ class UnfurledMediaResponse {
       'width': width,
       'height': height,
       'content_type': contentType,
-      'attachment_id': attachmentId?.toJson(),
+      'attachment_id': ?attachmentId?.toJson(),
     };
   }
 

@@ -59,7 +59,7 @@ class EmojiResponse {
     return {
       'id': id.toJson(),
       'name': name,
-      'user': user?.toJson(),
+      'user': ?user?.toJson(),
       'roles': roles.map((e) => e.toJson()).toList(),
       'require_colons': requireColons,
       'managed': managed,

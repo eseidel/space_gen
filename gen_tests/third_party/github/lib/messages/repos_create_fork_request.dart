@@ -45,9 +45,9 @@ class ReposCreateForkRequest {
   /// Converts a [ReposCreateForkRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'organization': organization,
-      'name': name,
-      'default_branch_only': defaultBranchOnly,
+      'organization': ?organization,
+      'name': ?name,
+      'default_branch_only': ?defaultBranchOnly,
     };
   }
 

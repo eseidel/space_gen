@@ -125,12 +125,12 @@ class Page {
       'pending_domain_unverified_at': pendingDomainUnverifiedAt
           ?.toIso8601String(),
       'custom_404': custom404,
-      'html_url': htmlUrl?.toString(),
+      'html_url': ?htmlUrl?.toString(),
       'build_type': buildType?.toJson(),
-      'source': source?.toJson(),
+      'source': ?source?.toJson(),
       'public': public,
-      'https_certificate': httpsCertificate?.toJson(),
-      'https_enforced': httpsEnforced,
+      'https_certificate': ?httpsCertificate?.toJson(),
+      'https_enforced': ?httpsEnforced,
     };
   }
 

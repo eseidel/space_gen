@@ -89,7 +89,7 @@
     {{^hasNoJsonProperty}}
         return {
             {{#properties}}
-            {{{ jsonName }}}: {{{ toJson }}},
+            {{{ jsonName }}}: {{#omitWhenNull}}?{{/omitWhenNull}}{{{ toJson }}},
             {{/properties}}
             {{#hasAdditionalProperties}}
             for (final entry in {{additionalPropertiesName}}.entries)

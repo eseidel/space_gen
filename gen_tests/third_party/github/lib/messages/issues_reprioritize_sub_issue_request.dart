@@ -52,8 +52,8 @@ class IssuesReprioritizeSubIssueRequest {
   Map<String, dynamic> toJson() {
     return {
       'sub_issue_id': subIssueId,
-      'after_id': afterId,
-      'before_id': beforeId,
+      'after_id': ?afterId,
+      'before_id': ?beforeId,
     };
   }
 

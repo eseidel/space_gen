@@ -50,7 +50,7 @@ class ReviewDismissedIssueEventDismissedReview {
       'state': state,
       'review_id': reviewId,
       'dismissal_message': dismissalMessage,
-      'dismissal_commit_id': dismissalCommitId,
+      'dismissal_commit_id': ?dismissalCommitId,
     };
   }
 

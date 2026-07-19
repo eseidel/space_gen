@@ -56,11 +56,11 @@ class MarketplacePurchaseMarketplacePendingChange {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'is_installed': isInstalled,
-      'effective_date': effectiveDate,
+      'is_installed': ?isInstalled,
+      'effective_date': ?effectiveDate,
       'unit_count': unitCount,
-      'id': id,
-      'plan': plan?.toJson(),
+      'id': ?id,
+      'plan': ?plan?.toJson(),
     };
   }
 

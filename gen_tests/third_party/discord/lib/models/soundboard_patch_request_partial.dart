@@ -44,7 +44,7 @@ class SoundboardPatchRequestPartial {
   /// Converts a [SoundboardPatchRequestPartial] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
+      'name': ?name,
       'volume': volume,
       'emoji_id': emojiId?.toJson(),
       'emoji_name': emojiName,

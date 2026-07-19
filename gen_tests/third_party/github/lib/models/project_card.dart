@@ -108,11 +108,11 @@ class ProjectCard {
       'creator': creator?.toJson(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
-      'archived': archived,
-      'column_name': columnName,
-      'project_id': projectId,
+      'archived': ?archived,
+      'column_name': ?columnName,
+      'project_id': ?projectId,
       'column_url': columnUrl.toString(),
-      'content_url': contentUrl?.toString(),
+      'content_url': ?contentUrl?.toString(),
       'project_url': projectUrl.toString(),
     };
   }

@@ -61,7 +61,7 @@ class ReposUpdateBranchProtectionRequestRequiredPullRequestReviewsDismissalRestr
   /// Converts a [ReposUpdateBranchProtectionRequestRequiredPullRequestReviewsDismissalRestrictions]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'users': users, 'teams': teams, 'apps': apps};
+    return {'users': ?users, 'teams': ?teams, 'apps': ?apps};
   }
 
   @override
