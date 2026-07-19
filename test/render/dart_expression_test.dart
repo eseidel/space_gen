@@ -621,6 +621,65 @@ void main() {
         '(json ?? 0) as int',
       );
     });
+
+    test('a conditional reads as a ternary', () {
+      // Distinguishes an absent key from a present-but-null one, which `??`
+      // cannot — see the optional/nullable/default matrix (#318).
+      expect(
+        const DartConditional(
+          condition: DartMethodCall(
+            target: json,
+            name: 'containsKey',
+            arguments: [DartLiteral('x')],
+          ),
+          thenValue: DartCast(
+            operand: read,
+            type: DartType('int', isNullable: true),
+          ),
+          elseValue: DartLiteral(0),
+        ).source,
+        "json.containsKey('x') ? json['x'] as int? : 0",
+      );
+    });
+
+    test('a conditional nests to the right without parens', () {
+      expect(
+        const DartConditional(
+          condition: json,
+          thenValue: DartLiteral(1),
+          elseValue: DartConditional(
+            condition: read,
+            thenValue: DartLiteral(2),
+            elseValue: DartLiteral(3),
+          ),
+        ).source,
+        "json ? 1 : json['x'] ? 2 : 3",
+      );
+    });
+
+    test('a ?? inside a conditional branch needs no parens', () {
+      // `??` binds tighter than `?:`, so `a ? b ?? c : d` already parses
+      // as `a ? (b ?? c) : d`.
+      expect(
+        const DartConditional(
+          condition: json,
+          thenValue: DartIfNull(value: read, ifNullValue: DartLiteral(0)),
+          elseValue: DartLiteral(1),
+        ).source,
+        "json ? json['x'] ?? 0 : 1",
+      );
+    });
+
+    test('a conditional is never const', () {
+      expect(
+        const DartConditional(
+          condition: json,
+          thenValue: DartLiteral(1),
+          elseValue: DartLiteral(2),
+        ).canBeConst,
+        isFalse,
+      );
+    });
   });
 
   group('new nodes', () {
@@ -726,6 +785,30 @@ void main() {
     test('DartThrow compares its value', () {
       expect(const DartThrow(a), const DartThrow(a));
       expect(const DartThrow(a), isNot(const DartThrow(b)));
+    });
+
+    test('DartConditional compares all three parts', () {
+      const conditional = DartConditional(
+        condition: a,
+        thenValue: b,
+        elseValue: a,
+      );
+      expect(
+        conditional,
+        const DartConditional(condition: a, thenValue: b, elseValue: a),
+      );
+      expect(
+        conditional,
+        isNot(const DartConditional(condition: b, thenValue: b, elseValue: a)),
+      );
+      expect(
+        conditional,
+        isNot(const DartConditional(condition: a, thenValue: a, elseValue: a)),
+      );
+      expect(
+        conditional,
+        isNot(const DartConditional(condition: a, thenValue: b, elseValue: b)),
+      );
     });
   });
 }
