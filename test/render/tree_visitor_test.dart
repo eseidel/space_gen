@@ -128,5 +128,54 @@ void main() {
       expect((oneOf as RenderOneOf).emitsVariantDispatch, isTrue);
       expect(schemasNamedBy(oneOf).inline, isNotEmpty);
     });
+
+    test('descends into additionalProperties', () {
+      // `Map<String, Deep>` as a schema's additionalProperties names
+      // Deep, the same as a declared field of that type would.
+      final deep = _object('Deep');
+      final outer = RenderObject(
+        common: CommonProperties.test(
+          snakeName: 'outer',
+          pointer: JsonPointer.parse('#/components/schemas/outer'),
+          description: 'Outer',
+        ),
+        assignedName: 'Outer',
+        properties: const {},
+        additionalProperties: deep,
+      );
+
+      expect(schemasNamedBy(outer).imported, contains(deep));
+    });
+
+    test('descends into a map key schema', () {
+      // A typed key is an enum the file round-trips each key through, so
+      // it is named just like the value type.
+      final keyEnum = RenderStringEnum(
+        common: CommonProperties.test(
+          snakeName: 'key_kind',
+          pointer: JsonPointer.parse('#/components/schemas/key_kind'),
+          description: 'KeyKind',
+        ),
+        assignedName: 'KeyKind',
+        values: const ['a'],
+        names: const ['a'],
+        descriptions: null,
+      );
+      final value = _object('Value');
+      final map = RenderMap(
+        common: CommonProperties.test(
+          snakeName: 'map',
+          pointer: JsonPointer.parse('#/components/schemas/outer/map'),
+          description: 'Map',
+        ),
+        valueSchema: value,
+        keySchema: keyEnum,
+      );
+      final outer = _object('Outer', properties: {'map': map});
+
+      final imported = schemasNamedBy(outer).imported;
+      expect(imported, contains(keyEnum));
+      expect(imported, contains(value));
+    });
   });
 }
