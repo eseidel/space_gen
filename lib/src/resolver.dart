@@ -583,25 +583,31 @@ ResolvedRequestBody? _resolveRequestBody(
   });
 }
 
+/// A path parameter is any single wire value except a `number`.
+///
+/// [isSingleWireValue] covers the rest: strings, integers, enums, and the
+/// pod types (uuid, email, date-time, uri, uri-template, boolean) plus
+/// `Date`, all of which serialize to a single string via their `toJson` —
+/// the expression interpolated into the URL path. Without those, common
+/// patterns like `format: uuid` on a `/things/{id}` path would be rejected.
+///
+/// `number` is excluded deliberately: `?ratio=0.5` is a fine query value,
+/// but a float in a path segment is not something we want to emit. Stating
+/// the path rule as a subtraction from the query rule keeps the two in step
+/// — they previously enumerated the same types twice.
+///
+/// Note this will be wrong if we support non-string, non-integer enums.
 bool _canBePathParameter(ResolvedSchema schema) {
-  if (schema is ResolvedString || schema is ResolvedInteger) {
+  if (schema is ResolvedNumber) {
+    return false;
+  }
+  if (isSingleWireValue(schema)) {
     return true;
   }
-  // Pod types (uuid, email, date-time, uri, uri-template, boolean) and `Date`
-  // all serialize to a single string on the wire via their `toJson` — which is
-  // the expression interpolated into the URL path — so they're legal path
-  // parameters. Without this, common patterns like `format: uuid` on a
-  // `/things/{id}` path crash the resolver.
-  if (schema is ResolvedPod || schema is ResolvedDate) {
-    return true;
-  }
+  // Recurses rather than calling [isSingleWireValue] on the variants, so a
+  // `number` nested anywhere in the union is still rejected.
   if (schema is ResolvedOneOf) {
     return schema.schemas.every(_canBePathParameter);
-  }
-
-  /// Note this will be wrong if we support non-string, non-integer enums.
-  if (schema is ResolvedEnum) {
-    return true;
   }
   return false;
 }

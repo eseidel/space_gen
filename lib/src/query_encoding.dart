@@ -80,13 +80,19 @@ class UnsupportedEncoding extends QueryEncoding {
 }
 
 /// True when [schema] serializes to a single value on the wire — the shape
-/// a query parameter may take on its own, and the element type an
-/// array-shaped one may hold.
+/// a parameter may take on its own, and the element type an array-shaped
+/// one may hold.
 ///
-/// Deliberately a superset of what the resolver's path-parameter rule
-/// accepts: `number` is a legal query value (`?ratio=0.5`) whether or not
-/// we want one in a URL path segment. Keeping the two separate lets the
-/// path rule stay as strict as it is.
+/// Shared with the resolver's path-parameter rule, which is this set minus
+/// `ResolvedNumber`: `?ratio=0.5` is a fine query value, but we don't want
+/// one in a URL path segment. Expressing that rule as "this, minus number"
+/// is what keeps the two from drifting.
+///
+/// `_isMultipartScalar` in `render/render_tree.dart` asks the same question
+/// over `Render*`, for a multipart body's text fields. That one can't share
+/// this implementation — it runs after the Dart types exist and has to let
+/// the file-part branch claim `RenderBinary` first — so the two are held in
+/// step by hand. Change both or neither.
 bool isSingleWireValue(ResolvedSchema schema) {
   if (schema is ResolvedString ||
       schema is ResolvedInteger ||

@@ -879,7 +879,6 @@ class SpecResolver {
       type: toRenderSchema(parameter.schema),
       example: parameter.example,
       examples: parameter.examples,
-      explode: parameter.explode,
       queryEncoding: parameter.queryEncoding,
     );
   }
@@ -2596,11 +2595,12 @@ DartExpression _multipartValueExpr(
 /// structural form isn't total over the tree anyway: [RenderBinary]
 /// extends [RenderNoJson], whose override of that getter throws.
 bool _isMultipartScalar(RenderSchema schema) {
-  // TODO(eseidel): #292 adds the same "one value on the wire" rule over
-  // `Resolved*`, for query parameters. The resolver is deliberately
-  // Dart-blind, so the two can't share an implementation — but they
-  // describe one rule and must not drift. Point them at each other by
-  // name once that lands.
+  // `isSingleWireValue` in `query_encoding.dart` asks the same "one value
+  // on the wire" question over `Resolved*`. The two can't share an
+  // implementation — that one is deliberately Dart-blind and this one
+  // needs `RenderBinary` handled by the file-part branch above — but they
+  // describe one rule, so a divergence between them is a bug in one of
+  // them by construction. Change both or neither.
   return schema is RenderString ||
       schema is RenderInteger ||
       schema is RenderNumber ||
@@ -2609,10 +2609,10 @@ bool _isMultipartScalar(RenderSchema schema) {
       // `Date.toJson()` is a `String`, exactly the wire value a multipart
       // text field carries.
       schema is RenderDate ||
-      // Base64 bytes (`contentEncoding: base64`) are a distinct type from
-      // [RenderBinary], so the file-part branch above does not cover
-      // them. The wire value is the base64 `String` — a text field, not
-      // a file.
+      // Base64 bytes (`format: byte` or `contentEncoding: base64`) are a
+      // distinct type from [RenderBinary], so the file-part branch above
+      // does not cover them. The wire value is the base64 `String` — a
+      // text field, not a file.
       schema is RenderBase64Bytes;
 }
 
@@ -6440,7 +6440,6 @@ class RenderParameter implements CanBeParameter {
     required this.inLocation,
     required this.example,
     required this.examples,
-    required this.explode,
     required this.queryEncoding,
   });
 
@@ -6462,10 +6461,6 @@ class RenderParameter implements CanBeParameter {
 
   /// The in location of the parameter.
   final ParameterLocation inLocation;
-
-  /// The effective OpenAPI `explode`. For a query array, `false` comma-joins
-  /// into a single value (`?k=a,b,c`) instead of repeating the key.
-  final bool explode;
 
   /// Whether the parameter is required.
   @override

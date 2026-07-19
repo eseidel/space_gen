@@ -376,8 +376,8 @@ void main() {
                 'properties': {
                   'when': {'type': 'string', 'format': 'date'},
                   'until': {'type': 'string', 'format': 'date'},
-                  // base64 bytes come from `contentEncoding`, not
-                  // `format: byte` — see `parseFormat` in parser.dart.
+                  // The 3.1 spelling; `format: byte` is the 3.0 one and
+                  // converges on the same node (#298).
                   'blob': {'type': 'string', 'contentEncoding': 'base64'},
                 },
               },
