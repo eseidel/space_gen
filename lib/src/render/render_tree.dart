@@ -1450,39 +1450,139 @@ class Endpoint implements ToTemplateContext {
     // spreads each list across repeated keys (form/explode=true), so a
     // 1-element list yields `?k=v` and an N-element list yields
     // `?k=v1&k=v2&…`. Scalars wrap into a single-element list; arrays
-    // come through directly. Items must be `String`, so each item runs
-    // through `.toString()` — a no-op when the json expression already
-    // produces a `String` (raw string, dateTime/date/uri pods, enums)
-    // and the conversion when it doesn't (int/double/bool).
+    // come through directly.
+    //
+    // A union that mixes the two arities can't pick one form at render
+    // time — the arm held at the call site decides — so it emits a
+    // `switch` and each arm contributes its own. Every other shape has a
+    // single form and takes the direct path.
     final dartName = p.dartParameterName(context.quirks);
     final paramType = p.type;
+    final arityMixedUnion = _arityMixedUnion(paramType);
     final String value;
-    if (paramType is RenderArray) {
-      final itemsToJson = paramType.items.toJsonExpression(
-        const DartIdentifier('e'),
-        context,
-        dartIsNullable: false,
-      );
-      final item = _stringifyWireValue(paramType.items, itemsToJson);
-      final items = '$dartName.map((e) => ${_runtimeSource(item)})';
-      // `explode: false` (style=form) comma-joins the array into a single
-      // value (`?k=a,b,c`) rather than repeating the key. Wrap the joined
-      // string in a 1-element list so it flows through the same
-      // `Map<String, List<String>>` shape.
-      value = p.explode ? '$items.toList()' : "[$items.join(',')]";
+    if (arityMixedUnion != null) {
+      value = _unionQueryValue(arityMixedUnion, dartName, p, context);
     } else {
-      final scalarToJson = paramType.toJsonExpression(
-        DartIdentifier(dartName),
-        context,
-        dartIsNullable: false,
-      );
-      final stringified = _stringifyWireValue(paramType, scalarToJson);
-      value = '[${_runtimeSource(stringified)}]';
+      value = _queryValue(paramType, dartName, p, context);
     }
     if (p.isNullable) {
       return "${innerIndent}if ($dartName != null) '${p.name}': $value,";
     }
     return "$innerIndent'${p.name}': $value,";
+  }
+
+  /// The source for converting one element of [type] to its wire `String`,
+  /// written against the element variable `e` — or null when elements are
+  /// already `String` and need no conversion at all.
+  ///
+  /// Null is the signal to skip the surrounding `.map` entirely. Emitting it
+  /// anyway would produce `xs.map((e) => e)`, which copies the list and
+  /// changes nothing — the sort of line that gives away generated code.
+  static String? _elementWireConversion(
+    RenderArray type,
+    SchemaRenderer context,
+  ) {
+    const element = DartIdentifier('e');
+    final itemsToJson = type.items.toJsonExpression(
+      element,
+      context,
+      dartIsNullable: false,
+    );
+    final item = _stringifyWireValue(type.items, itemsToJson);
+    return item == element ? null : _runtimeSource(item);
+  }
+
+  /// The `Map<String, List<String>>` value expression for a query parameter
+  /// of type [type], reading the Dart value from [access].
+  ///
+  /// [access] is the parameter name at the top level, and a variant's
+  /// destructured `value` when called per-arm from [_unionQueryValue].
+  static String _queryValue(
+    RenderSchema type,
+    String access,
+    RenderParameter p,
+    SchemaRenderer context,
+  ) {
+    if (type is RenderArray) {
+      final conversion = _elementWireConversion(type, context);
+      final items = conversion == null
+          ? access
+          : '$access.map((e) => $conversion)';
+      // `explode: false` (style=form) comma-joins the array into a single
+      // value (`?k=a,b,c`) rather than repeating the key. Wrap the joined
+      // string in a 1-element list so it flows through the same
+      // `Map<String, List<String>>` shape.
+      if (!p.explode) return "[$items.join(',')]";
+      // Without a conversion the value is already the `List<String>` the
+      // query map wants, so there is nothing to `.toList()`.
+      return conversion == null ? items : '$items.toList()';
+    }
+    final scalarToJson = type.toJsonExpression(
+      DartIdentifier(access),
+      context,
+      dartIsNullable: false,
+    );
+    final stringified = _stringifyWireValue(type, scalarToJson);
+    return '[${_runtimeSource(stringified)}]';
+  }
+
+  /// A `switch` over [union]'s sealed variants, each arm producing that
+  /// variant's own query value.
+  ///
+  /// The arms destructure `value` — every wrapper subclass declares exactly
+  /// that field (see `objectWrapperContext` and the `schema_one_of`
+  /// template) — so each arm hands its variant's real Dart type to
+  /// [_queryValue] rather than the union's `dynamic` `toJson()`.
+  static String _unionQueryValue(
+    RenderOneOf union,
+    String access,
+    RenderParameter p,
+    SchemaRenderer context,
+  ) {
+    final arms = union.schemas.map((variant) {
+      final wrapper = union.wrapperTypeName(variant);
+      final value = _queryValue(variant, 'value', p, context);
+      return '$wrapper(:final value) => $value,';
+    });
+    return 'switch ($access) { ${arms.join(' ')} }';
+  }
+
+  /// [type] as a union that mixes single values with arrays — the one union
+  /// shape whose wire form the default scalar path gets *wrong*.
+  ///
+  /// Such a union's `toJson()` is `dynamic`, so the scalar path stringifies
+  /// it; for the array variant that yields Dart's list `toString()`
+  /// (`"[a, b]"`) instead of repeated keys. Unions whose variants are all
+  /// single values (discord's `oneOf: [enum]`) already stringify correctly,
+  /// so they stay on the simpler path and their output is unchanged.
+  ///
+  /// Returns null when [type] isn't such a union, or when any variant lacks
+  /// a wrapper subclass to switch over. That second guard is load-bearing in
+  /// two ways:
+  ///
+  /// - A `NoDispatch` union gets no wrappers at all; it renders the
+  ///   `UnimplementedError` stub instead.
+  /// - A *smooshed* variant extends the sealed parent directly and holds its
+  ///   own fields, so it has no `value` to destructure — an arm written
+  ///   against it would not compile. `_claimWrapperNames` skips the wrapper
+  ///   claim for exactly those variants, which is what surfaces here as a
+  ///   null name.
+  ///
+  /// Both fall back to the direct path, which stringifies. For a shape that
+  /// deserves better than that, the resolver's `_canBeQueryParameter` has
+  /// already warned.
+  static RenderOneOf? _arityMixedUnion(RenderSchema type) {
+    if (type is! RenderOneOf) return null;
+    if (!type.schemas.any((v) => v is RenderArray)) return null;
+    // Nested arrays have no `form` wire encoding — leave them to the warning.
+    if (type.schemas.any((v) => v is RenderArray && v.items is RenderArray)) {
+      return null;
+    }
+    final names = type.wrapperNames;
+    if (names.length != type.schemas.length || names.any((n) => n == null)) {
+      return null;
+    }
+    return type;
   }
 
   List<String> _bodyArgLines(String indent, SchemaRenderer context) =>
@@ -1528,13 +1628,10 @@ class Endpoint implements ToTemplateContext {
     final paramType = p.type;
     if (paramType is RenderArray) {
       final dartName = p.dartParameterName(context.quirks);
-      final itemsToJson = paramType.items.toJsonExpression(
-        const DartIdentifier('e'),
-        context,
-        dartIsNullable: false,
-      );
-      final item = _stringifyWireValue(paramType.items, itemsToJson);
-      final mapCall = ".map((e) => ${_runtimeSource(item)}).join(',')";
+      final conversion = _elementWireConversion(paramType, context);
+      final mapCall = conversion == null
+          ? ".join(',')"
+          : ".map((e) => $conversion).join(',')";
       final value = p.isNullable ? '?$dartName?$mapCall' : '$dartName$mapCall';
       return "$innerIndent'${p.name}': $value,";
     }
@@ -4812,25 +4909,30 @@ class RenderMap extends RenderSchema {
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) {
-    // Nothing to do if both key and value are json types.
-    if (keySchema == null && !valueSchema.shouldCallToJson) {
-      return dartName;
-    }
     const key = DartIdentifier('key');
+    const value = DartIdentifier('value');
     final keyToJson = keySchema == null
         ? key
         : const DartMethodCall(target: key, name: 'toJson');
     final valueToJson = valueSchema.toJsonExpression(
-      const DartIdentifier('value'),
+      value,
       context,
       dartIsNullable: false,
     );
+    // Nothing to do if neither side transforms — the same question, and
+    // now the same structural answer, as [fromJsonExpression]. Asking the
+    // built expression rather than predicting from the schema is what
+    // keeps the two directions from disagreeing about what counts as
+    // identity.
+    if (keyToJson == key && valueToJson == value) {
+      return dartName;
+    }
     return DartMethodCall(
       target: dartName,
       name: 'map',
       arguments: [
         DartLambda(
-          parameters: const ['key', 'value'],
+          parameters: [key.name, value.name],
           body: DartType.mapEntry.construct([keyToJson, valueToJson]),
         ),
       ],
@@ -4862,26 +4964,24 @@ class RenderMap extends RenderSchema {
     // TODO(eseidel): Support orDefault?
     // Should this have a leading ? to skip the key on null?
     //
-    // When neither side transforms, the closure is
-    // `(key, value) => MapEntry(key, value)` — a tearoff written the long
-    // way (`unnecessary_lambdas`), so emit the tearoff. Identity is a
-    // structural question now: did each side hand back the identifier it
-    // was given?
-    //
-    // The better output drops the `.map(...)` altogether, since an
-    // identity map only copies (#272).
-    final isIdentity = keyFromJson == key && valueFromJson == value;
+    // When neither side transforms, there is nothing to map: every entry
+    // would be rebuilt exactly as it came in, so the `.map` only copies.
+    // The cast alone already has the right static type, because the Dart
+    // type of a map whose key and value are both json types *is* the json
+    // storage type. Identity is a structural question: did each side hand
+    // back the identifier it was given?
+    final cast = jsonCast(jsonValue, jsonIsNullable: jsonIsNullable);
+    if (keyFromJson == key && valueFromJson == value) {
+      return cast;
+    }
     return DartMethodCall(
-      target: jsonCast(jsonValue, jsonIsNullable: jsonIsNullable),
+      target: cast,
       name: 'map',
       arguments: [
-        if (isIdentity)
-          DartType.mapEntry.member('new')
-        else
-          DartLambda(
-            parameters: [key.name, value.name],
-            body: DartType.mapEntry.construct([keyFromJson, valueFromJson]),
-          ),
+        DartLambda(
+          parameters: [key.name, value.name],
+          body: DartType.mapEntry.construct([keyFromJson, valueFromJson]),
+        ),
       ],
       isNullAware: jsonIsNullable,
     );
