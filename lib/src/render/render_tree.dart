@@ -2527,12 +2527,36 @@ DartExpression _multipartValueExpr(
   return _stringifyWireValue(property, jsonExpr);
 }
 
+/// Whether [schema] serializes to a single value on the wire, and so can
+/// become one `Map<String, String>` field of a multipart body.
+///
+/// An allowlist rather than a structural test on
+/// [RenderSchema.jsonStorageDartType] ("not map- or list-shaped"), for
+/// two reasons that both come down to failing loudly. A new
+/// [RenderSchema] subtype should arrive here as a `FormatException`
+/// naming the type rather than be waved through to
+/// [_multipartValueExpr] and emit something quietly wrong. And the
+/// structural form isn't total over the tree anyway: [RenderBinary]
+/// extends [RenderNoJson], whose override of that getter throws.
 bool _isMultipartScalar(RenderSchema schema) {
+  // TODO(eseidel): #292 adds the same "one value on the wire" rule over
+  // `Resolved*`, for query parameters. The resolver is deliberately
+  // Dart-blind, so the two can't share an implementation — but they
+  // describe one rule and must not drift. Point them at each other by
+  // name once that lands.
   return schema is RenderString ||
       schema is RenderInteger ||
       schema is RenderNumber ||
       schema is RenderPod ||
-      schema is RenderEnum;
+      schema is RenderEnum ||
+      // `Date.toJson()` is a `String`, exactly the wire value a multipart
+      // text field carries.
+      schema is RenderDate ||
+      // Base64 bytes (`contentEncoding: base64`) are a distinct type from
+      // [RenderBinary], so the file-part branch above does not cover
+      // them. The wire value is the base64 `String` — a text field, not
+      // a file.
+      schema is RenderBase64Bytes;
 }
 
 class RenderResponse {
@@ -4885,25 +4909,30 @@ class RenderMap extends RenderSchema {
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) {
-    // Nothing to do if both key and value are json types.
-    if (keySchema == null && !valueSchema.shouldCallToJson) {
-      return dartName;
-    }
     const key = DartIdentifier('key');
+    const value = DartIdentifier('value');
     final keyToJson = keySchema == null
         ? key
         : const DartMethodCall(target: key, name: 'toJson');
     final valueToJson = valueSchema.toJsonExpression(
-      const DartIdentifier('value'),
+      value,
       context,
       dartIsNullable: false,
     );
+    // Nothing to do if neither side transforms — the same question, and
+    // now the same structural answer, as [fromJsonExpression]. Asking the
+    // built expression rather than predicting from the schema is what
+    // keeps the two directions from disagreeing about what counts as
+    // identity.
+    if (keyToJson == key && valueToJson == value) {
+      return dartName;
+    }
     return DartMethodCall(
       target: dartName,
       name: 'map',
       arguments: [
         DartLambda(
-          parameters: const ['key', 'value'],
+          parameters: [key.name, value.name],
           body: DartType.mapEntry.construct([keyToJson, valueToJson]),
         ),
       ],
@@ -4935,26 +4964,24 @@ class RenderMap extends RenderSchema {
     // TODO(eseidel): Support orDefault?
     // Should this have a leading ? to skip the key on null?
     //
-    // When neither side transforms, the closure is
-    // `(key, value) => MapEntry(key, value)` — a tearoff written the long
-    // way (`unnecessary_lambdas`), so emit the tearoff. Identity is a
-    // structural question now: did each side hand back the identifier it
-    // was given?
-    //
-    // The better output drops the `.map(...)` altogether, since an
-    // identity map only copies (#272).
-    final isIdentity = keyFromJson == key && valueFromJson == value;
+    // When neither side transforms, there is nothing to map: every entry
+    // would be rebuilt exactly as it came in, so the `.map` only copies.
+    // The cast alone already has the right static type, because the Dart
+    // type of a map whose key and value are both json types *is* the json
+    // storage type. Identity is a structural question: did each side hand
+    // back the identifier it was given?
+    final cast = jsonCast(jsonValue, jsonIsNullable: jsonIsNullable);
+    if (keyFromJson == key && valueFromJson == value) {
+      return cast;
+    }
     return DartMethodCall(
-      target: jsonCast(jsonValue, jsonIsNullable: jsonIsNullable),
+      target: cast,
       name: 'map',
       arguments: [
-        if (isIdentity)
-          DartType.mapEntry.member('new')
-        else
-          DartLambda(
-            parameters: [key.name, value.name],
-            body: DartType.mapEntry.construct([keyFromJson, valueFromJson]),
-          ),
+        DartLambda(
+          parameters: [key.name, value.name],
+          body: DartType.mapEntry.construct([keyFromJson, valueFromJson]),
+        ),
       ],
       isNullAware: jsonIsNullable,
     );

@@ -41,7 +41,22 @@ dart run space_gen -i <spec> -o <out>   # run the generator
 
 Golden-output tests live under `gen_tests/` and are driven by
 `tool/gen_tests.dart`. `gen_tests/*` are standalone packages with their own
-pubspec — excluded from the root `dart analyze` via `analysis_options.yaml`.
+pubspec — excluded from the root `dart analyze` via `analysis_options.yaml`,
+and from the published package via `.pubignore`.
+
+Two directories, each with its own `gen_tests.yaml` manifest:
+
+- `gen_tests/` — synthetic specs we authored, one per feature. Generated
+  **with** `Quirks.openapi()`.
+- `gen_tests/third_party/` — real-world specs from the web (github, discord,
+  backstage, petstore, spacetraders, train_travel). Generated **without** the
+  quirks. Third-party text, so the whole directory is excluded from cspell;
+  see the README there.
+
+A generator change that alters output must be committed together with the
+regenerated fixtures — CI runs the tool and fails on any diff. Expect large
+diffs from `third_party/`: github and discord alone are ~4700 files, and they
+account for most of the roughly 40s the regen takes.
 
 ## Recursion support
 
