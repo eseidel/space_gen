@@ -28,6 +28,7 @@ verify: true
 # and `.`/`-` folded to `_`, which is what every fixture here wants.
 specs:
   - spec: const_property.json
+  - spec: form_urlencoded.json
   - spec: multipart.json
   - spec: security.json
   - spec: types.json

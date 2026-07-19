@@ -921,6 +921,12 @@ class SpecResolver {
           description: requestBody.description,
           isRequired: requestBody.isRequired,
         );
+      case MimeType.formUrlEncoded:
+        return RenderRequestBodyFormUrlEncoded(
+          schema: toRenderSchema(requestBody.schema),
+          description: requestBody.description,
+          isRequired: requestBody.isRequired,
+        );
     }
   }
 
@@ -2277,9 +2283,9 @@ const defaultBodyContentTypeExpression = 'BodyContentType.json';
 
 /// Sealed so the endpoint arg-builder can pattern-match exhaustively on
 /// the body shape: the multipart path emits `fields:`/`files:`, every
-/// other subclass emits `body:`/`bodyContentType:`. Adding a fifth shape
-/// (e.g. `application/x-www-form-urlencoded`) is a compile error in
-/// consumers until they handle it.
+/// other subclass ([RenderRequestBodySimple]) emits `body:`/
+/// `bodyContentType:`. Adding a new shape is a compile error in the
+/// arg-builder switch until it's handled.
 sealed class RenderRequestBody implements CanBeParameter {
   const RenderRequestBody({
     required this.schema,
@@ -2418,6 +2424,79 @@ class RenderRequestBodyTextPlain extends RenderRequestBodySimple {
       _requestBodyParameterContext(this, context);
 }
 
+/// `application/x-www-form-urlencoded` request body. The schema must
+/// resolve to a `RenderObject` whose properties are all scalars
+/// (string/number/bool/pod/enum/date); the body renders as a
+/// `Map<String, String>` literal that `http` encodes as `key=value&...`
+/// form fields.
+///
+/// Unlike multipart there is no file-part path — form-urlencoded has no
+/// way to carry binary — so a `format: binary` property (or any non-scalar)
+/// is a render-time `FormatException`.
+class RenderRequestBodyFormUrlEncoded extends RenderRequestBodySimple {
+  const RenderRequestBodyFormUrlEncoded({
+    required super.schema,
+    required super.description,
+    required super.isRequired,
+  });
+
+  @override
+  String get bodyContentTypeExpression => 'BodyContentType.formUrlEncoded';
+
+  @override
+  String bodyExpression(SchemaRenderer context) {
+    final object = schema;
+    if (object is! RenderObject) {
+      throw FormatException(
+        'application/x-www-form-urlencoded request body schema must be an '
+        'object (got ${object.runtimeType}) at ${schema.common.pointer}',
+      );
+    }
+    final paramName = dartParameterName(context.quirks);
+    // An optional body makes the whole parameter nullable, so even its
+    // required fields are read through `?.` and gated behind a null check.
+    final bodyNullable = !isRequired;
+    final entries = <String>[];
+    for (final entry in object.properties.entries) {
+      final jsonName = entry.key;
+      final property = entry.value;
+      if (!_isWireStringScalar(property)) {
+        throw FormatException(
+          'application/x-www-form-urlencoded property must be a scalar (got '
+          '${property.runtimeType} for "$jsonName") at '
+          '${property.common.pointer}',
+        );
+      }
+      final dartName = variableSafeName(context.quirks, jsonName);
+      final inRequired = object.requiredProperties.contains(jsonName);
+      final fieldNullable = !inRequired || property.common.nullable;
+      final access = bodyNullable
+          ? '$paramName?.$dartName'
+          : '$paramName.$dartName';
+      if (bodyNullable || fieldNullable) {
+        final valueExpr = _runtimeSource(
+          _wireStringFieldExpr(
+            property,
+            const DartIdentifier('value'),
+            context,
+          ),
+        );
+        entries.add("if ($access case final value?) '$jsonName': $valueExpr");
+      } else {
+        final valueExpr = _runtimeSource(
+          _wireStringFieldExpr(property, DartIdentifier(access), context),
+        );
+        entries.add("'$jsonName': $valueExpr");
+      }
+    }
+    return '<String, String>{${entries.join(', ')}}';
+  }
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
+      _requestBodyParameterContext(this, context);
+}
+
 /// One scalar text part in a `multipart/form-data` body.
 class MultipartScalarPart extends Equatable {
   const MultipartScalarPart({
@@ -2524,7 +2603,7 @@ class RenderRequestBodyMultipart extends RenderRequestBody {
             isNullable: isNullable,
           ),
         );
-      } else if (_isMultipartScalar(property)) {
+      } else if (_isWireStringScalar(property)) {
         scalars.add(
           MultipartScalarPart(
             fieldName: jsonName,
@@ -2536,14 +2615,14 @@ class RenderRequestBodyMultipart extends RenderRequestBody {
             // json types (int, bool, enum with int values) to satisfy
             // Map<String, String>.
             requiredValueExpr: _runtimeSource(
-              _multipartValueExpr(
+              _wireStringFieldExpr(
                 property,
                 DartIdentifier(dartAccess),
                 context,
               ),
             ),
             nullableValueExpr: _runtimeSource(
-              _multipartValueExpr(
+              _wireStringFieldExpr(
                 property,
                 const DartIdentifier('v'),
                 context,
@@ -2567,7 +2646,11 @@ class RenderRequestBodyMultipart extends RenderRequestBody {
       _requestBodyParameterContext(this, context);
 }
 
-DartExpression _multipartValueExpr(
+/// The Dart expression that renders [property] as one `Map<String, String>`
+/// wire field, reading from [base]. Shared by the multipart text-part and
+/// form-urlencoded builders — both encode a scalar property to a single
+/// string field.
+DartExpression _wireStringFieldExpr(
   RenderSchema property,
   DartExpression base,
   SchemaRenderer context,
@@ -2584,17 +2667,18 @@ DartExpression _multipartValueExpr(
 }
 
 /// Whether [schema] serializes to a single value on the wire, and so can
-/// become one `Map<String, String>` field of a multipart body.
+/// become one `Map<String, String>` field of a multipart or
+/// form-urlencoded body.
 ///
 /// An allowlist rather than a structural test on
 /// [RenderSchema.jsonStorageDartType] ("not map- or list-shaped"), for
 /// two reasons that both come down to failing loudly. A new
 /// [RenderSchema] subtype should arrive here as a `FormatException`
 /// naming the type rather than be waved through to
-/// [_multipartValueExpr] and emit something quietly wrong. And the
+/// [_wireStringFieldExpr] and emit something quietly wrong. And the
 /// structural form isn't total over the tree anyway: [RenderBinary]
 /// extends [RenderNoJson], whose override of that getter throws.
-bool _isMultipartScalar(RenderSchema schema) {
+bool _isWireStringScalar(RenderSchema schema) {
   // `isSingleWireValue` in `query_encoding.dart` asks the same "one value
   // on the wire" question over `Resolved*`. The two can't share an
   // implementation — that one is deliberately Dart-blind and this one

@@ -94,7 +94,11 @@ enum MimeType {
   applicationJson('application/json'),
   multipartFormData('multipart/form-data'),
   applicationOctetStream('application/octet-stream'),
-  textPlain('text/plain');
+  textPlain('text/plain'),
+  // Last in declaration order (which defines precedence) on purpose: a body
+  // that offers form-urlencoded alongside JSON (petstore, discord) keeps
+  // picking JSON. This wins only when it's the sole content type.
+  formUrlEncoded('application/x-www-form-urlencoded');
 
   const MimeType(this.value);
 
