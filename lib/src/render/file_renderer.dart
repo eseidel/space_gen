@@ -1060,44 +1060,38 @@ class FileRenderer {
     );
   }
 
+  /// Build artifacts left in the output directory by tooling rather
+  /// than by us. [_clearOutDir] keeps these: they are reproducible, but
+  /// deleting them makes every regeneration re-resolve dependencies
+  /// from scratch, and `.git` would take a repository with it.
+  static const _preservedOnClear = {'.dart_tool', 'pubspec.lock', '.git'};
+
+  /// Empty the output directory, keeping only [_preservedOnClear].
+  ///
+  /// The contract is deliberately blunt: name a directory as the output
+  /// and turn clearing on, and that directory is ours. It is the only
+  /// rule that stays true no matter how a subclass moves files around
+  /// via [modelPath] and [testPath] — anything narrower has to guess at
+  /// which paths are generated, and guesses wrong for exactly the
+  /// consumers who use those hooks.
+  ///
+  /// Generating into a package that also holds hand-written code means
+  /// turning clearing off (`GeneratorConfig.clearDirectory`, or
+  /// `--no-clear`) and removing stale output yourself. There is no way
+  /// for us to tell your files from ours in a directory we do not own.
+  void _clearOutDir() {
+    final outDir = fileWriter.outDir;
+    if (!outDir.existsSync()) return;
+    for (final entity in outDir.listSync()) {
+      if (_preservedOnClear.contains(p.basename(entity.path))) continue;
+      entity.deleteSync(recursive: true);
+    }
+  }
+
   /// Render the entire spec.
   void render(RenderSpec spec, {bool clearDirectory = true}) {
     if (clearDirectory) {
-      // Only delete the directories we make to handle the case of changing
-      // directory structure or adding/removing files.
-      // All other files we make can be overwritten.
-      final dirs = {
-        p.join('lib', 'api'),
-        // Previous output layouts we might inherit from — clear so stale
-        // files from an earlier layout don't linger.
-        p.join('lib', 'model'),
-        // Current layout.
-        p.join('lib', 'models'),
-        p.join('lib', 'messages'),
-        // Generated model tests mirror the `lib/` layout under `test/`
-        // (see [testPath]), so they need the same treatment. A schema
-        // that changes file name leaves a test behind otherwise, and
-        // that test still references the class under its old name — so
-        // the regenerated package no longer analyzes.
-        //
-        // Only when we are the ones writing them. `test/` is where a
-        // consumer's own tests live by Dart convention, so with
-        // [GeneratorConfig.generateTests] off these directories are not
-        // ours to delete — clearing them there would destroy files this
-        // run never produces.
-        if (config.generateTests) ...[
-          p.join('test', 'model'),
-          p.join('test', 'models'),
-          p.join('test', 'messages'),
-        ],
-      };
-      for (final dirName in dirs) {
-        final path = p.join(fileWriter.outDir.path, dirName);
-        final dir = fileWriter.fs.directory(path);
-        if (dir.existsSync()) {
-          dir.deleteSync(recursive: true);
-        }
-      }
+      _clearOutDir();
     }
     // Collect all the Apis and Model Schemas.
     // Do we walk through each endpoint and ask which class to put it on?

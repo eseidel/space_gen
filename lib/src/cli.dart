@@ -48,7 +48,16 @@ Future<int> _runCli(
       mandatory: true,
     )
     ..addFlag('verbose', abbr: 'v', help: 'Verbose output')
-    ..addFlag('openapi', help: 'Use OpenAPI quirks');
+    ..addFlag('openapi', help: 'Use OpenAPI quirks')
+    ..addFlag(
+      'clear',
+      defaultsTo: true,
+      help:
+          'Empty the output directory first, so a renamed or deleted '
+          'schema leaves no stale file behind. Pass --no-clear when '
+          'generating into a package that also holds hand-written '
+          'code; you then own removing stale output.',
+    );
   final results = parser.parse(arguments);
   if (results.rest.isNotEmpty) {
     logger
@@ -88,6 +97,7 @@ Future<int> _runCli(
       outDir: outDir,
       quirks: quirks,
       templatesDir: templatesDir,
+      clearDirectory: results['clear'] as bool,
       fileRendererBuilder: fileRendererBuilder,
     ),
   );
