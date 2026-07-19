@@ -1224,6 +1224,75 @@ void main() {
       expect(rule, isNot(contains('triggerType?.toJson()')));
     });
 
+    // A bare inline lone `const` on a property renders as a fixed getter
+    // returning the *literal* (not an enum member), and mints no
+    // single-value enum type or file — the non-enum sibling of the
+    // allOf-ref idiom above (issue #240).
+    test('bare inline lone const renders as a literal getter, no enum', () {
+      final results = renderTestSchemas(
+        {
+          'ListResp': {
+            'type': 'object',
+            'properties': {
+              'object': {'type': 'string', 'const': 'list'},
+              'version': {'type': 'integer', 'const': 5},
+              'count': {'type': 'integer'},
+            },
+            'required': ['object'],
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final listResp = results['ListResp'];
+      expect(listResp, isNotNull);
+      // Getters return the literal directly, not `SomeEnum.member`.
+      expect(listResp, contains("String get object => 'list';"));
+      expect(listResp, contains('int get version => 5;'));
+      // toJson emits the getter value with no `.toJson()` conversion.
+      expect(listResp, contains("'object': object"));
+      expect(listResp, contains("'version': version"));
+      // No throwaway single-value enum type was synthesized.
+      expect(results.keys, isNot(contains('ListRespObject')));
+      expect(listResp, isNot(contains('ListRespObject')));
+      // The const properties take no constructor argument and play no part
+      // in equality — only `count` is stored.
+      expect(listResp, contains('this.count'));
+      expect(listResp, isNot(contains('this.object')));
+      expect(listResp, isNot(contains('this.version')));
+      expect(listResp, isNot(contains('object == other.object')));
+    });
+
+    // A property pinned via `allOf: [{$ref: E}]` + `const` where the ref
+    // targets a scalar *newtype* (not an enum) must keep the stored-field
+    // shape: a literal getter would be typed as the wrapper (`PaymentObject
+    // get object => 'card'`) while returning a raw String, which wouldn't
+    // compile. The const-getter scalar path is inline-scalars only.
+    test('const pinning a scalar newtype ref stays a stored field', () {
+      final results = renderTestSchemas(
+        {
+          'Env': {
+            'type': 'object',
+            'properties': {
+              'object': {
+                'const': 'card',
+                'allOf': [
+                  {r'$ref': '#/components/schemas/PaymentObject'},
+                ],
+              },
+            },
+            'required': ['object'],
+          },
+          'PaymentObject': {'type': 'string', 'minLength': 1},
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final env = results['Env'];
+      expect(env, isNotNull);
+      // Stored field of the newtype, not a raw-literal getter.
+      expect(env, contains('PaymentObject object'));
+      expect(env, isNot(contains("get object => 'card'")));
+    });
+
     test('typed map variant walks each entry through fromJson/toJson', () {
       // Map with a non-trivial value schema. The wrapper must convert
       // each entry on fromJson and reverse on toJson.

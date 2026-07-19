@@ -1474,6 +1474,29 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
         childContext.markUsed('const');
       }
       constProperties[name] = constValue;
+      properties[name] = parseSchemaOrRef(childContext);
+      continue;
+    }
+    final loneConst = _loneScalarConstValue(childContext);
+    if (loneConst != null) {
+      // A bare inline lone `const` on a property (envelope markers like
+      // Stripe's `object: {const: "list"}`, version pins like
+      // `api_version: {const: "2024-01-01"}`) would otherwise mint a
+      // throwaway single-value enum type + file. Record the fixed value
+      // and parse the property as its plain scalar — the `const` stripped
+      // so `_handleEnum` doesn't fire — so render emits it as a fixed
+      // getter rather than an enum field. See
+      // [RenderObject.rendersAsConstGetter]. This is the non-enum sibling
+      // of the pinned-tag case above (issue #240).
+      constProperties[name] = loneConst;
+      final stripped = Map<String, dynamic>.of(childContext.json)
+        ..remove('const');
+      properties[name] = parseSchemaOrRef(
+        propertiesJson
+            .fakeChildAsMap(snakeName: name, value: stripped)
+            .addSnakeName(snakeName),
+      );
+      continue;
     }
     properties[name] = parseSchemaOrRef(childContext);
   }
@@ -1547,6 +1570,42 @@ Object? _constTagValue(MapContext json) {
   // Only scalar int/string tags dispatch cleanly; anything else isn't a
   // usable discriminator value.
   return (value is int || value is String) ? value : null;
+}
+
+/// Detects a bare inline lone scalar `const` on a property — `{type:
+/// string, const: "list"}` or `{type: integer, const: 5}` — the shape
+/// [_handleEnum] would otherwise collapse into a single-value enum type
+/// and file. Returns the fixed value (`int`/`String`) for the containing
+/// object to record in [SchemaObject.constProperties], or null when the
+/// property isn't this shape.
+///
+/// Deliberately narrow, so the strip-to-scalar it drives can't misfire:
+///
+/// - Requires an explicit `type: string`/`type: integer` with a matching
+///   scalar value. A typeless `const` (Discord's `{const: N}` oneOf
+///   variants, where `type` sits on the parent) keeps its enum spelling —
+///   [_handleEnum]'s value inference and the discriminator pass still need
+///   it — and there'd be no scalar type to strip down to anyway.
+/// - Excludes the `allOf: [{$ref: E}]` idiom ([_constTagValue] owns it;
+///   there the value belongs to a *named* enum) and `$ref` properties.
+/// - Excludes `enum:` (single-value `enum` is issue #239's cardinality-1
+///   work; `const` is the spelling issue #240 targets) and `format:`
+///   (which would parse to a non-scalar like `Uint8List`/`DateTime`, not
+///   the plain literal a const getter emits).
+Object? _loneScalarConstValue(MapContext json) {
+  final raw = json.json;
+  if (!raw.containsKey('const')) return null;
+  if (raw.containsKey('allOf') ||
+      raw.containsKey(r'$ref') ||
+      raw.containsKey('enum') ||
+      raw.containsKey('format')) {
+    return null;
+  }
+  final type = raw['type'];
+  final value = raw['const'];
+  if (type == 'string' && value is String) return value;
+  if (type == 'integer' && value is int) return value;
+  return null;
 }
 
 /// Parse a schema from a json object.

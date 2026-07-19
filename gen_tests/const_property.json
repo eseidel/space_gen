@@ -1,0 +1,88 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Const Property",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://example.com/const"
+        }
+    ],
+    "paths": {
+        "/list": {
+            "get": {
+                "operationId": "getList",
+                "summary": "List",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ListResp"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/marker": {
+            "get": {
+                "operationId": "getMarker",
+                "summary": "Marker",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Marker"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ListResp": {
+                "type": "object",
+                "description": "Envelope whose marker fields are fixed to a lone scalar `const`. Each renders as a fixed getter returning the literal, not a single-value enum type — see issue #240.",
+                "required": ["object", "count"],
+                "properties": {
+                    "object": {
+                        "type": "string",
+                        "const": "list",
+                        "description": "Envelope marker fixed to the literal 'list'."
+                    },
+                    "apiVersion": {
+                        "type": "string",
+                        "const": "2024-01-01"
+                    },
+                    "revision": {
+                        "type": "integer",
+                        "const": 5
+                    },
+                    "count": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "Marker": {
+                "type": "object",
+                "description": "An object whose every property is a lone const — the constructor takes no arguments and it stores nothing.",
+                "required": ["kind"],
+                "properties": {
+                    "kind": {
+                        "type": "string",
+                        "const": "marker"
+                    }
+                }
+            }
+        }
+    }
+}
