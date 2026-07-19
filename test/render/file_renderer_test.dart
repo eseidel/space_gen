@@ -2285,6 +2285,69 @@ void main() {
       );
     });
 
+    test('regen clears a stale generated test after a rename', () async {
+      // Generated model tests live under `test/`, mirroring the `lib/`
+      // layout. Regenerating into an existing package has to clear them
+      // the same way it clears `lib/`: a schema that changes file name
+      // otherwise leaves its old test behind, still referencing the
+      // class under its old name, and the package stops analyzing.
+      //
+      // Found by regenerating the spec repo after #207 renamed
+      // discord's `MLSpamTriggerMetadataResponse` file — both the old
+      // and new test survived and 13 suites failed to compile.
+      final out = MemoryFileSystem.test().directory('spacetraders');
+      Map<String, dynamic> specWithSchema(String name) => {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/thing': {
+            'get': {
+              'operationId': 'getThing',
+              'responses': {
+                '200': {
+                  'description': 'ok',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/$name'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            name: {
+              'type': 'object',
+              'properties': {
+                'id': {'type': 'string'},
+              },
+            },
+          },
+        },
+      };
+
+      await renderToDirectory(spec: specWithSchema('OldName'), outDir: out);
+      final staleTest = out.childFile('test/models/old_name_test.dart');
+      expect(staleTest.existsSync(), isTrue, reason: 'sanity: first regen');
+
+      // Regenerate the same package with the schema renamed.
+      await renderToDirectory(spec: specWithSchema('NewName'), outDir: out);
+      expect(
+        out.childFile('test/models/new_name_test.dart').existsSync(),
+        isTrue,
+      );
+      expect(
+        staleTest.existsSync(),
+        isFalse,
+        reason: "the previous name's test must not survive the regen",
+      );
+    });
+
     test('colliding names are renamed', () async {
       // This sort of collision happens in the GitHub spec.
       // e.g. #/components/schemas/code-scanning-variant-analysis/properties/status

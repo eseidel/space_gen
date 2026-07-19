@@ -1074,6 +1074,14 @@ class FileRenderer {
         // Current layout.
         p.join('lib', 'models'),
         p.join('lib', 'messages'),
+        // Generated model tests mirror the `lib/` layout under `test/`
+        // (see [testPath]), so they need the same treatment. A schema
+        // that changes file name leaves a test behind otherwise, and
+        // that test still references the class under its old name — so
+        // the regenerated package no longer analyzes.
+        p.join('test', 'model'),
+        p.join('test', 'models'),
+        p.join('test', 'messages'),
       };
       for (final dirName in dirs) {
         final path = p.join(fileWriter.outDir.path, dirName);
