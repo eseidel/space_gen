@@ -33,29 +33,28 @@ Future<(OpenApi, RefRegistry)> assembleSpec(Uri rootUrl, Cache cache) async {
   return (root, refRegistry);
 }
 
-/// Visitor that collects every [Ref] it sees. Used to find the full set of
-/// references in a spec (root or external) so assembly can pull in every
-/// externally-ref'd document before resolution runs.
+/// Visitor that collects every [Ref] it sees into its own [refs] set. Used
+/// to find the full set of references in a spec (root or external) so
+/// assembly can pull in every externally-ref'd document before resolution
+/// runs.
 class _RefCollector extends Visitor {
-  _RefCollector(this._refs);
-
-  final Set<Ref<Parseable>> _refs;
+  final refs = <Ref<Parseable>>{};
 
   @override
   void visitRefOr<T extends Parseable>(RefOr<T> refOr) {
     final ref = refOr.ref;
-    if (ref != null) _refs.add(ref);
+    if (ref != null) refs.add(ref);
   }
 }
 
-/// Collect every external `$ref` reachable by [walk] into a fresh set.
-/// Each call gets its own set (and thus a throwaway collector) because the
-/// refs it finds are enqueued against a specific source document — different
-/// walks feed different base URIs, so the batches can't share one set.
+/// Collect every external `$ref` reachable by [walk] into a fresh set. Each
+/// call gets its own collector because the refs it finds are enqueued
+/// against a specific source document — different walks feed different base
+/// URIs, so the batches can't share one set.
 Set<Ref<Parseable>> _collectRefs(void Function(SpecWalker walker) walk) {
-  final refs = <Ref<Parseable>>{};
-  walk(SpecWalker(_RefCollector(refs)));
-  return refs;
+  final collector = _RefCollector();
+  walk(SpecWalker(collector));
+  return collector.refs;
 }
 
 /// Load every document reachable from [rootSpec] through external `$ref`
