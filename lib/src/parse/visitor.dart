@@ -34,6 +34,11 @@ class SpecWalker {
     }
   }
 
+  /// Walk a single [refOr] and everything reachable beneath it. Used to
+  /// register / collect refs from a whole-file external component, whose
+  /// document root is a lone component rather than a `components:` map.
+  void walkRefOr<T extends Parseable>(RefOr<T> refOr) => _refOr(refOr);
+
   void walkRoot(OpenApi root) {
     visitor.visitRoot(root);
     for (final path in root.paths.paths.values) {

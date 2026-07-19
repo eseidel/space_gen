@@ -160,12 +160,16 @@ class ResolveContext {
     RefOr<T> refOr,
     R Function(T target) body,
   ) {
-    final target = refOr.object != null
-        ? refOr.object!
-        : refRegistry.get<T>(currentDoc.resolveUri(refOr.ref!.uri));
-    if (refOr.ref == null) return body(target);
+    if (refOr.ref == null) return body(refOr.object!);
+    // Follow alias chains so the document switch lands on the document that
+    // actually holds the target, not the (possibly aliasing) document the
+    // ref names. A direct ref has no alias, so this is a no-op there.
+    final targetUri = refRegistry.followAliases(
+      currentDoc.resolveUri(refOr.ref!.uri),
+    );
+    final target = refRegistry.get<T>(targetUri);
     final prev = currentDoc;
-    currentDoc = currentDoc.resolveUri(refOr.ref!.uri).removeFragment();
+    currentDoc = targetUri.removeFragment();
     try {
       return body(target);
     } finally {
@@ -874,33 +878,6 @@ ResolvedDefaultResponse? _resolveDefaultResponse(
       contentType: contentType,
     );
   });
-}
-
-class RegistryBuilder extends Visitor {
-  RegistryBuilder(this.specUrl, this.refRegistry);
-  final Uri specUrl;
-  final RefRegistry refRegistry;
-
-  void add(HasPointer object) {
-    final fragment = object.pointer.urlEncodedFragment;
-    final uri = specUrl.resolve(fragment);
-    refRegistry.register(uri, object);
-  }
-
-  @override
-  void visitPathItem(PathItem pathItem) => add(pathItem);
-  @override
-  void visitOperation(Operation operation) => add(operation);
-  @override
-  void visitParameter(Parameter parameter) => add(parameter);
-  @override
-  void visitResponse(Response response) => add(response);
-  @override
-  void visitRequestBody(RequestBody requestBody) => add(requestBody);
-  @override
-  void visitSchema(Schema schema) => add(schema);
-  @override
-  void visitHeader(Header header) => add(header);
 }
 
 ResolvedTag _resolvedTag(Tag tag) {

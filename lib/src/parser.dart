@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/parse/spec.dart';
+import 'package:space_gen/src/parse/visitor.dart';
 import 'package:space_gen/src/string.dart';
 
 T _required<T>(MapContext json, String key) {
@@ -2169,10 +2170,36 @@ class RefRegistry {
 
   final objectsByUri = <Uri, dynamic>{};
 
+  /// A ref location whose target is itself a `$ref` — a components alias
+  /// like `Product-Base: {$ref: ./schemas/product_base.yaml}`. Looking up
+  /// the alias URI follows the chain to the underlying object. Kept separate
+  /// from [objectsByUri] because a location holds either an object or a ref,
+  /// never both, so the two maps never key the same URI.
+  final aliasesByUri = <Uri, Uri>{};
+
   Iterable<Uri> get uris => objectsByUri.keys;
 
+  /// Follow any alias chain from [uri] to the URI of the object it
+  /// ultimately names. Returns [uri] unchanged when it isn't an alias.
+  /// Callers switching their document base must resolve refs against *this*
+  /// URI's document, not the alias's — a `Product-Base` alias in `api.yaml`
+  /// points at `schemas/product_base.yaml`, whose own refs are relative to
+  /// `schemas/`, not to `api.yaml`.
+  Uri followAliases(Uri uri) {
+    var resolved = uri;
+    final seen = <Uri>{};
+    while (aliasesByUri.containsKey(resolved)) {
+      if (!seen.add(resolved)) {
+        throw FormatException('Cyclic ref alias chain reaching $uri');
+      }
+      resolved = aliasesByUri[resolved]!;
+    }
+    return resolved;
+  }
+
   T get<T>(Uri uri) {
-    final object = objectsByUri[uri];
+    final resolved = followAliases(uri);
+    final object = objectsByUri[resolved];
     if (object == null) {
       throw FormatException('$T not found: $uri');
     }
@@ -2180,6 +2207,14 @@ class RefRegistry {
       throw FormatException('Expected $T, got ${object.runtimeType}');
     }
     return object;
+  }
+
+  /// Record that [from] is an alias for [to] (both absolute URIs). A
+  /// components entry that is a bare `$ref` names no object of its own; the
+  /// alias lets a lookup of its URI reach whatever [to] eventually holds.
+  /// First arrival wins — re-registering the same alias is a no-op.
+  void registerAlias(Uri from, Uri to) {
+    aliasesByUri.putIfAbsent(from, () => to);
   }
 
   void register(Uri uri, dynamic object) {
@@ -2208,6 +2243,53 @@ class RefRegistry {
     }
     objectsByUri[uri] = object;
   }
+}
+
+/// Walks a parsed [OpenApi] (or a standalone [Components]) and indexes every
+/// component in a [RefRegistry] by its document-relative URI, so the
+/// resolver can dereference `$ref`s. A location holding a bare `$ref` (a
+/// components alias) registers an alias rather than an object. Sits in the
+/// parse layer because it is pure post-parse indexing — both assembly and
+/// the resolver's single-document convenience path build registries with it.
+class RegistryBuilder extends Visitor {
+  RegistryBuilder(this.specUrl, this.refRegistry);
+  final Uri specUrl;
+  final RefRegistry refRegistry;
+
+  void add(HasPointer object) {
+    final fragment = object.pointer.urlEncodedFragment;
+    final uri = specUrl.resolve(fragment);
+    refRegistry.register(uri, object);
+  }
+
+  @override
+  void visitRefOr<T extends Parseable>(RefOr<T> refOr) {
+    // A location holding a bare `$ref` (a components alias like
+    // `Product-Base: {$ref: ./schemas/product_base.yaml}`) registers no
+    // object of its own — the inline case is handled by the `visitX` calls
+    // as the walk descends. Record the alias so a lookup of this location
+    // reaches whatever the target eventually resolves to.
+    final ref = refOr.ref;
+    if (ref == null) return;
+    final from = specUrl.resolve(refOr.pointer.urlEncodedFragment);
+    final to = specUrl.resolveUri(ref.uri);
+    refRegistry.registerAlias(from, to);
+  }
+
+  @override
+  void visitPathItem(PathItem pathItem) => add(pathItem);
+  @override
+  void visitOperation(Operation operation) => add(operation);
+  @override
+  void visitParameter(Parameter parameter) => add(parameter);
+  @override
+  void visitResponse(Response response) => add(response);
+  @override
+  void visitRequestBody(RequestBody requestBody) => add(requestBody);
+  @override
+  void visitSchema(Schema schema) => add(schema);
+  @override
+  void visitHeader(Header header) => add(header);
 }
 
 class MapContext extends ParseContext {

@@ -1,8 +1,7 @@
-import 'dart:collection';
-
 import 'package:file/file.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
+import 'package:space_gen/src/assemble.dart';
 import 'package:space_gen/src/loader.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/naming.dart';
@@ -18,95 +17,6 @@ import 'package:space_gen/src/resolver.dart';
 import 'package:space_gen/src/string.dart';
 
 export 'package:space_gen/src/quirks.dart';
-
-/// Visitor that collects every [Ref] it sees. Used to find the full set of
-/// references in a spec (root or external) so the loader can pull in every
-/// externally-ref'd document before resolution runs.
-class _RefCollector extends Visitor {
-  _RefCollector(this._refs);
-
-  final Set<Ref<Parseable>> _refs;
-
-  @override
-  void visitRefOr<T extends Parseable>(RefOr<T> refOr) {
-    final ref = refOr.ref;
-    if (ref != null) _refs.add(ref);
-  }
-}
-
-Set<Ref<Parseable>> _collectRefsFromRoot(OpenApi root) {
-  final refs = <Ref<Parseable>>{};
-  SpecWalker(_RefCollector(refs)).walkRoot(root);
-  return refs;
-}
-
-Set<Ref<Parseable>> _collectRefsFromComponents(Components components) {
-  final refs = <Ref<Parseable>>{};
-  SpecWalker(_RefCollector(refs)).walkComponents(components);
-  return refs;
-}
-
-/// Load every document reachable from [rootSpec] through external `$ref`
-/// and register its components in [refRegistry].
-///
-/// Uses the full parser (not a raw JSON scan) to find refs: a scan would
-/// false-positive on `$ref` strings that sit inside `example:` payloads
-/// or unsupported extension fields. The parser only surfaces refs in
-/// spec-meaningful positions.
-///
-/// External documents are parsed as a "components library": only the
-/// `components:` section is walked. That covers virtually all real-world
-/// external refs (shared schema files, vendor extension libraries, etc.)
-/// and side-steps the fact that external files aren't usually valid
-/// standalone OpenAPI specs. Non-components external refs surface as a
-/// lookup miss during resolution.
-Future<void> _loadExternalRefs({
-  required OpenApi rootSpec,
-  required Uri rootSpecUrl,
-  required Cache cache,
-  required RefRegistry refRegistry,
-}) async {
-  final processedDocs = <Uri>{rootSpecUrl};
-  // Each work item carries the URL of the doc containing the ref, so the
-  // ref's (possibly relative) URI resolves against the right base.
-  final workItems = Queue<(Uri sourceDoc, Ref<Parseable> ref)>();
-
-  void enqueue(Uri sourceDoc, Iterable<Ref<Parseable>> refs) {
-    for (final ref in refs) {
-      workItems.add((sourceDoc, ref));
-    }
-  }
-
-  enqueue(rootSpecUrl, _collectRefsFromRoot(rootSpec));
-
-  while (workItems.isNotEmpty) {
-    final (sourceDoc, ref) = workItems.removeFirst();
-    final docUri = sourceDoc.resolveUri(ref.uri).removeFragment();
-    if (!processedDocs.add(docUri)) continue;
-
-    final doc = await cache.load(docUri);
-    final componentsJson = doc['components'];
-    if (componentsJson is! Map<String, dynamic>) {
-      throw FormatException(
-        'External ref target $docUri has no `components:` section; '
-        'space_gen only supports external refs into OpenAPI-shaped '
-        'components libraries.',
-      );
-    }
-    final componentsContext = MapContext(
-      pointerParts: ['components'],
-      snakeNameStack: const [],
-      json: componentsJson,
-    );
-    final components = parseComponents(componentsContext);
-
-    SpecWalker(
-      RegistryBuilder(docUri, refRegistry),
-    ).walkComponents(components);
-
-    enqueue(docUri, _collectRefsFromComponents(components));
-  }
-}
 
 void validatePackageName(String packageName) {
   // Validate that packageName is a valid dart package name.
@@ -225,22 +135,10 @@ Future<void> loadAndRenderSpec(GeneratorConfig config) async {
   final templates = TemplateProvider.fromDirectory(config.templatesDir);
 
   final cache = Cache(fs);
-  final specJson = await cache.load(config.specUrl);
-  final spec = parseOpenApi(specJson);
-
-  // Build the ref registry from the root spec plus every externally-ref'd
-  // document. Has to happen before resolveSpec so refs into other files
-  // don't fall off the edge.
-  final refRegistry = RefRegistry();
-  SpecWalker(
-    RegistryBuilder(config.specUrl, refRegistry),
-  ).walkRoot(spec);
-  await _loadExternalRefs(
-    rootSpec: spec,
-    rootSpecUrl: config.specUrl,
-    cache: cache,
-    refRegistry: refRegistry,
-  );
+  // Assemble the parse tree plus a registry of every component reachable
+  // through external `$ref` — has to happen before resolveSpec so refs into
+  // other files don't fall off the edge.
+  final (spec, refRegistry) = await assembleSpec(config.specUrl, cache);
 
   final resolved = resolveSpec(
     spec,

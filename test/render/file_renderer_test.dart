@@ -2876,6 +2876,342 @@ void main() {
       expect(out.childFile('lib/custom/create_widget_request.dart'), exists);
       expect(hasGeneratedSchemaDirs(out), isFalse);
     });
+
+    // Write a set of spec documents (path → JSON) to a fresh in-memory
+    // filesystem and generate from `/src/api.json`, returning the package
+    // directory for content assertions. Models external multi-document
+    // specs, which single-`spec.json` [renderToDirectory] can't express.
+    Future<Directory> renderMultiFile(
+      Map<String, Object> files, {
+      Logger? logger,
+    }) async {
+      final fs = MemoryFileSystem.test();
+      for (final entry in files.entries) {
+        fs.file(entry.key)
+          ..createSync(recursive: true)
+          ..writeAsStringSync(jsonEncode(entry.value));
+      }
+      final out = fs.directory('pkg');
+      await runWithLogger(
+        logger ?? _MockLogger(),
+        () => loadAndRenderSpec(
+          GeneratorConfig(
+            specUrl: Uri.file('/src/api.json'),
+            packageName: 'pkg',
+            outDir: out,
+            templatesDir: templatesDir,
+            runProcess: runProcess,
+            logSchemas: false,
+          ),
+        ),
+      );
+      return out;
+    }
+
+    // A minimal root document that returns [responseSchema] (a schema
+    // node or `$ref`) from `GET /widget`, plus any extra `components` and
+    // `parameters`.
+    Map<String, dynamic> rootSpec({
+      required Object responseSchema,
+      List<Object> parameters = const [],
+      Map<String, dynamic> components = const {},
+    }) => {
+      'openapi': '3.1.0',
+      'info': {'title': 'Split', 'version': '1.0.0'},
+      'servers': [
+        {'url': 'https://example.com'},
+      ],
+      'paths': {
+        '/widget': {
+          'get': {
+            'operationId': 'getWidget',
+            'parameters': parameters,
+            'responses': {
+              '200': {
+                'description': 'OK',
+                'content': {
+                  'application/json': {'schema': responseSchema},
+                },
+              },
+            },
+          },
+        },
+      },
+      'components': components,
+    };
+
+    test(
+      'resolves split-spec external refs (whole-file, pointer, alias)',
+      () async {
+        // The redocly/stoplight split-spec convention (issue #315): one
+        // component per file, referenced by external `$ref`. This exercises
+        // every external-ref shape at once:
+        //   * a bare, fragment-less `$ref` to a whole-file schema
+        //     (`./schemas/widget.json`),
+        //   * a fragment `$ref` into an arbitrary JSON-pointer path of a
+        //     document with no `components:` section
+        //     (`./params/query.json#/properties/limit`, a Parameter),
+        //   * a components entry that is itself only a `$ref` — an alias —
+        //     referenced back as `#/components/schemas/Widget`, whose own
+        //     relative `$ref` (`./detail.json`) must resolve against the
+        //     alias *target's* directory, not the aliasing document's.
+        final out = await renderMultiFile({
+          '/src/api.json': rootSpec(
+            responseSchema: {r'$ref': '#/components/schemas/Widget'},
+            parameters: [
+              {r'$ref': './params/query.json#/properties/limit'},
+            ],
+            components: {
+              'schemas': {
+                'Widget': {r'$ref': './schemas/widget.json'},
+              },
+            },
+          ),
+          '/src/schemas/widget.json': {
+            'type': 'object',
+            'required': ['id', 'detail'],
+            'properties': {
+              'id': {'type': 'integer'},
+              'detail': {r'$ref': './detail.json'},
+            },
+          },
+          '/src/schemas/detail.json': {
+            'type': 'object',
+            'properties': {
+              'note': {'type': 'string'},
+            },
+          },
+          '/src/params/query.json': {
+            'type': 'object',
+            'properties': {
+              'limit': {
+                'name': 'limit',
+                'in': 'query',
+                'schema': {'type': 'integer'},
+              },
+            },
+          },
+        });
+        final widget = out.childFile('lib/models/widget.dart');
+        final detail = out.childFile('lib/models/detail.dart');
+        expect(widget, exists);
+        expect(detail, exists);
+        // The alias resolved to the whole-file schema, and its transitive
+        // `./detail.json` ref resolved against `schemas/` (the alias
+        // target's directory).
+        expect(widget.readAsStringSync(), contains('final int id;'));
+        expect(widget.readAsStringSync(), contains('final Detail detail;'));
+        expect(detail.readAsStringSync(), contains('class Detail'));
+        // The arbitrary-JSON-pointer ref resolved to a query Parameter.
+        expect(
+          out.childFile('lib/api/default_api.dart').readAsStringSync(),
+          contains('int? limit'),
+        );
+      },
+    );
+
+    test('resolves external refs into a components-library document', () async {
+      // The other external-doc shape: a document *with* a `components:`
+      // section, referenced by fragment (`./shared.json#/components/...`).
+      // Indexed whole and unchanged by the split-spec work.
+      final out = await renderMultiFile({
+        '/src/api.json': rootSpec(
+          responseSchema: {r'$ref': './shared.json#/components/schemas/Shared'},
+        ),
+        '/src/shared.json': {
+          'components': {
+            'schemas': {
+              'Shared': {
+                'type': 'object',
+                'properties': {
+                  'label': {'type': 'string'},
+                },
+              },
+            },
+          },
+        },
+      });
+      final shared = out.childFile('lib/models/shared.dart');
+      expect(shared, exists);
+      expect(shared.readAsStringSync(), contains('class Shared'));
+    });
+
+    test('parses a whole-file Response component', () async {
+      // A fragment-less ref from a `responses:` position parses the whole
+      // file as a Response (not a Schema) — the type comes from the site.
+      final out = await renderMultiFile({
+        '/src/api.json': {
+          'openapi': '3.1.0',
+          'info': {'title': 'Split', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/widget': {
+              'get': {
+                'operationId': 'getWidget',
+                'responses': {
+                  '200': {r'$ref': './responses/ok.json'},
+                },
+              },
+            },
+          },
+        },
+        '/src/responses/ok.json': {
+          'description': 'OK',
+          'content': {
+            'application/json': {
+              'schema': {
+                'type': 'object',
+                'properties': {
+                  'ok': {'type': 'boolean'},
+                },
+              },
+            },
+          },
+        },
+      });
+      expect(
+        out.childFile('lib/api/default_api.dart').readAsStringSync(),
+        contains('getWidget'),
+      );
+    });
+
+    test('a broken JSON-pointer into a split doc throws', () async {
+      await expectLater(
+        renderMultiFile({
+          '/src/api.json': rootSpec(
+            responseSchema: {r'$ref': './schemas/widget.json#/nope'},
+          ),
+          '/src/schemas/widget.json': {
+            'type': 'object',
+            'properties': {
+              'id': {'type': 'integer'},
+            },
+          },
+        }),
+        throwsFormatException,
+      );
+    });
+
+    test('a JSON-pointer at a non-object node throws', () async {
+      await expectLater(
+        renderMultiFile({
+          '/src/api.json': rootSpec(
+            // `properties/id/type` lands on the string `"integer"`.
+            responseSchema: {
+              r'$ref': './schemas/widget.json#/properties/id/type',
+            },
+          ),
+          '/src/schemas/widget.json': {
+            'type': 'object',
+            'properties': {
+              'id': {'type': 'integer'},
+            },
+          },
+        }),
+        throwsFormatException,
+      );
+    });
+
+    test('parses a whole-file RequestBody component', () async {
+      // A fragment-less ref from a `requestBody:` position parses the whole
+      // file as a RequestBody — the type comes from the site.
+      final out = await renderMultiFile({
+        '/src/api.json': {
+          'openapi': '3.1.0',
+          'info': {'title': 'Split', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/widget': {
+              'post': {
+                'operationId': 'createWidget',
+                'requestBody': {r'$ref': './bodies/create.json'},
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+        },
+        '/src/bodies/create.json': {
+          'content': {
+            'application/json': {
+              'schema': {
+                'type': 'object',
+                'properties': {
+                  'name': {'type': 'string'},
+                },
+              },
+            },
+          },
+        },
+      });
+      expect(
+        out.childFile('lib/api/default_api.dart').readAsStringSync(),
+        contains('createWidget'),
+      );
+    });
+
+    test('indexes inline and whole-file Header components', () async {
+      // `components.headers` are walked and registered: an inline header
+      // (via RegistryBuilder.visitHeader) and a fragment-less external
+      // header ref (parsed whole-file as a Header). Generation succeeding
+      // exercises both header paths.
+      final out = await renderMultiFile({
+        '/src/api.json': {
+          'openapi': '3.1.0',
+          'info': {'title': 'Split', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/widget': {
+              'get': {
+                'operationId': 'getWidget',
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+          'components': {
+            'headers': {
+              'InlineRate': {
+                'description': 'requests remaining',
+                'schema': {'type': 'integer'},
+              },
+              'ExternalRate': {r'$ref': './headers/rate.json'},
+            },
+          },
+        },
+        '/src/headers/rate.json': {
+          'description': 'reset window',
+          'schema': {'type': 'string'},
+        },
+      });
+      expect(out.childFile('lib/api_client.dart'), exists);
+    });
+
+    test('follows a whole-file document that is itself a bare ref', () async {
+      // A split-spec file whose entire content is `{$ref: ...}` — the loader
+      // chases it transitively to the real component.
+      final out = await renderMultiFile({
+        '/src/api.json': rootSpec(
+          responseSchema: {r'$ref': './schemas/alias.json'},
+        ),
+        '/src/schemas/alias.json': {r'$ref': './real.json'},
+        '/src/schemas/real.json': {
+          'type': 'object',
+          'properties': {
+            'value': {'type': 'string'},
+          },
+        },
+      });
+      expect(out.childFile('lib/models/real.dart'), exists);
+    });
   });
 
   group('Formatter', () {
