@@ -3155,6 +3155,46 @@ void main() {
       );
     });
 
+    test('indexes inline and whole-file Header components', () async {
+      // `components.headers` are walked and registered: an inline header
+      // (via RegistryBuilder.visitHeader) and a fragment-less external
+      // header ref (parsed whole-file as a Header). Generation succeeding
+      // exercises both header paths.
+      final out = await renderMultiFile({
+        '/src/api.json': {
+          'openapi': '3.1.0',
+          'info': {'title': 'Split', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/widget': {
+              'get': {
+                'operationId': 'getWidget',
+                'responses': {
+                  '200': {'description': 'OK'},
+                },
+              },
+            },
+          },
+          'components': {
+            'headers': {
+              'InlineRate': {
+                'description': 'requests remaining',
+                'schema': {'type': 'integer'},
+              },
+              'ExternalRate': {r'$ref': './headers/rate.json'},
+            },
+          },
+        },
+        '/src/headers/rate.json': {
+          'description': 'reset window',
+          'schema': {'type': 'string'},
+        },
+      });
+      expect(out.childFile('lib/api_client.dart'), exists);
+    });
+
     test('follows a whole-file document that is itself a bare ref', () async {
       // A split-spec file whose entire content is `{$ref: ...}` — the loader
       // chases it transitively to the real component.

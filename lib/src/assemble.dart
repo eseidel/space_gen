@@ -182,16 +182,15 @@ RefOr<Parseable> _parseExternalTarget(
   Map<String, dynamic> targetJson,
 ) {
   // A fragment names the node (`.../tags.yaml#/properties/brands` →
-  // `brands`); a bare file is named by its basename.
-  final fragment = target.fragment;
-  final rawName = fragment.isEmpty
+  // `brands`); a bare file — or a fragment with no named segment — is
+  // named by its basename.
+  final segments = target.fragment
+      .split('/')
+      .where((s) => s.isNotEmpty)
+      .toList();
+  final rawName = segments.isEmpty
       ? p.basenameWithoutExtension(target.path)
-      : fragment
-            .split('/')
-            .lastWhere(
-              (s) => s.isNotEmpty,
-              orElse: () => p.basenameWithoutExtension(target.path),
-            );
+      : segments.last;
   final context = MapContext(
     // A unique, opaque identity for the resolver's recursion stack and the
     // name allocator; never emitted, so the full URI is fine.
