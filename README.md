@@ -78,6 +78,25 @@ a consensus towards a better Dart generator, so releasing this one.
   off to FileRenderer which uses SchemaRenderer to render api (operation) and
   model (schema) files and imports.
 
+### The output directory belongs to the generator
+
+By default space_gen empties the output directory before each run,
+keeping only `.dart_tool/`, `pubspec.lock`, and `.git/`. A schema you
+rename or delete would otherwise leave its old file behind, and that
+file still refers to the class under its old name — so the regenerated
+package stops analyzing.
+
+Pass `--no-clear` (or `GeneratorConfig.clearDirectory: false`) to
+generate into a package that also holds hand-written code. Nothing is
+deleted then, and removing stale output becomes your job.
+
+There is no middle setting, because there is nothing reliable to base
+one on. Layout is yours to change through `FileRenderer.modelPath` and
+`FileRenderer.testPath`, so no fixed set of paths is "the generated
+ones" — a consumer who moves models to `lib/src/models/` would get
+nothing cleaned by a rule naming `lib/models/`. Owning the directory is
+the only rule that stays true whatever the layout.
+
 ### Lint suppression lives in the generated `.dart` files
 
 space_gen supports consumers who don't use the `analysis_options.yaml` it

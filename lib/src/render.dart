@@ -163,6 +163,7 @@ class GeneratorConfig {
     this.quirks = const Quirks(),
     this.logSchemas = true,
     this.generateTests = true,
+    this.clearDirectory = true,
     this.fileRendererBuilder = FileRenderer.new,
   });
 
@@ -199,6 +200,20 @@ class GeneratorConfig {
   /// skipped automatically when no safe example value can be
   /// constructed (recursive types, no-JSON types).
   final bool generateTests;
+
+  /// Whether [outDir] belongs to the generator. Default `true`, which
+  /// empties it before each run so a renamed or deleted schema cannot
+  /// leave a stale file behind — a stale file still references its
+  /// class under the old name, so the regenerated package stops
+  /// analyzing.
+  ///
+  /// Turn this off to generate into a package that also holds
+  /// hand-written code, and remove stale output yourself. We cannot
+  /// tell your files from ours in a directory we do not own: layout is
+  /// yours to change via [FileRenderer.modelPath] and
+  /// [FileRenderer.testPath], so there is no set of paths we could
+  /// assume are generated and be right.
+  final bool clearDirectory;
 
   /// Hook for plugging in a custom [FileRenderer] subclass. Defaults
   /// to `FileRenderer.new`.
@@ -266,7 +281,7 @@ Future<void> loadAndRenderSpec(GeneratorConfig config) async {
           generateTests: config.generateTests,
         ),
       )
-      .render(renderSpec);
+      .render(renderSpec, clearDirectory: config.clearDirectory);
 }
 
 @visibleForTesting
