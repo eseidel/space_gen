@@ -38,6 +38,70 @@ class _ImportCollector extends RenderTreeVisitor {
   }
 }
 
+/// An `import '<path>';` directive, capturing the path.
+final _importDirectivePattern = RegExp("^import '([^']+)'");
+
+/// [source] with its leading `import` directives sorted the way
+/// `directives_ordering` wants them: `dart:` first, then everything
+/// else, each section alphabetical by path, one blank line between.
+///
+/// The `.dart` file templates are real Dart — they analyze and format
+/// in this repo — so their imports are written in a fixed order. That
+/// order cannot be right for every consumer, because a same-package
+/// import's position depends on the package name:
+/// `package:aaa_petstore/auth.dart` sorts before `package:http/http.dart`
+/// and `package:zzz_petstore/auth.dart` after. `api_client.dart` mixes
+/// the two and so tripped `directives_ordering` on any package naming
+/// itself before `http` (#282). `dart fix` was reordering it, which is
+/// why it stayed invisible.
+///
+/// Applied to every `.dart` template rather than just that one, so a
+/// template that later grows a same-package import cannot reintroduce
+/// the bug.
+///
+/// Only the contiguous run of directives at the top is touched, and
+/// only when it holds nothing but imports and blank lines; anything
+/// else (a leading comment inside the run, an `export`) leaves the
+/// source alone. Sorting what we do not fully understand risks
+/// reordering across a directive whose position is load-bearing.
+@visibleForTesting
+String sortDartImports(String source) {
+  final lines = source.split('\n');
+  final first = lines.indexWhere(_importDirectivePattern.hasMatch);
+  if (first == -1) return source;
+  var last = first;
+  for (var i = first; i < lines.length; i++) {
+    if (_importDirectivePattern.hasMatch(lines[i])) {
+      last = i;
+    } else if (lines[i].trim().isNotEmpty) {
+      break;
+    }
+  }
+  final span = lines.sublist(first, last + 1);
+  if (span.any(
+    (l) => l.trim().isNotEmpty && !_importDirectivePattern.hasMatch(l),
+  )) {
+    return source;
+  }
+
+  final imports = span.where((l) => l.trim().isNotEmpty).toList();
+  String pathOf(String line) =>
+      _importDirectivePattern.firstMatch(line)!.group(1)!;
+  bool isDart(String line) => pathOf(line).startsWith('dart:');
+  final dartImports = imports.where(isDart).sortedBy(pathOf);
+  final otherImports = imports.whereNot(isDart).sortedBy(pathOf);
+  final sorted = [
+    ...dartImports,
+    if (dartImports.isNotEmpty && otherImports.isNotEmpty) '',
+    ...otherImports,
+  ];
+  return [
+    ...lines.sublist(0, first),
+    ...sorted,
+    ...lines.sublist(last + 1),
+  ].join('\n');
+}
+
 Set<RenderSchema> collectAllSchemas(RenderSpec spec) {
   final collector = _ModelCollector();
   RenderTreeWalker(visitor: collector).walkRoot(spec);
@@ -462,7 +526,10 @@ class FileRenderer {
   }) {
     final output = templates.loadDartTemplate(name);
     final content = applyMandatoryReplacements(output, replacements);
-    fileWriter.writeFile(path: outPath, content: content);
+    // After replacement, not before: the same-package imports only get
+    // their real paths here, and where those sort among the third-party
+    // ones depends on the package name.
+    fileWriter.writeFile(path: outPath, content: sortDartImports(content));
   }
 
   /// Emit `lib/api_exception.dart`. Override to no-op if the package

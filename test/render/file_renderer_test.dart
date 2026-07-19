@@ -2680,6 +2680,87 @@ void main() {
     );
   });
 
+  group('sortDartImports', () {
+    test('orders the package section by path, not by template order', () {
+      // The #282 shape: a same-package import's position depends on the
+      // package name, so the template cannot hard-code it.
+      const template = '''
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:http/http.dart';
+import 'package:aaa_petstore/api_exception.dart';
+import 'package:aaa_petstore/auth.dart';
+
+export 'package:aaa_petstore/auth.dart';
+''';
+      expect(sortDartImports(template), '''
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:aaa_petstore/api_exception.dart';
+import 'package:aaa_petstore/auth.dart';
+import 'package:http/http.dart';
+
+export 'package:aaa_petstore/auth.dart';
+''');
+    });
+
+    test('a package sorting after http keeps its order', () {
+      const template =
+          "import 'package:http/http.dart';\n"
+          "import 'package:zzz_petstore/auth.dart';\n";
+      expect(sortDartImports(template), template);
+    });
+
+    test('dart: imports come first, with a blank line after', () {
+      expect(
+        sortDartImports("import 'package:a/a.dart';\nimport 'dart:io';\n"),
+        "import 'dart:io';\n\nimport 'package:a/a.dart';\n",
+      );
+    });
+
+    test('no blank line is added when a section is empty', () {
+      const onlyPackages =
+          "import 'package:a/a.dart';\nimport 'package:b/b.dart';\n";
+      expect(sortDartImports(onlyPackages), onlyPackages);
+      const onlyDart = "import 'dart:async';\nimport 'dart:io';\n";
+      expect(sortDartImports(onlyDart), onlyDart);
+    });
+
+    test('a source with no imports is untouched', () {
+      const source = '// just a comment\nvoid main() {}\n';
+      expect(sortDartImports(source), source);
+    });
+
+    test('leaves the source alone when the run holds a non-import', () {
+      // Rather than reorder across a directive whose position might be
+      // load-bearing.
+      const source =
+          "import 'package:b/b.dart';\n"
+          '// a comment between directives\n'
+          "import 'package:a/a.dart';\n";
+      expect(sortDartImports(source), source);
+    });
+
+    test('preserves content before and after the import run', () {
+      const source =
+          '// License header.\n'
+          "import 'package:b/b.dart';\n"
+          "import 'package:a/a.dart';\n"
+          '\n'
+          'void main() {}\n';
+      expect(
+        sortDartImports(source),
+        '// License header.\n'
+        "import 'package:a/a.dart';\n"
+        "import 'package:b/b.dart';\n"
+        '\n'
+        'void main() {}\n',
+      );
+    });
+  });
+
   group('FileRenderer', () {
     test('imports for model', () {
       final templates = TemplateProvider.defaultLocation();
