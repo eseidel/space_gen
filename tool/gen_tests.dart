@@ -169,15 +169,30 @@ Future<void> run({
   }
   const fs = LocalFileSystem();
   final packageRoot = fs.currentDirectory;
-  final potentialTestDirs = [
-    packageRoot.childDirectory('gen_tests'),
-    // The spec repo currently sits beside the space_gen checkout. That
-    // only resolves from the primary clone — from a git worktree it
-    // does not — so `--dir` exists to name it explicitly.
-    packageRoot.childDirectory('../gen_tests'),
+  // Both implicit directories are repo-relative, so they resolve the
+  // same from the primary clone and from any git worktree. The
+  // real-world specs used to live in a sibling checkout reached via
+  // `../gen_tests`, which resolved only from the primary clone — from a
+  // worktree the directory simply was not there, and a missing directory
+  // was silently skipped, so a regen would report success having
+  // generated nothing. They are in `gen_tests/third_party/` now, which
+  // also scopes the licensing note and the cspell ignore to one path.
+  // `--dir` remains for pointing the tool outside the repo.
+  //
+  // Each directory carries its own manifest rather than being discovered
+  // by recursion: `third_party/` differs from its parent in quirks, and
+  // that is not inferable from the filesystem.
+  final genTests = packageRoot.childDirectory('gen_tests');
+  final testDirs = [
+    genTests,
+    genTests.childDirectory('third_party'),
     ...extraDirs.map(fs.directory),
   ];
-  final testDirs = potentialTestDirs.where((dir) => dir.existsSync()).toList();
+  for (final dir in testDirs) {
+    if (!dir.existsSync()) {
+      throw Exception('Test directory does not exist: ${dir.path}');
+    }
+  }
   final tests = collectTests(
     testDirs: testDirs,
     globList: globList,

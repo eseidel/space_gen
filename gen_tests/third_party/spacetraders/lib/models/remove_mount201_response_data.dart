@@ -1,0 +1,82 @@
+import 'package:meta/meta.dart';
+import 'package:spacetraders/model_helpers.dart';
+import 'package:spacetraders/models/agent.dart';
+import 'package:spacetraders/models/ship_cargo.dart';
+import 'package:spacetraders/models/ship_modification_transaction.dart';
+import 'package:spacetraders/models/ship_mount.dart';
+
+@immutable
+class RemoveMount201ResponseData {
+  const RemoveMount201ResponseData({
+    required this.agent,
+    required this.mounts,
+    required this.cargo,
+    required this.transaction,
+  });
+
+  /// Converts a `Map<String, dynamic>` to a [RemoveMount201ResponseData].
+  factory RemoveMount201ResponseData.fromJson(Map<String, dynamic> json) {
+    return parseFromJson(
+      'RemoveMount201ResponseData',
+      json,
+      () => RemoveMount201ResponseData(
+        agent: Agent.fromJson(json['agent'] as Map<String, dynamic>),
+        mounts: (json['mounts'] as List)
+            .map<ShipMount>(
+              (e) => ShipMount.fromJson(e as Map<String, dynamic>),
+            )
+            .toList(),
+        cargo: ShipCargo.fromJson(json['cargo'] as Map<String, dynamic>),
+        transaction: ShipModificationTransaction.fromJson(
+          json['transaction'] as Map<String, dynamic>,
+        ),
+      ),
+    );
+  }
+
+  /// Convenience to create a nullable type from a nullable json object.
+  /// Useful when parsing optional fields.
+  static RemoveMount201ResponseData? maybeFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return null;
+    }
+    return RemoveMount201ResponseData.fromJson(json);
+  }
+
+  /// Agent details.
+  final Agent agent;
+
+  /// List of installed mounts after the removal of the selected mount.
+  final List<ShipMount> mounts;
+
+  /// Ship cargo details.
+  final ShipCargo cargo;
+
+  /// Result of a transaction for a ship modification, such as installing a
+  /// mount or a module.
+  final ShipModificationTransaction transaction;
+
+  /// Converts a [RemoveMount201ResponseData] to a `Map<String, dynamic>`.
+  Map<String, dynamic> toJson() {
+    return {
+      'agent': agent.toJson(),
+      'mounts': mounts.map((e) => e.toJson()).toList(),
+      'cargo': cargo.toJson(),
+      'transaction': transaction.toJson(),
+    };
+  }
+
+  @override
+  int get hashCode =>
+      Object.hashAll([agent, listHash(mounts), cargo, transaction]);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is RemoveMount201ResponseData &&
+        agent == other.agent &&
+        listsEqual(mounts, other.mounts) &&
+        cargo == other.cargo &&
+        transaction == other.transaction;
+  }
+}

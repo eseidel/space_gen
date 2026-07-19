@@ -1,0 +1,30 @@
+// GENERATED — do not hand-edit.
+import 'package:github/api.dart';
+import 'package:test/test.dart';
+
+void main() {
+  group('ReposCreateOrgRulesetRequest', () {
+    test('round-trips via maybeFromJson/toJson', () {
+      const instance = ReposCreateOrgRulesetRequest(
+        name: 'example',
+        enforcement: RepositoryRuleEnforcement.disabled,
+      );
+      final parsed = ReposCreateOrgRulesetRequest.maybeFromJson(
+        instance.toJson(),
+      )!;
+      expect(parsed, equals(instance));
+      expect(parsed.hashCode, equals(instance.hashCode));
+    });
+
+    test('maybeFromJson returns null on null input', () {
+      expect(ReposCreateOrgRulesetRequest.maybeFromJson(null), isNull);
+    });
+
+    test('maybeFromJson throws FormatException on invalid input', () {
+      expect(
+        () => ReposCreateOrgRulesetRequest.maybeFromJson(<String, dynamic>{}),
+        throwsFormatException,
+      );
+    });
+  });
+}

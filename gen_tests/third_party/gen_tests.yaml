@@ -1,0 +1,33 @@
+# Manifest for `tool/gen_tests.dart` — the real-world regression corpus.
+#
+# Run from the package root, same as the synthetic fixtures one level up:
+#
+#     dart run tool/gen_tests.dart            # all of them
+#     dart run tool/gen_tests.dart github     # just one
+#
+# These specs are third-party (see README.md for provenance and
+# copyright). Keeping them in their own directory is what lets the
+# licensing note and the cspell `ignorePaths` entry each name a single
+# path rather than enumerating every spec.
+#
+# Generated WITHOUT `Quirks.openapi()` — plain
+# `dart run space_gen -i <spec> -o <dir>`, which is how they were
+# originally produced, and which keeps the non-quirks path covered. The
+# quirks flip six flags (dynamicJson, mutableModels,
+# nonNullableDefaultValues, allListsDefaultToEmpty, screamingCapsEnums,
+# flatModelDir), so generating these with them would rewrite every
+# package into `lib/model/` with different nullability and mutability.
+openapi: false
+
+# `package:` defaults to the spec's filename with the extension dropped
+# and `.`/`-` folded to `_`, so it is only spelled out below where that
+# default is not what we want.
+specs:
+  - spec: api.github.com.json
+    package: github # default would be api_github_com
+  - spec: backstage.yaml
+  - spec: discord.json
+  - spec: petstore.json
+  - spec: spacetraders.json
+  - spec: train-travel.yaml
+    package: train_travel # default already folds `-`; explicit for clarity
