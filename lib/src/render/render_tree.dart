@@ -616,7 +616,19 @@ class SpecResolver {
     return toRenderSchema(schema);
   }
 
-  RenderSchema toRenderSchema(ResolvedSchema schema) {
+  /// [isParameterSchema] is set when [schema] is the top-level schema of a
+  /// parameter (query/path/header/cookie). The `allListsDefaultToEmpty` quirk
+  /// synthesizes an empty-list default for arrays to match openapi-generator's
+  /// *response model* behavior (list fields come back `[]`, never null) — but a
+  /// parameter is an input, where omitted and present-but-empty differ. Forcing
+  /// `= const []` there makes an optional array param non-optional in practice
+  /// and emits a no-op `if (x != null)` guard over the default. So the quirk
+  /// is suppressed for parameter schemas; they default to `null` like plain
+  /// output.
+  RenderSchema toRenderSchema(
+    ResolvedSchema schema, {
+    bool isParameterSchema = false,
+  }) {
     switch (schema) {
       case ResolvedRecursiveRef():
         // The recursive ref's type name is the target's class name —
@@ -721,9 +733,12 @@ class SpecResolver {
         );
       case ResolvedArray():
         var defaultValue = schema.defaultValue;
-        // I don't think this is quite right.  OpenAPI does not show this fake
-        // default in cases where the schema is being used as a parameter.
-        if (defaultValue == null && quirks.allListsDefaultToEmpty) {
+        // The `allListsDefaultToEmpty` quirk fakes an empty-list default so
+        // response-model list fields are non-null; a parameter is an input, so
+        // it keeps its real (usually null) default — see [isParameterSchema].
+        if (defaultValue == null &&
+            quirks.allListsDefaultToEmpty &&
+            !isParameterSchema) {
           defaultValue = List<dynamic>.empty();
         }
         return RenderArray(
@@ -876,7 +891,7 @@ class SpecResolver {
       inLocation: parameter.inLocation,
       isRequired: parameter.isRequired,
       isDeprecated: parameter.isDeprecated,
-      type: toRenderSchema(parameter.schema),
+      type: toRenderSchema(parameter.schema, isParameterSchema: true),
       example: parameter.example,
       examples: parameter.examples,
       queryEncoding: parameter.queryEncoding,
