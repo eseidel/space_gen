@@ -1372,7 +1372,18 @@ class Endpoint implements ToTemplateContext {
   /// Otherwise the value is interpolated to stringify it, with the
   /// braces dropped for a bare identifier
   /// (`unnecessary_brace_in_string_interps`).
+  ///
+  /// The result is percent-encoded unless the type makes that provably
+  /// a no-op — see [_pathValueNeedsEncoding].
   String _pathReplacement(RenderParameter p, SchemaRenderer context) {
+    final source = _pathStringExpression(p, context);
+    if (!_pathValueNeedsEncoding(p)) return source;
+    return 'Uri.encodeComponent($source)';
+  }
+
+  /// The `String`-valued expression for path parameter [p], before any
+  /// percent-encoding.
+  String _pathStringExpression(RenderParameter p, SchemaRenderer context) {
     final expr = p.toJsonExpression(context);
     final source = _runtimeSource(expr);
     if (p.type.jsonStorageDartType == DartType.string) return source;
@@ -1381,6 +1392,37 @@ class Endpoint implements ToTemplateContext {
     // question about the expression's shape, which the tree answers
     // directly — it used to be a regex over the rendered text.
     return expr is DartIdentifier ? "'\$$source'" : "'\${$source}'";
+  }
+
+  /// Whether [p]'s value has to be percent-encoded before it is
+  /// substituted into the path.
+  ///
+  /// Substitution is textual, so a value carrying a URL-reserved
+  /// character would otherwise change the *structure* of the URL rather
+  /// than ride along as data — a `/` in particular splits one segment
+  /// into two and addresses a different endpoint. Encoding at
+  /// substitution time is the only place the parameter boundary is
+  /// still known.
+  ///
+  /// Numbers and bools are skipped: their `toString()` can only produce
+  /// `[0-9.eE+-]` or `true`/`false`, none of which
+  /// `Uri.encodeComponent` would alter, so wrapping them would be noise
+  /// in the generated source. Every other type — `String`, enums,
+  /// `DateTime`, `Uri` — can contain a reserved character and is
+  /// encoded.
+  //
+  // TODO(eseidel): `allowReserved: true` should select the raw form
+  // here once the parser keeps it (#100).
+  static bool _pathValueNeedsEncoding(RenderParameter p) {
+    // Not `const`: [DartType] overrides `==`, so it cannot be a const
+    // set element.
+    final unreserved = {
+      DartType.int_,
+      DartType.double_,
+      DartType.num_,
+      DartType.bool_,
+    };
+    return !unreserved.contains(p.type.jsonStorageDartType.asNonNullable());
   }
 
   List<String> _queryParamsLines(
