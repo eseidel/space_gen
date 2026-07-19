@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:form_urlencoded/api_exception.dart';
+import 'package:form_urlencoded/auth.dart';
 import 'package:http/http.dart';
-import 'package:spacetraders/api_exception.dart';
-import 'package:spacetraders/auth.dart';
 
-export 'package:spacetraders/auth.dart';
+export 'package:form_urlencoded/auth.dart';
 
 /// The HTTP methods supported by the API.
 enum Method {
@@ -74,7 +74,7 @@ class ApiClient {
     Client? client,
     this.defaultHeaders = const {},
     this.readSecret,
-  }) : baseUri = baseUri ?? Uri.parse('https://api.spacetraders.io/v2'),
+  }) : baseUri = baseUri ?? Uri.parse('https://example.com/form'),
        client = client ?? Client();
 
   final Uri baseUri;

@@ -88,11 +88,11 @@ class UnsupportedEncoding extends QueryEncoding {
 /// one in a URL path segment. Expressing that rule as "this, minus number"
 /// is what keeps the two from drifting.
 ///
-/// `_isMultipartScalar` in `render/render_tree.dart` asks the same question
-/// over `Render*`, for a multipart body's text fields. That one can't share
-/// this implementation — it runs after the Dart types exist and has to let
-/// the file-part branch claim `RenderBinary` first — so the two are held in
-/// step by hand. Change both or neither.
+/// `_isWireStringScalar` in `render/render_tree.dart` asks the same question
+/// over `Render*`, for a multipart or form-urlencoded body's text fields.
+/// That one can't share this implementation — it runs after the Dart types
+/// exist and has to let the file-part branch claim `RenderBinary` first — so
+/// the two are held in step by hand. Change both or neither.
 bool isSingleWireValue(ResolvedSchema schema) {
   if (schema is ResolvedString ||
       schema is ResolvedInteger ||

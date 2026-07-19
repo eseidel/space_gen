@@ -27,11 +27,15 @@ enum Method {
 /// [multipartFormData] is a marker value — the actual send path lives in
 /// [ApiClient.invokeApiMultipart], which sets the `Content-Type` with a
 /// generated boundary itself.
+/// [formUrlEncoded] bodies are passed to [ApiClient.invokeApi] as a
+/// `Map<String, String>`; the `http` package encodes it as
+/// `key=value&...` form fields.
 enum BodyContentType {
   json('application/json'),
   multipartFormData('multipart/form-data'),
   octetStream('application/octet-stream'),
-  textPlain('text/plain');
+  textPlain('text/plain'),
+  formUrlEncoded('application/x-www-form-urlencoded');
 
   const BodyContentType(this.value);
 
@@ -208,7 +212,9 @@ class ApiClient {
       auth: auth,
     );
     // Only the JSON path runs through jsonEncode; binary/text bodies pass
-    // through so the receiving server gets the bytes/string as-written.
+    // through so the receiving server gets the bytes/string as-written. A
+    // form-urlencoded body arrives here as a `Map<String, String>`, which
+    // `http` encodes as `key=value&...` when it sees a Map body.
     final Object? encodedBody;
     if (body == null) {
       encodedBody = null;
