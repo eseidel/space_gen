@@ -793,6 +793,45 @@ void main() {
       expect(result, contains('final int bar;'));
     });
 
+    test('allOf flattens a nested allOf member into one object', () {
+      // An `allOf` member that is itself an `allOf` (issue #320) merges
+      // recursively: the outer object collects the inner composition's
+      // properties alongside its own, producing one flat class.
+      final schema = {
+        'allOf': [
+          {
+            'allOf': [
+              {
+                'type': 'object',
+                'required': ['a'],
+                'properties': {
+                  'a': {'type': 'string'},
+                },
+              },
+              {
+                'type': 'object',
+                'properties': {
+                  'b': {'type': 'integer'},
+                },
+              },
+            ],
+          },
+          {
+            'type': 'object',
+            'properties': {
+              'c': {'type': 'boolean'},
+            },
+          },
+        ],
+      };
+      final result = renderTestSchema(schema);
+      expect(result, contains('final String a;'));
+      expect(result, contains('final int? b;'));
+      expect(result, contains('final bool? c;'));
+      // The inner member's `required` survives the flatten.
+      expect(result, contains('required this.a'));
+    });
+
     test('allOf with an open map member gets an overflow map', () {
       // Backstage's `RecursivePartialEntityMeta` shape: an open member
       // (`{type: object, additionalProperties: true}`, i.e. a `JsonObject`)
