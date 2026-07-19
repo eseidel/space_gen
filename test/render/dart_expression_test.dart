@@ -677,4 +677,44 @@ void main() {
       expect(withArgs, isNot(without));
     });
   });
+
+  group('equality', () {
+    // Not incidental: `RenderMap.fromJsonExpression` decides whether its
+    // closure is the identity by asking whether each side handed back the
+    // identifier it was given, so structural equality is load-bearing.
+    const a = DartIdentifier('a');
+    const b = DartIdentifier('b');
+
+    test('DartFunctionCall compares name and arguments', () {
+      const call = DartFunctionCall(name: 'f', arguments: [a]);
+      expect(call, const DartFunctionCall(name: 'f', arguments: [a]));
+      expect(call, isNot(const DartFunctionCall(name: 'g', arguments: [a])));
+      expect(call, isNot(const DartFunctionCall(name: 'f', arguments: [b])));
+    });
+
+    test('DartIndex compares target and index', () {
+      const index = DartIndex(target: a, index: DartLiteral('k'));
+      expect(index, const DartIndex(target: a, index: DartLiteral('k')));
+      expect(index, isNot(const DartIndex(target: b, index: DartLiteral('k'))));
+      expect(index, isNot(const DartIndex(target: a, index: DartLiteral('j'))));
+    });
+
+    test('DartCast compares operand and type', () {
+      const cast = DartCast(operand: a, type: DartType.int_);
+      expect(cast, const DartCast(operand: a, type: DartType.int_));
+      expect(cast, isNot(const DartCast(operand: b, type: DartType.int_)));
+      expect(cast, isNot(const DartCast(operand: a, type: DartType.string)));
+    });
+
+    test('DartIfNull compares both sides', () {
+      const ifNull = DartIfNull(value: a, ifNullValue: b);
+      expect(ifNull, const DartIfNull(value: a, ifNullValue: b));
+      expect(ifNull, isNot(const DartIfNull(value: b, ifNullValue: a)));
+    });
+
+    test('DartThrow compares its value', () {
+      expect(const DartThrow(a), const DartThrow(a));
+      expect(const DartThrow(a), isNot(const DartThrow(b)));
+    });
+  });
 }
