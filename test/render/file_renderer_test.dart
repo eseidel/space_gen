@@ -2995,6 +2995,7 @@ export 'package:aaa_petstore/auth.dart';
                   example: null,
                   examples: null,
                   explode: true,
+                  queryEncoding: null,
                 ),
               ],
               requestBody: null,

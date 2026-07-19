@@ -10,6 +10,8 @@ words:
   # github's `cwes` query parameter (Common Weakness Enumeration ids).
   - cwes
   - subtyping
+  # "stringified" was already in use; the gerund shows up alongside it.
+  - stringifying
   - dedupe
   - dedupes
   - tearoff

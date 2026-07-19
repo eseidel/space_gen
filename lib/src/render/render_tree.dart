@@ -4,8 +4,10 @@ import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
 import 'package:space_gen/src/dispatch.dart';
+import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/naming.dart';
 import 'package:space_gen/src/parse/spec.dart' show StatusCodeRange;
+import 'package:space_gen/src/query_encoding.dart';
 import 'package:space_gen/src/quirks.dart';
 import 'package:space_gen/src/render/dart_expression.dart';
 import 'package:space_gen/src/render/dart_type.dart';
@@ -878,6 +880,7 @@ class SpecResolver {
       example: parameter.example,
       examples: parameter.examples,
       explode: parameter.explode,
+      queryEncoding: parameter.queryEncoding,
     );
   }
 
@@ -1452,19 +1455,17 @@ class Endpoint implements ToTemplateContext {
     // `?k=v1&k=v2&…`. Scalars wrap into a single-element list; arrays
     // come through directly.
     //
-    // A union that mixes the two arities can't pick one form at render
-    // time — the arm held at the call site decides — so it emits a
-    // `switch` and each arm contributes its own. Every other shape has a
-    // single form and takes the direct path.
+    // Which of those applies was decided by the resolver — see
+    // [QueryEncoding]. This switch translates the decision into Dart; it
+    // does not re-derive it from the schema.
     final dartName = p.dartParameterName(context.quirks);
-    final paramType = p.type;
-    final arityMixedUnion = _arityMixedUnion(paramType);
-    final String value;
-    if (arityMixedUnion != null) {
-      value = _unionQueryValue(arityMixedUnion, dartName, p, context);
-    } else {
-      value = _queryValue(paramType, dartName, p, context);
-    }
+    final value = _queryValueFor(
+      p.queryEncoding ?? const UnsupportedEncoding(),
+      p.type,
+      dartName,
+      p,
+      context,
+    );
     if (p.isNullable) {
       return "${innerIndent}if ($dartName != null) '${p.name}': $value,";
     }
@@ -1492,31 +1493,51 @@ class Endpoint implements ToTemplateContext {
     return item == element ? null : _runtimeSource(item);
   }
 
-  /// The `Map<String, List<String>>` value expression for a query parameter
-  /// of type [type], reading the Dart value from [access].
+  /// The `Map<String, List<String>>` value expression realizing [encoding]
+  /// for a parameter of type [type], reading the Dart value from [access].
   ///
   /// [access] is the parameter name at the top level, and a variant's
   /// destructured `value` when called per-arm from [_unionQueryValue].
-  static String _queryValue(
+  static String _queryValueFor(
+    QueryEncoding encoding,
     RenderSchema type,
     String access,
     RenderParameter p,
     SchemaRenderer context,
+  ) => switch (encoding) {
+    // A single value, or a union of them — either way `toJson()` yields
+    // one value and the scalar path is correct.
+    SingleValueEncoding() => _scalarQueryValue(type, access, context),
+    // No encoding exists for this shape; the resolver has already warned.
+    // Stringifying is the documented fallback, not a claim of correctness.
+    UnsupportedEncoding() => _scalarQueryValue(type, access, context),
+    RepeatedKeyEncoding() => _arrayQueryValue(
+      type,
+      access,
+      context,
+      commaJoined: false,
+    ),
+    CommaJoinedEncoding() => _arrayQueryValue(
+      type,
+      access,
+      context,
+      commaJoined: true,
+    ),
+    PerVariantEncoding(:final variants) => _unionQueryValue(
+      type,
+      variants,
+      access,
+      p,
+      context,
+    ),
+  };
+
+  /// One wire value, wrapped in the 1-element list the query map wants.
+  static String _scalarQueryValue(
+    RenderSchema type,
+    String access,
+    SchemaRenderer context,
   ) {
-    if (type is RenderArray) {
-      final conversion = _elementWireConversion(type, context);
-      final items = conversion == null
-          ? access
-          : '$access.map((e) => $conversion)';
-      // `explode: false` (style=form) comma-joins the array into a single
-      // value (`?k=a,b,c`) rather than repeating the key. Wrap the joined
-      // string in a 1-element list so it flows through the same
-      // `Map<String, List<String>>` shape.
-      if (!p.explode) return "[$items.join(',')]";
-      // Without a conversion the value is already the `List<String>` the
-      // query map wants, so there is nothing to `.toList()`.
-      return conversion == null ? items : '$items.toList()';
-    }
     final scalarToJson = type.toJsonExpression(
       DartIdentifier(access),
       context,
@@ -1526,39 +1547,45 @@ class Endpoint implements ToTemplateContext {
     return '[${_runtimeSource(stringified)}]';
   }
 
-  /// A `switch` over [union]'s sealed variants, each arm producing that
-  /// variant's own query value.
+  /// An array, either repeated across the key or comma-joined into one
+  /// value.
+  ///
+  /// [type] is a [RenderArray] whenever the resolver decided an array
+  /// encoding. If it somehow isn't, fall back to the scalar path rather
+  /// than crash — a wrong query string beats a failed generation.
+  static String _arrayQueryValue(
+    RenderSchema type,
+    String access,
+    SchemaRenderer context, {
+    required bool commaJoined,
+  }) {
+    if (type is! RenderArray) {
+      return _scalarQueryValue(type, access, context);
+    }
+    final conversion = _elementWireConversion(type, context);
+    final items = conversion == null
+        ? access
+        : '$access.map((e) => $conversion)';
+    // Comma-joining produces a single value (`?k=a,b,c`) rather than
+    // repeating the key. Wrap it in a 1-element list so it flows through
+    // the same `Map<String, List<String>>` shape.
+    if (commaJoined) return "[$items.join(',')]";
+    // Without a conversion the value is already the `List<String>` the
+    // query map wants, so there is nothing to `.toList()`.
+    return conversion == null ? items : '$items.toList()';
+  }
+
+  /// A `switch` over [type]'s sealed variants, each arm producing that
+  /// variant's own query value per the matching entry of [variants].
   ///
   /// The arms destructure `value` — every wrapper subclass declares exactly
   /// that field (see `objectWrapperContext` and the `schema_one_of`
   /// template) — so each arm hands its variant's real Dart type to
-  /// [_queryValue] rather than the union's `dynamic` `toJson()`.
-  static String _unionQueryValue(
-    RenderOneOf union,
-    String access,
-    RenderParameter p,
-    SchemaRenderer context,
-  ) {
-    final arms = union.schemas.map((variant) {
-      final wrapper = union.wrapperTypeName(variant);
-      final value = _queryValue(variant, 'value', p, context);
-      return '$wrapper(:final value) => $value,';
-    });
-    return 'switch ($access) { ${arms.join(' ')} }';
-  }
-
-  /// [type] as a union that mixes single values with arrays — the one union
-  /// shape whose wire form the default scalar path gets *wrong*.
+  /// [_queryValueFor] rather than the union's `dynamic` `toJson()`.
   ///
-  /// Such a union's `toJson()` is `dynamic`, so the scalar path stringifies
-  /// it; for the array variant that yields Dart's list `toString()`
-  /// (`"[a, b]"`) instead of repeated keys. Unions whose variants are all
-  /// single values (discord's `oneOf: [enum]`) already stringify correctly,
-  /// so they stay on the simpler path and their output is unchanged.
-  ///
-  /// Returns null when [type] isn't such a union, or when any variant lacks
-  /// a wrapper subclass to switch over. That second guard is load-bearing in
-  /// two ways:
+  /// Emitting the switch needs a wrapper subclass per variant, which the
+  /// resolver cannot know about — it is a naming-layer fact. Two shapes
+  /// lack them:
   ///
   /// - A `NoDispatch` union gets no wrappers at all; it renders the
   ///   `UnimplementedError` stub instead.
@@ -1568,21 +1595,51 @@ class Endpoint implements ToTemplateContext {
   ///   claim for exactly those variants, which is what surfaces here as a
   ///   null name.
   ///
-  /// Both fall back to the direct path, which stringifies. For a shape that
-  /// deserves better than that, the resolver's `_canBeQueryParameter` has
-  /// already warned.
-  static RenderOneOf? _arityMixedUnion(RenderSchema type) {
-    if (type is! RenderOneOf) return null;
-    if (!type.schemas.any((v) => v is RenderArray)) return null;
-    // Nested arrays have no `form` wire encoding — leave them to the warning.
-    if (type.schemas.any((v) => v is RenderArray && v.items is RenderArray)) {
-      return null;
+  /// Both warn and fall back to stringifying. That is a renderer
+  /// limitation, so it is logged here rather than quietly reclassified as
+  /// a different encoding — the silent version of this is what let a union
+  /// of arrays render as `List.toString()` with no diagnostic (#296).
+  static String _unionQueryValue(
+    RenderSchema type,
+    List<QueryEncoding> variants,
+    String access,
+    RenderParameter p,
+    SchemaRenderer context,
+  ) {
+    String giveUp(String why) {
+      logger.warn(
+        'Query parameter "${p.name}" is a union whose variants encode '
+        'differently, but $why — emitting a stringified value, which is '
+        'unlikely to match what the server expects, in '
+        '${type.common.pointer}',
+      );
+      return _scalarQueryValue(type, access, context);
+    }
+
+    if (type is! RenderOneOf) {
+      return giveUp('it did not render as a union');
+    }
+    if (type.schemas.length != variants.length) {
+      return giveUp('its variants did not survive rendering intact');
     }
     final names = type.wrapperNames;
     if (names.length != type.schemas.length || names.any((n) => n == null)) {
-      return null;
+      return giveUp('not every variant has a wrapper subclass to match on');
     }
-    return type;
+    final arms = <String>[];
+    for (var i = 0; i < type.schemas.length; i++) {
+      final variant = type.schemas[i];
+      final wrapper = type.wrapperTypeName(variant);
+      final value = _queryValueFor(
+        variants[i],
+        variant,
+        'value',
+        p,
+        context,
+      );
+      arms.add('$wrapper(:final value) => $value,');
+    }
+    return 'switch ($access) { ${arms.join(' ')} }';
   }
 
   List<String> _bodyArgLines(String indent, SchemaRenderer context) =>
@@ -6384,10 +6441,15 @@ class RenderParameter implements CanBeParameter {
     required this.example,
     required this.examples,
     required this.explode,
+    required this.queryEncoding,
   });
 
   /// The name of the parameter.
   final String name;
+
+  /// How this parameter's value goes on the wire, decided by the resolver
+  /// — null for every location other than `query`.
+  final QueryEncoding? queryEncoding;
 
   @override
   String dartParameterName(Quirks quirks) => variableSafeName(quirks, name);

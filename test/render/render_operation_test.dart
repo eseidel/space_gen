@@ -208,6 +208,61 @@ void main() {
       expect(result, contains("'page': [page.toString()],"));
     });
 
+    // #296: a union whose variants are all arrays needs per-variant
+    // treatment, but this one is `NoDispatch` — no wrapper subclasses to
+    // match on — so the renderer genuinely cannot emit the switch. It must
+    // say so. Falling back silently is what made the wrong wire format
+    // (`?k=[a, b]`, Dart's `List.toString()`) invisible.
+    test('query union the renderer cannot switch over warns', () {
+      final operation = {
+        'tags': ['pet'],
+        'operationId': 'search',
+        'parameters': [
+          {
+            'name': 'twoArrays',
+            'in': 'query',
+            'schema': {
+              'oneOf': [
+                {
+                  'type': 'array',
+                  'items': {'type': 'string'},
+                },
+                {
+                  'type': 'array',
+                  'items': {'type': 'integer'},
+                },
+              ],
+            },
+          },
+        ],
+        'responses': {
+          '200': {'description': 'ok'},
+        },
+      };
+      final logger = _MockLogger();
+      final result = runWithLogger(
+        logger,
+        () => renderTestOperation(
+          path: '/search',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        ),
+      );
+      // The fallback is still the stringified form...
+      expect(result, contains("'twoArrays': [twoArrays.toJson().toString()]"));
+      // ...but it is no longer silent.
+      verify(
+        () => logger.warn(
+          any(
+            that: allOf(
+              contains('twoArrays'),
+              contains('wrapper subclass'),
+            ),
+          ),
+        ),
+      ).called(1);
+    });
+
     test('multipart/form-data with required file only', () {
       final operation = {
         'tags': ['files'],
