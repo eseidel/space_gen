@@ -347,7 +347,7 @@ void main() {
         result,
         contains("if (v != null) multipartFields['until'] = v.toJson();"),
       );
-      // `format: byte` is a text field carrying base64, not a file part.
+      // Base64 bytes are a text field carrying base64, not a file part.
       expect(
         result,
         contains("'blob': base64.encode(uploadFileRequest.blob),"),
