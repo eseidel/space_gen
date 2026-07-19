@@ -1,10 +1,30 @@
-// Convert CamelCase to snake_case
+/// Zero-width word boundaries inside a CamelCase identifier.
+///
+/// Two alternatives, which together treat a run of capitals as one
+/// word rather than one word per letter:
+///
+/// - `(?<=[a-z0-9])(?=[A-Z])` — the ordinary case change, `fooBar`.
+/// - `(?<=[A-Z])(?=[A-Z][a-z])` — the end of an acronym, splitting
+///   `XMLHttp` into `XML` + `Http` by breaking before the last capital
+///   of the run only when a lowercase letter follows it.
+///
+/// A capital run with nothing after it (`MACOS`) matches neither, so it
+/// stays whole.
+final _camelWordBoundary = RegExp(
+  '(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])',
+);
+
+/// Convert CamelCase to snake_case.
+///
+/// Splits on word boundaries rather than before every capital, so
+/// github's SCREAMING_CAPS property names (`MACOS`, `UBUNTU`) become
+/// `macos` / `ubuntu` instead of `m_a_c_o_s` / `u_b_u_n_t_u`.
 String snakeFromCamel(String camel) {
-  final snake = camel.splitMapJoin(
-    RegExp('[A-Z]'),
-    onMatch: (m) => '_${m.group(0)}'.toLowerCase(),
-    onNonMatch: (n) => n.toLowerCase(),
-  );
+  final snake = camel.split(_camelWordBoundary).join('_').toLowerCase();
+  // A leading underscore is dropped. Callers that compose a name as
+  // `'${parent}_${snakeFromCamel(part)}'` would otherwise emit `__`
+  // for github's `_links` properties — [toSnakeCase] collapses runs,
+  // but the direct callers don't.
   return snake.startsWith('_') ? snake.substring(1) : snake;
 }
 

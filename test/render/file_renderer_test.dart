@@ -2275,9 +2275,12 @@ void main() {
         hasGeneratedSchemaFiles([
           'workflow_usage.dart',
           'workflow_usage_billable.dart',
-          'workflow_usage_billable_u_b_u_n_t_u.dart',
-          'workflow_usage_billable_m_a_c_o_s.dart',
-          'workflow_usage_billable_w_i_n_d_o_w_s.dart',
+          // github declares these properties in SCREAMING_CAPS
+          // (`UBUNTU`, `MACOS`, `WINDOWS`). A run of capitals is one
+          // word, so it snakes to `ubuntu`, not `u_b_u_n_t_u` (#207).
+          'workflow_usage_billable_ubuntu.dart',
+          'workflow_usage_billable_macos.dart',
+          'workflow_usage_billable_windows.dart',
         ]),
       );
     });
