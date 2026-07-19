@@ -126,6 +126,7 @@ void main() {
       required Map<String, dynamic> spec,
       Directory? outDir,
       Logger? logger,
+      bool generateTests = true,
     }) async {
       final out = outDir ?? MemoryFileSystem.test().directory('spacetraders');
       final fs = out.fileSystem;
@@ -142,6 +143,7 @@ void main() {
             templatesDir: templatesDir,
             runProcess: runProcess,
             logSchemas: false,
+            generateTests: generateTests,
           ),
         ),
       );
@@ -2346,6 +2348,67 @@ void main() {
         isFalse,
         reason: "the previous name's test must not survive the regen",
       );
+    });
+
+    test('regen leaves test/ alone when not generating tests', () async {
+      // `test/` is where a consumer's own tests live by Dart
+      // convention. With generateTests off we write nothing there, so
+      // clearing it would delete files this run never produces — worse
+      // than the stale-file problem the clearing exists to fix.
+      final out = MemoryFileSystem.test().directory('spacetraders');
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/thing': {
+            'get': {
+              'operationId': 'getThing',
+              'responses': {
+                '200': {
+                  'description': 'ok',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Thing'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Thing': {
+              'type': 'object',
+              'properties': {
+                'id': {'type': 'string'},
+              },
+            },
+          },
+        },
+      };
+
+      await renderToDirectory(
+        spec: spec,
+        outDir: out,
+        generateTests: false,
+      );
+      // A hand-written test, in the layout a consumer would naturally
+      // mirror from lib/.
+      final handWritten = out.childFile('test/models/my_own_test.dart')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('// mine');
+
+      await renderToDirectory(
+        spec: spec,
+        outDir: out,
+        generateTests: false,
+      );
+      expect(handWritten.existsSync(), isTrue);
+      expect(handWritten.readAsStringSync(), '// mine');
     });
 
     test('colliding names are renamed', () async {
