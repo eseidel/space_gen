@@ -132,18 +132,6 @@ Set<RenderSchema> collectAllSchemas(RenderSpec spec) {
   return collector.schemas;
 }
 
-Set<RenderSchema> collectSchemasUnderApi(Api api) {
-  final collector = _ModelCollector();
-  RenderTreeWalker(visitor: collector).walkApi(api);
-  return collector.schemas;
-}
-
-Set<RenderSchema> collectSchemasUnderSchema(RenderSchema schema) {
-  final collector = _ModelCollector();
-  RenderTreeWalker(visitor: collector).walkSchema(schema);
-  return collector.schemas;
-}
-
 @visibleForTesting
 void logNameCollisions(Iterable<RenderSchema> schemas) {
   // List schemas with name collisions but different pointers.
@@ -791,6 +779,29 @@ class FileRenderer {
     return imports.where((i) => seen.add((i.path, i.asName)));
   }
 
+  /// The imports implied by the schemas a file names.
+  ///
+  /// Both file kinds need the same three things once [schemasNamedBy] /
+  /// [schemasNamedByApi] has answered: a directive per newtype, the
+  /// library imports contributed by the schemas rendered inline, and
+  /// `date.dart` when a `format: date` field is among them. Only the
+  /// question of *which* schemas differs between an api file and a
+  /// model file, so only that is asked separately.
+  ///
+  /// [names] gates the library imports on what the body actually
+  /// emitted — whether a `format: date` field survived into this file
+  /// is a fact about the template, not about the tree.
+  Iterable<Import> _importsForNamedSchemas(
+    NamedSchemas named, {
+    required bool Function(String) names,
+  }) => {
+    ...named.inline
+        .expand((s) => s.additionalImports)
+        .where((i) => i.library.isNeededBy(names)),
+    ..._dateImportFor(named.inline, bodyNamesDate: names('Date')),
+    ...named.imported.map((s) => Import.path(modelPackageImport(this, s))),
+  };
+
   @visibleForTesting
   Iterable<Import> importsForApi(
     Api api,
@@ -829,33 +840,15 @@ class FileRenderer {
       ...usage.importsFor(packageName),
     };
 
-    final apiSchemas = collectSchemasUnderApi(api);
-    final inlineSchemas = apiSchemas.where((s) => !s.createsNewType);
-    // Every newtype (including RenderRecursiveRef, which points at one)
-    // lives in its own file and needs an import at the use site —
-    // except smooshed variants, which are emitted inline in their
-    // sealed parent's file. The sealed parent is itself imported
-    // here, so the variant's class name resolves through that import.
-    // A newtype under the api that the body never names (e.g. a type
-    // nested inside another model, referenced only in that model's own
-    // file) is not imported.
-    final importedSchemas = apiSchemas
-        .where((s) => s.createsNewType)
-        .where((s) => !s.isSmooshed)
-        .where((s) => names(s.typeName));
-    final apiImports = importedSchemas
-        .map((s) => Import.path(modelPackageImport(this, s)))
-        .toList();
-    imports.addAll({
-      // Gated on what each library provides, the same as the fixed
-      // imports above — see [Import.provides].
-      ...inlineSchemas
-          .expand((s) => s.additionalImports)
-          .where((i) => i.library.isNeededBy(names)),
-      ..._dateImportFor(inlineSchemas, bodyNamesDate: names('Date')),
-      ...apiImports,
-    });
-    return _dedupeRenderedImports(imports);
+    // Which schemas the endpoint methods name — asked of the render
+    // tree, not of the rendered text. Every newtype (including
+    // RenderRecursiveRef, which points at one) lives in its own file
+    // and needs an import at the use site; smooshed variants resolve
+    // through their sealed parent, which is imported instead.
+    return _dedupeRenderedImports(
+      imports
+        ..addAll(_importsForNamedSchemas(schemasNamedByApi(api), names: names)),
+    );
   }
 
   /// Emit one `lib/api/<tag>_api.dart` per [Api]. Returns the list of
@@ -914,39 +907,21 @@ class FileRenderer {
     required String body,
   }) {
     final referenced = referencedIdentifiers(body);
-    final referencedSchemas = collectSchemasUnderSchema(schema);
-    final localSchemas = referencedSchemas.where(
-      (s) => !s.createsNewType,
-    );
-    // Every newtype (including RenderRecursiveRef) imports the target's
-    // file — except smooshed variants, which the sealed parent emits
-    // inline (same library, no separate file to import). A newtype the
-    // body never names (a type nested inside another model, referenced
-    // only in that model's own file) is not imported.
-    final importedSchemas = referencedSchemas
-        .where((s) => s.createsNewType)
-        .where((s) => !s.isSmooshed)
-        .where((s) => referenced.contains(s.typeName))
-        .toSet();
-    final referencedImports = importedSchemas
-        .map((s) => Import.path(modelPackageImport(this, s)))
-        .toList();
+    bool names(String token) => referenced.contains(token);
 
-    // `additionalImports` are collected from the schema *tree*, but the
-    // body only emits code for part of it, so each is gated on what its
-    // library provides (see [Import.provides]). Same discipline
-    // [importsForApi] applies to the api file's fixed imports.
-    bool bodyNeeds(Import i) => i.library.isNeededBy(referenced.contains);
+    // Which schemas this file's own declarations name — asked of the
+    // render tree, not of the rendered text. Every newtype (including
+    // RenderRecursiveRef) resolves through an import; smooshed variants
+    // and inline structure are rendered here and resolve locally.
+    final named = schemasNamedBy(schema);
 
     final imports = {
       ...usage.importsFor(packageName),
-      ...schema.additionalImports.where(bodyNeeds),
-      ...localSchemas.expand((s) => s.additionalImports).where(bodyNeeds),
-      ..._dateImportFor(
-        localSchemas,
-        bodyNamesDate: referenced.contains('Date'),
-      ),
-      ...referencedImports,
+      // The root schema's own contributions; the rest come from what it
+      // names. Gated on the body, like every library import — see
+      // [_importsForNamedSchemas].
+      ...schema.additionalImports.where((i) => i.library.isNeededBy(names)),
+      ..._importsForNamedSchemas(named, names: names),
     };
     // A file never imports itself.
     final selfPath = modelPackageImport(this, schema);

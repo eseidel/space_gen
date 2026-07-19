@@ -1050,8 +1050,9 @@ void main() {
 
     test('walker visits it as a leaf (collected, not recursed)', () {
       // RenderObject holds a RenderRecursiveRef among its properties.
-      // collectSchemasUnderSchema returns them both so the file renderer
-      // can emit the import for the ref target.
+      // The walker collects both without recursing through the ref, so
+      // the ref target still gets a file. (Which files *name* it — and
+      // so import it — is `schemasNamedBy`, a separate question.)
       const nodeObject = RenderObject(
         common: CommonProperties.test(
           snakeName: 'node',

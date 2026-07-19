@@ -1798,39 +1798,9 @@ class Endpoint implements ToTemplateContext {
         responseFromJson = null;
     }
 
-    // Collect error-body schemas from `default:`, `4XX:`, and `5XX:` and
-    // deduplicate by structural equality. When they all resolve to the same
-    // schema (the common case — most specs alias every error to a single
-    // `ErrorResponse`), emit a typed `ApiException<ErrorType>` throw.
-    // When they disagree, fall back to untyped — picking one would lie
-    // to callers about what they'll actually catch.
-    //
-    // Skip `RenderNoJson` subclasses (RenderVoid, RenderBinary) — a
-    // `default:` response with no content resolves to `RenderVoid`, whose
-    // `fromJsonExpression` returns empty string and `typeName` is `void`,
-    // which produced uncompilable Dart like `ApiException<void>(body: ,)`
-    // before this skip (most famously on petstore, whose 4xx/default
-    // responses carry only a description).
-    final errorSchemas = <RenderSchema>[
-      ?operation.defaultResponse?.content,
-      ...operation.rangeResponses
-          .where(
-            (e) =>
-                e.range == StatusCodeRange.clientError ||
-                e.range == StatusCodeRange.serverError,
-          )
-          .map((e) => e.content),
-    ];
-    final distinctErrorSchemas = <RenderSchema>[];
-    for (final schema in errorSchemas) {
-      if (schema is RenderNoJson) continue;
-      if (!distinctErrorSchemas.any((e) => e.equalsIgnoringName(schema))) {
-        distinctErrorSchemas.add(schema);
-      }
-    }
-    final errorSchema = distinctErrorSchemas.length == 1
-        ? distinctErrorSchemas.first
-        : null;
+    // See [RenderOperation.errorSchema] for which error body this is
+    // and why it lives on the operation.
+    final errorSchema = operation.errorSchema;
     final hasErrorType = errorSchema != null;
     final errorType = errorSchema?.typeName;
     final errorFromJson = errorSchema?.fromJsonExpression(
@@ -2007,6 +1977,48 @@ class RenderOperation {
   /// so the referenced type is always generated even when no specific
   /// 4xx/5xx status code also references it.
   final RenderDefaultResponse? defaultResponse;
+
+  /// The error body the API method's `throw` names, or null when it
+  /// throws untyped.
+  ///
+  /// Collects error-body schemas from `default:`, `4XX:` and `5XX:` and
+  /// deduplicates them by structural equality. When they all resolve to
+  /// one schema — the common case, since most specs alias every error
+  /// to a single `ErrorResponse` — the method emits a typed
+  /// `ApiException<ErrorType>`. When they disagree, it falls back to
+  /// untyped: picking one would lie to callers about what they will
+  /// actually catch.
+  ///
+  /// `RenderNoJson` subclasses (`RenderVoid`, `RenderBinary`) are
+  /// skipped. A `default:` response with no content resolves to
+  /// `RenderVoid`, whose `typeName` is `void`, which used to emit
+  /// uncompilable `ApiException<void>(body: ,)` (petstore, whose
+  /// 4xx/default responses carry only a description).
+  ///
+  /// A getter rather than a local in the template-context builder
+  /// because the import decision has to ask the same question: the api
+  /// file names this type, so it imports it. Two readers of one
+  /// definition cannot disagree about what was emitted.
+  RenderSchema? get errorSchema {
+    final candidates = <RenderSchema>[
+      ?defaultResponse?.content,
+      ...rangeResponses
+          .where(
+            (e) =>
+                e.range == StatusCodeRange.clientError ||
+                e.range == StatusCodeRange.serverError,
+          )
+          .map((e) => e.content),
+    ];
+    final distinct = <RenderSchema>[];
+    for (final schema in candidates) {
+      if (schema is RenderNoJson) continue;
+      if (!distinct.any((e) => e.equalsIgnoringName(schema))) {
+        distinct.add(schema);
+      }
+    }
+    return distinct.length == 1 ? distinct.first : null;
+  }
 
   /// What the operation's API method returns. Sealed so emit-time code
   /// (template context, walker) pattern-matches on the case rather than
@@ -5130,6 +5142,21 @@ class RenderOneOf extends RenderNewType {
       toJson: conversion.toJson,
       positionalBoolIgnore: conversion.positionalBoolIgnore,
     );
+  }
+
+  /// Whether the emitted body dispatches on the variants — and so
+  /// names them — or falls back to the `UnimplementedError` stub, which
+  /// names nothing.
+  ///
+  /// This is the `decideDispatch(source) is! NoDispatch` prediction that
+  /// [additionalImports] below deliberately stopped asking. It is sound
+  /// here and unsound there for the same reason: the case that broke it
+  /// is a oneOf whose dispatch fires with *no* variants, which emits no
+  /// `@immutable` but also has no variant to name. A prediction only
+  /// hurts where it can disagree with what was emitted.
+  bool get emitsVariantDispatch {
+    final src = source;
+    return src != null && decideDispatch(src) is! NoDispatch;
   }
 
   @override
