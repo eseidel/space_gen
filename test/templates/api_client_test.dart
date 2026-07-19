@@ -150,6 +150,32 @@ void main() {
       });
     });
 
+    test('an already-encoded path parameter is not re-encoded', () async {
+      // The generated api layer percent-encodes path parameters before
+      // handing the path over (#283), so the graft must leave those
+      // escapes alone: `Uri(path:)` preserves an existing `%2F` rather
+      // than escaping the `%` into `%252F`. Each half is exercised on
+      // its own elsewhere; this pins that they compose.
+      const value = 'a/b';
+      final path = '/things/{id}'.replaceAll(
+        '{id}',
+        Uri.encodeComponent(value),
+      );
+      Uri? captured;
+      final client = ApiClient(
+        baseUri: Uri.parse('https://example.com/v2'),
+        client: MockClient((req) async {
+          captured = req.url;
+          return Response('', 200);
+        }),
+      );
+      await client.invokeApi(method: Method.get, path: path);
+      expect(captured.toString(), 'https://example.com/v2/things/a%2Fb');
+      // The decisive assertion: the value survives as exactly one
+      // segment, so it addresses the intended endpoint.
+      expect(captured!.pathSegments, ['v2', 'things', 'a/b']);
+    });
+
     // The query renderer builds the `List<String>` for each param. These
     // tests pin what the *actual* sent URL looks like for the two shapes it
     // produces, exercising the real `Uri.replace` encoding — not the

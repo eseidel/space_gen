@@ -105,9 +105,73 @@ void main() {
           serverUrl: Uri.parse('https://example.com'),
         ),
       );
-      expect(result, contains(".replaceAll('{name}', name)"));
+      expect(
+        result,
+        contains(".replaceAll('{name}', Uri.encodeComponent(name))"),
+      );
       expect(result, isNot(contains(r"'${ name }'")));
       expect(result, isNot(contains(r"'$name'")));
+    });
+
+    test('path parameter is percent-encoded', () {
+      // Substitution is textual, so an unencoded value carrying a
+      // reserved character changes the URL's structure: a `/` splits
+      // one segment into two and addresses a different endpoint.
+      final operation = {
+        'tags': ['pet'],
+        'operationId': 'getByName',
+        'parameters': [
+          {
+            'name': 'name',
+            'in': 'path',
+            'required': true,
+            'schema': {'type': 'string'},
+          },
+        ],
+        'responses': {
+          '200': {'description': 'ok'},
+        },
+      };
+      final result = runWithLogger(
+        _MockLogger(),
+        () => renderTestOperation(
+          path: '/pet/{name}',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        ),
+      );
+      expect(result, contains('Uri.encodeComponent(name)'));
+    });
+
+    test('numeric path parameter is not encoded', () {
+      // `int.toString()` can only produce `[0-9-]`, none of which
+      // `Uri.encodeComponent` alters, so wrapping it would be noise in
+      // the generated source.
+      final operation = {
+        'tags': ['pet'],
+        'operationId': 'getById',
+        'parameters': [
+          {
+            'name': 'petId',
+            'in': 'path',
+            'required': true,
+            'schema': {'type': 'integer'},
+          },
+        ],
+        'responses': {
+          '200': {'description': 'ok'},
+        },
+      };
+      final result = runWithLogger(
+        _MockLogger(),
+        () => renderTestOperation(
+          path: '/pet/{petId}',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        ),
+      );
+      expect(result, contains(r".replaceAll('{petId}', '$petId')"));
+      expect(result, isNot(contains('Uri.encodeComponent')));
     });
 
     test('String query parameter is not stringified with .toString()', () {
