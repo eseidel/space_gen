@@ -4,9 +4,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class TeamsAddOrUpdateMembershipForUserInOrgRequest {
-  const TeamsAddOrUpdateMembershipForUserInOrgRequest({
-    this.role = TeamsAddOrUpdateMembershipForUserInOrgRequestRole.member,
-  });
+  const TeamsAddOrUpdateMembershipForUserInOrgRequest({this.role = .member});
 
   /// Converts a `Map<String, dynamic>` to a
   /// [TeamsAddOrUpdateMembershipForUserInOrgRequest].
@@ -21,7 +19,7 @@ class TeamsAddOrUpdateMembershipForUserInOrgRequest {
             TeamsAddOrUpdateMembershipForUserInOrgRequestRole.maybeFromJson(
               json['role'] as String?,
             ) ??
-            TeamsAddOrUpdateMembershipForUserInOrgRequestRole.member,
+            .member,
       ),
     );
   }

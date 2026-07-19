@@ -10,8 +10,7 @@ import 'package:meta/meta.dart';
 class ActionsCreateSelfHostedRunnerGroupForOrgRequest {
   const ActionsCreateSelfHostedRunnerGroupForOrgRequest({
     required this.name,
-    this.visibility =
-        ActionsCreateSelfHostedRunnerGroupForOrgRequestVisibility.all,
+    this.visibility = .all,
     this.selectedRepositoryIds,
     this.runners,
     this.allowsPublicRepositories = false,
@@ -34,7 +33,7 @@ class ActionsCreateSelfHostedRunnerGroupForOrgRequest {
             ActionsCreateSelfHostedRunnerGroupForOrgRequestVisibility.maybeFromJson(
               json['visibility'] as String?,
             ) ??
-            ActionsCreateSelfHostedRunnerGroupForOrgRequestVisibility.all,
+            .all,
         selectedRepositoryIds: (json['selected_repository_ids'] as List?)
             ?.cast<int>(),
         runners: (json['runners'] as List?)?.cast<int>(),

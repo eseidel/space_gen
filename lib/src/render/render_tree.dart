@@ -2370,7 +2370,7 @@ Map<String, dynamic> _requestBodyParameterContext(
     'required': body.isRequired,
     'hasDefaultValue': body.schema.defaultValue != null,
     'defaultValue': _maybeRuntimeSource(
-      body.schema.defaultValueExpression(context),
+      body.schema.slotDefaultExpression(context),
     ),
     'type': body.schema.typeName,
     'nullableType': body.schema.nullableTypeName(context),
@@ -2968,7 +2968,9 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     DartExpression coalesced(DartExpression defaultValue) =>
         DartIfNull(value: expression, ifNullValue: defaultValue);
 
-    final defaultValue = defaultValueExpression(context);
+    // The default lands as the `??` right-hand side into a typed slot, so an
+    // enum default reads as a dot shorthand here (`?? .cruise`).
+    final defaultValue = slotDefaultExpression(context);
     if (defaultValue == null) {
       if (jsonIsNullable && !dartIsNullable) {
         // Belt-and-braces: a non-nullable Dart slot fed by a nullable
@@ -3201,6 +3203,19 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     }
     return DartLiteral(value);
   }
+
+  /// The default value as it should appear in a *context-typed slot* — a
+  /// position where the destination type is already known (a constructor
+  /// param default, a `??` fallback into a typed field, a typed method
+  /// argument). Identical to [defaultValueExpression] for every schema
+  /// except [RenderEnum], which emits a Dart 3.10 dot shorthand there.
+  ///
+  /// Kept separate from [defaultValueExpression] on purpose: the latter also
+  /// feeds context-free consumers (e.g. the redundant-example structural
+  /// comparison) where a shorthand would be either illegal or a false
+  /// mismatch. Only reach for this at genuine emission sites.
+  DartExpression? slotDefaultExpression(SchemaRenderer context) =>
+      defaultValueExpression(context);
 
   bool hasDefaultValue(SchemaRenderer context) => defaultValue != null;
 
@@ -4257,7 +4272,9 @@ class RenderObject extends RenderNewType {
     } else {
       line.write('this.$dartName');
       if (property.hasDefaultValue(context)) {
-        final value = property.defaultValueExpression(context);
+        // `this.foo = <default>` — the field type is the slot type, so an
+        // enum default drops its prefix (`= .cruise`).
+        final value = property.slotDefaultExpression(context);
         line.write(' = ${_maybeRuntimeSource(value)}');
       }
     }
@@ -4273,7 +4290,8 @@ class RenderObject extends RenderNewType {
   }) {
     final dartName = variableSafeName(context.quirks, jsonName);
     if (property.hasNonConstDefaultValue(context)) {
-      final value = property.defaultValueExpression(context);
+      // `this.foo = foo ?? <default>` — the field type is the slot type.
+      final value = property.slotDefaultExpression(context);
       final source = _maybeRuntimeSource(value);
       return 'this.$dartName = $dartName ?? $source';
     }
@@ -4441,7 +4459,9 @@ class RenderObject extends RenderNewType {
     if (read == null || jsonKeyIsRequired || !property.common.nullable) {
       return read;
     }
-    final defaultValue = property.defaultValueExpression(context);
+    // The default is the else-branch of `json.containsKey(k) ? read : default`,
+    // assigned into the typed field, so an enum default reads as `.member`.
+    final defaultValue = property.slotDefaultExpression(context);
     if (defaultValue == null) return read;
     return DartConditional(
       condition: DartMethodCall(
@@ -5423,6 +5443,16 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
     final value = defaultValue;
     if (value == null) return null;
     return DartType(className).member(variableNameFor(value));
+  }
+
+  /// In a context-typed slot the enum type is already known, so the member
+  /// reference drops its prefix: `ShipNavFlightMode.cruise` becomes `.cruise`
+  /// (Dart 3.10 dot shorthand). See [RenderSchema.slotDefaultExpression].
+  @override
+  DartExpression? slotDefaultExpression(SchemaRenderer context) {
+    final value = defaultValue;
+    if (value == null) return null;
+    return DartShorthandMember(variableNameFor(value));
   }
 
   /// Renders [value] as a reference to this enum's member (e.g.
@@ -6745,7 +6775,7 @@ class RenderParameter implements CanBeParameter {
     'dartName': dartParameterName(context.quirks),
     'required': isRequired,
     'hasDefaultValue': type.defaultValue != null,
-    'defaultValue': _maybeRuntimeSource(type.defaultValueExpression(context)),
+    'defaultValue': _maybeRuntimeSource(type.slotDefaultExpression(context)),
     'type': type.typeName,
     'nullableType': type.nullableTypeName(context),
   };

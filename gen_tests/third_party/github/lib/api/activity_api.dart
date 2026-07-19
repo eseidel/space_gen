@@ -737,8 +737,8 @@ class ActivityApi {
   /// - **`application/vnd.github.star+json`**: Includes a timestamp of when
   /// the star was created.
   Future<List<Repository>> listReposStarredByAuthenticatedUser({
-    SortStarredParam? sort = SortStarredParam.created,
-    DirectionParam? direction = DirectionParam.desc,
+    SortStarredParam? sort = .created,
+    DirectionParam? direction = .desc,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -1042,8 +1042,8 @@ class ActivityApi {
   /// the star was created.
   Future<ActivityListReposStarredByUser200Response> listReposStarredByUser(
     String username, {
-    SortStarredParam? sort = SortStarredParam.created,
-    DirectionParam? direction = DirectionParam.desc,
+    SortStarredParam? sort = .created,
+    DirectionParam? direction = .desc,
     int? perPage = 30,
     int? page = 1,
   }) async {

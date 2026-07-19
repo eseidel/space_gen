@@ -17,7 +17,7 @@ class ShipNav {
     required this.waypointSymbol,
     required this.route,
     required this.status,
-    this.flightMode = ShipNavFlightMode.cruise,
+    this.flightMode = .cruise,
   });
 
   /// Converts a `Map<String, dynamic>` to a [ShipNav].

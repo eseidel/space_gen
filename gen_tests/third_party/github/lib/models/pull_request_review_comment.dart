@@ -38,10 +38,10 @@ class PullRequestReviewComment {
     this.inReplyToId,
     this.startLine,
     this.originalStartLine,
-    this.startSide = PullRequestReviewCommentStartSide.right,
+    this.startSide = .right,
     this.line,
     this.originalLine,
-    this.side = PullRequestReviewCommentSide.right,
+    this.side = .right,
     this.subjectType,
     this.reactions,
     this.bodyHtml,
@@ -83,14 +83,14 @@ class PullRequestReviewComment {
             ? PullRequestReviewCommentStartSide.maybeFromJson(
                 json['start_side'] as String?,
               )
-            : PullRequestReviewCommentStartSide.right,
+            : .right,
         line: json['line'] as int?,
         originalLine: json['original_line'] as int?,
         side:
             PullRequestReviewCommentSide.maybeFromJson(
               json['side'] as String?,
             ) ??
-            PullRequestReviewCommentSide.right,
+            .right,
         subjectType: PullRequestReviewCommentSubjectType.maybeFromJson(
           json['subject_type'] as String?,
         ),

@@ -6,7 +6,7 @@ import 'package:meta/meta.dart';
 class MarkdownRenderRequest {
   const MarkdownRenderRequest({
     required this.text,
-    this.mode = MarkdownRenderRequestMode.markdown,
+    this.mode = .markdown,
     this.context,
   });
 
@@ -19,7 +19,7 @@ class MarkdownRenderRequest {
         text: json['text'] as String,
         mode:
             MarkdownRenderRequestMode.maybeFromJson(json['mode'] as String?) ??
-            MarkdownRenderRequestMode.markdown,
+            .markdown,
         context: json['context'] as String?,
       ),
     );

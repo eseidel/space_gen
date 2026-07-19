@@ -44,8 +44,7 @@ class SecurityAdvisoriesApi {
   /// database](https://docs.github.com/code-security/security-advisories/global-security-advisories/about-the-github-advisory-database#about-types-of-security-advisories)."
   Future<List<GlobalAdvisory>> securityAdvisoriesListGlobalAdvisories({
     String? ghsaId,
-    SecurityAdvisoriesListGlobalAdvisoriesParameter1? type =
-        SecurityAdvisoriesListGlobalAdvisoriesParameter1.reviewed,
+    SecurityAdvisoriesListGlobalAdvisoriesParameter1? type = .reviewed,
     String? cveId,
     SecurityAdvisoryEcosystems? ecosystem,
     SecurityAdvisoriesListGlobalAdvisoriesParameter4? severity,
@@ -59,10 +58,9 @@ class SecurityAdvisoriesApi {
     String? epssPercentile,
     String? before,
     String? after,
-    DirectionParam? direction = DirectionParam.desc,
+    DirectionParam? direction = .desc,
     int? perPage = 30,
-    SecurityAdvisoriesListGlobalAdvisoriesParameter17? sort =
-        SecurityAdvisoriesListGlobalAdvisoriesParameter17.published,
+    SecurityAdvisoriesListGlobalAdvisoriesParameter17? sort = .published,
   }) async {
     perPage?.validateMaximum(100);
     perPage?.validateMinimum(1);
@@ -165,9 +163,8 @@ class SecurityAdvisoriesApi {
   Future<List<RepositoryAdvisory>>
   securityAdvisoriesListOrgRepositoryAdvisories(
     String org, {
-    DirectionParam? direction = DirectionParam.desc,
-    SecurityAdvisoriesListOrgRepositoryAdvisoriesParameter2? sort =
-        SecurityAdvisoriesListOrgRepositoryAdvisoriesParameter2.created,
+    DirectionParam? direction = .desc,
+    SecurityAdvisoriesListOrgRepositoryAdvisoriesParameter2? sort = .created,
     String? before,
     String? after,
     int? perPage = 30,
@@ -221,9 +218,8 @@ class SecurityAdvisoriesApi {
   Future<List<RepositoryAdvisory>> securityAdvisoriesListRepositoryAdvisories(
     String owner,
     String repo, {
-    DirectionParam? direction = DirectionParam.desc,
-    SecurityAdvisoriesListRepositoryAdvisoriesParameter3? sort =
-        SecurityAdvisoriesListRepositoryAdvisoriesParameter3.created,
+    DirectionParam? direction = .desc,
+    SecurityAdvisoriesListRepositoryAdvisoriesParameter3? sort = .created,
     String? before,
     String? after,
     int? perPage = 30,

@@ -13,7 +13,7 @@ class RepositoryRulesetBypassActor {
   const RepositoryRulesetBypassActor({
     required this.actorType,
     this.actorId,
-    this.bypassMode = RepositoryRulesetBypassActorBypassMode.always,
+    this.bypassMode = .always,
   });
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryRulesetBypassActor].
@@ -30,7 +30,7 @@ class RepositoryRulesetBypassActor {
             RepositoryRulesetBypassActorBypassMode.maybeFromJson(
               json['bypass_mode'] as String?,
             ) ??
-            RepositoryRulesetBypassActorBypassMode.always,
+            .always,
       ),
     );
   }

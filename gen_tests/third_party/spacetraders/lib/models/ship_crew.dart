@@ -14,7 +14,7 @@ class ShipCrew {
     required this.capacity,
     required this.morale,
     required this.wages,
-    this.rotation = ShipCrewRotation.strict,
+    this.rotation = .strict,
   });
 
   /// Converts a `Map<String, dynamic>` to a [ShipCrew].
