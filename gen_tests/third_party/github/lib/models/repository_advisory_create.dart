@@ -90,7 +90,7 @@ class RepositoryAdvisoryCreate {
 
   /// Whether to create a temporary private fork of the repository to
   /// collaborate on a fix.
-  final bool? startPrivateFork;
+  final bool startPrivateFork;
 
   /// Converts a [RepositoryAdvisoryCreate] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

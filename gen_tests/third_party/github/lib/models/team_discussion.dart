@@ -164,7 +164,7 @@ class TeamDiscussion {
       'title': title,
       'updated_at': updatedAt.toIso8601String(),
       'url': url.toString(),
-      'reactions': reactions?.toJson(),
+      if (reactions != null) 'reactions': reactions?.toJson(),
     };
   }
 

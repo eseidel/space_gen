@@ -46,8 +46,8 @@ class FileCommitCommitVerification {
   /// Converts a [FileCommitCommitVerification] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'verified': verified,
-      'reason': reason,
+      if (verified != null) 'verified': verified,
+      if (reason != null) 'reason': reason,
       'signature': signature,
       'payload': payload,
       'verified_at': verifiedAt,

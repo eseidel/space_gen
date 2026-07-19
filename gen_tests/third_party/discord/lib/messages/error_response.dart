@@ -43,7 +43,11 @@ class ErrorResponse {
 
   /// Converts an [ErrorResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'code': code, 'message': message, 'errors': errors?.toJson()};
+    return {
+      'code': code,
+      'message': message,
+      if (errors != null) 'errors': errors?.toJson(),
+    };
   }
 
   @override

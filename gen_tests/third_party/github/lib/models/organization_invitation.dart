@@ -92,7 +92,7 @@ class OrganizationInvitation {
       'team_count': teamCount,
       'node_id': nodeId,
       'invitation_teams_url': invitationTeamsUrl,
-      'invitation_source': invitationSource,
+      if (invitationSource != null) 'invitation_source': invitationSource,
     };
   }
 

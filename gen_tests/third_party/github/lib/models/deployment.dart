@@ -151,7 +151,8 @@ class Deployment {
       'ref': ref,
       'task': task,
       'payload': payload.toJson(),
-      'original_environment': originalEnvironment,
+      if (originalEnvironment != null)
+        'original_environment': originalEnvironment,
       'environment': environment,
       'description': description,
       'creator': creator?.toJson(),
@@ -159,8 +160,10 @@ class Deployment {
       'updated_at': updatedAt.toIso8601String(),
       'statuses_url': statusesUrl.toString(),
       'repository_url': repositoryUrl.toString(),
-      'transient_environment': transientEnvironment,
-      'production_environment': productionEnvironment,
+      if (transientEnvironment != null)
+        'transient_environment': transientEnvironment,
+      if (productionEnvironment != null)
+        'production_environment': productionEnvironment,
       'performed_via_github_app': performedViaGithubApp?.toJson(),
     };
   }

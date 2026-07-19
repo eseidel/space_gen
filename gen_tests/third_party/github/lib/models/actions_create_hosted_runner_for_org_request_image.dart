@@ -52,7 +52,10 @@ class ActionsCreateHostedRunnerForOrgRequestImage {
   /// Converts an [ActionsCreateHostedRunnerForOrgRequestImage]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'id': id, 'source': source?.toJson()};
+    return {
+      if (id != null) 'id': id,
+      if (source != null) 'source': source?.toJson(),
+    };
   }
 
   @override

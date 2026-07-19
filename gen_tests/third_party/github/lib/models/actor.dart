@@ -54,7 +54,7 @@ class Actor {
     return {
       'id': id,
       'login': login,
-      'display_login': displayLogin,
+      if (displayLogin != null) 'display_login': displayLogin,
       'gravatar_id': gravatarId,
       'url': url.toString(),
       'avatar_url': avatarUrl.toString(),

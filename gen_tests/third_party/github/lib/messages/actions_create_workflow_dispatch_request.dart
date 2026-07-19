@@ -43,7 +43,7 @@ class ActionsCreateWorkflowDispatchRequest {
   /// Converts an [ActionsCreateWorkflowDispatchRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'ref': ref, 'inputs': inputs};
+    return {'ref': ref, if (inputs != null) 'inputs': inputs};
   }
 
   @override

@@ -46,7 +46,10 @@ class CodeSecuritySetConfigurationAsDefaultRequest {
   /// Converts a [CodeSecuritySetConfigurationAsDefaultRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'default_for_new_repos': defaultForNewRepos?.toJson()};
+    return {
+      if (defaultForNewRepos != null)
+        'default_for_new_repos': defaultForNewRepos?.toJson(),
+    };
   }
 
   @override

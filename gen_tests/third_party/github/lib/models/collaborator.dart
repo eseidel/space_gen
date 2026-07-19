@@ -163,9 +163,9 @@ class Collaborator {
       'received_events_url': receivedEventsUrl.toString(),
       'type': type,
       'site_admin': siteAdmin,
-      'permissions': permissions?.toJson(),
+      if (permissions != null) 'permissions': permissions?.toJson(),
       'role_name': roleName,
-      'user_view_type': userViewType,
+      if (userViewType != null) 'user_view_type': userViewType,
     };
   }
 

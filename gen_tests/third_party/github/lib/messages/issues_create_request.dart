@@ -83,11 +83,11 @@ class IssuesCreateRequest {
   Map<String, dynamic> toJson() {
     return {
       'title': title.toJson(),
-      'body': body,
+      if (body != null) 'body': body,
       'assignee': assignee,
       'milestone': milestone?.toJson(),
-      'labels': labels?.map((e) => e.toJson()).toList(),
-      'assignees': assignees,
+      if (labels != null) 'labels': labels?.map((e) => e.toJson()).toList(),
+      if (assignees != null) 'assignees': assignees,
       'type': type,
     };
   }

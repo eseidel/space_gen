@@ -30,7 +30,9 @@ class ReposCreateDeploymentRequest {
           json['payload'] as Map<String, dynamic>?,
         ),
         environment: (json['environment'] as String?) ?? 'production',
-        description: (json['description'] as String?) ?? '',
+        description: json.containsKey('description')
+            ? json['description'] as String?
+            : '',
         transientEnvironment: (json['transient_environment'] as bool?) ?? false,
         productionEnvironment: json['production_environment'] as bool?,
       ),
@@ -52,11 +54,11 @@ class ReposCreateDeploymentRequest {
   final String ref;
 
   /// Specifies a task to execute (e.g., `deploy` or `deploy:migrations`).
-  final String? task;
+  final String task;
 
   /// Attempts to automatically merge the default branch into the requested
   /// ref, if it's behind the default branch.
-  final bool? autoMerge;
+  final bool autoMerge;
 
   /// The [status](https://docs.github.com/rest/commits/statuses) contexts to
   /// verify against commit status checks. If you omit this parameter, GitHub
@@ -67,14 +69,14 @@ class ReposCreateDeploymentRequest {
 
   /// Name for the target deployment environment (e.g., `production`,
   /// `staging`, `qa`).
-  final String? environment;
+  final String environment;
 
   /// Short description of the deployment.
   final String? description;
 
   /// Specifies if the given environment is specific to the deployment and
   /// will no longer exist at some point in the future. Default: `false`
-  final bool? transientEnvironment;
+  final bool transientEnvironment;
 
   /// Specifies if the given environment is one that end-users directly
   /// interact with. Default: `true` when `environment` is `production` and
@@ -87,12 +89,13 @@ class ReposCreateDeploymentRequest {
       'ref': ref,
       'task': task,
       'auto_merge': autoMerge,
-      'required_contexts': requiredContexts,
-      'payload': payload?.toJson(),
+      if (requiredContexts != null) 'required_contexts': requiredContexts,
+      if (payload != null) 'payload': payload?.toJson(),
       'environment': environment,
       'description': description,
       'transient_environment': transientEnvironment,
-      'production_environment': productionEnvironment,
+      if (productionEnvironment != null)
+        'production_environment': productionEnvironment,
     };
   }
 

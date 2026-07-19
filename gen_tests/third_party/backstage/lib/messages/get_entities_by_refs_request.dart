@@ -39,7 +39,11 @@ class GetEntitiesByRefsRequest {
 
   /// Converts a [GetEntitiesByRefsRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'entityRefs': entityRefs, 'fields': fields, 'query': query};
+    return {
+      'entityRefs': entityRefs,
+      if (fields != null) 'fields': fields,
+      if (query != null) 'query': query,
+    };
   }
 
   @override

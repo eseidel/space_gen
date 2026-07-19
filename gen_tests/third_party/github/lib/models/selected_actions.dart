@@ -51,9 +51,10 @@ class SelectedActions {
   /// Converts a [SelectedActions] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'github_owned_allowed': githubOwnedAllowed,
-      'verified_allowed': verifiedAllowed,
-      'patterns_allowed': patternsAllowed,
+      if (githubOwnedAllowed != null)
+        'github_owned_allowed': githubOwnedAllowed,
+      if (verifiedAllowed != null) 'verified_allowed': verifiedAllowed,
+      if (patternsAllowed != null) 'patterns_allowed': patternsAllowed,
     };
   }
 

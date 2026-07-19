@@ -59,7 +59,7 @@ class TimelineCrossReferencedEvent {
   Map<String, dynamic> toJson() {
     return {
       'event': event,
-      'actor': actor?.toJson(),
+      if (actor != null) 'actor': actor?.toJson(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'source': source.toJson(),

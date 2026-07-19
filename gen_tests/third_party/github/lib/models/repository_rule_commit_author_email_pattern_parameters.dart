@@ -58,8 +58,8 @@ class RepositoryRuleCommitAuthorEmailPatternParameters {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'negate': negate,
+      if (name != null) 'name': name,
+      if (negate != null) 'negate': negate,
       'operator': operator_.toJson(),
       'pattern': pattern,
     };

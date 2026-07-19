@@ -52,7 +52,7 @@ class ThreadMemberResponse {
       'user_id': userId.toJson(),
       'join_timestamp': joinTimestamp.toIso8601String(),
       'flags': flags,
-      'member': member?.toJson(),
+      if (member != null) 'member': member?.toJson(),
     };
   }
 

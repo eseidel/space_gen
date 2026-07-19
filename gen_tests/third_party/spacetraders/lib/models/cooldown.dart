@@ -56,7 +56,7 @@ class Cooldown {
       'shipSymbol': shipSymbol,
       'totalSeconds': totalSeconds,
       'remainingSeconds': remainingSeconds,
-      'expiration': expiration?.toIso8601String(),
+      if (expiration != null) 'expiration': expiration?.toIso8601String(),
     };
   }
 

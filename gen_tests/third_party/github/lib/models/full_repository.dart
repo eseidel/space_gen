@@ -611,7 +611,7 @@ class FullRepository {
   final int watchers;
 
   /// Whether anonymous git access is allowed.
-  final bool? anonymousAccessEnabled;
+  final bool anonymousAccessEnabled;
 
   /// Code Of Conduct Simple
   /// Code of Conduct Simple
@@ -685,50 +685,57 @@ class FullRepository {
       'size': size,
       'default_branch': defaultBranch,
       'open_issues_count': openIssuesCount,
-      'is_template': isTemplate,
-      'topics': topics,
+      if (isTemplate != null) 'is_template': isTemplate,
+      if (topics != null) 'topics': topics,
       'has_issues': hasIssues,
       'has_projects': hasProjects,
       'has_wiki': hasWiki,
       'has_pages': hasPages,
-      'has_downloads': hasDownloads,
+      if (hasDownloads != null) 'has_downloads': hasDownloads,
       'has_discussions': hasDiscussions,
       'archived': archived,
       'disabled': disabled,
-      'visibility': visibility,
+      if (visibility != null) 'visibility': visibility,
       'pushed_at': pushedAt.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
-      'permissions': permissions?.toJson(),
-      'allow_rebase_merge': allowRebaseMerge,
+      if (permissions != null) 'permissions': permissions?.toJson(),
+      if (allowRebaseMerge != null) 'allow_rebase_merge': allowRebaseMerge,
       'template_repository': templateRepository?.toJson(),
       'temp_clone_token': tempCloneToken,
-      'allow_squash_merge': allowSquashMerge,
-      'allow_auto_merge': allowAutoMerge,
-      'delete_branch_on_merge': deleteBranchOnMerge,
-      'allow_merge_commit': allowMergeCommit,
-      'allow_update_branch': allowUpdateBranch,
-      'use_squash_pr_title_as_default': useSquashPrTitleAsDefault,
-      'squash_merge_commit_title': squashMergeCommitTitle?.toJson(),
-      'squash_merge_commit_message': squashMergeCommitMessage?.toJson(),
-      'merge_commit_title': mergeCommitTitle?.toJson(),
-      'merge_commit_message': mergeCommitMessage?.toJson(),
-      'allow_forking': allowForking,
-      'web_commit_signoff_required': webCommitSignoffRequired,
+      if (allowSquashMerge != null) 'allow_squash_merge': allowSquashMerge,
+      if (allowAutoMerge != null) 'allow_auto_merge': allowAutoMerge,
+      if (deleteBranchOnMerge != null)
+        'delete_branch_on_merge': deleteBranchOnMerge,
+      if (allowMergeCommit != null) 'allow_merge_commit': allowMergeCommit,
+      if (allowUpdateBranch != null) 'allow_update_branch': allowUpdateBranch,
+      if (useSquashPrTitleAsDefault != null)
+        'use_squash_pr_title_as_default': useSquashPrTitleAsDefault,
+      if (squashMergeCommitTitle != null)
+        'squash_merge_commit_title': squashMergeCommitTitle?.toJson(),
+      if (squashMergeCommitMessage != null)
+        'squash_merge_commit_message': squashMergeCommitMessage?.toJson(),
+      if (mergeCommitTitle != null)
+        'merge_commit_title': mergeCommitTitle?.toJson(),
+      if (mergeCommitMessage != null)
+        'merge_commit_message': mergeCommitMessage?.toJson(),
+      if (allowForking != null) 'allow_forking': allowForking,
+      if (webCommitSignoffRequired != null)
+        'web_commit_signoff_required': webCommitSignoffRequired,
       'subscribers_count': subscribersCount,
       'network_count': networkCount,
       'license': license?.toJson(),
       'organization': organization?.toJson(),
-      'parent': parent?.toJson(),
-      'source': source?.toJson(),
+      if (parent != null) 'parent': parent?.toJson(),
+      if (source != null) 'source': source?.toJson(),
       'forks': forks,
-      'master_branch': masterBranch,
+      if (masterBranch != null) 'master_branch': masterBranch,
       'open_issues': openIssues,
       'watchers': watchers,
       'anonymous_access_enabled': anonymousAccessEnabled,
-      'code_of_conduct': codeOfConduct?.toJson(),
+      if (codeOfConduct != null) 'code_of_conduct': codeOfConduct?.toJson(),
       'security_and_analysis': securityAndAnalysis?.toJson(),
-      'custom_properties': customProperties,
+      if (customProperties != null) 'custom_properties': customProperties,
     };
   }
 

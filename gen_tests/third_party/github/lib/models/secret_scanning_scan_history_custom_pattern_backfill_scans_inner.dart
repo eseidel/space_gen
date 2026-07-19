@@ -66,12 +66,12 @@ class SecretScanningScanHistoryCustomPatternBackfillScansInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'type': type,
-      'status': status,
+      if (type != null) 'type': type,
+      if (status != null) 'status': status,
       'completed_at': completedAt?.toIso8601String(),
       'started_at': startedAt?.toIso8601String(),
-      'pattern_name': patternName,
-      'pattern_scope': patternScope,
+      if (patternName != null) 'pattern_name': patternName,
+      if (patternScope != null) 'pattern_scope': patternScope,
     };
   }
 

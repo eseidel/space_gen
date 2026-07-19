@@ -89,10 +89,10 @@ class ScannedShip {
       'symbol': symbol,
       'registration': registration.toJson(),
       'nav': nav.toJson(),
-      'frame': frame?.toJson(),
-      'reactor': reactor?.toJson(),
+      if (frame != null) 'frame': frame?.toJson(),
+      if (reactor != null) 'reactor': reactor?.toJson(),
       'engine': engine.toJson(),
-      'mounts': mounts?.map((e) => e.toJson()).toList(),
+      if (mounts != null) 'mounts': mounts?.map((e) => e.toJson()).toList(),
     };
   }
 

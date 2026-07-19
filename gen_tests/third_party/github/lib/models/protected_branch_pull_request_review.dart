@@ -83,17 +83,20 @@ class ProtectedBranchPullRequestReview {
   /// Whether the most recent push must be approved by someone other than the
   /// person who pushed it.
   /// Example: `true`
-  final bool? requireLastPushApproval;
+  final bool requireLastPushApproval;
 
   /// Converts a [ProtectedBranchPullRequestReview] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'url': url?.toString(),
-      'dismissal_restrictions': dismissalRestrictions?.toJson(),
-      'bypass_pull_request_allowances': bypassPullRequestAllowances?.toJson(),
+      if (url != null) 'url': url?.toString(),
+      if (dismissalRestrictions != null)
+        'dismissal_restrictions': dismissalRestrictions?.toJson(),
+      if (bypassPullRequestAllowances != null)
+        'bypass_pull_request_allowances': bypassPullRequestAllowances?.toJson(),
       'dismiss_stale_reviews': dismissStaleReviews,
       'require_code_owner_reviews': requireCodeOwnerReviews,
-      'required_approving_review_count': requiredApprovingReviewCount,
+      if (requiredApprovingReviewCount != null)
+        'required_approving_review_count': requiredApprovingReviewCount,
       'require_last_push_approval': requireLastPushApproval,
     };
   }

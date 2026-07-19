@@ -63,8 +63,9 @@ class GistsUpdateRequest {
   /// Converts a [GistsUpdateRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'description': description,
-      'files': files?.map((key, value) => MapEntry(key, value.toJson())),
+      if (description != null) 'description': description,
+      if (files != null)
+        'files': files?.map((key, value) => MapEntry(key, value.toJson())),
     };
   }
 

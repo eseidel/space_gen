@@ -32,7 +32,7 @@ class LocationsQueryResponsePageInfo {
 
   /// Converts a [LocationsQueryResponsePageInfo] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'nextCursor': nextCursor};
+    return {if (nextCursor != null) 'nextCursor': nextCursor};
   }
 
   @override

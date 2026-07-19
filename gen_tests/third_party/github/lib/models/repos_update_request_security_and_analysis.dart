@@ -127,13 +127,18 @@ class ReposUpdateRequestSecurityAndAnalysis {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'advanced_security': advancedSecurity?.toJson(),
-      'code_security': codeSecurity?.toJson(),
-      'secret_scanning': secretScanning?.toJson(),
-      'secret_scanning_push_protection': secretScanningPushProtection?.toJson(),
-      'secret_scanning_ai_detection': secretScanningAiDetection?.toJson(),
-      'secret_scanning_non_provider_patterns': secretScanningNonProviderPatterns
-          ?.toJson(),
+      if (advancedSecurity != null)
+        'advanced_security': advancedSecurity?.toJson(),
+      if (codeSecurity != null) 'code_security': codeSecurity?.toJson(),
+      if (secretScanning != null) 'secret_scanning': secretScanning?.toJson(),
+      if (secretScanningPushProtection != null)
+        'secret_scanning_push_protection': secretScanningPushProtection
+            ?.toJson(),
+      if (secretScanningAiDetection != null)
+        'secret_scanning_ai_detection': secretScanningAiDetection?.toJson(),
+      if (secretScanningNonProviderPatterns != null)
+        'secret_scanning_non_provider_patterns':
+            secretScanningNonProviderPatterns?.toJson(),
     };
   }
 

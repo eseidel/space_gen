@@ -64,8 +64,9 @@ class NullableEntityAnyOf0 {
   /// Converts a [NullableEntityAnyOf0] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'relations': relations?.map((e) => e.toJson()).toList(),
-      'spec': spec,
+      if (relations != null)
+        'relations': relations?.map((e) => e.toJson()).toList(),
+      if (spec != null) 'spec': spec,
       'metadata': metadata.toJson(),
       'kind': kind,
       'apiVersion': apiVersion,

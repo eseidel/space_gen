@@ -68,7 +68,7 @@ class GuildStickerResponse {
       'description': description,
       'available': available,
       'guild_id': guildId.toJson(),
-      'user': user?.toJson(),
+      if (user != null) 'user': user?.toJson(),
     };
   }
 

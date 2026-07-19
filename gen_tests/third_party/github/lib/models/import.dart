@@ -113,10 +113,10 @@ class Import {
   Map<String, dynamic> toJson() {
     return {
       'vcs': vcs,
-      'use_lfs': useLfs,
+      if (useLfs != null) 'use_lfs': useLfs,
       'vcs_url': vcsUrl,
-      'svc_root': svcRoot,
-      'tfvc_project': tfvcProject,
+      if (svcRoot != null) 'svc_root': svcRoot,
+      if (tfvcProject != null) 'tfvc_project': tfvcProject,
       'status': status.toJson(),
       'status_text': statusText,
       'failed_step': failedStep,
@@ -124,17 +124,18 @@ class Import {
       'import_percent': importPercent,
       'commit_count': commitCount,
       'push_percent': pushPercent,
-      'has_large_files': hasLargeFiles,
-      'large_files_size': largeFilesSize,
-      'large_files_count': largeFilesCount,
-      'project_choices': projectChoices?.map((e) => e.toJson()).toList(),
-      'message': message,
+      if (hasLargeFiles != null) 'has_large_files': hasLargeFiles,
+      if (largeFilesSize != null) 'large_files_size': largeFilesSize,
+      if (largeFilesCount != null) 'large_files_count': largeFilesCount,
+      if (projectChoices != null)
+        'project_choices': projectChoices?.map((e) => e.toJson()).toList(),
+      if (message != null) 'message': message,
       'authors_count': authorsCount,
       'url': url.toString(),
       'html_url': htmlUrl.toString(),
       'authors_url': authorsUrl.toString(),
       'repository_url': repositoryUrl.toString(),
-      'svn_root': svnRoot,
+      if (svnRoot != null) 'svn_root': svnRoot,
     };
   }
 

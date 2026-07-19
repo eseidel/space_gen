@@ -50,7 +50,12 @@ class ReposCreateCommitCommentRequest {
 
   /// Converts a [ReposCreateCommitCommentRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'body': body, 'path': path, 'position': position, 'line': line};
+    return {
+      'body': body,
+      if (path != null) 'path': path,
+      if (position != null) 'position': position,
+      if (line != null) 'line': line,
+    };
   }
 
   @override

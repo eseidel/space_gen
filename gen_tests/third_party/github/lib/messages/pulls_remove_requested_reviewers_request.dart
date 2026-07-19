@@ -43,7 +43,10 @@ class PullsRemoveRequestedReviewersRequest {
   /// Converts a [PullsRemoveRequestedReviewersRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'reviewers': reviewers, 'team_reviewers': teamReviewers};
+    return {
+      'reviewers': reviewers,
+      if (teamReviewers != null) 'team_reviewers': teamReviewers,
+    };
   }
 
   @override

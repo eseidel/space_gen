@@ -50,8 +50,8 @@ class MessageInteractionResponse {
       'id': id.toJson(),
       'type': type.toJson(),
       'name': name,
-      'user': user?.toJson(),
-      'name_localized': nameLocalized,
+      if (user != null) 'user': user?.toJson(),
+      if (nameLocalized != null) 'name_localized': nameLocalized,
     };
   }
 

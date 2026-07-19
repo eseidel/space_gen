@@ -48,11 +48,11 @@ class GistSimpleForksInner {
   /// Converts a [GistSimpleForksInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'url': url?.toString(),
-      'user': user?.toJson(),
-      'created_at': createdAt?.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
+      if (id != null) 'id': id,
+      if (url != null) 'url': url?.toString(),
+      if (user != null) 'user': user?.toJson(),
+      if (createdAt != null) 'created_at': createdAt?.toIso8601String(),
+      if (updatedAt != null) 'updated_at': updatedAt?.toIso8601String(),
     };
   }
 

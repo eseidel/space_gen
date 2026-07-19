@@ -46,7 +46,10 @@ class CodeScanningDefaultSetupUpdateResponse {
   /// Converts a [CodeScanningDefaultSetupUpdateResponse]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'run_id': runId, 'run_url': runUrl};
+    return {
+      if (runId != null) 'run_id': runId,
+      if (runUrl != null) 'run_url': runUrl,
+    };
   }
 
   @override

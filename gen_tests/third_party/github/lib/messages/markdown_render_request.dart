@@ -39,7 +39,7 @@ class MarkdownRenderRequest {
 
   /// The rendering mode.
   /// Example: `'markdown'`
-  final MarkdownRenderRequestMode? mode;
+  final MarkdownRenderRequestMode mode;
 
   /// The repository context to use when creating references in `gfm` mode.
   /// For example, setting `context` to `octo-org/octo-repo` will change the
@@ -49,7 +49,11 @@ class MarkdownRenderRequest {
 
   /// Converts a [MarkdownRenderRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'text': text, 'mode': mode?.toJson(), 'context': context};
+    return {
+      'text': text,
+      'mode': mode.toJson(),
+      if (context != null) 'context': context,
+    };
   }
 
   @override

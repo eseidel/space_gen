@@ -31,7 +31,7 @@ class ActionsReRunJobForWorkflowRunRequest {
   }
 
   /// Whether to enable debug logging for the re-run.
-  final bool? enableDebugLogging;
+  final bool enableDebugLogging;
 
   /// Converts an [ActionsReRunJobForWorkflowRunRequest]
   /// to a `Map<String, dynamic>`.

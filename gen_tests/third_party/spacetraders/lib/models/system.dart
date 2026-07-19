@@ -88,7 +88,7 @@ class System {
   /// Converts a [System] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'constellation': constellation,
+      if (constellation != null) 'constellation': constellation,
       'symbol': symbol,
       'sectorSymbol': sectorSymbol,
       'type': type.toJson(),
@@ -96,7 +96,7 @@ class System {
       'y': y,
       'waypoints': waypoints.map((e) => e.toJson()).toList(),
       'factions': factions.map((e) => e.toJson()).toList(),
-      'name': name,
+      if (name != null) 'name': name,
     };
   }
 

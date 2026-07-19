@@ -47,10 +47,10 @@ class TopicSearchResultItemRelatedInnerTopicRelation {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'name': name,
-      'topic_id': topicId,
-      'relation_type': relationType,
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (topicId != null) 'topic_id': topicId,
+      if (relationType != null) 'relation_type': relationType,
     };
   }
 

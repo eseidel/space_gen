@@ -90,7 +90,7 @@ class MigrationsStartForAuthenticatedUserRequest {
   /// Indicates whether this should only include organization metadata
   /// (repositories array should be empty and will ignore other flags).
   /// Example: `true`
-  final bool? orgMetadataOnly;
+  final bool orgMetadataOnly;
 
   /// Exclude attributes from the API response to improve performance
   /// Example: `'repositories'`
@@ -101,14 +101,15 @@ class MigrationsStartForAuthenticatedUserRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'lock_repositories': lockRepositories,
-      'exclude_metadata': excludeMetadata,
-      'exclude_git_data': excludeGitData,
-      'exclude_attachments': excludeAttachments,
-      'exclude_releases': excludeReleases,
-      'exclude_owner_projects': excludeOwnerProjects,
+      if (lockRepositories != null) 'lock_repositories': lockRepositories,
+      if (excludeMetadata != null) 'exclude_metadata': excludeMetadata,
+      if (excludeGitData != null) 'exclude_git_data': excludeGitData,
+      if (excludeAttachments != null) 'exclude_attachments': excludeAttachments,
+      if (excludeReleases != null) 'exclude_releases': excludeReleases,
+      if (excludeOwnerProjects != null)
+        'exclude_owner_projects': excludeOwnerProjects,
       'org_metadata_only': orgMetadataOnly,
-      'exclude': exclude?.map((e) => e.toJson()).toList(),
+      if (exclude != null) 'exclude': exclude?.map((e) => e.toJson()).toList(),
       'repositories': repositories,
     };
   }

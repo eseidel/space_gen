@@ -41,7 +41,10 @@ class ApiOverviewDomainsArtifactAttestations {
   /// Converts an [ApiOverviewDomainsArtifactAttestations]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'trust_domain': trustDomain, 'services': services};
+    return {
+      if (trustDomain != null) 'trust_domain': trustDomain,
+      if (services != null) 'services': services,
+    };
   }
 
   @override

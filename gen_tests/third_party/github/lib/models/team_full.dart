@@ -157,8 +157,9 @@ class TeamFull {
       'name': name,
       'slug': slug,
       'description': description,
-      'privacy': privacy?.toJson(),
-      'notification_setting': notificationSetting?.toJson(),
+      if (privacy != null) 'privacy': privacy?.toJson(),
+      if (notificationSetting != null)
+        'notification_setting': notificationSetting?.toJson(),
       'permission': permission,
       'members_url': membersUrl,
       'repositories_url': repositoriesUrl.toString(),
@@ -168,7 +169,7 @@ class TeamFull {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'organization': organization.toJson(),
-      'ldap_dn': ldapDn,
+      if (ldapDn != null) 'ldap_dn': ldapDn,
     };
   }
 

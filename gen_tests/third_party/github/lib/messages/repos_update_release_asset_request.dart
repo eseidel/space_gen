@@ -41,7 +41,11 @@ class ReposUpdateReleaseAssetRequest {
 
   /// Converts a [ReposUpdateReleaseAssetRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, 'label': label, 'state': state};
+    return {
+      if (name != null) 'name': name,
+      if (label != null) 'label': label,
+      if (state != null) 'state': state,
+    };
   }
 
   @override

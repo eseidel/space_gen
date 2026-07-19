@@ -64,7 +64,7 @@ class InviteGuildRoleResponse {
       'colors': colors.toJson(),
       'icon': icon,
       'unicode_emoji': unicodeEmoji,
-      'permissions': permissions,
+      if (permissions != null) 'permissions': permissions,
     };
   }
 

@@ -50,12 +50,12 @@ class ValidationErrorErrorsInner {
   /// Converts a [ValidationErrorErrorsInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'resource': resource,
-      'field': field,
-      'message': message,
+      if (resource != null) 'resource': resource,
+      if (field != null) 'field': field,
+      if (message != null) 'message': message,
       'code': code,
-      'index': index,
-      'value': value?.toJson(),
+      if (index != null) 'index': index,
+      if (value != null) 'value': value?.toJson(),
     };
   }
 

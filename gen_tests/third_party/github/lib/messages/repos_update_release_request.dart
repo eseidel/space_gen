@@ -76,7 +76,7 @@ class ReposUpdateReleaseRequest {
   /// to `true` for newly published releases. `legacy` specifies that the
   /// latest release should be determined based on the release creation date
   /// and higher semantic version.
-  final ReposUpdateReleaseRequestMakeLatest? makeLatest;
+  final ReposUpdateReleaseRequestMakeLatest makeLatest;
 
   /// If specified, a discussion of the specified category is created and
   /// linked to the release. The value must be a category that already exists
@@ -89,14 +89,15 @@ class ReposUpdateReleaseRequest {
   /// Converts a [ReposUpdateReleaseRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'tag_name': tagName,
-      'target_commitish': targetCommitish,
-      'name': name,
-      'body': body,
-      'draft': draft,
-      'prerelease': prerelease,
-      'make_latest': makeLatest?.toJson(),
-      'discussion_category_name': discussionCategoryName,
+      if (tagName != null) 'tag_name': tagName,
+      if (targetCommitish != null) 'target_commitish': targetCommitish,
+      if (name != null) 'name': name,
+      if (body != null) 'body': body,
+      if (draft != null) 'draft': draft,
+      if (prerelease != null) 'prerelease': prerelease,
+      'make_latest': makeLatest.toJson(),
+      if (discussionCategoryName != null)
+        'discussion_category_name': discussionCategoryName,
     };
   }
 

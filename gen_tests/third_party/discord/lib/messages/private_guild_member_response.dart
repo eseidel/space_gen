@@ -103,7 +103,7 @@ class PrivateGuildMemberResponse {
       'user': user.toJson(),
       'mute': mute,
       'deaf': deaf,
-      'permissions': permissions,
+      if (permissions != null) 'permissions': permissions,
     };
   }
 

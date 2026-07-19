@@ -115,12 +115,13 @@ class TeamSimple {
       'name': name,
       'description': description,
       'permission': permission,
-      'privacy': privacy,
-      'notification_setting': notificationSetting,
+      if (privacy != null) 'privacy': privacy,
+      if (notificationSetting != null)
+        'notification_setting': notificationSetting,
       'html_url': htmlUrl.toString(),
       'repositories_url': repositoriesUrl.toString(),
       'slug': slug,
-      'ldap_dn': ldapDn,
+      if (ldapDn != null) 'ldap_dn': ldapDn,
     };
   }
 

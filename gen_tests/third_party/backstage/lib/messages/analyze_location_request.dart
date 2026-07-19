@@ -34,7 +34,10 @@ class AnalyzeLocationRequest {
 
   /// Converts an [AnalyzeLocationRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'catalogFileName': catalogFileName, 'location': location.toJson()};
+    return {
+      if (catalogFileName != null) 'catalogFileName': catalogFileName,
+      'location': location.toJson(),
+    };
   }
 
   @override

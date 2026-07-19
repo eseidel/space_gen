@@ -42,7 +42,7 @@ class ReposUpdateRequestSecurityAndAnalysisSecretScanning {
   /// Converts a [ReposUpdateRequestSecurityAndAnalysisSecretScanning]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'status': status};
+    return {if (status != null) 'status': status};
   }
 
   @override

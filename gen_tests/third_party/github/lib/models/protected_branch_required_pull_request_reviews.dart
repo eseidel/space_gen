@@ -65,7 +65,7 @@ class ProtectedBranchRequiredPullRequestReviews {
 
   /// Whether the most recent push must be approved by someone other than the
   /// person who pushed it.
-  final bool? requireLastPushApproval;
+  final bool requireLastPushApproval;
   final ProtectedBranchRequiredPullRequestReviewsDismissalRestrictions?
   dismissalRestrictions;
   final ProtectedBranchRequiredPullRequestReviewsBypassPullRequestAllowances?
@@ -76,12 +76,17 @@ class ProtectedBranchRequiredPullRequestReviews {
   Map<String, dynamic> toJson() {
     return {
       'url': url.toString(),
-      'dismiss_stale_reviews': dismissStaleReviews,
-      'require_code_owner_reviews': requireCodeOwnerReviews,
-      'required_approving_review_count': requiredApprovingReviewCount,
+      if (dismissStaleReviews != null)
+        'dismiss_stale_reviews': dismissStaleReviews,
+      if (requireCodeOwnerReviews != null)
+        'require_code_owner_reviews': requireCodeOwnerReviews,
+      if (requiredApprovingReviewCount != null)
+        'required_approving_review_count': requiredApprovingReviewCount,
       'require_last_push_approval': requireLastPushApproval,
-      'dismissal_restrictions': dismissalRestrictions?.toJson(),
-      'bypass_pull_request_allowances': bypassPullRequestAllowances?.toJson(),
+      if (dismissalRestrictions != null)
+        'dismissal_restrictions': dismissalRestrictions?.toJson(),
+      if (bypassPullRequestAllowances != null)
+        'bypass_pull_request_allowances': bypassPullRequestAllowances?.toJson(),
     };
   }
 

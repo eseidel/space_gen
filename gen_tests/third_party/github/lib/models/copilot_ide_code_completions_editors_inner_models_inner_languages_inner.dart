@@ -81,12 +81,16 @@ class CopilotIdeCodeCompletionsEditorsInnerModelsInnerLanguagesInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'total_engaged_users': totalEngagedUsers,
-      'total_code_suggestions': totalCodeSuggestions,
-      'total_code_acceptances': totalCodeAcceptances,
-      'total_code_lines_suggested': totalCodeLinesSuggested,
-      'total_code_lines_accepted': totalCodeLinesAccepted,
+      if (name != null) 'name': name,
+      if (totalEngagedUsers != null) 'total_engaged_users': totalEngagedUsers,
+      if (totalCodeSuggestions != null)
+        'total_code_suggestions': totalCodeSuggestions,
+      if (totalCodeAcceptances != null)
+        'total_code_acceptances': totalCodeAcceptances,
+      if (totalCodeLinesSuggested != null)
+        'total_code_lines_suggested': totalCodeLinesSuggested,
+      if (totalCodeLinesAccepted != null)
+        'total_code_lines_accepted': totalCodeLinesAccepted,
     };
   }
 

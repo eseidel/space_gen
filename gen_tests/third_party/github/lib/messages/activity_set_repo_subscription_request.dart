@@ -40,7 +40,10 @@ class ActivitySetRepoSubscriptionRequest {
   /// Converts an [ActivitySetRepoSubscriptionRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'subscribed': subscribed, 'ignored': ignored};
+    return {
+      if (subscribed != null) 'subscribed': subscribed,
+      if (ignored != null) 'ignored': ignored,
+    };
   }
 
   @override

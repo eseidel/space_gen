@@ -159,27 +159,35 @@ class GuildChannelResponse {
       'guild_id': guildId.toJson(),
       'name': name,
       'parent_id': parentId?.toJson(),
-      'rate_limit_per_user': rateLimitPerUser,
-      'bitrate': bitrate,
-      'user_limit': userLimit,
+      if (rateLimitPerUser != null) 'rate_limit_per_user': rateLimitPerUser,
+      if (bitrate != null) 'bitrate': bitrate,
+      if (userLimit != null) 'user_limit': userLimit,
       'rtc_region': rtcRegion,
-      'video_quality_mode': videoQualityMode?.toJson(),
-      'permissions': permissions,
+      if (videoQualityMode != null)
+        'video_quality_mode': videoQualityMode?.toJson(),
+      if (permissions != null) 'permissions': permissions,
       'topic': topic,
-      'default_auto_archive_duration': defaultAutoArchiveDuration?.toJson(),
-      'default_thread_rate_limit_per_user': defaultThreadRateLimitPerUser,
+      if (defaultAutoArchiveDuration != null)
+        'default_auto_archive_duration': defaultAutoArchiveDuration?.toJson(),
+      if (defaultThreadRateLimitPerUser != null)
+        'default_thread_rate_limit_per_user': defaultThreadRateLimitPerUser,
       'position': position,
-      'permission_overwrites': permissionOverwrites
-          ?.map((e) => e.toJson())
-          .toList(),
-      'nsfw': nsfw,
-      'available_tags': availableTags?.map((e) => e.toJson()).toList(),
+      if (permissionOverwrites != null)
+        'permission_overwrites': permissionOverwrites
+            ?.map((e) => e.toJson())
+            .toList(),
+      if (nsfw != null) 'nsfw': nsfw,
+      if (availableTags != null)
+        'available_tags': availableTags?.map((e) => e.toJson()).toList(),
       'default_reaction_emoji': defaultReactionEmoji?.toJson(),
       'default_sort_order': defaultSortOrder?.toJson(),
-      'default_forum_layout': defaultForumLayout?.toJson(),
+      if (defaultForumLayout != null)
+        'default_forum_layout': defaultForumLayout?.toJson(),
       'default_tag_setting': defaultTagSetting?.toJson(),
-      'hd_streaming_until': hdStreamingUntil?.toIso8601String(),
-      'hd_streaming_buyer_id': hdStreamingBuyerId?.toJson(),
+      if (hdStreamingUntil != null)
+        'hd_streaming_until': hdStreamingUntil?.toIso8601String(),
+      if (hdStreamingBuyerId != null)
+        'hd_streaming_buyer_id': hdStreamingBuyerId?.toJson(),
     };
   }
 

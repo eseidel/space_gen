@@ -144,7 +144,7 @@ final class ReviewCustomGatesStateRequired
     return {
       'environment_name': environmentName,
       'state': state.toJson(),
-      'comment': comment,
+      if (comment != null) 'comment': comment,
     };
   }
 

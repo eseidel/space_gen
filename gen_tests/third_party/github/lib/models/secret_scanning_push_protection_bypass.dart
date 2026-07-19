@@ -53,9 +53,9 @@ class SecretScanningPushProtectionBypass {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'reason': reason?.toJson(),
+      if (reason != null) 'reason': reason?.toJson(),
       'expire_at': expireAt?.toIso8601String(),
-      'token_type': tokenType,
+      if (tokenType != null) 'token_type': tokenType,
     };
   }
 

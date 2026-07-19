@@ -159,7 +159,7 @@ class Root {
       'followers_url': followersUrl.toString(),
       'following_url': followingUrl.toString(),
       'gists_url': gistsUrl.toString(),
-      'hub_url': hubUrl?.toString(),
+      if (hubUrl != null) 'hub_url': hubUrl?.toString(),
       'issue_search_url': issueSearchUrl.toString(),
       'issues_url': issuesUrl.toString(),
       'keys_url': keysUrl.toString(),
@@ -175,7 +175,8 @@ class Root {
       'current_user_repositories_url': currentUserRepositoriesUrl.toString(),
       'starred_url': starredUrl.toString(),
       'starred_gists_url': starredGistsUrl.toString(),
-      'topic_search_url': topicSearchUrl?.toString(),
+      if (topicSearchUrl != null)
+        'topic_search_url': topicSearchUrl?.toString(),
       'user_url': userUrl.toString(),
       'user_organizations_url': userOrganizationsUrl.toString(),
       'user_repositories_url': userRepositoriesUrl.toString(),

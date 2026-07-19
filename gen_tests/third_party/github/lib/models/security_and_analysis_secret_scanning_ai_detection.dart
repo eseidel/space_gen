@@ -39,7 +39,7 @@ class SecurityAndAnalysisSecretScanningAiDetection {
   /// Converts a [SecurityAndAnalysisSecretScanningAiDetection]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'status': status?.toJson()};
+    return {if (status != null) 'status': status?.toJson()};
   }
 
   @override

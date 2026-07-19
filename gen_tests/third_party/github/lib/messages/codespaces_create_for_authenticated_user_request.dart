@@ -143,17 +143,20 @@ final class CodespacesCreateForAuthenticatedUserRequestOneOf0
   Map<String, dynamic> toJson() {
     return {
       'repository_id': repositoryId,
-      'ref': ref,
-      'location': location,
-      'geo': geo?.toJson(),
-      'client_ip': clientIp,
-      'machine': machine,
-      'devcontainer_path': devcontainerPath,
-      'multi_repo_permissions_opt_out': multiRepoPermissionsOptOut,
-      'working_directory': workingDirectory,
-      'idle_timeout_minutes': idleTimeoutMinutes,
-      'display_name': displayName,
-      'retention_period_minutes': retentionPeriodMinutes,
+      if (ref != null) 'ref': ref,
+      if (location != null) 'location': location,
+      if (geo != null) 'geo': geo?.toJson(),
+      if (clientIp != null) 'client_ip': clientIp,
+      if (machine != null) 'machine': machine,
+      if (devcontainerPath != null) 'devcontainer_path': devcontainerPath,
+      if (multiRepoPermissionsOptOut != null)
+        'multi_repo_permissions_opt_out': multiRepoPermissionsOptOut,
+      if (workingDirectory != null) 'working_directory': workingDirectory,
+      if (idleTimeoutMinutes != null)
+        'idle_timeout_minutes': idleTimeoutMinutes,
+      if (displayName != null) 'display_name': displayName,
+      if (retentionPeriodMinutes != null)
+        'retention_period_minutes': retentionPeriodMinutes,
     };
   }
 
@@ -272,12 +275,13 @@ final class CodespacesCreateForAuthenticatedUserRequestOneOf1
   Map<String, dynamic> toJson() {
     return {
       'pull_request': pullRequest.toJson(),
-      'location': location,
-      'geo': geo?.toJson(),
-      'machine': machine,
-      'devcontainer_path': devcontainerPath,
-      'working_directory': workingDirectory,
-      'idle_timeout_minutes': idleTimeoutMinutes,
+      if (location != null) 'location': location,
+      if (geo != null) 'geo': geo?.toJson(),
+      if (machine != null) 'machine': machine,
+      if (devcontainerPath != null) 'devcontainer_path': devcontainerPath,
+      if (workingDirectory != null) 'working_directory': workingDirectory,
+      if (idleTimeoutMinutes != null)
+        'idle_timeout_minutes': idleTimeoutMinutes,
     };
   }
 

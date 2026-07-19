@@ -48,11 +48,11 @@ class CodeScanningAlertLocation {
   /// Converts a [CodeScanningAlertLocation] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'path': path,
-      'start_line': startLine,
-      'end_line': endLine,
-      'start_column': startColumn,
-      'end_column': endColumn,
+      if (path != null) 'path': path,
+      if (startLine != null) 'start_line': startLine,
+      if (endLine != null) 'end_line': endLine,
+      if (startColumn != null) 'start_column': startColumn,
+      if (endColumn != null) 'end_column': endColumn,
     };
   }
 

@@ -32,7 +32,7 @@ class BranchProtectionAllowForkSyncing {
     return BranchProtectionAllowForkSyncing.fromJson(json);
   }
 
-  final bool? enabled;
+  final bool enabled;
 
   /// Converts a [BranchProtectionAllowForkSyncing] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

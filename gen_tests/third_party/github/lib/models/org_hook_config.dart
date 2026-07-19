@@ -48,10 +48,10 @@ class OrgHookConfig {
   /// Converts an [OrgHookConfig] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'url': url,
-      'insecure_ssl': insecureSsl,
-      'content_type': contentType,
-      'secret': secret,
+      if (url != null) 'url': url,
+      if (insecureSsl != null) 'insecure_ssl': insecureSsl,
+      if (contentType != null) 'content_type': contentType,
+      if (secret != null) 'secret': secret,
     };
   }
 

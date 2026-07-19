@@ -55,9 +55,9 @@ class OrgsListAttestationsBulk200ResponseAttestationsSubjectDigestsInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'bundle': bundle?.toJson(),
-      'repository_id': repositoryId,
-      'bundle_url': bundleUrl,
+      if (bundle != null) 'bundle': bundle?.toJson(),
+      if (repositoryId != null) 'repository_id': repositoryId,
+      if (bundleUrl != null) 'bundle_url': bundleUrl,
     };
   }
 

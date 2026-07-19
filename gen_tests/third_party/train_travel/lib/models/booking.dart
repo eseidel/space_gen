@@ -60,11 +60,11 @@ class Booking {
   /// Converts a [Booking] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'trip_id': tripId,
-      'passenger_name': passengerName,
-      'has_bicycle': hasBicycle,
-      'has_dog': hasDog,
+      if (id != null) 'id': id,
+      if (tripId != null) 'trip_id': tripId,
+      if (passengerName != null) 'passenger_name': passengerName,
+      if (hasBicycle != null) 'has_bicycle': hasBicycle,
+      if (hasDog != null) 'has_dog': hasDog,
     };
   }
 

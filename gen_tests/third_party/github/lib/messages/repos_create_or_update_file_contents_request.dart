@@ -75,10 +75,10 @@ class ReposCreateOrUpdateFileContentsRequest {
     return {
       'message': message,
       'content': content,
-      'sha': sha,
-      'branch': branch,
-      'committer': committer?.toJson(),
-      'author': author?.toJson(),
+      if (sha != null) 'sha': sha,
+      if (branch != null) 'branch': branch,
+      if (committer != null) 'committer': committer?.toJson(),
+      if (author != null) 'author': author?.toJson(),
     };
   }
 

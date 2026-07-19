@@ -70,11 +70,14 @@ class Dependency {
   /// Converts a [Dependency] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'package_url': packageUrl,
-      'metadata': metadata?.map((key, value) => MapEntry(key, value.toJson())),
-      'relationship': relationship?.toJson(),
-      'scope': scope?.toJson(),
-      'dependencies': dependencies,
+      if (packageUrl != null) 'package_url': packageUrl,
+      if (metadata != null)
+        'metadata': metadata?.map(
+          (key, value) => MapEntry(key, value.toJson()),
+        ),
+      if (relationship != null) 'relationship': relationship?.toJson(),
+      if (scope != null) 'scope': scope?.toJson(),
+      if (dependencies != null) 'dependencies': dependencies,
     };
   }
 

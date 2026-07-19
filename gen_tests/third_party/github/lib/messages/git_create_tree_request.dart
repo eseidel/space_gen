@@ -56,7 +56,7 @@ class GitCreateTreeRequest {
   Map<String, dynamic> toJson() {
     return {
       'tree': tree.map((e) => e.toJson()).toList(),
-      'base_tree': baseTree,
+      if (baseTree != null) 'base_tree': baseTree,
     };
   }
 

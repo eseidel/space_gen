@@ -53,7 +53,7 @@ class OAuth2GetAuthorizationResponse {
       'application': application.toJson(),
       'expires': expires.toIso8601String(),
       'scopes': scopes.map((e) => e.toJson()).toList(),
-      'user': user?.toJson(),
+      if (user != null) 'user': user?.toJson(),
     };
   }
 

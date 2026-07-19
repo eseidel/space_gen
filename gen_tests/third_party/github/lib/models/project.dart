@@ -137,8 +137,9 @@ class Project {
       'creator': creator?.toJson(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
-      'organization_permission': organizationPermission?.toJson(),
-      'private': private,
+      if (organizationPermission != null)
+        'organization_permission': organizationPermission?.toJson(),
+      if (private != null) 'private': private,
     };
   }
 

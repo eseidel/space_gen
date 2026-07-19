@@ -89,7 +89,7 @@
     {{^hasNoJsonProperty}}
         return {
             {{#properties}}
-            {{{ jsonName }}}: {{{ toJson }}},
+            {{#omitWhenNull}}if ({{ dartName }} != null) {{/omitWhenNull}}{{{ jsonName }}}: {{{ toJson }}},
             {{/properties}}
             {{#hasAdditionalProperties}}
             for (final entry in {{additionalPropertiesName}}.entries)

@@ -53,9 +53,15 @@ class Manifest {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'file': file?.toJson(),
-      'metadata': metadata?.map((key, value) => MapEntry(key, value.toJson())),
-      'resolved': resolved?.map((key, value) => MapEntry(key, value.toJson())),
+      if (file != null) 'file': file?.toJson(),
+      if (metadata != null)
+        'metadata': metadata?.map(
+          (key, value) => MapEntry(key, value.toJson()),
+        ),
+      if (resolved != null)
+        'resolved': resolved?.map(
+          (key, value) => MapEntry(key, value.toJson()),
+        ),
     };
   }
 

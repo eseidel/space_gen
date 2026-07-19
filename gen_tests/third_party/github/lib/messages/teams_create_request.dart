@@ -87,7 +87,7 @@ class TeamsCreateRequest {
 
   /// **Closing down notice**. The permission that new repositories will be
   /// added to the team with when none is specified.
-  final TeamsCreateRequestPermission? permission;
+  final TeamsCreateRequestPermission permission;
 
   /// The ID of a team to set as the parent team.
   final int? parentTeamId;
@@ -96,13 +96,14 @@ class TeamsCreateRequest {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'description': description,
-      'maintainers': maintainers,
-      'repo_names': repoNames,
-      'privacy': privacy?.toJson(),
-      'notification_setting': notificationSetting?.toJson(),
-      'permission': permission?.toJson(),
-      'parent_team_id': parentTeamId,
+      if (description != null) 'description': description,
+      if (maintainers != null) 'maintainers': maintainers,
+      if (repoNames != null) 'repo_names': repoNames,
+      if (privacy != null) 'privacy': privacy?.toJson(),
+      if (notificationSetting != null)
+        'notification_setting': notificationSetting?.toJson(),
+      'permission': permission.toJson(),
+      if (parentTeamId != null) 'parent_team_id': parentTeamId,
     };
   }
 

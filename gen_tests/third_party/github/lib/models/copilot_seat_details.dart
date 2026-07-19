@@ -113,8 +113,8 @@ class CopilotSeatDetails {
       'last_activity_at': lastActivityAt?.toIso8601String(),
       'last_activity_editor': lastActivityEditor,
       'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
-      'plan_type': planType?.toJson(),
+      if (updatedAt != null) 'updated_at': updatedAt?.toIso8601String(),
+      if (planType != null) 'plan_type': planType?.toJson(),
     };
   }
 

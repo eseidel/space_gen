@@ -84,13 +84,14 @@ class VoiceScheduledEventPatchRequestPartial {
   Map<String, dynamic> toJson() {
     return {
       'status': status?.toJson(),
-      'name': name,
+      if (name != null) 'name': name,
       'description': description,
       'image': maybeBase64Encode(image),
-      'scheduled_start_time': scheduledStartTime?.toIso8601String(),
+      if (scheduledStartTime != null)
+        'scheduled_start_time': scheduledStartTime?.toIso8601String(),
       'scheduled_end_time': scheduledEndTime?.toIso8601String(),
       'entity_type': entityType?.toJson(),
-      'privacy_level': privacyLevel?.toJson(),
+      if (privacyLevel != null) 'privacy_level': privacyLevel?.toJson(),
       'channel_id': channelId?.toJson(),
       'entity_metadata': entityMetadata?.toJson(),
     };

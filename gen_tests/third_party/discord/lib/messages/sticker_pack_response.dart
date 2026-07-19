@@ -66,8 +66,8 @@ class StickerPackResponse {
       'name': name,
       'description': description,
       'stickers': stickers.map((e) => e.toJson()).toList(),
-      'cover_sticker_id': coverStickerId?.toJson(),
-      'banner_asset_id': bannerAssetId?.toJson(),
+      if (coverStickerId != null) 'cover_sticker_id': coverStickerId?.toJson(),
+      if (bannerAssetId != null) 'banner_asset_id': bannerAssetId?.toJson(),
     };
   }
 

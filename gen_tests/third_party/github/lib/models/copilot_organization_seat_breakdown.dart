@@ -70,12 +70,13 @@ class CopilotOrganizationSeatBreakdown {
   /// Converts a [CopilotOrganizationSeatBreakdown] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'total': total,
-      'added_this_cycle': addedThisCycle,
-      'pending_cancellation': pendingCancellation,
-      'pending_invitation': pendingInvitation,
-      'active_this_cycle': activeThisCycle,
-      'inactive_this_cycle': inactiveThisCycle,
+      if (total != null) 'total': total,
+      if (addedThisCycle != null) 'added_this_cycle': addedThisCycle,
+      if (pendingCancellation != null)
+        'pending_cancellation': pendingCancellation,
+      if (pendingInvitation != null) 'pending_invitation': pendingInvitation,
+      if (activeThisCycle != null) 'active_this_cycle': activeThisCycle,
+      if (inactiveThisCycle != null) 'inactive_this_cycle': inactiveThisCycle,
     };
   }
 

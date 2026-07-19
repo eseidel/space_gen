@@ -31,7 +31,7 @@ class UpdateGuildTemplateRequest {
 
   /// Converts a [UpdateGuildTemplateRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, 'description': description};
+    return {if (name != null) 'name': name, 'description': description};
   }
 
   @override

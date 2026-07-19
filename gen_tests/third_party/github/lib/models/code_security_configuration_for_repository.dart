@@ -56,8 +56,8 @@ class CodeSecurityConfigurationForRepository {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'status': status?.toJson(),
-      'configuration': configuration?.toJson(),
+      if (status != null) 'status': status?.toJson(),
+      if (configuration != null) 'configuration': configuration?.toJson(),
     };
   }
 

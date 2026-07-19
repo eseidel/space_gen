@@ -108,39 +108,39 @@ class ReposCreateInOrgRequest {
   final String? homepage;
 
   /// Whether the repository is private.
-  final bool? private;
+  final bool private;
 
   /// The visibility of the repository.
   final ReposCreateInOrgRequestVisibility? visibility;
 
   /// Either `true` to enable issues for this repository or `false` to disable
   /// them.
-  final bool? hasIssues;
+  final bool hasIssues;
 
   /// Either `true` to enable projects for this repository or `false` to
   /// disable them. **Note:** If you're creating a repository in an
   /// organization that has disabled repository projects, the default is
   /// `false`, and if you pass `true`, the API returns an error.
-  final bool? hasProjects;
+  final bool hasProjects;
 
   /// Either `true` to enable the wiki for this repository or `false` to
   /// disable it.
-  final bool? hasWiki;
+  final bool hasWiki;
 
   /// Whether downloads are enabled.
   /// Example: `true`
-  final bool? hasDownloads;
+  final bool hasDownloads;
 
   /// Either `true` to make this repo available as a template repository or
   /// `false` to prevent it.
-  final bool? isTemplate;
+  final bool isTemplate;
 
   /// The id of the team that will be granted access to this repository. This
   /// is only valid when creating a repository in an organization.
   final int? teamId;
 
   /// Pass `true` to create an initial commit with empty README.
-  final bool? autoInit;
+  final bool autoInit;
 
   /// Desired language or platform [.gitignore
   /// template](https://github.com/github/gitignore) to apply. Use the name of
@@ -155,31 +155,31 @@ class ReposCreateInOrgRequest {
 
   /// Either `true` to allow squash-merging pull requests, or `false` to
   /// prevent squash-merging.
-  final bool? allowSquashMerge;
+  final bool allowSquashMerge;
 
   /// Either `true` to allow merging pull requests with a merge commit, or
   /// `false` to prevent merging pull requests with merge commits.
-  final bool? allowMergeCommit;
+  final bool allowMergeCommit;
 
   /// Either `true` to allow rebase-merging pull requests, or `false` to
   /// prevent rebase-merging.
-  final bool? allowRebaseMerge;
+  final bool allowRebaseMerge;
 
   /// Either `true` to allow auto-merge on pull requests, or `false` to
   /// disallow auto-merge.
-  final bool? allowAutoMerge;
+  final bool allowAutoMerge;
 
   /// Either `true` to allow automatically deleting head branches when pull
   /// requests are merged, or `false` to prevent automatic deletion. **The
   /// authenticated user must be an organization owner to set this property to
   /// `true`.**
-  final bool? deleteBranchOnMerge;
+  final bool deleteBranchOnMerge;
 
   /// Either `true` to allow squash-merge commits to use pull request title,
   /// or `false` to use commit message. **This property is closing down.
   /// Please use `squash_merge_commit_title` instead.
   @deprecated
-  final bool? useSquashPrTitleAsDefault;
+  final bool useSquashPrTitleAsDefault;
 
   /// Required when using `squash_merge_commit_message`.
   ///
@@ -223,30 +223,34 @@ class ReposCreateInOrgRequest {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'description': description,
-      'homepage': homepage,
+      if (description != null) 'description': description,
+      if (homepage != null) 'homepage': homepage,
       'private': private,
-      'visibility': visibility?.toJson(),
+      if (visibility != null) 'visibility': visibility?.toJson(),
       'has_issues': hasIssues,
       'has_projects': hasProjects,
       'has_wiki': hasWiki,
       'has_downloads': hasDownloads,
       'is_template': isTemplate,
-      'team_id': teamId,
+      if (teamId != null) 'team_id': teamId,
       'auto_init': autoInit,
-      'gitignore_template': gitignoreTemplate,
-      'license_template': licenseTemplate,
+      if (gitignoreTemplate != null) 'gitignore_template': gitignoreTemplate,
+      if (licenseTemplate != null) 'license_template': licenseTemplate,
       'allow_squash_merge': allowSquashMerge,
       'allow_merge_commit': allowMergeCommit,
       'allow_rebase_merge': allowRebaseMerge,
       'allow_auto_merge': allowAutoMerge,
       'delete_branch_on_merge': deleteBranchOnMerge,
       'use_squash_pr_title_as_default': useSquashPrTitleAsDefault,
-      'squash_merge_commit_title': squashMergeCommitTitle?.toJson(),
-      'squash_merge_commit_message': squashMergeCommitMessage?.toJson(),
-      'merge_commit_title': mergeCommitTitle?.toJson(),
-      'merge_commit_message': mergeCommitMessage?.toJson(),
-      'custom_properties': customProperties,
+      if (squashMergeCommitTitle != null)
+        'squash_merge_commit_title': squashMergeCommitTitle?.toJson(),
+      if (squashMergeCommitMessage != null)
+        'squash_merge_commit_message': squashMergeCommitMessage?.toJson(),
+      if (mergeCommitTitle != null)
+        'merge_commit_title': mergeCommitTitle?.toJson(),
+      if (mergeCommitMessage != null)
+        'merge_commit_message': mergeCommitMessage?.toJson(),
+      if (customProperties != null) 'custom_properties': customProperties,
     };
   }
 

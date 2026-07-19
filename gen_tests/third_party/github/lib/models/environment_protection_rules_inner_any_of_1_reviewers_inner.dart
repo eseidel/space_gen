@@ -51,7 +51,10 @@ class EnvironmentProtectionRulesInnerAnyOf1ReviewersInner {
   /// Converts an [EnvironmentProtectionRulesInnerAnyOf1ReviewersInner]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'type': type?.toJson(), 'reviewer': reviewer?.toJson()};
+    return {
+      if (type != null) 'type': type?.toJson(),
+      if (reviewer != null) 'reviewer': reviewer?.toJson(),
+    };
   }
 
   @override

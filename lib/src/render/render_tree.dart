@@ -2871,15 +2871,21 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
       if (jsonIsNullable && !dartIsNullable) {
         // Belt-and-braces: a non-nullable Dart slot fed by a nullable
         // JSON value with no default would silently produce a null-cast
-        // crash at runtime. That combination only arises today via the
-        // [nonNullableDefaultValues] quirk, which only forces non-null
-        // when the property has a default — so reaching here means the
-        // generator violated its own invariant, not user error.
+        // crash at runtime. A non-null slot is only chosen when the
+        // property has a default, so reaching here means the generator
+        // violated its own invariant, not user error.
         throw StateError('No default value for nullable property: $this');
       }
       return expression;
     }
     if (!jsonIsNullable) return expression;
+    // The schema permits null, so a null on the wire is a legal value
+    // rather than a stand-in for an absent key. `default` applies to
+    // absence only, and `??` cannot tell the two apart — coalescing here
+    // would silently replace a null the spec allows. When the key is also
+    // optional the caller substitutes the default by testing for the key;
+    // when it is required there is no absent case to substitute for.
+    if (common.nullable) return expression;
     // Non-null Dart slot fed by nullable JSON: an `as T?` cast would
     // crash on null. Substitute the default whether the default is
     // const or not.
@@ -4113,16 +4119,19 @@ class RenderObject extends RenderNewType {
   // genuinely needs meta comes from `SchemaUsage.usesMetaAnnotations`.
 
   // isNullable means it's optional for the server, use nullable storage.
+  //
+  // A property with a default is non-nullable: an absent key means the
+  // default, so no input produces a null and a nullable field would only
+  // let a caller emit `{"x": null}` for a property whose schema forbids
+  // it. A schema that does permit null is unaffected — that nullability
+  // comes from the property's own type, not from here.
   bool propertyDartIsNullable({
     required String jsonName,
     required SchemaRenderer context,
     required bool propertyHasDefaultValue,
   }) {
     final inRequiredList = requiredProperties.contains(jsonName);
-    if (context.quirks.nonNullableDefaultValues) {
-      return !inRequiredList && !propertyHasDefaultValue;
-    }
-    return !inRequiredList;
+    return !inRequiredList && !propertyHasDefaultValue;
   }
 
   @visibleForTesting
@@ -4281,6 +4290,12 @@ class RenderObject extends RenderNewType {
       ),
       'equals': property.equalsExpression(dartName, context),
       'hashCode': property.hashCodeExpression(dartName),
+      // A nullable slot whose schema forbids null holds null to mean "the
+      // key was absent", so emitting it would produce `{"x": null}` — a
+      // value the spec rejects. Omit the key instead. When the schema does
+      // permit null there is nothing to hide: null is a legal value and
+      // the key is always emitted.
+      'omitWhenNull': dartIsNullable && !property.common.nullable,
       'toJson': _runtimeSource(
         property.toJsonExpression(
           DartIdentifier(dartName),
@@ -4289,14 +4304,51 @@ class RenderObject extends RenderNewType {
         ),
       ),
       'fromJson': _maybeRuntimeSource(
-        property.fromJsonExpression(
-          jsonRead,
-          context,
-          dartIsNullable: dartIsNullable,
-          jsonIsNullable: jsonIsNullable,
+        _defaultOnAbsence(
+          property.fromJsonExpression(
+            jsonRead,
+            context,
+            dartIsNullable: dartIsNullable,
+            jsonIsNullable: jsonIsNullable,
+          ),
+          property: property,
+          context: context,
+          jsonName: jsonName,
+          jsonKeyIsRequired: jsonKeyIsRequired,
         ),
       ),
     };
+  }
+
+  /// [read], guarded so a declared default lands only when the key is
+  /// absent.
+  ///
+  /// Only applies where the schema permits null and the key is optional:
+  /// there the wire has three states (absent, null, value) and `??` — which
+  /// [RenderSchema.orDefault] would otherwise use — collapses the first two.
+  /// Every other combination either cannot be absent or cannot be null, so
+  /// the plain read already carries the right value.
+  DartExpression? _defaultOnAbsence(
+    DartExpression? read, {
+    required RenderSchema property,
+    required SchemaRenderer context,
+    required String jsonName,
+    required bool jsonKeyIsRequired,
+  }) {
+    if (read == null || jsonKeyIsRequired || !property.common.nullable) {
+      return read;
+    }
+    final defaultValue = property.defaultValueExpression(context);
+    if (defaultValue == null) return read;
+    return DartConditional(
+      condition: DartMethodCall(
+        target: const DartIdentifier('json'),
+        name: 'containsKey',
+        arguments: [DartLiteral(jsonName)],
+      ),
+      thenValue: read,
+      elseValue: defaultValue,
+    );
   }
 
   /// Template context for a property pinned to a single value, which
@@ -4328,6 +4380,9 @@ class RenderObject extends RenderNewType {
       ),
       'isConstGetter': true,
       'constGetter': '${property.typeName} get $dartName => $constExpression;',
+      // The getter returns a pinned value and is never null, so the key is
+      // always emitted — there is no absent case to represent.
+      'omitWhenNull': false,
       'toJson': _runtimeSource(
         property.toJsonExpression(
           DartIdentifier(dartName),

@@ -44,7 +44,7 @@ class CreateLocation201Response {
   /// Converts a [CreateLocation201Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'exists': exists,
+      if (exists != null) 'exists': exists,
       'entities': entities.map((e) => e.toJson()).toList(),
       'location': location.toJson(),
     };

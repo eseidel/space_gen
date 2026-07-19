@@ -40,7 +40,10 @@ class OrgsRemoveOutsideCollaborator422Response {
   /// Converts an [OrgsRemoveOutsideCollaborator422Response]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'message': message, 'documentation_url': documentationUrl};
+    return {
+      if (message != null) 'message': message,
+      if (documentationUrl != null) 'documentation_url': documentationUrl,
+    };
   }
 
   @override

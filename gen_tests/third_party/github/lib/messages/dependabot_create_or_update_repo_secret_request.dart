@@ -51,7 +51,10 @@ class DependabotCreateOrUpdateRepoSecretRequest {
   /// Converts a [DependabotCreateOrUpdateRepoSecretRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'encrypted_value': encryptedValue, 'key_id': keyId};
+    return {
+      if (encryptedValue != null) 'encrypted_value': encryptedValue,
+      if (keyId != null) 'key_id': keyId,
+    };
   }
 
   @override

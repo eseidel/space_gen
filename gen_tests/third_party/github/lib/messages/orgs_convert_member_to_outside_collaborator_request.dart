@@ -32,7 +32,7 @@ class OrgsConvertMemberToOutsideCollaboratorRequest {
 
   /// When set to `true`, the request will be performed asynchronously.
   /// Returns a 202 status code when the job is successfully queued.
-  final bool? async_;
+  final bool async_;
 
   /// Converts an [OrgsConvertMemberToOutsideCollaboratorRequest]
   /// to a `Map<String, dynamic>`.

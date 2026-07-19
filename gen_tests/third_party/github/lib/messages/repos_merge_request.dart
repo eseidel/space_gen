@@ -43,7 +43,11 @@ class ReposMergeRequest {
 
   /// Converts a [ReposMergeRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'base': base, 'head': head, 'commit_message': commitMessage};
+    return {
+      'base': base,
+      'head': head,
+      if (commitMessage != null) 'commit_message': commitMessage,
+    };
   }
 
   @override

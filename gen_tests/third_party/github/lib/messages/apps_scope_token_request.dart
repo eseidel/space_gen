@@ -80,11 +80,11 @@ class AppsScopeTokenRequest {
   Map<String, dynamic> toJson() {
     return {
       'access_token': accessToken,
-      'target': target,
-      'target_id': targetId,
-      'repositories': repositories,
-      'repository_ids': repositoryIds,
-      'permissions': permissions?.toJson(),
+      if (target != null) 'target': target,
+      if (targetId != null) 'target_id': targetId,
+      if (repositories != null) 'repositories': repositories,
+      if (repositoryIds != null) 'repository_ids': repositoryIds,
+      if (permissions != null) 'permissions': permissions?.toJson(),
     };
   }
 

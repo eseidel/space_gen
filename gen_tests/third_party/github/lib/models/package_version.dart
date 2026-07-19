@@ -102,13 +102,13 @@ class PackageVersion {
       'name': name,
       'url': url,
       'package_html_url': packageHtmlUrl,
-      'html_url': htmlUrl,
-      'license': license,
-      'description': description,
+      if (htmlUrl != null) 'html_url': htmlUrl,
+      if (license != null) 'license': license,
+      if (description != null) 'description': description,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
-      'deleted_at': deletedAt?.toIso8601String(),
-      'metadata': metadata?.toJson(),
+      if (deletedAt != null) 'deleted_at': deletedAt?.toIso8601String(),
+      if (metadata != null) 'metadata': metadata?.toJson(),
     };
   }
 

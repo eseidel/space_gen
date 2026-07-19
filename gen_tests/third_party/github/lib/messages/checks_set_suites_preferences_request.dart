@@ -51,7 +51,10 @@ class ChecksSetSuitesPreferencesRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'auto_trigger_checks': autoTriggerChecks?.map((e) => e.toJson()).toList(),
+      if (autoTriggerChecks != null)
+        'auto_trigger_checks': autoTriggerChecks
+            ?.map((e) => e.toJson())
+            .toList(),
     };
   }
 

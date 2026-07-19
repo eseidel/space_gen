@@ -84,7 +84,8 @@ class Contract {
       'accepted': accepted,
       'fulfilled': fulfilled,
       'expiration': expiration.toIso8601String(),
-      'deadlineToAccept': deadlineToAccept?.toIso8601String(),
+      if (deadlineToAccept != null)
+        'deadlineToAccept': deadlineToAccept?.toIso8601String(),
     };
   }
 

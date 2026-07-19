@@ -52,7 +52,7 @@ class ValidationError {
     return {
       'message': message,
       'documentation_url': documentationUrl,
-      'errors': errors?.map((e) => e.toJson()).toList(),
+      if (errors != null) 'errors': errors?.map((e) => e.toJson()).toList(),
     };
   }
 

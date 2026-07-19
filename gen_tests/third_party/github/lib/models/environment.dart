@@ -106,7 +106,8 @@ class Environment {
       'html_url': htmlUrl,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
-      'protection_rules': protectionRules?.map((e) => e.toJson()).toList(),
+      if (protectionRules != null)
+        'protection_rules': protectionRules?.map((e) => e.toJson()).toList(),
       'deployment_branch_policy': deploymentBranchPolicy?.toJson(),
     };
   }

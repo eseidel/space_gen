@@ -46,11 +46,11 @@ class MinimalRepositoryPermissions {
   /// Converts a [MinimalRepositoryPermissions] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'admin': admin,
-      'maintain': maintain,
-      'push': push,
-      'triage': triage,
-      'pull': pull,
+      if (admin != null) 'admin': admin,
+      if (maintain != null) 'maintain': maintain,
+      if (push != null) 'push': push,
+      if (triage != null) 'triage': triage,
+      if (pull != null) 'pull': pull,
     };
   }
 

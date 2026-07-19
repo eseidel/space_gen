@@ -117,19 +117,21 @@ class CreatedThreadResponse {
       'guild_id': guildId.toJson(),
       'name': name,
       'parent_id': parentId?.toJson(),
-      'rate_limit_per_user': rateLimitPerUser,
-      'bitrate': bitrate,
-      'user_limit': userLimit,
+      if (rateLimitPerUser != null) 'rate_limit_per_user': rateLimitPerUser,
+      if (bitrate != null) 'bitrate': bitrate,
+      if (userLimit != null) 'user_limit': userLimit,
       'rtc_region': rtcRegion,
-      'video_quality_mode': videoQualityMode?.toJson(),
-      'permissions': permissions,
+      if (videoQualityMode != null)
+        'video_quality_mode': videoQualityMode?.toJson(),
+      if (permissions != null) 'permissions': permissions,
       'owner_id': ownerId.toJson(),
       'thread_metadata': threadMetadata.toJson(),
       'message_count': messageCount,
       'member_count': memberCount,
       'total_message_sent': totalMessageSent,
-      'applied_tags': appliedTags?.map((e) => e.toJson()).toList(),
-      'member': member?.toJson(),
+      if (appliedTags != null)
+        'applied_tags': appliedTags?.map((e) => e.toJson()).toList(),
+      if (member != null) 'member': member?.toJson(),
     };
   }
 

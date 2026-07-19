@@ -67,10 +67,10 @@ class ActionsPublicKey {
     return {
       'key_id': keyId,
       'key': key,
-      'id': id,
-      'url': url,
-      'title': title,
-      'created_at': createdAt,
+      if (id != null) 'id': id,
+      if (url != null) 'url': url,
+      if (title != null) 'title': title,
+      if (createdAt != null) 'created_at': createdAt,
     };
   }
 

@@ -213,14 +213,13 @@ class CodeSecurityCreateConfigurationRequest {
 
   /// The enablement status of GitHub Advanced Security features. `enabled`
   /// will enable both Code Security and Secret Protection features.
-  final CodeSecurityCreateConfigurationRequestAdvancedSecurity?
-  advancedSecurity;
+  final CodeSecurityCreateConfigurationRequestAdvancedSecurity advancedSecurity;
 
   /// The enablement status of Dependency Graph
-  final CodeSecurityCreateConfigurationRequestDependencyGraph? dependencyGraph;
+  final CodeSecurityCreateConfigurationRequestDependencyGraph dependencyGraph;
 
   /// The enablement status of Automatic dependency submission
-  final CodeSecurityCreateConfigurationRequestDependencyGraphAutosubmitAction?
+  final CodeSecurityCreateConfigurationRequestDependencyGraphAutosubmitAction
   dependencyGraphAutosubmitAction;
 
   /// Feature options for Automatic dependency submission
@@ -228,33 +227,32 @@ class CodeSecurityCreateConfigurationRequest {
   dependencyGraphAutosubmitActionOptions;
 
   /// The enablement status of Dependabot alerts
-  final CodeSecurityCreateConfigurationRequestDependabotAlerts?
-  dependabotAlerts;
+  final CodeSecurityCreateConfigurationRequestDependabotAlerts dependabotAlerts;
 
   /// The enablement status of Dependabot security updates
-  final CodeSecurityCreateConfigurationRequestDependabotSecurityUpdates?
+  final CodeSecurityCreateConfigurationRequestDependabotSecurityUpdates
   dependabotSecurityUpdates;
 
   /// The enablement status of code scanning default setup
-  final CodeSecurityCreateConfigurationRequestCodeScanningDefaultSetup?
+  final CodeSecurityCreateConfigurationRequestCodeScanningDefaultSetup
   codeScanningDefaultSetup;
 
   /// Feature options for code scanning default setup
   final CodeScanningDefaultSetupOptions? codeScanningDefaultSetupOptions;
 
   /// The enablement status of code scanning delegated alert dismissal
-  final CodeSecurityCreateConfigurationRequestCodeScanningDelegatedAlertDismissal?
+  final CodeSecurityCreateConfigurationRequestCodeScanningDelegatedAlertDismissal
   codeScanningDelegatedAlertDismissal;
 
   /// The enablement status of secret scanning
-  final CodeSecurityCreateConfigurationRequestSecretScanning? secretScanning;
+  final CodeSecurityCreateConfigurationRequestSecretScanning secretScanning;
 
   /// The enablement status of secret scanning push protection
-  final CodeSecurityCreateConfigurationRequestSecretScanningPushProtection?
+  final CodeSecurityCreateConfigurationRequestSecretScanningPushProtection
   secretScanningPushProtection;
 
   /// The enablement status of secret scanning delegated bypass
-  final CodeSecurityCreateConfigurationRequestSecretScanningDelegatedBypass?
+  final CodeSecurityCreateConfigurationRequestSecretScanningDelegatedBypass
   secretScanningDelegatedBypass;
 
   /// Feature options for secret scanning delegated bypass
@@ -262,15 +260,15 @@ class CodeSecurityCreateConfigurationRequest {
   secretScanningDelegatedBypassOptions;
 
   /// The enablement status of secret scanning validity checks
-  final CodeSecurityCreateConfigurationRequestSecretScanningValidityChecks?
+  final CodeSecurityCreateConfigurationRequestSecretScanningValidityChecks
   secretScanningValidityChecks;
 
   /// The enablement status of secret scanning non provider patterns
-  final CodeSecurityCreateConfigurationRequestSecretScanningNonProviderPatterns?
+  final CodeSecurityCreateConfigurationRequestSecretScanningNonProviderPatterns
   secretScanningNonProviderPatterns;
 
   /// The enablement status of Copilot secret scanning
-  final CodeSecurityCreateConfigurationRequestSecretScanningGenericSecrets?
+  final CodeSecurityCreateConfigurationRequestSecretScanningGenericSecrets
   secretScanningGenericSecrets;
 
   /// The enablement status of secret scanning delegated alert dismissal
@@ -278,11 +276,11 @@ class CodeSecurityCreateConfigurationRequest {
   secretScanningDelegatedAlertDismissal;
 
   /// The enablement status of private vulnerability reporting
-  final CodeSecurityCreateConfigurationRequestPrivateVulnerabilityReporting?
+  final CodeSecurityCreateConfigurationRequestPrivateVulnerabilityReporting
   privateVulnerabilityReporting;
 
   /// The enforcement status for a security configuration
-  final CodeSecurityCreateConfigurationRequestEnforcement? enforcement;
+  final CodeSecurityCreateConfigurationRequestEnforcement enforcement;
 
   /// Converts a [CodeSecurityCreateConfigurationRequest]
   /// to a `Map<String, dynamic>`.
@@ -290,34 +288,36 @@ class CodeSecurityCreateConfigurationRequest {
     return {
       'name': name,
       'description': description,
-      'advanced_security': advancedSecurity?.toJson(),
-      'dependency_graph': dependencyGraph?.toJson(),
+      'advanced_security': advancedSecurity.toJson(),
+      'dependency_graph': dependencyGraph.toJson(),
       'dependency_graph_autosubmit_action': dependencyGraphAutosubmitAction
-          ?.toJson(),
-      'dependency_graph_autosubmit_action_options':
-          dependencyGraphAutosubmitActionOptions?.toJson(),
-      'dependabot_alerts': dependabotAlerts?.toJson(),
-      'dependabot_security_updates': dependabotSecurityUpdates?.toJson(),
-      'code_scanning_default_setup': codeScanningDefaultSetup?.toJson(),
+          .toJson(),
+      if (dependencyGraphAutosubmitActionOptions != null)
+        'dependency_graph_autosubmit_action_options':
+            dependencyGraphAutosubmitActionOptions?.toJson(),
+      'dependabot_alerts': dependabotAlerts.toJson(),
+      'dependabot_security_updates': dependabotSecurityUpdates.toJson(),
+      'code_scanning_default_setup': codeScanningDefaultSetup.toJson(),
       'code_scanning_default_setup_options': codeScanningDefaultSetupOptions
           ?.toJson(),
       'code_scanning_delegated_alert_dismissal':
-          codeScanningDelegatedAlertDismissal?.toJson(),
-      'secret_scanning': secretScanning?.toJson(),
-      'secret_scanning_push_protection': secretScanningPushProtection?.toJson(),
+          codeScanningDelegatedAlertDismissal.toJson(),
+      'secret_scanning': secretScanning.toJson(),
+      'secret_scanning_push_protection': secretScanningPushProtection.toJson(),
       'secret_scanning_delegated_bypass': secretScanningDelegatedBypass
-          ?.toJson(),
-      'secret_scanning_delegated_bypass_options':
-          secretScanningDelegatedBypassOptions?.toJson(),
-      'secret_scanning_validity_checks': secretScanningValidityChecks?.toJson(),
+          .toJson(),
+      if (secretScanningDelegatedBypassOptions != null)
+        'secret_scanning_delegated_bypass_options':
+            secretScanningDelegatedBypassOptions?.toJson(),
+      'secret_scanning_validity_checks': secretScanningValidityChecks.toJson(),
       'secret_scanning_non_provider_patterns': secretScanningNonProviderPatterns
-          ?.toJson(),
-      'secret_scanning_generic_secrets': secretScanningGenericSecrets?.toJson(),
-      'secret_scanning_delegated_alert_dismissal':
-          secretScanningDelegatedAlertDismissal?.toJson(),
-      'private_vulnerability_reporting': privateVulnerabilityReporting
-          ?.toJson(),
-      'enforcement': enforcement?.toJson(),
+          .toJson(),
+      'secret_scanning_generic_secrets': secretScanningGenericSecrets.toJson(),
+      if (secretScanningDelegatedAlertDismissal != null)
+        'secret_scanning_delegated_alert_dismissal':
+            secretScanningDelegatedAlertDismissal?.toJson(),
+      'private_vulnerability_reporting': privateVulnerabilityReporting.toJson(),
+      'enforcement': enforcement.toJson(),
     };
   }
 

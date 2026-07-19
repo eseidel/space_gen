@@ -91,7 +91,7 @@ final class EnvironmentProtectionRulesInnerAnyOf0
       'id': id,
       'node_id': nodeId,
       'type': type,
-      'wait_timer': waitTimer?.toJson(),
+      if (waitTimer != null) 'wait_timer': waitTimer?.toJson(),
     };
   }
 
@@ -183,9 +183,10 @@ final class EnvironmentProtectionRulesInnerAnyOf1
     return {
       'id': id,
       'node_id': nodeId,
-      'prevent_self_review': preventSelfReview,
+      if (preventSelfReview != null) 'prevent_self_review': preventSelfReview,
       'type': type,
-      'reviewers': reviewers?.map((e) => e.toJson()).toList(),
+      if (reviewers != null)
+        'reviewers': reviewers?.map((e) => e.toJson()).toList(),
     };
   }
 

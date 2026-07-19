@@ -93,7 +93,7 @@ class BillingUsageReportUserUsageItemsInner {
       'grossAmount': grossAmount,
       'discountAmount': discountAmount,
       'netAmount': netAmount,
-      'repositoryName': repositoryName,
+      if (repositoryName != null) 'repositoryName': repositoryName,
     };
   }
 

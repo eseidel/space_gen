@@ -43,7 +43,7 @@ class ReposCreateAutolinkRequest {
   /// true, the `<num>` parameter of the `url_template` matches alphanumeric
   /// characters `A-Z` (case insensitive), `0-9`, and `-`. If false, this
   /// autolink reference only matches numeric characters.
-  final bool? isAlphanumeric;
+  final bool isAlphanumeric;
 
   /// Converts a [ReposCreateAutolinkRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

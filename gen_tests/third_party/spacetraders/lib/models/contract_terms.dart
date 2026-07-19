@@ -57,7 +57,7 @@ class ContractTerms {
     return {
       'deadline': deadline.toIso8601String(),
       'payment': payment.toJson(),
-      'deliver': deliver?.map((e) => e.toJson()).toList(),
+      if (deliver != null) 'deliver': deliver?.map((e) => e.toJson()).toList(),
     };
   }
 

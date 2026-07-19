@@ -39,7 +39,9 @@ class TopicSearchResultItemRelatedInner {
   /// Converts a [TopicSearchResultItemRelatedInner]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'topic_relation': topicRelation?.toJson()};
+    return {
+      if (topicRelation != null) 'topic_relation': topicRelation?.toJson(),
+    };
   }
 
   @override

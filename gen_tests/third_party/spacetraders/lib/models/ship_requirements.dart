@@ -42,7 +42,11 @@ class ShipRequirements {
 
   /// Converts a [ShipRequirements] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'power': power, 'crew': crew, 'slots': slots};
+    return {
+      if (power != null) 'power': power,
+      if (crew != null) 'crew': crew,
+      if (slots != null) 'slots': slots,
+    };
   }
 
   @override

@@ -99,13 +99,14 @@ class DependencyGraphSpdxSbomSbom {
     return {
       'SPDXID': spdxid,
       'spdxVersion': spdxVersion,
-      'comment': comment,
+      if (comment != null) 'comment': comment,
       'creationInfo': creationInfo.toJson(),
       'name': name,
       'dataLicense': dataLicense,
       'documentNamespace': documentNamespace,
       'packages': packages.map((e) => e.toJson()).toList(),
-      'relationships': relationships?.map((e) => e.toJson()).toList(),
+      if (relationships != null)
+        'relationships': relationships?.map((e) => e.toJson()).toList(),
     };
   }
 

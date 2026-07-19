@@ -89,7 +89,7 @@ class OrgHook {
       'id': id,
       'url': url.toString(),
       'ping_url': pingUrl.toString(),
-      'deliveries_url': deliveriesUrl?.toString(),
+      if (deliveriesUrl != null) 'deliveries_url': deliveriesUrl?.toString(),
       'name': name,
       'events': events,
       'active': active,

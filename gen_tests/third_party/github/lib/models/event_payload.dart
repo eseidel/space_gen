@@ -52,10 +52,10 @@ class EventPayload {
   /// Converts an [EventPayload] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'action': action,
-      'issue': issue?.toJson(),
-      'comment': comment?.toJson(),
-      'pages': pages?.map((e) => e.toJson()).toList(),
+      if (action != null) 'action': action,
+      if (issue != null) 'issue': issue?.toJson(),
+      if (comment != null) 'comment': comment?.toJson(),
+      if (pages != null) 'pages': pages?.map((e) => e.toJson()).toList(),
     };
   }
 

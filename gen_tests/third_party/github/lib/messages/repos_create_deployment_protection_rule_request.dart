@@ -36,7 +36,7 @@ class ReposCreateDeploymentProtectionRuleRequest {
   /// Converts a [ReposCreateDeploymentProtectionRuleRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'integration_id': integrationId};
+    return {if (integrationId != null) 'integration_id': integrationId};
   }
 
   @override

@@ -222,20 +222,21 @@ class OrganizationSecretScanningAlert {
   /// Converts an [OrganizationSecretScanningAlert] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'number': number?.toJson(),
-      'created_at': createdAt?.toJson(),
+      if (number != null) 'number': number?.toJson(),
+      if (createdAt != null) 'created_at': createdAt?.toJson(),
       'updated_at': updatedAt?.toJson(),
-      'url': url?.toJson(),
-      'html_url': htmlUrl?.toJson(),
-      'locations_url': locationsUrl?.toString(),
-      'state': state?.toJson(),
+      if (url != null) 'url': url?.toJson(),
+      if (htmlUrl != null) 'html_url': htmlUrl?.toJson(),
+      if (locationsUrl != null) 'locations_url': locationsUrl?.toString(),
+      if (state != null) 'state': state?.toJson(),
       'resolution': resolution?.toJson(),
       'resolved_at': resolvedAt?.toIso8601String(),
       'resolved_by': resolvedBy?.toJson(),
-      'secret_type': secretType,
-      'secret_type_display_name': secretTypeDisplayName,
-      'secret': secret,
-      'repository': repository?.toJson(),
+      if (secretType != null) 'secret_type': secretType,
+      if (secretTypeDisplayName != null)
+        'secret_type_display_name': secretTypeDisplayName,
+      if (secret != null) 'secret': secret,
+      if (repository != null) 'repository': repository?.toJson(),
       'push_protection_bypassed': pushProtectionBypassed,
       'push_protection_bypassed_by': pushProtectionBypassedBy?.toJson(),
       'push_protection_bypassed_at': pushProtectionBypassedAt
@@ -249,12 +250,12 @@ class OrganizationSecretScanningAlert {
       'push_protection_bypass_request_html_url':
           pushProtectionBypassRequestHtmlUrl?.toString(),
       'resolution_comment': resolutionComment,
-      'validity': validity?.toJson(),
+      if (validity != null) 'validity': validity?.toJson(),
       'publicly_leaked': publiclyLeaked,
       'multi_repo': multiRepo,
       'is_base64_encoded': isBase64Encoded,
       'first_location_detected': firstLocationDetected?.toJson(),
-      'has_more_locations': hasMoreLocations,
+      if (hasMoreLocations != null) 'has_more_locations': hasMoreLocations,
     };
   }
 

@@ -113,16 +113,17 @@ class DependencyGraphSpdxSbomSbomPackagesInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'SPDXID': spdxid,
-      'name': name,
-      'versionInfo': versionInfo,
-      'downloadLocation': downloadLocation,
-      'filesAnalyzed': filesAnalyzed,
-      'licenseConcluded': licenseConcluded,
-      'licenseDeclared': licenseDeclared,
-      'supplier': supplier,
-      'copyrightText': copyrightText,
-      'externalRefs': externalRefs?.map((e) => e.toJson()).toList(),
+      if (spdxid != null) 'SPDXID': spdxid,
+      if (name != null) 'name': name,
+      if (versionInfo != null) 'versionInfo': versionInfo,
+      if (downloadLocation != null) 'downloadLocation': downloadLocation,
+      if (filesAnalyzed != null) 'filesAnalyzed': filesAnalyzed,
+      if (licenseConcluded != null) 'licenseConcluded': licenseConcluded,
+      if (licenseDeclared != null) 'licenseDeclared': licenseDeclared,
+      if (supplier != null) 'supplier': supplier,
+      if (copyrightText != null) 'copyrightText': copyrightText,
+      if (externalRefs != null)
+        'externalRefs': externalRefs?.map((e) => e.toJson()).toList(),
     };
   }
 

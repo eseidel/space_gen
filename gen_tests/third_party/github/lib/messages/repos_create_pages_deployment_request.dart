@@ -55,7 +55,7 @@ class ReposCreatePagesDeploymentRequest {
   final String? artifactUrl;
 
   /// The target environment for this GitHub Pages deployment.
-  final String? environment;
+  final String environment;
 
   /// A unique string that represents the version of the build for this
   /// deployment.
@@ -69,8 +69,8 @@ class ReposCreatePagesDeploymentRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'artifact_id': artifactId,
-      'artifact_url': artifactUrl,
+      if (artifactId != null) 'artifact_id': artifactId,
+      if (artifactUrl != null) 'artifact_url': artifactUrl,
       'environment': environment,
       'pages_build_version': pagesBuildVersion,
       'oidc_token': oidcToken,

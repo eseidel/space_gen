@@ -67,7 +67,7 @@ class IntegrationInstallationRequest {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'node_id': nodeId,
+      if (nodeId != null) 'node_id': nodeId,
       'account': account.toJson(),
       'requester': requester.toJson(),
       'created_at': createdAt.toIso8601String(),

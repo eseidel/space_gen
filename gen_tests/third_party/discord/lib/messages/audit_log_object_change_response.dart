@@ -39,7 +39,11 @@ class AuditLogObjectChangeResponse {
 
   /// Converts an [AuditLogObjectChangeResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'key': key, 'new_value': newValue, 'old_value': oldValue};
+    return {
+      'key': key,
+      if (newValue != null) 'new_value': newValue,
+      if (oldValue != null) 'old_value': oldValue,
+    };
   }
 
   @override

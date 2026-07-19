@@ -69,7 +69,7 @@ class GitTree {
   Map<String, dynamic> toJson() {
     return {
       'sha': sha,
-      'url': url?.toString(),
+      if (url != null) 'url': url?.toString(),
       'truncated': truncated,
       'tree': tree.map((e) => e.toJson()).toList(),
     };

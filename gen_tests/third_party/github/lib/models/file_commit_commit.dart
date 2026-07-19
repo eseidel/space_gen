@@ -78,16 +78,16 @@ class FileCommitCommit {
   /// Converts a [FileCommitCommit] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'sha': sha,
-      'node_id': nodeId,
-      'url': url,
-      'html_url': htmlUrl,
-      'author': author?.toJson(),
-      'committer': committer?.toJson(),
-      'message': message,
-      'tree': tree?.toJson(),
-      'parents': parents?.map((e) => e.toJson()).toList(),
-      'verification': verification?.toJson(),
+      if (sha != null) 'sha': sha,
+      if (nodeId != null) 'node_id': nodeId,
+      if (url != null) 'url': url,
+      if (htmlUrl != null) 'html_url': htmlUrl,
+      if (author != null) 'author': author?.toJson(),
+      if (committer != null) 'committer': committer?.toJson(),
+      if (message != null) 'message': message,
+      if (tree != null) 'tree': tree?.toJson(),
+      if (parents != null) 'parents': parents?.map((e) => e.toJson()).toList(),
+      if (verification != null) 'verification': verification?.toJson(),
     };
   }
 

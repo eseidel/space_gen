@@ -47,9 +47,9 @@ class RepoSearchResultItemPermissions {
   Map<String, dynamic> toJson() {
     return {
       'admin': admin,
-      'maintain': maintain,
+      if (maintain != null) 'maintain': maintain,
       'push': push,
-      'triage': triage,
+      if (triage != null) 'triage': triage,
       'pull': pull,
     };
   }

@@ -123,22 +123,24 @@ class ApiOverview {
   Map<String, dynamic> toJson() {
     return {
       'verifiable_password_authentication': verifiablePasswordAuthentication,
-      'ssh_key_fingerprints': sshKeyFingerprints?.toJson(),
-      'ssh_keys': sshKeys,
-      'hooks': hooks,
-      'github_enterprise_importer': githubEnterpriseImporter,
-      'web': web,
-      'api': api,
-      'git': git,
-      'packages': packages,
-      'pages': pages,
-      'importer': importer,
-      'actions': actions,
-      'actions_macos': actionsMacos,
-      'codespaces': codespaces,
-      'dependabot': dependabot,
-      'copilot': copilot,
-      'domains': domains?.toJson(),
+      if (sshKeyFingerprints != null)
+        'ssh_key_fingerprints': sshKeyFingerprints?.toJson(),
+      if (sshKeys != null) 'ssh_keys': sshKeys,
+      if (hooks != null) 'hooks': hooks,
+      if (githubEnterpriseImporter != null)
+        'github_enterprise_importer': githubEnterpriseImporter,
+      if (web != null) 'web': web,
+      if (api != null) 'api': api,
+      if (git != null) 'git': git,
+      if (packages != null) 'packages': packages,
+      if (pages != null) 'pages': pages,
+      if (importer != null) 'importer': importer,
+      if (actions != null) 'actions': actions,
+      if (actionsMacos != null) 'actions_macos': actionsMacos,
+      if (codespaces != null) 'codespaces': codespaces,
+      if (dependabot != null) 'dependabot': dependabot,
+      if (copilot != null) 'copilot': copilot,
+      if (domains != null) 'domains': domains?.toJson(),
     };
   }
 

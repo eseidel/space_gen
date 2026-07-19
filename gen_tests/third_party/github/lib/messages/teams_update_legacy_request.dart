@@ -75,7 +75,7 @@ class TeamsUpdateLegacyRequest {
 
   /// **Closing down notice**. The permission that new repositories will be
   /// added to the team with when none is specified.
-  final TeamsUpdateLegacyRequestPermission? permission;
+  final TeamsUpdateLegacyRequestPermission permission;
 
   /// The ID of a team to set as the parent team.
   final int? parentTeamId;
@@ -84,10 +84,11 @@ class TeamsUpdateLegacyRequest {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'description': description,
-      'privacy': privacy?.toJson(),
-      'notification_setting': notificationSetting?.toJson(),
-      'permission': permission?.toJson(),
+      if (description != null) 'description': description,
+      if (privacy != null) 'privacy': privacy?.toJson(),
+      if (notificationSetting != null)
+        'notification_setting': notificationSetting?.toJson(),
+      'permission': permission.toJson(),
       'parent_team_id': parentTeamId,
     };
   }

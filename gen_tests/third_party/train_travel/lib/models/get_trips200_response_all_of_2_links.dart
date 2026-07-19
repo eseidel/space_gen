@@ -36,9 +36,9 @@ class GetTrips200ResponseAllOf2Links {
   /// Converts a [GetTrips200ResponseAllOf2Links] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'self': self?.toString(),
-      'next': next?.toString(),
-      'prev': prev?.toString(),
+      if (self != null) 'self': self?.toString(),
+      if (next != null) 'next': next?.toString(),
+      if (prev != null) 'prev': prev?.toString(),
     };
   }
 

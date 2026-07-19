@@ -35,7 +35,7 @@ class ProtectedBranchRequiredConversationResolution {
   /// Converts a [ProtectedBranchRequiredConversationResolution]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'enabled': enabled};
+    return {if (enabled != null) 'enabled': enabled};
   }
 
   @override

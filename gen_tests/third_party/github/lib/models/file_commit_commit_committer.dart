@@ -33,7 +33,11 @@ class FileCommitCommitCommitter {
 
   /// Converts a [FileCommitCommitCommitter] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'date': date, 'name': name, 'email': email};
+    return {
+      if (date != null) 'date': date,
+      if (name != null) 'name': name,
+      if (email != null) 'email': email,
+    };
   }
 
   @override

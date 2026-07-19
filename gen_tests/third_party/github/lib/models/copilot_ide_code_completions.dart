@@ -88,9 +88,10 @@ class CopilotIdeCodeCompletions {
   /// Converts a [CopilotIdeCodeCompletions] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'total_engaged_users': totalEngagedUsers,
-      'languages': languages?.map((e) => e.toJson()).toList(),
-      'editors': editors?.map((e) => e.toJson()).toList(),
+      if (totalEngagedUsers != null) 'total_engaged_users': totalEngagedUsers,
+      if (languages != null)
+        'languages': languages?.map((e) => e.toJson()).toList(),
+      if (editors != null) 'editors': editors?.map((e) => e.toJson()).toList(),
       for (final entry in entries.entries)
         if (!const {
           'total_engaged_users',

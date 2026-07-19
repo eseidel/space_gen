@@ -45,8 +45,8 @@ class CopilotListCopilotSeats200Response {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'total_seats': totalSeats,
-      'seats': seats?.map((e) => e.toJson()).toList(),
+      if (totalSeats != null) 'total_seats': totalSeats,
+      if (seats != null) 'seats': seats?.map((e) => e.toJson()).toList(),
     };
   }
 

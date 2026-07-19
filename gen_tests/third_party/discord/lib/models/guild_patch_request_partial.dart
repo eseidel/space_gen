@@ -118,7 +118,7 @@ class GuildPatchRequestPartial {
   /// Converts a [GuildPatchRequestPartial] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
+      if (name != null) 'name': name,
       'description': description,
       'region': region,
       'icon': maybeBase64Encode(icon),

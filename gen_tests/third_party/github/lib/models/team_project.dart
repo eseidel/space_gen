@@ -108,8 +108,9 @@ class TeamProject {
       'creator': creator.toJson(),
       'created_at': createdAt,
       'updated_at': updatedAt,
-      'organization_permission': organizationPermission,
-      'private': private,
+      if (organizationPermission != null)
+        'organization_permission': organizationPermission,
+      if (private != null) 'private': private,
       'permissions': permissions.toJson(),
     };
   }

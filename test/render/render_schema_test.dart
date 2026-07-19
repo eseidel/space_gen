@@ -48,7 +48,7 @@ void main() {
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            'foo': foo,\n"
+        "            if (foo != null) 'foo': foo,\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -383,7 +383,7 @@ void main() {
         '    factory Test.fromJson(Map<String, dynamic>\n'
         '        json) {\n'
         "        return parseFromJson('Test', json, () => Test(\n"
-        "            foo: maybeParseDateTime(json['foo'] as String?),\n"
+        "            foo: maybeParseDateTime(json['foo'] as String?) ?? DateTime.parse('2012-04-23T18:25:43.511Z'),\n"
         '        ));\n'
         '    }\n'
         '\n'
@@ -396,12 +396,12 @@ void main() {
         '        return Test.fromJson(json);\n'
         '    }\n'
         '\n'
-        '    final DateTime? foo;\n'
+        '    final DateTime foo;\n'
         '\n'
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            'foo': foo?.toIso8601String(),\n"
+        "            'foo': foo.toIso8601String(),\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -445,7 +445,7 @@ void main() {
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           "        return parseFromJson('Test', json, () => Test(\n"
-          "            foo: maybeParseUri(json['foo'] as String?),\n"
+          "            foo: maybeParseUri(json['foo'] as String?) ?? Uri.parse('https://example.com'),\n"
           '        ));\n'
           '    }\n'
           '\n'
@@ -458,12 +458,12 @@ void main() {
           '        return Test.fromJson(json);\n'
           '    }\n'
           '\n'
-          '    final Uri? foo;\n'
+          '    final Uri foo;\n'
           '\n'
           '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
           '    Map<String, dynamic> toJson() {\n'
           '        return {\n'
-          "            'foo': foo?.toString(),\n"
+          "            'foo': foo.toString(),\n"
           '        };\n'
           '    }\n'
           '\n'
@@ -592,7 +592,7 @@ void main() {
           '    factory Test.fromJson(Map<String, dynamic>\n'
           '        json) {\n'
           "        return parseFromJson('Test', json, () => Test(\n"
-          "            foo: maybeParseUriTemplate(json['foo'] as String?),\n"
+          "            foo: maybeParseUriTemplate(json['foo'] as String?) ?? UriTemplate('https://example.com/{foo}'),\n"
           '        ));\n'
           '    }\n'
           '\n'
@@ -605,12 +605,12 @@ void main() {
           '        return Test.fromJson(json);\n'
           '    }\n'
           '\n'
-          '    final UriTemplate? foo;\n'
+          '    final UriTemplate foo;\n'
           '\n'
           '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
           '    Map<String, dynamic> toJson() {\n'
           '        return {\n'
-          "            'foo': foo?.toString(),\n"
+          "            'foo': foo.toString(),\n"
           '        };\n'
           '    }\n'
           '\n'
@@ -739,8 +739,8 @@ void main() {
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            'foo': foo,\n"
-        "            'bar': bar,\n"
+        "            if (foo != null) 'foo': foo,\n"
+        "            if (bar != null) 'bar': bar,\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -3552,7 +3552,7 @@ void main() {
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            'map': map,\n"
+        "            if (map != null) 'map': map,\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -3666,15 +3666,15 @@ void main() {
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            'm_string': mString,\n"
-        "            'm_int': mInt,\n"
-        "            'm_number': mNumber,\n"
-        "            'm_boolean': mBoolean,\n"
-        "            'm_date_time': mDateTime?.map((key, value) => MapEntry(key, value.toIso8601String())),\n"
-        "            'm_uri': mUri?.map((key, value) => MapEntry(key, value.toString())),\n"
-        "            'm_map_of_string': mMapOfString,\n"
-        "            'm_enum': mEnum?.map((key, value) => MapEntry(key, value.toJson())),\n"
-        "            'm_unknown': mUnknown,\n"
+        "            if (mString != null) 'm_string': mString,\n"
+        "            if (mInt != null) 'm_int': mInt,\n"
+        "            if (mNumber != null) 'm_number': mNumber,\n"
+        "            if (mBoolean != null) 'm_boolean': mBoolean,\n"
+        "            if (mDateTime != null) 'm_date_time': mDateTime?.map((key, value) => MapEntry(key, value.toIso8601String())),\n"
+        "            if (mUri != null) 'm_uri': mUri?.map((key, value) => MapEntry(key, value.toString())),\n"
+        "            if (mMapOfString != null) 'm_map_of_string': mMapOfString,\n"
+        "            if (mEnum != null) 'm_enum': mEnum?.map((key, value) => MapEntry(key, value.toJson())),\n"
+        "            if (mUnknown != null) 'm_unknown': mUnknown,\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -3793,15 +3793,15 @@ void main() {
         '        return Test.fromJson(json);\n'
         '    }\n'
         '\n'
-        '    final List<String>? aString;\n'
-        'final List<int>? aInt;\n'
-        'final List<double>? aNumber;\n'
-        'final List<bool>? aBoolean;\n'
-        'final List<DateTime>? aDateTime;\n'
-        'final List<Uri>? aUri;\n'
-        'final List<List<String>>? aArrayOfString;\n'
-        'final List<TestAEnumInner>? aEnum;\n'
-        'final List<dynamic>? aUnknown;\n'
+        '    final List<String> aString;\n'
+        'final List<int> aInt;\n'
+        'final List<double> aNumber;\n'
+        'final List<bool> aBoolean;\n'
+        'final List<DateTime> aDateTime;\n'
+        'final List<Uri> aUri;\n'
+        'final List<List<String>> aArrayOfString;\n'
+        'final List<TestAEnumInner> aEnum;\n'
+        'final List<dynamic> aUnknown;\n'
         '\n'
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
@@ -3810,10 +3810,10 @@ void main() {
         "            'a_int': aInt,\n"
         "            'a_number': aNumber,\n"
         "            'a_boolean': aBoolean,\n"
-        "            'a_date_time': aDateTime?.map((e) => e.toIso8601String()).toList(),\n"
-        "            'a_uri': aUri?.map((e) => e.toString()).toList(),\n"
+        "            'a_date_time': aDateTime.map((e) => e.toIso8601String()).toList(),\n"
+        "            'a_uri': aUri.map((e) => e.toString()).toList(),\n"
         "            'a_array_of_string': aArrayOfString,\n"
-        "            'a_enum': aEnum?.map((e) => e.toJson()).toList(),\n"
+        "            'a_enum': aEnum.map((e) => e.toJson()).toList(),\n"
         "            'a_unknown': aUnknown,\n"
         '        };\n'
         '    }\n'
@@ -3917,7 +3917,7 @@ void main() {
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            'a': a?.toJson(),\n"
+        "            if (a != null) 'a': a?.toJson(),\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -4108,7 +4108,7 @@ void main() {
         '        return Test.fromJson(json);\n'
         '    }\n'
         '\n'
-        '    final List<String>? a;\n'
+        '    final List<String> a;\n'
         '\n'
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
@@ -4317,14 +4317,14 @@ void main() {
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            'foo-bar': fooBar,\n"
-        "            '_not_private': notPrivate,\n"
-        "            'bar baz': barBaz,\n"
-        "            '123': n123,\n"
-        "            '+1': plus1,\n"
-        "            '-1': minus1,\n"
-        "            'don\\'t': dont,\n"
-        "            'default': default_,\n"
+        "            if (fooBar != null) 'foo-bar': fooBar,\n"
+        "            if (notPrivate != null) '_not_private': notPrivate,\n"
+        "            if (barBaz != null) 'bar baz': barBaz,\n"
+        "            if (n123 != null) '123': n123,\n"
+        "            if (plus1 != null) '+1': plus1,\n"
+        "            if (minus1 != null) '-1': minus1,\n"
+        "            if (dont != null) 'don\\'t': dont,\n"
+        "            if (default_ != null) 'default': default_,\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -4520,7 +4520,7 @@ void main() {
           '        return Test.fromJson(json);\n'
           '    }\n'
           '\n'
-          '    final double? a;\n'
+          '    final double a;\n'
           '\n'
           '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
           '    Map<String, dynamic> toJson() {\n'
@@ -4570,13 +4570,12 @@ void main() {
       });
 
       test(
-        'optional property with const default under openapi quirks emits '
-        '?? default in fromJson and non-nullable field',
+        'optional property with const default emits ?? default in fromJson '
+        'and a non-nullable field',
         () {
-          // Covers the `!dartIsNullable` arm of `orDefaultExpression`:
-          // `nonNullableDefaultValues` makes the Dart field non-null
-          // when a default is present, and `as int? ?? 1` is what
-          // populates the field on a missing JSON key. Mirrors github's
+          // Covers the `!dartIsNullable` arm of `orDefaultExpression`: a
+          // default makes the Dart field non-null, and `as int? ?? 1` is
+          // what populates it on a missing JSON key. Mirrors github's
           // `repository.private = false` shape.
           final json = {
             'type': 'object',
@@ -4689,7 +4688,7 @@ void main() {
           '        return Test.fromJson(json);\n'
           '    }\n'
           '\n'
-          '    final int? a;\n'
+          '    final int a;\n'
           '\n'
           '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
           '    Map<String, dynamic> toJson() {\n'
@@ -4887,8 +4886,8 @@ void main() {
           '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
           '    Map<String, dynamic> toJson() {\n'
           '        return {\n'
-          "            'a': a,\n"
-          "            'b': b,\n"
+          "            if (a != null) 'a': a,\n"
+          "            if (b != null) 'b': b,\n"
           '        };\n'
           '    }\n'
           '\n'
@@ -4952,7 +4951,7 @@ void main() {
           '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
           '    Map<String, dynamic> toJson() {\n'
           '        return {\n'
-          "            'a': a,\n"
+          "            if (a != null) 'a': a,\n"
           '        };\n'
           '    }\n'
           '\n'
@@ -5024,7 +5023,7 @@ void main() {
           "            'req_null': reqNull,\n"
           "            'opt_null': optNull,\n"
           "            'req': req,\n"
-          "            'opt': opt,\n"
+          "            if (opt != null) 'opt': opt,\n"
           '        };\n'
           '    }\n'
           '\n'
@@ -5103,7 +5102,7 @@ void main() {
           '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
           '    Map<String, dynamic> toJson() {\n'
           '        return {\n'
-          "            'a': a?.toJson(),\n"
+          "            if (a != null) 'a': a?.toJson(),\n"
           '        };\n'
           '    }\n'
           '\n'
@@ -5455,5 +5454,130 @@ void main() {
         expect(result, contains('ThingSearchResponse.fromJson('));
       },
     );
+  });
+
+  // The optional/nullable/default matrix (#318). "Optional" (the key may be
+  // absent) and "nullable" (the value may be null) are independent, and the
+  // eight combinations do not collapse: rows 5 and 7 are both optional and
+  // both stored as `T?`, yet 5 must omit the key from `toJson` while 7 must
+  // emit it, because only 7's schema permits null.
+  //
+  // Each case declares one property and asserts all four surfaces:
+  // constructor, storage, fromJson, toJson.
+  group('optional/nullable/default matrix', () {
+    String render({
+      required bool required_,
+      required bool nullable,
+      required bool hasDefault,
+    }) => renderTestSchema({
+      'type': 'object',
+      if (required_) 'required': ['x'],
+      'properties': {
+        'x': {
+          'type': nullable ? ['string', 'null'] : 'string',
+          if (hasDefault) 'default': 'd',
+        },
+      },
+    });
+
+    test('1. required, non-nullable, no default', () {
+      final result = render(
+        required_: true,
+        nullable: false,
+        hasDefault: false,
+      );
+      expect(result, contains('required this.x'));
+      expect(result, contains('final String x;'));
+      expect(result, contains("x: json['x'] as String,"));
+      expect(result, contains("'x': x,"));
+    });
+
+    test('2. required, non-nullable, default', () {
+      // `required` is about the serialized form, not the Dart constructor:
+      // the key must be present on the wire, but we can synthesize it, so
+      // the parameter takes the default instead of being `required`.
+      final result = render(required_: true, nullable: false, hasDefault: true);
+      expect(result, contains("this.x = 'd'"));
+      expect(result, contains('final String x;'));
+      // A required key is never absent, so the default never applies here.
+      expect(result, contains("x: json['x'] as String,"));
+      expect(result, contains("'x': x,"));
+    });
+
+    test('3. required, nullable, no default', () {
+      final result = render(required_: true, nullable: true, hasDefault: false);
+      expect(result, contains('required this.x'));
+      expect(result, contains('final String? x;'));
+      // `checkedKey` rejects an absent key, which a plain `as String?` cast
+      // would silently accept as null.
+      expect(result, contains("x: checkedKey(json, 'x') as String?,"));
+      expect(result, contains("'x': x,"));
+    });
+
+    test('4. required, nullable, default does not eat an explicit null', () {
+      final result = render(required_: true, nullable: true, hasDefault: true);
+      expect(result, contains("this.x = 'd'"));
+      expect(result, contains('final String? x;'));
+      expect(result, contains("x: checkedKey(json, 'x') as String?,"));
+      // The key is required, so there is no absent case for the default to
+      // fill. Coalescing would only ever replace a null the spec permits.
+      expect(result, isNot(contains("?? 'd'")));
+      expect(result, contains("'x': x,"));
+    });
+
+    test('5. optional, non-nullable, no default omits from toJson', () {
+      final result = render(
+        required_: false,
+        nullable: false,
+        hasDefault: false,
+      );
+      expect(result, contains('this.x,'));
+      expect(result, contains('final String? x;'));
+      expect(result, contains("x: json['x'] as String?,"));
+      // null here means "absent". Emitting it would produce `{"x": null}`,
+      // which `type: string` rejects.
+      expect(result, contains("if (x != null) 'x': x,"));
+    });
+
+    test('6. optional, non-nullable, default is non-nullable storage', () {
+      final result = render(
+        required_: false,
+        nullable: false,
+        hasDefault: true,
+      );
+      expect(result, contains("this.x = 'd'"));
+      // Absent means the default, so no input yields null.
+      expect(result, contains('final String x;'));
+      expect(result, contains("x: (json['x'] as String?) ?? 'd',"));
+      expect(result, contains("'x': x,"));
+    });
+
+    test('7. optional, nullable, no default keeps the key in toJson', () {
+      final result = render(
+        required_: false,
+        nullable: true,
+        hasDefault: false,
+      );
+      expect(result, contains('this.x,'));
+      expect(result, contains('final String? x;'));
+      expect(result, contains("x: json['x'] as String?,"));
+      // The schema permits null, so emitting it is valid — and it is the
+      // only way a caller can send an explicit null.
+      expect(result, contains("'x': x,"));
+      expect(result, isNot(contains('if (x != null)')));
+    });
+
+    test('8. optional, nullable, default applies on absence only', () {
+      final result = render(required_: false, nullable: true, hasDefault: true);
+      expect(result, contains("this.x = 'd'"));
+      expect(result, contains('final String? x;'));
+      // Three legal wire states (absent, null, value) and `??` collapses the
+      // first two, so the absent case is tested for explicitly.
+      expect(
+        result,
+        contains("x: json.containsKey('x') ? json['x'] as String? : 'd',"),
+      );
+      expect(result, contains("'x': x,"));
+    });
   });
 }

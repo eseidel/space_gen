@@ -38,7 +38,10 @@ class ApiOverviewDomainsActionsInbound {
   /// Converts an [ApiOverviewDomainsActionsInbound]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'full_domains': fullDomains, 'wildcard_domains': wildcardDomains};
+    return {
+      if (fullDomains != null) 'full_domains': fullDomains,
+      if (wildcardDomains != null) 'wildcard_domains': wildcardDomains,
+    };
   }
 
   @override

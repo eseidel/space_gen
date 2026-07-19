@@ -54,9 +54,11 @@ class ActionsSetDefaultWorkflowPermissions {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'default_workflow_permissions': defaultWorkflowPermissions?.toJson(),
-      'can_approve_pull_request_reviews': canApprovePullRequestReviews
-          ?.toJson(),
+      if (defaultWorkflowPermissions != null)
+        'default_workflow_permissions': defaultWorkflowPermissions?.toJson(),
+      if (canApprovePullRequestReviews != null)
+        'can_approve_pull_request_reviews': canApprovePullRequestReviews
+            ?.toJson(),
     };
   }
 

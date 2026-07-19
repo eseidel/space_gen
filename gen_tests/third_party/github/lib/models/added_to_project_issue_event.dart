@@ -89,7 +89,7 @@ class AddedToProjectIssueEvent {
       'commit_url': commitUrl,
       'created_at': createdAt,
       'performed_via_github_app': performedViaGithubApp?.toJson(),
-      'project_card': projectCard?.toJson(),
+      if (projectCard != null) 'project_card': projectCard?.toJson(),
     };
   }
 

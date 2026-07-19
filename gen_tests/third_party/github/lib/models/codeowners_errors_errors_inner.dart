@@ -81,7 +81,7 @@ class CodeownersErrorsErrorsInner {
     return {
       'line': line,
       'column': column,
-      'source': source,
+      if (source != null) 'source': source,
       'kind': kind,
       'suggestion': suggestion,
       'message': message,

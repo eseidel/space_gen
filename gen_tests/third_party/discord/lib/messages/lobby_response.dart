@@ -67,7 +67,7 @@ class LobbyResponse {
       'application_id': applicationId.toJson(),
       'metadata': metadata,
       'members': members.map((e) => e.toJson()).toList(),
-      'linked_channel': linkedChannel?.toJson(),
+      if (linkedChannel != null) 'linked_channel': linkedChannel?.toJson(),
       'flags': flags.toJson(),
       'override_event_webhooks_url': overrideEventWebhooksUrl,
     };

@@ -71,7 +71,7 @@ class Faction {
       'symbol': symbol.toJson(),
       'name': name,
       'description': description,
-      'headquarters': headquarters,
+      if (headquarters != null) 'headquarters': headquarters,
       'traits': traits.map((e) => e.toJson()).toList(),
       'isRecruiting': isRecruiting,
     };

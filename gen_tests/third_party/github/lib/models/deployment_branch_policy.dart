@@ -52,7 +52,12 @@ class DeploymentBranchPolicy {
 
   /// Converts a [DeploymentBranchPolicy] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'id': id, 'node_id': nodeId, 'name': name, 'type': type?.toJson()};
+    return {
+      if (id != null) 'id': id,
+      if (nodeId != null) 'node_id': nodeId,
+      if (name != null) 'name': name,
+      if (type != null) 'type': type?.toJson(),
+    };
   }
 
   @override

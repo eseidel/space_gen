@@ -44,7 +44,10 @@ class InteractionLimit {
 
   /// Converts an [InteractionLimit] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'limit': limit.toJson(), 'expiry': expiry?.toJson()};
+    return {
+      'limit': limit.toJson(),
+      if (expiry != null) 'expiry': expiry?.toJson(),
+    };
   }
 
   @override

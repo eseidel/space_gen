@@ -59,14 +59,14 @@ class RepositoryRulesetBypassActor {
   /// that an actor can only bypass rules on pull requests. `pull_request` is
   /// not applicable for the `DeployKey` actor type. Also, `pull_request` is
   /// only applicable to branch rulesets.
-  final RepositoryRulesetBypassActorBypassMode? bypassMode;
+  final RepositoryRulesetBypassActorBypassMode bypassMode;
 
   /// Converts a [RepositoryRulesetBypassActor] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
       'actor_id': actorId,
       'actor_type': actorType.toJson(),
-      'bypass_mode': bypassMode?.toJson(),
+      'bypass_mode': bypassMode.toJson(),
     };
   }
 

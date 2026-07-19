@@ -31,7 +31,7 @@ class ActivitySetThreadSubscriptionRequest {
   }
 
   /// Whether to block all notifications from a thread.
-  final bool? ignored;
+  final bool ignored;
 
   /// Converts an [ActivitySetThreadSubscriptionRequest]
   /// to a `Map<String, dynamic>`.

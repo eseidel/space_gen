@@ -86,11 +86,11 @@ class ReviewComment {
         side:
             ReviewCommentSide.maybeFromJson(json['side'] as String?) ??
             ReviewCommentSide.right,
-        startSide:
-            ReviewCommentStartSide.maybeFromJson(
-              json['start_side'] as String?,
-            ) ??
-            ReviewCommentStartSide.right,
+        startSide: json.containsKey('start_side')
+            ? ReviewCommentStartSide.maybeFromJson(
+                json['start_side'] as String?,
+              )
+            : ReviewCommentStartSide.right,
         line: json['line'] as int?,
         originalLine: json['original_line'] as int?,
         startLine: json['start_line'] as int?,
@@ -177,7 +177,7 @@ class ReviewComment {
   final ReactionRollup? reactions;
 
   /// The side of the first line of the range for a multi-line comment.
-  final ReviewCommentSide? side;
+  final ReviewCommentSide side;
 
   /// The side of the first line of the range for a multi-line comment.
   final ReviewCommentStartSide? startSide;
@@ -217,7 +217,7 @@ class ReviewComment {
       'original_position': originalPosition,
       'commit_id': commitId,
       'original_commit_id': originalCommitId,
-      'in_reply_to_id': inReplyToId,
+      if (inReplyToId != null) 'in_reply_to_id': inReplyToId,
       'user': user?.toJson(),
       'body': body,
       'created_at': createdAt.toIso8601String(),
@@ -226,16 +226,16 @@ class ReviewComment {
       'pull_request_url': pullRequestUrl.toString(),
       'author_association': authorAssociation.toJson(),
       '_links': links.toJson(),
-      'body_text': bodyText,
-      'body_html': bodyHtml,
-      'reactions': reactions?.toJson(),
-      'side': side?.toJson(),
+      if (bodyText != null) 'body_text': bodyText,
+      if (bodyHtml != null) 'body_html': bodyHtml,
+      if (reactions != null) 'reactions': reactions?.toJson(),
+      'side': side.toJson(),
       'start_side': startSide?.toJson(),
-      'line': line,
-      'original_line': originalLine,
+      if (line != null) 'line': line,
+      if (originalLine != null) 'original_line': originalLine,
       'start_line': startLine,
       'original_start_line': originalStartLine,
-      'subject_type': subjectType?.toJson(),
+      if (subjectType != null) 'subject_type': subjectType?.toJson(),
     };
   }
 

@@ -168,7 +168,7 @@ class CheckRun {
       'check_suite': checkSuite?.toJson(),
       'app': app?.toJson(),
       'pull_requests': pullRequests.map((e) => e.toJson()).toList(),
-      'deployment': deployment?.toJson(),
+      if (deployment != null) 'deployment': deployment?.toJson(),
     };
   }
 

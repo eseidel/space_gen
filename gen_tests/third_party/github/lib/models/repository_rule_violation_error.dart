@@ -50,10 +50,10 @@ class RepositoryRuleViolationError {
   /// Converts a [RepositoryRuleViolationError] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'message': message,
-      'documentation_url': documentationUrl,
-      'status': status,
-      'metadata': metadata?.toJson(),
+      if (message != null) 'message': message,
+      if (documentationUrl != null) 'documentation_url': documentationUrl,
+      if (status != null) 'status': status,
+      if (metadata != null) 'metadata': metadata?.toJson(),
     };
   }
 

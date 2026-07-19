@@ -48,7 +48,11 @@ class ChecksUpdateRequestAnyOf1OutputImagesInner {
   /// Converts a [ChecksUpdateRequestAnyOf1OutputImagesInner]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'alt': alt, 'image_url': imageUrl, 'caption': caption};
+    return {
+      'alt': alt,
+      'image_url': imageUrl,
+      if (caption != null) 'caption': caption,
+    };
   }
 
   @override

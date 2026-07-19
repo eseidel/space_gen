@@ -93,7 +93,7 @@ class ActionsHostedRunner {
   /// The maximum amount of hosted runners. Runners will not scale
   /// automatically above this number. Use this setting to limit your cost.
   /// Example: `5`
-  final int? maximumRunners;
+  final int maximumRunners;
 
   /// Whether public IP is enabled for the hosted runners.
   /// Example: `true`
@@ -111,14 +111,15 @@ class ActionsHostedRunner {
     return {
       'id': id,
       'name': name,
-      'runner_group_id': runnerGroupId,
+      if (runnerGroupId != null) 'runner_group_id': runnerGroupId,
       'image_details': imageDetails?.toJson(),
       'machine_size_details': machineSizeDetails.toJson(),
       'status': status.toJson(),
       'platform': platform,
       'maximum_runners': maximumRunners,
       'public_ip_enabled': publicIpEnabled,
-      'public_ips': publicIps?.map((e) => e.toJson()).toList(),
+      if (publicIps != null)
+        'public_ips': publicIps?.map((e) => e.toJson()).toList(),
       'last_active_on': lastActiveOn?.toIso8601String(),
     };
   }

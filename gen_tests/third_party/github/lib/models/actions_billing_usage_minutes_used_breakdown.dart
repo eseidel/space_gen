@@ -109,21 +109,21 @@ class ActionsBillingUsageMinutesUsedBreakdown {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'UBUNTU': ubuntu,
-      'MACOS': macos,
-      'WINDOWS': windows,
-      'ubuntu_4_core': ubuntu4Core,
-      'ubuntu_8_core': ubuntu8Core,
-      'ubuntu_16_core': ubuntu16Core,
-      'ubuntu_32_core': ubuntu32Core,
-      'ubuntu_64_core': ubuntu64Core,
-      'windows_4_core': windows4Core,
-      'windows_8_core': windows8Core,
-      'windows_16_core': windows16Core,
-      'windows_32_core': windows32Core,
-      'windows_64_core': windows64Core,
-      'macos_12_core': macos12Core,
-      'total': total,
+      if (ubuntu != null) 'UBUNTU': ubuntu,
+      if (macos != null) 'MACOS': macos,
+      if (windows != null) 'WINDOWS': windows,
+      if (ubuntu4Core != null) 'ubuntu_4_core': ubuntu4Core,
+      if (ubuntu8Core != null) 'ubuntu_8_core': ubuntu8Core,
+      if (ubuntu16Core != null) 'ubuntu_16_core': ubuntu16Core,
+      if (ubuntu32Core != null) 'ubuntu_32_core': ubuntu32Core,
+      if (ubuntu64Core != null) 'ubuntu_64_core': ubuntu64Core,
+      if (windows4Core != null) 'windows_4_core': windows4Core,
+      if (windows8Core != null) 'windows_8_core': windows8Core,
+      if (windows16Core != null) 'windows_16_core': windows16Core,
+      if (windows32Core != null) 'windows_32_core': windows32Core,
+      if (windows64Core != null) 'windows_64_core': windows64Core,
+      if (macos12Core != null) 'macos_12_core': macos12Core,
+      if (total != null) 'total': total,
     };
   }
 

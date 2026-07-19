@@ -99,11 +99,13 @@ class CodeSearchResultItem {
       'html_url': htmlUrl.toString(),
       'repository': repository.toJson(),
       'score': score,
-      'file_size': fileSize,
+      if (fileSize != null) 'file_size': fileSize,
       'language': language,
-      'last_modified_at': lastModifiedAt?.toIso8601String(),
-      'line_numbers': lineNumbers,
-      'text_matches': textMatches?.map((e) => e.toJson()).toList(),
+      if (lastModifiedAt != null)
+        'last_modified_at': lastModifiedAt?.toIso8601String(),
+      if (lineNumbers != null) 'line_numbers': lineNumbers,
+      if (textMatches != null)
+        'text_matches': textMatches?.map((e) => e.toJson()).toList(),
     };
   }
 

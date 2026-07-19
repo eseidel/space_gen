@@ -63,10 +63,10 @@ class RuleSuiteRuleEvaluationsInner {
   /// Converts a [RuleSuiteRuleEvaluationsInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'rule_source': ruleSource?.toJson(),
-      'enforcement': enforcement?.toJson(),
-      'result': result?.toJson(),
-      'rule_type': ruleType,
+      if (ruleSource != null) 'rule_source': ruleSource?.toJson(),
+      if (enforcement != null) 'enforcement': enforcement?.toJson(),
+      if (result != null) 'result': result?.toJson(),
+      if (ruleType != null) 'rule_type': ruleType,
       'details': details,
     };
   }

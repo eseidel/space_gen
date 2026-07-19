@@ -40,7 +40,10 @@ class RecursivePartialEntityRelation {
 
   /// Converts a [RecursivePartialEntityRelation] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'targetRef': targetRef, 'type': type};
+    return {
+      if (targetRef != null) 'targetRef': targetRef,
+      if (type != null) 'type': type,
+    };
   }
 
   @override

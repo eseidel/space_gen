@@ -70,7 +70,8 @@ class ExtractResources201ResponseData {
       'extraction': extraction.toJson(),
       'cooldown': cooldown.toJson(),
       'cargo': cargo.toJson(),
-      'modifiers': modifiers?.map((e) => e.toJson()).toList(),
+      if (modifiers != null)
+        'modifiers': modifiers?.map((e) => e.toJson()).toList(),
       'events': events.map((e) => e.toJson()).toList(),
     };
   }

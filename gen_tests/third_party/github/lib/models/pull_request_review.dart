@@ -116,10 +116,10 @@ class PullRequestReview {
       'html_url': htmlUrl.toString(),
       'pull_request_url': pullRequestUrl.toString(),
       '_links': links.toJson(),
-      'submitted_at': submittedAt?.toIso8601String(),
+      if (submittedAt != null) 'submitted_at': submittedAt?.toIso8601String(),
       'commit_id': commitId,
-      'body_html': bodyHtml,
-      'body_text': bodyText,
+      if (bodyHtml != null) 'body_html': bodyHtml,
+      if (bodyText != null) 'body_text': bodyText,
       'author_association': authorAssociation.toJson(),
     };
   }

@@ -36,7 +36,7 @@ class UpdateWebhookRequest {
   /// Converts a [UpdateWebhookRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
+      if (name != null) 'name': name,
       'avatar': maybeBase64Encode(avatar),
       'channel_id': channelId?.toJson(),
     };

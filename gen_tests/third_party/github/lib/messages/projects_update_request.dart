@@ -65,11 +65,12 @@ class ProjectsUpdateRequest {
   /// Converts a [ProjectsUpdateRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
+      if (name != null) 'name': name,
       'body': body,
-      'state': state,
-      'organization_permission': organizationPermission?.toJson(),
-      'private': private,
+      if (state != null) 'state': state,
+      if (organizationPermission != null)
+        'organization_permission': organizationPermission?.toJson(),
+      if (private != null) 'private': private,
     };
   }
 

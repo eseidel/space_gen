@@ -71,10 +71,11 @@ class OrgsListAttestationsBulk200Response {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'attestations_subject_digests': attestationsSubjectDigests?.map(
-        (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
-      ),
-      'page_info': pageInfo?.toJson(),
+      if (attestationsSubjectDigests != null)
+        'attestations_subject_digests': attestationsSubjectDigests?.map(
+          (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
+        ),
+      if (pageInfo != null) 'page_info': pageInfo?.toJson(),
     };
   }
 

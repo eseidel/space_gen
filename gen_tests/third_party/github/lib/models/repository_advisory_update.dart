@@ -110,15 +110,16 @@ class RepositoryAdvisoryUpdate {
   /// Converts a [RepositoryAdvisoryUpdate] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'summary': summary,
-      'description': description,
+      if (summary != null) 'summary': summary,
+      if (description != null) 'description': description,
       'cve_id': cveId,
-      'vulnerabilities': vulnerabilities?.map((e) => e.toJson()).toList(),
+      if (vulnerabilities != null)
+        'vulnerabilities': vulnerabilities?.map((e) => e.toJson()).toList(),
       'cwe_ids': cweIds,
       'credits': credits?.map((e) => e.toJson()).toList(),
       'severity': severity?.toJson(),
       'cvss_vector_string': cvssVectorString,
-      'state': state?.toJson(),
+      if (state != null) 'state': state?.toJson(),
       'collaborating_users': collaboratingUsers,
       'collaborating_teams': collaboratingTeams,
     };

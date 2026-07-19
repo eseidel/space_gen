@@ -102,28 +102,31 @@ class Contributor {
   /// Converts a [Contributor] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'login': login,
-      'id': id,
-      'node_id': nodeId,
-      'avatar_url': avatarUrl?.toString(),
+      if (login != null) 'login': login,
+      if (id != null) 'id': id,
+      if (nodeId != null) 'node_id': nodeId,
+      if (avatarUrl != null) 'avatar_url': avatarUrl?.toString(),
       'gravatar_id': gravatarId,
-      'url': url?.toString(),
-      'html_url': htmlUrl?.toString(),
-      'followers_url': followersUrl?.toString(),
-      'following_url': followingUrl,
-      'gists_url': gistsUrl,
-      'starred_url': starredUrl,
-      'subscriptions_url': subscriptionsUrl?.toString(),
-      'organizations_url': organizationsUrl?.toString(),
-      'repos_url': reposUrl?.toString(),
-      'events_url': eventsUrl,
-      'received_events_url': receivedEventsUrl?.toString(),
+      if (url != null) 'url': url?.toString(),
+      if (htmlUrl != null) 'html_url': htmlUrl?.toString(),
+      if (followersUrl != null) 'followers_url': followersUrl?.toString(),
+      if (followingUrl != null) 'following_url': followingUrl,
+      if (gistsUrl != null) 'gists_url': gistsUrl,
+      if (starredUrl != null) 'starred_url': starredUrl,
+      if (subscriptionsUrl != null)
+        'subscriptions_url': subscriptionsUrl?.toString(),
+      if (organizationsUrl != null)
+        'organizations_url': organizationsUrl?.toString(),
+      if (reposUrl != null) 'repos_url': reposUrl?.toString(),
+      if (eventsUrl != null) 'events_url': eventsUrl,
+      if (receivedEventsUrl != null)
+        'received_events_url': receivedEventsUrl?.toString(),
       'type': type,
-      'site_admin': siteAdmin,
+      if (siteAdmin != null) 'site_admin': siteAdmin,
       'contributions': contributions,
-      'email': email,
-      'name': name,
-      'user_view_type': userViewType,
+      if (email != null) 'email': email,
+      if (name != null) 'name': name,
+      if (userViewType != null) 'user_view_type': userViewType,
     };
   }
 

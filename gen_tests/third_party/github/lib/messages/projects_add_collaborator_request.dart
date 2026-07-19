@@ -36,11 +36,11 @@ class ProjectsAddCollaboratorRequest {
 
   /// The permission to grant the collaborator.
   /// Example: `'write'`
-  final ProjectsAddCollaboratorRequestPermission? permission;
+  final ProjectsAddCollaboratorRequestPermission permission;
 
   /// Converts a [ProjectsAddCollaboratorRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'permission': permission?.toJson()};
+    return {'permission': permission.toJson()};
   }
 
   @override

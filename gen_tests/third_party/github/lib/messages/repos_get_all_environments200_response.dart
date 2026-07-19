@@ -48,8 +48,9 @@ class ReposGetAllEnvironments200Response {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'total_count': totalCount,
-      'environments': environments?.map((e) => e.toJson()).toList(),
+      if (totalCount != null) 'total_count': totalCount,
+      if (environments != null)
+        'environments': environments?.map((e) => e.toJson()).toList(),
     };
   }
 

@@ -74,13 +74,15 @@ class CopilotIdeChatEditorsInnerModelsInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'is_custom_model': isCustomModel,
+      if (name != null) 'name': name,
+      if (isCustomModel != null) 'is_custom_model': isCustomModel,
       'custom_model_training_date': customModelTrainingDate,
-      'total_engaged_users': totalEngagedUsers,
-      'total_chats': totalChats,
-      'total_chat_insertion_events': totalChatInsertionEvents,
-      'total_chat_copy_events': totalChatCopyEvents,
+      if (totalEngagedUsers != null) 'total_engaged_users': totalEngagedUsers,
+      if (totalChats != null) 'total_chats': totalChats,
+      if (totalChatInsertionEvents != null)
+        'total_chat_insertion_events': totalChatInsertionEvents,
+      if (totalChatCopyEvents != null)
+        'total_chat_copy_events': totalChatCopyEvents,
     };
   }
 

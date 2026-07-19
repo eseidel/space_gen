@@ -99,12 +99,12 @@ class ChecksUpdateRequestAnyOf0OutputAnnotationsInner {
       'path': path,
       'start_line': startLine,
       'end_line': endLine,
-      'start_column': startColumn,
-      'end_column': endColumn,
+      if (startColumn != null) 'start_column': startColumn,
+      if (endColumn != null) 'end_column': endColumn,
       'annotation_level': annotationLevel.toJson(),
       'message': message,
-      'title': title,
-      'raw_details': rawDetails,
+      if (title != null) 'title': title,
+      if (rawDetails != null) 'raw_details': rawDetails,
     };
   }
 

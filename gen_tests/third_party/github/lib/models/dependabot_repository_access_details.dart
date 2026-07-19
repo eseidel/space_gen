@@ -59,9 +59,10 @@ class DependabotRepositoryAccessDetails {
   Map<String, dynamic> toJson() {
     return {
       'default_level': defaultLevel?.toJson(),
-      'accessible_repositories': accessibleRepositories
-          ?.map((e) => e.toJson())
-          .toList(),
+      if (accessibleRepositories != null)
+        'accessible_repositories': accessibleRepositories
+            ?.map((e) => e.toJson())
+            .toList(),
     };
   }
 

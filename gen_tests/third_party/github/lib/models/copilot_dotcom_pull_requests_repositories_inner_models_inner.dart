@@ -62,11 +62,12 @@ class CopilotDotcomPullRequestsRepositoriesInnerModelsInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'is_custom_model': isCustomModel,
+      if (name != null) 'name': name,
+      if (isCustomModel != null) 'is_custom_model': isCustomModel,
       'custom_model_training_date': customModelTrainingDate,
-      'total_pr_summaries_created': totalPrSummariesCreated,
-      'total_engaged_users': totalEngagedUsers,
+      if (totalPrSummariesCreated != null)
+        'total_pr_summaries_created': totalPrSummariesCreated,
+      if (totalEngagedUsers != null) 'total_engaged_users': totalEngagedUsers,
     };
   }
 

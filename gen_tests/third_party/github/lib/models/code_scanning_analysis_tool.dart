@@ -49,7 +49,7 @@ class CodeScanningAnalysisTool {
   /// Converts a [CodeScanningAnalysisTool] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name?.toJson(),
+      if (name != null) 'name': name?.toJson(),
       'version': version?.toJson(),
       'guid': guid?.toJson(),
     };

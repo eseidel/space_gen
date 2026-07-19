@@ -37,7 +37,10 @@ class CodeSecurityDetachConfigurationRequest {
   /// Converts a [CodeSecurityDetachConfigurationRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'selected_repository_ids': selectedRepositoryIds};
+    return {
+      if (selectedRepositoryIds != null)
+        'selected_repository_ids': selectedRepositoryIds,
+    };
   }
 
   @override

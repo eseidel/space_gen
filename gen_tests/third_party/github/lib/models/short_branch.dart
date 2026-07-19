@@ -61,8 +61,8 @@ class ShortBranch {
       'name': name,
       'commit': commit.toJson(),
       'protected': protected,
-      'protection': protection?.toJson(),
-      'protection_url': protectionUrl?.toString(),
+      if (protection != null) 'protection': protection?.toJson(),
+      if (protectionUrl != null) 'protection_url': protectionUrl?.toString(),
     };
   }
 

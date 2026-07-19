@@ -69,11 +69,11 @@ class ReposCreateReleaseRequest {
 
   /// `true` to create a draft (unpublished) release, `false` to create a
   /// published one.
-  final bool? draft;
+  final bool draft;
 
   /// `true` to identify the release as a prerelease. `false` to identify the
   /// release as a full release.
-  final bool? prerelease;
+  final bool prerelease;
 
   /// If specified, a discussion of the specified category is created and
   /// linked to the release. The value must be a category that already exists
@@ -86,27 +86,28 @@ class ReposCreateReleaseRequest {
   /// `name` is specified, the specified name will be used; otherwise, a name
   /// will be automatically generated. If `body` is specified, the body will
   /// be pre-pended to the automatically generated notes.
-  final bool? generateReleaseNotes;
+  final bool generateReleaseNotes;
 
   /// Specifies whether this release should be set as the latest release for
   /// the repository. Drafts and prereleases cannot be set as latest. Defaults
   /// to `true` for newly published releases. `legacy` specifies that the
   /// latest release should be determined based on the release creation date
   /// and higher semantic version.
-  final ReposCreateReleaseRequestMakeLatest? makeLatest;
+  final ReposCreateReleaseRequestMakeLatest makeLatest;
 
   /// Converts a [ReposCreateReleaseRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
       'tag_name': tagName,
-      'target_commitish': targetCommitish,
-      'name': name,
-      'body': body,
+      if (targetCommitish != null) 'target_commitish': targetCommitish,
+      if (name != null) 'name': name,
+      if (body != null) 'body': body,
       'draft': draft,
       'prerelease': prerelease,
-      'discussion_category_name': discussionCategoryName,
+      if (discussionCategoryName != null)
+        'discussion_category_name': discussionCategoryName,
       'generate_release_notes': generateReleaseNotes,
-      'make_latest': makeLatest?.toJson(),
+      'make_latest': makeLatest.toJson(),
     };
   }
 

@@ -128,8 +128,8 @@ class CopilotUsageMetricsDay {
   Map<String, dynamic> toJson() {
     return {
       'date': date.toJson(),
-      'total_active_users': totalActiveUsers,
-      'total_engaged_users': totalEngagedUsers,
+      if (totalActiveUsers != null) 'total_active_users': totalActiveUsers,
+      if (totalEngagedUsers != null) 'total_engaged_users': totalEngagedUsers,
       'copilot_ide_code_completions': copilotIdeCodeCompletions?.toJson(),
       'copilot_ide_chat': copilotIdeChat?.toJson(),
       'copilot_dotcom_chat': copilotDotcomChat?.toJson(),

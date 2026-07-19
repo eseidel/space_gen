@@ -38,9 +38,9 @@ class ProjectsDelete403Response {
   /// Converts a [ProjectsDelete403Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'message': message,
-      'documentation_url': documentationUrl,
-      'errors': errors,
+      if (message != null) 'message': message,
+      if (documentationUrl != null) 'documentation_url': documentationUrl,
+      if (errors != null) 'errors': errors,
     };
   }
 

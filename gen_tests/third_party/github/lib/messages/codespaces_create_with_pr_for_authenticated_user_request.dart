@@ -92,16 +92,19 @@ class CodespacesCreateWithPrForAuthenticatedUserRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'location': location,
-      'geo': geo?.toJson(),
-      'client_ip': clientIp,
-      'machine': machine,
-      'devcontainer_path': devcontainerPath,
-      'multi_repo_permissions_opt_out': multiRepoPermissionsOptOut,
-      'working_directory': workingDirectory,
-      'idle_timeout_minutes': idleTimeoutMinutes,
-      'display_name': displayName,
-      'retention_period_minutes': retentionPeriodMinutes,
+      if (location != null) 'location': location,
+      if (geo != null) 'geo': geo?.toJson(),
+      if (clientIp != null) 'client_ip': clientIp,
+      if (machine != null) 'machine': machine,
+      if (devcontainerPath != null) 'devcontainer_path': devcontainerPath,
+      if (multiRepoPermissionsOptOut != null)
+        'multi_repo_permissions_opt_out': multiRepoPermissionsOptOut,
+      if (workingDirectory != null) 'working_directory': workingDirectory,
+      if (idleTimeoutMinutes != null)
+        'idle_timeout_minutes': idleTimeoutMinutes,
+      if (displayName != null) 'display_name': displayName,
+      if (retentionPeriodMinutes != null)
+        'retention_period_minutes': retentionPeriodMinutes,
     };
   }
 

@@ -72,11 +72,12 @@ class ModalSubmitInteractionMetadataResponse {
     return {
       'id': id.toJson(),
       'type': type.toJson(),
-      'user': user?.toJson(),
+      if (user != null) 'user': user?.toJson(),
       'authorizing_integration_owners': authorizingIntegrationOwners.map(
         (key, value) => MapEntry(key, value.toJson()),
       ),
-      'original_response_message_id': originalResponseMessageId?.toJson(),
+      if (originalResponseMessageId != null)
+        'original_response_message_id': originalResponseMessageId?.toJson(),
       'triggering_interaction_metadata': triggeringInteractionMetadata.toJson(),
     };
   }

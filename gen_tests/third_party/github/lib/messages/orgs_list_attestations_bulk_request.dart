@@ -41,7 +41,10 @@ class OrgsListAttestationsBulkRequest {
 
   /// Converts an [OrgsListAttestationsBulkRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'subject_digests': subjectDigests, 'predicate_type': predicateType};
+    return {
+      'subject_digests': subjectDigests,
+      if (predicateType != null) 'predicate_type': predicateType,
+    };
   }
 
   @override

@@ -113,8 +113,8 @@ class Commit {
       'author': author?.toJson(),
       'committer': committer?.toJson(),
       'parents': parents.map((e) => e.toJson()).toList(),
-      'stats': stats?.toJson(),
-      'files': files?.map((e) => e.toJson()).toList(),
+      if (stats != null) 'stats': stats?.toJson(),
+      if (files != null) 'files': files?.map((e) => e.toJson()).toList(),
     };
   }
 

@@ -88,12 +88,14 @@ class CodeScanningVariantAnalysisRepoTask {
     return {
       'repository': repository.toJson(),
       'analysis_status': analysisStatus.toJson(),
-      'artifact_size_in_bytes': artifactSizeInBytes,
-      'result_count': resultCount,
-      'failure_message': failureMessage,
-      'database_commit_sha': databaseCommitSha,
-      'source_location_prefix': sourceLocationPrefix,
-      'artifact_url': artifactUrl,
+      if (artifactSizeInBytes != null)
+        'artifact_size_in_bytes': artifactSizeInBytes,
+      if (resultCount != null) 'result_count': resultCount,
+      if (failureMessage != null) 'failure_message': failureMessage,
+      if (databaseCommitSha != null) 'database_commit_sha': databaseCommitSha,
+      if (sourceLocationPrefix != null)
+        'source_location_prefix': sourceLocationPrefix,
+      if (artifactUrl != null) 'artifact_url': artifactUrl,
     };
   }
 

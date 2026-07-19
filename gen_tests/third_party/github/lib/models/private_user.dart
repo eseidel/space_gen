@@ -241,7 +241,7 @@ class PrivateUser {
     return {
       'login': login,
       'id': id,
-      'user_view_type': userViewType,
+      if (userViewType != null) 'user_view_type': userViewType,
       'node_id': nodeId,
       'avatar_url': avatarUrl.toString(),
       'gravatar_id': gravatarId,
@@ -279,9 +279,9 @@ class PrivateUser {
       'disk_usage': diskUsage,
       'collaborators': collaborators,
       'two_factor_authentication': twoFactorAuthentication,
-      'plan': plan?.toJson(),
-      'business_plus': businessPlus,
-      'ldap_dn': ldapDn,
+      if (plan != null) 'plan': plan?.toJson(),
+      if (businessPlus != null) 'business_plus': businessPlus,
+      if (ldapDn != null) 'ldap_dn': ldapDn,
     };
   }
 

@@ -70,13 +70,15 @@ class ApplicationCommandChannelOptionResponse {
     return {
       'type': type.toJson(),
       'name': name,
-      'name_localized': nameLocalized,
+      if (nameLocalized != null) 'name_localized': nameLocalized,
       'name_localizations': nameLocalizations,
       'description': description,
-      'description_localized': descriptionLocalized,
+      if (descriptionLocalized != null)
+        'description_localized': descriptionLocalized,
       'description_localizations': descriptionLocalizations,
-      'required': required_,
-      'channel_types': channelTypes?.map((e) => e.toJson()).toList(),
+      if (required_ != null) 'required': required_,
+      if (channelTypes != null)
+        'channel_types': channelTypes?.map((e) => e.toJson()).toList(),
     };
   }
 

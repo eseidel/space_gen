@@ -69,13 +69,13 @@ class CampaignsUpdateCampaignRequest {
   /// Converts a [CampaignsUpdateCampaignRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'description': description,
-      'managers': managers,
-      'team_managers': teamManagers,
-      'ends_at': endsAt?.toIso8601String(),
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (managers != null) 'managers': managers,
+      if (teamManagers != null) 'team_managers': teamManagers,
+      if (endsAt != null) 'ends_at': endsAt?.toIso8601String(),
       'contact_link': contactLink?.toString(),
-      'state': state?.toJson(),
+      if (state != null) 'state': state?.toJson(),
     };
   }
 

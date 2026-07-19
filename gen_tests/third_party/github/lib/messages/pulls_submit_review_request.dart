@@ -39,7 +39,7 @@ class PullsSubmitReviewRequest {
 
   /// Converts a [PullsSubmitReviewRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'body': body, 'event': event.toJson()};
+    return {if (body != null) 'body': body, 'event': event.toJson()};
   }
 
   @override

@@ -56,8 +56,9 @@ class DependabotUpdateAlertRequest {
   Map<String, dynamic> toJson() {
     return {
       'state': state.toJson(),
-      'dismissed_reason': dismissedReason?.toJson(),
-      'dismissed_comment': dismissedComment,
+      if (dismissedReason != null)
+        'dismissed_reason': dismissedReason?.toJson(),
+      if (dismissedComment != null) 'dismissed_comment': dismissedComment,
     };
   }
 

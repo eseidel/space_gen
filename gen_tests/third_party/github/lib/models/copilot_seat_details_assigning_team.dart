@@ -144,11 +144,13 @@ final class EnterpriseTeam extends CopilotSeatDetailsAssigningTeam {
     return {
       'id': id,
       'name': name,
-      'description': description,
+      if (description != null) 'description': description,
       'slug': slug,
       'url': url.toString(),
-      'sync_to_organizations': syncToOrganizations,
-      'organization_selection_type': organizationSelectionType,
+      if (syncToOrganizations != null)
+        'sync_to_organizations': syncToOrganizations,
+      if (organizationSelectionType != null)
+        'organization_selection_type': organizationSelectionType,
       'group_id': groupId,
       'group_name': groupName,
       'html_url': htmlUrl.toString(),

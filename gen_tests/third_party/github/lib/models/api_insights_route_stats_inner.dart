@@ -56,12 +56,14 @@ class ApiInsightsRouteStatsInner {
   /// Converts an [ApiInsightsRouteStatsInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'http_method': httpMethod,
-      'api_route': apiRoute,
-      'total_request_count': totalRequestCount,
-      'rate_limited_request_count': rateLimitedRequestCount,
+      if (httpMethod != null) 'http_method': httpMethod,
+      if (apiRoute != null) 'api_route': apiRoute,
+      if (totalRequestCount != null) 'total_request_count': totalRequestCount,
+      if (rateLimitedRequestCount != null)
+        'rate_limited_request_count': rateLimitedRequestCount,
       'last_rate_limited_timestamp': lastRateLimitedTimestamp,
-      'last_request_timestamp': lastRequestTimestamp,
+      if (lastRequestTimestamp != null)
+        'last_request_timestamp': lastRequestTimestamp,
     };
   }
 

@@ -39,7 +39,10 @@ class IssuesAddSubIssueRequest {
 
   /// Converts an [IssuesAddSubIssueRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'sub_issue_id': subIssueId, 'replace_parent': replaceParent};
+    return {
+      'sub_issue_id': subIssueId,
+      if (replaceParent != null) 'replace_parent': replaceParent,
+    };
   }
 
   @override

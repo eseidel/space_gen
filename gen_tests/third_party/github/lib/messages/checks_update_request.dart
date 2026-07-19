@@ -173,15 +173,15 @@ final class ChecksUpdateRequestAnyOf0 extends ChecksUpdateRequest {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'details_url': detailsUrl,
-      'external_id': externalId,
-      'started_at': startedAt?.toIso8601String(),
-      'status': status?.toJson(),
+      if (name != null) 'name': name,
+      if (detailsUrl != null) 'details_url': detailsUrl,
+      if (externalId != null) 'external_id': externalId,
+      if (startedAt != null) 'started_at': startedAt?.toIso8601String(),
+      if (status != null) 'status': status?.toJson(),
       'conclusion': conclusion.toJson(),
-      'completed_at': completedAt?.toIso8601String(),
-      'output': output?.toJson(),
-      'actions': actions?.map((e) => e.toJson()).toList(),
+      if (completedAt != null) 'completed_at': completedAt?.toIso8601String(),
+      if (output != null) 'output': output?.toJson(),
+      if (actions != null) 'actions': actions?.map((e) => e.toJson()).toList(),
       for (final entry in entries.entries)
         if (!const {
           'name',
@@ -360,15 +360,15 @@ final class ChecksUpdateRequestAnyOf1 extends ChecksUpdateRequest {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'details_url': detailsUrl,
-      'external_id': externalId,
-      'started_at': startedAt?.toIso8601String(),
-      'status': status?.toJson(),
-      'conclusion': conclusion?.toJson(),
-      'completed_at': completedAt?.toIso8601String(),
-      'output': output?.toJson(),
-      'actions': actions?.map((e) => e.toJson()).toList(),
+      if (name != null) 'name': name,
+      if (detailsUrl != null) 'details_url': detailsUrl,
+      if (externalId != null) 'external_id': externalId,
+      if (startedAt != null) 'started_at': startedAt?.toIso8601String(),
+      if (status != null) 'status': status?.toJson(),
+      if (conclusion != null) 'conclusion': conclusion?.toJson(),
+      if (completedAt != null) 'completed_at': completedAt?.toIso8601String(),
+      if (output != null) 'output': output?.toJson(),
+      if (actions != null) 'actions': actions?.map((e) => e.toJson()).toList(),
       for (final entry in entries.entries)
         if (!const {
           'name',

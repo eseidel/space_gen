@@ -127,19 +127,26 @@ class ProtectedBranch {
   Map<String, dynamic> toJson() {
     return {
       'url': url.toString(),
-      'required_status_checks': requiredStatusChecks?.toJson(),
-      'required_pull_request_reviews': requiredPullRequestReviews?.toJson(),
-      'required_signatures': requiredSignatures?.toJson(),
-      'enforce_admins': enforceAdmins?.toJson(),
-      'required_linear_history': requiredLinearHistory?.toJson(),
-      'allow_force_pushes': allowForcePushes?.toJson(),
-      'allow_deletions': allowDeletions?.toJson(),
-      'restrictions': restrictions?.toJson(),
-      'required_conversation_resolution': requiredConversationResolution
-          ?.toJson(),
-      'block_creations': blockCreations?.toJson(),
-      'lock_branch': lockBranch?.toJson(),
-      'allow_fork_syncing': allowForkSyncing?.toJson(),
+      if (requiredStatusChecks != null)
+        'required_status_checks': requiredStatusChecks?.toJson(),
+      if (requiredPullRequestReviews != null)
+        'required_pull_request_reviews': requiredPullRequestReviews?.toJson(),
+      if (requiredSignatures != null)
+        'required_signatures': requiredSignatures?.toJson(),
+      if (enforceAdmins != null) 'enforce_admins': enforceAdmins?.toJson(),
+      if (requiredLinearHistory != null)
+        'required_linear_history': requiredLinearHistory?.toJson(),
+      if (allowForcePushes != null)
+        'allow_force_pushes': allowForcePushes?.toJson(),
+      if (allowDeletions != null) 'allow_deletions': allowDeletions?.toJson(),
+      if (restrictions != null) 'restrictions': restrictions?.toJson(),
+      if (requiredConversationResolution != null)
+        'required_conversation_resolution': requiredConversationResolution
+            ?.toJson(),
+      if (blockCreations != null) 'block_creations': blockCreations?.toJson(),
+      if (lockBranch != null) 'lock_branch': lockBranch?.toJson(),
+      if (allowForkSyncing != null)
+        'allow_fork_syncing': allowForkSyncing?.toJson(),
     };
   }
 

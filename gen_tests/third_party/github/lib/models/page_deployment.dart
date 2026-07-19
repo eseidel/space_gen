@@ -66,7 +66,7 @@ class PageDeployment {
       'id': id.toJson(),
       'status_url': statusUrl.toString(),
       'page_url': pageUrl.toString(),
-      'preview_url': previewUrl?.toString(),
+      if (previewUrl != null) 'preview_url': previewUrl?.toString(),
     };
   }
 

@@ -44,7 +44,10 @@ class CodeScanningDefaultSetupOptions {
 
   /// Converts a [CodeScanningDefaultSetupOptions] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'runner_type': runnerType?.toJson(), 'runner_label': runnerLabel};
+    return {
+      if (runnerType != null) 'runner_type': runnerType?.toJson(),
+      'runner_label': runnerLabel,
+    };
   }
 
   @override

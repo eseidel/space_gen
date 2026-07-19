@@ -90,8 +90,9 @@ class ScopedInstallation {
       'permissions': permissions.toJson(),
       'repository_selection': repositorySelection.toJson(),
       'single_file_name': singleFileName,
-      'has_multiple_single_files': hasMultipleSingleFiles,
-      'single_file_paths': singleFilePaths,
+      if (hasMultipleSingleFiles != null)
+        'has_multiple_single_files': hasMultipleSingleFiles,
+      if (singleFilePaths != null) 'single_file_paths': singleFilePaths,
       'repositories_url': repositoriesUrl.toString(),
       'account': account.toJson(),
     };

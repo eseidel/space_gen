@@ -37,7 +37,7 @@ class ProjectsMoveCardRequest {
 
   /// Converts a [ProjectsMoveCardRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'position': position, 'column_id': columnId};
+    return {'position': position, if (columnId != null) 'column_id': columnId};
   }
 
   @override

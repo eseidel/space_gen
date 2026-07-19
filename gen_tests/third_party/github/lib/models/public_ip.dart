@@ -46,7 +46,11 @@ class PublicIp {
 
   /// Converts a [PublicIp] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'enabled': enabled, 'prefix': prefix, 'length': length};
+    return {
+      if (enabled != null) 'enabled': enabled,
+      if (prefix != null) 'prefix': prefix,
+      if (length != null) 'length': length,
+    };
   }
 
   @override

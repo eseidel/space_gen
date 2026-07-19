@@ -50,8 +50,8 @@ class ScheduledEventUserResponse {
     return {
       'guild_scheduled_event_id': guildScheduledEventId.toJson(),
       'user_id': userId.toJson(),
-      'user': user?.toJson(),
-      'member': member?.toJson(),
+      if (user != null) 'user': user?.toJson(),
+      if (member != null) 'member': member?.toJson(),
     };
   }
 

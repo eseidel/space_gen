@@ -39,7 +39,10 @@ class WorkflowRunUsage {
 
   /// Converts a [WorkflowRunUsage] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'billable': billable.toJson(), 'run_duration_ms': runDurationMs};
+    return {
+      'billable': billable.toJson(),
+      if (runDurationMs != null) 'run_duration_ms': runDurationMs,
+    };
   }
 
   @override

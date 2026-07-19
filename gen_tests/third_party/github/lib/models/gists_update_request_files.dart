@@ -34,7 +34,7 @@ class GistsUpdateRequestFiles {
 
   /// Converts a [GistsUpdateRequestFiles] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'content': content, 'filename': filename};
+    return {if (content != null) 'content': content, 'filename': filename};
   }
 
   @override

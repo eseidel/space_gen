@@ -39,7 +39,10 @@ class SecretScanningLocation {
 
   /// Converts a [SecretScanningLocation] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'type': type?.toJson(), 'details': details?.toJson()};
+    return {
+      if (type != null) 'type': type?.toJson(),
+      if (details != null) 'details': details?.toJson(),
+    };
   }
 
   @override

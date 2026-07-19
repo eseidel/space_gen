@@ -65,9 +65,9 @@ class IntegrationApplicationResponse {
       'icon': icon,
       'description': description,
       'type': type?.toJson(),
-      'cover_image': coverImage,
-      'primary_sku_id': primarySkuId?.toJson(),
-      'bot': bot?.toJson(),
+      if (coverImage != null) 'cover_image': coverImage,
+      if (primarySkuId != null) 'primary_sku_id': primarySkuId?.toJson(),
+      if (bot != null) 'bot': bot?.toJson(),
     };
   }
 

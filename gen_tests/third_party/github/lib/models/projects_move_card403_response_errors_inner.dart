@@ -47,10 +47,10 @@ class ProjectsMoveCard403ResponseErrorsInner {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'code': code,
-      'message': message,
-      'resource': resource,
-      'field': field,
+      if (code != null) 'code': code,
+      if (message != null) 'message': message,
+      if (resource != null) 'resource': resource,
+      if (field != null) 'field': field,
     };
   }
 

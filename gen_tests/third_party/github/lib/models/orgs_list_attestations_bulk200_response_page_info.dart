@@ -58,10 +58,10 @@ class OrgsListAttestationsBulk200ResponsePageInfo {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'has_next': hasNext,
-      'has_previous': hasPrevious,
-      'next': next,
-      'previous': previous,
+      if (hasNext != null) 'has_next': hasNext,
+      if (hasPrevious != null) 'has_previous': hasPrevious,
+      if (next != null) 'next': next,
+      if (previous != null) 'previous': previous,
     };
   }
 

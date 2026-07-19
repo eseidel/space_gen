@@ -45,7 +45,11 @@ class RunnerLabel {
 
   /// Converts a [RunnerLabel] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'id': id, 'name': name, 'type': type?.toJson()};
+    return {
+      if (id != null) 'id': id,
+      'name': name,
+      if (type != null) 'type': type?.toJson(),
+    };
   }
 
   @override

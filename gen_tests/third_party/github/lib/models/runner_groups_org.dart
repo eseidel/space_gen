@@ -76,11 +76,11 @@ class RunnerGroupsOrg {
 
   /// If `true`, the `restricted_to_workflows` and `selected_workflows` fields
   /// cannot be modified.
-  final bool? workflowRestrictionsReadOnly;
+  final bool workflowRestrictionsReadOnly;
 
   /// If `true`, the runner group will be restricted to running only the
   /// workflows specified in the `selected_workflows` array.
-  final bool? restrictedToWorkflows;
+  final bool restrictedToWorkflows;
 
   /// List of workflows the runner group should be allowed to run. This
   /// setting will be ignored unless `restricted_to_workflows` is set to
@@ -94,16 +94,20 @@ class RunnerGroupsOrg {
       'name': name,
       'visibility': visibility,
       'default': default_,
-      'selected_repositories_url': selectedRepositoriesUrl,
+      if (selectedRepositoriesUrl != null)
+        'selected_repositories_url': selectedRepositoriesUrl,
       'runners_url': runnersUrl,
-      'hosted_runners_url': hostedRunnersUrl,
-      'network_configuration_id': networkConfigurationId,
+      if (hostedRunnersUrl != null) 'hosted_runners_url': hostedRunnersUrl,
+      if (networkConfigurationId != null)
+        'network_configuration_id': networkConfigurationId,
       'inherited': inherited,
-      'inherited_allows_public_repositories': inheritedAllowsPublicRepositories,
+      if (inheritedAllowsPublicRepositories != null)
+        'inherited_allows_public_repositories':
+            inheritedAllowsPublicRepositories,
       'allows_public_repositories': allowsPublicRepositories,
       'workflow_restrictions_read_only': workflowRestrictionsReadOnly,
       'restricted_to_workflows': restrictedToWorkflows,
-      'selected_workflows': selectedWorkflows,
+      if (selectedWorkflows != null) 'selected_workflows': selectedWorkflows,
     };
   }
 

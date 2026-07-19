@@ -97,16 +97,17 @@ class TeamRoleAssignment {
   /// Converts a [TeamRoleAssignment] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'assignment': assignment?.toJson(),
+      if (assignment != null) 'assignment': assignment?.toJson(),
       'id': id,
       'node_id': nodeId,
       'name': name,
       'slug': slug,
       'description': description,
-      'privacy': privacy,
-      'notification_setting': notificationSetting,
+      if (privacy != null) 'privacy': privacy,
+      if (notificationSetting != null)
+        'notification_setting': notificationSetting,
       'permission': permission,
-      'permissions': permissions?.toJson(),
+      if (permissions != null) 'permissions': permissions?.toJson(),
       'url': url.toString(),
       'html_url': htmlUrl.toString(),
       'members_url': membersUrl,

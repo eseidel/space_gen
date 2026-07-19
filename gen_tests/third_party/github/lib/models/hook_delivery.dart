@@ -136,7 +136,7 @@ class HookDelivery {
       'installation_id': installationId,
       'repository_id': repositoryId,
       'throttled_at': throttledAt?.toIso8601String(),
-      'url': url,
+      if (url != null) 'url': url,
       'request': request.toJson(),
       'response': response.toJson(),
     };

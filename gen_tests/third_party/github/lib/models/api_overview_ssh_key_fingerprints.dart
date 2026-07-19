@@ -43,10 +43,10 @@ class ApiOverviewSshKeyFingerprints {
   /// Converts an [ApiOverviewSshKeyFingerprints] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'SHA256_RSA': sha256Rsa,
-      'SHA256_DSA': sha256Dsa,
-      'SHA256_ECDSA': sha256Ecdsa,
-      'SHA256_ED25519': sha256Ed25519,
+      if (sha256Rsa != null) 'SHA256_RSA': sha256Rsa,
+      if (sha256Dsa != null) 'SHA256_DSA': sha256Dsa,
+      if (sha256Ecdsa != null) 'SHA256_ECDSA': sha256Ecdsa,
+      if (sha256Ed25519 != null) 'SHA256_ED25519': sha256Ed25519,
     };
   }
 

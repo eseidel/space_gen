@@ -30,7 +30,7 @@ class ProtectedBranchLockBranch {
     return ProtectedBranchLockBranch.fromJson(json);
   }
 
-  final bool? enabled;
+  final bool enabled;
 
   /// Converts a [ProtectedBranchLockBranch] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

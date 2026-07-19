@@ -62,9 +62,10 @@ class HostedComputeUpdateNetworkConfigurationForOrgRequest {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'name': name,
-      'compute_service': computeService?.toJson(),
-      'network_settings_ids': networkSettingsIds,
+      if (name != null) 'name': name,
+      if (computeService != null) 'compute_service': computeService?.toJson(),
+      if (networkSettingsIds != null)
+        'network_settings_ids': networkSettingsIds,
     };
   }
 

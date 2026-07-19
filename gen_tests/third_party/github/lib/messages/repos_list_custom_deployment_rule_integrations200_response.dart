@@ -54,11 +54,12 @@ class ReposListCustomDeploymentRuleIntegrations200Response {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'total_count': totalCount,
-      'available_custom_deployment_protection_rule_integrations':
-          availableCustomDeploymentProtectionRuleIntegrations
-              ?.map((e) => e.toJson())
-              .toList(),
+      if (totalCount != null) 'total_count': totalCount,
+      if (availableCustomDeploymentProtectionRuleIntegrations != null)
+        'available_custom_deployment_protection_rule_integrations':
+            availableCustomDeploymentProtectionRuleIntegrations
+                ?.map((e) => e.toJson())
+                .toList(),
     };
   }
 

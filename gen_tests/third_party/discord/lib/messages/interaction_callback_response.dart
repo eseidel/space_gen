@@ -41,7 +41,7 @@ class InteractionCallbackResponse {
   Map<String, dynamic> toJson() {
     return {
       'interaction': interaction.toJson(),
-      'resource': resource?.toJson(),
+      if (resource != null) 'resource': resource?.toJson(),
     };
   }
 

@@ -357,7 +357,7 @@ class PullRequest {
       '_links': links.toJson(),
       'author_association': authorAssociation.toJson(),
       'auto_merge': autoMerge?.toJson(),
-      'draft': draft,
+      if (draft != null) 'draft': draft,
       'merged': merged,
       'mergeable': mergeable,
       'rebaseable': rebaseable,

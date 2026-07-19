@@ -58,7 +58,11 @@ class ReposUpdatePullRequestReviewProtectionRequestBypassPullRequestAllowances {
   /// Converts a [ReposUpdatePullRequestReviewProtectionRequestBypassPullRequestAllowances]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'users': users, 'teams': teams, 'apps': apps};
+    return {
+      if (users != null) 'users': users,
+      if (teams != null) 'teams': teams,
+      if (apps != null) 'apps': apps,
+    };
   }
 
   @override

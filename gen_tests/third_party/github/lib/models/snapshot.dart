@@ -95,10 +95,14 @@ class Snapshot {
       'sha': sha,
       'ref': ref,
       'detector': detector.toJson(),
-      'metadata': metadata?.map((key, value) => MapEntry(key, value.toJson())),
-      'manifests': manifests?.map(
-        (key, value) => MapEntry(key, value.toJson()),
-      ),
+      if (metadata != null)
+        'metadata': metadata?.map(
+          (key, value) => MapEntry(key, value.toJson()),
+        ),
+      if (manifests != null)
+        'manifests': manifests?.map(
+          (key, value) => MapEntry(key, value.toJson()),
+        ),
       'scanned': scanned.toIso8601String(),
     };
   }

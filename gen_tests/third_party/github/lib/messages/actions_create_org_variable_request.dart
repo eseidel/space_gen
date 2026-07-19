@@ -61,7 +61,8 @@ class ActionsCreateOrgVariableRequest {
       'name': name,
       'value': value,
       'visibility': visibility.toJson(),
-      'selected_repository_ids': selectedRepositoryIds,
+      if (selectedRepositoryIds != null)
+        'selected_repository_ids': selectedRepositoryIds,
     };
   }
 

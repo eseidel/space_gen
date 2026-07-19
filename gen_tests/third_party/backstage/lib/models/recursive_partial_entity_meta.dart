@@ -160,16 +160,16 @@ class RecursivePartialEntityMeta {
   /// Converts a [RecursivePartialEntityMeta] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'links': links?.map((e) => e.toJson()).toList(),
-      'tags': tags,
-      'annotations': annotations,
-      'labels': labels,
-      'description': description,
-      'title': title,
-      'namespace': namespace,
-      'name': name,
-      'etag': etag,
-      'uid': uid,
+      if (links != null) 'links': links?.map((e) => e.toJson()).toList(),
+      if (tags != null) 'tags': tags,
+      if (annotations != null) 'annotations': annotations,
+      if (labels != null) 'labels': labels,
+      if (description != null) 'description': description,
+      if (title != null) 'title': title,
+      if (namespace != null) 'namespace': namespace,
+      if (name != null) 'name': name,
+      if (etag != null) 'etag': etag,
+      if (uid != null) 'uid': uid,
       for (final entry in entries.entries)
         if (!const {
           'links',

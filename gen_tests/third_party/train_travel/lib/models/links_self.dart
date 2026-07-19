@@ -31,7 +31,7 @@ class LinksSelf {
 
   /// Converts a [LinksSelf] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'self': self?.toString()};
+    return {if (self != null) 'self': self?.toString()};
   }
 
   @override

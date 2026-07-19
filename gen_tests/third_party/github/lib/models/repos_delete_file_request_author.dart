@@ -40,7 +40,7 @@ class ReposDeleteFileRequestAuthor {
 
   /// Converts a [ReposDeleteFileRequestAuthor] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'name': name, 'email': email};
+    return {if (name != null) 'name': name, if (email != null) 'email': email};
   }
 
   @override

@@ -105,8 +105,8 @@ class UserPiiResponse {
       'discriminator': discriminator,
       'public_flags': publicFlags,
       'flags': flags.toJson(),
-      'bot': bot,
-      'system': system,
+      if (bot != null) 'bot': bot,
+      if (system != null) 'system': system,
       'banner': banner,
       'accent_color': accentColor,
       'global_name': globalName,
@@ -115,9 +115,9 @@ class UserPiiResponse {
       'primary_guild': primaryGuild?.toJson(),
       'mfa_enabled': mfaEnabled,
       'locale': locale.toJson(),
-      'premium_type': premiumType?.toJson(),
+      if (premiumType != null) 'premium_type': premiumType?.toJson(),
       'email': email,
-      'verified': verified,
+      if (verified != null) 'verified': verified,
     };
   }
 

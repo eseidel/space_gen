@@ -57,15 +57,17 @@ class ApiInsightsUserStatsInner {
   /// Converts an [ApiInsightsUserStatsInner] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'actor_type': actorType,
-      'actor_name': actorName,
-      'actor_id': actorId,
+      if (actorType != null) 'actor_type': actorType,
+      if (actorName != null) 'actor_name': actorName,
+      if (actorId != null) 'actor_id': actorId,
       'integration_id': integrationId,
       'oauth_application_id': oauthApplicationId,
-      'total_request_count': totalRequestCount,
-      'rate_limited_request_count': rateLimitedRequestCount,
+      if (totalRequestCount != null) 'total_request_count': totalRequestCount,
+      if (rateLimitedRequestCount != null)
+        'rate_limited_request_count': rateLimitedRequestCount,
       'last_rate_limited_timestamp': lastRateLimitedTimestamp,
-      'last_request_timestamp': lastRequestTimestamp,
+      if (lastRequestTimestamp != null)
+        'last_request_timestamp': lastRequestTimestamp,
     };
   }
 

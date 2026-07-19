@@ -74,12 +74,13 @@ class ConnectedAccountResponse {
       'name': name,
       'type': type.toJson(),
       'friend_sync': friendSync,
-      'integrations': integrations?.map((e) => e.toJson()).toList(),
+      if (integrations != null)
+        'integrations': integrations?.map((e) => e.toJson()).toList(),
       'show_activity': showActivity,
       'two_way_link': twoWayLink,
       'verified': verified,
       'visibility': visibility.toJson(),
-      'revoked': revoked,
+      if (revoked != null) 'revoked': revoked,
     };
   }
 

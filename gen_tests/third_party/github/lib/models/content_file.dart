@@ -96,8 +96,8 @@ class ContentFile {
       'html_url': htmlUrl?.toString(),
       'download_url': downloadUrl?.toString(),
       '_links': links.toJson(),
-      'target': target,
-      'submodule_git_url': submoduleGitUrl,
+      if (target != null) 'target': target,
+      if (submoduleGitUrl != null) 'submodule_git_url': submoduleGitUrl,
     };
   }
 

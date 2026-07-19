@@ -81,11 +81,11 @@ class OrgsCreateWebhookRequestConfig {
   Map<String, dynamic> toJson() {
     return {
       'url': url.toJson(),
-      'content_type': contentType?.toJson(),
-      'secret': secret?.toJson(),
-      'insecure_ssl': insecureSsl?.toJson(),
-      'username': username,
-      'password': password,
+      if (contentType != null) 'content_type': contentType?.toJson(),
+      if (secret != null) 'secret': secret?.toJson(),
+      if (insecureSsl != null) 'insecure_ssl': insecureSsl?.toJson(),
+      if (username != null) 'username': username,
+      if (password != null) 'password': password,
     };
   }
 

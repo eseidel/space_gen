@@ -59,9 +59,9 @@ class GistsCreateRequest {
   /// Converts a [GistsCreateRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'description': description,
+      if (description != null) 'description': description,
       'files': files.map((key, value) => MapEntry(key, value.toJson())),
-      'public': public?.toJson(),
+      if (public != null) 'public': public?.toJson(),
     };
   }
 

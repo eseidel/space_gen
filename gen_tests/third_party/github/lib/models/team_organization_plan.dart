@@ -47,8 +47,8 @@ class TeamOrganizationPlan {
       'name': name,
       'space': space,
       'private_repos': privateRepos,
-      'filled_seats': filledSeats,
-      'seats': seats,
+      if (filledSeats != null) 'filled_seats': filledSeats,
+      if (seats != null) 'seats': seats,
     };
   }
 

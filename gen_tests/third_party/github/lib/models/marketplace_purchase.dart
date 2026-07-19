@@ -69,7 +69,8 @@ class MarketplacePurchase {
       'type': type,
       'id': id,
       'login': login,
-      'organization_billing_email': organizationBillingEmail,
+      if (organizationBillingEmail != null)
+        'organization_billing_email': organizationBillingEmail,
       'email': email,
       'marketplace_pending_change': marketplacePendingChange?.toJson(),
       'marketplace_purchase': marketplacePurchase.toJson(),

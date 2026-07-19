@@ -38,7 +38,10 @@ class ReposListAttestations200Response {
 
   /// Converts a [ReposListAttestations200Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'attestations': attestations?.map((e) => e.toJson()).toList()};
+    return {
+      if (attestations != null)
+        'attestations': attestations?.map((e) => e.toJson()).toList(),
+    };
   }
 
   @override

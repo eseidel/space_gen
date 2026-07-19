@@ -57,7 +57,7 @@ class GithubIssue {
       'user': user.toJson(),
       'title': title,
       'body': body,
-      'pull_request': pullRequest,
+      if (pullRequest != null) 'pull_request': pullRequest,
     };
   }
 
