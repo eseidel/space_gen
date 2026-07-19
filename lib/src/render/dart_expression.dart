@@ -249,6 +249,19 @@ class DartExpressionSerializer extends Equatable {
   List<Object?> get props => [isConstContext];
 }
 
+/// A call to a top-level function: `call('jsonDecode', [body])`.
+///
+/// The free-function counterpart to [DartTypeExpressions.construct], and
+/// here for the same reason: so a call site reads like the Dart it emits,
+/// and so the two kinds of call look alike where a branch picks between
+/// them.
+///
+/// A function rather than an extension on `String`: an extension member
+/// named `call` would make every `String` implicitly invocable, and any
+/// other name reads worse than this does.
+DartExpression call(String name, [List<DartExpression> arguments = const []]) =>
+    DartFunctionCall(name: name, arguments: arguments);
+
 /// Expression builders for the forms that are *rooted at a type name* —
 /// `Foo(...)`, `Uri.parse(...)`, `UserRole.admin` — so a call site reads
 /// like the Dart it emits.

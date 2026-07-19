@@ -3065,11 +3065,14 @@ class RenderPod extends RenderSchema {
     DartExpression name, {
     required bool nameIsNullable,
   }) {
-    DartExpression call(String method) =>
-        DartMethodCall(target: name, name: method, isNullAware: nameIsNullable);
+    DartExpression method(String methodName) => DartMethodCall(
+      target: name,
+      name: methodName,
+      isNullAware: nameIsNullable,
+    );
     return switch (type) {
-      PodType.dateTime => call('toIso8601String'),
-      PodType.uri || PodType.uriTemplate => call('toString'),
+      PodType.dateTime => method('toIso8601String'),
+      PodType.uri || PodType.uriTemplate => method('toString'),
       // String- and bool-backed types: no conversion; `name` already
       // has the correct nullable/non-nullable type.
       PodType.email || PodType.uuid || PodType.boolean => name,
@@ -3132,24 +3135,15 @@ class RenderPod extends RenderSchema {
       switch (type) {
         PodType.dateTime =>
           jsonIsNullable
-              ? DartFunctionCall(
-                  name: ModelHelpers.maybeParseDateTime,
-                  arguments: [cast],
-                )
+              ? call(ModelHelpers.maybeParseDateTime, [cast])
               : DartType.dateTime.construct([cast], name: 'parse'),
         PodType.uri =>
           jsonIsNullable
-              ? DartFunctionCall(
-                  name: ModelHelpers.maybeParseUri,
-                  arguments: [cast],
-                )
+              ? call(ModelHelpers.maybeParseUri, [cast])
               : DartType.uri.construct([cast], name: 'parse'),
         PodType.uriTemplate =>
           jsonIsNullable
-              ? DartFunctionCall(
-                  name: ModelHelpers.maybeParseUriTemplate,
-                  arguments: [cast],
-                )
+              ? call(ModelHelpers.maybeParseUriTemplate, [cast])
               : DartType.uriTemplate.construct([cast]),
         // Already JSON-native: the cast is the whole conversion.
         PodType.boolean || PodType.email || PodType.uuid => cast,
@@ -4037,10 +4031,10 @@ class RenderObject extends RenderNewType {
     // `checkedKey`, which throws `FormatException` when the key is
     // absent — other combinations still read `json[key]` directly.
     final jsonRead = jsonKeyIsRequired && property.common.nullable
-        ? DartFunctionCall(
-            name: ModelHelpers.checkedKey,
-            arguments: [const DartIdentifier('json'), DartLiteral(jsonName)],
-          )
+        ? call(ModelHelpers.checkedKey, [
+            const DartIdentifier('json'),
+            DartLiteral(jsonName),
+          ])
         : DartIndex(
             target: const DartIdentifier('json'),
             index: DartLiteral(jsonName),
@@ -5740,6 +5734,7 @@ const _responseBody = DartPropertyAccess(
 /// `'response.body'` is the coupling `doc/dart_expression.md` calls out.
 enum _ResponseBodySource {
   /// The body is JSON and has to be decoded before parsing.
+  // Not `call(...)`: a const initializer needs the constructor directly.
   json(DartFunctionCall(name: 'jsonDecode', arguments: [_responseBody])),
 
   /// A non-JSON content type: the body is the value.
@@ -6563,10 +6558,7 @@ class RenderBase64Bytes extends RenderSchema {
     // null check (a ternary on a public-property `Uint8List?` doesn't
     // promote).
     return jsonIsNullable
-        ? DartFunctionCall(
-            name: ModelHelpers.maybeBase64Decode,
-            arguments: [cast],
-          )
+        ? call(ModelHelpers.maybeBase64Decode, [cast])
         : DartMethodCall(
             target: const DartIdentifier('base64'),
             name: 'decode',
