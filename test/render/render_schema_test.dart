@@ -841,6 +841,27 @@ void main() {
       expect(result, isNot(contains('MapEntry.new')));
     });
 
+    test('array of open maps round-trips without per-entry conversion', () {
+      // Reaches `RenderMap.shouldCallToJson` through
+      // `RenderArray.items.shouldCallToJson`, which is the only production
+      // caller left now that `RenderMap.toJsonExpression` asks the built
+      // expression instead of predicting from the schema. An open map needs
+      // no conversion in either direction, so neither side maps its
+      // elements.
+      final schema = {
+        'type': 'object',
+        'properties': {
+          'rows': {
+            'type': 'array',
+            'items': {'type': 'object', 'additionalProperties': true},
+          },
+        },
+      };
+      final result = renderTestSchema(schema);
+      expect(result, contains('final List<Map<String, dynamic>>? rows;'));
+      expect(result, isNot(contains('MapEntry')));
+    });
+
     test('map with a transforming value still maps its entries', () {
       // The counterpart: a `date-time` value needs `DateTime.parse` per
       // entry, so the `.map` earns its place and must not be dropped.
