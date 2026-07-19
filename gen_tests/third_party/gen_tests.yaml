@@ -19,6 +19,13 @@
 # package into `lib/model/` with different nullability and mutability.
 openapi: false
 
+# `--verify` skips these. They are already compiled and tested by
+# Shorebird's Workflow Discovery, and github alone builds ~1700 test
+# kernels (~68 GB of scratch, ~104s) — too heavy to do a second time
+# here. The synthetic fixtures one level up are the ones that lacked
+# any compile/test coverage (#307), so they keep the default `true`.
+verify: false
+
 # `package:` defaults to the spec's filename with the extension dropped
 # and `.`/`-` folded to `_`, so it is only spelled out below where that
 # default is not what we want.

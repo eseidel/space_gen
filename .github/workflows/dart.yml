@@ -39,16 +39,18 @@ jobs:
 
       - name: Run end-to-end generator tests
         run: |
-          # Regenerate every fixture and run the generated tests —
-          # catches runtime issues in emitted code (toJson/fromJson
-          # round-tripping, hashCode consistency with ==, etc.) that
-          # the unit tests above can't see.
+          # Regenerate every fixture, then compile and test the ones
+          # marked `verify: true` in their manifest (the synthetic
+          # fixtures — the real-world corpus in third_party/ is already
+          # compiled by Workflow Discovery). `--verify` catches emitted
+          # code that doesn't analyze (#307) as well as runtime issues
+          # the unit tests above can't see — toJson/fromJson
+          # round-tripping, hashCode consistency with ==, etc.
           #
-          # All fixtures, not just `types`, because the next step diffs
-          # the result: a fixture that is never regenerated can never be
-          # caught drifting.
-          dart run tool/gen_tests.dart
-          cd gen_tests/types && dart pub get && dart test
+          # Every fixture is regenerated regardless of `verify`, because
+          # the next step diffs the result: a fixture that is never
+          # regenerated can never be caught drifting.
+          dart run tool/gen_tests.dart --verify
 
       - name: Verify goldens match the generator
         run: |
