@@ -78,9 +78,9 @@ List<TestCase>? _testsFromManifest(Directory testDir) {
   if (doc is! Map || doc['specs'] is! List) {
     throw Exception('${manifest.path}: expected a top-level `specs:` list');
   }
-  // Directory-wide default, overridable per spec. `true` matches the
-  // unmanifested behavior below, so adding a manifest to an existing
-  // directory changes nothing until you say otherwise.
+  // Directory-wide default, overridable per spec. `true` matches what
+  // a directory without a manifest gets below, so adding a manifest to
+  // an existing directory changes nothing until you say otherwise.
   final dirOpenapi = doc['openapi'] as bool? ?? true;
   final tests = <TestCase>[];
   for (final entry in doc['specs'] as List) {
