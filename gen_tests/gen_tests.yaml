@@ -17,6 +17,13 @@
 # nullability and mutability.
 openapi: true
 
+# `--verify` compiles and tests these (dart pub get + analyze + test).
+# They are generated and diff-gated but were otherwise never compiled,
+# so a generator change emitting code that does not analyze would land
+# green (#307). This is the default; spelled out because it is the
+# coverage these fixtures exist to provide. `third_party/` opts out.
+verify: true
+
 # `package:` defaults to the spec's filename with the extension dropped
 # and `.`/`-` folded to `_`, which is what every fixture here wants.
 specs:
