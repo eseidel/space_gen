@@ -2430,12 +2430,32 @@ DartExpression _multipartValueExpr(
   return _stringifyWireValue(property, jsonExpr);
 }
 
+/// Whether [schema] serializes to a single value on the wire, and so can
+/// become one `Map<String, String>` field of a multipart body.
+///
+/// An allowlist rather than "not object/array/map-shaped" on purpose: a
+/// new [RenderSchema] subtype should land here as a loud
+/// `FormatException` naming the type, not be waved through to
+/// [_multipartValueExpr] to emit something quietly wrong.
+///
+/// The resolver asks the same "one value on the wire" question over
+/// `Resolved*` for query parameters. The two lists can't share an
+/// implementation — the resolver is deliberately Dart-blind — but they
+/// describe one rule, so a divergence between them is a bug in one of
+/// them by construction. Keep them in sync.
 bool _isMultipartScalar(RenderSchema schema) {
   return schema is RenderString ||
       schema is RenderInteger ||
       schema is RenderNumber ||
       schema is RenderPod ||
-      schema is RenderEnum;
+      schema is RenderEnum ||
+      // `Date.toJson()` is a `String` — the wire value a multipart field
+      // wants. Omitted here until #294; the resolver-side list had it.
+      schema is RenderDate ||
+      // `format: byte`, not `format: binary` — a distinct type that the
+      // [RenderBinary] file-part branch above does not cover. Its wire
+      // value is the base64 `String`, so it is a text field, not a file.
+      schema is RenderBase64Bytes;
 }
 
 class RenderResponse {

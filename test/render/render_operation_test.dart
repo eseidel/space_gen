@@ -301,6 +301,60 @@ void main() {
       );
     });
 
+    // #294: `format: date` and base64 bytes were missing from
+    // `_isMultipartScalar`, so either one crashed the generator with
+    // "must be a scalar or binary" instead of rendering. Both serialize
+    // to a `String` on the wire, which is exactly what a multipart text
+    // field carries — base64 bytes in particular are a *text* field
+    // holding base64, not a file part like `format: binary`.
+    test('multipart/form-data with date and base64 fields', () {
+      final operation = {
+        'tags': ['files'],
+        'operationId': 'uploadFile',
+        'requestBody': {
+          'required': true,
+          'content': {
+            'multipart/form-data': {
+              'schema': {
+                'type': 'object',
+                'required': ['when', 'blob'],
+                'properties': {
+                  'when': {'type': 'string', 'format': 'date'},
+                  'until': {'type': 'string', 'format': 'date'},
+                  // base64 bytes come from `contentEncoding`, not
+                  // `format: byte` — see `parseFormat` in parser.dart.
+                  'blob': {'type': 'string', 'contentEncoding': 'base64'},
+                },
+              },
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/upload',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      // `Date.toJson()` is already a String — no `.toString()` on top
+      // of it (that would be a `noop_primitive_operations` lint).
+      expect(result, contains("'when': uploadFileRequest.when.toJson(),"));
+      // Optional date: captured to a local, null-checked before set.
+      expect(result, contains('final v = uploadFileRequest.until;'));
+      expect(
+        result,
+        contains("if (v != null) multipartFields['until'] = v.toJson();"),
+      );
+      // `format: byte` is a text field carrying base64, not a file part.
+      expect(
+        result,
+        contains("'blob': base64.encode(uploadFileRequest.blob),"),
+      );
+      expect(result, isNot(contains("MultipartFile.fromBytes('blob'")));
+    });
+
     test('multipart/form-data with optional file', () {
       final operation = {
         'tags': ['files'],
