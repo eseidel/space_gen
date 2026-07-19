@@ -58,4 +58,21 @@ class DefaultApi {
       throw ApiException<Object?>(response.statusCode, response.body);
     }
   }
+
+  /// Uses a cookie-borne API key.
+  Future<void> getSession() async {
+    final response = await client.invokeApi(
+      method: Method.get,
+      path: '/session',
+      authRequest: const ApiKeyAuth(
+        name: 'session',
+        secretName: 'cookieAuth',
+        sendIn: ApiKeyLocation.cookie,
+      ),
+    );
+
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException<Object?>(response.statusCode, response.body);
+    }
+  }
 }

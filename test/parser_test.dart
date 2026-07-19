@@ -2784,11 +2784,14 @@ void main() {
       });
     });
     group('security scheme', () {
-      test('cookie not supported', () {
-        final json = {'type': 'apiKey', 'name': 'apiKey', 'in': 'cookie'};
+      test('cookie location', () {
+        final json = {'type': 'apiKey', 'name': 'session', 'in': 'cookie'};
+        final scheme = parseSecurityScheme('name', MapContext.initial(json));
         expect(
-          () => parseSecurityScheme('name', MapContext.initial(json)),
-          throwsA(isA<UnimplementedError>()),
+          scheme,
+          isA<ApiKeySecurityScheme>()
+              .having((s) => s.keyName, 'keyName', 'session')
+              .having((s) => s.inLocation, 'inLocation', ApiKeyLocation.cookie),
         );
       });
       test('unknown location', () {

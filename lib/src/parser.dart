@@ -1870,10 +1870,7 @@ ApiKeyLocation _parseApiKeyLocation(MapContext context, String location) {
     case 'query':
       return ApiKeyLocation.query;
     case 'cookie':
-      _unimplemented(
-        context,
-        'cookie parameters are not yet supported for API key authentication',
-      );
+      return ApiKeyLocation.cookie;
     default:
       _error(context, 'Unknown API key location: $location');
   }
