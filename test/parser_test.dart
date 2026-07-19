@@ -377,6 +377,48 @@ void main() {
       expect(obj.constProperties, {'type': 1});
     });
 
+    test('captures a bare inline lone const as a scalar const property', () {
+      // A property fixed to a lone scalar `const` (envelope markers like
+      // Stripe's `object: {const: "list"}`, version pins) records the value
+      // in `constProperties` and parses as its plain scalar — NOT a
+      // single-value enum type — so render emits a fixed getter (issue
+      // #240). Distinct from the allOf-ref idiom above: no wrapper, no
+      // named enum, just a literal.
+      final json = {
+        'type': 'object',
+        'properties': {
+          'object': {'type': 'string', 'const': 'list'},
+          'version': {'type': 'integer', 'const': 5},
+          'count': {'type': 'integer'},
+        },
+        'required': ['object'],
+      };
+      final schema = parseTestSchema(json) as SchemaObject;
+      expect(schema.constProperties, {'object': 'list', 'version': 5});
+      // The pinned properties parse as plain scalars, not single-value
+      // enums — so no throwaway enum type or file gets generated.
+      expect(schema.properties['object']!.object, isA<SchemaString>());
+      expect(schema.properties['object']!.object, isNot(isA<SchemaEnum>()));
+      expect(schema.properties['version']!.object, isA<SchemaInteger>());
+      expect(schema.properties['count']!.object, isA<SchemaInteger>());
+    });
+
+    test('leaves a typeless const as a single-value enum', () {
+      // Discord's oneOf-variant tags carry `{const: N}` with the `type` on
+      // the parent. There's no scalar type to strip to, and `_handleEnum`'s
+      // value inference plus the discriminator pass still need the enum
+      // spelling — so it must NOT be captured as a scalar const property.
+      final json = {
+        'type': 'object',
+        'properties': {
+          'tag': {'const': 1},
+        },
+      };
+      final schema = parseTestSchema(json) as SchemaObject;
+      expect(schema.constProperties, isEmpty);
+      expect(schema.properties['tag']!.object, isA<SchemaEnum>());
+    });
+
     test('oneOf with a real polymorphic variant stays a oneOf', () {
       // A oneOf where any variant brings its own shape (here, a
       // `type: string` variant) is a real polymorphic schema — the

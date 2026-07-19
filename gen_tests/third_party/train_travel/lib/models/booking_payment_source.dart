@@ -4,9 +4,7 @@
 // ignore_for_file: lines_longer_than_80_chars
 import 'package:meta/meta.dart';
 import 'package:train_travel/model_helpers.dart';
-import 'package:train_travel/models/booking_payment_source_one_of_0_object.dart';
 import 'package:train_travel/models/booking_payment_source_one_of_1_account_type.dart';
-import 'package:train_travel/models/booking_payment_source_one_of_1_object.dart';
 
 /// The payment source to take the payment from. This can be a card or a bank
 /// account. Some of these properties will be hidden on read to protect PII
@@ -53,7 +51,6 @@ final class Card extends BookingPaymentSource {
     required this.expMonth,
     required this.expYear,
     required this.addressCountry,
-    this.object,
     this.addressLine1,
     this.addressLine2,
     this.addressCity,
@@ -66,9 +63,6 @@ final class Card extends BookingPaymentSource {
       'Card',
       json,
       () => Card(
-        object: BookingPaymentSourceOneOf0Object.maybeFromJson(
-          json['object'] as String?,
-        ),
         name: json['name'] as String,
         number: json['number'] as String,
         cvc: json['cvc'] as String,
@@ -92,7 +86,7 @@ final class Card extends BookingPaymentSource {
     return Card.fromJson(json);
   }
 
-  final BookingPaymentSourceOneOf0Object? object;
+  String get object => 'card';
 
   /// Cardholder's full name as it appears on the card.
   /// Example: `'Francis Bourgeois'`
@@ -124,7 +118,7 @@ final class Card extends BookingPaymentSource {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'object': object?.toJson(),
+      'object': object,
       'name': name,
       'number': number,
       'cvc': cvc,
@@ -140,7 +134,6 @@ final class Card extends BookingPaymentSource {
 
   @override
   int get hashCode => Object.hashAll([
-    object,
     name,
     number,
     cvc,
@@ -157,7 +150,6 @@ final class Card extends BookingPaymentSource {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is Card &&
-        object == other.object &&
         name == other.name &&
         number == other.number &&
         cvc == other.cvc &&
@@ -185,7 +177,6 @@ final class BankAccount extends BookingPaymentSource {
     required this.accountType,
     required this.bankName,
     required this.country,
-    this.object,
     this.sortCode,
   });
 
@@ -195,9 +186,6 @@ final class BankAccount extends BookingPaymentSource {
       'BankAccount',
       json,
       () => BankAccount(
-        object: BookingPaymentSourceOneOf1Object.maybeFromJson(
-          json['object'] as String?,
-        ),
         name: json['name'] as String,
         number: json['number'] as String,
         sortCode: json['sort_code'] as String?,
@@ -219,7 +207,7 @@ final class BankAccount extends BookingPaymentSource {
     return BankAccount.fromJson(json);
   }
 
-  final BookingPaymentSourceOneOf1Object? object;
+  String get object => 'bank_account';
   final String name;
 
   /// The account number for the bank account, in string form. Must be a
@@ -245,7 +233,7 @@ final class BankAccount extends BookingPaymentSource {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'object': object?.toJson(),
+      'object': object,
       'name': name,
       'number': number,
       'sort_code': sortCode,
@@ -256,21 +244,13 @@ final class BankAccount extends BookingPaymentSource {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    object,
-    name,
-    number,
-    sortCode,
-    accountType,
-    bankName,
-    country,
-  ]);
+  int get hashCode =>
+      Object.hashAll([name, number, sortCode, accountType, bankName, country]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is BankAccount &&
-        object == other.object &&
         name == other.name &&
         number == other.number &&
         sortCode == other.sortCode &&

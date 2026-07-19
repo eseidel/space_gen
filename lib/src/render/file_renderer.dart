@@ -378,13 +378,25 @@ class FileRenderer {
   /// package root (so the returned value includes the leading `test/`).
   /// Return `null` to skip emitting a test for this schema.
   ///
-  /// Default: mirrors [modelPath] under `test/`, with `_test` before the
-  /// `.dart` extension — so a schema at `lib/models/app.dart` gets a
-  /// test at `test/models/app_test.dart`.
+  /// Default: mirrors [modelPath] under `test/gen/`, with `_test`
+  /// before the `.dart` extension — so a schema at `lib/models/app.dart`
+  /// gets a test at `test/gen/models/app_test.dart`.
   ///
-  /// Override this hook to redirect generated tests (e.g. to
-  /// `test/generated/` so they sit alongside hand-written tests without
-  /// colliding), or return null to opt out entirely.
+  /// The `gen/` level is the point. Generated tests are cleared on
+  /// regeneration ([generatedDirs]), and `test/` is the one tree Dart
+  /// convention shares with the consumer: all of a package's tests live
+  /// there, and mirroring `lib/` is the idiomatic way to arrange them,
+  /// so writing straight to `test/models/` would claim a directory the
+  /// consumer has every reason to be using. `lib/` needs no equivalent
+  /// — a generated client's `lib/` is ours — and prefixing it would put
+  /// `gen/` in every import path.
+  ///
+  /// `dart test` recurses all of `test/`, so the extra level costs
+  /// nothing at run time.
+  ///
+  /// Override to redirect generated tests, or return null to opt out
+  /// entirely. An override needs a matching [generatedDirs] entry, or
+  /// its output is never cleaned up.
   @protected
   @visibleForOverriding
   String? testPath(LayoutContext context) {
@@ -393,7 +405,7 @@ class FileRenderer {
       RegExp(r'\.dart$'),
       '_test.dart',
     );
-    return 'test/$withSuffix';
+    return p.join('test', 'gen', withSuffix);
   }
 
   /// `lib/`-relative path to the package-level barrel that a generated
@@ -563,7 +575,18 @@ class FileRenderer {
   /// [usedDate] is complete, mirroring [renderModelHelpers].
   @protected
   void renderDate() {
-    if (!usedDate) return;
+    // `lib/` is shared with the consumer, so nothing sweeps it — this
+    // hook owns the file and removes it when a spec stops using dates.
+    // Doing it here rather than from a list of files we own keeps it
+    // safe for a subclass that no-ops this hook: our delete never runs,
+    // so we never remove a file we did not produce.
+    if (!usedDate) {
+      final stale = fileWriter.fs.file(
+        p.join(fileWriter.outDir.path, 'lib', 'date.dart'),
+      );
+      if (stale.existsSync()) stale.deleteSync();
+      return;
+    }
     _renderDartFile(name: 'date', outPath: 'lib/date.dart');
   }
 
@@ -1060,38 +1083,66 @@ class FileRenderer {
     );
   }
 
-  /// Build artifacts left in the output directory by tooling rather
-  /// than by us. [_clearOutDir] keeps these: they are reproducible, but
-  /// deleting them makes every regeneration re-resolve dependencies
-  /// from scratch, and `.git` would take a repository with it.
-  static const _preservedOnClear = {'.dart_tool', 'pubspec.lock', '.git'};
+  /// Directories, relative to the package root, that this renderer
+  /// generates into and therefore owns. Emptied before each run when
+  /// clearing is on, so a renamed or deleted schema leaves nothing
+  /// behind.
+  ///
+  /// Declared rather than worked out from the files we write, so that
+  /// the claim "this directory is ours" is something the renderer says
+  /// out loud, in one place, instead of being inferred from output
+  /// paths after the fact.
+  ///
+  /// A directory here is deleted **recursively**, so only name ones
+  /// holding nothing but generated output. In particular not `lib/`,
+  /// `test/`, or the package root: a package's own files live there by
+  /// Dart convention, so ours sit beside the consumer's, and we write
+  /// no README, LICENSE, CHANGELOG or `.github/` that would replace
+  /// theirs. Our files directly inside those have fixed names and are
+  /// overwritten when still needed.
+  ///
+  /// **Override this whenever you override [modelPath] or [testPath].**
+  /// The two encode the same decision — where output goes — and a
+  /// layout moved without moving this gets no cleanup at all. That is
+  /// how `shorebird_code_push_protocol`, which puts models under
+  /// `lib/src/models/`, went without stale-file removal entirely.
+  ///
+  /// Generating into a package that also holds hand-written code is
+  /// exactly the case to be explicit about: give the generated output
+  /// a directory of its own (`lib/gen/`, `lib/src/models/`) and name it
+  /// here, rather than sharing a directory with files we must not
+  /// delete.
+  @protected
+  @visibleForOverriding
+  Set<String> get generatedDirs => {
+    p.join('lib', 'api'),
+    // Both model layouts: [Quirks.flatModelDir] writes a flat `model/`,
+    // the default splits into `models/` and `messages/`. Naming both
+    // means regenerating with the quirk flipped clears the layout it
+    // moved off of.
+    p.join('lib', 'model'),
+    p.join('lib', 'models'),
+    p.join('lib', 'messages'),
+    // Generated tests, all of them, from [testPath]. One directory
+    // rather than a `test/` mirror of the three above, because `test/`
+    // is shared with the consumer — see [testPath].
+    p.join('test', 'gen'),
+  };
 
-  /// Empty the output directory, keeping only [_preservedOnClear].
-  ///
-  /// The contract is deliberately blunt: name a directory as the output
-  /// and turn clearing on, and that directory is ours. It is the only
-  /// rule that stays true no matter how a subclass moves files around
-  /// via [modelPath] and [testPath] — anything narrower has to guess at
-  /// which paths are generated, and guesses wrong for exactly the
-  /// consumers who use those hooks.
-  ///
-  /// Generating into a package that also holds hand-written code means
-  /// turning clearing off (`GeneratorConfig.clearDirectory`, or
-  /// `--no-clear`) and removing stale output yourself. There is no way
-  /// for us to tell your files from ours in a directory we do not own.
-  void _clearOutDir() {
-    final outDir = fileWriter.outDir;
-    if (!outDir.existsSync()) return;
-    for (final entity in outDir.listSync()) {
-      if (_preservedOnClear.contains(p.basename(entity.path))) continue;
-      entity.deleteSync(recursive: true);
+  /// Delete the contents of [generatedDirs].
+  void _clearGeneratedDirs() {
+    for (final dir in generatedDirs) {
+      final directory = fileWriter.fs.directory(
+        p.join(fileWriter.outDir.path, dir),
+      );
+      if (directory.existsSync()) directory.deleteSync(recursive: true);
     }
   }
 
   /// Render the entire spec.
   void render(RenderSpec spec, {bool clearDirectory = true}) {
     if (clearDirectory) {
-      _clearOutDir();
+      _clearGeneratedDirs();
     }
     // Collect all the Apis and Model Schemas.
     // Do we walk through each endpoint and ask which class to put it on?

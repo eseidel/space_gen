@@ -27,6 +27,7 @@ verify: true
 # `package:` defaults to the spec's filename with the extension dropped
 # and `.`/`-` folded to `_`, which is what every fixture here wants.
 specs:
+  - spec: const_property.json
   - spec: multipart.json
   - spec: security.json
   - spec: types.json

@@ -78,24 +78,41 @@ a consensus towards a better Dart generator, so releasing this one.
   off to FileRenderer which uses SchemaRenderer to render api (operation) and
   model (schema) files and imports.
 
-### The output directory belongs to the generator
+### We own the directories we declare, and nothing else
 
-By default space_gen empties the output directory before each run,
-keeping only `.dart_tool/`, `pubspec.lock`, and `.git/`. A schema you
-rename or delete would otherwise leave its old file behind, and that
-file still refers to the class under its old name — so the regenerated
-package stops analyzing.
+A schema you rename or delete would otherwise leave its old file
+behind, and that file still refers to the class under its old name — so
+the regenerated package stops analyzing. `FileRenderer.generatedDirs`
+names the directories holding that output; they are emptied before each
+run.
 
-Pass `--no-clear` (or `GeneratorConfig.clearDirectory: false`) to
-generate into a package that also holds hand-written code. Nothing is
-deleted then, and removing stale output becomes your job.
+Output comes in two shapes, and only one can go stale. Files named
+after something in the spec live in `generatedDirs`. The rest —
+`pubspec.yaml`, the barrel, `model_helpers.dart` — keep the same name
+every run and are simply overwritten.
 
-There is no middle setting, because there is nothing reliable to base
-one on. Layout is yours to change through `FileRenderer.modelPath` and
-`FileRenderer.testPath`, so no fixed set of paths is "the generated
-ones" — a consumer who moves models to `lib/src/models/` would get
-nothing cleaned by a rule naming `lib/models/`. Owning the directory is
-the only rule that stays true whatever the layout.
+Generated tests go under `test/gen/`, not `test/models/`. `test/` is
+the one tree Dart convention shares with you: all of a package's tests
+live there and mirroring `lib/` is the idiomatic way to arrange them,
+so a cleared `test/models/` would take your tests with it. `lib/` needs
+no such prefix — a generated client's `lib/` is ours — and adding one
+would put `gen/` in every import path.
+
+**If you override `modelPath` or `testPath`, override `generatedDirs`
+too.** They encode the same decision, and a layout that moves without
+it gets no cleanup at all. If you generate into a package that also
+holds hand-written code, give the output a directory of its own
+(`lib/gen/`, `lib/src/models/`) and name it there, rather than sharing
+a directory with files that must survive.
+
+Never touched:
+
+- **The package root, `lib/`, and `test/` themselves.** A package's own
+  files live there by Dart convention, so ours sit beside yours. We
+  write no README, LICENSE, CHANGELOG or `.github/`, and a generated
+  client is often its own repository holding all of them.
+- **Everything, under `--no-clear`** (`GeneratorConfig.clearDirectory:
+  false`), if you would rather manage stale output yourself.
 
 ### Lint suppression lives in the generated `.dart` files
 
