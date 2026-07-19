@@ -529,6 +529,138 @@ void main() {
       );
     });
 
+    // openfoodfacts `POST /cgi/session.pl` offers only
+    // application/x-www-form-urlencoded (no JSON alternative), so it's the
+    // sole content type the resolver can pick. The body object renders as a
+    // `Map<String, String>` literal that `http` encodes as form fields.
+    test('application/x-www-form-urlencoded renders a string-map body', () {
+      final operation = {
+        'tags': ['auth'],
+        'operationId': 'createSession',
+        'requestBody': {
+          'required': true,
+          'content': {
+            'application/x-www-form-urlencoded': {
+              'schema': {
+                'type': 'object',
+                'required': ['userId', 'password'],
+                'properties': {
+                  'userId': {'type': 'string'},
+                  'password': {'type': 'string'},
+                  'remember': {'type': 'boolean'},
+                  'attempts': {'type': 'integer'},
+                },
+              },
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/session',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      expect(result, contains('body: <String, String>{'));
+      expect(
+        result,
+        contains('bodyContentType: BodyContentType.formUrlEncoded,'),
+      );
+      // Required String: bare, no stringify.
+      expect(result, contains("'userId': createSessionRequest.userId"));
+      expect(result, contains("'password': createSessionRequest.password"));
+      // Optional non-String: coerced with .toString() to satisfy the map
+      // value type, and gated behind a collection-if null check.
+      expect(
+        result,
+        contains(
+          'if (createSessionRequest.remember case final value?) '
+          "'remember': value.toString()",
+        ),
+      );
+      expect(
+        result,
+        contains(
+          'if (createSessionRequest.attempts case final value?) '
+          "'attempts': value.toString()",
+        ),
+      );
+      // Uses the shared invokeApi send path, not invokeApiMultipart.
+      expect(result, isNot(contains('invokeApiMultipart')));
+    });
+
+    // An optional body makes the whole parameter nullable, so even its
+    // required fields read through `?.` and hide behind a null check.
+    test('application/x-www-form-urlencoded optional body reads via ?.', () {
+      final operation = {
+        'tags': ['auth'],
+        'operationId': 'createSession',
+        'requestBody': {
+          'content': {
+            'application/x-www-form-urlencoded': {
+              'schema': {
+                'type': 'object',
+                'required': ['userId'],
+                'properties': {
+                  'userId': {'type': 'string'},
+                },
+              },
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/session',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      expect(
+        result,
+        contains(
+          "if (createSessionRequest?.userId case final value?) 'userId': value",
+        ),
+      );
+    });
+
+    test('application/x-www-form-urlencoded rejects non-object schema', () {
+      final operation = {
+        'tags': ['auth'],
+        'operationId': 'createSession',
+        'requestBody': {
+          'content': {
+            'application/x-www-form-urlencoded': {
+              'schema': {'type': 'string'},
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      expect(
+        () => renderTestOperation(
+          path: '/session',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        ),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains(
+              'application/x-www-form-urlencoded request body schema must '
+              'be an object',
+            ),
+          ),
+        ),
+      );
+    });
+
     test(
       'text/plain response body returns response.body without jsonDecode',
       () {

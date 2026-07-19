@@ -1,0 +1,122 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "FormUrlEncoded",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://example.com/form"
+        }
+    ],
+    "paths": {
+        "/session": {
+            "post": {
+                "operationId": "createSession",
+                "summary": "Log in with a form-urlencoded body (openfoodfacts session.pl).",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "user_id",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "user_id": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    },
+                                    "remember": {
+                                        "type": "boolean"
+                                    },
+                                    "attempts": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/preferences": {
+            "post": {
+                "operationId": "updatePreferences",
+                "summary": "Form body with enum + date scalar fields.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "visibility"
+                                ],
+                                "properties": {
+                                    "visibility": {
+                                        "type": "string",
+                                        "enum": [
+                                            "public",
+                                            "private",
+                                            "unlisted"
+                                        ]
+                                    },
+                                    "since": {
+                                        "type": "string",
+                                        "format": "date"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/subscribe": {
+            "post": {
+                "operationId": "subscribe",
+                "summary": "Endpoint whose form-urlencoded body itself is optional.",
+                "requestBody": {
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "topic": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        }
+    }
+}
