@@ -193,6 +193,51 @@
                     }
                 }
             }
+        },
+        "/upload/array-fields": {
+            "post": {
+                "operationId": "uploadArrayFields",
+                "summary": "Array-of-scalar fields comma-join into one part (openfoodfacts add-product shape).",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "brands",
+                                    "counts"
+                                ],
+                                "properties": {
+                                    "brands": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "labels": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "counts": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
         }
     }
 }

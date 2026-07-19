@@ -1740,7 +1740,7 @@ class Endpoint implements ToTemplateContext {
     if (body is! RenderRequestBodyMultipart) return '';
 
     final parts = body.partsFor(context);
-    final scalars = parts.scalars;
+    final textFields = parts.textParts;
     final files = parts.files;
 
     final outer = _methodBodyIndent;
@@ -1751,9 +1751,9 @@ class Endpoint implements ToTemplateContext {
       // Body is non-nullable at the Dart call site, so we can read its
       // fields directly into the initializing literals.
       lines
-        ..addAll(_multipartFieldsLiteral(outer, inner, scalars))
+        ..addAll(_multipartFieldsLiteral(outer, inner, textFields))
         ..addAll(_multipartFilesLiteral(outer, inner, files))
-        ..addAll(_multipartNullableFieldBlocks(outer, inner, scalars))
+        ..addAll(_multipartNullableFieldBlocks(outer, inner, textFields))
         ..addAll(_multipartNullableFileBlocks(outer, inner, files));
     } else {
       // Nullable body: empty literals up front, populate inside
@@ -1765,11 +1765,11 @@ class Endpoint implements ToTemplateContext {
         ..add('${outer}final multipartFields = <String, String>{};')
         ..add('${outer}final multipartFiles = <http.MultipartFile>[];')
         ..add('${outer}if ($paramName != null) {');
-      for (final s in scalars.where((s) => !s.isNullable)) {
+      for (final s in textFields.where((s) => !s.isNullable)) {
         lines.add(_fieldSetLine(guarded, s.fieldName, s.requiredValueExpr));
       }
       lines.addAll(
-        _multipartNullableFieldBlocks(guarded, guardedInner, scalars),
+        _multipartNullableFieldBlocks(guarded, guardedInner, textFields),
       );
       for (final f in files.where((f) => !f.isNullable)) {
         lines.add(_fileAddLine(guarded, f.fieldName, f.dartAccess));
@@ -1782,15 +1782,15 @@ class Endpoint implements ToTemplateContext {
     return '${lines.join('\n')}\n';
   }
 
-  /// Non-nullable scalar fields as a map literal. Only used when the
+  /// Non-nullable text fields as a map literal. Only used when the
   /// body itself is non-nullable (otherwise they go inside the null
   /// guard, not a literal).
   List<String> _multipartFieldsLiteral(
     String outer,
     String inner,
-    List<MultipartScalarPart> scalars,
+    List<MultipartTextPart> textFields,
   ) {
-    final nonNull = scalars.where((s) => !s.isNullable).toList();
+    final nonNull = textFields.where((s) => !s.isNullable).toList();
     return [
       '${outer}final multipartFields = <String, String>{',
       for (final s in nonNull)
@@ -1820,10 +1820,10 @@ class Endpoint implements ToTemplateContext {
   List<String> _multipartNullableFieldBlocks(
     String outer,
     String inner,
-    List<MultipartScalarPart> scalars,
+    List<MultipartTextPart> textFields,
   ) {
     final out = <String>[];
-    for (final s in scalars.where((s) => s.isNullable)) {
+    for (final s in textFields.where((s) => s.isNullable)) {
       final setStmt = _fieldSetLine('', s.fieldName, s.nullableValueExpr);
       out.addAll([
         '$outer{',
@@ -2440,13 +2440,14 @@ class RenderRequestBodyTextPlain extends RenderRequestBodySimple {
 }
 
 /// `application/x-www-form-urlencoded` request body. The schema must
-/// resolve to a `RenderObject` whose properties are all scalars
-/// (string/number/bool/pod/enum/date); the body renders as a
-/// `Map<String, String>` literal that `http` encodes as `key=value&...`
-/// form fields.
+/// resolve to a `RenderObject` whose properties are each a scalar
+/// (string/number/bool/pod/enum/date) or an array of scalars (comma-joined
+/// into one field); the body renders as a `Map<String, String>` literal
+/// that `http` encodes as `key=value&...` form fields.
 ///
 /// Unlike multipart there is no file-part path — form-urlencoded has no
-/// way to carry binary — so a `format: binary` property (or any non-scalar)
+/// way to carry binary — so a `format: binary` property (or any other
+/// non-scalar shape: a nested array, an array of objects, a bare object)
 /// is a render-time `FormatException`.
 class RenderRequestBodyFormUrlEncoded extends RenderRequestBodySimple {
   const RenderRequestBodyFormUrlEncoded({
@@ -2469,34 +2470,37 @@ class RenderRequestBodyFormUrlEncoded extends RenderRequestBodySimple {
     for (final entry in object.properties.entries) {
       final jsonName = entry.key;
       final property = entry.value;
-      if (!_isWireStringScalar(property)) {
-        throw FormatException(
-          'application/x-www-form-urlencoded property must be a scalar (got '
-          '${property.runtimeType} for "$jsonName") at '
-          '${property.common.pointer}',
-        );
-      }
       final dartName = variableSafeName(context.quirks, jsonName);
-      final inRequired = object.requiredProperties.contains(jsonName);
-      final fieldNullable = !inRequired || property.common.nullable;
+      final fieldNullable = object.propertyRendersNullable(
+        jsonName,
+        property,
+        context,
+      );
       final access = bodyNullable
           ? '$paramName?.$dartName'
           : '$paramName.$dartName';
-      if (bodyNullable || fieldNullable) {
-        final valueExpr = _runtimeSource(
-          _wireStringFieldExpr(
-            property,
-            const DartIdentifier('value'),
-            context,
-          ),
+      // A nullable field (or an optional body making every field nullable)
+      // reads through an `if (... case final value?)` guard, so the wire
+      // value is built against the captured `value`; otherwise straight
+      // off `access`.
+      final guarded = bodyNullable || fieldNullable;
+      final valueExpr = _wireStringFieldSource(
+        property,
+        guarded ? 'value' : access,
+        context,
+      );
+      if (valueExpr == null) {
+        throw FormatException(
+          'application/x-www-form-urlencoded property must be a scalar or an '
+          'array of scalars (got ${property.runtimeType} for "$jsonName") at '
+          '${property.common.pointer}',
         );
-        entries.add("if ($access case final value?) '$jsonName': $valueExpr");
-      } else {
-        final valueExpr = _runtimeSource(
-          _wireStringFieldExpr(property, DartIdentifier(access), context),
-        );
-        entries.add("'$jsonName': $valueExpr");
       }
+      entries.add(
+        guarded
+            ? "if ($access case final value?) '$jsonName': $valueExpr"
+            : "'$jsonName': $valueExpr",
+      );
     }
     return '<String, String>{${entries.join(', ')}}';
   }
@@ -2506,9 +2510,10 @@ class RenderRequestBodyFormUrlEncoded extends RenderRequestBodySimple {
       _requestBodyParameterContext(this, context);
 }
 
-/// One scalar text part in a `multipart/form-data` body.
-class MultipartScalarPart extends Equatable {
-  const MultipartScalarPart({
+/// One text part in a `multipart/form-data` body — a scalar property, or
+/// an array of scalars comma-joined into one field value.
+class MultipartTextPart extends Equatable {
+  const MultipartTextPart({
     required this.fieldName,
     required this.dartAccess,
     required this.isNullable,
@@ -2564,8 +2569,9 @@ class MultipartFilePart extends Equatable {
 
 /// `multipart/form-data` request body. The schema must resolve to a
 /// `RenderObject` whose properties are scalars (string/number/bool/pod/
-/// enum) or binary (`format: binary` → `Uint8List`). Scalars become text
-/// parts; binaries become file parts in the generated endpoint method.
+/// enum), arrays of scalars, or binary (`format: binary` → `Uint8List`).
+/// Scalars become text parts; an array of scalars comma-joins into one
+/// text part; binaries become file parts in the generated endpoint method.
 ///
 /// Unsupported on purpose (v1): arrays-of-files, nested objects as
 /// fields, per-part `encoding.contentType`, and filenames other than the
@@ -2577,26 +2583,30 @@ class RenderRequestBodyMultipart extends RenderRequestBody {
     required super.isRequired,
   });
 
-  /// Classify this body's properties into scalar (text) and file parts.
+  /// Classify this body's properties into text parts (scalars, and arrays
+  /// of scalars comma-joined) and file parts.
   /// Throws [FormatException] at render time when the schema shape is
   /// outside the v1-supported set — the ground truth for what the
   /// generator will emit. Called once from `_buildMultipartAssembly`
   /// on every render cycle, so schema-shape errors surface even though
   /// no eager validation happens at construction time.
-  ({List<MultipartScalarPart> scalars, List<MultipartFilePart> files}) partsFor(
+  ({List<MultipartTextPart> textParts, List<MultipartFilePart> files}) partsFor(
     SchemaRenderer context,
   ) {
     final object = _requireObjectBody(this, MimeType.multipartFormData.value);
     final paramName = dartParameterName(context.quirks);
-    final scalars = <MultipartScalarPart>[];
+    final textParts = <MultipartTextPart>[];
     final files = <MultipartFilePart>[];
     for (final entry in object.properties.entries) {
       final jsonName = entry.key;
       final property = entry.value;
       final dartName = variableSafeName(context.quirks, jsonName);
       final dartAccess = '$paramName.$dartName';
-      final inRequired = object.requiredProperties.contains(jsonName);
-      final isNullable = !inRequired || property.common.nullable;
+      final isNullable = object.propertyRendersNullable(
+        jsonName,
+        property,
+        context,
+      );
 
       if (property is RenderBinary) {
         files.add(
@@ -2606,42 +2616,36 @@ class RenderRequestBodyMultipart extends RenderRequestBody {
             isNullable: isNullable,
           ),
         );
-      } else if (_isWireStringScalar(property)) {
-        scalars.add(
-          MultipartScalarPart(
-            fieldName: jsonName,
-            dartAccess: dartAccess,
-            isNullable: isNullable,
-            // `toJsonExpression` knows how to render each pod correctly
-            // (DateTime → .toIso8601String(), newtype → .toJson(), plain
-            // Dart types → identity). `.toString()` coerces non-String
-            // json types (int, bool, enum with int values) to satisfy
-            // Map<String, String>.
-            requiredValueExpr: _runtimeSource(
-              _wireStringFieldExpr(
-                property,
-                DartIdentifier(dartAccess),
-                context,
-              ),
-            ),
-            nullableValueExpr: _runtimeSource(
-              _wireStringFieldExpr(
-                property,
-                const DartIdentifier('v'),
-                context,
-              ),
-            ),
-          ),
-        );
-      } else {
+        continue;
+      }
+      // A scalar becomes one text field; an array of scalars comma-joins
+      // into one (see [_wireStringFieldSource]). `requiredValueExpr` reads
+      // straight off `dartAccess`; `nullableValueExpr` reads off the `v`
+      // local the nullable-field block captures the property into.
+      final requiredValueExpr = _wireStringFieldSource(
+        property,
+        dartAccess,
+        context,
+      );
+      final nullableValueExpr = _wireStringFieldSource(property, 'v', context);
+      if (requiredValueExpr == null || nullableValueExpr == null) {
         throw FormatException(
-          'multipart/form-data property must be a scalar or binary (got '
-          '${property.runtimeType} for "$jsonName") at '
-          '${property.common.pointer}',
+          'multipart/form-data property must be a scalar, an array of '
+          'scalars, or binary (got ${property.runtimeType} for "$jsonName") '
+          'at ${property.common.pointer}',
         );
       }
+      textParts.add(
+        MultipartTextPart(
+          fieldName: jsonName,
+          dartAccess: dartAccess,
+          isNullable: isNullable,
+          requiredValueExpr: requiredValueExpr,
+          nullableValueExpr: nullableValueExpr,
+        ),
+      );
     }
-    return (scalars: scalars, files: files);
+    return (textParts: textParts, files: files);
   }
 
   @override
@@ -2682,6 +2686,36 @@ DartExpression _wireStringFieldExpr(
   // question [_stringifyWireValue] already answers from [DartType],
   // spelled as a comparison against rendered text.
   return _stringifyWireValue(property, jsonExpr);
+}
+
+/// Source for [property] rendered as one `Map<String, String>` wire field
+/// value, reading from the Dart expression [access]. A scalar stringifies
+/// to a single value; an array of scalars comma-joins into one value — the
+/// `explode: false` form that header and query arrays already use (see
+/// [Endpoint._elementWireConversion]), and what form-shaped servers that
+/// document a "comma separated list of values" expect.
+///
+/// Returns null when [property] is neither shape (a nested array, an array
+/// of objects, a bare object, …), leaving the caller to throw a
+/// content-type-specific [FormatException] naming the property.
+String? _wireStringFieldSource(
+  RenderSchema property,
+  String access,
+  SchemaRenderer context,
+) {
+  if (_isWireStringScalar(property)) {
+    return _runtimeSource(
+      _wireStringFieldExpr(property, DartIdentifier(access), context),
+    );
+  }
+  if (property is RenderArray && _isWireStringScalar(property.items)) {
+    final conversion = Endpoint._elementWireConversion(property, context);
+    final mapped = conversion == null
+        ? access
+        : '$access.map((e) => $conversion)';
+    return "$mapped.join(',')";
+  }
+  return null;
 }
 
 /// Whether [schema] serializes to a single value on the wire, and so can
@@ -4236,6 +4270,25 @@ class RenderObject extends RenderNewType {
     return !inRequiredList && !propertyHasDefaultValue;
   }
 
+  /// Whether property [jsonName] renders as a nullable Dart field. The
+  /// field declaration and every read of it — JSON (de)serialization, the
+  /// multipart/form-data field assembly — must agree on this, so they all
+  /// go through here. An optional property is *not* nullable when it has a
+  /// (possibly quirk-synthesized) default: an optional array under the
+  /// `allListsDefaultToEmpty` quirk is a non-nullable `List<T> = const []`,
+  /// not a `List<T>?`.
+  bool propertyRendersNullable(
+    String jsonName,
+    RenderSchema property,
+    SchemaRenderer context,
+  ) =>
+      propertyDartIsNullable(
+        jsonName: jsonName,
+        context: context,
+        propertyHasDefaultValue: property.hasDefaultValue(context),
+      ) ||
+      property.common.nullable;
+
   @visibleForTesting
   String argumentLine(
     String jsonName,
@@ -4333,13 +4386,7 @@ class RenderObject extends RenderNewType {
     final hasDefaultValue = property.hasDefaultValue(context);
     final jsonKeyIsRequired = requiredProperties.contains(jsonName);
     final jsonIsNullable = !jsonKeyIsRequired || property.common.nullable;
-    final dartIsNullable =
-        propertyDartIsNullable(
-          jsonName: jsonName,
-          context: context,
-          propertyHasDefaultValue: hasDefaultValue,
-        ) ||
-        property.common.nullable;
+    final dartIsNullable = propertyRendersNullable(jsonName, property, context);
     // OpenAPI 3.1 lets a property be both `required` and accept `null`
     // as its value (`type: [T, "null"]` + `required: [key]`). A plain
     // `json[key] as T?` cast would then accept a missing key as a null
