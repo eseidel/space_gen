@@ -605,6 +605,71 @@ bool _canBePathParameter(ResolvedSchema schema) {
   return false;
 }
 
+/// True when [schema] serializes to a single value on the wire — the shape a
+/// query parameter may take on its own, and the element type an array-shaped
+/// one may hold.
+///
+/// Deliberately a superset of what [_canBePathParameter] accepts: `number`
+/// is a legal query value (`?ratio=0.5`) whether or not we want one in a URL
+/// path segment. Keeping the two predicates separate lets the path rule stay
+/// as strict as it is.
+bool _isSingleWireValue(ResolvedSchema schema) {
+  if (schema is ResolvedString ||
+      schema is ResolvedInteger ||
+      schema is ResolvedNumber ||
+      schema is ResolvedEnum) {
+    return true;
+  }
+  // Pods (uuid, email, date-time, uri, uri-template, boolean) and `Date` all
+  // serialize to a single string on the wire via their `toJson`.
+  return schema is ResolvedPod || schema is ResolvedDate;
+}
+
+/// True when [schema] is a shape the query renderer knows how to put on the
+/// wire under `style: form` — the only style the generator emits.
+///
+/// That is a single wire value, an array of those, or a union whose every
+/// variant is one of the two. A union may mix arities: github's `cwes` is
+/// `oneOf: [string, array<string>]`, which serializes as either `?k=a` or
+/// `?k=a&k=b` depending on the variant held at the call site.
+///
+/// Object shapes are rejected. `form`/`deepObject` object serialization isn't
+/// implemented, and no spec in the validation rotation uses it — so rather
+/// than guess at a wire format, the caller warns and the renderer's existing
+/// fallback stringifies the value. The warning is the record that we're
+/// dropping spec semantics; implement the real encoding when a spec needs it.
+bool _canBeQueryParameter(ResolvedSchema schema) {
+  if (_isSingleWireValue(schema)) {
+    return true;
+  }
+  if (schema is ResolvedArray) {
+    return _isSingleWireValue(schema.items);
+  }
+  // `anyOf` as well as `oneOf`: both render as a sealed union (anyOf becomes
+  // a `RenderOneOf`), and both appear in this position in the wild —
+  // spacetraders' `traits` is an `anyOf`. `allOf` is a
+  // [ResolvedSchemaCollection] too, but it intersects rather than unions its
+  // members, so it is deliberately not accepted here.
+  final variants = switch (schema) {
+    ResolvedOneOf(:final schemas) => schemas,
+    ResolvedAnyOf(:final schemas) => schemas,
+    _ => null,
+  };
+  if (variants == null) {
+    return false;
+  }
+  // Variants are checked one level deep rather than recursively. The renderer
+  // switches over this union's own wrapper subclasses and emits a wire form
+  // per arm, so a variant that is itself a union has no single form to emit.
+  // Holding this in step with the renderer is what keeps an accepted shape
+  // from silently rendering wrong instead of warning.
+  return variants.every(
+    (v) =>
+        _isSingleWireValue(v) ||
+        (v is ResolvedArray && _isSingleWireValue(v.items)),
+  );
+}
+
 List<ResolvedParameter> _resolveParameters(
   List<RefOr<Parameter>> parameters,
   ResolveContext context,
@@ -616,6 +681,17 @@ List<ResolvedParameter> _resolveParameters(
           !_canBePathParameter(type)) {
         _error(
           'Path parameters must be strings or integers',
+          resolved.pointer,
+        );
+      }
+      // Warn rather than error: an unsupported query shape still renders
+      // (as a stringified value), so this is a "we're dropping spec
+      // semantics" signal, not a reason to fail the whole spec.
+      if (resolved.inLocation == ParameterLocation.query &&
+          !_canBeQueryParameter(type)) {
+        _warn(
+          'Unsupported query parameter shape; generator emits a stringified '
+          'value, which is unlikely to match what the server expects',
           resolved.pointer,
         );
       }

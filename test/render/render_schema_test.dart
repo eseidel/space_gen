@@ -5034,7 +5034,7 @@ void main() {
 
     group('array parameters', () {
       test(
-        'nullable string-array query param emits .map((e) => e.toString()).toList()',
+        'nullable string-array query param passes the list through unchanged',
         () {
           // Default OpenAPI style=form, explode=true: each value gets its own
           // ?key=v repetition. Generated client emits an Iterable<String>
@@ -5059,11 +5059,11 @@ void main() {
             operationJson: operation,
             serverUrl: Uri.parse('https://example.com'),
           );
+          // Elements are already `String`, so there is no per-element
+          // conversion and the list goes straight into the query map.
           expect(
             result,
-            contains(
-              "                if (tags != null) 'tags': tags.map((e) => e).toList(),",
-            ),
+            contains("                if (tags != null) 'tags': tags,"),
           );
           // The buggy old emission must be gone — `?tags?.toString()` would
           // ship the list as `[a, b]` literal on the wire.
@@ -5098,9 +5098,7 @@ void main() {
         );
         expect(
           result,
-          contains(
-            "                'X-Tags': xTags.map((e) => e).join(','),",
-          ),
+          contains("                'X-Tags': xTags.join(','),"),
         );
       });
     });

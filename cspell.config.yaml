@@ -4,6 +4,11 @@ ignorePaths:
   - "coverage/**"
   - "*.txt" # ignore text files at the root of the project
 words:
+  # Plural of "arity" — a union whose variants differ in how many wire
+  # values they produce (one vs many).
+  - arities
+  # github's `cwes` query parameter (Common Weakness Enumeration ids).
+  - cwes
   - subtyping
   - dedupe
   - dedupes
