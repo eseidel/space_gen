@@ -378,7 +378,7 @@ void main() {
       expect(
         DartLambda(
           parameters: const ['key', 'value'],
-          body: const DartType('MapEntry').construct(const [
+          body: DartType.mapEntry.construct(const [
             DartIdentifier('key'),
             DartIdentifier('value'),
           ]),
@@ -498,10 +498,21 @@ void main() {
       );
     });
 
-    test('the two serializers are distinct values', () {
+    test('the two destinations render the same tree differently', () {
+      // The reason rendering is not a method on the node: a constant
+      // destination must not repeat the keyword (`unnecessary_const`),
+      // a runtime one wants it.
+      const constable = DartInvocation(
+        type: DartType('Foo'),
+        isConstConstructor: true,
+      );
       expect(
-        DartExpressionSerializer.constContext,
-        isNot(DartExpressionSerializer.runtimeContext),
+        serializeExpression(constable, isConstContext: false),
+        'const Foo()',
+      );
+      expect(
+        serializeExpression(constable, isConstContext: true),
+        'Foo()',
       );
     });
 
@@ -548,6 +559,173 @@ void main() {
       expect(member.source, 'Foo.a');
       expect(member.canBeConst, isTrue);
       expect(member, const DartStaticMember(type: DartType('Foo'), name: 'a'));
+    });
+  });
+
+  group('parenthesization', () {
+    const json = DartIdentifier('json');
+    const read = DartIndex(target: json, index: DartLiteral('x'));
+
+    test('a bare cast keeps no parens', () {
+      // #255: `(json['x'] as int)` would be `unnecessary_parenthesis`.
+      expect(
+        const DartCast(operand: read, type: DartType.int_).source,
+        "json['x'] as int",
+      );
+    });
+
+    test('a cast under a selector is parenthesized', () {
+      expect(
+        const DartMethodCall(
+          target: DartCast(operand: read, type: DartType.num_),
+          name: 'toDouble',
+        ).source,
+        "(json['x'] as num).toDouble()",
+      );
+    });
+
+    test('a cast on the left of ?? is parenthesized', () {
+      // Elective, not required — `as` already binds tighter. See the arm
+      // in the serializer.
+      expect(
+        const DartIfNull(
+          value: DartCast(
+            operand: read,
+            type: DartType('int', isNullable: true),
+          ),
+          ifNullValue: DartLiteral(0),
+        ).source,
+        "(json['x'] as int?) ?? 0",
+      );
+    });
+
+    test('?? nests to the right without parens', () {
+      expect(
+        const DartIfNull(
+          value: json,
+          ifNullValue: DartIfNull(
+            value: read,
+            ifNullValue: DartLiteral(0),
+          ),
+        ).source,
+        "json ?? json['x'] ?? 0",
+      );
+    });
+
+    test('?? under a cast is parenthesized', () {
+      expect(
+        const DartCast(
+          operand: DartIfNull(value: json, ifNullValue: DartLiteral(0)),
+          type: DartType.int_,
+        ).source,
+        '(json ?? 0) as int',
+      );
+    });
+  });
+
+  group('new nodes', () {
+    test('DartFunctionCall renders a top-level call', () {
+      const call = DartFunctionCall(
+        name: 'jsonDecode',
+        arguments: [DartIdentifier('body')],
+      );
+      expect(call.source, 'jsonDecode(body)');
+      expect(call.canBeConst, isFalse);
+    });
+
+    test('DartIndex renders a subscript', () {
+      expect(
+        const DartIndex(
+          target: DartIdentifier('json'),
+          index: DartLiteral('a'),
+        ).source,
+        "json['a']",
+      );
+    });
+
+    test('DartIndex quotes a key that needs escaping', () {
+      // The read used to interpolate the JSON key raw, emitting
+      // `json['don't']`, which does not parse.
+      expect(
+        const DartIndex(
+          target: DartIdentifier('json'),
+          index: DartLiteral("don't"),
+        ).source,
+        r"json['don\'t']",
+      );
+    });
+
+    test('DartThrow renders a throw expression', () {
+      const thrown = DartThrow(
+        DartInvocation(
+          type: DartType.unimplementedError,
+          isConstConstructor: false,
+          arguments: [DartLiteral('nope')],
+        ),
+      );
+      expect(thrown.source, "throw UnimplementedError('nope')");
+      expect(thrown.canBeConst, isFalse);
+    });
+
+    test('DartMethodCall writes type arguments', () {
+      expect(
+        const DartMethodCall(
+          target: DartIdentifier('v'),
+          name: 'cast',
+          typeArguments: [DartType.string],
+        ).source,
+        'v.cast<String>()',
+      );
+    });
+
+    test('type arguments participate in equality', () {
+      const withArgs = DartMethodCall(
+        target: DartIdentifier('v'),
+        name: 'cast',
+        typeArguments: [DartType.string],
+      );
+      const without = DartMethodCall(target: DartIdentifier('v'), name: 'cast');
+      expect(withArgs, isNot(without));
+    });
+  });
+
+  group('equality', () {
+    // Not incidental: `RenderMap.fromJsonExpression` decides whether its
+    // closure is the identity by asking whether each side handed back the
+    // identifier it was given, so structural equality is load-bearing.
+    const a = DartIdentifier('a');
+    const b = DartIdentifier('b');
+
+    test('DartFunctionCall compares name and arguments', () {
+      const call = DartFunctionCall(name: 'f', arguments: [a]);
+      expect(call, const DartFunctionCall(name: 'f', arguments: [a]));
+      expect(call, isNot(const DartFunctionCall(name: 'g', arguments: [a])));
+      expect(call, isNot(const DartFunctionCall(name: 'f', arguments: [b])));
+    });
+
+    test('DartIndex compares target and index', () {
+      const index = DartIndex(target: a, index: DartLiteral('k'));
+      expect(index, const DartIndex(target: a, index: DartLiteral('k')));
+      expect(index, isNot(const DartIndex(target: b, index: DartLiteral('k'))));
+      expect(index, isNot(const DartIndex(target: a, index: DartLiteral('j'))));
+    });
+
+    test('DartCast compares operand and type', () {
+      const cast = DartCast(operand: a, type: DartType.int_);
+      expect(cast, const DartCast(operand: a, type: DartType.int_));
+      expect(cast, isNot(const DartCast(operand: b, type: DartType.int_)));
+      expect(cast, isNot(const DartCast(operand: a, type: DartType.string)));
+    });
+
+    test('DartIfNull compares both sides', () {
+      const ifNull = DartIfNull(value: a, ifNullValue: b);
+      expect(ifNull, const DartIfNull(value: a, ifNullValue: b));
+      expect(ifNull, isNot(const DartIfNull(value: b, ifNullValue: a)));
+    });
+
+    test('DartThrow compares its value', () {
+      expect(const DartThrow(a), const DartThrow(a));
+      expect(const DartThrow(a), isNot(const DartThrow(b)));
     });
   });
 }

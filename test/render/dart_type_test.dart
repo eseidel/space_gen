@@ -37,7 +37,7 @@ void main() {
 
     test('DartType.list builds List<T>, defaulting the element to dynamic', () {
       expect(DartType.list(DartType.string).toString(), 'List<String>');
-      expect(DartType.list().toString(), 'List<dynamic>');
+      expect(DartType.list().toString(), 'List');
       expect(
         DartType.list(DartType.list(DartType.int_)).toString(),
         'List<List<int>>',

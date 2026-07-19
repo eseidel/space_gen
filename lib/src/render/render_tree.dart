@@ -1768,7 +1768,7 @@ class Endpoint implements ToTemplateContext {
     final returnShape = operation.returnShape;
     final String returnType;
     final bool isVoidReturn;
-    final String? responseFromJson;
+    final DartExpression? responseFromJson;
     final _MultiStatusContext? multiStatusContext;
     switch (returnShape) {
       case SingleSchemaReturn(:final schema):
@@ -1782,11 +1782,11 @@ class Endpoint implements ToTemplateContext {
         // (text/plain) emitting clean Dart. The non-JSON path then
         // falls back to the raw body without going through
         // `fromJsonExpression`, since that expects JSON-shaped input.
-        final source = _responseBodySource(operation.successContentType);
-        responseFromJson = source == 'response.body'
-            ? source
+        final source = _ResponseBodySource.of(operation.successContentType);
+        responseFromJson = source == _ResponseBodySource.raw
+            ? source.expression
             : schema.fromJsonExpression(
-                source,
+                source.expression,
                 context,
                 jsonIsNullable: false,
                 dartIsNullable: false,
@@ -1804,7 +1804,7 @@ class Endpoint implements ToTemplateContext {
     final hasErrorType = errorSchema != null;
     final errorType = errorSchema?.typeName;
     final errorFromJson = errorSchema?.fromJsonExpression(
-      'jsonDecode(response.body)',
+      _ResponseBodySource.json.expression,
       context,
       jsonIsNullable: false,
       dartIsNullable: false,
@@ -1864,7 +1864,7 @@ class Endpoint implements ToTemplateContext {
       'multipartAssembly': _buildMultipartAssembly(context),
       'returnType': returnType,
       'isVoidReturn': isVoidReturn,
-      'responseFromJson': responseFromJson,
+      'responseFromJson': _maybeRuntimeSource(responseFromJson),
       // Mustache treats a non-empty map as a single-iteration section
       // that pushes the map onto the context — so
       // `{{#multiStatus}}...{{/multiStatus}}` doubles as both the
@@ -1882,7 +1882,7 @@ class Endpoint implements ToTemplateContext {
             },
       'hasErrorType': hasErrorType,
       'errorType': errorType,
-      'errorFromJson': errorFromJson,
+      'errorFromJson': _maybeRuntimeSource(errorFromJson),
       'validationStatements': validationStatementsString,
     };
   }
@@ -2650,11 +2650,21 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   @override
   List<Object?> get props => [snakeName, pointer];
 
-  String orDefaultExpression({
+  /// [expression], with this schema's default substituted when the JSON
+  /// value can be null but the value the expression produces still has to
+  /// land in a slot that needs one.
+  ///
+  /// Returns [expression] unchanged when no substitution is called for,
+  /// so composing is unconditional at the call site.
+  DartExpression orDefault(
+    DartExpression expression, {
     required SchemaRenderer context,
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
+    DartExpression coalesced(DartExpression defaultValue) =>
+        DartIfNull(value: expression, ifNullValue: defaultValue);
+
     final defaultValue = defaultValueExpression(context);
     if (defaultValue == null) {
       if (jsonIsNullable && !dartIsNullable) {
@@ -2666,13 +2676,13 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
         // generator violated its own invariant, not user error.
         throw StateError('No default value for nullable property: $this');
       }
-      return '';
+      return expression;
     }
-    if (!jsonIsNullable) return '';
+    if (!jsonIsNullable) return expression;
     // Non-null Dart slot fed by nullable JSON: an `as T?` cast would
     // crash on null. Substitute the default whether the default is
     // const or not.
-    if (!dartIsNullable) return ' ?? ${_runtimeSource(defaultValue)}';
+    if (!dartIsNullable) return coalesced(defaultValue);
     // Nullable Dart slot with a const default: the constructor uses
     // `this.foo = default`, which only fires when the param is omitted.
     // `fromJson` always passes a value (possibly null), so substitute
@@ -2680,13 +2690,11 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     // produces `null` instead of the spec's default. Surfaced by a
     // real spec with `bool` properties marked `default: false` outside
     // the `required` array.
-    if (defaultValue.canBeConst) {
-      return ' ?? ${_runtimeSource(defaultValue)}';
-    }
+    if (defaultValue.canBeConst) return coalesced(defaultValue);
     // Nullable Dart slot with a non-const default: the constructor uses
     // an initializer list (`: foo = foo ?? default`) that substitutes
     // on null too, so the default lands without `fromJson`'s help.
-    return '';
+    return expression;
   }
 
   /// The structured Dart type for this schema — the single source of truth.
@@ -2734,12 +2742,109 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     required bool dartIsNullable,
   });
 
-  String fromJsonExpression(
-    String jsonValue,
+  /// The expression that converts [jsonValue] (a value in JSON wire form)
+  /// into this schema's Dart type.
+  ///
+  /// Null when the schema has no `fromJson` at all: [RenderVoid], whose
+  /// only use is a void return, produces no value to convert. Modeled as
+  /// an absent expression rather than an empty one so callers have to
+  /// decide what to do about it.
+  DartExpression? fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   });
+
+  /// `<jsonValue> as <this schema's wire type>`, the cast every
+  /// [fromJsonExpression] starts from.
+  @protected
+  DartExpression jsonCast(
+    DartExpression jsonValue, {
+    required bool jsonIsNullable,
+  }) => DartCast(
+    operand: jsonValue,
+    type: jsonIsNullable
+        ? jsonStorageDartType.asNullable()
+        : jsonStorageDartType,
+  );
+
+  /// [fromJsonExpression] where an absent expression has no meaning — as a
+  /// list element or a map value, whose Dart type cannot be `void`.
+  ///
+  /// [RenderVoid] is the only schema that returns null, and it is reachable
+  /// only as an operation's return. Getting one here means the tree was
+  /// built wrong, so this reports that rather than propagating a null into
+  /// an expression that has nowhere to put it.
+  ///
+  /// Only [RenderMap] can actually reach the throw: [RenderArray] asks
+  /// first whether its items need conversion, and [RenderVoid] answers no,
+  /// so an array of void takes the `.cast()` branch and never calls this.
+  @protected
+  DartExpression requireFromJsonExpression(
+    DartExpression jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) {
+    final expression = fromJsonExpression(
+      jsonValue,
+      context,
+      jsonIsNullable: jsonIsNullable,
+      dartIsNullable: dartIsNullable,
+    );
+    if (expression == null) {
+      throw StateError('$runtimeType has no fromJson expression: $this');
+    }
+    return expression;
+  }
+
+  /// This schema parsed from [jsonValue]: cast to the wire type, handed to
+  /// the schema's own `fromJson` factory, with any default substituted
+  /// after.
+  ///
+  /// The whole conversion for every schema that renders its own factory,
+  /// which is why it is one method rather than the same three calls
+  /// written out per subclass.
+  ///
+  /// Not used by [RenderOneOf] or [RenderEmptyObject]: both would be
+  /// unchanged by [orDefault] today (their default is always null), but
+  /// routing them through it would newly subject them to its
+  /// nullable-without-a-default [StateError].
+  @protected
+  DartExpression parsedFromJson(
+    DartExpression jsonValue,
+    SchemaRenderer context, {
+    required bool jsonIsNullable,
+    required bool dartIsNullable,
+  }) => orDefault(
+    _fromJsonCall(
+      jsonCast(jsonValue, jsonIsNullable: jsonIsNullable),
+      jsonIsNullable: jsonIsNullable,
+    ),
+    context: context,
+    jsonIsNullable: jsonIsNullable,
+    dartIsNullable: dartIsNullable,
+  );
+
+  /// `<Type>.fromJson(<argument>)`, or `maybeFromJson` when the JSON value
+  /// can be null — the shape every schema that renders its own `fromJson`
+  /// is parsed through.
+  ///
+  /// Named off [dartType] rather than a separately-computed class name.
+  /// Those are the same string today, but only one of them is the type
+  /// reference sites elsewhere emit, and a divergence would produce a call
+  /// to a class that does not exist.
+  DartExpression _fromJsonCall(
+    DartExpression argument, {
+    required bool jsonIsNullable,
+  }) => DartInvocation(
+    type: dartType,
+    constructorName: jsonIsNullable ? 'maybeFromJson' : 'fromJson',
+    arguments: [argument],
+    // A factory that parses at runtime.
+    isConstConstructor: false,
+  );
 
   /// A Dart expression that constructs a valid in-memory instance of
   /// this schema, used by generated round-trip tests. Returns `null`
@@ -2836,7 +2941,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 /// a `??` right-hand side, or a parameter default, where a `const` keyword
 /// turns an allocation into a compile-time constant.
 String _runtimeSource(DartExpression expression) =>
-    DartExpressionSerializer.runtimeContext.serialize(expression);
+    serializeExpression(expression, isConstContext: false);
 
 /// [_runtimeSource] for an expression that may be absent.
 String? _maybeRuntimeSource(DartExpression? expression) =>
@@ -2978,11 +3083,14 @@ class RenderPod extends RenderSchema {
     DartExpression name, {
     required bool nameIsNullable,
   }) {
-    DartExpression call(String method) =>
-        DartMethodCall(target: name, name: method, isNullAware: nameIsNullable);
+    DartExpression method(String methodName) => DartMethodCall(
+      target: name,
+      name: methodName,
+      isNullAware: nameIsNullable,
+    );
     return switch (type) {
-      PodType.dateTime => call('toIso8601String'),
-      PodType.uri || PodType.uriTemplate => call('toString'),
+      PodType.dateTime => method('toIso8601String'),
+      PodType.uri || PodType.uriTemplate => method('toString'),
       // String- and bool-backed types: no conversion; `name` already
       // has the correct nullable/non-nullable type.
       PodType.email || PodType.uuid || PodType.boolean => name,
@@ -3016,49 +3124,54 @@ class RenderPod extends RenderSchema {
   }
 
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
-    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
-    final orDefault = orDefaultExpression(
+    final cast = jsonCast(jsonValue, jsonIsNullable: jsonIsNullable);
+    // Applied to every branch: when the JSON value can't be null it
+    // returns the expression unchanged, so the branches don't each have
+    // to know whether a default is in play.
+    DartExpression withDefault(DartExpression expression) => orDefault(
+      expression,
       context: context,
       jsonIsNullable: jsonIsNullable,
       dartIsNullable: dartIsNullable,
     );
-    final castedValue = '$jsonValue as $jsonType';
 
     if (createsNewType) {
-      final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-      return '$typeName.$jsonMethod($castedValue)$orDefault';
+      return parsedFromJson(
+        jsonValue,
+        context,
+        jsonIsNullable: jsonIsNullable,
+        dartIsNullable: dartIsNullable,
+      );
     }
 
-    // Inline: convert json String -> Dart value at the use site. For
-    // nullable values we call a helper (so the expression remains a
-    // single nullable-aware expression), for non-nullable we inline.
-    switch (type) {
-      case PodType.dateTime:
-        if (jsonIsNullable) {
-          return '${ModelHelpers.maybeParseDateTime}($castedValue)$orDefault';
-        }
-        return 'DateTime.parse($castedValue)';
-      case PodType.uri:
-        if (jsonIsNullable) {
-          return '${ModelHelpers.maybeParseUri}($castedValue)$orDefault';
-        }
-        return 'Uri.parse($castedValue)';
-      case PodType.uriTemplate:
-        if (jsonIsNullable) {
-          final call = '${ModelHelpers.maybeParseUriTemplate}($castedValue)';
-          return '$call$orDefault';
-        }
-        return 'UriTemplate($castedValue)';
-      case PodType.boolean || PodType.email || PodType.uuid:
-        // 'as' has higher precedence than '??' so no parens are needed.
-        return '$castedValue$orDefault';
-    }
+    // Inline: convert the JSON string to a Dart value at the use site. A
+    // nullable value goes through a model helper, which keeps the result
+    // a single nullable-aware expression; a non-nullable one inlines the
+    // parse.
+    return withDefault(
+      switch (type) {
+        PodType.dateTime =>
+          jsonIsNullable
+              ? callFunction(ModelHelpers.maybeParseDateTime, [cast])
+              : DartType.dateTime.construct([cast], name: 'parse'),
+        PodType.uri =>
+          jsonIsNullable
+              ? callFunction(ModelHelpers.maybeParseUri, [cast])
+              : DartType.uri.construct([cast], name: 'parse'),
+        PodType.uriTemplate =>
+          jsonIsNullable
+              ? callFunction(ModelHelpers.maybeParseUriTemplate, [cast])
+              : DartType.uriTemplate.construct([cast]),
+        // Already JSON-native: the cast is the whole conversion.
+        PodType.boolean || PodType.email || PodType.uuid => cast,
+      },
+    );
   }
 
   @override
@@ -3234,47 +3347,28 @@ class RenderString extends RenderSchema {
   @override
   DartType get jsonStorageDartType => DartType.string;
 
-  String newTypeFromJsonExpression(
-    String jsonValue,
-    SchemaRenderer context, {
-    required bool jsonIsNullable,
-    required bool dartIsNullable,
-  }) {
-    final orDefault = orDefaultExpression(
-      context: context,
-      jsonIsNullable: jsonIsNullable,
-      dartIsNullable: dartIsNullable,
-    );
-    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-    final className = camelFromSnake(snakeName);
-    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
-    final castedValue = '$jsonValue as $jsonType';
-    return '$className.$jsonMethod($castedValue)$orDefault';
-  }
-
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
     if (createsNewType) {
-      return newTypeFromJsonExpression(
+      return parsedFromJson(
         jsonValue,
         context,
         jsonIsNullable: jsonIsNullable,
         dartIsNullable: dartIsNullable,
       );
     }
-    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
-    final orDefault = orDefaultExpression(
+    // A String is already JSON-native: the cast is the conversion.
+    return orDefault(
+      jsonCast(jsonValue, jsonIsNullable: jsonIsNullable),
       context: context,
       jsonIsNullable: jsonIsNullable,
       dartIsNullable: dartIsNullable,
     );
-    final castedValue = '$jsonValue as $jsonType';
-    return '$castedValue$orDefault';
   }
 
   @override
@@ -3493,56 +3587,51 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
     };
   }
 
-  String jsonToDartCall({required bool jsonIsNullable});
+  /// The method that narrows the JSON wire type to the Dart type — `num`
+  /// arrives off the wire where a `double` is wanted. Null when the two
+  /// already agree and no call is needed.
+  String? get jsonToDartMethod;
 
-  String newTypeFromJsonExpression(
-    String jsonValue,
-    SchemaRenderer context, {
-    required bool jsonIsNullable,
-    required bool dartIsNullable,
-  }) {
-    final orDefault = orDefaultExpression(
-      context: context,
-      jsonIsNullable: jsonIsNullable,
-      dartIsNullable: dartIsNullable,
-    );
-    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-    final className = camelFromSnake(snakeName);
-    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
-    final castedValue = '$jsonValue as $jsonType';
-    return '$className.$jsonMethod($castedValue)$orDefault';
+  /// [jsonToDartMethod] spelled as a call, for the newtype template, which
+  /// splices it into a body this class does not build.
+  String jsonToDartCall({required bool jsonIsNullable}) {
+    final method = jsonToDartMethod;
+    if (method == null) return '';
+    return '${jsonIsNullable ? '?.' : '.'}$method()';
   }
 
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
     if (createsNewType) {
-      return newTypeFromJsonExpression(
+      return parsedFromJson(
         jsonValue,
         context,
         jsonIsNullable: jsonIsNullable,
         dartIsNullable: dartIsNullable,
       );
     }
-    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
-    final orDefault = orDefaultExpression(
+    // Where the wire type is wider than the Dart type (`num` -> `double`),
+    // narrow it. The serializer parenthesizes the cast because a selector
+    // binds tighter than `as`; a cast with no call on it stays bare (#255).
+    final cast = jsonCast(jsonValue, jsonIsNullable: jsonIsNullable);
+    final narrowed = jsonToDartMethod;
+    return orDefault(
+      narrowed == null
+          ? cast
+          : DartMethodCall(
+              target: cast,
+              name: narrowed,
+              isNullAware: jsonIsNullable,
+            ),
       context: context,
       jsonIsNullable: jsonIsNullable,
       dartIsNullable: dartIsNullable,
     );
-    final toDartCall = jsonToDartCall(jsonIsNullable: jsonIsNullable);
-    final cast = '$jsonValue as $jsonType';
-    // A bare cast needs no parens (`unnecessary_parenthesis`). Keep them
-    // to bind a trailing `.toX()` tighter than `as`
-    // (`(json['x'] as num).toDouble()`), or around a `?? default` where
-    // the analyzer leaves the parens for readability
-    // (`(json['x'] as int?) ?? 0`).
-    if (toDartCall.isEmpty && orDefault.isEmpty) return cast;
-    return '($cast)$toDartCall$orDefault';
   }
 
   @override
@@ -3612,8 +3701,7 @@ class RenderNumber extends RenderNumeric<double> {
   DartType get jsonStorageDartType => DartType.num_;
 
   @override
-  String jsonToDartCall({required bool jsonIsNullable}) =>
-      jsonIsNullable ? '?.toDouble()' : '.toDouble()';
+  String? get jsonToDartMethod => 'toDouble';
 
   @override
   DartExpression? exampleValue(SchemaRenderer context) =>
@@ -3651,9 +3739,9 @@ class RenderInteger extends RenderNumeric<int> {
   @override
   DartType get jsonStorageDartType => DartType.int_;
 
-  // jsonType and dartType are both int, so we don't need to do anything.
+  // jsonType and dartType are both int, so there is nothing to narrow.
   @override
-  String jsonToDartCall({required bool jsonIsNullable}) => '';
+  String? get jsonToDartMethod => null;
 
   @override
   DartExpression? exampleValue(SchemaRenderer context) => newtypeWrappedExample(
@@ -3936,8 +4024,14 @@ class RenderObject extends RenderNewType {
     // `checkedKey`, which throws `FormatException` when the key is
     // absent — other combinations still read `json[key]` directly.
     final jsonRead = jsonKeyIsRequired && property.common.nullable
-        ? "${ModelHelpers.checkedKey}(json, '$jsonName')"
-        : "json['$jsonName']";
+        ? callFunction(ModelHelpers.checkedKey, [
+            const DartIdentifier('json'),
+            DartLiteral(jsonName),
+          ])
+        : DartIndex(
+            target: const DartIdentifier('json'),
+            index: DartLiteral(jsonName),
+          );
 
     // Means that the constructor parameter is required which is only true if
     // both the json property is required and it does not have a default.
@@ -3982,11 +4076,13 @@ class RenderObject extends RenderNewType {
           dartIsNullable: dartIsNullable,
         ),
       ),
-      'fromJson': property.fromJsonExpression(
-        jsonRead,
-        context,
-        dartIsNullable: dartIsNullable,
-        jsonIsNullable: jsonIsNullable,
+      'fromJson': _maybeRuntimeSource(
+        property.fromJsonExpression(
+          jsonRead,
+          context,
+          dartIsNullable: dartIsNullable,
+          jsonIsNullable: jsonIsNullable,
+        ),
       ),
     };
   }
@@ -4170,11 +4266,16 @@ class RenderObject extends RenderNewType {
           dartIsNullable: isNullable,
         ),
       ),
-      'entryValueFromJson': valueSchema?.fromJsonExpression(
-        'entry.value',
-        context,
-        jsonIsNullable: isNullable,
-        dartIsNullable: isNullable,
+      'entryValueFromJson': _maybeRuntimeSource(
+        valueSchema?.fromJsonExpression(
+          const DartPropertyAccess(
+            target: DartIdentifier('entry'),
+            name: 'value',
+          ),
+          context,
+          jsonIsNullable: isNullable,
+          dartIsNullable: isNullable,
+        ),
       ),
       // The set of named-property JSON keys to exclude from
       // `entries` on round-trip. A `const <String>{...}` literal —
@@ -4195,21 +4296,17 @@ class RenderObject extends RenderNewType {
   }
 
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
-  }) {
-    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
-    final orDefault = orDefaultExpression(
-      context: context,
-      jsonIsNullable: jsonIsNullable,
-      dartIsNullable: dartIsNullable,
-    );
-    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-    return '$className.$jsonMethod($jsonValue as $jsonType)$orDefault';
-  }
+  }) => parsedFromJson(
+    jsonValue,
+    context,
+    jsonIsNullable: jsonIsNullable,
+    dartIsNullable: dartIsNullable,
+  );
 
   // This would probably be easier if we did a copyWith and then compared with
   // normal equals provided by Equatable.
@@ -4419,11 +4516,13 @@ class RenderArray extends RenderSchema {
     // `.cast<Uri>()` over a `List<String>` is a lazy view that throws on
     // access; those items must be mapped through `fromJsonExpression`.
     if (items.shouldCallToJson) {
-      final itemFrom = items.fromJsonExpression(
-        'e',
-        context,
-        jsonIsNullable: false,
-        dartIsNullable: false,
+      final itemFrom = _runtimeSource(
+        items.requireFromJsonExpression(
+          const DartIdentifier('e'),
+          context,
+          jsonIsNullable: false,
+          dartIsNullable: false,
+        ),
       );
       fromJson = 'v.map<$itemTypeName>((e) => $itemFrom).toList()';
     } else {
@@ -4507,40 +4606,58 @@ class RenderArray extends RenderSchema {
   }
 
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
-    final orDefault = orDefaultExpression(
-      context: context,
-      jsonIsNullable: jsonIsNullable,
-      dartIsNullable: dartIsNullable,
-    );
-    final itemTypeName = items.typeName;
-    // List has special handling for nullability since we want to cast
-    // through List<dynamic> first before casting to the item type.
-    final castAsList = jsonIsNullable
-        ? '($jsonValue as List?)?'
-        : '($jsonValue as List)';
-    final itemsFromJson = items.fromJsonExpression(
-      'e',
-      context,
-      dartIsNullable: false,
-      // Unless itemSchema itself has a nullable type this is always false.
-      jsonIsNullable: false,
-    );
+    // Cast through a bare `List` first, then convert to the item type —
+    // the wire value is a list of anything whatever the items are.
+    final cast = jsonCast(jsonValue, jsonIsNullable: jsonIsNullable);
     // Only a truly json-native item (Dart type == wire type: String, int,
     // bool, num) can be cast directly. Items that need conversion — newtypes,
     // enums, and pods like `Uri`/`DateTime` whose wire type is a String —
     // must be mapped through `fromJsonExpression`; a bare `.cast<Uri>()` is a
     // lazy view over the wire Strings that throws on element access.
-    if (!items.shouldCallToJson) {
-      return '$castAsList.cast<$itemTypeName>()$orDefault';
+    final DartExpression converted;
+    if (items.shouldCallToJson) {
+      const element = DartIdentifier('e');
+      converted = DartMethodCall(
+        target: DartMethodCall(
+          target: cast,
+          name: 'map',
+          typeArguments: [items.dartType],
+          arguments: [
+            DartLambda(
+              parameters: [element.name],
+              body: items.requireFromJsonExpression(
+                element,
+                context,
+                dartIsNullable: false,
+                // Unless the item schema itself is nullable, always false.
+                jsonIsNullable: false,
+              ),
+            ),
+          ],
+          isNullAware: jsonIsNullable,
+        ),
+        name: 'toList',
+      );
+    } else {
+      converted = DartMethodCall(
+        target: cast,
+        name: 'cast',
+        typeArguments: [items.dartType],
+        isNullAware: jsonIsNullable,
+      );
     }
-    return '$castAsList.map<$itemTypeName>('
-        '(e) => $itemsFromJson).toList()$orDefault';
+    return orDefault(
+      converted,
+      context: context,
+      jsonIsNullable: jsonIsNullable,
+      dartIsNullable: dartIsNullable,
+    );
   }
 
   @override
@@ -4624,11 +4741,13 @@ class RenderMap extends RenderSchema {
     final keyFromJson = keyEnum == null
         ? 'k'
         : '${keyEnum.typeName}.fromJson(k)';
-    final valueFromJson = value.fromJsonExpression(
-      'val',
-      context,
-      jsonIsNullable: false,
-      dartIsNullable: false,
+    final valueFromJson = _runtimeSource(
+      value.requireFromJsonExpression(
+        const DartIdentifier('val'),
+        context,
+        jsonIsNullable: false,
+        dartIsNullable: false,
+      ),
     );
     final keyToJson = keyEnum == null ? 'k' : 'k.toJson()';
     final valueToJson = value.toJsonExpression(
@@ -4688,7 +4807,7 @@ class RenderMap extends RenderSchema {
       arguments: [
         DartLambda(
           parameters: const ['key', 'value'],
-          body: const DartType('MapEntry').construct([keyToJson, valueToJson]),
+          body: DartType.mapEntry.construct([keyToJson, valueToJson]),
         ),
       ],
       isNullAware: dartIsNullable,
@@ -4696,45 +4815,52 @@ class RenderMap extends RenderSchema {
   }
 
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
     // We could probably do a smaller cast if the value schema is only json
     // types.
-    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
-    const keyName = 'key';
-    const valueName = 'value';
+    const key = DartIdentifier('key');
+    const value = DartIdentifier('value');
+    final keySchema = this.keySchema;
     final keyFromJson = keySchema == null
-        ? keyName
-        : '${keySchema!.typeName}.fromJson($keyName)';
-    final valueFromJson = valueSchema.fromJsonExpression(
-      valueName,
+        ? key
+        : keySchema._fromJsonCall(key, jsonIsNullable: false);
+    final valueFromJson = valueSchema.requireFromJsonExpression(
+      value,
       context,
       jsonIsNullable: false,
       dartIsNullable: false,
     );
     // TODO(eseidel): Support orDefault?
     // Should this have a leading ? to skip the key on null?
-    final callMap = jsonIsNullable ? '?.map' : '.map';
-    // When neither key nor value transforms, the closure is
+    //
+    // When neither side transforms, the closure is
     // `(key, value) => MapEntry(key, value)` — a tearoff written the long
-    // way (`unnecessary_lambdas`). Asking whether each side returned the
-    // name it was handed is a stopgap: once `fromJsonExpression` returns a
-    // `DartExpression` (see doc/dart_expression.md), identity becomes
-    // `expr == DartIdentifier(valueName)` structurally.
+    // way (`unnecessary_lambdas`), so emit the tearoff. Identity is a
+    // structural question now: did each side hand back the identifier it
+    // was given?
     //
     // The better output drops the `.map(...)` altogether, since an
-    // identity map only copies. That needs the same migration, because
-    // the result is then a bare cast whose parenthesization is a
-    // structural question (#255) rather than one this string can answer.
-    final isIdentity = keyFromJson == keyName && valueFromJson == valueName;
-    final transform = isIdentity
-        ? 'MapEntry.new'
-        : '(key, value) => MapEntry($keyFromJson, $valueFromJson)';
-    return '($jsonValue as $jsonType)$callMap($transform)';
+    // identity map only copies (#272).
+    final isIdentity = keyFromJson == key && valueFromJson == value;
+    return DartMethodCall(
+      target: jsonCast(jsonValue, jsonIsNullable: jsonIsNullable),
+      name: 'map',
+      arguments: [
+        if (isIdentity)
+          DartType.mapEntry.member('new')
+        else
+          DartLambda(
+            parameters: [key.name, value.name],
+            body: DartType.mapEntry.construct([keyFromJson, valueFromJson]),
+          ),
+      ],
+      isNullAware: jsonIsNullable,
+    );
   }
 
   @override
@@ -4902,21 +5028,17 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
       '$className.${variableNameFor(value as T)}';
 
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
-  }) {
-    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
-    final orDefault = orDefaultExpression(
-      context: context,
-      jsonIsNullable: jsonIsNullable,
-      dartIsNullable: dartIsNullable,
-    );
-    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-    return '$className.$jsonMethod($jsonValue as $jsonType)$orDefault';
-  }
+  }) => parsedFromJson(
+    jsonValue,
+    context,
+    jsonIsNullable: jsonIsNullable,
+    dartIsNullable: dartIsNullable,
+  );
 
   String variableNameFor(T value) => names[values.indexOf(value)];
 
@@ -5542,16 +5664,15 @@ class RenderOneOf extends RenderNewType {
   }
 
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
-  }) {
-    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
-    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-    return '$className.$jsonMethod($jsonValue as $jsonType)';
-  }
+  }) => _fromJsonCall(
+    jsonCast(jsonValue, jsonIsNullable: jsonIsNullable),
+    jsonIsNullable: jsonIsNullable,
+  );
 
   @override
   dynamic get defaultValue => null;
@@ -5583,10 +5704,33 @@ class RenderOneOf extends RenderNewType {
 /// else (`text/plain`, `text/html`, `application/octet-stream`, …).
 /// Used by both the single-schema return path and the per-arm
 /// decode in multi-status dispatch.
-String _responseBodySource(String? contentType) =>
-    contentType == null || contentType == 'application/json'
-    ? 'jsonDecode(response.body)'
-    : 'response.body';
+/// `response.body`, the raw string an api method gets back.
+const _responseBody = DartPropertyAccess(
+  target: DartIdentifier('response'),
+  name: 'body',
+);
+
+/// Where an api method reads its response body from.
+///
+/// An enum rather than the expression alone because callers branch on
+/// *which* of the two it is — a raw body skips `fromJson` entirely — and
+/// recovering that by comparing the rendered text against
+/// `'response.body'` is the coupling `doc/dart_expression.md` calls out.
+enum _ResponseBodySource {
+  /// The body is JSON and has to be decoded before parsing.
+  // Not `call(...)`: a const initializer needs the constructor directly.
+  json(DartFunctionCall(name: 'jsonDecode', arguments: [_responseBody])),
+
+  /// A non-JSON content type: the body is the value.
+  raw(_responseBody);
+
+  const _ResponseBodySource(this.expression);
+
+  final DartExpression expression;
+
+  static _ResponseBodySource of(String? contentType) =>
+      contentType == null || contentType == 'application/json' ? json : raw;
+}
 
 /// One status-code entry in a multi-status response: the status, the
 /// wrapper subclass name (`<Parent>200`), the body schema (null for
@@ -5635,11 +5779,13 @@ final class _StatusInfo {
     if (body == null) {
       construction = 'const $wrapperTypeName()';
     } else {
-      final decoded = body.fromJsonExpression(
-        _responseBodySource(contentType),
-        context,
-        jsonIsNullable: false,
-        dartIsNullable: false,
+      final decoded = _runtimeSource(
+        body.requireFromJsonExpression(
+          _ResponseBodySource.of(contentType).expression,
+          context,
+          jsonIsNullable: false,
+          dartIsNullable: false,
+        ),
       );
       construction = '$wrapperTypeName($decoded)';
     }
@@ -6224,8 +6370,8 @@ class RenderUnknown extends RenderSchema {
   }) => dartName;
 
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
@@ -6256,14 +6402,15 @@ class RenderVoid extends RenderNoJson {
   String equalsExpression(String name, SchemaRenderer context) =>
       'throw UnimplementedError("RenderVoid.equalsExpression")';
 
+  /// Null, not an expression: a void return has no value to convert.
+  /// The sole caller checks for a void return before asking.
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression? fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
-  }) => ''; // Unclear if this is correct. The one usage is for returning
-  // a void type, maybe we need a "return expression" value instead?
+  }) => null;
 
   @override
   DartExpression? exampleValue(SchemaRenderer context) => null;
@@ -6292,15 +6439,23 @@ abstract class RenderNoJson extends RenderSchema {
     DartExpression dartName,
     SchemaRenderer context, {
     required bool dartIsNullable,
-  }) => DartIdentifier('throw UnimplementedError("$runtimeType.toJson")');
+  }) => DartThrow(
+    DartType.unimplementedError.construct([
+      DartLiteral('$runtimeType.toJson'),
+    ]),
+  );
 
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression? fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
-  }) => 'throw UnimplementedError("$runtimeType.fromJson")';
+  }) => DartThrow(
+    DartType.unimplementedError.construct([
+      DartLiteral('$runtimeType.fromJson'),
+    ]),
+  );
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
@@ -6379,20 +6534,24 @@ class RenderBase64Bytes extends RenderSchema {
   String hashCodeExpression(String name) => '${ModelHelpers.listHash}($name)';
 
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
-    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
-    if (jsonIsNullable) {
-      // Use the model_helpers wrapper so `Uint8List?` parses cleanly
-      // without forcing the call site to write its own null check (a
-      // ternary on a public-property `Uint8List?` doesn't promote).
-      return '${ModelHelpers.maybeBase64Decode}($jsonValue as $jsonType)';
-    }
-    return 'base64.decode($jsonValue as $jsonType)';
+    final cast = jsonCast(jsonValue, jsonIsNullable: jsonIsNullable);
+    // The nullable case goes through the model_helpers wrapper so
+    // `Uint8List?` parses cleanly without the call site writing its own
+    // null check (a ternary on a public-property `Uint8List?` doesn't
+    // promote).
+    return jsonIsNullable
+        ? callFunction(ModelHelpers.maybeBase64Decode, [cast])
+        : DartMethodCall(
+            target: const DartIdentifier('base64'),
+            name: 'decode',
+            arguments: [cast],
+          );
   }
 
   @override
@@ -6462,24 +6621,17 @@ class RenderDate extends RenderSchema {
   }
 
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
-  }) {
-    final castedValue =
-        '$jsonValue as ${jsonStorageType(isNullable: jsonIsNullable)}';
-    final orDefault = orDefaultExpression(
-      context: context,
-      jsonIsNullable: jsonIsNullable,
-      dartIsNullable: dartIsNullable,
-    );
-    final call = jsonIsNullable
-        ? 'Date.maybeFromJson($castedValue)'
-        : 'Date.fromJson($castedValue)';
-    return '$call$orDefault';
-  }
+  }) => parsedFromJson(
+    jsonValue,
+    context,
+    jsonIsNullable: jsonIsNullable,
+    dartIsNullable: dartIsNullable,
+  );
 
   @override
   DartExpression toJsonExpression(
@@ -6554,16 +6706,15 @@ class RenderEmptyObject extends RenderNewType {
   );
 
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
-  }) {
-    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
-    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-    return '$className.$jsonMethod($jsonValue as $jsonType)';
-  }
+  }) => _fromJsonCall(
+    jsonCast(jsonValue, jsonIsNullable: jsonIsNullable),
+    jsonIsNullable: jsonIsNullable,
+  );
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) => {
@@ -6632,21 +6783,20 @@ class RenderRecursiveRef extends RenderSchema {
   }
 
   @override
-  String fromJsonExpression(
-    String jsonValue,
+  DartExpression fromJsonExpression(
+    DartExpression jsonValue,
     SchemaRenderer context, {
     required bool jsonIsNullable,
     required bool dartIsNullable,
-  }) {
-    final jsonType = jsonStorageType(isNullable: jsonIsNullable);
-    final jsonMethod = jsonIsNullable ? 'maybeFromJson' : 'fromJson';
-    final orDefault = orDefaultExpression(
-      context: context,
+  }) => orDefault(
+    _fromJsonCall(
+      jsonCast(jsonValue, jsonIsNullable: jsonIsNullable),
       jsonIsNullable: jsonIsNullable,
-      dartIsNullable: dartIsNullable,
-    );
-    return '$typeName.$jsonMethod($jsonValue as $jsonType)$orDefault';
-  }
+    ),
+    context: context,
+    jsonIsNullable: jsonIsNullable,
+    dartIsNullable: dartIsNullable,
+  );
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>

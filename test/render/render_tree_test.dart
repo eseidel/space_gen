@@ -10,6 +10,13 @@ import 'package:test/test.dart';
 
 import 'expression_source.dart';
 
+/// `json`, the parameter every generated `fromJson` receives.
+const _json = DartIdentifier('json');
+
+/// `json['<key>']`, the read a property's `fromJson` starts from.
+DartExpression _jsonKey(String key) =>
+    DartIndex(target: _json, index: DartLiteral(key));
+
 class _Collector extends RenderTreeVisitor {
   final List<RenderSchema> visited = [];
 
@@ -1020,21 +1027,25 @@ void main() {
       final templates = TemplateProvider.defaultLocation();
       final context = SchemaRenderer(templates: templates);
       expect(
-        ref.fromJsonExpression(
-          'json',
-          context,
-          jsonIsNullable: false,
-          dartIsNullable: false,
-        ),
+        ref
+            .fromJsonExpression(
+              _json,
+              context,
+              jsonIsNullable: false,
+              dartIsNullable: false,
+            )
+            .runtimeSource,
         'Node.fromJson(json as Map<String, dynamic>)',
       );
       expect(
-        ref.fromJsonExpression(
-          'json',
-          context,
-          jsonIsNullable: true,
-          dartIsNullable: true,
-        ),
+        ref
+            .fromJsonExpression(
+              _json,
+              context,
+              jsonIsNullable: true,
+              dartIsNullable: true,
+            )
+            .runtimeSource,
         'Node.maybeFromJson(json as Map<String, dynamic>?)',
       );
     });
@@ -1287,9 +1298,68 @@ void main() {
       expect(schema.exampleValue(context)?.source, isNull);
     });
 
+    test('void has no fromJson expression, and array items must', () {
+      const void_ = RenderVoid(common: common);
+      expect(
+        void_.fromJsonExpression(
+          const DartIdentifier('json'),
+          context,
+          jsonIsNullable: false,
+          dartIsNullable: false,
+        ),
+        isNull,
+      );
+      // A map value's type can't be void, so an absent expression there
+      // means the tree was built wrong — say so rather than propagating a
+      // null into an expression with nowhere to put it.
+      const map = RenderMap(
+        common: common,
+        valueSchema: void_,
+        keySchema: null,
+      );
+      expect(
+        () => map.fromJsonExpression(
+          const DartIdentifier('json'),
+          context,
+          jsonIsNullable: false,
+          dartIsNullable: false,
+        ),
+        throwsStateError,
+      );
+    });
+
     test('binary (NoJson) returns null', () {
       const schema = RenderBinary(common: common);
       expect(schema.exampleValue(context)?.source, isNull);
+    });
+
+    test('a no-JSON schema converts to a throw in both directions', () {
+      // `toJson` used to spell this as a DartIdentifier holding the whole
+      // `throw ...` string, because no node could express a throw. Both
+      // directions now build one, so the message is a real string literal
+      // and is quoted like every other.
+      const schema = RenderBinary(common: common);
+      expect(
+        schema
+            .fromJsonExpression(
+              const DartIdentifier('json'),
+              context,
+              jsonIsNullable: false,
+              dartIsNullable: false,
+            )
+            ?.runtimeSource,
+        "throw UnimplementedError('RenderBinary.fromJson')",
+      );
+      expect(
+        schema
+            .toJsonExpression(
+              const DartIdentifier('value'),
+              context,
+              dartIsNullable: false,
+            )
+            .runtimeSource,
+        "throw UnimplementedError('RenderBinary.toJson')",
+      );
     });
 
     test('recursive ref returns null', () {
@@ -1976,21 +2046,25 @@ void main() {
 
     test('fromJson routes to Date.fromJson / maybeFromJson', () {
       expect(
-        date.fromJsonExpression(
-          "json['d']",
-          context,
-          jsonIsNullable: false,
-          dartIsNullable: false,
-        ),
+        date
+            .fromJsonExpression(
+              _jsonKey('d'),
+              context,
+              jsonIsNullable: false,
+              dartIsNullable: false,
+            )
+            .runtimeSource,
         "Date.fromJson(json['d'] as String)",
       );
       expect(
-        date.fromJsonExpression(
-          "json['d']",
-          context,
-          jsonIsNullable: true,
-          dartIsNullable: true,
-        ),
+        date
+            .fromJsonExpression(
+              _jsonKey('d'),
+              context,
+              jsonIsNullable: true,
+              dartIsNullable: true,
+            )
+            .runtimeSource,
         "Date.maybeFromJson(json['d'] as String?)",
       );
     });
@@ -2147,33 +2221,39 @@ void main() {
         'when a newtype', () {
       final schema = pod(PodType.dateTime, createsNewType: true);
       expect(
-        schema.fromJsonExpression(
-          "json['d']",
-          context,
-          jsonIsNullable: false,
-          dartIsNullable: false,
-        ),
+        schema
+            .fromJsonExpression(
+              _jsonKey('d'),
+              context,
+              jsonIsNullable: false,
+              dartIsNullable: false,
+            )
+            .runtimeSource,
         "FooBar.fromJson(json['d'] as String)",
       );
       expect(
-        schema.fromJsonExpression(
-          "json['d']",
-          context,
-          jsonIsNullable: true,
-          dartIsNullable: true,
-        ),
+        schema
+            .fromJsonExpression(
+              _jsonKey('d'),
+              context,
+              jsonIsNullable: true,
+              dartIsNullable: true,
+            )
+            .runtimeSource,
         "FooBar.maybeFromJson(json['d'] as String?)",
       );
     });
 
     test('fromJsonExpression inline routes nullable uuid correctly', () {
       expect(
-        pod(PodType.uuid).fromJsonExpression(
-          "json['u']",
-          context,
-          jsonIsNullable: false,
-          dartIsNullable: false,
-        ),
+        pod(PodType.uuid)
+            .fromJsonExpression(
+              _jsonKey('u'),
+              context,
+              jsonIsNullable: false,
+              dartIsNullable: false,
+            )
+            .runtimeSource,
         "json['u'] as String",
       );
     });
@@ -2267,6 +2347,43 @@ void main() {
     // that catches naming-pass bypasses (a test forgot to populate
     // `SpecResolver.names`, or a render path didn't go through one of
     // the documented entry points).
+    test('a newtype fromJson names the assigned type, not the snake name', () {
+      // The `fromJson` call used to be built from
+      // `camelFromSnake(snakeName)` while every type *reference* around it
+      // came from the assigned name. Those agree whenever the naming pass
+      // hands back the snake-derived name, which is why this went
+      // unnoticed — when they disagree the old form called a class that
+      // does not exist.
+      const schema = RenderString(
+        common: CommonProperties.test(
+          snakeName: 'foo_bar',
+          pointer: JsonPointer.empty(),
+        ),
+        defaultValue: null,
+        maxLength: null,
+        minLength: null,
+        pattern: null,
+        createsNewType: true,
+        assignedName: 'CustomName',
+      );
+      expect(schema.typeName, 'CustomName');
+      final context = SchemaRenderer(
+        templates: TemplateProvider.defaultLocation(),
+      );
+      expect(
+        schema
+            .fromJsonExpression(
+              _json,
+              context,
+              jsonIsNullable: false,
+              dartIsNullable: false,
+            )
+            .runtimeSource,
+        // Not `FooBar.fromJson(...)`.
+        'CustomName.fromJson(json as String)',
+      );
+    });
+
     test('newtype RenderObject without assignedName throws on typeName', () {
       const schema = RenderObject(
         common: CommonProperties.test(
@@ -2321,7 +2438,7 @@ void main() {
       expect(schema.typeName, 'CustomName');
     });
 
-    test('jsonStorageType: RenderArray stores as List<dynamic>', () {
+    test('jsonStorageType: RenderArray stores as a bare List', () {
       const array = RenderArray(
         common: CommonProperties.test(
           snakeName: 'a',
@@ -2336,8 +2453,11 @@ void main() {
           ),
         ),
       );
-      expect(array.jsonStorageType(isNullable: false), 'List<dynamic>');
-      expect(array.jsonStorageType(isNullable: true), 'List<dynamic>?');
+      // Raw `List` and `List<dynamic>` are the same type — `List<E>` is
+      // unbounded, so the raw form instantiates its parameter to
+      // `dynamic`. This is the spelling the cast uses.
+      expect(array.jsonStorageType(isNullable: false), 'List');
+      expect(array.jsonStorageType(isNullable: true), 'List?');
     });
 
     test('jsonStorageDartType throws for schemas with no JSON form', () {

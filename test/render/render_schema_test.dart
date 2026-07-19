@@ -4160,7 +4160,9 @@ void main() {
         "            n123: json['123'] as String?,\n"
         "            plus1: json['+1'] as String?,\n"
         "            minus1: json['-1'] as String?,\n"
-        "            dont: json['don't'] as String?,\n"
+        // The apostrophe is escaped: this read used to interpolate the
+        // JSON key raw, emitting `json['don't']`, which does not parse.
+        "            dont: json['don\\'t'] as String?,\n"
         "            default_: json['default'] as String?,\n"
         '        ));\n'
         '    }\n'

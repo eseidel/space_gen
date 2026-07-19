@@ -16,10 +16,24 @@ class DartType extends Equatable {
     this.isNullable = false,
   });
 
-  /// A `List<T>` type. [element] defaults to `dynamic` (`List<dynamic>`).
+  /// A `List<T>` type, or bare `List` when [element] is omitted.
+  ///
+  /// The two spellings are the same type — `List<E>` is unbounded, so raw
+  /// `List` instantiates to `List<dynamic>` — but they are *not*
+  /// interchangeable in output, which is why this does not canonicalize
+  /// one into the other:
+  ///
+  /// - A **declaration** wants `List<dynamic>`. Bare `List` there trips
+  ///   `strict_raw_type`, and generated models are public API for
+  ///   consumers who may enable it.
+  /// - A **cast** wants bare `List`. `as List` reads better than
+  ///   `as List<dynamic>` and raw types in an expression trip nothing.
+  ///
+  /// So `dartType` passes an element and `jsonStorageDartType` does not,
+  /// and `==` distinguishing them is the point rather than a defect.
   DartType.list([DartType? element])
     : name = 'List',
-      typeArguments = [element ?? dynamic_],
+      typeArguments = element == null ? const [] : [element],
       isNullable = false;
 
   /// A `Map<K, V>` type.
@@ -67,6 +81,14 @@ class DartType extends Equatable {
   // of the core class (e.g. a space_gen-side constant, or built at the use
   // site) rather than living alongside the language-level types.
   static const uriTemplate = DartType('UriTemplate');
+
+  /// `MapEntry` (`dart:core`) — built by the closure a map's `fromJson`
+  /// maps through.
+  static const mapEntry = DartType('MapEntry');
+
+  /// `UnimplementedError` (`dart:core`) — thrown where a schema has no
+  /// JSON form.
+  static const unimplementedError = DartType('UnimplementedError');
 
   /// The `String` type.
   static const string = DartType('String');
