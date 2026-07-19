@@ -2759,6 +2759,29 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// emit a wrapper / a separate file / a wrapping case-arm call.
   bool get isSmooshed => false;
 
+  /// The schemas structurally nested in this one: object properties and
+  /// the open member, array items, map value and key, oneOf variants.
+  ///
+  /// The render tree is enumerated by two traversals that each need a
+  /// node's children — `RenderTreeWalker` ("which schemas must exist, so
+  /// each gets a file") and the named-schema collector ("which schemas a
+  /// file names, so it imports them"). Routing both through this one
+  /// getter is what keeps them from drifting: they can no longer disagree
+  /// about a node's children, which for the collector meant a dropped
+  /// import (see #289). Each consumer keeps its own policy about what to
+  /// do with the children it gets; this only enumerates them.
+  ///
+  /// Defaults to none — only the container schemas ([RenderObject],
+  /// [RenderArray], [RenderMap], [RenderOneOf]) override it. A new subtype
+  /// with nested schemas must remember to override too, or it will be
+  /// treated as a leaf; that is the accepted cost of not enumerating every
+  /// leaf here.
+  ///
+  /// Order follows the traversals' historical visit order — collectors
+  /// fold these into ordered output (imports, exports), so the sequence
+  /// is load-bearing, not incidental.
+  Iterable<RenderSchema> get children => const [];
+
   /// The pointer of the resolved schema.
   JsonPointer get pointer => common.pointer;
 
@@ -4049,6 +4072,17 @@ class RenderObject extends RenderNewType {
   bool get isSmooshed => parentSealedTypeName != null;
 
   @override
+  Iterable<RenderSchema> get children {
+    // Local so the null-check promotes — `additionalProperties` is a
+    // public field, which flow analysis won't promote in place.
+    final additional = additionalProperties;
+    return [
+      ...properties.values,
+      if (additional != null) additional,
+    ];
+  }
+
+  @override
   String? get wrapperTag => typeName;
 
   @override
@@ -4643,6 +4677,9 @@ class RenderArray extends RenderSchema {
   final RenderSchema items;
 
   @override
+  Iterable<RenderSchema> get children => [items];
+
+  @override
   final dynamic defaultValue;
 
   /// The maximum number of items in the array.
@@ -4875,6 +4912,13 @@ class RenderMap extends RenderSchema {
   /// when non-null the generated Dart uses this enum as the map key and
   /// the enum's `fromJson`/`toJson` round-trips each key at the boundary.
   final RenderEnum? keySchema;
+
+  @override
+  Iterable<RenderSchema> get children {
+    // Local so the null-check promotes — `keySchema` is a public field.
+    final key = keySchema;
+    return [valueSchema, if (key != null) key];
+  }
 
   @override
   final dynamic defaultValue;
@@ -5352,6 +5396,9 @@ class RenderOneOf extends RenderNewType {
   /// owns their coverage.
   List<RenderObject> get smooshedVariants =>
       schemas.whereType<RenderObject>().where((v) => v.isSmooshed).toList();
+
+  @override
+  Iterable<RenderSchema> get children => schemas;
 
   @override
   List<Object?> get props => [super.props, schemas, discriminator];
