@@ -7,7 +7,7 @@ class OrgsCreateInvitationRequest {
   const OrgsCreateInvitationRequest({
     this.inviteeId,
     this.email,
-    this.role = OrgsCreateInvitationRequestRole.directMember,
+    this.role = .directMember,
     this.teamIds,
   });
 
@@ -23,7 +23,7 @@ class OrgsCreateInvitationRequest {
             OrgsCreateInvitationRequestRole.maybeFromJson(
               json['role'] as String?,
             ) ??
-            OrgsCreateInvitationRequestRole.directMember,
+            .directMember,
         teamIds: (json['team_ids'] as List?)?.cast<int>(),
       ),
     );

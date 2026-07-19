@@ -277,7 +277,7 @@ class TeamsApi {
   Future<List<TeamDiscussion>> listDiscussionsInOrg(
     String org,
     String teamSlug, {
-    DirectionParam? direction = DirectionParam.desc,
+    DirectionParam? direction = .desc,
     int? perPage = 30,
     int? page = 1,
     String? pinned,
@@ -466,7 +466,7 @@ class TeamsApi {
     String org,
     String teamSlug,
     int discussionNumber, {
-    DirectionParam? direction = DirectionParam.desc,
+    DirectionParam? direction = .desc,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -705,7 +705,7 @@ class TeamsApi {
   Future<List<SimpleUser>> listMembersInOrg(
     String org,
     String teamSlug, {
-    TeamsListMembersInOrgParameter2? role = TeamsListMembersInOrgParameter2.all,
+    TeamsListMembersInOrgParameter2? role = .all,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -1308,7 +1308,7 @@ class TeamsApi {
   /// `read:discussion` scope to use this endpoint.
   Future<List<TeamDiscussion>> listDiscussionsLegacy(
     int teamId, {
-    DirectionParam? direction = DirectionParam.desc,
+    DirectionParam? direction = .desc,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -1493,7 +1493,7 @@ class TeamsApi {
   Future<List<TeamDiscussionComment>> listDiscussionCommentsLegacy(
     int teamId,
     int discussionNumber, {
-    DirectionParam? direction = DirectionParam.desc,
+    DirectionParam? direction = .desc,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -1734,8 +1734,7 @@ class TeamsApi {
   /// Team members will include the members of child teams.
   Future<List<SimpleUser>> listMembersLegacy(
     int teamId, {
-    TeamsListMembersLegacyParameter1? role =
-        TeamsListMembersLegacyParameter1.all,
+    TeamsListMembersLegacyParameter1? role = .all,
     int? perPage = 30,
     int? page = 1,
   }) async {

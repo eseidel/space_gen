@@ -4,9 +4,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class OrgsSetMembershipForUserRequest {
-  const OrgsSetMembershipForUserRequest({
-    this.role = OrgsSetMembershipForUserRequestRole.member,
-  });
+  const OrgsSetMembershipForUserRequest({this.role = .member});
 
   /// Converts a `Map<String, dynamic>` to an [OrgsSetMembershipForUserRequest].
   factory OrgsSetMembershipForUserRequest.fromJson(Map<String, dynamic> json) {
@@ -18,7 +16,7 @@ class OrgsSetMembershipForUserRequest {
             OrgsSetMembershipForUserRequestRole.maybeFromJson(
               json['role'] as String?,
             ) ??
-            OrgsSetMembershipForUserRequestRole.member,
+            .member,
       ),
     );
   }

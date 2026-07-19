@@ -6,7 +6,7 @@ import 'package:meta/meta.dart';
 class IssuesCreateMilestoneRequest {
   const IssuesCreateMilestoneRequest({
     required this.title,
-    this.state = IssuesCreateMilestoneRequestState.open,
+    this.state = .open,
     this.description,
     this.dueOn,
   });
@@ -22,7 +22,7 @@ class IssuesCreateMilestoneRequest {
             IssuesCreateMilestoneRequestState.maybeFromJson(
               json['state'] as String?,
             ) ??
-            IssuesCreateMilestoneRequestState.open,
+            .open,
         description: json['description'] as String?,
         dueOn: maybeParseDateTime(json['due_on'] as String?),
       ),

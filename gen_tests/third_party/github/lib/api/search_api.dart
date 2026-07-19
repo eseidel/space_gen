@@ -69,7 +69,7 @@ class SearchApi {
   Future<SearchCode200Response> code(
     String q, {
     SearchCodeParameter1? sort,
-    SearchCodeParameter2? order = SearchCodeParameter2.desc,
+    SearchCodeParameter2? order = .desc,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -116,7 +116,7 @@ class SearchApi {
   Future<SearchCommits200Response> commits(
     String q, {
     SearchCommitsParameter1? sort,
-    OrderParam? order = OrderParam.desc,
+    OrderParam? order = .desc,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -154,7 +154,7 @@ class SearchApi {
   Future<SearchIssuesAndPullRequests200Response> issuesAndPullRequests(
     String q, {
     SearchIssuesAndPullRequestsParameter1? sort,
-    OrderParam? order = OrderParam.desc,
+    OrderParam? order = .desc,
     int? perPage = 30,
     int? page = 1,
     String? advancedSearch,
@@ -207,7 +207,7 @@ class SearchApi {
     int repositoryId,
     String q, {
     SearchLabelsParameter2? sort,
-    OrderParam? order = OrderParam.desc,
+    OrderParam? order = .desc,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -261,7 +261,7 @@ class SearchApi {
   Future<SearchRepos200Response> repos(
     String q, {
     SearchReposParameter1? sort,
-    OrderParam? order = OrderParam.desc,
+    OrderParam? order = .desc,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -373,7 +373,7 @@ class SearchApi {
   Future<SearchUsers200Response> users(
     String q, {
     SearchUsersParameter1? sort,
-    OrderParam? order = OrderParam.desc,
+    OrderParam? order = .desc,
     int? perPage = 30,
     int? page = 1,
   }) async {

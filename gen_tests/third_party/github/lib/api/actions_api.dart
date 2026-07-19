@@ -2499,8 +2499,8 @@ class ActionsApi {
     int? page = 1,
     String? ref,
     String? key,
-    ActionsCacheListSortParam? sort = ActionsCacheListSortParam.lastAccessedAt,
-    DirectionParam? direction = DirectionParam.desc,
+    ActionsCacheListSortParam? sort = .lastAccessedAt,
+    DirectionParam? direction = .desc,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,
@@ -3962,8 +3962,7 @@ class ActionsApi {
     String owner,
     String repo,
     int runId, {
-    ActionsListJobsForWorkflowRunParameter3? filter =
-        ActionsListJobsForWorkflowRunParameter3.latest,
+    ActionsListJobsForWorkflowRunParameter3? filter = .latest,
     int? perPage = 30,
     int? page = 1,
   }) async {

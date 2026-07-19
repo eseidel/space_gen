@@ -4,7 +4,7 @@ import 'package:spacetraders/models/ship_nav_flight_mode.dart';
 
 @immutable
 class PatchShipNavRequest {
-  const PatchShipNavRequest({this.flightMode = ShipNavFlightMode.cruise});
+  const PatchShipNavRequest({this.flightMode = .cruise});
 
   /// Converts a `Map<String, dynamic>` to a [PatchShipNavRequest].
   factory PatchShipNavRequest.fromJson(Map<String, dynamic> json) {
@@ -14,7 +14,7 @@ class PatchShipNavRequest {
       () => PatchShipNavRequest(
         flightMode:
             ShipNavFlightMode.maybeFromJson(json['flightMode'] as String?) ??
-            ShipNavFlightMode.cruise,
+            .cruise,
       ),
     );
   }

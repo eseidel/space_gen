@@ -29,49 +29,25 @@ class CodeSecurityCreateConfigurationRequest {
   const CodeSecurityCreateConfigurationRequest({
     required this.name,
     required this.description,
-    this.advancedSecurity =
-        CodeSecurityCreateConfigurationRequestAdvancedSecurity.disabled,
-    this.dependencyGraph =
-        CodeSecurityCreateConfigurationRequestDependencyGraph.enabled,
-    this.dependencyGraphAutosubmitAction =
-        CodeSecurityCreateConfigurationRequestDependencyGraphAutosubmitAction
-            .disabled,
+    this.advancedSecurity = .disabled,
+    this.dependencyGraph = .enabled,
+    this.dependencyGraphAutosubmitAction = .disabled,
     this.dependencyGraphAutosubmitActionOptions,
-    this.dependabotAlerts =
-        CodeSecurityCreateConfigurationRequestDependabotAlerts.disabled,
-    this.dependabotSecurityUpdates =
-        CodeSecurityCreateConfigurationRequestDependabotSecurityUpdates
-            .disabled,
-    this.codeScanningDefaultSetup =
-        CodeSecurityCreateConfigurationRequestCodeScanningDefaultSetup.disabled,
+    this.dependabotAlerts = .disabled,
+    this.dependabotSecurityUpdates = .disabled,
+    this.codeScanningDefaultSetup = .disabled,
     this.codeScanningDefaultSetupOptions,
-    this.codeScanningDelegatedAlertDismissal =
-        CodeSecurityCreateConfigurationRequestCodeScanningDelegatedAlertDismissal
-            .notSet,
-    this.secretScanning =
-        CodeSecurityCreateConfigurationRequestSecretScanning.disabled,
-    this.secretScanningPushProtection =
-        CodeSecurityCreateConfigurationRequestSecretScanningPushProtection
-            .disabled,
-    this.secretScanningDelegatedBypass =
-        CodeSecurityCreateConfigurationRequestSecretScanningDelegatedBypass
-            .disabled,
+    this.codeScanningDelegatedAlertDismissal = .notSet,
+    this.secretScanning = .disabled,
+    this.secretScanningPushProtection = .disabled,
+    this.secretScanningDelegatedBypass = .disabled,
     this.secretScanningDelegatedBypassOptions,
-    this.secretScanningValidityChecks =
-        CodeSecurityCreateConfigurationRequestSecretScanningValidityChecks
-            .disabled,
-    this.secretScanningNonProviderPatterns =
-        CodeSecurityCreateConfigurationRequestSecretScanningNonProviderPatterns
-            .disabled,
-    this.secretScanningGenericSecrets =
-        CodeSecurityCreateConfigurationRequestSecretScanningGenericSecrets
-            .disabled,
+    this.secretScanningValidityChecks = .disabled,
+    this.secretScanningNonProviderPatterns = .disabled,
+    this.secretScanningGenericSecrets = .disabled,
     this.secretScanningDelegatedAlertDismissal,
-    this.privateVulnerabilityReporting =
-        CodeSecurityCreateConfigurationRequestPrivateVulnerabilityReporting
-            .disabled,
-    this.enforcement =
-        CodeSecurityCreateConfigurationRequestEnforcement.enforced,
+    this.privateVulnerabilityReporting = .disabled,
+    this.enforcement = .enforced,
   });
 
   /// Converts a `Map<String, dynamic>` to a
@@ -89,18 +65,17 @@ class CodeSecurityCreateConfigurationRequest {
             CodeSecurityCreateConfigurationRequestAdvancedSecurity.maybeFromJson(
               json['advanced_security'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestAdvancedSecurity.disabled,
+            .disabled,
         dependencyGraph:
             CodeSecurityCreateConfigurationRequestDependencyGraph.maybeFromJson(
               json['dependency_graph'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestDependencyGraph.enabled,
+            .enabled,
         dependencyGraphAutosubmitAction:
             CodeSecurityCreateConfigurationRequestDependencyGraphAutosubmitAction.maybeFromJson(
               json['dependency_graph_autosubmit_action'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestDependencyGraphAutosubmitAction
-                .disabled,
+            .disabled,
         dependencyGraphAutosubmitActionOptions:
             CodeSecurityCreateConfigurationRequestDependencyGraphAutosubmitActionOptions.maybeFromJson(
               json['dependency_graph_autosubmit_action_options']
@@ -110,19 +85,17 @@ class CodeSecurityCreateConfigurationRequest {
             CodeSecurityCreateConfigurationRequestDependabotAlerts.maybeFromJson(
               json['dependabot_alerts'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestDependabotAlerts.disabled,
+            .disabled,
         dependabotSecurityUpdates:
             CodeSecurityCreateConfigurationRequestDependabotSecurityUpdates.maybeFromJson(
               json['dependabot_security_updates'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestDependabotSecurityUpdates
-                .disabled,
+            .disabled,
         codeScanningDefaultSetup:
             CodeSecurityCreateConfigurationRequestCodeScanningDefaultSetup.maybeFromJson(
               json['code_scanning_default_setup'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestCodeScanningDefaultSetup
-                .disabled,
+            .disabled,
         codeScanningDefaultSetupOptions:
             CodeScanningDefaultSetupOptions.maybeFromJson(
               json['code_scanning_default_setup_options']
@@ -132,25 +105,22 @@ class CodeSecurityCreateConfigurationRequest {
             CodeSecurityCreateConfigurationRequestCodeScanningDelegatedAlertDismissal.maybeFromJson(
               json['code_scanning_delegated_alert_dismissal'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestCodeScanningDelegatedAlertDismissal
-                .notSet,
+            .notSet,
         secretScanning:
             CodeSecurityCreateConfigurationRequestSecretScanning.maybeFromJson(
               json['secret_scanning'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestSecretScanning.disabled,
+            .disabled,
         secretScanningPushProtection:
             CodeSecurityCreateConfigurationRequestSecretScanningPushProtection.maybeFromJson(
               json['secret_scanning_push_protection'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestSecretScanningPushProtection
-                .disabled,
+            .disabled,
         secretScanningDelegatedBypass:
             CodeSecurityCreateConfigurationRequestSecretScanningDelegatedBypass.maybeFromJson(
               json['secret_scanning_delegated_bypass'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestSecretScanningDelegatedBypass
-                .disabled,
+            .disabled,
         secretScanningDelegatedBypassOptions:
             CodeSecurityCreateConfigurationRequestSecretScanningDelegatedBypassOptions.maybeFromJson(
               json['secret_scanning_delegated_bypass_options']
@@ -160,20 +130,17 @@ class CodeSecurityCreateConfigurationRequest {
             CodeSecurityCreateConfigurationRequestSecretScanningValidityChecks.maybeFromJson(
               json['secret_scanning_validity_checks'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestSecretScanningValidityChecks
-                .disabled,
+            .disabled,
         secretScanningNonProviderPatterns:
             CodeSecurityCreateConfigurationRequestSecretScanningNonProviderPatterns.maybeFromJson(
               json['secret_scanning_non_provider_patterns'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestSecretScanningNonProviderPatterns
-                .disabled,
+            .disabled,
         secretScanningGenericSecrets:
             CodeSecurityCreateConfigurationRequestSecretScanningGenericSecrets.maybeFromJson(
               json['secret_scanning_generic_secrets'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestSecretScanningGenericSecrets
-                .disabled,
+            .disabled,
         secretScanningDelegatedAlertDismissal:
             CodeSecurityCreateConfigurationRequestSecretScanningDelegatedAlertDismissal.maybeFromJson(
               json['secret_scanning_delegated_alert_dismissal'] as String?,
@@ -182,13 +149,12 @@ class CodeSecurityCreateConfigurationRequest {
             CodeSecurityCreateConfigurationRequestPrivateVulnerabilityReporting.maybeFromJson(
               json['private_vulnerability_reporting'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestPrivateVulnerabilityReporting
-                .disabled,
+            .disabled,
         enforcement:
             CodeSecurityCreateConfigurationRequestEnforcement.maybeFromJson(
               json['enforcement'] as String?,
             ) ??
-            CodeSecurityCreateConfigurationRequestEnforcement.enforced,
+            .enforced,
       ),
     );
   }

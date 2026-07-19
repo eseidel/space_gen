@@ -10,7 +10,7 @@ class ReposCreatePagesSiteRequestSource {
   /// {@macro repos_create_pages_site_request_source}
   const ReposCreatePagesSiteRequestSource({
     required this.branch,
-    this.path = ReposCreatePagesSiteRequestSourcePath.a,
+    this.path = .a,
   });
 
   /// Converts a `Map<String, dynamic>` to a
@@ -27,7 +27,7 @@ class ReposCreatePagesSiteRequestSource {
             ReposCreatePagesSiteRequestSourcePath.maybeFromJson(
               json['path'] as String?,
             ) ??
-            ReposCreatePagesSiteRequestSourcePath.a,
+            .a,
       ),
     );
   }

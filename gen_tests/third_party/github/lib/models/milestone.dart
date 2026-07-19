@@ -26,7 +26,7 @@ class Milestone {
     required this.updatedAt,
     required this.closedAt,
     required this.dueOn,
-    this.state = MilestoneState.open,
+    this.state = .open,
   });
 
   /// Converts a `Map<String, dynamic>` to a [Milestone].
