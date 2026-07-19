@@ -29,34 +29,28 @@ class TestCase {
   String get packageName => outDir.basename;
 }
 
-/// Spec file extensions [collectTests] will pick up when a directory
-/// has no manifest.
-///
-/// A directory holding YAML that is *not* a spec (`cspell.config.yaml`,
-/// `analysis_options.yaml`) must use a manifest, which replaces the
-/// scan; otherwise that file is treated as a spec.
-const _specExtensions = ['.json', '.yaml', '.yml'];
-
-/// Name of the optional per-directory manifest, e.g.
+/// Name of the per-directory manifest that describes a spec directory:
 ///
 /// ```yaml
+/// openapi: false             # directory-wide default, per-entry overridable
 /// specs:
 ///   - spec: api.github.com.json
-///     package: github          # optional; defaults to the derived name
+///     package: github        # optional; defaults to the derived name
 ///   - spec: train-travel.yaml
-///     package: train_travel
 /// ```
 ///
-/// A directory carrying one is described entirely by it — the spec list
-/// is explicit rather than scanned, and each entry may override the
-/// package name. Without a manifest the directory is scanned as before,
-/// which is why `gen_tests/` in this repo needs no config.
+/// A spec directory is described entirely by its manifest — point the
+/// tool at a directory and it generates what the manifest says. There
+/// is deliberately no fallback that infers the list from the
+/// filesystem: inference cannot express the two things that actually
+/// vary. `api.github.com.json` needs to generate `github/` rather than
+/// `api_github_com/`, and a directory's quirks are not guessable at all
+/// (this repo's fixtures use `Quirks.openapi()`; the parallel spec repo
+/// does not, and generating it with them rewrites every package).
 ///
-/// The override exists because the package name is otherwise forced to
-/// be a mangling of the spec's filename: `api.github.com.json` would
-/// have to live in `api_github_com/`. The parallel spec repo prefers
-/// `github/`, and renaming the *input* files to control the output
-/// directory is the wrong lever.
+/// It also removes a trap: a scan would treat any stray
+/// `cspell.config.yaml` or `analysis_options.yaml` sitting beside the
+/// specs as a spec.
 const _manifestName = 'gen_tests.yaml';
 
 /// The package name [spec]'s filename implies: extension dropped, and
@@ -66,14 +60,16 @@ String _derivePackageName(File spec) => p
     .replaceAll('.', '_')
     .replaceAll('-', '_');
 
-/// Reads [_manifestName] from [testDir], or returns null if absent.
+/// Reads [_manifestName] from [testDir].
 ///
-/// Throws on a malformed manifest or a listed spec that does not exist
-/// — a typo'd entry silently generating nothing is exactly the failure
-/// this file is meant to remove.
-List<TestCase>? _testsFromManifest(Directory testDir) {
+/// Throws if it is missing or malformed, or if a listed spec does not
+/// exist — a typo'd entry silently generating nothing is exactly the
+/// failure this file is meant to remove.
+List<TestCase> _testsFromManifest(Directory testDir) {
   final manifest = testDir.childFile(_manifestName);
-  if (!manifest.existsSync()) return null;
+  if (!manifest.existsSync()) {
+    throw Exception('${testDir.path}: no $_manifestName');
+  }
   final doc = loadYaml(manifest.readAsStringSync());
   if (doc is! Map || doc['specs'] is! List) {
     throw Exception('${manifest.path}: expected a top-level `specs:` list');
@@ -129,24 +125,9 @@ List<TestCase> collectTests({
 
   final tests = <TestCase>[];
   for (final testDir in testDirs) {
-    // A manifest, when present, replaces the directory scan — it is the
-    // list, including any package-name overrides. Skip/glob still apply
-    // on top so `gen_tests.dart github` keeps working either way.
-    final candidates =
-        _testsFromManifest(testDir) ??
-        testDir
-            .listSync()
-            .whereType<File>()
-            .where((f) => _specExtensions.contains(p.extension(f.path)))
-            .map(
-              (f) => TestCase(
-                spec: f,
-                outDir: testDir.childDirectory(_derivePackageName(f)),
-                quirks: const Quirks.openapi(),
-              ),
-            )
-            .toList();
-    for (final test in candidates) {
+    // The manifest is the list. Skip/glob still narrow it, so
+    // `gen_tests.dart types` keeps working.
+    for (final test in _testsFromManifest(testDir)) {
       if (!shouldInclude(
         specFile: test.spec,
         packageName: test.packageName,
