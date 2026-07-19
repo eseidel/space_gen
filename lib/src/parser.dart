@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/parse/spec.dart';
+import 'package:space_gen/src/parse/visitor.dart';
 import 'package:space_gen/src/string.dart';
 
 T _required<T>(MapContext json, String key) {
@@ -2242,6 +2243,53 @@ class RefRegistry {
     }
     objectsByUri[uri] = object;
   }
+}
+
+/// Walks a parsed [OpenApi] (or a standalone [Components]) and indexes every
+/// component in a [RefRegistry] by its document-relative URI, so the
+/// resolver can dereference `$ref`s. A location holding a bare `$ref` (a
+/// components alias) registers an alias rather than an object. Sits in the
+/// parse layer because it is pure post-parse indexing — both assembly and
+/// the resolver's single-document convenience path build registries with it.
+class RegistryBuilder extends Visitor {
+  RegistryBuilder(this.specUrl, this.refRegistry);
+  final Uri specUrl;
+  final RefRegistry refRegistry;
+
+  void add(HasPointer object) {
+    final fragment = object.pointer.urlEncodedFragment;
+    final uri = specUrl.resolve(fragment);
+    refRegistry.register(uri, object);
+  }
+
+  @override
+  void visitRefOr<T extends Parseable>(RefOr<T> refOr) {
+    // A location holding a bare `$ref` (a components alias like
+    // `Product-Base: {$ref: ./schemas/product_base.yaml}`) registers no
+    // object of its own — the inline case is handled by the `visitX` calls
+    // as the walk descends. Record the alias so a lookup of this location
+    // reaches whatever the target eventually resolves to.
+    final ref = refOr.ref;
+    if (ref == null) return;
+    final from = specUrl.resolve(refOr.pointer.urlEncodedFragment);
+    final to = specUrl.resolveUri(ref.uri);
+    refRegistry.registerAlias(from, to);
+  }
+
+  @override
+  void visitPathItem(PathItem pathItem) => add(pathItem);
+  @override
+  void visitOperation(Operation operation) => add(operation);
+  @override
+  void visitParameter(Parameter parameter) => add(parameter);
+  @override
+  void visitResponse(Response response) => add(response);
+  @override
+  void visitRequestBody(RequestBody requestBody) => add(requestBody);
+  @override
+  void visitSchema(Schema schema) => add(schema);
+  @override
+  void visitHeader(Header header) => add(header);
 }
 
 class MapContext extends ParseContext {
