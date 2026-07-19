@@ -5,9 +5,6 @@ import 'package:space_gen/src/render/templates.dart';
 /// A maximal Dart identifier: `[a-zA-Z_$]` head, `[\w$]*` tail.
 final _identifierPattern = RegExp(r'[a-zA-Z_$][\w$]*');
 
-/// A single character that can appear inside a Dart identifier.
-final _identifierCharPattern = RegExp(r'[\w$]');
-
 /// [ModelHelpers.all] as a set, for O(1) membership while scanning.
 final Set<String> _helperNames = ModelHelpers.all.toSet();
 
@@ -25,129 +22,57 @@ final Set<String> _helperNames = ModelHelpers.all.toSet();
 /// genuine one at risk.
 final _docReferencePattern = RegExp(r'\[([^\]\s]+)\]');
 
+/// A string literal or a line comment: the two spans of a rendered body
+/// that must not be read as ordinary code.
+///
+/// One pattern for both, because each is what stops the other from being
+/// misread — the leftmost match wins, so in `Uri.parse('https://x')` the
+/// quote comes first and the `//` is part of the string, while in
+/// `/// don't` the `//` comes first and the apostrophe never opens a
+/// string.
+///
+/// Block comments are deliberately absent: the generator emits none, and
+/// every `/*` in the tracked specs' output is a glob inside a `///`
+/// line, which the comment branch already consumes. Should one ever
+/// appear its prose would be tokenized as code, which over-keeps an
+/// import — a lint, never a broken build.
+final _stringOrLineComment = RegExp(
+  // Raw strings first: their backslash is literal, so it must not be
+  // read as escaping the closing quote.
+  r"""r'[^'\n]*'|r"[^"\n]*"|"""
+  // Then ordinary strings, where a backslash does escape.
+  r"""'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"|"""
+  // Then line comments, which run to the end of the line.
+  r'//[^\n]*',
+);
+
+/// The `[Bracketed]` references in [comment] — the only part of it that
+/// can name a type. Space-prefixed so that replacing a comment cannot
+/// fuse it with the code before it (`foo//[Bar]` must not become
+/// `fooBar`).
+String _docReferencesIn(String comment) =>
+    ' ${_docReferencePattern.allMatches(comment).map((m) => m[1]!).join(' ')}';
+
 /// [body] with comment prose removed, keeping the parts that can name a
 /// Dart identifier.
 ///
-/// A comment survives only as its `[Bracketed]` references; the rest of
-/// the prose is replaced by spaces rather than deleted, so that the code
-/// on either side stays separated. Deleting it would fuse
-/// `foo/*c*/bar` into the identifier `foobar`, inventing a reference
-/// that never appeared.
+/// A comment survives only as its `[Bracketed]` references. Code and
+/// string literals are kept verbatim: a string can carry an identifier
+/// through interpolation (`'${Foo.bar}'`), and reproducing Dart's
+/// interpolation grammar to find out buys nothing, since keeping an
+/// extra identifier only ever keeps an extra import.
 ///
-/// Code and string literals are kept verbatim: a string can carry an
-/// identifier through interpolation (`'${Foo.bar}'`), and reproducing
-/// Dart's interpolation grammar to find out buys nothing, since keeping
-/// an extra identifier only ever keeps an extra import.
-///
-/// Strings are still *recognized* — not to drop them, but to skip past
-/// them. `Uri.parse('https://example.com/x')` embeds a `//` that a
+/// Strings are matched only so the scan can skip past them.
+/// `Uri.parse('https://example.com/x')` embeds a `//` that a
 /// string-blind scan would read as starting a comment, discarding the
 /// real code that follows it on that line. That is the one direction
-/// this function must never fail in: dropping code loses a genuine
-/// reference, and losing a reference drops a needed import and breaks
-/// compilation.
-String stripComments(String body) {
-  final out = StringBuffer();
-  // Start of the run of kept text not yet flushed to [out]. Everything
-  // that is not a comment is kept verbatim, so the scan only has to find
-  // comment boundaries and copy whole runs between them.
-  var runStart = 0;
-  var i = 0;
-
-  /// Advances [i] past the string literal starting there, handling raw,
-  /// multiline, and escaped quotes. The literal itself needs no special
-  /// copying — it stays part of the current run.
-  void skipStringLiteral() {
-    // In a raw string a backslash is literal, so it cannot escape the
-    // closing quote.
-    final isRaw = body[i] == 'r';
-    if (isRaw) i++;
-    final quote = body[i];
-    // `'''` / `"""` — a multiline string ends only on the full triple.
-    final delimiter = body.startsWith(quote * 3, i) ? quote * 3 : quote;
-    i += delimiter.length;
-    while (i < body.length) {
-      if (!isRaw && body[i] == r'\') {
-        i += 2;
-        continue;
-      }
-      if (body.startsWith(delimiter, i)) {
-        i += delimiter.length;
-        return;
-      }
-      i++;
-    }
-  }
-
-  /// Advances [i] past the comment starting there, returning its text.
-  String skipComment({required bool isBlock}) {
-    final start = i;
-    if (isBlock) {
-      // Dart nests block comments, so track depth rather than stopping
-      // at the first `*/`.
-      var depth = 0;
-      while (i < body.length) {
-        if (body.startsWith('/*', i)) {
-          depth++;
-          i += 2;
-        } else if (body.startsWith('*/', i)) {
-          depth--;
-          i += 2;
-          if (depth == 0) break;
-        } else {
-          i++;
-        }
-      }
-    } else {
-      while (i < body.length && body[i] != '\n') {
-        i++;
-      }
-    }
-    return body.substring(start, i);
-  }
-
-  /// The replacement for [comment]: its doc references at their original
-  /// offsets, everything else blanked. Never empty, so the code on
-  /// either side of the comment cannot fuse into one token.
-  String elided(String comment) {
-    final kept = List.filled(comment.length, ' ');
-    for (final match in _docReferencePattern.allMatches(comment)) {
-      final reference = match[1]!;
-      for (var k = 0; k < reference.length; k++) {
-        kept[match.start + 1 + k] = reference[k];
-      }
-    }
-    return kept.join();
-  }
-
-  while (i < body.length) {
-    final char = body[i];
-    if (char == '/' && i + 1 < body.length) {
-      final next = body[i + 1];
-      if (next == '/' || next == '*') {
-        out
-          ..write(body.substring(runStart, i))
-          ..write(elided(skipComment(isBlock: next == '*')));
-        runStart = i;
-        continue;
-      }
-    }
-    // A quote, or the `r` of a raw string — as opposed to an `r` ending
-    // a longer identifier that happens to precede one.
-    if (char == "'" ||
-        char == '"' ||
-        (char == 'r' &&
-            i + 1 < body.length &&
-            (body[i + 1] == "'" || body[i + 1] == '"') &&
-            (i == 0 || !_identifierCharPattern.hasMatch(body[i - 1])))) {
-      skipStringLiteral();
-      continue;
-    }
-    i++;
-  }
-  out.write(body.substring(runStart));
-  return out.toString();
-}
+/// this must never fail in: dropping code loses a genuine reference,
+/// and losing a reference drops a needed import and breaks compilation.
+String stripComments(String body) =>
+    body.replaceAllMapped(_stringOrLineComment, (match) {
+      final text = match[0]!;
+      return text.startsWith('//') ? _docReferencesIn(text) : text;
+    });
 
 /// Every whole-identifier token appearing in [code], which callers pass
 /// through [stripComments] first.

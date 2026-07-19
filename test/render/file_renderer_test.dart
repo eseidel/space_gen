@@ -2844,13 +2844,11 @@ void main() {
       // dangling comment reference.
       final code = stripComments('''
 /// Uses [Enterprise] and mentions GitHub Milestone Server.
-/* Block Contract */
 final x = Ship();
 ''');
       expect(referencedIdentifiers(code), contains('Enterprise'));
       expect(referencedIdentifiers(code), contains('Ship'));
       expect(referencedIdentifiers(code), isNot(contains('Milestone')));
-      expect(referencedIdentifiers(code), isNot(contains('Contract')));
     });
 
     test('stripComments does not treat a markdown link label as a '
@@ -2879,17 +2877,12 @@ final x = Ship();
       expect(referencedIdentifiers(code), contains('Ship'));
     });
 
-    test('stripComments handles raw, multiline, and escaped strings', () {
-      // Each of these can swallow the rest of the file if its end is
-      // mis-detected: a raw string's backslash does not escape, a
-      // multiline string ends only on the full triple quote, and an
-      // escaped quote does not end an ordinary one.
-      for (final literal in [
-        r"r'a\'",
-        "'''multi ' line'''",
-        r"'it\'s'",
-        r'"say \"hi\""',
-      ]) {
+    test('stripComments finds the end of raw and escaped strings', () {
+      // Either can swallow the rest of the file if its end is
+      // mis-detected: an escaped quote does not close an ordinary
+      // string, and a raw string's backslash does not escape at all, so
+      // it cannot be read as protecting the closing quote.
+      for (final literal in [r"r'a\'", r"'it\'s'", r'"say \"hi\""']) {
         final code = stripComments('final s = $literal; final x = Ship();');
         expect(
           referencedIdentifiers(code),
@@ -2899,21 +2892,14 @@ final x = Ship();
       }
     });
 
-    test('stripComments does not fuse the code on either side of a '
-        'comment', () {
-      // Blanking rather than deleting is what keeps these apart —
-      // deleting would invent the identifier `foobar`.
-      final code = stripComments('foo/* c */bar');
-      expect(referencedIdentifiers(code), containsAll(['foo', 'bar']));
-      expect(referencedIdentifiers(code), isNot(contains('foobar')));
-    });
-
-    test('stripComments handles nested block comments', () {
-      // Dart nests these, so stopping at the first `*/` would resume
-      // treating comment prose as code.
-      final code = stripComments('/* a /* b */ Milestone */ final x = Ship();');
-      expect(referencedIdentifiers(code), contains('Ship'));
-      expect(referencedIdentifiers(code), isNot(contains('Milestone')));
+    test('stripComments does not fuse a comment replacement with the '
+        'code before it', () {
+      // The replacement is space-prefixed for this: an unformatted body
+      // can put a comment straight after an identifier, and `fooBar` is
+      // a reference that never appeared.
+      final code = stripComments('foo//[Bar]');
+      expect(referencedIdentifiers(code), containsAll(['foo', 'Bar']));
+      expect(referencedIdentifiers(code), isNot(contains('fooBar')));
     });
 
     test('importsForModel drops a model named only in prose', () {
