@@ -49,6 +49,119 @@ void main() {
       return spec.paths.first.operations.first.responses.first.content;
     }
 
+    group('query parameter shapes', () {
+      Map<String, dynamic> specWithQueryParam(Map<String, dynamic> schema) => {
+        'openapi': '3.1.0',
+        'info': {'title': 'Test API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/things': {
+            'get': {
+              'summary': 'List things',
+              'parameters': [
+                {'name': 'q', 'in': 'query', 'schema': schema},
+              ],
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+
+      const unsupportedWarning =
+          'Unsupported query parameter shape; generator emits a stringified '
+          'value, which is unlikely to match what the server expects '
+          'in #/paths/~1things/get/parameters/0';
+
+      // `form`/`deepObject` object serialization is not implemented. The
+      // warning is how that stays visible instead of silently shipping a
+      // Dart map's `toString()` as the query value.
+      test('object query param warns', () {
+        final logger = _MockLogger();
+        runWithLogger(
+          logger,
+          () => parseAndResolveTestSpec(
+            specWithQueryParam({
+              'type': 'object',
+              'properties': {
+                'a': {'type': 'string'},
+              },
+            }),
+          ),
+        );
+        verify(() => logger.warn(unsupportedWarning)).called(1);
+      });
+
+      test('array of objects warns', () {
+        final logger = _MockLogger();
+        runWithLogger(
+          logger,
+          () => parseAndResolveTestSpec(
+            specWithQueryParam({
+              'type': 'array',
+              'items': {
+                'type': 'object',
+                'properties': {
+                  'a': {'type': 'string'},
+                },
+              },
+            }),
+          ),
+        );
+        verify(() => logger.warn(unsupportedWarning)).called(1);
+      });
+
+      test('supported shapes do not warn', () {
+        for (final schema in <Map<String, dynamic>>[
+          {'type': 'string'},
+          {'type': 'integer'},
+          // `number` is legal in a query even though `_canBePathParameter`
+          // rejects it for path segments.
+          {'type': 'number'},
+          {'type': 'boolean'},
+          {'type': 'string', 'format': 'uuid'},
+          {
+            'type': 'string',
+            'enum': ['a', 'b'],
+          },
+          {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+          // github's `cwes`: a union mixing a single value with an array.
+          {
+            'oneOf': [
+              {'type': 'string'},
+              {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            ],
+          },
+          // spacetraders' `traits` uses `anyOf` for the same shape.
+          {
+            'anyOf': [
+              {'type': 'string'},
+              {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            ],
+          },
+        ]) {
+          final logger = _MockLogger();
+          runWithLogger(
+            logger,
+            () => parseAndResolveTestSpec(specWithQueryParam(schema)),
+          );
+          verifyNever(() => logger.warn(unsupportedWarning));
+        }
+      });
+    });
+
     test('path parameters must be strings or integers', () {
       final json = {
         'openapi': '3.1.0',

@@ -1162,7 +1162,7 @@ void main() {
         '            method: Method.post,\n'
         "            path: '/users',\n"
         '            queryParameters: {\n'
-        "                if (foo != null) 'foo': foo.map((e) => e).toList(),\n"
+        "                if (foo != null) 'foo': foo,\n"
         '            },\n'
         '        );\n'
         '\n'
@@ -1201,9 +1201,11 @@ void main() {
       );
       // explode: false → one comma-joined value, not repeated keys. The joined
       // string is wrapped in a 1-element list for the Map<String, List<String>>.
+      // The elements are already `String`, so they join directly — no
+      // intervening identity `.map`.
       expect(
         result,
-        contains("'foo': [foo.map((e) => e).join(',')],"),
+        contains("'foo': [foo.join(',')],"),
       );
     });
 
@@ -1405,6 +1407,47 @@ void main() {
           '        }\n'
           '    }\n'
           '}\n',
+        );
+      });
+
+      test('string or array of string switches on the variant', () {
+        // github's `cwes` / `affects`: a union mixing a single value with an
+        // array of them. The union's `toJson()` is `dynamic`, so the scalar
+        // path would stringify the list variant to `"[a, b]"` instead of
+        // repeating the key. Each arm must contribute its own wire shape.
+        final json = {
+          'summary': 'Get user',
+          'parameters': [
+            {
+              'name': 'cwes',
+              'in': 'query',
+              'schema': {
+                'oneOf': [
+                  {'type': 'string'},
+                  {
+                    'type': 'array',
+                    'items': {'type': 'string'},
+                  },
+                ],
+              },
+            },
+          ],
+          'responses': {
+            '200': {'description': 'OK'},
+          },
+        };
+        final result = renderTestOperation(
+          path: '/users',
+          operationJson: json,
+          serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+        );
+        expect(
+          result,
+          contains(
+            "if (cwes != null) 'cwes': switch (cwes) { "
+            'UsersParameter0String(:final value) => [value], '
+            'UsersParameter0List(:final value) => value, }',
+          ),
         );
       });
     });
