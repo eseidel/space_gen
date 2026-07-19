@@ -819,6 +819,44 @@ void main() {
       expect(result, contains('.contains(entry.key)'));
     });
 
+    test('map of json types parses as a bare cast, with no identity map', () {
+      // Neither key nor value transforms, so `.map(MapEntry.new)` would
+      // rebuild every entry exactly as it came in — a copy and nothing
+      // else (#272). The cast alone already has the right static type.
+      //
+      // Dropping the call also drops the parentheses the old form needed
+      // to be a valid method-call target; the serializer decides that from
+      // precedence rather than anyone spelling it out.
+      final schema = {
+        'type': 'object',
+        'properties': {
+          'headers': {'type': 'object', 'additionalProperties': true},
+        },
+      };
+      final result = renderTestSchema(schema);
+      expect(
+        result,
+        contains("headers: json['headers'] as Map<String, dynamic>?,"),
+      );
+      expect(result, isNot(contains('MapEntry.new')));
+    });
+
+    test('map with a transforming value still maps its entries', () {
+      // The counterpart: a `date-time` value needs `DateTime.parse` per
+      // entry, so the `.map` earns its place and must not be dropped.
+      final schema = {
+        'type': 'object',
+        'properties': {
+          'seenAt': {
+            'type': 'object',
+            'additionalProperties': {'type': 'string', 'format': 'date-time'},
+          },
+        },
+      };
+      final result = renderTestSchema(schema);
+      expect(result, contains('MapEntry(key, DateTime.parse('));
+    });
+
     test('oneOf of allOf variants tagged by single-value enum', () {
       // Each variant is `allOf: [<rule>, <info>]` where the first
       // member tags itself with a single-value enum on `type`. After
@@ -3509,9 +3547,10 @@ void main() {
         "            mUri: (json['m_uri'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, Uri.parse(value as String))),\n"
         "            mMapOfString: (json['m_map_of_string'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, (value as Map<String, dynamic>).map((key, value) => MapEntry(key, value as String)))),\n"
         "            mEnum: (json['m_enum'] as Map<String, dynamic>?)?.map((key, value) => MapEntry(key, TestMEnum.fromJson(value as String))),\n"
-        // Neither key nor value transforms, so the identity closure is
-        // emitted as the tearoff it is.
-        "            mUnknown: (json['m_unknown'] as Map<String, dynamic>?)?.map(MapEntry.new),\n"
+        // Neither key nor value transforms, so there is nothing to map and
+        // the cast stands alone — no `.map`, and so no parentheses around
+        // the cast either (#272). Contrast every line above.
+        "            mUnknown: json['m_unknown'] as Map<String, dynamic>?,\n"
         '        ));\n'
         '    }\n'
         '\n'
