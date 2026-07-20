@@ -42,6 +42,9 @@
                                         },
                                         "status": {
                                             "$ref": "#/components/schemas/Status"
+                                        },
+                                        "stock": {
+                                            "$ref": "#/components/schemas/StockStatus"
                                         }
                                     },
                                     "required": [
@@ -82,6 +85,11 @@
             "Status": {
                 "type": "string",
                 "enum": ["active", "inactive", "pending"]
+            },
+            "StockStatus": {
+                "type": "string",
+                "description": "Values whose sanitized identifiers collide — `in stock` and `in-stock` both reduce to the same identifier. The generated enum must disambiguate rather than declare it twice.",
+                "enum": ["in stock", "in-stock", "out of stock"]
             },
             "Widget": {
                 "type": "object",

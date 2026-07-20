@@ -5415,7 +5415,30 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
       return dartName;
     }
 
-    return values.map(toShortVariableName).toList();
+    return _uniqueNames(values.map(toShortVariableName).toList());
+  }
+
+  /// Disambiguate names that collapsed to the same Dart identifier after
+  /// sanitization, so the generated enum has no duplicate members. The
+  /// values `g` and `μg`, for example, both reduce to `g` once the
+  /// non-ASCII `μ` is dropped; the second becomes `g2`. The first
+  /// occurrence keeps the bare name; each later duplicate takes the
+  /// smallest free numeric suffix (`g`, `g2`, `g3`). No underscore — the
+  /// suffix stays lowerCamelCase, matching [variableNamesForInts]'
+  /// `value<N>` form.
+  static List<String> _uniqueNames(List<String> names) {
+    final seen = <String>{};
+    final result = <String>[];
+    for (final name in names) {
+      var unique = name;
+      var suffix = 2;
+      while (!seen.add(unique)) {
+        unique = '$name$suffix';
+        suffix++;
+      }
+      result.add(unique);
+    }
+    return result;
   }
 
   /// Variable names for an int-valued enum. Defaults to `value<N>`
