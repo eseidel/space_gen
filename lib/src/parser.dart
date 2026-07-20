@@ -943,14 +943,24 @@ SchemaMap _mapSchema(
   );
 }
 
-/// Some specs wrap a scalar enum `default` in a single-element list
-/// (OpenAI: `default: [auto]` on `enum: [auto]`). Enum values are always
-/// scalars, so a one-element list default is an unambiguous author typo —
-/// treat it as the scalar it plainly means. Any other value is returned
-/// untouched.
-dynamic _unwrapSingletonDefault(dynamic value) {
+/// Unwraps a scalar enum `default` that a spec wrapped in a single-element
+/// list — e.g. OpenAI's `default: [auto]` on `enum: [auto]`.
+///
+/// **This is a real-world leniency, not part of the OpenAPI / JSON Schema
+/// spec.** There, an enum `default` is a bare value, and for a scalar enum
+/// that means a scalar — never a list. But some spec-authoring tools emit
+/// the value wrapped in a one-element list; since enum values are always
+/// scalars, a one-item list is an unambiguous typo, so we reinterpret it as
+/// the scalar it plainly means and log the accommodation at `-v`. Any other
+/// value is returned untouched.
+dynamic _unwrapSingletonDefault(MapContext json, dynamic value) {
   if (value is List && value.length == 1) {
-    return value.first;
+    final unwrapped = value.first;
+    logger.detail(
+      'Unwrapping single-element list default $value to $unwrapped '
+      '(not spec-conformant; seen in real-world specs) in ${json.pointer}',
+    );
+    return unwrapped;
   }
   return value;
 }
@@ -1039,7 +1049,7 @@ SchemaEnum<Object>? _handleEnum({
     final typedEnumValues = nonNullValues.cast<int>();
     int? typedDefaultValue;
     if (defaultValue != null) {
-      final candidate = _unwrapSingletonDefault(defaultValue);
+      final candidate = _unwrapSingletonDefault(json, defaultValue);
       if (candidate is int && nonNullValues.contains(candidate)) {
         typedDefaultValue = candidate;
       } else {
@@ -1066,7 +1076,7 @@ SchemaEnum<Object>? _handleEnum({
   final typedEnumValues = nonNullValues.cast<String>();
   String? typedDefaultValue;
   if (defaultValue != null) {
-    final candidate = _unwrapSingletonDefault(defaultValue);
+    final candidate = _unwrapSingletonDefault(json, defaultValue);
     if (nonNullValues.contains(candidate)) {
       typedDefaultValue = candidate as String;
     } else if (nonNullValues.contains(candidate.toString())) {

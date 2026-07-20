@@ -2257,11 +2257,15 @@ void main() {
           'enum': [1, 2, 11],
           'default': [11],
         };
-        final schema = parseTestSchema(json);
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
         if (schema is! SchemaIntEnum) {
           fail('Expected SchemaIntEnum, got ${schema.runtimeType}');
         }
         expect(schema.defaultValue, 11);
+        verify(
+          () => logger.detail(any(that: contains('not spec-conformant'))),
+        ).called(1);
       });
       test('integer const parses as a single-value SchemaIntEnum', () {
         // OpenAPI 3.1 / JSON Schema 2020-12: `const: N` is the single-
@@ -2556,17 +2560,21 @@ void main() {
       test('string enum default wrapped in a single-element list unwraps', () {
         // OpenAI's `TranscriptionChunkingStrategy`: `default: [auto]` on
         // `enum: [auto]` — a scalar default the author wrote as a one-item
-        // list.
+        // list. Not spec-conformant, so the accommodation is logged.
         final json = {
           'type': 'string',
           'enum': ['auto'],
           'default': ['auto'],
         };
-        final schema = parseTestSchema(json);
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
         if (schema is! SchemaStringEnum) {
           fail('Expected SchemaStringEnum, got ${schema.runtimeType}');
         }
         expect(schema.defaultValue, 'auto');
+        verify(
+          () => logger.detail(any(that: contains('not spec-conformant'))),
+        ).called(1);
       });
     });
 
