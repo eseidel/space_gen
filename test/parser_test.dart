@@ -2623,20 +2623,31 @@ void main() {
         final schema = runWithLogger(logger, () => parseTestSchema(json));
         expect(schema, isA<SchemaBase64Bytes>());
       });
-      test('contentEncoding=binary stays a SchemaString (deferred)', () {
-        // Routing `contentEncoding: binary` to `SchemaBinary` (a no-
-        // JSON type) breaks generated response handlers for non-JSON
-        // content types (`image/png` returning `Uint8List` from a
-        // String-shaped path). Until the response-bytes pipeline
-        // lands, acknowledge the keyword via the verbose log and
-        // keep the wire-shape `String`.
+      test('contentEncoding=binary parses as SchemaBinary', () {
+        // The OAS 3.1 successor to `format: binary`: raw bytes. Renders as
+        // `Uint8List` — a multipart file upload, or a response sourced from
+        // `response.bodyBytes` (see the render path for binary responses).
         final json = {'type': 'string', 'contentEncoding': 'binary'};
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaBinary>());
+        // A recognized keyword, so no "Ignoring: contentEncoding" chatter.
+        verifyNever(
+          () => logger.detail(
+            any(that: contains('Ignoring: contentEncoding')),
+          ),
+        );
+      });
+      test('an unmodeled contentEncoding stays a SchemaString', () {
+        // Encodings we don't map (base16, quoted-printable, 7bit, …) keep
+        // the wire-shape `String` and are acknowledged in the verbose log.
+        final json = {'type': 'string', 'contentEncoding': 'base16'};
         final logger = _MockLogger();
         final schema = runWithLogger(logger, () => parseTestSchema(json));
         expect(schema, isA<SchemaString>());
         verify(
           () => logger.detail(
-            any(that: contains('Ignoring: contentEncoding=binary')),
+            any(that: contains('Ignoring: contentEncoding=base16')),
           ),
         ).called(1);
       });
