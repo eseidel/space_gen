@@ -189,6 +189,38 @@ void main() {
       expect(r, contains('MapEntry(key.toJson(), value.toJson())'));
     });
 
+    test(
+      'a typed-map-keyed map round-trips its key enum as a oneOf variant',
+      () {
+        // A map with a string-enum key appearing as a `oneOf` variant exercises
+        // RenderMap._variantConversion: the key round-trips through the enum's
+        // fromJson/toJson inside the union's conversion.
+        final schemas = <String, Map<String, dynamic>>{
+          'Platform': {
+            'type': 'string',
+            'enum': ['android', 'ios'],
+          },
+          'U': {
+            'oneOf': [
+              {
+                'type': 'object',
+                'additionalProperties': {'type': 'string'},
+                'propertyNames': {r'$ref': '#/components/schemas/Platform'},
+              },
+              {'type': 'integer'},
+            ],
+          },
+        };
+        final rendered = renderTestSchemas(
+          schemas,
+          specUrl: Uri.parse('file:///spec.yaml'),
+        );
+        final u = rendered['U']!;
+        expect(u, contains('Platform.fromJson(k)'));
+        expect(u, contains('k.toJson()'));
+      },
+    );
+
     test('propertyNames with an int enum falls back to String keys', () {
       // An integer enum renders as a value newtype, not an enum, so it can't
       // type a JSON map key (keys are strings on the wire). The map degrades
@@ -1296,6 +1328,36 @@ void main() {
       expect(rule, contains('TriggerType get triggerType =>'));
       expect(rule, contains("'trigger_type': triggerType.toJson()"));
       expect(rule, isNot(contains('triggerType?.toJson()')));
+    });
+
+    test('const getter pins a named string enum to its member', () {
+      // A string enum pinned to one value via the allOf-ref idiom renders a
+      // fixed getter returning the enum member (`State.active`) — the
+      // Dart-enum const-getter branch, distinct from the int-newtype `E(v)`
+      // form used for a nameless int enum.
+      final results = renderTestSchemas(
+        {
+          'Thing': {
+            'type': 'object',
+            'required': ['state'],
+            'properties': {
+              'state': {
+                'type': 'string',
+                'enum': ['active'],
+                'allOf': [
+                  {r'$ref': '#/components/schemas/State'},
+                ],
+              },
+            },
+          },
+          'State': {
+            'type': 'string',
+            'enum': ['active', 'inactive'],
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      expect(results['Thing'], contains('State get state => State.active;'));
     });
 
     // A bare inline lone `const` on a property renders as a fixed getter

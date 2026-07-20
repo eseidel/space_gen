@@ -785,6 +785,9 @@ void main() {
       const same = RenderIntNewtype(common: common, allowedValues: [1, 2]);
       expect(a.equalsIgnoringName(b), isFalse);
       expect(a.equalsIgnoringName(same), isTrue);
+      // Equatable `==`/props include the allowed set too.
+      expect(a, equals(same));
+      expect(a, isNot(equals(b)));
       // A plain bounded integer newtype is never a closed-set int.
       const plainInt = RenderInteger(
         common: common,
@@ -1267,6 +1270,18 @@ void main() {
     test('date format produces a Date value-class literal', () {
       const schema = RenderDate(common: common, defaultValue: null);
       expect(schema.exampleValue(context)?.source, 'Date(2024, 1, 1)');
+    });
+
+    test('int newtype example constructs the first allowed value', () {
+      const schema = RenderIntNewtype(
+        common: common,
+        allowedValues: [3, 4],
+        assignedName: 'NovaGroup',
+        assignedSnakeName: 'nova_group',
+      );
+      // Non-const: the validating constructor has a body, so the example is
+      // `NovaGroup(3)`, not `const NovaGroup(3)`.
+      expect(schema.exampleValue(context)?.source, 'NovaGroup(3)');
     });
 
     // `number` examples land in a statically-`double` destination, where an

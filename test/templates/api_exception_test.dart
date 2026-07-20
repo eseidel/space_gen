@@ -47,6 +47,21 @@ void main() {
       6.validateMultipleOf(3);
       expect(() => 7.validateMultipleOf(3), throwsMessage('multiple of 3'));
     });
+
+    test('validateEnumValues accepts a member and rejects a non-member', () {
+      3.validateEnumValues([3, 4]);
+      // Out-of-set is a parse failure, so it throws FormatException.
+      expect(
+        () => 5.validateEnumValues([3, 4]),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains('5 is not one of [3, 4]'),
+          ),
+        ),
+      );
+    });
   });
 
   group('ValidateString', () {
