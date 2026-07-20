@@ -77,6 +77,36 @@ void main() {
       );
     });
 
+    test('binary response body reads response.bodyBytes, not body', () {
+      // A `Uint8List` return type must be sourced from `response.bodyBytes`,
+      // not the `String` `response.body` — otherwise the method doesn't
+      // compile (return_of_invalid_type).
+      final operation = {
+        'operationId': 'downloadImage',
+        'responses': {
+          '200': {
+            'description': 'ok',
+            'content': {
+              'image/png': {
+                'schema': {'type': 'string', 'format': 'binary'},
+              },
+            },
+          },
+        },
+      };
+      final result = runWithLogger(
+        _MockLogger(),
+        () => renderTestOperation(
+          path: '/image',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        ),
+      );
+      expect(result, contains('Future<Uint8List> downloadImage('));
+      expect(result, contains('return response.bodyBytes;'));
+      expect(result, isNot(contains('return response.body;')));
+    });
+
     test('String path parameter substitutes bare, without interpolation', () {
       // A String path parameter is already a String, so it substitutes
       // directly — no `'${...}'` wrapper (which would trip

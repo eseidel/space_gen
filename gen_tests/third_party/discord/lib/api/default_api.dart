@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:discord/api_client.dart';
 import 'package:discord/api_exception.dart';
 import 'package:discord/messages/activities_attachment_response.dart';
@@ -725,10 +726,14 @@ class DefaultApi {
     SnowflakeType applicationId,
     UploadApplicationAttachmentRequest uploadApplicationAttachmentRequest,
   ) async {
-    final multipartFields = <String, String>{
-      'file': uploadApplicationAttachmentRequest.file,
-    };
-    final multipartFiles = <http.MultipartFile>[];
+    final multipartFields = <String, String>{};
+    final multipartFiles = <http.MultipartFile>[
+      http.MultipartFile.fromBytes(
+        'file',
+        uploadApplicationAttachmentRequest.file,
+        filename: 'file',
+      ),
+    ];
     final response = await client.invokeApiMultipart(
       method: Method.post,
       path: '/applications/{application_id}/attachment'.replaceAll(
@@ -6074,9 +6079,14 @@ class DefaultApi {
     final multipartFields = <String, String>{
       'name': createGuildStickerRequest.name,
       'tags': createGuildStickerRequest.tags,
-      'file': createGuildStickerRequest.file,
     };
-    final multipartFiles = <http.MultipartFile>[];
+    final multipartFiles = <http.MultipartFile>[
+      http.MultipartFile.fromBytes(
+        'file',
+        createGuildStickerRequest.file,
+        filename: 'file',
+      ),
+    ];
     {
       final v = createGuildStickerRequest.description;
       if (v != null) multipartFields['description'] = v;
@@ -6812,7 +6822,7 @@ class DefaultApi {
     throw ApiException<Object?>.unhandled(response.statusCode);
   }
 
-  Future<String> getGuildWidgetPng(
+  Future<Uint8List> getGuildWidgetPng(
     SnowflakeType guildId, {
     WidgetImageStyles? style,
   }) async {
@@ -6846,7 +6856,7 @@ class DefaultApi {
     }
 
     if (response.body.isNotEmpty) {
-      return response.body;
+      return response.bodyBytes;
     }
 
     throw ApiException<Object?>.unhandled(response.statusCode);
@@ -6983,7 +6993,7 @@ class DefaultApi {
   }
 
   /// Get the target users for an invite.
-  Future<String> getInviteTargetUsers(String code) async {
+  Future<Uint8List> getInviteTargetUsers(String code) async {
     code.validateMaximumLength(152133);
 
     final response = await client.invokeApi(
@@ -7010,7 +7020,7 @@ class DefaultApi {
     }
 
     if (response.body.isNotEmpty) {
-      return response.body;
+      return response.bodyBytes;
     }
 
     throw ApiException<Object?>.unhandled(response.statusCode);
@@ -7023,10 +7033,14 @@ class DefaultApi {
   ) async {
     code.validateMaximumLength(152133);
 
-    final multipartFields = <String, String>{
-      'target_users_file': updateInviteTargetUsersRequest.targetUsersFile,
-    };
-    final multipartFiles = <http.MultipartFile>[];
+    final multipartFields = <String, String>{};
+    final multipartFiles = <http.MultipartFile>[
+      http.MultipartFile.fromBytes(
+        'target_users_file',
+        updateInviteTargetUsersRequest.targetUsersFile,
+        filename: 'target_users_file',
+      ),
+    ];
     final response = await client.invokeApiMultipart(
       method: Method.put,
       path: '/invites/{code}/target-users'.replaceAll(

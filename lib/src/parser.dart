@@ -1296,7 +1296,22 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   }
 
   if (type == 'string') {
-    if (typeAndFormat.format == 'binary') {
+    // JSON Schema 2020-12 / OpenAPI 3.1 successors to `format: byte` and
+    // `format: binary`: the wire is still a JSON string, but its value is
+    // encoded binary. Read alongside `format` so a 3.0 and a 3.1 spec
+    // converge on the same node.
+    final contentEncoding = _optional<String>(json, 'contentEncoding');
+    // `contentMediaType` (e.g. `image/png`) is metadata about the bytes'
+    // MIME type. Not actionable on the Dart side beyond documentation;
+    // consume to suppress the unused-key warning.
+    _ignored<String>(json, 'contentMediaType');
+
+    // `format: binary` (OAS 3.0) and `contentEncoding: binary` (OAS 3.1 /
+    // 2020-12) both mark a raw-bytes string: a file upload in a multipart
+    // request body, or a `Uint8List` response sourced from
+    // `response.bodyBytes`. They converge on one node so a 3.1 spec gets
+    // the same `Uint8List` a 3.0 spec does.
+    if (typeAndFormat.format == 'binary' || contentEncoding == 'binary') {
       return SchemaBinary(common: common);
     }
     // `format: date` (RFC 3339 full-date) is a calendar day with no time or
@@ -1308,46 +1323,21 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
         defaultValue: _optional<String>(json, 'default'),
       );
     }
-    // JSON Schema 2020-12 / OpenAPI 3.1 successors to `format: byte`
-    // and `format: binary`. The wire is still a JSON string, but the
-    // string value is encoded binary — base64 (most common) or raw
-    // octets (`binary`, only meaningful when the surrounding content
-    // type is non-JSON like multipart). Discord uses
-    // `contentEncoding: base64` on `avatar`/`image` upload fields.
-    final contentEncoding = _optional<String>(json, 'contentEncoding');
-    // `contentMediaType` (e.g. `image/png`) is metadata about the
-    // bytes' MIME type. Not actionable on the Dart side beyond
-    // documentation; consume to suppress the unused-key warning.
-    _ignored<String>(json, 'contentMediaType');
-    // `contentEncoding: binary` is the OpenAPI 3.1 successor to
-    // `format: binary`, but on a non-multipart response body (e.g.
-    // an `image/png` content type) it implies the response method
-    // should return `Uint8List` from `response.bodyBytes`, not
-    // `String` from `response.body`. That's a separate render-path
-    // change; until then, acknowledge the keyword and keep the
-    // wire-shape `String` so the existing non-JSON response handler
-    // continues to compile. `contentEncoding: binary` on a JSON
-    // property is also nonsensical (JSON strings are UTF-8 text);
-    // same fallback covers it.
-    if (contentEncoding != null && contentEncoding != 'base64') {
-      // Mark used; detail-log the value at -v.
+    // `format: byte` (OAS 3.0 / draft-4) and `contentEncoding: base64`
+    // (OAS 3.1 / 2020-12) are the same statement in two spec versions: a
+    // JSON string whose value is base64-encoded binary. A spec that sets
+    // both is accepted rather than flagged — they agree, and belt-and-braces
+    // declarations are common in specs that straddle versions.
+    if (typeAndFormat.format == 'byte' || contentEncoding == 'base64') {
+      return SchemaBase64Bytes(common: common);
+    }
+    // Any other `contentEncoding` (base16, quoted-printable, 7bit, …) we
+    // don't model: keep the wire-shape `String` and detail-log at -v.
+    if (contentEncoding != null) {
       logger.detail(
         'Ignoring: contentEncoding=$contentEncoding (String) in '
         '${json.pointer}',
       );
-    }
-    // `format: byte` (OAS 3.0 / draft-4) and `contentEncoding: base64`
-    // (OAS 3.1 / 2020-12) are the same statement in the vocabulary of
-    // two spec versions: a JSON string whose value is base64-encoded
-    // binary. They converge on one node, so a 3.0 spec gets the same
-    // `Uint8List` a 3.1 spec does rather than a `String` the caller has
-    // to decode by hand.
-    //
-    // A spec that sets both is accepted rather than flagged: they agree,
-    // and belt-and-braces declarations are common in specs that straddle
-    // versions.
-    if (typeAndFormat.format == 'byte' || contentEncoding == 'base64') {
-      return SchemaBase64Bytes(common: common);
     }
   }
 
