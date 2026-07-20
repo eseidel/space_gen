@@ -1296,10 +1296,9 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   }
 
   if (type == 'string') {
-    // JSON Schema 2020-12 / OpenAPI 3.1 successors to `format: byte` and
-    // `format: binary`: the wire is still a JSON string, but its value is
-    // encoded binary. Read alongside `format` so a 3.0 and a 3.1 spec
-    // converge on the same node.
+    // `contentEncoding` is the OpenAPI 3.1 / JSON-Schema 2020-12 encoding
+    // keyword; read it up front since both the binary and base64 branches
+    // below pair it with the equivalent 3.0 `format`.
     final contentEncoding = _optional<String>(json, 'contentEncoding');
     // `contentMediaType` (e.g. `image/png`) is metadata about the bytes'
     // MIME type. Not actionable on the Dart side beyond documentation;
