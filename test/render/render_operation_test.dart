@@ -386,6 +386,46 @@ void main() {
       );
     });
 
+    test('multipart/form-data contentEncoding: binary is a file part', () {
+      // OpenAPI 3.1 spells `format: binary` as `contentEncoding: binary`.
+      // Discord's upload fields use it; the field must become a
+      // `MultipartFile` part, not a string form field.
+      final operation = {
+        'tags': ['files'],
+        'operationId': 'uploadFile',
+        'requestBody': {
+          'required': true,
+          'content': {
+            'multipart/form-data': {
+              'schema': {
+                'type': 'object',
+                'required': ['file'],
+                'properties': {
+                  'file': {'type': 'string', 'contentEncoding': 'binary'},
+                },
+              },
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/upload',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      expect(
+        result,
+        contains(
+          "http.MultipartFile.fromBytes('file', uploadFileRequest.file, filename: 'file'),",
+        ),
+      );
+      // Not routed through the string-valued fields map.
+      expect(result, isNot(contains("multipartFields['file']")));
+    });
+
     // #294: `format: date` and base64 bytes were missing from
     // `_isMultipartScalar`, so either one crashed the generator with
     // "must be a scalar or binary" instead of rendering. Both serialize
