@@ -19,11 +19,16 @@
 # package into `lib/model/` with different nullability and mutability.
 openapi: false
 
-# `--verify` skips these. They are already compiled and tested by
-# Shorebird's Workflow Discovery, and github alone builds ~1700 test
-# kernels (~68 GB of scratch, ~104s) — too heavy to do a second time
-# here. The synthetic fixtures one level up are the ones that lacked
-# any compile/test coverage (#307), so they keep the default `true`.
+# `--verify` skips these — it runs `dart test`, and github alone builds
+# ~1700 test kernels (~68 GB of scratch, ~104s), well past a standard CI
+# runner's disk. CI instead runs `dart analyze` on each generated
+# package in its own `third-party` matrix leg (see .github/workflows/
+# dart.yml): static analysis of the same tree is ~10s and catches
+# emitted code that does not compile (#307), which is the coverage that
+# matters here. Runtime round-tripping is already covered generator-wide
+# by the synthetic fixtures one level up, which keep the default `true`.
+# (Until it was retired, Shorebird's Workflow Discovery compiled and
+# tested these, which is why this stayed `false` historically.)
 verify: false
 
 # `package:` defaults to the spec's filename with the extension dropped
