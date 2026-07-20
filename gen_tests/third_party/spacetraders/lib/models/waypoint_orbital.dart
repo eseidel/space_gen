@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 
 /// {@template waypoint_orbital}
@@ -7,7 +8,9 @@ import 'package:spacetraders/model_helpers.dart';
 @immutable
 class WaypointOrbital {
   /// {@macro waypoint_orbital}
-  const WaypointOrbital({required this.symbol});
+  WaypointOrbital({required this.symbol}) {
+    symbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [WaypointOrbital].
   factory WaypointOrbital.fromJson(Map<String, dynamic> json) {

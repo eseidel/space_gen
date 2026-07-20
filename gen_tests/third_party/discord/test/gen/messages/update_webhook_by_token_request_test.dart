@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('UpdateWebhookByTokenRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = UpdateWebhookByTokenRequest();
+      final instance = UpdateWebhookByTokenRequest();
       final parsed = UpdateWebhookByTokenRequest.maybeFromJson(
         instance.toJson(),
       )!;

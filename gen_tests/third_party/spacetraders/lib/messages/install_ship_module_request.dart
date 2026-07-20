@@ -1,9 +1,12 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 
 @immutable
 class InstallShipModuleRequest {
-  const InstallShipModuleRequest({required this.symbol});
+  InstallShipModuleRequest({required this.symbol}) {
+    symbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [InstallShipModuleRequest].
   factory InstallShipModuleRequest.fromJson(Map<String, dynamic> json) {

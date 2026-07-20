@@ -7,7 +7,7 @@ void main() {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = ScrapShip200Response(
         data: ScrapShip200ResponseData(
-          agent: const Agent(
+          agent: Agent(
             accountId: 'example',
             symbol: 'example',
             headquarters: 'example',

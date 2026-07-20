@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 void main() {
   group('InteractionApplicationCommandAutocompleteCallbackNumberData', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance =
+      final instance =
           InteractionApplicationCommandAutocompleteCallbackNumberData();
       final parsed =
           InteractionApplicationCommandAutocompleteCallbackNumberData.maybeFromJson(

@@ -31,9 +31,8 @@ class StationsApi {
     String? search,
     String? country,
   }) async {
-    page?.validateMinimum(1);
-    limit?.validateMaximum(100);
-    limit?.validateMinimum(1);
+    page?.validate(min: 1);
+    limit?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,

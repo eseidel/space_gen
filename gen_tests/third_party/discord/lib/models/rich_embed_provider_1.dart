@@ -1,9 +1,12 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class RichEmbedProvider1 {
-  const RichEmbedProvider1({this.name, this.url});
+  RichEmbedProvider1({this.name, this.url}) {
+    name?.validate(maxLength: 256);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [RichEmbedProvider1].
   factory RichEmbedProvider1.fromJson(Map<String, dynamic> json) {

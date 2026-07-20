@@ -5,7 +5,7 @@ import 'package:train_travel/api.dart';
 void main() {
   group('CreateBookingPayment200Response', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CreateBookingPayment200Response();
+      final instance = CreateBookingPayment200Response();
       final parsed = CreateBookingPayment200Response.maybeFromJson(
         instance.toJson(),
       )!;

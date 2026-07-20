@@ -1,9 +1,12 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class ProjectsMoveCardRequest {
-  const ProjectsMoveCardRequest({required this.position, this.columnId});
+  ProjectsMoveCardRequest({required this.position, this.columnId}) {
+    position.validate(pattern: r'^(?:top|bottom|after:\d+)$');
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ProjectsMoveCardRequest].
   factory ProjectsMoveCardRequest.fromJson(Map<String, dynamic> json) {

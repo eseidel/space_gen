@@ -6,7 +6,7 @@ void main() {
   group('SellCargo201ResponseData', () {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = SellCargo201ResponseData(
-        cargo: const ShipCargo(
+        cargo: ShipCargo(
           capacity: 0,
           units: 0,
           inventory: <ShipCargoItem>[
@@ -28,7 +28,7 @@ void main() {
           totalPrice: 0,
           timestamp: DateTime.utc(2024),
         ),
-        agent: const Agent(
+        agent: Agent(
           accountId: 'example',
           symbol: 'example',
           headquarters: 'example',

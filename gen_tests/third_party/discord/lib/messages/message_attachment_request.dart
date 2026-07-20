@@ -1,10 +1,11 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class MessageAttachmentRequest {
-  const MessageAttachmentRequest({
+  MessageAttachmentRequest({
     required this.id,
     this.filename,
     this.description,
@@ -12,7 +13,13 @@ class MessageAttachmentRequest {
     this.waveform,
     this.title,
     this.isRemix,
-  });
+  }) {
+    filename?.validate(maxLength: 1024);
+    description?.validate(maxLength: 1024);
+    durationSecs?.validate(min: 0.0, max: 2147483647.0);
+    waveform?.validate(maxLength: 400);
+    title?.validate(maxLength: 1024);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [MessageAttachmentRequest].
   factory MessageAttachmentRequest.fromJson(Map<String, dynamic> json) {

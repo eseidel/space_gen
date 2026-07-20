@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ComponentEmojiForRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ComponentEmojiForRequest(name: 'example');
+      final instance = ComponentEmojiForRequest(name: 'example');
       final parsed = ComponentEmojiForRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

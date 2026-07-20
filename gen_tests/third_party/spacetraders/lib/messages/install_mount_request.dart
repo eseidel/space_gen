@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 
 /// {@template install_mount_request}
@@ -7,7 +8,9 @@ import 'package:spacetraders/model_helpers.dart';
 @immutable
 class InstallMountRequest {
   /// {@macro install_mount_request}
-  const InstallMountRequest({required this.symbol});
+  InstallMountRequest({required this.symbol}) {
+    symbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [InstallMountRequest].
   factory InstallMountRequest.fromJson(Map<String, dynamic> json) {

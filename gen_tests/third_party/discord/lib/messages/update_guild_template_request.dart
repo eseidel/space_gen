@@ -1,9 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class UpdateGuildTemplateRequest {
-  const UpdateGuildTemplateRequest({this.name, this.description});
+  UpdateGuildTemplateRequest({this.name, this.description}) {
+    name?.validate(minLength: 1, maxLength: 100);
+    description?.validate(maxLength: 120);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UpdateGuildTemplateRequest].
   factory UpdateGuildTemplateRequest.fromJson(Map<String, dynamic> json) {

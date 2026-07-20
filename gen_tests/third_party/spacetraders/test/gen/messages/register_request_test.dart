@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('RegisterRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = RegisterRequest(
+      final instance = RegisterRequest(
         symbol: 'BADGER',
         faction: FactionSymbol.cosmic,
       );

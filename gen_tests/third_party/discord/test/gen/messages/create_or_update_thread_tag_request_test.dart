@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CreateOrUpdateThreadTagRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CreateOrUpdateThreadTagRequest(name: 'example');
+      final instance = CreateOrUpdateThreadTagRequest(name: 'example');
       final parsed = CreateOrUpdateThreadTagRequest.maybeFromJson(
         instance.toJson(),
       )!;

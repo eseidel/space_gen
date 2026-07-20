@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('KeywordUpsertRequestPartial', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = KeywordUpsertRequestPartial();
+      final instance = KeywordUpsertRequestPartial();
       final parsed = KeywordUpsertRequestPartial.maybeFromJson(
         instance.toJson(),
       )!;

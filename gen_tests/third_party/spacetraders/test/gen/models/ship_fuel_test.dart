@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ShipFuel', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ShipFuel(current: 0, capacity: 0);
+      final instance = ShipFuel(current: 0, capacity: 0);
       final parsed = ShipFuel.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

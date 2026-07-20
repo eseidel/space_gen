@@ -7,7 +7,7 @@ void main() {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = RefuelShip200Response(
         data: RefuelShip200ResponseData(
-          agent: const Agent(
+          agent: Agent(
             accountId: 'example',
             symbol: 'example',
             headquarters: 'example',
@@ -15,7 +15,7 @@ void main() {
             startingFaction: 'example',
             shipCount: 0,
           ),
-          fuel: const ShipFuel(current: 0, capacity: 0),
+          fuel: ShipFuel(current: 0, capacity: 0),
           transaction: MarketTransaction(
             waypointSymbol: WaypointSymbol('example'),
             shipSymbol: 'example',

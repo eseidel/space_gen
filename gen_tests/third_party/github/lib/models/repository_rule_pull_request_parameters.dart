@@ -2,13 +2,14 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/repository_rule_pull_request_parameters_allowed_merge_methods_inner.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class RepositoryRulePullRequestParameters {
-  const RepositoryRulePullRequestParameters({
+  RepositoryRulePullRequestParameters({
     required this.dismissStaleReviewsOnPush,
     required this.requireCodeOwnerReview,
     required this.requireLastPushApproval,
@@ -16,7 +17,9 @@ class RepositoryRulePullRequestParameters {
     required this.requiredReviewThreadResolution,
     this.allowedMergeMethods,
     this.automaticCopilotCodeReviewEnabled,
-  });
+  }) {
+    requiredApprovingReviewCount.validate(min: 0, max: 10);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RepositoryRulePullRequestParameters].

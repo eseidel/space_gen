@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('MentionSpamTriggerMetadata', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = MentionSpamTriggerMetadata();
+      final instance = MentionSpamTriggerMetadata();
       final parsed = MentionSpamTriggerMetadata.maybeFromJson(
         instance.toJson(),
       )!;

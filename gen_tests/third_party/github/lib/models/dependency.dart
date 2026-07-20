@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/dependency_relationship.dart';
 import 'package:github/models/dependency_scope.dart';
@@ -6,13 +7,15 @@ import 'package:meta/meta.dart';
 
 @immutable
 class Dependency {
-  const Dependency({
+  Dependency({
     this.packageUrl,
     this.metadata,
     this.relationship,
     this.scope,
     this.dependencies,
-  });
+  }) {
+    packageUrl?.validate(pattern: '^pkg');
+  }
 
   /// Converts a `Map<String, dynamic>` to a [Dependency].
   factory Dependency.fromJson(Map<String, dynamic> json) {

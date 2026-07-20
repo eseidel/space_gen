@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('RichEmbedImage1', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = RichEmbedImage1();
+      final instance = RichEmbedImage1();
       final parsed = RichEmbedImage1.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

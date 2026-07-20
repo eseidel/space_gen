@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('SoundboardPatchRequestPartial', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = SoundboardPatchRequestPartial();
+      final instance = SoundboardPatchRequestPartial();
       final parsed = SoundboardPatchRequestPartial.maybeFromJson(
         instance.toJson(),
       )!;

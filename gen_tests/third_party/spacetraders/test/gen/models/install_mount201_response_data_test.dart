@@ -6,7 +6,7 @@ void main() {
   group('InstallMount201ResponseData', () {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = InstallMount201ResponseData(
-        agent: const Agent(
+        agent: Agent(
           accountId: 'example',
           symbol: 'example',
           headquarters: 'example',
@@ -14,15 +14,15 @@ void main() {
           startingFaction: 'example',
           shipCount: 0,
         ),
-        mounts: const <ShipMount>[
+        mounts: <ShipMount>[
           ShipMount(
             symbol: ShipMountSymbol.mountGasSiphonI,
             name: 'example',
             description: 'example',
-            requirements: ShipRequirements(),
+            requirements: const ShipRequirements(),
           ),
         ],
-        cargo: const ShipCargo(
+        cargo: ShipCargo(
           capacity: 0,
           units: 0,
           inventory: <ShipCargoItem>[

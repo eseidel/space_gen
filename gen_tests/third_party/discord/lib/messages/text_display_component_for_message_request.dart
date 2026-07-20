@@ -1,10 +1,14 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/message_component_types.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class TextDisplayComponentForMessageRequest {
-  const TextDisplayComponentForMessageRequest({required this.content, this.id});
+  TextDisplayComponentForMessageRequest({required this.content, this.id}) {
+    id?.validate(min: 0);
+    content.validate(minLength: 1, maxLength: 4000);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [TextDisplayComponentForMessageRequest].

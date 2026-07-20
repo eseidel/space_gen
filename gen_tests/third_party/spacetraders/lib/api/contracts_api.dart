@@ -24,9 +24,8 @@ class ContractsApi {
     int? page = 1,
     int? limit = 10,
   }) async {
-    page?.validateMinimum(1);
-    limit?.validateMaximum(20);
-    limit?.validateMinimum(1);
+    page?.validate(min: 1);
+    limit?.validate(min: 1, max: 20);
 
     final response = await client.invokeApi(
       method: Method.get,

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CreateGuildTemplateRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CreateGuildTemplateRequest(name: 'example');
+      final instance = CreateGuildTemplateRequest(name: 'example');
       final parsed = CreateGuildTemplateRequest.maybeFromJson(
         instance.toJson(),
       )!;

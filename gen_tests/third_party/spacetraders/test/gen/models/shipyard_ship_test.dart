@@ -43,20 +43,20 @@ void main() {
           requirements: const ShipRequirements(),
           quality: const ShipComponentQuality(0),
         ),
-        modules: const <ShipModule>[
+        modules: <ShipModule>[
           ShipModule(
             symbol: ShipModuleSymbol.moduleMineralProcessorI,
             name: 'example',
             description: 'example',
-            requirements: ShipRequirements(),
+            requirements: const ShipRequirements(),
           ),
         ],
-        mounts: const <ShipMount>[
+        mounts: <ShipMount>[
           ShipMount(
             symbol: ShipMountSymbol.mountGasSiphonI,
             name: 'example',
             description: 'example',
-            requirements: ShipRequirements(),
+            requirements: const ShipRequirements(),
           ),
         ],
         crew: const ShipyardShipCrew(required_: 0, capacity: 0),

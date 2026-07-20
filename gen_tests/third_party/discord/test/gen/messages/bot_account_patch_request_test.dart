@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('BotAccountPatchRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = BotAccountPatchRequest(username: 'example');
+      final instance = BotAccountPatchRequest(username: 'example');
       final parsed = BotAccountPatchRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

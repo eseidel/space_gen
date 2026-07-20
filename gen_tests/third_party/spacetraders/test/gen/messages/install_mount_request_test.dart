@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('InstallMountRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = InstallMountRequest(symbol: 'example');
+      final instance = InstallMountRequest(symbol: 'example');
       final parsed = InstallMountRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

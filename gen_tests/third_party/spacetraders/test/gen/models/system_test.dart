@@ -17,9 +17,7 @@ void main() {
             type: WaypointType.planet,
             x: 0,
             y: 0,
-            orbitals: const <WaypointOrbital>[
-              WaypointOrbital(symbol: 'example'),
-            ],
+            orbitals: <WaypointOrbital>[WaypointOrbital(symbol: 'example')],
           ),
         ],
         factions: const <SystemFaction>[

@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/author_association.dart';
 import 'package:github/models/simple_user.dart';
@@ -10,7 +11,7 @@ import 'package:meta/meta.dart';
 @immutable
 class GistComment {
   /// {@macro gist_comment}
-  const GistComment({
+  GistComment({
     required this.id,
     required this.nodeId,
     required this.url,
@@ -19,7 +20,9 @@ class GistComment {
     required this.createdAt,
     required this.updatedAt,
     required this.authorAssociation,
-  });
+  }) {
+    body.validate(maxLength: 65535);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GistComment].
   factory GistComment.fromJson(Map<String, dynamic> json) {

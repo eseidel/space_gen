@@ -1,10 +1,11 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class UpdateGuildMemberRequest {
-  const UpdateGuildMemberRequest({
+  UpdateGuildMemberRequest({
     this.nick,
     this.roles,
     this.mute,
@@ -12,7 +13,10 @@ class UpdateGuildMemberRequest {
     this.channelId,
     this.communicationDisabledUntil,
     this.flags,
-  });
+  }) {
+    nick?.validate(maxLength: 32);
+    roles?.validate(maxItems: 350, unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UpdateGuildMemberRequest].
   factory UpdateGuildMemberRequest.fromJson(Map<String, dynamic> json) {

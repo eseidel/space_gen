@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/github_check_pull_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/github_check_run_output_1.dart';
@@ -6,7 +7,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class GithubCheckRun {
-  const GithubCheckRun({
+  GithubCheckRun({
     required this.name,
     required this.htmlUrl,
     required this.checkSuite,
@@ -14,7 +15,11 @@ class GithubCheckRun {
     this.detailsUrl,
     this.output,
     this.pullRequests,
-  });
+  }) {
+    conclusion?.validate(maxLength: 152133);
+    name.validate(maxLength: 152133);
+    pullRequests?.validate(maxItems: 1521);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GithubCheckRun].
   factory GithubCheckRun.fromJson(Map<String, dynamic> json) {

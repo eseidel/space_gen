@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/text_display_component_for_message_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/message_component_types.dart';
@@ -6,11 +7,14 @@ import 'package:meta/meta.dart';
 
 @immutable
 class SectionComponentForMessageRequest {
-  const SectionComponentForMessageRequest({
+  SectionComponentForMessageRequest({
     required this.components,
     required this.accessory,
     this.id,
-  });
+  }) {
+    id?.validate(min: 0);
+    components.validate(minItems: 1, maxItems: 3);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [SectionComponentForMessageRequest].

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('GetShipCooldown200Response', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = GetShipCooldown200Response(
+      final instance = GetShipCooldown200Response(
         data: Cooldown(
           shipSymbol: 'example',
           totalSeconds: 0,

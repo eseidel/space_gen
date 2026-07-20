@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 void main() {
   group('SocialLayerSkuPurchaseEligibilityInteractionCallbackRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance =
+      final instance =
           SocialLayerSkuPurchaseEligibilityInteractionCallbackRequest(
             data: SocialLayerSkuPurchaseEligibilityCallbackData(
               eligible: false,

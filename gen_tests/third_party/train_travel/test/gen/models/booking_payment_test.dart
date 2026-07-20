@@ -5,7 +5,7 @@ import 'package:train_travel/api.dart';
 void main() {
   group('BookingPayment', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = BookingPayment();
+      final instance = BookingPayment();
       final parsed = BookingPayment.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('UpdateChannelRequest', () {
     test('UpdateDmRequestPartial round-trips via maybeFromJson/toJson', () {
-      const instance = UpdateDmRequestPartial();
+      final instance = UpdateDmRequestPartial();
       final parsed = UpdateDmRequestPartial.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));
@@ -14,7 +14,7 @@ void main() {
     test(
       'UpdateGroupDmRequestPartial round-trips via maybeFromJson/toJson',
       () {
-        const instance = UpdateGroupDmRequestPartial();
+        final instance = UpdateGroupDmRequestPartial();
         final parsed = UpdateGroupDmRequestPartial.maybeFromJson(
           instance.toJson(),
         )!;
@@ -26,7 +26,7 @@ void main() {
     test(
       'UpdateGuildChannelRequestPartial round-trips via maybeFromJson/toJson',
       () {
-        const instance = UpdateGuildChannelRequestPartial();
+        final instance = UpdateGuildChannelRequestPartial();
         final parsed = UpdateGuildChannelRequestPartial.maybeFromJson(
           instance.toJson(),
         )!;
@@ -36,7 +36,7 @@ void main() {
     );
 
     test('UpdateThreadRequestPartial round-trips via maybeFromJson/toJson', () {
-      const instance = UpdateThreadRequestPartial();
+      final instance = UpdateThreadRequestPartial();
       final parsed = UpdateThreadRequestPartial.maybeFromJson(
         instance.toJson(),
       )!;

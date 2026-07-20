@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/channel_permission_overwrite_request.dart';
 import 'package:discord/messages/create_or_update_thread_tag_request.dart';
 import 'package:discord/messages/update_default_reaction_emoji_request.dart';
@@ -13,7 +14,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class CreateGuildChannelRequest {
-  const CreateGuildChannelRequest({
+  CreateGuildChannelRequest({
     required this.name,
     this.type,
     this.position,
@@ -33,7 +34,17 @@ class CreateGuildChannelRequest {
     this.defaultForumLayout,
     this.defaultTagSetting,
     this.availableTags,
-  });
+  }) {
+    name.validate(minLength: 1, maxLength: 100);
+    position?.validate(min: 0);
+    topic?.validate(minLength: 0, maxLength: 4096);
+    bitrate?.validate(min: 8000);
+    userLimit?.validate(min: 0);
+    rateLimitPerUser?.validate(min: 0, max: 21600);
+    permissionOverwrites?.validate(maxItems: 100);
+    defaultThreadRateLimitPerUser?.validate(min: 0, max: 21600);
+    availableTags?.validate(maxItems: 20);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreateGuildChannelRequest].
   factory CreateGuildChannelRequest.fromJson(Map<String, dynamic> json) {

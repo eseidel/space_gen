@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/extraction_yield.dart';
 
@@ -8,7 +9,9 @@ import 'package:spacetraders/models/extraction_yield.dart';
 @immutable
 class Extraction {
   /// {@macro extraction}
-  const Extraction({required this.shipSymbol, required this.yield_});
+  Extraction({required this.shipSymbol, required this.yield_}) {
+    shipSymbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [Extraction].
   factory Extraction.fromJson(Map<String, dynamic> json) {

@@ -1,9 +1,12 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 
 @immutable
 class WarpShipRequest {
-  const WarpShipRequest({required this.waypointSymbol});
+  WarpShipRequest({required this.waypointSymbol}) {
+    waypointSymbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [WarpShipRequest].
   factory WarpShipRequest.fromJson(Map<String, dynamic> json) {

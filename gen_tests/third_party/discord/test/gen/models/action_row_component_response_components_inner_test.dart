@@ -7,7 +7,7 @@ void main() {
     test(
       'ChannelSelectComponentResponse round-trips via maybeFromJson/toJson',
       () {
-        const instance = ChannelSelectComponentResponse(
+        final instance = ChannelSelectComponentResponse(
           id: 0,
           customId: 'example',
           minValues: 0,

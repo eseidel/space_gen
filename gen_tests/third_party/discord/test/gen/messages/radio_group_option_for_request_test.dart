@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('RadioGroupOptionForRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = RadioGroupOptionForRequest(
+      final instance = RadioGroupOptionForRequest(
         label: 'example',
         value: 'example',
       );

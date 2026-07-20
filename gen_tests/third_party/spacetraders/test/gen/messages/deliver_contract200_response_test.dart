@@ -17,7 +17,7 @@ void main() {
             ),
             expiration: DateTime.utc(2024),
           ),
-          cargo: const ShipCargo(
+          cargo: ShipCargo(
             capacity: 0,
             units: 0,
             inventory: <ShipCargoItem>[

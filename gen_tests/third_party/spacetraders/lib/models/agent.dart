@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 
 /// {@template agent}
@@ -7,14 +8,19 @@ import 'package:spacetraders/model_helpers.dart';
 @immutable
 class Agent {
   /// {@macro agent}
-  const Agent({
+  Agent({
     required this.accountId,
     required this.symbol,
     required this.headquarters,
     required this.credits,
     required this.startingFaction,
     required this.shipCount,
-  });
+  }) {
+    accountId.validate(minLength: 1);
+    symbol.validate(minLength: 3, maxLength: 14);
+    headquarters.validate(minLength: 1);
+    startingFaction.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [Agent].
   factory Agent.fromJson(Map<String, dynamic> json) {

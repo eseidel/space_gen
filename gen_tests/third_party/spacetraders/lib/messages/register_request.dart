@@ -1,10 +1,13 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/faction_symbol.dart';
 
 @immutable
 class RegisterRequest {
-  const RegisterRequest({required this.symbol, required this.faction});
+  RegisterRequest({required this.symbol, required this.faction}) {
+    symbol.validate(minLength: 3, maxLength: 14, pattern: r'^[a-zA-Z0-9-_]+$');
+  }
 
   /// Converts a `Map<String, dynamic>` to a [RegisterRequest].
   factory RegisterRequest.fromJson(Map<String, dynamic> json) {

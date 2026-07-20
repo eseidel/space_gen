@@ -1,3 +1,10 @@
+// A spec constraint bound exceeds JS's safe-integer range, so the
+// generated `validate` call carries an integer literal dart2js
+// rounds. The bound is faithful to the spec; precise web handling of
+// 64-bit integers is tracked in
+// https://github.com/eseidel/space_gen/issues/185.
+// ignore_for_file: avoid_js_rounded_ints
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/application_command_create_request_options_inner.dart';
 import 'package:discord/models/application_command_handler.dart';
@@ -8,7 +15,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class ApplicationCommandCreateRequest {
-  const ApplicationCommandCreateRequest({
+  ApplicationCommandCreateRequest({
     required this.name,
     this.nameLocalizations,
     this.description,
@@ -20,7 +27,14 @@ class ApplicationCommandCreateRequest {
     this.integrationTypes,
     this.handler,
     this.type,
-  });
+  }) {
+    name.validate(minLength: 1, maxLength: 32);
+    description?.validate(maxLength: 100);
+    options?.validate(maxItems: 25);
+    defaultMemberPermissions?.validate(min: 0, max: 18014398509481983);
+    contexts?.validate(minItems: 1, unique: true);
+    integrationTypes?.validate(minItems: 1, unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [ApplicationCommandCreateRequest].
   factory ApplicationCommandCreateRequest.fromJson(Map<String, dynamic> json) {

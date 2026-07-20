@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/dependabot_update_alert_request_dismissed_reason.dart';
 import 'package:github/models/dependabot_update_alert_request_state.dart';
@@ -5,11 +6,13 @@ import 'package:meta/meta.dart';
 
 @immutable
 class DependabotUpdateAlertRequest {
-  const DependabotUpdateAlertRequest({
+  DependabotUpdateAlertRequest({
     required this.state,
     this.dismissedReason,
     this.dismissedComment,
-  });
+  }) {
+    dismissedComment?.validate(maxLength: 280);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [DependabotUpdateAlertRequest].
   factory DependabotUpdateAlertRequest.fromJson(Map<String, dynamic> json) {

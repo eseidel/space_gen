@@ -39,7 +39,7 @@ void main() {
             vulnerableFunctions: <String>['example'],
           ),
         ],
-        cvss: const GlobalAdvisoryCvss(vectorString: 'example', score: 0),
+        cvss: GlobalAdvisoryCvss(vectorString: 'example', score: 0),
         cwes: const <GlobalAdvisoryCwesInner>[
           GlobalAdvisoryCwesInner(cweId: 'example', name: 'example'),
         ],

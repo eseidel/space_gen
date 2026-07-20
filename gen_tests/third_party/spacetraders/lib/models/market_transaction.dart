@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/market_transaction_type.dart';
 import 'package:spacetraders/models/waypoint_symbol.dart';
@@ -9,7 +10,7 @@ import 'package:spacetraders/models/waypoint_symbol.dart';
 @immutable
 class MarketTransaction {
   /// {@macro market_transaction}
-  const MarketTransaction({
+  MarketTransaction({
     required this.waypointSymbol,
     required this.shipSymbol,
     required this.tradeSymbol,
@@ -18,7 +19,11 @@ class MarketTransaction {
     required this.pricePerUnit,
     required this.totalPrice,
     required this.timestamp,
-  });
+  }) {
+    units.validate(min: 0);
+    pricePerUnit.validate(min: 0);
+    totalPrice.validate(min: 0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [MarketTransaction].
   factory MarketTransaction.fromJson(Map<String, dynamic> json) {

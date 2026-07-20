@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/emoji_response.dart';
 import 'package:discord/messages/guild_incidents_data_response.dart';
 import 'package:discord/messages/guild_role_response.dart';
@@ -17,7 +18,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class GuildResponse {
-  const GuildResponse({
+  GuildResponse({
     required this.id,
     required this.name,
     required this.icon,
@@ -59,7 +60,9 @@ class GuildResponse {
     required this.stickers,
     required this.incidentsData,
     this.premiumProgressBarEnabledUserUpdatedAt,
-  });
+  }) {
+    features.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GuildResponse].
   factory GuildResponse.fromJson(Map<String, dynamic> json) {

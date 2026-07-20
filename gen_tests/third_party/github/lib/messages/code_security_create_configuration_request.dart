@@ -2,6 +2,7 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/code_scanning_default_setup_options.dart';
 import 'package:github/models/code_security_create_configuration_request_advanced_security.dart';
@@ -26,7 +27,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class CodeSecurityCreateConfigurationRequest {
-  const CodeSecurityCreateConfigurationRequest({
+  CodeSecurityCreateConfigurationRequest({
     required this.name,
     required this.description,
     this.advancedSecurity = .disabled,
@@ -48,7 +49,9 @@ class CodeSecurityCreateConfigurationRequest {
     this.secretScanningDelegatedAlertDismissal,
     this.privateVulnerabilityReporting = .disabled,
     this.enforcement = .enforced,
-  });
+  }) {
+    description.validate(maxLength: 255);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [CodeSecurityCreateConfigurationRequest].

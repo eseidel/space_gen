@@ -1,9 +1,12 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class BlockMessageActionMetadata1 {
-  const BlockMessageActionMetadata1({this.customMessage});
+  BlockMessageActionMetadata1({this.customMessage}) {
+    customMessage?.validate(maxLength: 300);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [BlockMessageActionMetadata1].
   factory BlockMessageActionMetadata1.fromJson(Map<String, dynamic> json) {

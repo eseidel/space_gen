@@ -1,17 +1,22 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/metadata_item_types.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class ApplicationRoleConnectionsMetadataItemRequest {
-  const ApplicationRoleConnectionsMetadataItemRequest({
+  ApplicationRoleConnectionsMetadataItemRequest({
     required this.type,
     required this.key,
     required this.name,
     required this.description,
     this.nameLocalizations,
     this.descriptionLocalizations,
-  });
+  }) {
+    key.validate(minLength: 1, maxLength: 50);
+    name.validate(minLength: 1, maxLength: 100);
+    description.validate(minLength: 1, maxLength: 200);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [ApplicationRoleConnectionsMetadataItemRequest].

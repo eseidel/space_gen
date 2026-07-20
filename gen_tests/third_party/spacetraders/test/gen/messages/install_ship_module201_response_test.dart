@@ -7,7 +7,7 @@ void main() {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = InstallShipModule201Response(
         data: InstallShipModule201ResponseData(
-          agent: const Agent(
+          agent: Agent(
             accountId: 'example',
             symbol: 'example',
             headquarters: 'example',
@@ -15,15 +15,15 @@ void main() {
             startingFaction: 'example',
             shipCount: 0,
           ),
-          modules: const <ShipModule>[
+          modules: <ShipModule>[
             ShipModule(
               symbol: ShipModuleSymbol.moduleMineralProcessorI,
               name: 'example',
               description: 'example',
-              requirements: ShipRequirements(),
+              requirements: const ShipRequirements(),
             ),
           ],
-          cargo: const ShipCargo(
+          cargo: ShipCargo(
             capacity: 0,
             units: 0,
             inventory: <ShipCargoItem>[

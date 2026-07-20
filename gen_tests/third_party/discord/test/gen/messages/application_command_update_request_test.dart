@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ApplicationCommandUpdateRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ApplicationCommandUpdateRequest(name: 'example');
+      final instance = ApplicationCommandUpdateRequest(name: 'example');
       final parsed = ApplicationCommandUpdateRequest.maybeFromJson(
         instance.toJson(),
       )!;

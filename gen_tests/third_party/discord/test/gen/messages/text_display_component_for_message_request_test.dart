@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('TextDisplayComponentForMessageRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = TextDisplayComponentForMessageRequest(
+      final instance = TextDisplayComponentForMessageRequest(
         content: 'example',
       );
       final parsed = TextDisplayComponentForMessageRequest.maybeFromJson(

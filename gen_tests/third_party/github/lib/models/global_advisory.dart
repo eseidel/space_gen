@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/cvss_severities.dart';
 import 'package:github/models/global_advisory_credits_inner.dart';
@@ -16,7 +17,7 @@ import 'package:meta/meta.dart';
 @immutable
 class GlobalAdvisory {
   /// {@macro global_advisory}
-  const GlobalAdvisory({
+  GlobalAdvisory({
     required this.ghsaId,
     required this.cveId,
     required this.url,
@@ -40,7 +41,10 @@ class GlobalAdvisory {
     required this.credits,
     this.cvssSeverities,
     this.epss,
-  });
+  }) {
+    summary.validate(maxLength: 1024);
+    description?.validate(maxLength: 65535);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GlobalAdvisory].
   factory GlobalAdvisory.fromJson(Map<String, dynamic> json) {

@@ -11,7 +11,7 @@ void main() {
     test(
       'ChannelSelectComponentForMessageRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = ChannelSelectComponentForMessageRequest(
+        final instance = ChannelSelectComponentForMessageRequest(
           customId: 'example',
         );
         final parsed = ChannelSelectComponentForMessageRequest.maybeFromJson(
@@ -25,7 +25,7 @@ void main() {
     test(
       'MentionableSelectComponentForMessageRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = MentionableSelectComponentForMessageRequest(
+        final instance = MentionableSelectComponentForMessageRequest(
           customId: 'example',
         );
         final parsed =
@@ -40,7 +40,7 @@ void main() {
     test(
       'RoleSelectComponentForMessageRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = RoleSelectComponentForMessageRequest(
+        final instance = RoleSelectComponentForMessageRequest(
           customId: 'example',
         );
         final parsed = RoleSelectComponentForMessageRequest.maybeFromJson(
@@ -54,7 +54,7 @@ void main() {
     test(
       'StringSelectComponentForMessageRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = StringSelectComponentForMessageRequest(
+        final instance = StringSelectComponentForMessageRequest(
           customId: 'example',
           options: <StringSelectOptionForRequest>[
             StringSelectOptionForRequest(label: 'example', value: 'example'),
@@ -71,7 +71,7 @@ void main() {
     test(
       'UserSelectComponentForMessageRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = UserSelectComponentForMessageRequest(
+        final instance = UserSelectComponentForMessageRequest(
           customId: 'example',
         );
         final parsed = UserSelectComponentForMessageRequest.maybeFromJson(

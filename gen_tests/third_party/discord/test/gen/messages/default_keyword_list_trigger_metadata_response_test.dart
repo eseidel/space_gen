@@ -5,9 +5,11 @@ import 'package:test/test.dart';
 void main() {
   group('DefaultKeywordListTriggerMetadataResponse', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = DefaultKeywordListTriggerMetadataResponse(
-        allowList: <String>['example'],
-        presets: <AutomodKeywordPresetType>[AutomodKeywordPresetType.profanity],
+      final instance = DefaultKeywordListTriggerMetadataResponse(
+        allowList: const <String>['example'],
+        presets: const <AutomodKeywordPresetType>[
+          AutomodKeywordPresetType.profanity,
+        ],
       );
       final parsed = DefaultKeywordListTriggerMetadataResponse.maybeFromJson(
         instance.toJson(),

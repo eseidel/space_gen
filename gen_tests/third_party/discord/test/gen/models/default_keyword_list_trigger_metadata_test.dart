@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('DefaultKeywordListTriggerMetadata', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = DefaultKeywordListTriggerMetadata();
+      final instance = DefaultKeywordListTriggerMetadata();
       final parsed = DefaultKeywordListTriggerMetadata.maybeFromJson(
         instance.toJson(),
       )!;

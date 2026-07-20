@@ -1,10 +1,11 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/campaign_state.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CampaignsUpdateCampaignRequest {
-  const CampaignsUpdateCampaignRequest({
+  CampaignsUpdateCampaignRequest({
     this.name,
     this.description,
     this.managers,
@@ -12,7 +13,12 @@ class CampaignsUpdateCampaignRequest {
     this.endsAt,
     this.contactLink,
     this.state,
-  });
+  }) {
+    name?.validate(minLength: 1, maxLength: 50);
+    description?.validate(minLength: 1, maxLength: 255);
+    managers?.validate(maxItems: 10);
+    teamManagers?.validate(maxItems: 10);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CampaignsUpdateCampaignRequest].
   factory CampaignsUpdateCampaignRequest.fromJson(Map<String, dynamic> json) {

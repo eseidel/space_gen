@@ -5,10 +5,10 @@ import 'package:test/test.dart';
 void main() {
   group('GetShipyard200Response', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = GetShipyard200Response(
+      final instance = GetShipyard200Response(
         data: Shipyard(
           symbol: 'example',
-          shipTypes: <ShipyardShipTypesInner>[
+          shipTypes: const <ShipyardShipTypesInner>[
             ShipyardShipTypesInner(type: ShipType.shipProbe),
           ],
           modificationsFee: 0,

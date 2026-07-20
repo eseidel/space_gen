@@ -1,13 +1,18 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class KeywordTriggerMetadata {
-  const KeywordTriggerMetadata({
+  KeywordTriggerMetadata({
     this.keywordFilter,
     this.regexPatterns,
     this.allowList,
-  });
+  }) {
+    keywordFilter?.validate(maxItems: 1000);
+    regexPatterns?.validate(maxItems: 10);
+    allowList?.validate(maxItems: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [KeywordTriggerMetadata].
   factory KeywordTriggerMetadata.fromJson(Map<String, dynamic> json) {

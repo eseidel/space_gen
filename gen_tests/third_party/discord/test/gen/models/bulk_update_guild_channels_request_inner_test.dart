@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('BulkUpdateGuildChannelsRequestInner', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = BulkUpdateGuildChannelsRequestInner();
+      final instance = BulkUpdateGuildChannelsRequestInner();
       final parsed = BulkUpdateGuildChannelsRequestInner.maybeFromJson(
         instance.toJson(),
       )!;

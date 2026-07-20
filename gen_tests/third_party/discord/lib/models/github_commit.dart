@@ -1,15 +1,19 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/github_author.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class GithubCommit {
-  const GithubCommit({
+  GithubCommit({
     required this.id,
     required this.url,
     required this.message,
     required this.author,
-  });
+  }) {
+    id.validate(maxLength: 152133);
+    message.validate(maxLength: 152133);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GithubCommit].
   factory GithubCommit.fromJson(Map<String, dynamic> json) {

@@ -15,7 +15,7 @@ void main() {
           name: 'example',
           scheduledStartTime: DateTime.utc(2024),
           privacyLevel: GuildScheduledEventPrivacyLevels.guildOnly,
-          entityMetadata: const EntityMetadataExternal(location: 'example'),
+          entityMetadata: EntityMetadataExternal(location: 'example'),
         );
         final parsed = ExternalScheduledEventCreateRequest.maybeFromJson(
           instance.toJson(),

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('SlackWebhook', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = SlackWebhook();
+      final instance = SlackWebhook();
       final parsed = SlackWebhook.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

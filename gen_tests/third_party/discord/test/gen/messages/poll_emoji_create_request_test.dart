@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('PollEmojiCreateRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = PollEmojiCreateRequest();
+      final instance = PollEmojiCreateRequest();
       final parsed = PollEmojiCreateRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

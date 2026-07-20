@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('HostedComputeUpdateNetworkConfigurationForOrgRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = HostedComputeUpdateNetworkConfigurationForOrgRequest();
+      final instance = HostedComputeUpdateNetworkConfigurationForOrgRequest();
       final parsed =
           HostedComputeUpdateNetworkConfigurationForOrgRequest.maybeFromJson(
             instance.toJson(),

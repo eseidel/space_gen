@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/waypoint_symbol.dart';
 
@@ -8,12 +9,14 @@ import 'package:spacetraders/models/waypoint_symbol.dart';
 @immutable
 class RepairTransaction {
   /// {@macro repair_transaction}
-  const RepairTransaction({
+  RepairTransaction({
     required this.waypointSymbol,
     required this.shipSymbol,
     required this.totalPrice,
     required this.timestamp,
-  });
+  }) {
+    totalPrice.validate(min: 0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [RepairTransaction].
   factory RepairTransaction.fromJson(Map<String, dynamic> json) {

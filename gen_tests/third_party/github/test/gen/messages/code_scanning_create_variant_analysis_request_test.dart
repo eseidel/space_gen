@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CodeScanningCreateVariantAnalysisRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CodeScanningCreateVariantAnalysisRequest(
+      final instance = CodeScanningCreateVariantAnalysisRequest(
         language: CodeScanningVariantAnalysisLanguage.cpp,
         queryPack: 'example',
       );

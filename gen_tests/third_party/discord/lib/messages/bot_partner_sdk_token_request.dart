@@ -1,12 +1,16 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class BotPartnerSdkTokenRequest {
-  const BotPartnerSdkTokenRequest({
+  BotPartnerSdkTokenRequest({
     required this.externalUserId,
     this.preferredGlobalName,
-  });
+  }) {
+    externalUserId.validate(minLength: 1, maxLength: 1024);
+    preferredGlobalName?.validate(minLength: 1, maxLength: 32);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [BotPartnerSdkTokenRequest].
   factory BotPartnerSdkTokenRequest.fromJson(Map<String, dynamic> json) {

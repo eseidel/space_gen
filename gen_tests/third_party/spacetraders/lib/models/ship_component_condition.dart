@@ -6,9 +6,7 @@ import 'package:spacetraders/api_exception.dart';
 /// repaired, the overall integrity of the component decreases.
 extension type const ShipComponentCondition._(double value) {
   ShipComponentCondition(this.value) {
-    value
-      ..validateMaximum(1.0)
-      ..validateMinimum(0.0);
+    value.validate(min: 0.0, max: 1.0);
   }
 
   factory ShipComponentCondition.fromJson(num json) =>

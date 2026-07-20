@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('GithubCheckSuite', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = GithubCheckSuite(
+      final instance = GithubCheckSuite(
         headSha: 'example',
         app: GithubCheckApp(name: 'example'),
       );

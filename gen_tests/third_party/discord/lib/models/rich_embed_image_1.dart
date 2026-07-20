@@ -1,9 +1,10 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class RichEmbedImage1 {
-  const RichEmbedImage1({
+  RichEmbedImage1({
     this.url,
     this.width,
     this.height,
@@ -11,7 +12,11 @@ class RichEmbedImage1 {
     this.placeholderVersion,
     this.isAnimated,
     this.description,
-  });
+  }) {
+    placeholder?.validate(maxLength: 64);
+    placeholderVersion?.validate(min: 0, max: 2147483647);
+    description?.validate(maxLength: 4096);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [RichEmbedImage1].
   factory RichEmbedImage1.fromJson(Map<String, dynamic> json) {

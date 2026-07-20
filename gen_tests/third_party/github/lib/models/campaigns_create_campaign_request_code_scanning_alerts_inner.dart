@@ -1,12 +1,15 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CampaignsCreateCampaignRequestCodeScanningAlertsInner {
-  const CampaignsCreateCampaignRequestCodeScanningAlertsInner({
+  CampaignsCreateCampaignRequestCodeScanningAlertsInner({
     required this.repositoryId,
     required this.alertNumbers,
-  });
+  }) {
+    alertNumbers.validate(minItems: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [CampaignsCreateCampaignRequestCodeScanningAlertsInner].

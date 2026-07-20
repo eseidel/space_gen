@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('UpdateStageInstanceRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = UpdateStageInstanceRequest();
+      final instance = UpdateStageInstanceRequest();
       final parsed = UpdateStageInstanceRequest.maybeFromJson(
         instance.toJson(),
       )!;

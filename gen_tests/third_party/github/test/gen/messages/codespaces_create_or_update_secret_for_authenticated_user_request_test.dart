@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 void main() {
   group('CodespacesCreateOrUpdateSecretForAuthenticatedUserRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance =
+      final instance =
           CodespacesCreateOrUpdateSecretForAuthenticatedUserRequest(
             keyId: 'example',
           );

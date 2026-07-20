@@ -13,9 +13,7 @@ void main() {
             systemSymbol: SystemSymbol('example'),
             x: 0,
             y: 0,
-            orbitals: const <WaypointOrbital>[
-              WaypointOrbital(symbol: 'example'),
-            ],
+            orbitals: <WaypointOrbital>[WaypointOrbital(symbol: 'example')],
             traits: const <WaypointTrait>[
               WaypointTrait(
                 symbol: WaypointTraitSymbol.uncharted,
@@ -26,7 +24,7 @@ void main() {
             isUnderConstruction: false,
           ),
         ],
-        meta: const Meta(total: 0, limit: 1),
+        meta: Meta(total: 0, limit: 1),
       );
       final parsed = GetSystemWaypoints200Response.maybeFromJson(
         instance.toJson(),

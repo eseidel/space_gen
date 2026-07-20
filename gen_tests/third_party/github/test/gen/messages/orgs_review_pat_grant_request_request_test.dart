@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('OrgsReviewPatGrantRequestRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = OrgsReviewPatGrantRequestRequest(
+      final instance = OrgsReviewPatGrantRequestRequest(
         action: OrgsReviewPatGrantRequestRequestAction.approve,
       );
       final parsed = OrgsReviewPatGrantRequestRequest.maybeFromJson(

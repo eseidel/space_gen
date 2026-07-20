@@ -30,7 +30,7 @@ void main() {
           status: ShipNavStatus.inTransit,
           flightMode: ShipNavFlightMode.drift,
         ),
-        cooldown: const Cooldown(
+        cooldown: Cooldown(
           shipSymbol: 'example',
           totalSeconds: 0,
           remainingSeconds: 0,
@@ -45,7 +45,7 @@ void main() {
           totalPrice: 0,
           timestamp: DateTime.utc(2024),
         ),
-        agent: const Agent(
+        agent: Agent(
           accountId: 'example',
           symbol: 'example',
           headquarters: 'example',

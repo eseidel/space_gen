@@ -7,7 +7,7 @@ void main() {
     test(
       'IssuesAddLabelsRequestOneOf0 round-trips via maybeFromJson/toJson',
       () {
-        const instance = IssuesAddLabelsRequestOneOf0();
+        final instance = IssuesAddLabelsRequestOneOf0();
         final parsed = IssuesAddLabelsRequestOneOf0.maybeFromJson(
           instance.toJson(),
         )!;
@@ -19,7 +19,7 @@ void main() {
     test(
       'IssuesAddLabelsRequestOneOf2 round-trips via maybeFromJson/toJson',
       () {
-        const instance = IssuesAddLabelsRequestOneOf2();
+        final instance = IssuesAddLabelsRequestOneOf2();
         final parsed = IssuesAddLabelsRequestOneOf2.maybeFromJson(
           instance.toJson(),
         )!;

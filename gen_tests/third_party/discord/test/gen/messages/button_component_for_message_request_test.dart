@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ButtonComponentForMessageRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ButtonComponentForMessageRequest(
+      final instance = ButtonComponentForMessageRequest(
         style: ButtonStyleTypes.primary,
       );
       final parsed = ButtonComponentForMessageRequest.maybeFromJson(

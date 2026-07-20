@@ -5,13 +5,13 @@ import 'package:test/test.dart';
 void main() {
   group('GetFactions200Response', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = GetFactions200Response(
+      final instance = GetFactions200Response(
         data: <Faction>[
           Faction(
             symbol: FactionSymbol.cosmic,
             name: 'example',
             description: 'example',
-            traits: <FactionTrait>[
+            traits: const <FactionTrait>[
               FactionTrait(
                 symbol: FactionTraitSymbol.bureaucratic,
                 name: 'example',

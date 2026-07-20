@@ -1,11 +1,14 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class ActionsAddCustomLabelsToSelfHostedRunnerForOrgRequest {
-  const ActionsAddCustomLabelsToSelfHostedRunnerForOrgRequest({
+  ActionsAddCustomLabelsToSelfHostedRunnerForOrgRequest({
     required this.labels,
-  });
+  }) {
+    labels.validate(minItems: 1, maxItems: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [ActionsAddCustomLabelsToSelfHostedRunnerForOrgRequest].

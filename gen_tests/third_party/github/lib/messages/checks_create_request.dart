@@ -8,6 +8,7 @@
 // symbol exists. Suppress file-locally so the lint stays live
 // elsewhere; spec authors do not always escape brackets.
 // ignore_for_file: comment_references
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/checks_create_request_one_of_0_actions_inner.dart';
 import 'package:github/models/checks_create_request_one_of_0_conclusion.dart';
@@ -49,7 +50,7 @@ sealed class ChecksCreateRequest {
 
 @immutable
 final class ChecksCreateRequestOneOf0 extends ChecksCreateRequest {
-  const ChecksCreateRequestOneOf0({
+  ChecksCreateRequestOneOf0({
     required this.name,
     required this.headSha,
     required this.status,
@@ -61,7 +62,9 @@ final class ChecksCreateRequestOneOf0 extends ChecksCreateRequest {
     this.completedAt,
     this.output,
     this.actions,
-  });
+  }) {
+    actions?.validate(maxItems: 3);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ChecksCreateRequestOneOf0].
   factory ChecksCreateRequestOneOf0.fromJson(Map<String, dynamic> json) {
@@ -254,7 +257,7 @@ final class ChecksCreateRequestOneOf0 extends ChecksCreateRequest {
 
 @immutable
 final class ChecksCreateRequestOneOf1 extends ChecksCreateRequest {
-  const ChecksCreateRequestOneOf1({
+  ChecksCreateRequestOneOf1({
     required this.name,
     required this.headSha,
     required this.entries,
@@ -266,7 +269,9 @@ final class ChecksCreateRequestOneOf1 extends ChecksCreateRequest {
     this.completedAt,
     this.output,
     this.actions,
-  });
+  }) {
+    actions?.validate(maxItems: 3);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ChecksCreateRequestOneOf1].
   factory ChecksCreateRequestOneOf1.fromJson(Map<String, dynamic> json) {

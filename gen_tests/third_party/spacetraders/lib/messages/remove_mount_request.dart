@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 
 /// {@template remove_mount_request}
@@ -7,7 +8,9 @@ import 'package:spacetraders/model_helpers.dart';
 @immutable
 class RemoveMountRequest {
   /// {@macro remove_mount_request}
-  const RemoveMountRequest({required this.symbol});
+  RemoveMountRequest({required this.symbol}) {
+    symbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [RemoveMountRequest].
   factory RemoveMountRequest.fromJson(Map<String, dynamic> json) {

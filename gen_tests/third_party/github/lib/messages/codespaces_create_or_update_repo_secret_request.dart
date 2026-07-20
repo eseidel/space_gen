@@ -2,15 +2,18 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CodespacesCreateOrUpdateRepoSecretRequest {
-  const CodespacesCreateOrUpdateRepoSecretRequest({
-    this.encryptedValue,
-    this.keyId,
-  });
+  CodespacesCreateOrUpdateRepoSecretRequest({this.encryptedValue, this.keyId}) {
+    encryptedValue?.validate(
+      pattern:
+          r'^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$',
+    );
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [CodespacesCreateOrUpdateRepoSecretRequest].

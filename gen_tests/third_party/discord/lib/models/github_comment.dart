@@ -1,16 +1,20 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/github_user.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class GithubComment {
-  const GithubComment({
+  GithubComment({
     required this.id,
     required this.htmlUrl,
     required this.user,
     required this.body,
     this.commitId,
-  });
+  }) {
+    commitId?.validate(maxLength: 152133);
+    body.validate(maxLength: 152133);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GithubComment].
   factory GithubComment.fromJson(Map<String, dynamic> json) {

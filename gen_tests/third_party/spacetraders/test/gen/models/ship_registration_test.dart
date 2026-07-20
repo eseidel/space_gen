@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ShipRegistration', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ShipRegistration(
+      final instance = ShipRegistration(
         name: 'example',
         factionSymbol: 'example',
         role: ShipRole.fabricator,

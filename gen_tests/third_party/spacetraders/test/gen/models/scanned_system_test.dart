@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ScannedSystem', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ScannedSystem(
+      final instance = ScannedSystem(
         symbol: 'example',
         sectorSymbol: 'example',
         type: SystemType.neutronStar,

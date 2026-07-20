@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('UpdateRoleRequestPartial', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = UpdateRoleRequestPartial();
+      final instance = UpdateRoleRequestPartial();
       final parsed = UpdateRoleRequestPartial.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

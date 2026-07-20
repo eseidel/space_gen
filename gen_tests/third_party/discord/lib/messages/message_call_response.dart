@@ -1,10 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class MessageCallResponse {
-  const MessageCallResponse({required this.participants, this.endedTimestamp});
+  MessageCallResponse({required this.participants, this.endedTimestamp}) {
+    participants.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [MessageCallResponse].
   factory MessageCallResponse.fromJson(Map<String, dynamic> json) {

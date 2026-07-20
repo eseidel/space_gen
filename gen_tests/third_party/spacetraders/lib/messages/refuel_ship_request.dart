@@ -1,9 +1,12 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 
 @immutable
 class RefuelShipRequest {
-  const RefuelShipRequest({this.units, this.fromCargo});
+  RefuelShipRequest({this.units, this.fromCargo}) {
+    units?.validate(min: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [RefuelShipRequest].
   factory RefuelShipRequest.fromJson(Map<String, dynamic> json) {

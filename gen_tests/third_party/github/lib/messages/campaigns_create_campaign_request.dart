@@ -2,13 +2,14 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/campaigns_create_campaign_request_code_scanning_alerts_inner.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CampaignsCreateCampaignRequest {
-  const CampaignsCreateCampaignRequest({
+  CampaignsCreateCampaignRequest({
     required this.name,
     required this.description,
     required this.endsAt,
@@ -17,7 +18,13 @@ class CampaignsCreateCampaignRequest {
     this.teamManagers,
     this.contactLink,
     this.generateIssues = false,
-  });
+  }) {
+    name.validate(minLength: 1, maxLength: 50);
+    description.validate(minLength: 1, maxLength: 255);
+    managers?.validate(maxItems: 10);
+    teamManagers?.validate(maxItems: 10);
+    codeScanningAlerts.validate(minItems: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CampaignsCreateCampaignRequest].
   factory CampaignsCreateCampaignRequest.fromJson(Map<String, dynamic> json) {

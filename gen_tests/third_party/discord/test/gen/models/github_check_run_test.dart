@@ -8,7 +8,7 @@ void main() {
       final instance = GithubCheckRun(
         name: 'example',
         htmlUrl: Uri.parse('https://example.com'),
-        checkSuite: const GithubCheckSuite(
+        checkSuite: GithubCheckSuite(
           headSha: 'example',
           app: GithubCheckApp(name: 'example'),
         ),

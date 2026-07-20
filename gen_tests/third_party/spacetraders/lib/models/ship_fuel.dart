@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/ship_fuel_consumed.dart';
 
@@ -9,11 +10,10 @@ import 'package:spacetraders/models/ship_fuel_consumed.dart';
 @immutable
 class ShipFuel {
   /// {@macro ship_fuel}
-  const ShipFuel({
-    required this.current,
-    required this.capacity,
-    this.consumed,
-  });
+  ShipFuel({required this.current, required this.capacity, this.consumed}) {
+    current.validate(min: 0);
+    capacity.validate(min: 0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ShipFuel].
   factory ShipFuel.fromJson(Map<String, dynamic> json) {

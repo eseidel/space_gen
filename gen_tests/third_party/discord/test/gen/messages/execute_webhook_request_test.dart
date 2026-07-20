@@ -7,7 +7,7 @@ void main() {
     test(
       'IncomingWebhookRequestPartial round-trips via maybeFromJson/toJson',
       () {
-        const instance = IncomingWebhookRequestPartial();
+        final instance = IncomingWebhookRequestPartial();
         final parsed = IncomingWebhookRequestPartial.maybeFromJson(
           instance.toJson(),
         )!;

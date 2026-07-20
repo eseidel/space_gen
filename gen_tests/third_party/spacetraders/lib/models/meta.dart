@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 
 /// {@template meta}
@@ -7,7 +8,11 @@ import 'package:spacetraders/model_helpers.dart';
 @immutable
 class Meta {
   /// {@macro meta}
-  const Meta({required this.total, this.page = 1, this.limit = 10});
+  Meta({required this.total, this.page = 1, this.limit = 10}) {
+    total.validate(min: 0);
+    page.validate(min: 1);
+    limit.validate(min: 1, max: 20);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [Meta].
   factory Meta.fromJson(Map<String, dynamic> json) {

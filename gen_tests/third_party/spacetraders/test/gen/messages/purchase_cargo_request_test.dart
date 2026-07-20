@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('PurchaseCargoRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = PurchaseCargoRequest(
+      final instance = PurchaseCargoRequest(
         symbol: TradeSymbol.preciousStones,
         units: 1,
       );

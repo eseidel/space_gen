@@ -1,10 +1,13 @@
 import 'dart:typed_data';
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CreateWebhookRequest {
-  const CreateWebhookRequest({required this.name, this.avatar});
+  CreateWebhookRequest({required this.name, this.avatar}) {
+    name.validate(minLength: 1, maxLength: 80);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreateWebhookRequest].
   factory CreateWebhookRequest.fromJson(Map<String, dynamic> json) {

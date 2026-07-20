@@ -2,6 +2,7 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
@@ -98,9 +99,9 @@ final class UsersDeleteEmailForAuthenticatedUserRequestString
 final class UsersDeleteEmailForAuthenticatedUserRequestOneOf0
     extends UsersDeleteEmailForAuthenticatedUserRequest {
   /// {@macro users_delete_email_for_authenticated_user_request_one_of_0}
-  const UsersDeleteEmailForAuthenticatedUserRequestOneOf0({
-    required this.emails,
-  });
+  UsersDeleteEmailForAuthenticatedUserRequestOneOf0({required this.emails}) {
+    emails.validate(minItems: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [UsersDeleteEmailForAuthenticatedUserRequestOneOf0].

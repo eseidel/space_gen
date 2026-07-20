@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('DeliverContractRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = DeliverContractRequest(
+      final instance = DeliverContractRequest(
         shipSymbol: 'example',
         tradeSymbol: 'IRON_ORE',
         units: 10,

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('MessageEditRequestPartial', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = MessageEditRequestPartial();
+      final instance = MessageEditRequestPartial();
       final parsed = MessageEditRequestPartial.maybeFromJson(
         instance.toJson(),
       )!;

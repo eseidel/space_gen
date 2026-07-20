@@ -5,10 +5,13 @@ import 'package:test/test.dart';
 void main() {
   group('ExtractResources201ResponseData', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ExtractResources201ResponseData(
+      final instance = ExtractResources201ResponseData(
         extraction: Extraction(
           shipSymbol: 'example',
-          yield_: ExtractionYield(symbol: TradeSymbol.preciousStones, units: 0),
+          yield_: const ExtractionYield(
+            symbol: TradeSymbol.preciousStones,
+            units: 0,
+          ),
         ),
         cooldown: Cooldown(
           shipSymbol: 'example',
@@ -27,7 +30,7 @@ void main() {
             ),
           ],
         ),
-        events: <ShipConditionEvent>[
+        events: const <ShipConditionEvent>[
           ShipConditionEvent(
             symbol: ShipConditionEventSymbol.reactorOverload,
             component: ShipConditionEventComponent.frame,

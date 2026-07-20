@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/alert_auto_dismissed_at.dart';
 import 'package:github/models/alert_created_at.dart';
@@ -22,7 +23,7 @@ import 'package:meta/meta.dart';
 @immutable
 class DependabotAlertWithRepository {
   /// {@macro dependabot_alert_with_repository}
-  const DependabotAlertWithRepository({
+  DependabotAlertWithRepository({
     required this.number,
     required this.state,
     required this.dependency,
@@ -39,7 +40,9 @@ class DependabotAlertWithRepository {
     required this.fixedAt,
     required this.repository,
     this.autoDismissedAt,
-  });
+  }) {
+    dismissedComment?.validate(maxLength: 280);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [DependabotAlertWithRepository].
   factory DependabotAlertWithRepository.fromJson(Map<String, dynamic> json) {

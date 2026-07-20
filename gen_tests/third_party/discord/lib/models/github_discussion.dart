@@ -1,17 +1,21 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/github_user.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class GithubDiscussion {
-  const GithubDiscussion({
+  GithubDiscussion({
     required this.title,
     required this.number,
     required this.htmlUrl,
     required this.user,
     this.answerHtmlUrl,
     this.body,
-  });
+  }) {
+    title.validate(maxLength: 152133);
+    body?.validate(maxLength: 152133);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GithubDiscussion].
   factory GithubDiscussion.fromJson(Map<String, dynamic> json) {

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('BotPartnerSdkTokenRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = BotPartnerSdkTokenRequest(externalUserId: 'example');
+      final instance = BotPartnerSdkTokenRequest(externalUserId: 'example');
       final parsed = BotPartnerSdkTokenRequest.maybeFromJson(
         instance.toJson(),
       )!;

@@ -1,14 +1,17 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/unfurled_media_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class MediaGalleryItemRequest {
-  const MediaGalleryItemRequest({
+  MediaGalleryItemRequest({
     required this.media,
     this.description,
     this.spoiler,
-  });
+  }) {
+    description?.validate(minLength: 1, maxLength: 1024);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [MediaGalleryItemRequest].
   factory MediaGalleryItemRequest.fromJson(Map<String, dynamic> json) {

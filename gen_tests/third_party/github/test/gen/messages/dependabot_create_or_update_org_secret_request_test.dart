@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('DependabotCreateOrUpdateOrgSecretRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = DependabotCreateOrUpdateOrgSecretRequest(
+      final instance = DependabotCreateOrUpdateOrgSecretRequest(
         visibility: DependabotCreateOrUpdateOrgSecretRequestVisibility.all,
       );
       final parsed = DependabotCreateOrUpdateOrgSecretRequest.maybeFromJson(

@@ -2,6 +2,7 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/button_component_response.dart';
 import 'package:discord/messages/channel_select_default_value_response.dart';
 import 'package:discord/messages/role_select_default_value_response.dart';
@@ -79,7 +80,7 @@ final class ActionRowComponentResponseComponentsInnerButtonComponentResponse
 @immutable
 final class ChannelSelectComponentResponse
     extends ActionRowComponentResponseComponentsInner {
-  const ChannelSelectComponentResponse({
+  ChannelSelectComponentResponse({
     required this.id,
     required this.customId,
     required this.minValues,
@@ -88,7 +89,9 @@ final class ChannelSelectComponentResponse
     this.disabled,
     this.channelTypes,
     this.defaultValues,
-  });
+  }) {
+    channelTypes?.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ChannelSelectComponentResponse].
   factory ChannelSelectComponentResponse.fromJson(Map<String, dynamic> json) {

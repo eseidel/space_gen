@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('MentionSpamUpsertRequestPartial', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = MentionSpamUpsertRequestPartial();
+      final instance = MentionSpamUpsertRequestPartial();
       final parsed = MentionSpamUpsertRequestPartial.maybeFromJson(
         instance.toJson(),
       )!;

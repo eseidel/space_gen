@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/media_gallery_item_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/message_component_types.dart';
@@ -5,7 +6,10 @@ import 'package:meta/meta.dart';
 
 @immutable
 class MediaGalleryComponentForMessageRequest {
-  const MediaGalleryComponentForMessageRequest({required this.items, this.id});
+  MediaGalleryComponentForMessageRequest({required this.items, this.id}) {
+    id?.validate(min: 0);
+    items.validate(minItems: 1, maxItems: 10);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [MediaGalleryComponentForMessageRequest].

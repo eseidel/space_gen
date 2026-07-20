@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/github_check_pull_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/github_check_app.dart';
@@ -5,13 +6,18 @@ import 'package:meta/meta.dart';
 
 @immutable
 class GithubCheckSuite {
-  const GithubCheckSuite({
+  GithubCheckSuite({
     required this.headSha,
     required this.app,
     this.conclusion,
     this.headBranch,
     this.pullRequests,
-  });
+  }) {
+    conclusion?.validate(maxLength: 152133);
+    headBranch?.validate(maxLength: 152133);
+    headSha.validate(maxLength: 152133);
+    pullRequests?.validate(maxItems: 1521);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GithubCheckSuite].
   factory GithubCheckSuite.fromJson(Map<String, dynamic> json) {

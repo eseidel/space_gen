@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('UpdateApplicationUserRoleConnectionRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = UpdateApplicationUserRoleConnectionRequest();
+      final instance = UpdateApplicationUserRoleConnectionRequest();
       final parsed = UpdateApplicationUserRoleConnectionRequest.maybeFromJson(
         instance.toJson(),
       )!;

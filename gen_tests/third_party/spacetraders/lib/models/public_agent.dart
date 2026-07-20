@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 
 /// {@template public_agent}
@@ -7,13 +8,17 @@ import 'package:spacetraders/model_helpers.dart';
 @immutable
 class PublicAgent {
   /// {@macro public_agent}
-  const PublicAgent({
+  PublicAgent({
     required this.symbol,
     required this.headquarters,
     required this.credits,
     required this.startingFaction,
     required this.shipCount,
-  });
+  }) {
+    symbol.validate(minLength: 3, maxLength: 14);
+    headquarters.validate(minLength: 1);
+    startingFaction.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [PublicAgent].
   factory PublicAgent.fromJson(Map<String, dynamic> json) {

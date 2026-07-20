@@ -686,7 +686,7 @@ class DefaultApi {
     SnowflakeType applicationId,
     String instanceId,
   ) async {
-    instanceId.validateMaximumLength(152133);
+    instanceId.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -1209,8 +1209,7 @@ class DefaultApi {
     bool? excludeDeleted,
     bool? onlyActive,
   }) async {
-    limit?.validateMaximum(100);
-    limit?.validateMinimum(1);
+    limit?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -2143,8 +2142,7 @@ class DefaultApi {
     SnowflakeType? after,
     int? limit,
   }) async {
-    limit?.validateMaximum(100);
-    limit?.validateMinimum(1);
+    limit?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -2257,8 +2255,7 @@ class DefaultApi {
     DateTime? before,
     int? limit,
   }) async {
-    limit?.validateMaximum(50);
-    limit?.validateMinimum(1);
+    limit?.validate(min: 1, max: 50);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -2519,9 +2516,8 @@ class DefaultApi {
     int? limit,
     ReactionTypes? type,
   }) async {
-    emojiName.validateMaximumLength(152133);
-    limit?.validateMaximum(100);
-    limit?.validateMinimum(1);
+    emojiName.validate(maxLength: 152133);
+    limit?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -2574,7 +2570,7 @@ class DefaultApi {
     SnowflakeType messageId,
     String emojiName,
   ) async {
-    emojiName.validateMaximumLength(152133);
+    emojiName.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.delete,
@@ -2612,7 +2608,7 @@ class DefaultApi {
     SnowflakeType messageId,
     String emojiName,
   ) async {
-    emojiName.validateMaximumLength(152133);
+    emojiName.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.put,
@@ -2650,7 +2646,7 @@ class DefaultApi {
     SnowflakeType messageId,
     String emojiName,
   ) async {
-    emojiName.validateMaximumLength(152133);
+    emojiName.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.delete,
@@ -2689,7 +2685,7 @@ class DefaultApi {
     String emojiName,
     SnowflakeType userId,
   ) async {
-    emojiName.validateMaximumLength(152133);
+    emojiName.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.delete,
@@ -2920,11 +2916,8 @@ class DefaultApi {
     SnowflakeType? after,
     int? limit,
   }) async {
-    answerId
-      ..validateMaximum(10)
-      ..validateMinimum(1);
-    limit?.validateMaximum(100);
-    limit?.validateMinimum(1);
+    answerId.validate(min: 1, max: 10);
+    limit?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -3098,8 +3091,7 @@ class DefaultApi {
     int? limit,
     SnowflakeType? after,
   }) async {
-    limit?.validateMaximum(100);
-    limit?.validateMinimum(1);
+    limit?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -3325,8 +3317,7 @@ class DefaultApi {
     DateTime? before,
     int? limit,
   }) async {
-    limit?.validateMaximum(100);
-    limit?.validateMinimum(2);
+    limit?.validate(min: 2, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -3369,8 +3360,7 @@ class DefaultApi {
     DateTime? before,
     int? limit,
   }) async {
-    limit?.validateMaximum(100);
-    limit?.validateMinimum(2);
+    limit?.validate(min: 2, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -3422,13 +3412,10 @@ class DefaultApi {
     int? limit,
     int? offset,
   }) async {
-    name?.validateMaximumLength(100);
-    slop?.validateMaximum(100);
-    slop?.validateMinimum(0);
-    limit?.validateMaximum(25);
-    limit?.validateMinimum(1);
-    offset?.validateMaximum(9975);
-    offset?.validateMinimum(0);
+    name?.validate(maxLength: 100);
+    slop?.validate(min: 0, max: 100);
+    limit?.validate(min: 1, max: 25);
+    offset?.validate(min: 0, max: 9975);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -3528,8 +3515,7 @@ class DefaultApi {
     SnowflakeType? before,
     int? limit,
   }) async {
-    limit?.validateMaximum(100);
-    limit?.validateMinimum(2);
+    limit?.validate(min: 2, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -3735,7 +3721,7 @@ class DefaultApi {
   }
 
   Future<GuildTemplateResponse> getGuildTemplate(String code) async {
-    code.validateMaximumLength(152133);
+    code.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -3857,8 +3843,7 @@ class DefaultApi {
     SnowflakeType? after,
     int? limit,
   }) async {
-    limit?.validateMaximum(100);
-    limit?.validateMinimum(1);
+    limit?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -4081,8 +4066,7 @@ class DefaultApi {
     SnowflakeType? before,
     SnowflakeType? after,
   }) async {
-    limit?.validateMaximum(1000);
-    limit?.validateMinimum(1);
+    limit?.validate(min: 1, max: 1000);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -4645,9 +4629,8 @@ class DefaultApi {
     int? limit,
     int? after,
   }) async {
-    limit?.validateMaximum(1000);
-    limit?.validateMinimum(1);
-    after?.validateMinimum(0);
+    limit?.validate(min: 1, max: 1000);
+    after?.validate(min: 0);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -4729,11 +4712,8 @@ class DefaultApi {
     String query, {
     int? limit,
   }) async {
-    limit?.validateMaximum(1000);
-    limit?.validateMinimum(1);
-    query
-      ..validateMaximumLength(100)
-      ..validateMinimumLength(1);
+    limit?.validate(min: 1, max: 1000);
+    query.validate(minLength: 1, maxLength: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -4998,39 +4978,23 @@ class DefaultApi {
     bool? includeNsfw,
     List<SnowflakeType>? channelId,
   }) async {
-    content?.validateMaximumLength(1024);
-    slop?.validateMaximum(100);
-    slop?.validateMinimum(0);
-    authorId?.validateMaximumItems(100);
-    authorId?.validateUniqueItems();
-    authorType?.validateMaximumItems(6);
-    authorType?.validateUniqueItems();
-    mentions?.validateMaximumItems(100);
-    mentions?.validateUniqueItems();
-    mentionsRoleId?.validateMaximumItems(100);
-    mentionsRoleId?.validateUniqueItems();
-    repliedToUserId?.validateMaximumItems(100);
-    repliedToUserId?.validateUniqueItems();
-    repliedToMessageId?.validateMaximumItems(100);
-    repliedToMessageId?.validateUniqueItems();
-    limit?.validateMaximum(25);
-    limit?.validateMinimum(1);
-    offset?.validateMaximum(9975);
-    offset?.validateMinimum(0);
-    has?.validateMaximumItems(18);
-    has?.validateUniqueItems();
-    linkHostname?.validateMaximumItems(100);
-    linkHostname?.validateUniqueItems();
-    embedProvider?.validateMaximumItems(100);
-    embedProvider?.validateUniqueItems();
-    embedType?.validateMaximumItems(5);
-    embedType?.validateUniqueItems();
-    attachmentExtension?.validateMaximumItems(100);
-    attachmentExtension?.validateUniqueItems();
-    attachmentFilename?.validateMaximumItems(100);
-    attachmentFilename?.validateUniqueItems();
-    channelId?.validateMaximumItems(500);
-    channelId?.validateUniqueItems();
+    content?.validate(maxLength: 1024);
+    slop?.validate(min: 0, max: 100);
+    authorId?.validate(maxItems: 100, unique: true);
+    authorType?.validate(maxItems: 6, unique: true);
+    mentions?.validate(maxItems: 100, unique: true);
+    mentionsRoleId?.validate(maxItems: 100, unique: true);
+    repliedToUserId?.validate(maxItems: 100, unique: true);
+    repliedToMessageId?.validate(maxItems: 100, unique: true);
+    limit?.validate(min: 1, max: 25);
+    offset?.validate(min: 0, max: 9975);
+    has?.validate(maxItems: 18, unique: true);
+    linkHostname?.validate(maxItems: 100, unique: true);
+    embedProvider?.validate(maxItems: 100, unique: true);
+    embedType?.validate(maxItems: 5, unique: true);
+    attachmentExtension?.validate(maxItems: 100, unique: true);
+    attachmentFilename?.validate(maxItems: 100, unique: true);
+    channelId?.validate(maxItems: 500, unique: true);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -5256,8 +5220,7 @@ class DefaultApi {
     int? days,
     PreviewPruneGuildParameter1? includeRoles,
   }) async {
-    days?.validateMaximum(30);
-    days?.validateMinimum(1);
+    days?.validate(min: 1, max: 30);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -5817,8 +5780,7 @@ class DefaultApi {
     SnowflakeType? before,
     SnowflakeType? after,
   }) async {
-    limit?.validateMaximum(100);
-    limit?.validateMinimum(1);
+    limit?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -6302,7 +6264,7 @@ class DefaultApi {
     SnowflakeType guildId,
     String code,
   ) async {
-    code.validateMaximumLength(152133);
+    code.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.put,
@@ -6339,7 +6301,7 @@ class DefaultApi {
     SnowflakeType guildId,
     String code,
   ) async {
-    code.validateMaximumLength(152133);
+    code.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.delete,
@@ -6377,7 +6339,7 @@ class DefaultApi {
     String code,
     UpdateGuildTemplateRequest updateGuildTemplateRequest,
   ) async {
-    code.validateMaximumLength(152133);
+    code.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.patch,
@@ -6868,7 +6830,7 @@ class DefaultApi {
     CreateInteractionResponseRequest createInteractionResponseRequest, {
     bool? withResponse,
   }) async {
-    interactionToken.validateMaximumLength(152133);
+    interactionToken.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.post,
@@ -6921,7 +6883,7 @@ class DefaultApi {
     bool? withCounts,
     SnowflakeType? guildScheduledEventId,
   }) async {
-    code.validateMaximumLength(152133);
+    code.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -6961,7 +6923,7 @@ class DefaultApi {
   }
 
   Future<ListChannelInvites200ResponseInner> inviteRevoke(String code) async {
-    code.validateMaximumLength(152133);
+    code.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.delete,
@@ -6994,7 +6956,7 @@ class DefaultApi {
 
   /// Get the target users for an invite.
   Future<Uint8List> getInviteTargetUsers(String code) async {
-    code.validateMaximumLength(152133);
+    code.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -7031,7 +6993,7 @@ class DefaultApi {
     String code,
     UpdateInviteTargetUsersRequest updateInviteTargetUsersRequest,
   ) async {
-    code.validateMaximumLength(152133);
+    code.validate(maxLength: 152133);
 
     final multipartFields = <String, String>{};
     final multipartFiles = <http.MultipartFile>[
@@ -7071,7 +7033,7 @@ class DefaultApi {
   Future<TargetUsersJobStatusResponse> getInviteTargetUsersJobStatus(
     String code,
   ) async {
-    code.validateMaximumLength(152133);
+    code.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -7492,8 +7454,7 @@ class DefaultApi {
     SnowflakeType lobbyId, {
     int? limit,
   }) async {
-    limit?.validateMaximum(200);
-    limit?.validateMinimum(1);
+    limit?.validate(min: 1, max: 200);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -8435,8 +8396,7 @@ class DefaultApi {
     int? limit,
     bool? withCounts,
   }) async {
-    limit?.validateMaximum(200);
-    limit?.validateMinimum(1);
+    limit?.validate(min: 1, max: 200);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -8700,7 +8660,7 @@ class DefaultApi {
     SnowflakeType webhookId,
     String webhookToken,
   ) async {
-    webhookToken.validateMaximumLength(152133);
+    webhookToken.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -8744,7 +8704,7 @@ class DefaultApi {
     SnowflakeType? threadId,
     bool? withComponents,
   }) async {
-    webhookToken.validateMaximumLength(152133);
+    webhookToken.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.post,
@@ -8793,7 +8753,7 @@ class DefaultApi {
     SnowflakeType webhookId,
     String webhookToken,
   ) async {
-    webhookToken.validateMaximumLength(152133);
+    webhookToken.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.delete,
@@ -8826,7 +8786,7 @@ class DefaultApi {
     String webhookToken,
     UpdateWebhookByTokenRequest updateWebhookByTokenRequest,
   ) async {
-    webhookToken.validateMaximumLength(152133);
+    webhookToken.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.patch,
@@ -8870,7 +8830,7 @@ class DefaultApi {
     bool? wait,
     SnowflakeType? threadId,
   }) async {
-    webhookToken.validateMaximumLength(152133);
+    webhookToken.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.post,
@@ -8908,7 +8868,7 @@ class DefaultApi {
     String webhookToken, {
     SnowflakeType? threadId,
   }) async {
-    webhookToken.validateMaximumLength(152133);
+    webhookToken.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -8952,7 +8912,7 @@ class DefaultApi {
     String webhookToken, {
     SnowflakeType? threadId,
   }) async {
-    webhookToken.validateMaximumLength(152133);
+    webhookToken.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.delete,
@@ -8990,7 +8950,7 @@ class DefaultApi {
     SnowflakeType? threadId,
     bool? withComponents,
   }) async {
-    webhookToken.validateMaximumLength(152133);
+    webhookToken.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.patch,
@@ -9038,7 +8998,7 @@ class DefaultApi {
     SnowflakeType messageId, {
     SnowflakeType? threadId,
   }) async {
-    webhookToken.validateMaximumLength(152133);
+    webhookToken.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -9084,7 +9044,7 @@ class DefaultApi {
     SnowflakeType messageId, {
     SnowflakeType? threadId,
   }) async {
-    webhookToken.validateMaximumLength(152133);
+    webhookToken.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.delete,
@@ -9124,7 +9084,7 @@ class DefaultApi {
     SnowflakeType? threadId,
     bool? withComponents,
   }) async {
-    webhookToken.validateMaximumLength(152133);
+    webhookToken.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.patch,
@@ -9174,7 +9134,7 @@ class DefaultApi {
     bool? wait,
     SnowflakeType? threadId,
   }) async {
-    webhookToken.validateMaximumLength(152133);
+    webhookToken.validate(maxLength: 152133);
 
     final response = await client.invokeApi(
       method: Method.post,

@@ -1,11 +1,12 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CodespacesSetCodespacesAccessUsersRequest {
-  const CodespacesSetCodespacesAccessUsersRequest({
-    required this.selectedUsernames,
-  });
+  CodespacesSetCodespacesAccessUsersRequest({required this.selectedUsernames}) {
+    selectedUsernames.validate(maxItems: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [CodespacesSetCodespacesAccessUsersRequest].

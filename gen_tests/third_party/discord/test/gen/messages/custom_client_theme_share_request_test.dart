@@ -5,8 +5,8 @@ import 'package:test/test.dart';
 void main() {
   group('CustomClientThemeShareRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CustomClientThemeShareRequest(
-        colors: <String>['exampl'],
+      final instance = CustomClientThemeShareRequest(
+        colors: const <String>['exampl'],
         gradientAngle: 0,
         baseMix: 0,
       );

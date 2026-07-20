@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('GistsUpdateCommentRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = GistsUpdateCommentRequest(
+      final instance = GistsUpdateCommentRequest(
         body: 'Body of the attachment',
       );
       final parsed = GistsUpdateCommentRequest.maybeFromJson(

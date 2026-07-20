@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
@@ -8,7 +9,10 @@ import 'package:meta/meta.dart';
 @immutable
 class SecurityAdvisoryEpss {
   /// {@macro security_advisory_epss}
-  const SecurityAdvisoryEpss({this.percentage, this.percentile});
+  SecurityAdvisoryEpss({this.percentage, this.percentile}) {
+    percentage?.validate(min: 0.0, max: 100.0);
+    percentile?.validate(min: 0.0, max: 100.0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [SecurityAdvisoryEpss].
   factory SecurityAdvisoryEpss.fromJson(Map<String, dynamic> json) {

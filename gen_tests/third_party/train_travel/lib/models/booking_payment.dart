@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:train_travel/api_exception.dart';
 import 'package:train_travel/model_helpers.dart';
 import 'package:train_travel/models/booking_payment_currency.dart';
 import 'package:train_travel/models/booking_payment_source.dart';
@@ -10,13 +11,15 @@ import 'package:train_travel/models/booking_payment_status.dart';
 @immutable
 class BookingPayment {
   /// {@macro booking_payment}
-  const BookingPayment({
+  BookingPayment({
     this.id,
     this.amount,
     this.currency,
     this.source,
     this.status,
-  });
+  }) {
+    amount?.validate(exclusiveMin: 0.0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [BookingPayment].
   factory BookingPayment.fromJson(Map<String, dynamic> json) {

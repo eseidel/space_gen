@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ProjectsMoveCardRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ProjectsMoveCardRequest(position: 'bottom');
+      final instance = ProjectsMoveCardRequest(position: 'bottom');
       final parsed = ProjectsMoveCardRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

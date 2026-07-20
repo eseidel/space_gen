@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/checks_update_request_any_of_1_output_annotations_inner.dart';
 import 'package:github/models/checks_update_request_any_of_1_output_images_inner.dart';
@@ -11,13 +12,17 @@ import 'package:meta/meta.dart';
 @immutable
 class ChecksUpdateRequestAnyOf1Output {
   /// {@macro checks_update_request_any_of_1_output}
-  const ChecksUpdateRequestAnyOf1Output({
+  ChecksUpdateRequestAnyOf1Output({
     required this.summary,
     this.title,
     this.text,
     this.annotations,
     this.images,
-  });
+  }) {
+    summary.validate(maxLength: 65535);
+    text?.validate(maxLength: 65535);
+    annotations?.validate(maxItems: 50);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ChecksUpdateRequestAnyOf1Output].
   factory ChecksUpdateRequestAnyOf1Output.fromJson(Map<String, dynamic> json) {

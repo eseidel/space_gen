@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ReposCreateDispatchEventRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ReposCreateDispatchEventRequest(eventType: 'example');
+      final instance = ReposCreateDispatchEventRequest(eventType: 'example');
       final parsed = ReposCreateDispatchEventRequest.maybeFromJson(
         instance.toJson(),
       )!;

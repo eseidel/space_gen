@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('RepositoryAdvisoryCvss', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = RepositoryAdvisoryCvss(
+      final instance = RepositoryAdvisoryCvss(
         vectorString: 'example',
         score: 0,
       );

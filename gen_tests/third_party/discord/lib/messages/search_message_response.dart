@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/basic_application_response.dart';
 import 'package:discord/messages/basic_message_response.dart';
 import 'package:discord/messages/custom_client_theme_response.dart';
@@ -28,7 +29,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class SearchMessageResponse {
-  const SearchMessageResponse({
+  SearchMessageResponse({
     required this.type,
     required this.content,
     required this.mentions,
@@ -68,7 +69,9 @@ class SearchMessageResponse {
     this.messageSnapshots,
     this.reactions,
     this.referencedMessage,
-  });
+  }) {
+    mentionRoles.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [SearchMessageResponse].
   factory SearchMessageResponse.fromJson(Map<String, dynamic> json) {

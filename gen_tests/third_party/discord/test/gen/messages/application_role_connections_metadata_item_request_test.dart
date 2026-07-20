@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ApplicationRoleConnectionsMetadataItemRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ApplicationRoleConnectionsMetadataItemRequest(
+      final instance = ApplicationRoleConnectionsMetadataItemRequest(
         type: MetadataItemTypes.integerLessThanEqual,
         key: 'example',
         name: 'example',

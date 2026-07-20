@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ApplicationCommandSubcommandOption', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ApplicationCommandSubcommandOption(
+      final instance = ApplicationCommandSubcommandOption(
         name: 'example',
         description: 'example',
       );

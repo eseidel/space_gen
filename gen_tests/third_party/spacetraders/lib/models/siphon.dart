@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/siphon_yield.dart';
 
@@ -8,7 +9,9 @@ import 'package:spacetraders/models/siphon_yield.dart';
 @immutable
 class Siphon {
   /// {@macro siphon}
-  const Siphon({required this.shipSymbol, required this.yield_});
+  Siphon({required this.shipSymbol, required this.yield_}) {
+    shipSymbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [Siphon].
   factory Siphon.fromJson(Map<String, dynamic> json) {

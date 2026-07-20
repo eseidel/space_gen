@@ -1,14 +1,17 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/sku_ineligibility_reason.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class SocialLayerSkuPurchaseEligibilityCallbackData {
-  const SocialLayerSkuPurchaseEligibilityCallbackData({
+  SocialLayerSkuPurchaseEligibilityCallbackData({
     required this.eligible,
     this.ineligibleReason,
     this.ineligibleReasonDescription,
-  });
+  }) {
+    ineligibleReasonDescription?.validate(maxLength: 255);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [SocialLayerSkuPurchaseEligibilityCallbackData].

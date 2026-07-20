@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/message_component_types.dart';
 import 'package:discord/models/text_input_style_types.dart';
@@ -5,7 +6,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class TextInputComponentForModalRequest {
-  const TextInputComponentForModalRequest({
+  TextInputComponentForModalRequest({
     required this.customId,
     required this.style,
     this.id,
@@ -15,7 +16,15 @@ class TextInputComponentForModalRequest {
     this.required_,
     this.minLength,
     this.maxLength,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+    label?.validate(minLength: 1, maxLength: 45);
+    value?.validate(maxLength: 4000);
+    placeholder?.validate(maxLength: 100);
+    minLength?.validate(min: 0, max: 4000);
+    maxLength?.validate(min: 1, max: 4000);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [TextInputComponentForModalRequest].

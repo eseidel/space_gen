@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 void main() {
   group('IncomingWebhookUpdateForInteractionCallbackRequestPartial', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance =
+      final instance =
           IncomingWebhookUpdateForInteractionCallbackRequestPartial();
       final parsed =
           IncomingWebhookUpdateForInteractionCallbackRequestPartial.maybeFromJson(
