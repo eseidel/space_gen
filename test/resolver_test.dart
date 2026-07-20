@@ -628,6 +628,87 @@ void main() {
       expect(outer.schemas.first, isA<ResolvedAllOf>());
     });
 
+    test(
+      'allOf with a nullable-ref metadata member elides, marks nullable',
+      () {
+        // OpenAPI 3.0 nullable-$ref idiom (#356): 3.0 forbids `nullable`
+        // beside a `$ref`, so specs wrap both in an allOf. The `{nullable:
+        // true}` member resolves to `ResolvedUnknown` — a metadata-only
+        // modifier. The composition elides to the sole substantive member,
+        // marked nullable, rather than crashing on the non-object member.
+        final json = {
+          'allOf': [
+            {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+              },
+            },
+            {'nullable': true},
+          ],
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(
+          logger,
+          () => parseAndResolveTestSchema(json),
+        );
+        expect(schema, isA<ResolvedObject>());
+        expect(schema.common.nullable, isTrue);
+      },
+    );
+
+    test('allOf wrapping a scalar with a metadata member elides', () {
+      // A scalar refined by a metadata-only sibling (#347): `allOf:
+      // [<scalar>, {description: ...}]`. The description member resolves to
+      // `ResolvedUnknown` and is set aside; the composition elides to the
+      // scalar rather than crashing with "allOf only supports objects".
+      final json = {
+        'allOf': [
+          {'type': 'string', 'nullable': true},
+          {'description': 'refines the string above'},
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(schema, isA<ResolvedString>());
+      expect(schema.common.nullable, isTrue);
+    });
+
+    test('allOf keeps multiple objects, folds in metadata nullable', () {
+      // Two real object members plus a `{nullable: true}` modifier: the
+      // objects still merge into a `ResolvedAllOf` (the metadata member is
+      // dropped, not merged) and the whole composition is nullable.
+      final json = {
+        'allOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'foo': {'type': 'string'},
+            },
+          },
+          {
+            'type': 'object',
+            'properties': {
+              'bar': {'type': 'integer'},
+            },
+          },
+          {'nullable': true},
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(schema, isA<ResolvedAllOf>());
+      final allOf = schema as ResolvedAllOf;
+      expect(allOf.schemas.length, 2);
+      expect(allOf.common.nullable, isTrue);
+    });
+
     test('resolve anyOf', () {
       final json = {
         'anyOf': [

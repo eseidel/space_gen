@@ -450,13 +450,37 @@ ResolvedSchema _resolveSchemaFully(
     final schemas = allOf.schemas
         .map((e) => resolveSchemaRef(e, context))
         .toList();
-    // Elide the allOf if there is only one schema.
-    // Probably should only do this for the pod case?  Since in the object
-    // case allOf should probably create a new object?
-    if (schemas.length == 1) {
-      return schemas.first;
+    // Metadata-only members carry no shape to merge — they exist only to
+    // attach `nullable`/`description`/etc. to their siblings. The canonical
+    // case is the OpenAPI 3.0 nullable-$ref idiom: 3.0 forbids `nullable`
+    // as a sibling of `$ref`, so specs wrap both in an allOf —
+    // `allOf: [{$ref: X}, {nullable: true}]`. A bare `{nullable: true}` (or
+    // a lone `{description: ...}`) resolves to `ResolvedUnknown`. Set these
+    // aside as modifiers rather than schemas to merge, folding their
+    // `nullable` into the composition (issues #347, #356).
+    final metadataOnly = schemas.whereType<ResolvedUnknown>().toList();
+    final members = schemas.where((s) => s is! ResolvedUnknown).toList();
+    final nullable =
+        resolvedCommon.nullable || metadataOnly.any((s) => s.common.nullable);
+    // Elide to the sole substantive member. Covers `allOf: [X]` (a single
+    // member — often a scalar wrapped to attach metadata) and
+    // `allOf: [X, {nullable: true}]` (the nullable-$ref idiom): both reduce
+    // to X, marked nullable when any member asked for it.
+    if (members.length == 1) {
+      final member = members.first;
+      return nullable
+          ? member.copyWith(common: member.common.copyWith(nullable: true))
+          : member;
     }
-    for (final schema in schemas) {
+    // An allOf of pure metadata has no substantive member to merge; treat it
+    // as an unconstrained value, nullable if any member said so.
+    if (members.isEmpty) {
+      return ResolvedUnknown(
+        common: resolvedCommon.copyWith(nullable: nullable),
+        createsNewType: createsNewType,
+      );
+    }
+    for (final schema in members) {
       // allOf members must be object-shaped. Besides plain objects, admit an
       // open map member (e.g. a `JsonObject`: `type: object` with only
       // `additionalProperties`, which resolves to `ResolvedMap`) — it
@@ -473,7 +497,12 @@ ResolvedSchema _resolveSchemaFully(
       }
       _error('allOf only supports objects: $schema', allOf.pointer);
     }
-    return ResolvedAllOf(common: resolvedCommon, schemas: schemas);
+    return ResolvedAllOf(
+      common: nullable
+          ? resolvedCommon.copyWith(nullable: true)
+          : resolvedCommon,
+      schemas: members,
+    );
   }
   if (schema is SchemaAnyOf) {
     assert(createsNewType, 'SchemaAnyOf should create a new type');
