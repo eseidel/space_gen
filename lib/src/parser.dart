@@ -943,6 +943,18 @@ SchemaMap _mapSchema(
   );
 }
 
+/// Some specs wrap a scalar enum `default` in a single-element list
+/// (OpenAI: `default: [auto]` on `enum: [auto]`). Enum values are always
+/// scalars, so a one-element list default is an unambiguous author typo —
+/// treat it as the scalar it plainly means. Any other value is returned
+/// untouched.
+dynamic _unwrapSingletonDefault(dynamic value) {
+  if (value is List && value.length == 1) {
+    return value.first;
+  }
+  return value;
+}
+
 SchemaEnum<Object>? _handleEnum({
   required MapContext json,
   required TypeAndFormat typeAndFormat,
@@ -1027,13 +1039,16 @@ SchemaEnum<Object>? _handleEnum({
     final typedEnumValues = nonNullValues.cast<int>();
     int? typedDefaultValue;
     if (defaultValue != null) {
-      if (!nonNullValues.contains(defaultValue)) {
-        _error(
+      final candidate = _unwrapSingletonDefault(defaultValue);
+      if (candidate is int && nonNullValues.contains(candidate)) {
+        typedDefaultValue = candidate;
+      } else {
+        _warn(
           json,
-          'defaultValue must be one of the enum values: $defaultValue',
+          'Ignoring default=$defaultValue: not one of the enum values '
+          '$nonNullValues',
         );
       }
-      typedDefaultValue = defaultValue as int;
     }
     return SchemaIntEnum(
       common: common,
@@ -1051,20 +1066,20 @@ SchemaEnum<Object>? _handleEnum({
   final typedEnumValues = nonNullValues.cast<String>();
   String? typedDefaultValue;
   if (defaultValue != null) {
-    if (!nonNullValues.contains(defaultValue)) {
-      // Try converting to a string and looking again.
+    final candidate = _unwrapSingletonDefault(defaultValue);
+    if (nonNullValues.contains(candidate)) {
+      typedDefaultValue = candidate as String;
+    } else if (nonNullValues.contains(candidate.toString())) {
       // In GitHub spec, they have a defaultValue of true (boolean) despite the
       // enum being strings (with 'true' as a valid value), so we convert the
       // default value to the enum type before checking if it's valid.
-      typedDefaultValue = defaultValue.toString();
-      if (!nonNullValues.contains(typedDefaultValue)) {
-        _error(
-          json,
-          'defaultValue must be one of the enum values: $defaultValue',
-        );
-      }
+      typedDefaultValue = candidate.toString();
     } else {
-      typedDefaultValue = defaultValue as String?;
+      _warn(
+        json,
+        'Ignoring default=$defaultValue: not one of the enum values '
+        '$nonNullValues',
+      );
     }
   }
   return SchemaStringEnum(

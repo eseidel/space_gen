@@ -2232,22 +2232,36 @@ void main() {
         }
         expect(schema.defaultValue, equals(11));
       });
-      test('integer enum default value not in enum is a spec error', () {
+      test(
+        'integer enum default value not in enum is dropped with a warning',
+        () {
+          final json = {
+            'type': 'integer',
+            'enum': [1, 2, 11],
+            'default': 99,
+          };
+          final logger = _MockLogger();
+          final schema = runWithLogger(logger, () => parseTestSchema(json));
+          if (schema is! SchemaIntEnum) {
+            fail('Expected SchemaIntEnum, got ${schema.runtimeType}');
+          }
+          expect(schema.defaultValue, isNull);
+          verify(
+            () => logger.warn(any(that: contains('Ignoring default=99'))),
+          ).called(1);
+        },
+      );
+      test('integer enum default wrapped in a single-element list unwraps', () {
         final json = {
           'type': 'integer',
           'enum': [1, 2, 11],
-          'default': 99,
+          'default': [11],
         };
-        expect(
-          () => parseTestSchema(json),
-          throwsA(
-            isA<FormatException>().having(
-              (e) => e.message,
-              'message',
-              contains('defaultValue must be one of the enum values: 99'),
-            ),
-          ),
-        );
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaIntEnum) {
+          fail('Expected SchemaIntEnum, got ${schema.runtimeType}');
+        }
+        expect(schema.defaultValue, 11);
       });
       test('integer const parses as a single-value SchemaIntEnum', () {
         // OpenAPI 3.1 / JSON Schema 2020-12: `const: N` is the single-
@@ -2523,22 +2537,36 @@ void main() {
         );
       });
 
-      test('defaultValue must be a valid enum value', () {
+      test('string enum default not in enum is dropped with a warning', () {
         final json = {
           'type': 'string',
           'enum': ['success', 'failure'],
           'default': 'neutral',
         };
-        expect(
-          () => parseTestSchema(json),
-          throwsA(
-            isA<FormatException>().having(
-              (e) => e.message,
-              'message',
-              contains('defaultValue must be one of the enum values: neutral'),
-            ),
-          ),
-        );
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        if (schema is! SchemaStringEnum) {
+          fail('Expected SchemaStringEnum, got ${schema.runtimeType}');
+        }
+        expect(schema.defaultValue, isNull);
+        verify(
+          () => logger.warn(any(that: contains('Ignoring default=neutral'))),
+        ).called(1);
+      });
+      test('string enum default wrapped in a single-element list unwraps', () {
+        // OpenAI's `TranscriptionChunkingStrategy`: `default: [auto]` on
+        // `enum: [auto]` — a scalar default the author wrote as a one-item
+        // list.
+        final json = {
+          'type': 'string',
+          'enum': ['auto'],
+          'default': ['auto'],
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaStringEnum) {
+          fail('Expected SchemaStringEnum, got ${schema.runtimeType}');
+        }
+        expect(schema.defaultValue, 'auto');
       });
     });
 
