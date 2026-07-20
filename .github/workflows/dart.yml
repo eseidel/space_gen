@@ -13,61 +13,72 @@ jobs:
     with:
       config: cspell.config.yaml
 
-  build:
+  # Analyze the generator itself and run its unit tests with coverage.
+  #
+  # This job and the two `gen-*` jobs below used to be one serial `build`
+  # job. They were split because the end-to-end regen was the long pole:
+  # the coverage run and the regen are independent, so running them on
+  # separate runners overlaps them instead of summing them. The floor is
+  # this job's `dart test --coverage` run — no gen split can beat it, so
+  # the regen is sharded just far enough to land under it (see `gen-*`).
+  analyze-and-test:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
-
-      # Note: This workflow uses the latest stable version of the Dart SDK.
-      # You can specify other versions if desired, see documentation here:
-      # https://github.com/dart-lang/setup-dart/blob/main/README.md
       - uses: dart-lang/setup-dart@v1
-
       - name: Install dependencies
         run: dart pub get
-
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
-
-      # Consider passing '--fatal-infos' for slightly stricter analysis.
       - name: Analyze project source
         run: dart analyze
-
       - name: Run tests with coverage
         run: ./coverage.sh
-
-      - name: Run end-to-end generator tests
-        run: |
-          # Regenerate every fixture, then compile and test the ones
-          # marked `verify: true` in their manifest (the synthetic
-          # fixtures — the real-world corpus in third_party/ is already
-          # compiled by Workflow Discovery). `--verify` catches emitted
-          # code that doesn't analyze (#307) as well as runtime issues
-          # the unit tests above can't see — toJson/fromJson
-          # round-tripping, hashCode consistency with ==, etc.
-          #
-          # Every fixture is regenerated regardless of `verify`, because
-          # the next step diffs the result: a fixture that is never
-          # regenerated can never be caught drifting.
-          dart run tool/gen_tests.dart --verify
-
-      - name: Verify goldens match the generator
-        run: |
-          # The step above regenerated every fixture in place. Anything
-          # it changed means the committed goldens are stale — an
-          # output-changing PR landed without a regen. Fix by running
-          # `dart run tool/gen_tests.dart` locally and committing.
-          #
-          # Without this, drift is silent: the generated tests pass
-          # against the freshly regenerated tree regardless of what is
-          # committed, so the repo and the generator can disagree
-          # indefinitely (see #280).
-          git diff --exit-code -- gen_tests/
-
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/lcov.info
+
+  # github is ~44% of the regen wall-clock on its own (a 300k-line spec,
+  # ~3600 emitted files), so it gets its own runner. It has nothing to
+  # `--verify` (third_party is `verify: false` — Shorebird's Workflow
+  # Discovery compiles those externally), so this is pure regen + a diff
+  # scoped to what it regenerated.
+  gen-github:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dart-lang/setup-dart@v1
+      - name: Install dependencies
+        run: dart pub get
+      - name: Regenerate github fixture
+        run: dart run tool/gen_tests.dart github
+      - name: Verify github golden matches the generator
+        # See the same check in `gen-rest` for why drift must be gated.
+        run: git diff --exit-code -- gen_tests/third_party/github
+
+  # Everything except github: the other 11 fixtures, plus the synthetic
+  # ones that `--verify` compiles and tests (github's absence is what
+  # keeps this under the coverage floor).
+  gen-rest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dart-lang/setup-dart@v1
+      - name: Install dependencies
+        run: dart pub get
+      - name: Regenerate fixtures (verify) and run generator tests
+        # `-i github` skips only github; every other fixture is
+        # regenerated, and the `verify: true` synthetic fixtures are
+        # compiled and tested (`dart pub get` + analyze + test) to catch
+        # emitted code that doesn't analyze (#307).
+        run: dart run tool/gen_tests.dart -i github --verify
+      - name: Verify goldens match the generator
+        # The step above regenerated every non-github fixture in place.
+        # Anything it changed means the committed goldens are stale — an
+        # output-changing PR landed without a regen (see #280). github is
+        # untouched here (gated by `gen-github`), so diffing all of
+        # gen_tests/ flags only what this job regenerated.
+        run: git diff --exit-code -- gen_tests/
