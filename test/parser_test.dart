@@ -2261,6 +2261,47 @@ void main() {
         }
         expect(schema.enumValues, equals([7]));
       });
+      test('integer bounds parse, tolerating an int written as a double', () {
+        // A JSON/YAML integer bound may arrive as a double (`5.0`); it
+        // still round-trips exactly to an int, so it is accepted.
+        final json = {
+          'type': 'integer',
+          'minimum': -5,
+          'maximum': 5.0,
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaInteger) {
+          fail('Expected SchemaInteger, got ${schema.runtimeType}');
+        }
+        expect(schema.minimum, -5);
+        expect(schema.maximum, 5);
+      });
+      test('integer bound outside 64-bit range is dropped with a warning', () {
+        // OpenAI's `CreateChatCompletionRequest.seed` declares
+        // `minimum: -9223372036854775808 / maximum: 9223372036854775807`
+        // (int64 bounds), but the spec serialized them through float64,
+        // yielding `±9223372036854776000` — beyond Dart's int range, so
+        // the YAML parser hands them back as doubles. Such a bound is
+        // both unrepresentable as a Dart `int` literal and vacuous for a
+        // 64-bit `int`, so it is dropped rather than crashing the parse.
+        final json = {
+          'type': 'integer',
+          'minimum': -9223372036854776000.0,
+          'maximum': 9223372036854776000.0,
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        if (schema is! SchemaInteger) {
+          fail('Expected SchemaInteger, got ${schema.runtimeType}');
+        }
+        expect(schema.minimum, isNull);
+        expect(schema.maximum, isNull);
+        verify(
+          () => logger.warn(
+            any(that: contains('not representable as a 64-bit int')),
+          ),
+        ).called(2);
+      });
       test('string const parses as a single-value SchemaStringEnum', () {
         // Discord's `match_all` discriminator value uses `const`.
         final json = {'type': 'string', 'const': 'match_all'};
