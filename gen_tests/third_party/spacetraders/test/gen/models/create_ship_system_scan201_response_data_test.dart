@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CreateShipSystemScan201ResponseData', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CreateShipSystemScan201ResponseData(
+      final instance = CreateShipSystemScan201ResponseData(
         cooldown: Cooldown(
           shipSymbol: 'example',
           totalSeconds: 0,

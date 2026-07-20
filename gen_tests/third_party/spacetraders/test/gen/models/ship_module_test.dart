@@ -5,11 +5,11 @@ import 'package:test/test.dart';
 void main() {
   group('ShipModule', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ShipModule(
+      final instance = ShipModule(
         symbol: ShipModuleSymbol.moduleMineralProcessorI,
         name: 'example',
         description: 'example',
-        requirements: ShipRequirements(),
+        requirements: const ShipRequirements(),
       );
       final parsed = ShipModule.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));

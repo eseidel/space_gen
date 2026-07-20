@@ -1,15 +1,20 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/message_share_custom_user_theme_base_theme.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CustomClientThemeShareRequest {
-  const CustomClientThemeShareRequest({
+  CustomClientThemeShareRequest({
     required this.colors,
     required this.gradientAngle,
     required this.baseMix,
     this.baseTheme,
-  });
+  }) {
+    colors.validate(minItems: 1, maxItems: 5);
+    gradientAngle.validate(min: 0, max: 360);
+    baseMix.validate(min: 0, max: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CustomClientThemeShareRequest].
   factory CustomClientThemeShareRequest.fromJson(Map<String, dynamic> json) {

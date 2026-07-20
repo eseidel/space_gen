@@ -2,6 +2,7 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/issues_set_labels_request_one_of_2_labels_inner.dart';
 import 'package:github/models/issues_set_labels_request_one_of_3_inner.dart';
@@ -113,7 +114,9 @@ final class IssuesSetLabelsRequestString extends IssuesSetLabelsRequest {
 
 @immutable
 final class IssuesSetLabelsRequestOneOf0 extends IssuesSetLabelsRequest {
-  const IssuesSetLabelsRequestOneOf0({this.labels});
+  IssuesSetLabelsRequestOneOf0({this.labels}) {
+    labels?.validate(minItems: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [IssuesSetLabelsRequestOneOf0].
   factory IssuesSetLabelsRequestOneOf0.fromJson(Map<String, dynamic> json) {
@@ -165,7 +168,9 @@ final class IssuesSetLabelsRequestOneOf0 extends IssuesSetLabelsRequest {
 
 @immutable
 final class IssuesSetLabelsRequestOneOf2 extends IssuesSetLabelsRequest {
-  const IssuesSetLabelsRequestOneOf2({this.labels});
+  IssuesSetLabelsRequestOneOf2({this.labels}) {
+    labels?.validate(minItems: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [IssuesSetLabelsRequestOneOf2].
   factory IssuesSetLabelsRequestOneOf2.fromJson(Map<String, dynamic> json) {

@@ -85,9 +85,9 @@ class EntityApi {
     String? after,
     List<String>? order,
   }) async {
-    limit?.validateMinimum(0);
-    offset?.validateMinimum(0);
-    after?.validateMinimumLength(1);
+    limit?.validate(min: 0);
+    offset?.validate(min: 0);
+    after?.validate(minLength: 1);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -339,9 +339,9 @@ class EntityApi {
     String? fullTextFilterTerm,
     List<String>? fullTextFilterFields,
   }) async {
-    limit?.validateMinimum(0);
-    offset?.validateMinimum(0);
-    cursor?.validateMinimumLength(1);
+    limit?.validate(min: 0);
+    offset?.validate(min: 0);
+    cursor?.validate(minLength: 1);
 
     final response = await client.invokeApi(
       method: Method.get,

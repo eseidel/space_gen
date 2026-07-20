@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/application_command_option_integer_choice.dart';
 import 'package:discord/models/application_command_option_type.dart';
@@ -6,7 +7,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class ApplicationCommandIntegerOption {
-  const ApplicationCommandIntegerOption({
+  ApplicationCommandIntegerOption({
     required this.name,
     required this.description,
     this.nameLocalizations,
@@ -16,7 +17,11 @@ class ApplicationCommandIntegerOption {
     this.choices,
     this.minValue,
     this.maxValue,
-  });
+  }) {
+    name.validate(minLength: 1, maxLength: 32);
+    description.validate(minLength: 1, maxLength: 100);
+    choices?.validate(maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [ApplicationCommandIntegerOption].
   factory ApplicationCommandIntegerOption.fromJson(Map<String, dynamic> json) {

@@ -1,16 +1,20 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CreateGuildEmojiRequest {
-  const CreateGuildEmojiRequest({
+  CreateGuildEmojiRequest({
     required this.name,
     required this.image,
     this.roles,
-  });
+  }) {
+    name.validate(minLength: 2, maxLength: 32);
+    roles?.validate(maxItems: 1521, unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreateGuildEmojiRequest].
   factory CreateGuildEmojiRequest.fromJson(Map<String, dynamic> json) {

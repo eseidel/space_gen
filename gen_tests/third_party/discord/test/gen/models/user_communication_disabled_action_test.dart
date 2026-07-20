@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('UserCommunicationDisabledAction', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = UserCommunicationDisabledAction(
+      final instance = UserCommunicationDisabledAction(
         metadata: UserCommunicationDisabledActionMetadata(),
       );
       final parsed = UserCommunicationDisabledAction.maybeFromJson(

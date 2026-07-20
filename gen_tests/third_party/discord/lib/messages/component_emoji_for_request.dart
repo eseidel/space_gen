@@ -1,10 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class ComponentEmojiForRequest {
-  const ComponentEmojiForRequest({required this.name, this.id});
+  ComponentEmojiForRequest({required this.name, this.id}) {
+    name.validate(maxLength: 32);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ComponentEmojiForRequest].
   factory ComponentEmojiForRequest.fromJson(Map<String, dynamic> json) {

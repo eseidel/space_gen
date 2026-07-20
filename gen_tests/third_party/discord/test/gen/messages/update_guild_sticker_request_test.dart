@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('UpdateGuildStickerRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = UpdateGuildStickerRequest();
+      final instance = UpdateGuildStickerRequest();
       final parsed = UpdateGuildStickerRequest.maybeFromJson(
         instance.toJson(),
       )!;

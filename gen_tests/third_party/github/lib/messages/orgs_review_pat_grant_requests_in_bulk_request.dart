@@ -1,14 +1,18 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/orgs_review_pat_grant_requests_in_bulk_request_action.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class OrgsReviewPatGrantRequestsInBulkRequest {
-  const OrgsReviewPatGrantRequestsInBulkRequest({
+  OrgsReviewPatGrantRequestsInBulkRequest({
     required this.action,
     this.patRequestIds,
     this.reason,
-  });
+  }) {
+    patRequestIds?.validate(minItems: 1, maxItems: 100);
+    reason?.validate(maxLength: 1024);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [OrgsReviewPatGrantRequestsInBulkRequest].

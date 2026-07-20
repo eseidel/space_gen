@@ -1,12 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class BanUserFromGuildRequest {
-  const BanUserFromGuildRequest({
-    this.deleteMessageSeconds,
-    this.deleteMessageDays,
-  });
+  BanUserFromGuildRequest({this.deleteMessageSeconds, this.deleteMessageDays}) {
+    deleteMessageSeconds?.validate(min: 0, max: 604800);
+    deleteMessageDays?.validate(min: 0, max: 7);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [BanUserFromGuildRequest].
   factory BanUserFromGuildRequest.fromJson(Map<String, dynamic> json) {

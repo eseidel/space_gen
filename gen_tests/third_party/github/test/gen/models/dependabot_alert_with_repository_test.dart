@@ -33,7 +33,7 @@ void main() {
             ),
           ],
           severity: DependabotAlertSecurityAdvisorySeverity.low,
-          cvss: const DependabotAlertSecurityAdvisoryCvss(
+          cvss: DependabotAlertSecurityAdvisoryCvss(
             score: 0,
             vectorString: 'example',
           ),

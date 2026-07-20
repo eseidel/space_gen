@@ -1,16 +1,20 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/code_scanning_variant_analysis_language.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CodeScanningCreateVariantAnalysisRequest {
-  const CodeScanningCreateVariantAnalysisRequest({
+  CodeScanningCreateVariantAnalysisRequest({
     required this.language,
     required this.queryPack,
     this.repositories,
     this.repositoryLists,
     this.repositoryOwners,
-  });
+  }) {
+    repositoryLists?.validate(maxItems: 1);
+    repositoryOwners?.validate(maxItems: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [CodeScanningCreateVariantAnalysisRequest].

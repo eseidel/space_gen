@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('PollCreateRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = PollCreateRequest(
+      final instance = PollCreateRequest(
         question: PollMedia(),
         answers: <PollAnswerCreateRequest>[
           PollAnswerCreateRequest(pollMedia: PollMediaCreateRequest()),

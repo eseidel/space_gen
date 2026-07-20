@@ -1,13 +1,16 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/custom_property_value.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class OrgsCreateOrUpdateCustomPropertiesValuesForReposRequest {
-  const OrgsCreateOrUpdateCustomPropertiesValuesForReposRequest({
+  OrgsCreateOrUpdateCustomPropertiesValuesForReposRequest({
     required this.repositoryNames,
     required this.properties,
-  });
+  }) {
+    repositoryNames.validate(minItems: 1, maxItems: 30);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [OrgsCreateOrUpdateCustomPropertiesValuesForReposRequest].

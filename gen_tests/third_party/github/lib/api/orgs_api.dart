@@ -2110,8 +2110,8 @@ class OrgsApi {
     DateTime? lastUsedAfter,
     List<String>? tokenId,
   }) async {
-    owner?.validateMaximumItems(10);
-    tokenId?.validateMaximumItems(50);
+    owner?.validate(maxItems: 10);
+    tokenId?.validate(maxItems: 50);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -2265,8 +2265,8 @@ class OrgsApi {
     DateTime? lastUsedAfter,
     List<String>? tokenId,
   }) async {
-    owner?.validateMaximumItems(10);
-    tokenId?.validateMaximumItems(50);
+    owner?.validate(maxItems: 10);
+    tokenId?.validate(maxItems: 50);
 
     final response = await client.invokeApi(
       method: Method.get,

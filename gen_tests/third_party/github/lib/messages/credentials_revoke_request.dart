@@ -1,9 +1,12 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CredentialsRevokeRequest {
-  const CredentialsRevokeRequest({required this.credentials});
+  CredentialsRevokeRequest({required this.credentials}) {
+    credentials.validate(minItems: 1, maxItems: 1000);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CredentialsRevokeRequest].
   factory CredentialsRevokeRequest.fromJson(Map<String, dynamic> json) {

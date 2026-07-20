@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CreateChannelInviteRequest', () {
     test('CreateGroupDmInviteRequest round-trips via maybeFromJson/toJson', () {
-      const instance = CreateGroupDmInviteRequest();
+      final instance = CreateGroupDmInviteRequest();
       final parsed = CreateGroupDmInviteRequest.maybeFromJson(
         instance.toJson(),
       )!;
@@ -14,7 +14,7 @@ void main() {
     });
 
     test('CreateGuildInviteRequest round-trips via maybeFromJson/toJson', () {
-      const instance = CreateGuildInviteRequest();
+      final instance = CreateGuildInviteRequest();
       final parsed = CreateGuildInviteRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

@@ -5,8 +5,8 @@ import 'package:test/test.dart';
 void main() {
   group('ActionsCreateOrUpdateEnvironmentSecretRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ActionsCreateOrUpdateEnvironmentSecretRequest(
-        encryptedValue: 'example',
+      final instance = ActionsCreateOrUpdateEnvironmentSecretRequest(
+        encryptedValue: 'aaaa',
         keyId: 'example',
       );
       final parsed =

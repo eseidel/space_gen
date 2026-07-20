@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CodeSecurityCreateConfigurationForEnterpriseRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CodeSecurityCreateConfigurationForEnterpriseRequest(
+      final instance = CodeSecurityCreateConfigurationForEnterpriseRequest(
         name: 'example',
         description: 'example',
       );

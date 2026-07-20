@@ -1,15 +1,18 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class BulkUpdateGuildChannelsRequestInner {
-  const BulkUpdateGuildChannelsRequestInner({
+  BulkUpdateGuildChannelsRequestInner({
     this.id,
     this.position,
     this.parentId,
     this.lockPermissions,
-  });
+  }) {
+    position?.validate(min: 0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [BulkUpdateGuildChannelsRequestInner].

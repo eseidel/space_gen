@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ApplicationCommandAttachmentOption', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ApplicationCommandAttachmentOption(
+      final instance = ApplicationCommandAttachmentOption(
         name: 'example',
         description: 'example',
       );

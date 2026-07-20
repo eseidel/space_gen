@@ -2,6 +2,7 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/text_input_component_for_modal_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/label_component_for_modal_request_component.dart';
@@ -43,7 +44,10 @@ sealed class ModalInteractionCallbackRequestDataComponentsInner {
 @immutable
 final class ActionRowComponentForModalRequest
     extends ModalInteractionCallbackRequestDataComponentsInner {
-  const ActionRowComponentForModalRequest({required this.components, this.id});
+  ActionRowComponentForModalRequest({required this.components, this.id}) {
+    id?.validate(min: 0);
+    components.validate(minItems: 1, maxItems: 5);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [ActionRowComponentForModalRequest].
@@ -107,12 +111,16 @@ final class ActionRowComponentForModalRequest
 @immutable
 final class LabelComponentForModalRequest
     extends ModalInteractionCallbackRequestDataComponentsInner {
-  const LabelComponentForModalRequest({
+  LabelComponentForModalRequest({
     required this.label,
     required this.component,
     this.id,
     this.description,
-  });
+  }) {
+    id?.validate(min: 0);
+    label.validate(minLength: 1, maxLength: 45);
+    description?.validate(minLength: 1, maxLength: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [LabelComponentForModalRequest].
   factory LabelComponentForModalRequest.fromJson(Map<String, dynamic> json) {
@@ -176,7 +184,10 @@ final class LabelComponentForModalRequest
 @immutable
 final class TextDisplayComponentForModalRequest
     extends ModalInteractionCallbackRequestDataComponentsInner {
-  const TextDisplayComponentForModalRequest({required this.content, this.id});
+  TextDisplayComponentForModalRequest({required this.content, this.id}) {
+    id?.validate(min: 0);
+    content.validate(minLength: 1, maxLength: 4000);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [TextDisplayComponentForModalRequest].

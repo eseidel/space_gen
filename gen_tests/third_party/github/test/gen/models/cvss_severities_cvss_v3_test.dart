@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CvssSeveritiesCvssV3', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CvssSeveritiesCvssV3(vectorString: 'example', score: 0);
+      final instance = CvssSeveritiesCvssV3(vectorString: 'example', score: 0);
       final parsed = CvssSeveritiesCvssV3.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

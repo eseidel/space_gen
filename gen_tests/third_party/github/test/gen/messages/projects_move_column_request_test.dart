@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ProjectsMoveColumnRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ProjectsMoveColumnRequest(position: 'last');
+      final instance = ProjectsMoveColumnRequest(position: 'last');
       final parsed = ProjectsMoveColumnRequest.maybeFromJson(
         instance.toJson(),
       )!;

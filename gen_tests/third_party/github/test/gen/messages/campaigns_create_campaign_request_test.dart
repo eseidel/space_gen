@@ -10,10 +10,10 @@ void main() {
         description: 'example',
         endsAt: DateTime.utc(2024),
         codeScanningAlerts:
-            const <CampaignsCreateCampaignRequestCodeScanningAlertsInner>[
+            <CampaignsCreateCampaignRequestCodeScanningAlertsInner>[
               CampaignsCreateCampaignRequestCodeScanningAlertsInner(
                 repositoryId: 0,
-                alertNumbers: <int>[0],
+                alertNumbers: const <int>[0],
               ),
             ],
       );

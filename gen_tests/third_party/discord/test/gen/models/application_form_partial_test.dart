@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ApplicationFormPartial', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ApplicationFormPartial();
+      final instance = ApplicationFormPartial();
       final parsed = ApplicationFormPartial.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

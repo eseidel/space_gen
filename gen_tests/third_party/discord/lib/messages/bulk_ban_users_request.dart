@@ -1,10 +1,14 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class BulkBanUsersRequest {
-  const BulkBanUsersRequest({required this.userIds, this.deleteMessageSeconds});
+  BulkBanUsersRequest({required this.userIds, this.deleteMessageSeconds}) {
+    userIds.validate(maxItems: 200, unique: true);
+    deleteMessageSeconds?.validate(min: 0, max: 604800);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [BulkBanUsersRequest].
   factory BulkBanUsersRequest.fromJson(Map<String, dynamic> json) {

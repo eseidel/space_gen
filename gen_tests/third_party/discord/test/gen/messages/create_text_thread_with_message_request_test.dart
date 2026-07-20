@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CreateTextThreadWithMessageRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CreateTextThreadWithMessageRequest(name: 'example');
+      final instance = CreateTextThreadWithMessageRequest(name: 'example');
       final parsed = CreateTextThreadWithMessageRequest.maybeFromJson(
         instance.toJson(),
       )!;

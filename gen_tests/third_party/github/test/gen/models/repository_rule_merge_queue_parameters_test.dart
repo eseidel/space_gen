@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('RepositoryRuleMergeQueueParameters', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = RepositoryRuleMergeQueueParameters(
+      final instance = RepositoryRuleMergeQueueParameters(
         checkResponseTimeoutMinutes: 1,
         groupingStrategy:
             RepositoryRuleMergeQueueParametersGroupingStrategy.allgreen,

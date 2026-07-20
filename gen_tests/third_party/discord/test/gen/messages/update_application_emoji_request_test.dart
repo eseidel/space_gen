@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('UpdateApplicationEmojiRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = UpdateApplicationEmojiRequest();
+      final instance = UpdateApplicationEmojiRequest();
       final parsed = UpdateApplicationEmojiRequest.maybeFromJson(
         instance.toJson(),
       )!;

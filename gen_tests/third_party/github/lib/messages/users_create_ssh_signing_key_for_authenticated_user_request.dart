@@ -2,15 +2,21 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class UsersCreateSshSigningKeyForAuthenticatedUserRequest {
-  const UsersCreateSshSigningKeyForAuthenticatedUserRequest({
+  UsersCreateSshSigningKeyForAuthenticatedUserRequest({
     required this.key,
     this.title,
-  });
+  }) {
+    key.validate(
+      pattern:
+          '^ssh-(rsa|dss|ed25519) |^ecdsa-sha2-nistp(256|384|521) |^(sk-ssh-ed25519|sk-ecdsa-sha2-nistp256)@openssh.com ',
+    );
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [UsersCreateSshSigningKeyForAuthenticatedUserRequest].

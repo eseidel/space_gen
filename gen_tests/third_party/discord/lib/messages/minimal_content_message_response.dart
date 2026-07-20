@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/message_attachment_response.dart';
 import 'package:discord/messages/message_embed_response.dart';
 import 'package:discord/messages/message_sticker_item_response.dart';
@@ -11,7 +12,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class MinimalContentMessageResponse {
-  const MinimalContentMessageResponse({
+  MinimalContentMessageResponse({
     required this.type,
     required this.content,
     required this.mentions,
@@ -24,7 +25,9 @@ class MinimalContentMessageResponse {
     required this.components,
     this.stickers,
     this.stickerItems,
-  });
+  }) {
+    mentionRoles.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [MinimalContentMessageResponse].
   factory MinimalContentMessageResponse.fromJson(Map<String, dynamic> json) {

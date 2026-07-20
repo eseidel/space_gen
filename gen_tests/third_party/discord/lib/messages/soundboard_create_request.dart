@@ -1,18 +1,23 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class SoundboardCreateRequest {
-  const SoundboardCreateRequest({
+  SoundboardCreateRequest({
     required this.name,
     required this.sound,
     this.volume,
     this.emojiId,
     this.emojiName,
-  });
+  }) {
+    name.validate(minLength: 2, maxLength: 32);
+    volume?.validate(min: 0.0, max: 1.0);
+    emojiName?.validate(minLength: 1, maxLength: 32);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [SoundboardCreateRequest].
   factory SoundboardCreateRequest.fromJson(Map<String, dynamic> json) {

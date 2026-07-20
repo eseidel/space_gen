@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ContractDeliverGood', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ContractDeliverGood(
+      final instance = ContractDeliverGood(
         tradeSymbol: 'example',
         destinationSymbol: 'example',
         unitsRequired: 0,

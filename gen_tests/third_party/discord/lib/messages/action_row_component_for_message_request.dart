@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/action_row_component_for_message_request_components_inner.dart';
 import 'package:discord/models/message_component_types.dart';
@@ -5,10 +6,10 @@ import 'package:meta/meta.dart';
 
 @immutable
 class ActionRowComponentForMessageRequest {
-  const ActionRowComponentForMessageRequest({
-    required this.components,
-    this.id,
-  });
+  ActionRowComponentForMessageRequest({required this.components, this.id}) {
+    id?.validate(min: 0);
+    components.validate(minItems: 1, maxItems: 5);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [ActionRowComponentForMessageRequest].

@@ -3,6 +3,7 @@
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
 import 'dart:typed_data';
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/entity_metadata_external.dart';
 import 'package:discord/models/entity_metadata_stage_instance.dart';
@@ -45,7 +46,7 @@ sealed class CreateGuildScheduledEventRequest {
 @immutable
 final class ExternalScheduledEventCreateRequest
     extends CreateGuildScheduledEventRequest {
-  const ExternalScheduledEventCreateRequest({
+  ExternalScheduledEventCreateRequest({
     required this.name,
     required this.scheduledStartTime,
     required this.privacyLevel,
@@ -54,7 +55,10 @@ final class ExternalScheduledEventCreateRequest
     this.image,
     this.scheduledEndTime,
     this.channelId,
-  });
+  }) {
+    name.validate(maxLength: 100);
+    description?.validate(maxLength: 1000);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [ExternalScheduledEventCreateRequest].
@@ -154,7 +158,7 @@ final class ExternalScheduledEventCreateRequest
 @immutable
 final class StageScheduledEventCreateRequest
     extends CreateGuildScheduledEventRequest {
-  const StageScheduledEventCreateRequest({
+  StageScheduledEventCreateRequest({
     required this.name,
     required this.scheduledStartTime,
     required this.privacyLevel,
@@ -163,7 +167,10 @@ final class StageScheduledEventCreateRequest
     this.scheduledEndTime,
     this.channelId,
     this.entityMetadata,
-  });
+  }) {
+    name.validate(maxLength: 100);
+    description?.validate(maxLength: 1000);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [StageScheduledEventCreateRequest].
   factory StageScheduledEventCreateRequest.fromJson(Map<String, dynamic> json) {
@@ -259,7 +266,7 @@ final class StageScheduledEventCreateRequest
 @immutable
 final class VoiceScheduledEventCreateRequest
     extends CreateGuildScheduledEventRequest {
-  const VoiceScheduledEventCreateRequest({
+  VoiceScheduledEventCreateRequest({
     required this.name,
     required this.scheduledStartTime,
     required this.privacyLevel,
@@ -268,7 +275,10 @@ final class VoiceScheduledEventCreateRequest
     this.scheduledEndTime,
     this.channelId,
     this.entityMetadata,
-  });
+  }) {
+    name.validate(maxLength: 100);
+    description?.validate(maxLength: 1000);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [VoiceScheduledEventCreateRequest].
   factory VoiceScheduledEventCreateRequest.fromJson(Map<String, dynamic> json) {

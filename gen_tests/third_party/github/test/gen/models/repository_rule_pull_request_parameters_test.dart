@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('RepositoryRulePullRequestParameters', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = RepositoryRulePullRequestParameters(
+      final instance = RepositoryRulePullRequestParameters(
         dismissStaleReviewsOnPush: false,
         requireCodeOwnerReview: false,
         requireLastPushApproval: false,

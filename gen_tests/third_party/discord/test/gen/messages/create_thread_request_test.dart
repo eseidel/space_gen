@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 void main() {
   group('CreateThreadRequest', () {
     test('CreateForumThreadRequest round-trips via maybeFromJson/toJson', () {
-      const instance = CreateForumThreadRequest(
+      final instance = CreateForumThreadRequest(
         name: 'example',
         message: BaseCreateMessageCreateRequest(),
       );
@@ -21,7 +21,7 @@ void main() {
     test(
       'CreateTextThreadWithoutMessageRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = CreateTextThreadWithoutMessageRequest(name: 'example');
+        final instance = CreateTextThreadWithoutMessageRequest(name: 'example');
         final parsed = CreateTextThreadWithoutMessageRequest.maybeFromJson(
           instance.toJson(),
         )!;

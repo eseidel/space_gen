@@ -1,12 +1,15 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class OrgsListAttestationsBulkRequest {
-  const OrgsListAttestationsBulkRequest({
+  OrgsListAttestationsBulkRequest({
     required this.subjectDigests,
     this.predicateType,
-  });
+  }) {
+    subjectDigests.validate(minItems: 1, maxItems: 1024);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [OrgsListAttestationsBulkRequest].
   factory OrgsListAttestationsBulkRequest.fromJson(Map<String, dynamic> json) {

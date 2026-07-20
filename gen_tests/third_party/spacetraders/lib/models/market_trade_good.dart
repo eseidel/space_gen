@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/activity_level.dart';
 import 'package:spacetraders/models/market_trade_good_type.dart';
@@ -7,7 +8,7 @@ import 'package:spacetraders/models/trade_symbol.dart';
 
 @immutable
 class MarketTradeGood {
-  const MarketTradeGood({
+  MarketTradeGood({
     required this.symbol,
     required this.type,
     required this.tradeVolume,
@@ -15,7 +16,11 @@ class MarketTradeGood {
     required this.purchasePrice,
     required this.sellPrice,
     this.activity,
-  });
+  }) {
+    tradeVolume.validate(min: 1);
+    purchasePrice.validate(min: 0);
+    sellPrice.validate(min: 0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [MarketTradeGood].
   factory MarketTradeGood.fromJson(Map<String, dynamic> json) {

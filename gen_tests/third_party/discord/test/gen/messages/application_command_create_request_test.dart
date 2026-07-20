@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ApplicationCommandCreateRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ApplicationCommandCreateRequest(name: 'example');
+      final instance = ApplicationCommandCreateRequest(name: 'example');
       final parsed = ApplicationCommandCreateRequest.maybeFromJson(
         instance.toJson(),
       )!;

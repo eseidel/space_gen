@@ -1,9 +1,12 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 
 @immutable
 class RemoveShipModuleRequest {
-  const RemoveShipModuleRequest({required this.symbol});
+  RemoveShipModuleRequest({required this.symbol}) {
+    symbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [RemoveShipModuleRequest].
   factory RemoveShipModuleRequest.fromJson(Map<String, dynamic> json) {

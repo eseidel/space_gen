@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('GithubCheckApp', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = GithubCheckApp(name: 'example');
+      final instance = GithubCheckApp(name: 'example');
       final parsed = GithubCheckApp.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

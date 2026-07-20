@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/cvss_severities.dart';
 import 'package:github/models/dependabot_alert_security_advisory_cvss.dart';
@@ -15,7 +16,7 @@ import 'package:meta/meta.dart';
 @immutable
 class DependabotAlertSecurityAdvisory {
   /// {@macro dependabot_alert_security_advisory}
-  const DependabotAlertSecurityAdvisory({
+  DependabotAlertSecurityAdvisory({
     required this.ghsaId,
     required this.cveId,
     required this.summary,
@@ -31,7 +32,9 @@ class DependabotAlertSecurityAdvisory {
     required this.withdrawnAt,
     this.cvssSeverities,
     this.epss,
-  });
+  }) {
+    summary.validate(maxLength: 1024);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [DependabotAlertSecurityAdvisory].
   factory DependabotAlertSecurityAdvisory.fromJson(Map<String, dynamic> json) {

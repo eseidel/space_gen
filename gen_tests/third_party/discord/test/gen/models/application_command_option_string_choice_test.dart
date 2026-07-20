@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ApplicationCommandOptionStringChoice', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ApplicationCommandOptionStringChoice(
+      final instance = ApplicationCommandOptionStringChoice(
         name: 'example',
         value: 'example',
       );

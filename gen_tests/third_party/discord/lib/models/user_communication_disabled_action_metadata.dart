@@ -1,9 +1,12 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class UserCommunicationDisabledActionMetadata {
-  const UserCommunicationDisabledActionMetadata({this.durationSeconds});
+  UserCommunicationDisabledActionMetadata({this.durationSeconds}) {
+    durationSeconds?.validate(min: 0, max: 2419200);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [UserCommunicationDisabledActionMetadata].

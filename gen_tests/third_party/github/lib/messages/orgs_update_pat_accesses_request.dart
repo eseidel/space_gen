@@ -1,13 +1,13 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/orgs_update_pat_accesses_request_action.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class OrgsUpdatePatAccessesRequest {
-  const OrgsUpdatePatAccessesRequest({
-    required this.action,
-    required this.patIds,
-  });
+  OrgsUpdatePatAccessesRequest({required this.action, required this.patIds}) {
+    patIds.validate(minItems: 1, maxItems: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [OrgsUpdatePatAccessesRequest].
   factory OrgsUpdatePatAccessesRequest.fromJson(Map<String, dynamic> json) {

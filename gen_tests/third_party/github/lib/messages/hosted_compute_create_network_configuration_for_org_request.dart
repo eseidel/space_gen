@@ -2,17 +2,20 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/hosted_compute_create_network_configuration_for_org_request_compute_service.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class HostedComputeCreateNetworkConfigurationForOrgRequest {
-  const HostedComputeCreateNetworkConfigurationForOrgRequest({
+  HostedComputeCreateNetworkConfigurationForOrgRequest({
     required this.name,
     required this.networkSettingsIds,
     this.computeService,
-  });
+  }) {
+    networkSettingsIds.validate(minItems: 1, maxItems: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [HostedComputeCreateNetworkConfigurationForOrgRequest].

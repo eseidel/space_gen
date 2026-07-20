@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/manifest.dart';
 import 'package:github/models/metadata_1.dart';
@@ -12,7 +13,7 @@ import 'package:meta/meta.dart';
 @immutable
 class Snapshot {
   /// {@macro snapshot}
-  const Snapshot({
+  Snapshot({
     required this.version,
     required this.job,
     required this.sha,
@@ -21,7 +22,10 @@ class Snapshot {
     required this.scanned,
     this.metadata,
     this.manifests,
-  });
+  }) {
+    sha.validate(minLength: 40, maxLength: 40);
+    ref.validate(pattern: '^refs/');
+  }
 
   /// Converts a `Map<String, dynamic>` to a [Snapshot].
   factory Snapshot.fromJson(Map<String, dynamic> json) {

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('RemoveShipModuleRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = RemoveShipModuleRequest(symbol: 'example');
+      final instance = RemoveShipModuleRequest(symbol: 'example');
       final parsed = RemoveShipModuleRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

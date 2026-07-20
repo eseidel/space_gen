@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/message_allowed_mentions_request.dart';
 import 'package:discord/messages/message_attachment_request.dart';
 import 'package:discord/messages/poll_create_request.dart';
@@ -8,7 +9,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class IncomingWebhookInteractionRequest {
-  const IncomingWebhookInteractionRequest({
+  IncomingWebhookInteractionRequest({
     this.content,
     this.embeds,
     this.allowedMentions,
@@ -17,7 +18,12 @@ class IncomingWebhookInteractionRequest {
     this.poll,
     this.tts,
     this.flags,
-  });
+  }) {
+    content?.validate(maxLength: 2000);
+    embeds?.validate(maxItems: 10);
+    components?.validate(maxItems: 40);
+    attachments?.validate(maxItems: 10);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [IncomingWebhookInteractionRequest].

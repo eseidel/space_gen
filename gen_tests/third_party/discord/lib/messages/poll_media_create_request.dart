@@ -1,10 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/poll_emoji_create_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class PollMediaCreateRequest {
-  const PollMediaCreateRequest({this.text, this.emoji});
+  PollMediaCreateRequest({this.text, this.emoji}) {
+    text?.validate(minLength: 1, maxLength: 300);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [PollMediaCreateRequest].
   factory PollMediaCreateRequest.fromJson(Map<String, dynamic> json) {

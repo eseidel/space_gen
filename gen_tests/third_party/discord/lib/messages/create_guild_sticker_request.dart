@@ -3,17 +3,22 @@
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
 import 'dart:typed_data';
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CreateGuildStickerRequest {
-  const CreateGuildStickerRequest({
+  CreateGuildStickerRequest({
     required this.name,
     required this.tags,
     required this.file,
     this.description,
-  });
+  }) {
+    name.validate(minLength: 2, maxLength: 30);
+    tags.validate(minLength: 1, maxLength: 200);
+    description?.validate(maxLength: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreateGuildStickerRequest].
   factory CreateGuildStickerRequest.fromJson(Map<String, dynamic> json) {

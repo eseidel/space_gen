@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('TextInputComponentForModalRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = TextInputComponentForModalRequest(
+      final instance = TextInputComponentForModalRequest(
         customId: 'example',
         style: TextInputStyleTypes.short,
       );

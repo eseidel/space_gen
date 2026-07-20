@@ -5,11 +5,11 @@ import 'package:test/test.dart';
 void main() {
   group('PrivateRegistriesCreateOrgPrivateRegistryRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = PrivateRegistriesCreateOrgPrivateRegistryRequest(
+      final instance = PrivateRegistriesCreateOrgPrivateRegistryRequest(
         registryType:
             PrivateRegistriesCreateOrgPrivateRegistryRequestRegistryType
                 .mavenRepository,
-        encryptedValue: 'example',
+        encryptedValue: 'aaaa',
         keyId: 'example',
         visibility:
             PrivateRegistriesCreateOrgPrivateRegistryRequestVisibility.all,

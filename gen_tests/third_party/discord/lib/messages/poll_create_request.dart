@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/poll_answer_create_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/poll_layout_types.dart';
@@ -6,13 +7,16 @@ import 'package:meta/meta.dart';
 
 @immutable
 class PollCreateRequest {
-  const PollCreateRequest({
+  PollCreateRequest({
     required this.question,
     required this.answers,
     this.allowMultiselect,
     this.layoutType,
     this.duration,
-  });
+  }) {
+    answers.validate(minItems: 1, maxItems: 10);
+    duration?.validate(min: 1, max: 768);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [PollCreateRequest].
   factory PollCreateRequest.fromJson(Map<String, dynamic> json) {

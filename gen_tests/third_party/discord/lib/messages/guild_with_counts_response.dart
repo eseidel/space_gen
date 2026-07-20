@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/emoji_response.dart';
 import 'package:discord/messages/guild_incidents_data_response.dart';
 import 'package:discord/messages/guild_role_response.dart';
@@ -17,7 +18,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class GuildWithCountsResponse {
-  const GuildWithCountsResponse({
+  GuildWithCountsResponse({
     required this.id,
     required this.name,
     required this.icon,
@@ -61,7 +62,9 @@ class GuildWithCountsResponse {
     this.premiumProgressBarEnabledUserUpdatedAt,
     this.approximateMemberCount,
     this.approximatePresenceCount,
-  });
+  }) {
+    features.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GuildWithCountsResponse].
   factory GuildWithCountsResponse.fromJson(Map<String, dynamic> json) {

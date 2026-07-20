@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/message_allowed_mentions_request.dart';
 import 'package:discord/messages/message_attachment_request.dart';
 import 'package:discord/messages/poll_create_request.dart';
@@ -56,7 +57,7 @@ final class ExecuteWebhookRequestIncomingWebhookUpdateRequestPartial
 
 @immutable
 final class IncomingWebhookRequestPartial extends ExecuteWebhookRequest {
-  const IncomingWebhookRequestPartial({
+  IncomingWebhookRequestPartial({
     this.content,
     this.embeds,
     this.allowedMentions,
@@ -69,7 +70,15 @@ final class IncomingWebhookRequestPartial extends ExecuteWebhookRequest {
     this.avatarUrl,
     this.threadName,
     this.appliedTags,
-  });
+  }) {
+    content?.validate(maxLength: 2000);
+    embeds?.validate(maxItems: 10);
+    components?.validate(maxItems: 40);
+    attachments?.validate(maxItems: 10);
+    username?.validate(minLength: 1, maxLength: 80);
+    threadName?.validate(minLength: 0, maxLength: 100);
+    appliedTags?.validate(maxItems: 5);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [IncomingWebhookRequestPartial].
   factory IncomingWebhookRequestPartial.fromJson(Map<String, dynamic> json) {

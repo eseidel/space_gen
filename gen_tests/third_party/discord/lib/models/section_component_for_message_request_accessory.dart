@@ -2,6 +2,7 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/button_component_for_message_request.dart';
 import 'package:discord/messages/unfurled_media_request.dart';
 import 'package:discord/model_helpers.dart';
@@ -69,12 +70,15 @@ final class SectionComponentForMessageRequestAccessoryButtonComponentForMessageR
 @immutable
 final class ThumbnailComponentForMessageRequest
     extends SectionComponentForMessageRequestAccessory {
-  const ThumbnailComponentForMessageRequest({
+  ThumbnailComponentForMessageRequest({
     required this.media,
     this.id,
     this.description,
     this.spoiler,
-  });
+  }) {
+    id?.validate(min: 0);
+    description?.validate(minLength: 1, maxLength: 1024);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [ThumbnailComponentForMessageRequest].

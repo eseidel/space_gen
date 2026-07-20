@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/system_type.dart';
 
@@ -8,14 +9,17 @@ import 'package:spacetraders/models/system_type.dart';
 @immutable
 class ScannedSystem {
   /// {@macro scanned_system}
-  const ScannedSystem({
+  ScannedSystem({
     required this.symbol,
     required this.sectorSymbol,
     required this.type,
     required this.x,
     required this.y,
     required this.distance,
-  });
+  }) {
+    symbol.validate(minLength: 1);
+    sectorSymbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ScannedSystem].
   factory ScannedSystem.fromJson(Map<String, dynamic> json) {

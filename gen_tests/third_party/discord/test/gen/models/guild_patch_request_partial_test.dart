@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('GuildPatchRequestPartial', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = GuildPatchRequestPartial();
+      final instance = GuildPatchRequestPartial();
       final parsed = GuildPatchRequestPartial.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

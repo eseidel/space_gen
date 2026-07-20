@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('BotPartnerSdkUnmergeProvisionalAccountRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = BotPartnerSdkUnmergeProvisionalAccountRequest(
+      final instance = BotPartnerSdkUnmergeProvisionalAccountRequest(
         externalUserId: 'example',
       );
       final parsed =

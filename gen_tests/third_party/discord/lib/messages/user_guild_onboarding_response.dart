@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/onboarding_prompt_response.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/guild_onboarding_mode.dart';
@@ -6,13 +7,15 @@ import 'package:meta/meta.dart';
 
 @immutable
 class UserGuildOnboardingResponse {
-  const UserGuildOnboardingResponse({
+  UserGuildOnboardingResponse({
     required this.guildId,
     required this.prompts,
     required this.defaultChannelIds,
     required this.enabled,
     required this.mode,
-  });
+  }) {
+    defaultChannelIds.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UserGuildOnboardingResponse].
   factory UserGuildOnboardingResponse.fromJson(Map<String, dynamic> json) {

@@ -1,12 +1,15 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class ReposCreateDispatchEventRequest {
-  const ReposCreateDispatchEventRequest({
+  ReposCreateDispatchEventRequest({
     required this.eventType,
     this.clientPayload,
-  });
+  }) {
+    eventType.validate(minLength: 1, maxLength: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ReposCreateDispatchEventRequest].
   factory ReposCreateDispatchEventRequest.fromJson(Map<String, dynamic> json) {

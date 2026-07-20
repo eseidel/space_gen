@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/rich_embed_author_1.dart';
 import 'package:discord/models/rich_embed_field.dart';
@@ -10,7 +11,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class RichEmbed {
-  const RichEmbed({
+  RichEmbed({
     this.type,
     this.url,
     this.title,
@@ -24,7 +25,13 @@ class RichEmbed {
     this.fields,
     this.provider,
     this.video,
-  });
+  }) {
+    type?.validate(maxLength: 152133);
+    title?.validate(maxLength: 256);
+    color?.validate(min: 0, max: 16777215);
+    description?.validate(maxLength: 4096);
+    fields?.validate(maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [RichEmbed].
   factory RichEmbed.fromJson(Map<String, dynamic> json) {

@@ -5,11 +5,11 @@ import 'package:test/test.dart';
 void main() {
   group('Faction', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = Faction(
+      final instance = Faction(
         symbol: FactionSymbol.cosmic,
         name: 'example',
         description: 'example',
-        traits: <FactionTrait>[
+        traits: const <FactionTrait>[
           FactionTrait(
             symbol: FactionTraitSymbol.bureaucratic,
             name: 'example',

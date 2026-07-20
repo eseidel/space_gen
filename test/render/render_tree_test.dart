@@ -1461,6 +1461,62 @@ void main() {
       expect(map.exampleValue(context)?.source, "{Foo.a: 'example'}");
     });
 
+    RenderArray arrayOf(
+      RenderSchema items, {
+      int? minItems,
+      int? maxItems,
+      bool uniqueItems = false,
+    }) => RenderArray(
+      common: common,
+      items: items,
+      minItems: minItems,
+      maxItems: maxItems,
+      uniqueItems: uniqueItems,
+    );
+
+    const stringItem = RenderString(
+      createsNewType: false,
+      common: common,
+      defaultValue: null,
+      maxLength: null,
+      minLength: null,
+      pattern: null,
+    );
+
+    test('array with no minItems yields a single-element example', () {
+      expect(
+        arrayOf(stringItem).exampleValue(context)?.source,
+        "<String>['example']",
+      );
+    });
+
+    test('array repeats its element example to satisfy minItems', () {
+      expect(
+        arrayOf(stringItem, minItems: 3).exampleValue(context)?.source,
+        "<String>['example', 'example', 'example']",
+      );
+    });
+
+    test('array opts out of an example when uniqueItems needs distinct '
+        'values', () {
+      // Repeating the one synthesized element would violate the array's
+      // `unique` check, and synthesizing N distinct values of an arbitrary
+      // element type isn't possible — skip the example.
+      expect(
+        arrayOf(stringItem, minItems: 2, uniqueItems: true).exampleValue(
+          context,
+        ),
+        isNull,
+      );
+    });
+
+    test('array opts out when minItems exceeds maxItems (unsatisfiable)', () {
+      expect(
+        arrayOf(stringItem, minItems: 3, maxItems: 2).exampleValue(context),
+        isNull,
+      );
+    });
+
     test('string with spec example uses it verbatim', () {
       const schema = RenderString(
         common: CommonProperties.test(
@@ -1546,11 +1602,13 @@ void main() {
       expect(schema.exampleValue(context)?.source, "'exam'");
     });
 
-    test('string falls back when no candidate matches the pattern', () {
+    test('string opts out of an example when no candidate matches the '
+        'pattern', () {
       // Pattern requires content the synthesizer's candidate set can't
-      // produce — `^Z+\$` won't match `'a'`, `'0'`, `'1'`, or
-      // `'example'`. Synthesizer surfaces a placeholder rather than
-      // throwing.
+      // produce — `^Z+\$` won't match `'a'`, `'0'`, `'1'`, `'aaaa'`, or
+      // `'example'`. Emitting the invalid placeholder would make the
+      // round-trip test construct a spec-invalid instance that now throws
+      // (#204), so `exampleValue` returns null and the test is skipped.
       const schema = RenderString(
         common: CommonProperties.test(
           snakeName: 'foo',
@@ -1562,12 +1620,14 @@ void main() {
         pattern: r'^Z+$',
         createsNewType: false,
       );
-      expect(schema.exampleValue(context)?.source, "'example'");
+      expect(schema.exampleValue(context), isNull);
     });
 
-    test('string falls back when the spec pattern is invalid regex', () {
-      // Spec author's pattern doesn't parse as a Dart RegExp. Synthesizer
-      // doesn't crash — returns a padded fallback.
+    test('string keeps the fallback example when the spec pattern is invalid '
+        'regex', () {
+      // Spec author's pattern doesn't parse as a Dart RegExp, so there's
+      // nothing to validate against (the generated `validate(pattern:)` is
+      // equally lenient) — keep the padded fallback rather than opting out.
       const schema = RenderString(
         common: CommonProperties.test(
           snakeName: 'foo',
@@ -1766,7 +1826,7 @@ void main() {
 
     test('a validating numeric newtype default is not constant', () {
       // The generated constructor has a validating body
-      // (`validateMinimum`), so it cannot be declared `const`. Emitting
+      // (`validate(min: 1)`), so it cannot be declared `const`. Emitting
       // `const WaitTimer(30)` against it would not compile. No spec in the
       // rotation reaches this today, which is why it needs a unit test.
       const schema = RenderInteger(
@@ -1780,7 +1840,7 @@ void main() {
         multipleOf: null,
         assignedName: 'WaitTimer',
       );
-      expect(schema.validationCalls, isNotEmpty);
+      expect(schema.validationCall, 'validate(min: 1)');
       expect(schema.defaultValueExpression(context)?.source, 'WaitTimer(30)');
       expect(schema.defaultValueExpression(context)?.canBeConst, isFalse);
       expect(schema.hasNonConstDefaultValue(context), isTrue);
@@ -2059,6 +2119,20 @@ void main() {
       expect(
         synthesizeStringSatisfying(pattern: r'^Z+$', minLength: 10),
         "example${'e' * 3}",
+      );
+    });
+
+    test('base64 fixed-block pattern matches the length-4 candidate', () {
+      // github's secret `^(?:[A-Za-z0-9+/]{4})*(?:...==|...=|...{4})$` needs a
+      // multiple-of-4 length; the single-char `targetLen` candidates (len 1)
+      // all fail, and `'a' * 4` is the first that matches.
+      expect(
+        synthesizeStringSatisfying(
+          pattern:
+              '^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}=='
+              r'|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$',
+        ),
+        'aaaa',
       );
     });
   });

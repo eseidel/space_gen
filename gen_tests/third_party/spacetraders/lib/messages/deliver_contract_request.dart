@@ -1,13 +1,16 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 
 @immutable
 class DeliverContractRequest {
-  const DeliverContractRequest({
+  DeliverContractRequest({
     required this.shipSymbol,
     required this.tradeSymbol,
     required this.units,
-  });
+  }) {
+    units.validate(min: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [DeliverContractRequest].
   factory DeliverContractRequest.fromJson(Map<String, dynamic> json) {

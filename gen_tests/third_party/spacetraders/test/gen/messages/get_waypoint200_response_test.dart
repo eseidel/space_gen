@@ -12,7 +12,7 @@ void main() {
           systemSymbol: SystemSymbol('example'),
           x: 0,
           y: 0,
-          orbitals: const <WaypointOrbital>[WaypointOrbital(symbol: 'example')],
+          orbitals: <WaypointOrbital>[WaypointOrbital(symbol: 'example')],
           traits: const <WaypointTrait>[
             WaypointTrait(
               symbol: WaypointTraitSymbol.uncharted,

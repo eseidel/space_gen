@@ -1,10 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class BulkDeleteMessagesRequest {
-  const BulkDeleteMessagesRequest({required this.messages});
+  BulkDeleteMessagesRequest({required this.messages}) {
+    messages.validate(minItems: 2, maxItems: 100, unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [BulkDeleteMessagesRequest].
   factory BulkDeleteMessagesRequest.fromJson(Map<String, dynamic> json) {

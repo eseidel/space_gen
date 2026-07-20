@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/checks_create_request_one_of_1_output_annotations_inner.dart';
 import 'package:github/models/checks_create_request_one_of_1_output_images_inner.dart';
@@ -11,13 +12,17 @@ import 'package:meta/meta.dart';
 @immutable
 class ChecksCreateRequestOneOf1Output {
   /// {@macro checks_create_request_one_of_1_output}
-  const ChecksCreateRequestOneOf1Output({
+  ChecksCreateRequestOneOf1Output({
     required this.title,
     required this.summary,
     this.text,
     this.annotations,
     this.images,
-  });
+  }) {
+    summary.validate(maxLength: 65535);
+    text?.validate(maxLength: 65535);
+    annotations?.validate(maxItems: 50);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ChecksCreateRequestOneOf1Output].
   factory ChecksCreateRequestOneOf1Output.fromJson(Map<String, dynamic> json) {

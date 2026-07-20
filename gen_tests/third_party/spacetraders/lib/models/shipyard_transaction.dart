@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/waypoint_symbol.dart';
 
@@ -8,14 +9,16 @@ import 'package:spacetraders/models/waypoint_symbol.dart';
 @immutable
 class ShipyardTransaction {
   /// {@macro shipyard_transaction}
-  const ShipyardTransaction({
+  ShipyardTransaction({
     required this.waypointSymbol,
     @deprecated required this.shipSymbol,
     required this.shipType,
     required this.price,
     required this.agentSymbol,
     required this.timestamp,
-  });
+  }) {
+    price.validate(min: 0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ShipyardTransaction].
   factory ShipyardTransaction.fromJson(Map<String, dynamic> json) {

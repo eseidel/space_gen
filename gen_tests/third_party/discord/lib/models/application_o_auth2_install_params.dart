@@ -1,10 +1,20 @@
+// A spec constraint bound exceeds JS's safe-integer range, so the
+// generated `validate` call carries an integer literal dart2js
+// rounds. The bound is faithful to the spec; precise web handling of
+// 64-bit integers is tracked in
+// https://github.com/eseidel/space_gen/issues/185.
+// ignore_for_file: avoid_js_rounded_ints
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/o_auth2_scopes.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class ApplicationOAuth2InstallParams {
-  const ApplicationOAuth2InstallParams({this.scopes, this.permissions});
+  ApplicationOAuth2InstallParams({this.scopes, this.permissions}) {
+    scopes?.validate(minItems: 1, unique: true);
+    permissions?.validate(min: 0, max: 18014398509481983);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [ApplicationOAuth2InstallParams].
   factory ApplicationOAuth2InstallParams.fromJson(Map<String, dynamic> json) {

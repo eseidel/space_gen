@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/repository_advisory_update_credits_inner.dart';
 import 'package:github/models/repository_advisory_update_severity.dart';
@@ -7,7 +8,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class RepositoryAdvisoryUpdate {
-  const RepositoryAdvisoryUpdate({
+  RepositoryAdvisoryUpdate({
     this.summary,
     this.description,
     this.cveId,
@@ -19,7 +20,10 @@ class RepositoryAdvisoryUpdate {
     this.state,
     this.collaboratingUsers,
     this.collaboratingTeams,
-  });
+  }) {
+    summary?.validate(maxLength: 1024);
+    description?.validate(maxLength: 65535);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryAdvisoryUpdate].
   factory RepositoryAdvisoryUpdate.fromJson(Map<String, dynamic> json) {

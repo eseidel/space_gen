@@ -1,15 +1,15 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/webhook_slack_embed.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class SlackWebhook {
-  const SlackWebhook({
-    this.text,
-    this.username,
-    this.iconUrl,
-    this.attachments,
-  });
+  SlackWebhook({this.text, this.username, this.iconUrl, this.attachments}) {
+    text?.validate(maxLength: 2000);
+    username?.validate(maxLength: 152133);
+    attachments?.validate(maxItems: 1521);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [SlackWebhook].
   factory SlackWebhook.fromJson(Map<String, dynamic> json) {

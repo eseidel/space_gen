@@ -1,16 +1,20 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/create_or_join_lobby_request_flags_one_of_1.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CreateOrJoinLobbyRequest {
-  const CreateOrJoinLobbyRequest({
+  CreateOrJoinLobbyRequest({
     required this.secret,
     this.idleTimeoutSeconds,
     this.lobbyMetadata,
     this.memberMetadata,
     this.flags,
-  });
+  }) {
+    idleTimeoutSeconds?.validate(min: 5, max: 604800);
+    secret.validate(maxLength: 250);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreateOrJoinLobbyRequest].
   factory CreateOrJoinLobbyRequest.fromJson(Map<String, dynamic> json) {

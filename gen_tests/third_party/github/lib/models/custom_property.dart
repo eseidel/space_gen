@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/custom_property_default_value.dart';
 import 'package:github/models/custom_property_source_type.dart';
@@ -12,7 +13,7 @@ import 'package:meta/meta.dart';
 @immutable
 class CustomProperty {
   /// {@macro custom_property}
-  const CustomProperty({
+  CustomProperty({
     required this.propertyName,
     required this.valueType,
     this.url,
@@ -22,7 +23,9 @@ class CustomProperty {
     this.description,
     this.allowedValues,
     this.valuesEditableBy,
-  });
+  }) {
+    allowedValues?.validate(maxItems: 200);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CustomProperty].
   factory CustomProperty.fromJson(Map<String, dynamic> json) {

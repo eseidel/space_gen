@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/message_allowed_mentions_request.dart';
 import 'package:discord/messages/message_attachment_request.dart';
 import 'package:discord/model_helpers.dart';
@@ -8,7 +9,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class MessageEditRequestPartial {
-  const MessageEditRequestPartial({
+  MessageEditRequestPartial({
     this.content,
     this.embeds,
     this.flags,
@@ -16,7 +17,13 @@ class MessageEditRequestPartial {
     this.stickerIds,
     this.components,
     this.attachments,
-  });
+  }) {
+    content?.validate(maxLength: 4000);
+    embeds?.validate(maxItems: 10);
+    stickerIds?.validate(maxItems: 1521);
+    components?.validate(maxItems: 40);
+    attachments?.validate(maxItems: 10);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [MessageEditRequestPartial].
   factory MessageEditRequestPartial.fromJson(Map<String, dynamic> json) {

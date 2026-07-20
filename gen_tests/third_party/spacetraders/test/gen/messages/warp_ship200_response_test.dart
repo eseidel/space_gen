@@ -31,7 +31,7 @@ void main() {
             status: ShipNavStatus.inTransit,
             flightMode: ShipNavFlightMode.drift,
           ),
-          fuel: const ShipFuel(current: 0, capacity: 0),
+          fuel: ShipFuel(current: 0, capacity: 0),
           events: const <ShipConditionEvent>[
             ShipConditionEvent(
               symbol: ShipConditionEventSymbol.reactorOverload,

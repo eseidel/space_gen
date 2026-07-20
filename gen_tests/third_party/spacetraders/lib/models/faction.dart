@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/faction_symbol.dart';
 import 'package:spacetraders/models/faction_trait.dart';
@@ -9,14 +10,18 @@ import 'package:spacetraders/models/faction_trait.dart';
 @immutable
 class Faction {
   /// {@macro faction}
-  const Faction({
+  Faction({
     required this.symbol,
     required this.name,
     required this.description,
     required this.traits,
     required this.isRecruiting,
     this.headquarters,
-  });
+  }) {
+    name.validate(minLength: 1);
+    description.validate(minLength: 1);
+    headquarters?.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [Faction].
   factory Faction.fromJson(Map<String, dynamic> json) {

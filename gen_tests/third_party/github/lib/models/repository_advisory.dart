@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/cvss_severities.dart';
 import 'package:github/models/repository_advisory_author.dart';
@@ -22,7 +23,7 @@ import 'package:meta/meta.dart';
 @immutable
 class RepositoryAdvisory {
   /// {@macro repository_advisory}
-  const RepositoryAdvisory({
+  RepositoryAdvisory({
     required this.ghsaId,
     required this.cveId,
     required this.url,
@@ -50,7 +51,10 @@ class RepositoryAdvisory {
     required this.collaboratingTeams,
     required this.privateFork,
     this.cvssSeverities,
-  });
+  }) {
+    summary.validate(maxLength: 1024);
+    description?.validate(maxLength: 65535);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryAdvisory].
   factory RepositoryAdvisory.fromJson(Map<String, dynamic> json) {

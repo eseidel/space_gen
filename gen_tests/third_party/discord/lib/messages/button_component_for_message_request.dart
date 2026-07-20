@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/component_emoji_for_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/button_style_types.dart';
@@ -7,7 +8,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class ButtonComponentForMessageRequest {
-  const ButtonComponentForMessageRequest({
+  ButtonComponentForMessageRequest({
     required this.style,
     this.id,
     this.customId,
@@ -16,7 +17,11 @@ class ButtonComponentForMessageRequest {
     this.url,
     this.skuId,
     this.emoji,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId?.validate(minLength: 1, maxLength: 100);
+    label?.validate(maxLength: 80);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ButtonComponentForMessageRequest].
   factory ButtonComponentForMessageRequest.fromJson(Map<String, dynamic> json) {

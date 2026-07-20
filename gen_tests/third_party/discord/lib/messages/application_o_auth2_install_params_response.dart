@@ -1,13 +1,16 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/o_auth2_scopes.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class ApplicationOAuth2InstallParamsResponse {
-  const ApplicationOAuth2InstallParamsResponse({
+  ApplicationOAuth2InstallParamsResponse({
     required this.scopes,
     required this.permissions,
-  });
+  }) {
+    scopes.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [ApplicationOAuth2InstallParamsResponse].

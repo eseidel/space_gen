@@ -1,10 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class UpdateDefaultReactionEmojiRequest {
-  const UpdateDefaultReactionEmojiRequest({this.emojiId, this.emojiName});
+  UpdateDefaultReactionEmojiRequest({this.emojiId, this.emojiName}) {
+    emojiName?.validate(maxLength: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [UpdateDefaultReactionEmojiRequest].

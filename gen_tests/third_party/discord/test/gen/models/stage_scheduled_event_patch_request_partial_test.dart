@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('StageScheduledEventPatchRequestPartial', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = StageScheduledEventPatchRequestPartial();
+      final instance = StageScheduledEventPatchRequestPartial();
       final parsed = StageScheduledEventPatchRequestPartial.maybeFromJson(
         instance.toJson(),
       )!;

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CustomPropertySetPayload', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CustomPropertySetPayload(
+      final instance = CustomPropertySetPayload(
         valueType: CustomPropertySetPayloadValueType.string,
       );
       final parsed = CustomPropertySetPayload.maybeFromJson(instance.toJson())!;

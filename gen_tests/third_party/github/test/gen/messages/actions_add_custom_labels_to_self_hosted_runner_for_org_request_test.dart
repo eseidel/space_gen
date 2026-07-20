@@ -5,8 +5,8 @@ import 'package:test/test.dart';
 void main() {
   group('ActionsAddCustomLabelsToSelfHostedRunnerForOrgRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ActionsAddCustomLabelsToSelfHostedRunnerForOrgRequest(
-        labels: <String>['example'],
+      final instance = ActionsAddCustomLabelsToSelfHostedRunnerForOrgRequest(
+        labels: const <String>['example'],
       );
       final parsed =
           ActionsAddCustomLabelsToSelfHostedRunnerForOrgRequest.maybeFromJson(

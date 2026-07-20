@@ -1,14 +1,19 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/modal_interaction_callback_request_data_components_inner.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class ModalInteractionCallbackRequestData {
-  const ModalInteractionCallbackRequestData({
+  ModalInteractionCallbackRequestData({
     required this.customId,
     required this.title,
     required this.components,
-  });
+  }) {
+    customId.validate(minLength: 1, maxLength: 100);
+    title.validate(minLength: 1, maxLength: 45);
+    components.validate(minItems: 1, maxItems: 40);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [ModalInteractionCallbackRequestData].

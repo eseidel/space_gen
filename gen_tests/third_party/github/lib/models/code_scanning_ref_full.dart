@@ -5,7 +5,7 @@ import 'package:github/api_exception.dart';
 /// Example: `'refs/heads/main'`
 extension type const CodeScanningRefFull._(String value) {
   CodeScanningRefFull(this.value) {
-    value.validatePattern(r'^refs/(heads|tags|pull)/.*$');
+    value.validate(pattern: r'^refs/(heads|tags|pull)/.*$');
   }
 
   factory CodeScanningRefFull.fromJson(String json) =>

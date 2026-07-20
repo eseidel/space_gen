@@ -2,6 +2,7 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/automod_event_type.dart';
 import 'package:discord/models/automod_trigger_type.dart';
@@ -50,7 +51,7 @@ sealed class CreateAutoModerationRuleRequest {
 @immutable
 final class DefaultKeywordListUpsertRequest
     extends CreateAutoModerationRuleRequest {
-  const DefaultKeywordListUpsertRequest({
+  DefaultKeywordListUpsertRequest({
     required this.name,
     required this.eventType,
     required this.triggerMetadata,
@@ -58,7 +59,12 @@ final class DefaultKeywordListUpsertRequest
     this.enabled,
     this.exemptRoles,
     this.exemptChannels,
-  });
+  }) {
+    name.validate(maxLength: 100);
+    actions?.validate(minItems: 1, maxItems: 5);
+    exemptRoles?.validate(maxItems: 20, unique: true);
+    exemptChannels?.validate(maxItems: 50, unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [DefaultKeywordListUpsertRequest].
   factory DefaultKeywordListUpsertRequest.fromJson(Map<String, dynamic> json) {
@@ -151,7 +157,7 @@ final class DefaultKeywordListUpsertRequest
 
 @immutable
 final class KeywordUpsertRequest extends CreateAutoModerationRuleRequest {
-  const KeywordUpsertRequest({
+  KeywordUpsertRequest({
     required this.name,
     required this.eventType,
     this.actions,
@@ -159,7 +165,12 @@ final class KeywordUpsertRequest extends CreateAutoModerationRuleRequest {
     this.exemptRoles,
     this.exemptChannels,
     this.triggerMetadata,
-  });
+  }) {
+    name.validate(maxLength: 100);
+    actions?.validate(minItems: 1, maxItems: 5);
+    exemptRoles?.validate(maxItems: 20, unique: true);
+    exemptChannels?.validate(maxItems: 50, unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [KeywordUpsertRequest].
   factory KeywordUpsertRequest.fromJson(Map<String, dynamic> json) {
@@ -250,7 +261,7 @@ final class KeywordUpsertRequest extends CreateAutoModerationRuleRequest {
 
 @immutable
 final class MlSpamUpsertRequest extends CreateAutoModerationRuleRequest {
-  const MlSpamUpsertRequest({
+  MlSpamUpsertRequest({
     required this.name,
     required this.eventType,
     this.actions,
@@ -258,7 +269,12 @@ final class MlSpamUpsertRequest extends CreateAutoModerationRuleRequest {
     this.exemptRoles,
     this.exemptChannels,
     this.triggerMetadata,
-  });
+  }) {
+    name.validate(maxLength: 100);
+    actions?.validate(minItems: 1, maxItems: 5);
+    exemptRoles?.validate(maxItems: 20, unique: true);
+    exemptChannels?.validate(maxItems: 50, unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [MlSpamUpsertRequest].
   factory MlSpamUpsertRequest.fromJson(Map<String, dynamic> json) {
@@ -349,7 +365,7 @@ final class MlSpamUpsertRequest extends CreateAutoModerationRuleRequest {
 
 @immutable
 final class MentionSpamUpsertRequest extends CreateAutoModerationRuleRequest {
-  const MentionSpamUpsertRequest({
+  MentionSpamUpsertRequest({
     required this.name,
     required this.eventType,
     this.actions,
@@ -357,7 +373,12 @@ final class MentionSpamUpsertRequest extends CreateAutoModerationRuleRequest {
     this.exemptRoles,
     this.exemptChannels,
     this.triggerMetadata,
-  });
+  }) {
+    name.validate(maxLength: 100);
+    actions?.validate(minItems: 1, maxItems: 5);
+    exemptRoles?.validate(maxItems: 20, unique: true);
+    exemptChannels?.validate(maxItems: 50, unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [MentionSpamUpsertRequest].
   factory MentionSpamUpsertRequest.fromJson(Map<String, dynamic> json) {

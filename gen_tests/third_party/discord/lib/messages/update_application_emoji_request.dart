@@ -1,9 +1,12 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class UpdateApplicationEmojiRequest {
-  const UpdateApplicationEmojiRequest({this.name});
+  UpdateApplicationEmojiRequest({this.name}) {
+    name?.validate(minLength: 2, maxLength: 32);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UpdateApplicationEmojiRequest].
   factory UpdateApplicationEmojiRequest.fromJson(Map<String, dynamic> json) {

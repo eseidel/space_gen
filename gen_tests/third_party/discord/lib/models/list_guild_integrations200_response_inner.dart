@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/account_response.dart';
 import 'package:discord/messages/integration_application_response.dart';
 import 'package:discord/messages/user_response.dart';
@@ -42,7 +43,7 @@ sealed class ListGuildIntegrations200ResponseInner {
 @immutable
 final class DiscordIntegrationResponse
     extends ListGuildIntegrations200ResponseInner {
-  const DiscordIntegrationResponse({
+  DiscordIntegrationResponse({
     required this.name,
     required this.account,
     required this.enabled,
@@ -50,7 +51,9 @@ final class DiscordIntegrationResponse
     required this.application,
     required this.scopes,
     this.user,
-  });
+  }) {
+    scopes.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [DiscordIntegrationResponse].
   factory DiscordIntegrationResponse.fromJson(Map<String, dynamic> json) {

@@ -1,15 +1,19 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CreateOrUpdateThreadTagRequest {
-  const CreateOrUpdateThreadTagRequest({
+  CreateOrUpdateThreadTagRequest({
     required this.name,
     this.emojiId,
     this.emojiName,
     this.moderated,
-  });
+  }) {
+    name.validate(minLength: 0, maxLength: 50);
+    emojiName?.validate(maxLength: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreateOrUpdateThreadTagRequest].
   factory CreateOrUpdateThreadTagRequest.fromJson(Map<String, dynamic> json) {

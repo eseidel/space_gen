@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/ship_mount_deposits_inner.dart';
 import 'package:spacetraders/models/ship_mount_symbol.dart';
@@ -10,14 +11,16 @@ import 'package:spacetraders/models/ship_requirements.dart';
 @immutable
 class ShipMount {
   /// {@macro ship_mount}
-  const ShipMount({
+  ShipMount({
     required this.symbol,
     required this.name,
     required this.description,
     required this.requirements,
     this.strength,
     this.deposits,
-  });
+  }) {
+    strength?.validate(min: 0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ShipMount].
   factory ShipMount.fromJson(Map<String, dynamic> json) {

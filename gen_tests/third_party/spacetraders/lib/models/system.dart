@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/system_faction.dart';
 import 'package:spacetraders/models/system_type.dart';
@@ -10,7 +11,7 @@ import 'package:spacetraders/models/system_waypoint.dart';
 @immutable
 class System {
   /// {@macro system}
-  const System({
+  System({
     required this.symbol,
     required this.sectorSymbol,
     required this.type,
@@ -20,7 +21,10 @@ class System {
     required this.factions,
     this.constellation,
     this.name,
-  });
+  }) {
+    symbol.validate(minLength: 1);
+    sectorSymbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [System].
   factory System.fromJson(Map<String, dynamic> json) {

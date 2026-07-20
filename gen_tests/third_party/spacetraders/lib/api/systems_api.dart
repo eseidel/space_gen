@@ -34,9 +34,8 @@ class SystemsApi {
     int? page = 1,
     int? limit = 10,
   }) async {
-    page?.validateMinimum(1);
-    limit?.validateMaximum(20);
-    limit?.validateMinimum(1);
+    page?.validate(min: 1);
+    limit?.validate(min: 1, max: 20);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -105,9 +104,8 @@ class SystemsApi {
     WaypointType? type,
     List<WaypointTraitSymbol>? traits,
   }) async {
-    page?.validateMinimum(1);
-    limit?.validateMaximum(20);
-    limit?.validateMinimum(1);
+    page?.validate(min: 1);
+    limit?.validate(min: 1, max: 20);
 
     final response = await client.invokeApi(
       method: Method.get,

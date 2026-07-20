@@ -19,9 +19,7 @@ void main() {
                 type: WaypointType.planet,
                 x: 0,
                 y: 0,
-                orbitals: const <WaypointOrbital>[
-                  WaypointOrbital(symbol: 'example'),
-                ],
+                orbitals: <WaypointOrbital>[WaypointOrbital(symbol: 'example')],
               ),
             ],
             factions: const <SystemFaction>[
@@ -29,7 +27,7 @@ void main() {
             ],
           ),
         ],
-        meta: const Meta(total: 0, limit: 1),
+        meta: Meta(total: 0, limit: 1),
       );
       final parsed = GetSystems200Response.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));

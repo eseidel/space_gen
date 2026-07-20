@@ -2,6 +2,7 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/message_allowed_mentions_request.dart';
 import 'package:discord/messages/message_attachment_request.dart';
 import 'package:discord/model_helpers.dart';
@@ -11,14 +12,19 @@ import 'package:meta/meta.dart';
 
 @immutable
 class IncomingWebhookUpdateForInteractionCallbackRequestPartial {
-  const IncomingWebhookUpdateForInteractionCallbackRequestPartial({
+  IncomingWebhookUpdateForInteractionCallbackRequestPartial({
     this.content,
     this.embeds,
     this.allowedMentions,
     this.components,
     this.attachments,
     this.flags,
-  });
+  }) {
+    content?.validate(maxLength: 2000);
+    embeds?.validate(maxItems: 10);
+    components?.validate(maxItems: 40);
+    attachments?.validate(maxItems: 10);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [IncomingWebhookUpdateForInteractionCallbackRequestPartial].

@@ -1,10 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class PollEmojiCreateRequest {
-  const PollEmojiCreateRequest({this.id, this.name, this.animated});
+  PollEmojiCreateRequest({this.id, this.name, this.animated}) {
+    name?.validate(maxLength: 32);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [PollEmojiCreateRequest].
   factory PollEmojiCreateRequest.fromJson(Map<String, dynamic> json) {

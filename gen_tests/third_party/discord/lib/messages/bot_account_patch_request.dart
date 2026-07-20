@@ -1,14 +1,13 @@
 import 'dart:typed_data';
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class BotAccountPatchRequest {
-  const BotAccountPatchRequest({
-    required this.username,
-    this.avatar,
-    this.banner,
-  });
+  BotAccountPatchRequest({required this.username, this.avatar, this.banner}) {
+    username.validate(minLength: 2, maxLength: 32);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [BotAccountPatchRequest].
   factory BotAccountPatchRequest.fromJson(Map<String, dynamic> json) {

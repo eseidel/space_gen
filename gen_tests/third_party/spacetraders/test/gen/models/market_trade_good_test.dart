@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('MarketTradeGood', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = MarketTradeGood(
+      final instance = MarketTradeGood(
         symbol: TradeSymbol.preciousStones,
         type: MarketTradeGoodType.export_,
         tradeVolume: 1,

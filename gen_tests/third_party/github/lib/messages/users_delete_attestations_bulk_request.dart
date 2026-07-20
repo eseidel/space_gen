@@ -2,6 +2,7 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
@@ -42,9 +43,9 @@ sealed class UsersDeleteAttestationsBulkRequest {
 @immutable
 final class UsersDeleteAttestationsBulkRequestOneOf0
     extends UsersDeleteAttestationsBulkRequest {
-  const UsersDeleteAttestationsBulkRequestOneOf0({
-    required this.subjectDigests,
-  });
+  UsersDeleteAttestationsBulkRequestOneOf0({required this.subjectDigests}) {
+    subjectDigests.validate(minItems: 1, maxItems: 1024);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [UsersDeleteAttestationsBulkRequestOneOf0].
@@ -96,9 +97,9 @@ final class UsersDeleteAttestationsBulkRequestOneOf0
 @immutable
 final class UsersDeleteAttestationsBulkRequestOneOf1
     extends UsersDeleteAttestationsBulkRequest {
-  const UsersDeleteAttestationsBulkRequestOneOf1({
-    required this.attestationIds,
-  });
+  UsersDeleteAttestationsBulkRequestOneOf1({required this.attestationIds}) {
+    attestationIds.validate(minItems: 1, maxItems: 1024);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [UsersDeleteAttestationsBulkRequestOneOf1].

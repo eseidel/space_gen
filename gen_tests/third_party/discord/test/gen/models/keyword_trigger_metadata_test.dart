@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('KeywordTriggerMetadata', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = KeywordTriggerMetadata();
+      final instance = KeywordTriggerMetadata();
       final parsed = KeywordTriggerMetadata.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

@@ -1,9 +1,12 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CvssSeveritiesCvssV4 {
-  const CvssSeveritiesCvssV4({required this.vectorString, required this.score});
+  CvssSeveritiesCvssV4({required this.vectorString, required this.score}) {
+    score?.validate(min: 0.0, max: 10.0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CvssSeveritiesCvssV4].
   factory CvssSeveritiesCvssV4.fromJson(Map<String, dynamic> json) {

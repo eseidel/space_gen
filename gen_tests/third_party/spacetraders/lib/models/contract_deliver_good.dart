@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 
 /// {@template contract_deliver_good}
@@ -8,12 +9,15 @@ import 'package:spacetraders/model_helpers.dart';
 @immutable
 class ContractDeliverGood {
   /// {@macro contract_deliver_good}
-  const ContractDeliverGood({
+  ContractDeliverGood({
     required this.tradeSymbol,
     required this.destinationSymbol,
     required this.unitsRequired,
     required this.unitsFulfilled,
-  });
+  }) {
+    tradeSymbol.validate(minLength: 1);
+    destinationSymbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ContractDeliverGood].
   factory ContractDeliverGood.fromJson(Map<String, dynamic> json) {

@@ -11,8 +11,8 @@ void main() {
     test(
       'UsersDeleteAttestationsBulkRequestOneOf0 round-trips via maybeFromJson/toJson',
       () {
-        const instance = UsersDeleteAttestationsBulkRequestOneOf0(
-          subjectDigests: <String>['example'],
+        final instance = UsersDeleteAttestationsBulkRequestOneOf0(
+          subjectDigests: const <String>['example'],
         );
         final parsed = UsersDeleteAttestationsBulkRequestOneOf0.maybeFromJson(
           instance.toJson(),
@@ -25,8 +25,8 @@ void main() {
     test(
       'UsersDeleteAttestationsBulkRequestOneOf1 round-trips via maybeFromJson/toJson',
       () {
-        const instance = UsersDeleteAttestationsBulkRequestOneOf1(
-          attestationIds: <int>[0],
+        final instance = UsersDeleteAttestationsBulkRequestOneOf1(
+          attestationIds: const <int>[0],
         );
         final parsed = UsersDeleteAttestationsBulkRequestOneOf1.maybeFromJson(
           instance.toJson(),

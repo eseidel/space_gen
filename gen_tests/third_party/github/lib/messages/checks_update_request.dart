@@ -8,6 +8,7 @@
 // symbol exists. Suppress file-locally so the lint stays live
 // elsewhere; spec authors do not always escape brackets.
 // ignore_for_file: comment_references
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/checks_update_request_any_of_0_actions_inner.dart';
 import 'package:github/models/checks_update_request_any_of_0_conclusion.dart';
@@ -44,7 +45,7 @@ sealed class ChecksUpdateRequest {
 
 @immutable
 final class ChecksUpdateRequestAnyOf0 extends ChecksUpdateRequest {
-  const ChecksUpdateRequestAnyOf0({
+  ChecksUpdateRequestAnyOf0({
     required this.conclusion,
     required this.entries,
     this.name,
@@ -55,7 +56,9 @@ final class ChecksUpdateRequestAnyOf0 extends ChecksUpdateRequest {
     this.completedAt,
     this.output,
     this.actions,
-  });
+  }) {
+    actions?.validate(maxItems: 3);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ChecksUpdateRequestAnyOf0].
   factory ChecksUpdateRequestAnyOf0.fromJson(Map<String, dynamic> json) {
@@ -231,7 +234,7 @@ final class ChecksUpdateRequestAnyOf0 extends ChecksUpdateRequest {
 
 @immutable
 final class ChecksUpdateRequestAnyOf1 extends ChecksUpdateRequest {
-  const ChecksUpdateRequestAnyOf1({
+  ChecksUpdateRequestAnyOf1({
     required this.entries,
     this.name,
     this.detailsUrl,
@@ -242,7 +245,9 @@ final class ChecksUpdateRequestAnyOf1 extends ChecksUpdateRequest {
     this.completedAt,
     this.output,
     this.actions,
-  });
+  }) {
+    actions?.validate(maxItems: 3);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ChecksUpdateRequestAnyOf1].
   factory ChecksUpdateRequestAnyOf1.fromJson(Map<String, dynamic> json) {

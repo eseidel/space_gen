@@ -5,10 +5,13 @@ import 'package:test/test.dart';
 void main() {
   group('SiphonResources201ResponseData', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = SiphonResources201ResponseData(
+      final instance = SiphonResources201ResponseData(
         siphon: Siphon(
           shipSymbol: 'example',
-          yield_: SiphonYield(symbol: TradeSymbol.preciousStones, units: 0),
+          yield_: const SiphonYield(
+            symbol: TradeSymbol.preciousStones,
+            units: 0,
+          ),
         ),
         cooldown: Cooldown(
           shipSymbol: 'example',
@@ -27,7 +30,7 @@ void main() {
             ),
           ],
         ),
-        events: <ShipConditionEvent>[
+        events: const <ShipConditionEvent>[
           ShipConditionEvent(
             symbol: ShipConditionEventSymbol.reactorOverload,
             component: ShipConditionEventComponent.frame,

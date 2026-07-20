@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('BanUserFromGuildRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = BanUserFromGuildRequest();
+      final instance = BanUserFromGuildRequest();
       final parsed = BanUserFromGuildRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

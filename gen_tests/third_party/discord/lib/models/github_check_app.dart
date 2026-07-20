@@ -1,9 +1,12 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class GithubCheckApp {
-  const GithubCheckApp({required this.name});
+  GithubCheckApp({required this.name}) {
+    name.validate(maxLength: 152133);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GithubCheckApp].
   factory GithubCheckApp.fromJson(Map<String, dynamic> json) {

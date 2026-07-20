@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/guild_features.dart';
 import 'package:discord/models/guild_nsfw_content_level.dart';
@@ -7,7 +8,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class InviteGuildResponse {
-  const InviteGuildResponse({
+  InviteGuildResponse({
     required this.id,
     required this.name,
     required this.splash,
@@ -20,7 +21,9 @@ class InviteGuildResponse {
     required this.nsfwLevel,
     required this.nsfw,
     required this.premiumSubscriptionCount,
-  });
+  }) {
+    features.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [InviteGuildResponse].
   factory InviteGuildResponse.fromJson(Map<String, dynamic> json) {

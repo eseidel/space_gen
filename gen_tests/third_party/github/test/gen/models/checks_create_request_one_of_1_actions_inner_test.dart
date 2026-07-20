@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ChecksCreateRequestOneOf1ActionsInner', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ChecksCreateRequestOneOf1ActionsInner(
+      final instance = ChecksCreateRequestOneOf1ActionsInner(
         label: 'example',
         description: 'example',
         identifier: 'example',

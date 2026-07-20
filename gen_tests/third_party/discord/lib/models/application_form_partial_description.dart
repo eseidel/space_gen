@@ -1,12 +1,15 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class ApplicationFormPartialDescription {
-  const ApplicationFormPartialDescription({
+  ApplicationFormPartialDescription({
     required this.default_,
     this.localizations,
-  });
+  }) {
+    default_.validate(maxLength: 400);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [ApplicationFormPartialDescription].

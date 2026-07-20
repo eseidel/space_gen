@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('PublicAgent', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = PublicAgent(
+      final instance = PublicAgent(
         symbol: 'example',
         headquarters: 'example',
         credits: 0,

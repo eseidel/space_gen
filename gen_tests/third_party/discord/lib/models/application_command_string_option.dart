@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/application_command_option_string_choice.dart';
 import 'package:discord/models/application_command_option_type.dart';
@@ -5,7 +6,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class ApplicationCommandStringOption {
-  const ApplicationCommandStringOption({
+  ApplicationCommandStringOption({
     required this.name,
     required this.description,
     this.nameLocalizations,
@@ -15,7 +16,13 @@ class ApplicationCommandStringOption {
     this.minLength,
     this.maxLength,
     this.choices,
-  });
+  }) {
+    name.validate(minLength: 1, maxLength: 32);
+    description.validate(minLength: 1, maxLength: 100);
+    minLength?.validate(min: 0, max: 6000);
+    maxLength?.validate(min: 1, max: 6000);
+    choices?.validate(maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [ApplicationCommandStringOption].
   factory ApplicationCommandStringOption.fromJson(Map<String, dynamic> json) {

@@ -1,12 +1,17 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class UsersCreatePublicSshKeyForAuthenticatedUserRequest {
-  const UsersCreatePublicSshKeyForAuthenticatedUserRequest({
+  UsersCreatePublicSshKeyForAuthenticatedUserRequest({
     required this.key,
     this.title,
-  });
+  }) {
+    key.validate(
+      pattern: '^ssh-(rsa|dss|ed25519) |^ecdsa-sha2-nistp(256|384|521) ',
+    );
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [UsersCreatePublicSshKeyForAuthenticatedUserRequest].

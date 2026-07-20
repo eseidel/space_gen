@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('MessageAllowedMentionsRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = MessageAllowedMentionsRequest();
+      final instance = MessageAllowedMentionsRequest();
       final parsed = MessageAllowedMentionsRequest.maybeFromJson(
         instance.toJson(),
       )!;

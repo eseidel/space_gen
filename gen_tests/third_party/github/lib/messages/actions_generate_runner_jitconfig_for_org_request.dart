@@ -1,14 +1,17 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class ActionsGenerateRunnerJitconfigForOrgRequest {
-  const ActionsGenerateRunnerJitconfigForOrgRequest({
+  ActionsGenerateRunnerJitconfigForOrgRequest({
     required this.name,
     required this.runnerGroupId,
     required this.labels,
     this.workFolder = '_work',
-  });
+  }) {
+    labels.validate(minItems: 1, maxItems: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [ActionsGenerateRunnerJitconfigForOrgRequest].

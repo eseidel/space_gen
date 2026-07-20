@@ -5,8 +5,8 @@ import 'package:test/test.dart';
 void main() {
   group('CodespacesSetCodespacesAccessUsersRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CodespacesSetCodespacesAccessUsersRequest(
-        selectedUsernames: <String>['example'],
+      final instance = CodespacesSetCodespacesAccessUsersRequest(
+        selectedUsernames: const <String>['example'],
       );
       final parsed = CodespacesSetCodespacesAccessUsersRequest.maybeFromJson(
         instance.toJson(),

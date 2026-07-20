@@ -5,13 +5,13 @@ import 'package:test/test.dart';
 void main() {
   group('GetShipModules200Response', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = GetShipModules200Response(
+      final instance = GetShipModules200Response(
         data: <ShipModule>[
           ShipModule(
             symbol: ShipModuleSymbol.moduleMineralProcessorI,
             name: 'example',
             description: 'example',
-            requirements: ShipRequirements(),
+            requirements: const ShipRequirements(),
           ),
         ],
       );

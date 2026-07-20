@@ -1,9 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class GithubAuthor {
-  const GithubAuthor({required this.name, this.username});
+  GithubAuthor({required this.name, this.username}) {
+    username?.validate(maxLength: 152133);
+    name.validate(maxLength: 152133);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GithubAuthor].
   factory GithubAuthor.fromJson(Map<String, dynamic> json) {

@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/application_command_option_type.dart';
 import 'package:discord/models/channel_types.dart';
@@ -5,7 +6,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class ApplicationCommandChannelOptionResponse {
-  const ApplicationCommandChannelOptionResponse({
+  ApplicationCommandChannelOptionResponse({
     required this.name,
     required this.description,
     this.nameLocalized,
@@ -14,7 +15,9 @@ class ApplicationCommandChannelOptionResponse {
     this.descriptionLocalizations,
     this.required_,
     this.channelTypes,
-  });
+  }) {
+    channelTypes?.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [ApplicationCommandChannelOptionResponse].

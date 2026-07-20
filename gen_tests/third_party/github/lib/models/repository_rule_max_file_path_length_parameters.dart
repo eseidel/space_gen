@@ -1,11 +1,12 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class RepositoryRuleMaxFilePathLengthParameters {
-  const RepositoryRuleMaxFilePathLengthParameters({
-    required this.maxFilePathLength,
-  });
+  RepositoryRuleMaxFilePathLengthParameters({required this.maxFilePathLength}) {
+    maxFilePathLength.validate(min: 1, max: 256);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RepositoryRuleMaxFilePathLengthParameters].

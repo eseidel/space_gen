@@ -5,8 +5,8 @@ import 'package:test/test.dart';
 void main() {
   group('CopilotAddCopilotSeatsForTeamsRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CopilotAddCopilotSeatsForTeamsRequest(
-        selectedTeams: <String>['example'],
+      final instance = CopilotAddCopilotSeatsForTeamsRequest(
+        selectedTeams: const <String>['example'],
       );
       final parsed = CopilotAddCopilotSeatsForTeamsRequest.maybeFromJson(
         instance.toJson(),

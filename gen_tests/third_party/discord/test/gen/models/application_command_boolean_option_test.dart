@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ApplicationCommandBooleanOption', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ApplicationCommandBooleanOption(
+      final instance = ApplicationCommandBooleanOption(
         name: 'example',
         description: 'example',
       );

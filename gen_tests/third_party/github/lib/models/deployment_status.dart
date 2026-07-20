@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/deployment_status_state.dart';
 import 'package:github/models/integration.dart';
@@ -29,7 +30,9 @@ class DeploymentStatus {
     this.performedViaGithubApp,
   }) : targetUrl = targetUrl ?? Uri.parse(''),
        environmentUrl = environmentUrl ?? Uri.parse(''),
-       logUrl = logUrl ?? Uri.parse('');
+       logUrl = logUrl ?? Uri.parse('') {
+    description.validate(maxLength: 140);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [DeploymentStatus].
   factory DeploymentStatus.fromJson(Map<String, dynamic> json) {

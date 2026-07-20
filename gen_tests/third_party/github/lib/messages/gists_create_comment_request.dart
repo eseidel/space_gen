@@ -1,9 +1,12 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class GistsCreateCommentRequest {
-  const GistsCreateCommentRequest({required this.body});
+  GistsCreateCommentRequest({required this.body}) {
+    body.validate(maxLength: 65535);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GistsCreateCommentRequest].
   factory GistsCreateCommentRequest.fromJson(Map<String, dynamic> json) {

@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/update_onboarding_prompt_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/guild_onboarding_mode.dart';
@@ -6,12 +7,15 @@ import 'package:meta/meta.dart';
 
 @immutable
 class UpdateGuildOnboardingRequest {
-  const UpdateGuildOnboardingRequest({
+  UpdateGuildOnboardingRequest({
     this.prompts,
     this.enabled,
     this.defaultChannelIds,
     this.mode,
-  });
+  }) {
+    prompts?.validate(maxItems: 15);
+    defaultChannelIds?.validate(maxItems: 500, unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UpdateGuildOnboardingRequest].
   factory UpdateGuildOnboardingRequest.fromJson(Map<String, dynamic> json) {

@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/ml_spam_trigger_metadata_response.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/automod_event_type.dart';
@@ -8,7 +9,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class MlSpamRuleResponse {
-  const MlSpamRuleResponse({
+  MlSpamRuleResponse({
     required this.id,
     required this.guildId,
     required this.creatorId,
@@ -19,7 +20,10 @@ class MlSpamRuleResponse {
     required this.exemptRoles,
     required this.exemptChannels,
     required this.triggerMetadata,
-  });
+  }) {
+    exemptRoles.validate(unique: true);
+    exemptChannels.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [MlSpamRuleResponse].
   factory MlSpamRuleResponse.fromJson(Map<String, dynamic> json) {

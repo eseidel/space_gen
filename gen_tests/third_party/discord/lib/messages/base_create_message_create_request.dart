@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/custom_client_theme_share_request.dart';
 import 'package:discord/messages/message_allowed_mentions_request.dart';
 import 'package:discord/messages/message_attachment_request.dart';
@@ -10,7 +11,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class BaseCreateMessageCreateRequest {
-  const BaseCreateMessageCreateRequest({
+  BaseCreateMessageCreateRequest({
     this.content,
     this.embeds,
     this.allowedMentions,
@@ -20,7 +21,13 @@ class BaseCreateMessageCreateRequest {
     this.attachments,
     this.poll,
     this.sharedClientTheme,
-  });
+  }) {
+    content?.validate(maxLength: 4000);
+    embeds?.validate(maxItems: 10);
+    stickerIds?.validate(maxItems: 3);
+    components?.validate(maxItems: 40);
+    attachments?.validate(maxItems: 10);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [BaseCreateMessageCreateRequest].
   factory BaseCreateMessageCreateRequest.fromJson(Map<String, dynamic> json) {

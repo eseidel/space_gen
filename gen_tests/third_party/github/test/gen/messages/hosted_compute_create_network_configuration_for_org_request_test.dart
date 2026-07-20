@@ -5,9 +5,9 @@ import 'package:test/test.dart';
 void main() {
   group('HostedComputeCreateNetworkConfigurationForOrgRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = HostedComputeCreateNetworkConfigurationForOrgRequest(
+      final instance = HostedComputeCreateNetworkConfigurationForOrgRequest(
         name: 'example',
-        networkSettingsIds: <String>['example'],
+        networkSettingsIds: const <String>['example'],
       );
       final parsed =
           HostedComputeCreateNetworkConfigurationForOrgRequest.maybeFromJson(

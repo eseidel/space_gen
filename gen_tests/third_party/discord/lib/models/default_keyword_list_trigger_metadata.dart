@@ -1,10 +1,14 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/automod_keyword_preset_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class DefaultKeywordListTriggerMetadata {
-  const DefaultKeywordListTriggerMetadata({this.allowList, this.presets});
+  DefaultKeywordListTriggerMetadata({this.allowList, this.presets}) {
+    allowList?.validate(maxItems: 1000);
+    presets?.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [DefaultKeywordListTriggerMetadata].

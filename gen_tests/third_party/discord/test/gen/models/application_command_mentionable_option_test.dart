@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ApplicationCommandMentionableOption', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ApplicationCommandMentionableOption(
+      final instance = ApplicationCommandMentionableOption(
         name: 'example',
         description: 'example',
       );

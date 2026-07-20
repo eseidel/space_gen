@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/message_component_separator_spacing_size.dart';
 import 'package:discord/models/message_component_types.dart';
@@ -5,11 +6,9 @@ import 'package:meta/meta.dart';
 
 @immutable
 class SeparatorComponentForMessageRequest {
-  const SeparatorComponentForMessageRequest({
-    this.id,
-    this.spacing,
-    this.divider,
-  });
+  SeparatorComponentForMessageRequest({this.id, this.spacing, this.divider}) {
+    id?.validate(min: 0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [SeparatorComponentForMessageRequest].

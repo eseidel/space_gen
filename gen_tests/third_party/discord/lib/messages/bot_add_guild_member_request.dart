@@ -1,17 +1,22 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class BotAddGuildMemberRequest {
-  const BotAddGuildMemberRequest({
+  BotAddGuildMemberRequest({
     required this.accessToken,
     this.nick,
     this.roles,
     this.mute,
     this.deaf,
     this.flags,
-  });
+  }) {
+    nick?.validate(maxLength: 32);
+    roles?.validate(maxItems: 250, unique: true);
+    accessToken.validate(maxLength: 10240);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [BotAddGuildMemberRequest].
   factory BotAddGuildMemberRequest.fromJson(Map<String, dynamic> json) {

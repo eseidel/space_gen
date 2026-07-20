@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('DependabotAlertSecurityAdvisoryCvss', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = DependabotAlertSecurityAdvisoryCvss(
+      final instance = DependabotAlertSecurityAdvisoryCvss(
         score: 0,
         vectorString: 'example',
       );

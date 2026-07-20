@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CreateApplicationEmojiRequest {
-  const CreateApplicationEmojiRequest({
-    required this.name,
-    required this.image,
-  });
+  CreateApplicationEmojiRequest({required this.name, required this.image}) {
+    name.validate(minLength: 2, maxLength: 32);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreateApplicationEmojiRequest].
   factory CreateApplicationEmojiRequest.fromJson(Map<String, dynamic> json) {

@@ -1,13 +1,14 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class RoleColors {
-  const RoleColors({
-    this.primaryColor,
-    this.secondaryColor,
-    this.tertiaryColor,
-  });
+  RoleColors({this.primaryColor, this.secondaryColor, this.tertiaryColor}) {
+    primaryColor?.validate(min: 0, max: 16777215);
+    secondaryColor?.validate(min: 0, max: 16777215);
+    tertiaryColor?.validate(min: 0, max: 16777215);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [RoleColors].
   factory RoleColors.fromJson(Map<String, dynamic> json) {

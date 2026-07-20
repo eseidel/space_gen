@@ -7,7 +7,7 @@ void main() {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = ScannedShip(
         symbol: 'example',
-        registration: const ShipRegistration(
+        registration: ShipRegistration(
           name: 'example',
           factionSymbol: 'example',
           role: ShipRole.fabricator,

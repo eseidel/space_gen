@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/settings_emoji_response.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
@@ -5,14 +6,17 @@ import 'package:meta/meta.dart';
 
 @immutable
 class OnboardingPromptOptionResponse {
-  const OnboardingPromptOptionResponse({
+  OnboardingPromptOptionResponse({
     required this.id,
     required this.title,
     required this.description,
     required this.emoji,
     required this.roleIds,
     required this.channelIds,
-  });
+  }) {
+    roleIds.validate(unique: true);
+    channelIds.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [OnboardingPromptOptionResponse].
   factory OnboardingPromptOptionResponse.fromJson(Map<String, dynamic> json) {

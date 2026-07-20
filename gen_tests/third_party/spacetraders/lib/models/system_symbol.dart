@@ -3,7 +3,7 @@ import 'package:spacetraders/api_exception.dart';
 /// The symbol of the system.
 extension type const SystemSymbol._(String value) {
   SystemSymbol(this.value) {
-    value.validateMinimumLength(1);
+    value.validate(minLength: 1);
   }
 
   factory SystemSymbol.fromJson(String json) => SystemSymbol(json);

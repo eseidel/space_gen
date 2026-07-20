@@ -1,12 +1,15 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class MentionSpamTriggerMetadata {
-  const MentionSpamTriggerMetadata({
+  MentionSpamTriggerMetadata({
     this.mentionTotalLimit,
     this.mentionRaidProtectionEnabled,
-  });
+  }) {
+    mentionTotalLimit?.validate(min: 0, max: 50);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [MentionSpamTriggerMetadata].
   factory MentionSpamTriggerMetadata.fromJson(Map<String, dynamic> json) {

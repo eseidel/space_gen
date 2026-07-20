@@ -6,7 +6,7 @@ void main() {
   group('CreateSurvey201ResponseData', () {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = CreateSurvey201ResponseData(
-        cooldown: const Cooldown(
+        cooldown: Cooldown(
           shipSymbol: 'example',
           totalSeconds: 0,
           remainingSeconds: 0,

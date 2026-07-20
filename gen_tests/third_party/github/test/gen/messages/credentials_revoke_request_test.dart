@@ -5,8 +5,8 @@ import 'package:test/test.dart';
 void main() {
   group('CredentialsRevokeRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CredentialsRevokeRequest(
-        credentials: <String>['example'],
+      final instance = CredentialsRevokeRequest(
+        credentials: const <String>['example'],
       );
       final parsed = CredentialsRevokeRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));

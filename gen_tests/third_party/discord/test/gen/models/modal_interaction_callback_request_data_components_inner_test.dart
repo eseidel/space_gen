@@ -11,7 +11,7 @@ void main() {
     test(
       'ActionRowComponentForModalRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = ActionRowComponentForModalRequest(
+        final instance = ActionRowComponentForModalRequest(
           components: <TextInputComponentForModalRequest>[
             TextInputComponentForModalRequest(
               customId: 'example',
@@ -30,7 +30,7 @@ void main() {
     test(
       'TextDisplayComponentForModalRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = TextDisplayComponentForModalRequest(
+        final instance = TextDisplayComponentForModalRequest(
           content: 'example',
         );
         final parsed = TextDisplayComponentForModalRequest.maybeFromJson(
