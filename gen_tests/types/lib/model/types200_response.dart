@@ -1,6 +1,7 @@
 import 'package:types/date.dart';
 import 'package:types/model/email_type.dart';
 import 'package:types/model/status.dart';
+import 'package:types/model/stock_status.dart';
 import 'package:types/model/timestamp.dart';
 import 'package:types/model/uuid_type.dart';
 import 'package:types/model/widget.dart';
@@ -15,6 +16,7 @@ class Types200Response {
     required this.timestamp,
     required this.widget,
     required this.status,
+    this.stock,
   });
 
   /// Converts a `Map<String, dynamic>` to a [Types200Response].
@@ -31,6 +33,7 @@ class Types200Response {
         timestamp: Timestamp.fromJson(json['timestamp'] as String),
         widget: Widget.fromJson(json['widget'] as Map<String, dynamic>),
         status: Status.fromJson(json['status'] as String),
+        stock: StockStatus.maybeFromJson(json['stock'] as String?),
       ),
     );
   }
@@ -55,6 +58,11 @@ class Types200Response {
   Widget widget;
   Status status;
 
+  /// Values whose sanitized identifiers collide — `in stock` and `in-stock`
+  /// both reduce to the same identifier. The generated enum must disambiguate
+  /// rather than declare it twice.
+  StockStatus? stock;
+
   /// Converts a [Types200Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
@@ -65,6 +73,7 @@ class Types200Response {
       'timestamp': timestamp.toJson(),
       'widget': widget.toJson(),
       'status': status.toJson(),
+      'stock': ?stock?.toJson(),
     };
   }
 
@@ -77,6 +86,7 @@ class Types200Response {
     timestamp,
     widget,
     status,
+    stock,
   ]);
 
   @override
@@ -89,6 +99,7 @@ class Types200Response {
         uuid == other.uuid &&
         timestamp == other.timestamp &&
         widget == other.widget &&
-        status == other.status;
+        status == other.status &&
+        stock == other.stock;
   }
 }
