@@ -67,6 +67,76 @@ String toSnakeCase(String unknown) {
 /// Convert kebab-case to snake_case.
 String snakeFromKebab(String kebab) => kebab.replaceAll('-', '_');
 
+/// Characters that carry a conventional ASCII spelling, mapped to it so
+/// identifier sanitization yields a readable name instead of dropping the
+/// character (which leaves collisions for the enum-dedup pass to paper over
+/// with numeric suffixes: `g` and `mug` beat `g` and `g2`).
+///
+/// Dart identifiers are ASCII-only — a raw `μg` is `illegal_character`, not
+/// a valid name (https://github.com/dart-lang/language/issues/1283) — so
+/// some ASCII rewrite is mandatory; this just makes it a meaningful one.
+///
+/// Keyed by the character's *name*, not a domain reading — Greek `μ`
+/// (mu) becomes `mu`, never the units interpretation `micro`, so one table
+/// serves every spec. Only word- and unit-forming characters belong here:
+/// separators like `&`/`@`/`#` are deliberately left to the `_` catch-all
+/// in `variableSafeName`, since spelling them out in place would run
+/// together the words they divide.
+///
+/// Each replacement mirrors the source character's case — lowercase `μ` ->
+/// `mu`, uppercase `Δ` -> `Delta`, symbols with no case (`°`, `%`) go
+/// lowercase.
+/// Case is preserved rather than lowercased because `variableSafeName` has
+/// a `preserveCase` mode (the SCREAMING_CAPS-enum quirk) where casing is
+/// meaningful: a spec may use `Δ` and `δ` as distinct enum values, and
+/// collapsing both to `delta` would fabricate a collision.
+///
+/// Greek mu (U+03BC) and the micro sign (U+00B5) look identical but are
+/// distinct code points; both are listed, tagged with their Unicode name.
+const Map<String, String> asciiTransliterations = {
+  // Greek letters, by letter name.
+  'α': 'alpha', 'β': 'beta', 'γ': 'gamma', 'δ': 'delta',
+  'ε': 'epsilon', 'ζ': 'zeta', 'η': 'eta', 'θ': 'theta',
+  'ι': 'iota', 'κ': 'kappa', 'λ': 'lambda',
+  'μ': 'mu', // GREEK SMALL LETTER MU
+  'ν': 'nu', 'ξ': 'xi', 'ο': 'omicron', 'π': 'pi',
+  'ρ': 'rho', 'σ': 'sigma', 'ς': 'sigma', 'τ': 'tau',
+  'υ': 'upsilon', 'φ': 'phi', 'χ': 'chi', 'ψ': 'psi',
+  'ω': 'omega',
+  'Δ': 'Delta', 'Σ': 'Sigma', 'Π': 'Pi', 'Ω': 'Omega',
+  'Φ': 'Phi', 'Θ': 'Theta', 'Λ': 'Lambda', 'Ξ': 'Xi',
+  'Ψ': 'Psi', 'Γ': 'Gamma',
+  // Unit symbols, by name.
+  'µ': 'mu', // MICRO SIGN (looks like Greek mu; same spelling)
+  '°': 'degree', // DEGREE SIGN
+  '%': 'percent',
+  // Accented Latin (Latin-1 Supplement) folded to the base letter.
+  'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a',
+  'å': 'a', 'æ': 'ae', 'ç': 'c', 'è': 'e', 'é': 'e',
+  'ê': 'e', 'ë': 'e', 'ì': 'i', 'í': 'i', 'î': 'i',
+  'ï': 'i', 'ñ': 'n', 'ò': 'o', 'ó': 'o', 'ô': 'o',
+  'õ': 'o', 'ö': 'o', 'ø': 'o', 'ù': 'u', 'ú': 'u',
+  'û': 'u', 'ü': 'u', 'ý': 'y', 'ÿ': 'y', 'ß': 'ss',
+  'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A',
+  'Å': 'A', 'Æ': 'AE', 'Ç': 'C', 'È': 'E', 'É': 'E',
+  'Ê': 'E', 'Ë': 'E', 'Ì': 'I', 'Í': 'I', 'Î': 'I',
+  'Ï': 'I', 'Ñ': 'N', 'Ò': 'O', 'Ó': 'O', 'Ô': 'O',
+  'Õ': 'O', 'Ö': 'O', 'Ø': 'O', 'Ù': 'U', 'Ú': 'U',
+  'Û': 'U', 'Ü': 'U', 'Ý': 'Y',
+};
+
+/// Replace each character in [value] that has a conventional ASCII spelling
+/// (see [asciiTransliterations]) with that spelling, leaving every other
+/// character untouched. `µg` -> `mug`, `café` -> `cafe`.
+String transliterateToAscii(String value) {
+  final buffer = StringBuffer();
+  for (final rune in value.runes) {
+    final ch = String.fromCharCode(rune);
+    buffer.write(asciiTransliterations[ch] ?? ch);
+  }
+  return buffer.toString();
+}
+
 /// Converts from SCREAMING_CAPS, snake_case or kebab-case to camelCase.
 String toLowerCamelCase(String caps) {
   // Our SCREAMING_CAPS logic is not safe for camelCase input,

@@ -71,11 +71,16 @@ String variableSafeName(
       // Replace any remaining skewers with underscores.
       .replaceAll('-', '_')
       // ' is most commonly used as an apostrophe so just stripping it.
-      .replaceAll("'", '')
-      // Since jsonName is a raw string, it could have non-legal characters.
-      // We need to escape them.
-      // TODO(eseidel): Tweak this to make nicer names.
-      .replaceAll(RegExp('[^a-zA-Z0-9_]'), '_');
+      .replaceAll("'", '');
+  // Give known symbols and letters a real ASCII spelling (`µg` -> `mug`,
+  // `%` -> `percent`, `café` -> `cafe`) before the catch-all below turns
+  // every other non-identifier character into `_`. This keeps distinct
+  // values from collapsing to the same name (which the enum-dedup pass
+  // would then have to disambiguate as `g`/`g2`).
+  escapedName = transliterateToAscii(escapedName);
+  // Since jsonName is a raw string, it could have non-legal characters.
+  // We need to escape them.
+  escapedName = escapedName.replaceAll(RegExp('[^a-zA-Z0-9_]'), '_');
 
   if (!preserveCase) {
     // Dart style uses camelCase.
