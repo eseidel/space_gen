@@ -5410,7 +5410,34 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
       return dartName;
     }
 
-    return values.map(toShortVariableName).toList();
+    return _deduplicateNames(values.map(toShortVariableName).toList());
+  }
+
+  /// Disambiguate enum member names that collide after sanitization.
+  ///
+  /// Distinct wire values can sanitize to the same Dart identifier —
+  /// openfoodfacts' `NutrientUnit` has both `g` and `μg`, and stripping the
+  /// non-ASCII `μ` leaves two `g` members, which is a `duplicate_definition`
+  /// error. The first occurrence keeps the bare name; each later collision
+  /// gets the lowest free numeric suffix (`g`, `g2`, `g3`, …), mirroring how
+  /// the type [NameAllocator] resolves ties. The wire value is preserved
+  /// verbatim in the member's `._(<value>)`, so round-tripping is unaffected —
+  /// only the (rarely-referenced) member identifier changes.
+  static List<String> _deduplicateNames(List<String> names) {
+    final used = <String>{};
+    final result = <String>[];
+    for (final name in names) {
+      if (used.add(name)) {
+        result.add(name);
+        continue;
+      }
+      var suffix = 2;
+      while (!used.add('$name$suffix')) {
+        suffix++;
+      }
+      result.add('$name$suffix');
+    }
+    return result;
   }
 
   /// Variable names for an int-valued enum. Defaults to `value<N>`

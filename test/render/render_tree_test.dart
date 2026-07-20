@@ -74,6 +74,21 @@ void main() {
       ]);
     });
 
+    test('enum names collide-free after sanitization', () {
+      const quirks = Quirks();
+      // openfoodfacts' `NutrientUnit` has both `g` and `μg`; stripping the
+      // non-ASCII `μ` leaves two `g` members. Distinct wire values must not
+      // sanitize to the same Dart identifier — the first keeps the bare name,
+      // later collisions take the lowest free numeric suffix.
+      final names = RenderEnum.variableNamesFor(quirks, [
+        'g',
+        'mg',
+        'μg',
+        'µg', // A second, distinct micro-sign codepoint — also strips to `g`.
+      ]);
+      expect(names, ['g', 'mg', 'g2', 'g3']);
+    });
+
     test('parameter names', () {
       const quirks = Quirks();
       expect(quirks.screamingCapsEnums, isFalse);
