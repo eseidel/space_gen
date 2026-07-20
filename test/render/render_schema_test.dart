@@ -189,6 +189,39 @@ void main() {
       expect(r, contains('MapEntry(key.toJson(), value.toJson())'));
     });
 
+    test('propertyNames with an int enum bridges the string JSON key', () {
+      // JSON object keys are always strings on the wire, but an int-valued
+      // enum's fromJson/toJson speak int, so the key is bridged through
+      // int.parse on decode and stringified on encode.
+      final schemas = <String, Map<String, dynamic>>{
+        'NovaGroup': {
+          'type': 'integer',
+          'enum': [3, 4],
+        },
+        'R': {
+          'type': 'object',
+          'required': ['markers'],
+          'properties': {
+            'markers': {
+              'type': 'object',
+              'additionalProperties': {'type': 'string'},
+              'propertyNames': {
+                r'$ref': '#/components/schemas/NovaGroup',
+              },
+            },
+          },
+        },
+      };
+      final rendered = renderTestSchemas(
+        schemas,
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final r = rendered['R']!;
+      expect(r, contains('final Map<NovaGroup, String> markers;'));
+      expect(r, contains('MapEntry(NovaGroup.fromJson(int.parse(key)),'));
+      expect(r, contains('MapEntry(key.toJson().toString(),'));
+    });
+
     test('propertyNames without an enum ref is a spec error', () {
       final schema = {
         'type': 'object',
@@ -207,7 +240,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            contains('must resolve to a string enum'),
+            contains('must resolve to an enum'),
           ),
         ),
       );

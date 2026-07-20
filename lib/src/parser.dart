@@ -869,7 +869,7 @@ SchemaMap _mapSchema(
 }) {
   // Optional: JSON Schema 2020-12 / OpenAPI 3.1 `propertyNames` constrains the
   // keys of this map-shaped object to values that conform to the given schema.
-  // When that schema is (or resolves to) a string enum, we use it as the Dart
+  // When that schema is (or resolves to) an enum, we use it as the Dart
   // map key type.
   final propertyNamesJson = _optionalMap(json, 'propertyNames');
   final keySchema = propertyNamesJson == null

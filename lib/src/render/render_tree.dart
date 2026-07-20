@@ -5230,9 +5230,10 @@ class RenderMap extends RenderSchema {
         toJson: 'value',
       );
     }
+    const k = DartIdentifier('k');
     final keyFromJson = keyEnum == null
         ? 'k'
-        : '${keyEnum.typeName}.fromJson(k)';
+        : _runtimeSource(keyEnum.fromJsonMapKey(k));
     final valueFromJson = _runtimeSource(
       value.requireFromJsonExpression(
         const DartIdentifier('val'),
@@ -5241,7 +5242,9 @@ class RenderMap extends RenderSchema {
         dartIsNullable: false,
       ),
     );
-    final keyToJson = keyEnum == null ? 'k' : 'k.toJson()';
+    final keyToJson = keyEnum == null
+        ? 'k'
+        : _runtimeSource(keyEnum.toJsonMapKey(k));
     final valueToJson = value.toJsonExpression(
       const DartIdentifier('val'),
       context,
@@ -5282,9 +5285,8 @@ class RenderMap extends RenderSchema {
   }) {
     const key = DartIdentifier('key');
     const value = DartIdentifier('value');
-    final keyToJson = keySchema == null
-        ? key
-        : const DartMethodCall(target: key, name: 'toJson');
+    final keySchema = this.keySchema;
+    final keyToJson = keySchema == null ? key : keySchema.toJsonMapKey(key);
     final valueToJson = valueSchema.toJsonExpression(
       value,
       context,
@@ -5323,9 +5325,7 @@ class RenderMap extends RenderSchema {
     const key = DartIdentifier('key');
     const value = DartIdentifier('value');
     final keySchema = this.keySchema;
-    final keyFromJson = keySchema == null
-        ? key
-        : keySchema._fromJsonCall(key, jsonIsNullable: false);
+    final keyFromJson = keySchema == null ? key : keySchema.fromJsonMapKey(key);
     final valueFromJson = valueSchema.requireFromJsonExpression(
       value,
       context,
@@ -5491,6 +5491,37 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
   @override
   _VariantConversion? _variantConversion(SchemaRenderer context) =>
       _newtypeConversion(typeName);
+
+  /// Decode a JSON object key into this enum. JSON object keys are always
+  /// strings on the wire, but an int-valued enum's `fromJson` takes its
+  /// int value, so bridge the string through `int.parse` first. A
+  /// string-valued enum's key passes straight through. Used only when this
+  /// enum is a [RenderMap] key type.
+  DartExpression fromJsonMapKey(DartExpression key) =>
+      _fromJsonCall(_stringKeyToWire(key), jsonIsNullable: false);
+
+  /// Encode this enum as a JSON object key, which must be a string. `toJson`
+  /// yields the wire value — already a `String` for a string enum, an `int`
+  /// for an int enum — so stringify the int case back to a valid key. The
+  /// inverse of [fromJsonMapKey].
+  DartExpression toJsonMapKey(DartExpression key) {
+    final wire = DartMethodCall(target: key, name: 'toJson');
+    return jsonStorageDartType == DartType.string
+        ? wire
+        : DartMethodCall(target: wire, name: 'toString');
+  }
+
+  /// Bridge a `String` JSON object key to this enum's wire type, so a
+  /// non-string wire type (an int enum) can parse it. No-op for string keys.
+  DartExpression _stringKeyToWire(DartExpression key) =>
+      jsonStorageDartType == DartType.string
+      ? key
+      : DartInvocation(
+          type: jsonStorageDartType,
+          constructorName: 'parse',
+          arguments: [key],
+          isConstConstructor: false,
+        );
 
   @override
   List<Object?> get props => [
