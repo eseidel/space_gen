@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/spam_link_trigger_metadata_response.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/automod_event_type.dart';
@@ -8,7 +9,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class SpamLinkRuleResponse {
-  const SpamLinkRuleResponse({
+  SpamLinkRuleResponse({
     required this.id,
     required this.guildId,
     required this.creatorId,
@@ -19,7 +20,10 @@ class SpamLinkRuleResponse {
     required this.exemptRoles,
     required this.exemptChannels,
     required this.triggerMetadata,
-  });
+  }) {
+    exemptRoles.validate(unique: true);
+    exemptChannels.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [SpamLinkRuleResponse].
   factory SpamLinkRuleResponse.fromJson(Map<String, dynamic> json) {

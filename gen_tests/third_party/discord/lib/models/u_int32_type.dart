@@ -2,9 +2,7 @@ import 'package:discord/api_exception.dart';
 
 extension type const UInt32Type._(int value) {
   UInt32Type(this.value) {
-    value
-      ..validateMaximum(4294967295)
-      ..validateMinimum(0);
+    value.validate(min: 0, max: 4294967295);
   }
 
   factory UInt32Type.fromJson(int json) => UInt32Type(json);

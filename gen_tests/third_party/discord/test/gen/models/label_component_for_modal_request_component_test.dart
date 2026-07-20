@@ -11,7 +11,7 @@ void main() {
     test(
       'ChannelSelectComponentForModalRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = ChannelSelectComponentForModalRequest(
+        final instance = ChannelSelectComponentForModalRequest(
           customId: 'example',
         );
         final parsed = ChannelSelectComponentForModalRequest.maybeFromJson(
@@ -25,7 +25,7 @@ void main() {
     test(
       'CheckboxComponentForModalRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = CheckboxComponentForModalRequest(customId: 'example');
+        final instance = CheckboxComponentForModalRequest(customId: 'example');
         final parsed = CheckboxComponentForModalRequest.maybeFromJson(
           instance.toJson(),
         )!;
@@ -37,7 +37,7 @@ void main() {
     test(
       'CheckboxGroupComponentForModalRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = CheckboxGroupComponentForModalRequest(
+        final instance = CheckboxGroupComponentForModalRequest(
           customId: 'example',
           options: <CheckboxGroupOptionForRequest>[
             CheckboxGroupOptionForRequest(label: 'example', value: 'example'),
@@ -54,7 +54,7 @@ void main() {
     test(
       'FileUploadComponentForModalRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = FileUploadComponentForModalRequest(
+        final instance = FileUploadComponentForModalRequest(
           customId: 'example',
         );
         final parsed = FileUploadComponentForModalRequest.maybeFromJson(
@@ -68,7 +68,7 @@ void main() {
     test(
       'MentionableSelectComponentForModalRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = MentionableSelectComponentForModalRequest(
+        final instance = MentionableSelectComponentForModalRequest(
           customId: 'example',
         );
         final parsed = MentionableSelectComponentForModalRequest.maybeFromJson(
@@ -82,9 +82,10 @@ void main() {
     test(
       'RadioGroupComponentForModalRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = RadioGroupComponentForModalRequest(
+        final instance = RadioGroupComponentForModalRequest(
           customId: 'example',
           options: <RadioGroupOptionForRequest>[
+            RadioGroupOptionForRequest(label: 'example', value: 'example'),
             RadioGroupOptionForRequest(label: 'example', value: 'example'),
           ],
         );
@@ -99,7 +100,7 @@ void main() {
     test(
       'RoleSelectComponentForModalRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = RoleSelectComponentForModalRequest(
+        final instance = RoleSelectComponentForModalRequest(
           customId: 'example',
         );
         final parsed = RoleSelectComponentForModalRequest.maybeFromJson(
@@ -113,7 +114,7 @@ void main() {
     test(
       'StringSelectComponentForModalRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = StringSelectComponentForModalRequest(
+        final instance = StringSelectComponentForModalRequest(
           customId: 'example',
           options: <StringSelectOptionForRequest>[
             StringSelectOptionForRequest(label: 'example', value: 'example'),
@@ -130,7 +131,7 @@ void main() {
     test(
       'UserSelectComponentForModalRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = UserSelectComponentForModalRequest(
+        final instance = UserSelectComponentForModalRequest(
           customId: 'example',
         );
         final parsed = UserSelectComponentForModalRequest.maybeFromJson(

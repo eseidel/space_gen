@@ -1,10 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/stage_instances_privacy_levels.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class UpdateStageInstanceRequest {
-  const UpdateStageInstanceRequest({this.topic, this.privacyLevel});
+  UpdateStageInstanceRequest({this.topic, this.privacyLevel}) {
+    topic?.validate(minLength: 1, maxLength: 120);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UpdateStageInstanceRequest].
   factory UpdateStageInstanceRequest.fromJson(Map<String, dynamic> json) {

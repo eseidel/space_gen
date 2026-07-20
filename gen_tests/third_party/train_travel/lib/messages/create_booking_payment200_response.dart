@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:train_travel/api_exception.dart';
 import 'package:train_travel/model_helpers.dart';
 import 'package:train_travel/models/booking_payment_currency.dart';
 import 'package:train_travel/models/booking_payment_source.dart';
@@ -7,14 +8,16 @@ import 'package:train_travel/models/links_booking.dart';
 
 @immutable
 class CreateBookingPayment200Response {
-  const CreateBookingPayment200Response({
+  CreateBookingPayment200Response({
     this.id,
     this.amount,
     this.currency,
     this.source,
     this.status,
     this.links,
-  });
+  }) {
+    amount?.validate(exclusiveMin: 0.0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreateBookingPayment200Response].
   factory CreateBookingPayment200Response.fromJson(Map<String, dynamic> json) {

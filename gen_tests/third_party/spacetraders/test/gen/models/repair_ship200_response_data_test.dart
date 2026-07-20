@@ -6,7 +6,7 @@ void main() {
   group('RepairShip200ResponseData', () {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = RepairShip200ResponseData(
-        agent: const Agent(
+        agent: Agent(
           accountId: 'example',
           symbol: 'example',
           headquarters: 'example',
@@ -16,7 +16,7 @@ void main() {
         ),
         ship: Ship(
           symbol: 'example',
-          registration: const ShipRegistration(
+          registration: ShipRegistration(
             name: 'example',
             factionSymbol: 'example',
             role: ShipRole.fabricator,
@@ -45,7 +45,7 @@ void main() {
             status: ShipNavStatus.inTransit,
             flightMode: ShipNavFlightMode.drift,
           ),
-          crew: const ShipCrew(
+          crew: ShipCrew(
             current: 0,
             required_: 0,
             capacity: 0,
@@ -84,23 +84,23 @@ void main() {
             requirements: const ShipRequirements(),
             quality: const ShipComponentQuality(0),
           ),
-          modules: const <ShipModule>[
+          modules: <ShipModule>[
             ShipModule(
               symbol: ShipModuleSymbol.moduleMineralProcessorI,
               name: 'example',
               description: 'example',
-              requirements: ShipRequirements(),
+              requirements: const ShipRequirements(),
             ),
           ],
-          mounts: const <ShipMount>[
+          mounts: <ShipMount>[
             ShipMount(
               symbol: ShipMountSymbol.mountGasSiphonI,
               name: 'example',
               description: 'example',
-              requirements: ShipRequirements(),
+              requirements: const ShipRequirements(),
             ),
           ],
-          cargo: const ShipCargo(
+          cargo: ShipCargo(
             capacity: 0,
             units: 0,
             inventory: <ShipCargoItem>[
@@ -112,8 +112,8 @@ void main() {
               ),
             ],
           ),
-          fuel: const ShipFuel(current: 0, capacity: 0),
-          cooldown: const Cooldown(
+          fuel: ShipFuel(current: 0, capacity: 0),
+          cooldown: Cooldown(
             shipSymbol: 'example',
             totalSeconds: 0,
             remainingSeconds: 0,

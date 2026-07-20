@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ShipRefine201Response', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ShipRefine201Response(
+      final instance = ShipRefine201Response(
         data: ShipRefine201ResponseData(
           cargo: ShipCargo(
             capacity: 0,
@@ -24,13 +24,13 @@ void main() {
             totalSeconds: 0,
             remainingSeconds: 0,
           ),
-          produced: <ShipRefine201ResponseDataProducedInner>[
+          produced: const <ShipRefine201ResponseDataProducedInner>[
             ShipRefine201ResponseDataProducedInner(
               tradeSymbol: TradeSymbol.preciousStones,
               units: 0,
             ),
           ],
-          consumed: <ShipRefine201ResponseDataConsumedInner>[
+          consumed: const <ShipRefine201ResponseDataConsumedInner>[
             ShipRefine201ResponseDataConsumedInner(
               tradeSymbol: TradeSymbol.preciousStones,
               units: 0,

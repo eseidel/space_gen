@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('PrivateRegistriesUpdateOrgPrivateRegistryRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = PrivateRegistriesUpdateOrgPrivateRegistryRequest();
+      final instance = PrivateRegistriesUpdateOrgPrivateRegistryRequest();
       final parsed =
           PrivateRegistriesUpdateOrgPrivateRegistryRequest.maybeFromJson(
             instance.toJson(),

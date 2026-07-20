@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('WelcomeScreenPatchRequestPartial', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = WelcomeScreenPatchRequestPartial();
+      final instance = WelcomeScreenPatchRequestPartial();
       final parsed = WelcomeScreenPatchRequestPartial.maybeFromJson(
         instance.toJson(),
       )!;

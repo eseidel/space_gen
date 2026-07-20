@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ProtectedBranchPullRequestReview', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ProtectedBranchPullRequestReview(
+      final instance = ProtectedBranchPullRequestReview(
         dismissStaleReviews: false,
         requireCodeOwnerReviews: false,
       );

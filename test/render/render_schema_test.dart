@@ -4488,19 +4488,13 @@ void main() {
           'exclusiveMinimum': 9,
           'exclusiveMaximum': 0,
         };
-        // Named schemas get their own newtype and validate each rule
-        // in the constructor body via a `value` cascade. `dart format`
-        // re-indents this cleanly in the user-visible regen.
+        // Named schemas get their own newtype and validate every rule with
+        // a single `value.validate(...)` call in the constructor body.
         expect(
           renderTestSchema(json, asComponent: true),
           'extension type const Test._(int value) {\n'
           '    Test(this.value) {\n'
-          '        value\n'
-          '      ..validateMaximum(10)\n'
-          '      ..validateMinimum(1)\n'
-          '      ..validateExclusiveMaximum(0)\n'
-          '      ..validateExclusiveMinimum(9)\n'
-          '      ..validateMultipleOf(2);\n'
+          '        value.validate(min: 1, max: 10, exclusiveMin: 9, exclusiveMax: 0, multipleOf: 2);\n'
           '    }\n'
           '\n'
           '    factory Test.fromJson(int json) => Test(json);\n'
@@ -4545,10 +4539,7 @@ void main() {
           renderTestSchema(json, asComponent: true),
           'extension type const Test._(double value) {\n'
           '    Test(this.value) {\n'
-          '        value\n'
-          '      ..validateMaximum(10.2)\n'
-          '      ..validateMinimum(1.2)\n'
-          '      ..validateMultipleOf(2.2);\n'
+          '        value.validate(min: 1.2, max: 10.2, multipleOf: 2.2);\n'
           '    }\n'
           '\n'
           '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
@@ -4573,7 +4564,7 @@ void main() {
           renderTestSchema(json, asComponent: true),
           'extension type const Test._(double value) {\n'
           '    Test(this.value) {\n'
-          '        value.validateMaximum(10.2);\n'
+          '        value.validate(max: 10.2);\n'
           '    }\n'
           '\n'
           '    factory Test.fromJson(num json) => Test(json.toDouble());\n'
@@ -4603,9 +4594,11 @@ void main() {
           result,
           '@immutable\n'
           'class Test {\n'
-          '    const Test(\n'
+          '    Test(\n'
           '        { this.a = 1.2,  }\n'
-          '    );\n'
+          '    ) {\n'
+          '        a.validate(max: 10.2);\n'
+          '    }\n'
           '\n'
           '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
           '    factory Test.fromJson(Map<String, dynamic>\n'
@@ -4654,7 +4647,7 @@ void main() {
           renderTestSchema(json, asComponent: true),
           'extension type const Test._(int value) {\n'
           '    Test(this.value) {\n'
-          '        value.validateMinimum(0);\n'
+          '        value.validate(min: 0);\n'
           '    }\n'
           '\n'
           '    factory Test.fromJson(int json) => Test(json);\n'
@@ -4771,9 +4764,11 @@ void main() {
           result,
           '@immutable\n'
           'class Test {\n'
-          '    const Test(\n'
+          '    Test(\n'
           '        { this.a = 1,  }\n'
-          '    );\n'
+          '    ) {\n'
+          '        a.validate(min: 0);\n'
+          '    }\n'
           '\n'
           '    /// Converts a `Map<String, dynamic>` to a [Test].\n'
           '    factory Test.fromJson(Map<String, dynamic>\n'
@@ -5235,17 +5230,13 @@ void main() {
         'maxLength': 10,
         'minLength': 1,
       };
-      // Length validations move into the constructor body so the
-      // newtype enforces them once at construction. Multiple calls
-      // emit as a `value` cascade chain to satisfy the
-      // `cascade_invocations` lint.
+      // Length validations move into the constructor body so the newtype
+      // enforces them once at construction, in a single `validate(...)` call.
       expect(
         renderTestSchema(json, asComponent: true),
         'extension type const Test._(String value) {\n'
         '    Test(this.value) {\n'
-        '        value\n'
-        '      ..validateMaximumLength(10)\n'
-        '      ..validateMinimumLength(1);\n'
+        '        value.validate(minLength: 1, maxLength: 10);\n'
         '    }\n'
         '\n'
         '    factory Test.fromJson(String json) => Test(json);\n'
@@ -5377,10 +5368,7 @@ void main() {
           '    Future<void> uploadPets(\n'
           '        List<int> ids,\n'
           '    ) async {\n'
-          '        ids\n'
-          '      ..validateMaximumItems(10)\n'
-          '      ..validateMinimumItems(1)\n'
-          '      ..validateUniqueItems();\n'
+          '        ids.validate(minItems: 1, maxItems: 10, unique: true);\n'
           '\n'
           '        final response = await client.invokeApi(\n'
           '            method: Method.post,\n'
@@ -5417,6 +5405,74 @@ void main() {
       };
       expect(() => renderTestSchema(json), throwsA(isA<StateError>()));
     });
+  });
+
+  group('inline property validations (#204)', () {
+    test('constrained inline property validates in the object constructor', () {
+      final json = {
+        'type': 'object',
+        'required': ['name'],
+        'properties': {
+          'name': {'type': 'string', 'pattern': r'^[a-z]+$', 'maxLength': 10},
+        },
+      };
+      final result = renderTestSchema(json);
+      // Required, non-nullable receiver: one `validate(...)` call, no `?.`.
+      expect(
+        result,
+        contains(r"name.validate(maxLength: 10, pattern: '^[a-z]+\$');"),
+      );
+      // A validation body makes the constructor non-const.
+      expect(result, isNot(contains('const Test(')));
+    });
+
+    test('nullable/optional constrained property uses ?.', () {
+      final json = {
+        'type': 'object',
+        'properties': {
+          'count': {'type': 'integer', 'minimum': 1, 'maximum': 100},
+        },
+      };
+      final result = renderTestSchema(json);
+      expect(result, contains('count?.validate(min: 1, max: 100);'));
+    });
+
+    test('newtype-typed property is not double-validated in the parent', () {
+      // The `code` property references a named string schema (a newtype);
+      // it validates in its own constructor, so the parent object must not
+      // emit a second `validate` against the extension type (where the
+      // extension method wouldn't resolve).
+      final rendered = renderTestSchemas({
+        'Code': {'type': 'string', 'pattern': r'^[a-z]+$'},
+        'Holder': {
+          'type': 'object',
+          'required': ['code'],
+          'properties': {
+            'code': {r'$ref': '#/components/schemas/Code'},
+          },
+        },
+      }, specUrl: Uri.parse('file:///spec.yaml'));
+      final code = rendered['Code'];
+      final holder = rendered['Holder'];
+      if (code == null || holder == null) fail('missing rendered schema');
+      // The newtype validates itself...
+      expect(code, contains(r"value.validate(pattern: '^[a-z]+\$')"));
+      // ...but the holder object's constructor has no validation body.
+      expect(holder, contains('const Holder('));
+    });
+
+    test(
+      'object with no constrained properties keeps its const constructor',
+      () {
+        final json = {
+          'type': 'object',
+          'properties': {
+            'name': {'type': 'string'},
+          },
+        };
+        expect(renderTestSchema(json), contains('const Test('));
+      },
+    );
   });
 
   group('renderTestApiFromSpec', () {

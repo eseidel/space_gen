@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/invite_target_types.dart';
 import 'package:discord/models/snowflake_type.dart';
@@ -28,7 +29,9 @@ sealed class CreateChannelInviteRequest {
 
 @immutable
 final class CreateGroupDmInviteRequest extends CreateChannelInviteRequest {
-  const CreateGroupDmInviteRequest({this.maxAge});
+  CreateGroupDmInviteRequest({this.maxAge}) {
+    maxAge?.validate(min: 1, max: 604800);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreateGroupDmInviteRequest].
   factory CreateGroupDmInviteRequest.fromJson(Map<String, dynamic> json) {
@@ -68,7 +71,7 @@ final class CreateGroupDmInviteRequest extends CreateChannelInviteRequest {
 
 @immutable
 final class CreateGuildInviteRequest extends CreateChannelInviteRequest {
-  const CreateGuildInviteRequest({
+  CreateGuildInviteRequest({
     this.maxAge,
     this.temporary,
     this.maxUses,
@@ -76,7 +79,10 @@ final class CreateGuildInviteRequest extends CreateChannelInviteRequest {
     this.targetUserId,
     this.targetApplicationId,
     this.targetType,
-  });
+  }) {
+    maxAge?.validate(min: 0, max: 5184000);
+    maxUses?.validate(min: 0, max: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreateGuildInviteRequest].
   factory CreateGuildInviteRequest.fromJson(Map<String, dynamic> json) {

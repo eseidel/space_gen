@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/guild_features.dart';
 import 'package:discord/models/snowflake_type.dart';
@@ -5,7 +6,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class MyGuildResponse {
-  const MyGuildResponse({
+  MyGuildResponse({
     required this.id,
     required this.name,
     required this.icon,
@@ -15,7 +16,9 @@ class MyGuildResponse {
     required this.features,
     this.approximateMemberCount,
     this.approximatePresenceCount,
-  });
+  }) {
+    features.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [MyGuildResponse].
   factory MyGuildResponse.fromJson(Map<String, dynamic> json) {

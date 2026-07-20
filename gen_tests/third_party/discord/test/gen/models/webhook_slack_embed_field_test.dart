@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('WebhookSlackEmbedField', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = WebhookSlackEmbedField();
+      final instance = WebhookSlackEmbedField();
       final parsed = WebhookSlackEmbedField.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

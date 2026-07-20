@@ -5,9 +5,12 @@ import 'package:test/test.dart';
 void main() {
   group('Extraction', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = Extraction(
+      final instance = Extraction(
         shipSymbol: 'example',
-        yield_: ExtractionYield(symbol: TradeSymbol.preciousStones, units: 0),
+        yield_: const ExtractionYield(
+          symbol: TradeSymbol.preciousStones,
+          units: 0,
+        ),
       );
       final parsed = Extraction.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));

@@ -1,15 +1,19 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/github_user.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class GithubReview {
-  const GithubReview({
+  GithubReview({
     required this.user,
     required this.htmlUrl,
     required this.state,
     this.body,
-  });
+  }) {
+    body?.validate(maxLength: 152133);
+    state.validate(maxLength: 152133);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GithubReview].
   factory GithubReview.fromJson(Map<String, dynamic> json) {

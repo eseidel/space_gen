@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/allowed_mention_types.dart';
 import 'package:discord/models/snowflake_type.dart';
@@ -5,12 +6,16 @@ import 'package:meta/meta.dart';
 
 @immutable
 class MessageAllowedMentionsRequest {
-  const MessageAllowedMentionsRequest({
+  MessageAllowedMentionsRequest({
     this.parse,
     this.users,
     this.roles,
     this.repliedUser,
-  });
+  }) {
+    parse?.validate(maxItems: 1521, unique: true);
+    users?.validate(maxItems: 100, unique: true);
+    roles?.validate(maxItems: 100, unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [MessageAllowedMentionsRequest].
   factory MessageAllowedMentionsRequest.fromJson(Map<String, dynamic> json) {

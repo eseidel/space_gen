@@ -3,7 +3,7 @@ import 'package:github/api_exception.dart';
 /// The dismissal comment associated with the dismissal of the alert.
 extension type const CodeScanningAlertDismissedComment._(String value) {
   CodeScanningAlertDismissedComment(this.value) {
-    value.validateMaximumLength(280);
+    value.validate(maxLength: 280);
   }
 
   factory CodeScanningAlertDismissedComment.fromJson(String json) =>

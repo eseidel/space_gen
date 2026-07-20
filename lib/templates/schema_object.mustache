@@ -4,7 +4,10 @@
         {{#hasProperties}}
         { {{#requiredConstructorProperties}}{{{ argumentLine }}}, {{/requiredConstructorProperties}}{{#hasAdditionalProperties}}required this.{{additionalPropertiesName}}, {{/hasAdditionalProperties}}{{#optionalConstructorProperties}}{{{ argumentLine }}}, {{/optionalConstructorProperties}} }
         {{/hasProperties}}
-    ){{{assignmentsLine}}};
+    ){{{assignmentsLine}}}{{^hasConstructorValidation}};{{/hasConstructorValidation}}{{#hasConstructorValidation}} {
+        {{#constructorValidation}}{{{.}}}
+        {{/constructorValidation}}
+    }{{/hasConstructorValidation}}
 
     {{{ from_json_doc_comment }}}factory {{ typeName }}.fromJson({{{fromJsonJsonType}}}
     {{#castFromJsonArg}}

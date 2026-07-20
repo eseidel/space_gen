@@ -1,14 +1,17 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class GithubUser {
-  const GithubUser({
+  GithubUser({
     required this.id,
     required this.login,
     required this.htmlUrl,
     required this.avatarUrl,
-  });
+  }) {
+    login.validate(maxLength: 152133);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GithubUser].
   factory GithubUser.fromJson(Map<String, dynamic> json) {

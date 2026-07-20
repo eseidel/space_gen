@@ -5,8 +5,8 @@ import 'package:test/test.dart';
 void main() {
   group('GetMyFactions200Response', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = GetMyFactions200Response(
-        data: <GetMyFactions200ResponseDataInner>[
+      final instance = GetMyFactions200Response(
+        data: const <GetMyFactions200ResponseDataInner>[
           GetMyFactions200ResponseDataInner(symbol: 'example', reputation: 0),
         ],
         meta: Meta(total: 0, limit: 1),

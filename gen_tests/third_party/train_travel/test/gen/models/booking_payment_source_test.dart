@@ -5,7 +5,7 @@ import 'package:train_travel/api.dart';
 void main() {
   group('BookingPaymentSource', () {
     test('Card round-trips via maybeFromJson/toJson', () {
-      const instance = Card(
+      final instance = Card(
         name: 'Francis Bourgeois',
         number: '4242424242424242',
         cvc: '123',

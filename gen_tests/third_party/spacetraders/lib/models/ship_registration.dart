@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/ship_role.dart';
 
@@ -8,11 +9,14 @@ import 'package:spacetraders/models/ship_role.dart';
 @immutable
 class ShipRegistration {
   /// {@macro ship_registration}
-  const ShipRegistration({
+  ShipRegistration({
     required this.name,
     required this.factionSymbol,
     required this.role,
-  });
+  }) {
+    name.validate(minLength: 1);
+    factionSymbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ShipRegistration].
   factory ShipRegistration.fromJson(Map<String, dynamic> json) {

@@ -5,8 +5,8 @@ import 'package:test/test.dart';
 void main() {
   group('ActionsCreateOrUpdateOrgSecretRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ActionsCreateOrUpdateOrgSecretRequest(
-        encryptedValue: 'example',
+      final instance = ActionsCreateOrUpdateOrgSecretRequest(
+        encryptedValue: 'aaaa',
         keyId: 'example',
         visibility: ActionsCreateOrUpdateOrgSecretRequestVisibility.all,
       );

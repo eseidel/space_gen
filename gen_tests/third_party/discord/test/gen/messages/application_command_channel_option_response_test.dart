@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ApplicationCommandChannelOptionResponse', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ApplicationCommandChannelOptionResponse(
+      final instance = ApplicationCommandChannelOptionResponse(
         name: 'example',
         description: 'example',
       );

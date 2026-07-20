@@ -1,11 +1,12 @@
 import 'dart:typed_data';
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/role_colors.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CreateRoleRequest {
-  const CreateRoleRequest({
+  CreateRoleRequest({
     this.name,
     this.permissions,
     this.color,
@@ -14,7 +15,11 @@ class CreateRoleRequest {
     this.mentionable,
     this.icon,
     this.unicodeEmoji,
-  });
+  }) {
+    name?.validate(maxLength: 100);
+    color?.validate(min: 0, max: 16777215);
+    unicodeEmoji?.validate(maxLength: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreateRoleRequest].
   factory CreateRoleRequest.fromJson(Map<String, dynamic> json) {

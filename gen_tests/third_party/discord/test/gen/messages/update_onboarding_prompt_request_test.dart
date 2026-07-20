@@ -7,7 +7,7 @@ void main() {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = UpdateOnboardingPromptRequest(
         title: 'example',
-        options: const <OnboardingPromptOptionRequest>[
+        options: <OnboardingPromptOptionRequest>[
           OnboardingPromptOptionRequest(title: 'example'),
         ],
         id: SnowflakeType('0'),

@@ -1,15 +1,19 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class GuildWelcomeChannel {
-  const GuildWelcomeChannel({
+  GuildWelcomeChannel({
     required this.channelId,
     required this.description,
     this.emojiId,
     this.emojiName,
-  });
+  }) {
+    description.validate(minLength: 1, maxLength: 50);
+    emojiName?.validate(maxLength: 152133);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GuildWelcomeChannel].
   factory GuildWelcomeChannel.fromJson(Map<String, dynamic> json) {

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CreatePrivateChannelRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CreatePrivateChannelRequest();
+      final instance = CreatePrivateChannelRequest();
       final parsed = CreatePrivateChannelRequest.maybeFromJson(
         instance.toJson(),
       )!;

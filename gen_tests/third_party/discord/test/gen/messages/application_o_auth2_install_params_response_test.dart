@@ -5,8 +5,8 @@ import 'package:test/test.dart';
 void main() {
   group('ApplicationOAuth2InstallParamsResponse', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ApplicationOAuth2InstallParamsResponse(
-        scopes: <OAuth2Scopes>[OAuth2Scopes.identify],
+      final instance = ApplicationOAuth2InstallParamsResponse(
+        scopes: const <OAuth2Scopes>[OAuth2Scopes.identify],
         permissions: 'example',
       );
       final parsed = ApplicationOAuth2InstallParamsResponse.maybeFromJson(

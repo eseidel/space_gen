@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/basic_application_response.dart';
 import 'package:discord/messages/custom_client_theme_response.dart';
 import 'package:discord/messages/message_activity_response.dart';
@@ -26,7 +27,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class BasicMessageResponse {
-  const BasicMessageResponse({
+  BasicMessageResponse({
     required this.type,
     required this.content,
     required this.mentions,
@@ -63,7 +64,9 @@ class BasicMessageResponse {
     this.sharedClientTheme,
     this.interactionMetadata,
     this.messageSnapshots,
-  });
+  }) {
+    mentionRoles.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [BasicMessageResponse].
   factory BasicMessageResponse.fromJson(Map<String, dynamic> json) {

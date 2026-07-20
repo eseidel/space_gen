@@ -1,9 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class AddGroupDmUserRequest {
-  const AddGroupDmUserRequest({this.accessToken, this.nick});
+  AddGroupDmUserRequest({this.accessToken, this.nick}) {
+    accessToken?.validate(maxLength: 152133);
+    nick?.validate(maxLength: 152133);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [AddGroupDmUserRequest].
   factory AddGroupDmUserRequest.fromJson(Map<String, dynamic> json) {

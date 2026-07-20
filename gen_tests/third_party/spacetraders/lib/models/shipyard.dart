@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/shipyard_ship.dart';
 import 'package:spacetraders/models/shipyard_ship_types_inner.dart';
@@ -10,13 +11,15 @@ import 'package:spacetraders/models/shipyard_transaction.dart';
 @immutable
 class Shipyard {
   /// {@macro shipyard}
-  const Shipyard({
+  Shipyard({
     required this.symbol,
     required this.shipTypes,
     required this.modificationsFee,
     this.transactions,
     this.ships,
-  });
+  }) {
+    symbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [Shipyard].
   factory Shipyard.fromJson(Map<String, dynamic> json) {

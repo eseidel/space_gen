@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/waypoint_orbital.dart';
 import 'package:spacetraders/models/waypoint_symbol.dart';
@@ -10,14 +11,16 @@ import 'package:spacetraders/models/waypoint_type.dart';
 @immutable
 class SystemWaypoint {
   /// {@macro system_waypoint}
-  const SystemWaypoint({
+  SystemWaypoint({
     required this.symbol,
     required this.type,
     required this.x,
     required this.y,
     required this.orbitals,
     this.orbits,
-  });
+  }) {
+    orbits?.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [SystemWaypoint].
   factory SystemWaypoint.fromJson(Map<String, dynamic> json) {

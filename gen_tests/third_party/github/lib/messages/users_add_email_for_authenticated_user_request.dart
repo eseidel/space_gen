@@ -2,6 +2,7 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
@@ -89,7 +90,9 @@ final class UsersAddEmailForAuthenticatedUserRequestString
 @immutable
 final class UsersAddEmailForAuthenticatedUserRequestOneOf0
     extends UsersAddEmailForAuthenticatedUserRequest {
-  const UsersAddEmailForAuthenticatedUserRequestOneOf0({required this.emails});
+  UsersAddEmailForAuthenticatedUserRequestOneOf0({required this.emails}) {
+    emails.validate(minItems: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [UsersAddEmailForAuthenticatedUserRequestOneOf0].

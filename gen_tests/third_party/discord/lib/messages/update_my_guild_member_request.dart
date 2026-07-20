@@ -1,15 +1,14 @@
 import 'dart:typed_data';
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class UpdateMyGuildMemberRequest {
-  const UpdateMyGuildMemberRequest({
-    this.nick,
-    this.avatar,
-    this.bio,
-    this.banner,
-  });
+  UpdateMyGuildMemberRequest({this.nick, this.avatar, this.bio, this.banner}) {
+    nick?.validate(maxLength: 32);
+    bio?.validate(maxLength: 190);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UpdateMyGuildMemberRequest].
   factory UpdateMyGuildMemberRequest.fromJson(Map<String, dynamic> json) {

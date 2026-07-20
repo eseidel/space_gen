@@ -1,14 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/prune_guild_request_include_roles.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class PruneGuildRequest {
-  const PruneGuildRequest({
-    this.days,
-    this.computePruneCount,
-    this.includeRoles,
-  });
+  PruneGuildRequest({this.days, this.computePruneCount, this.includeRoles}) {
+    days?.validate(min: 1, max: 30);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [PruneGuildRequest].
   factory PruneGuildRequest.fromJson(Map<String, dynamic> json) {

@@ -1,9 +1,12 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class UpdateVoiceChannelStatusRequest {
-  const UpdateVoiceChannelStatusRequest({this.status});
+  UpdateVoiceChannelStatusRequest({this.status}) {
+    status?.validate(maxLength: 500);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UpdateVoiceChannelStatusRequest].
   factory UpdateVoiceChannelStatusRequest.fromJson(Map<String, dynamic> json) {

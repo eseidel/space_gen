@@ -1,9 +1,12 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class ProjectsMoveColumnRequest {
-  const ProjectsMoveColumnRequest({required this.position});
+  ProjectsMoveColumnRequest({required this.position}) {
+    position.validate(pattern: r'^(?:first|last|after:\d+)$');
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ProjectsMoveColumnRequest].
   factory ProjectsMoveColumnRequest.fromJson(Map<String, dynamic> json) {

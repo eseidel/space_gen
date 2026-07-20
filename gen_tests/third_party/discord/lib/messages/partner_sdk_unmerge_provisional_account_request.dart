@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/application_identity_provider_auth_type.dart';
 import 'package:discord/models/snowflake_type.dart';
@@ -5,12 +6,15 @@ import 'package:meta/meta.dart';
 
 @immutable
 class PartnerSdkUnmergeProvisionalAccountRequest {
-  const PartnerSdkUnmergeProvisionalAccountRequest({
+  PartnerSdkUnmergeProvisionalAccountRequest({
     required this.clientId,
     required this.externalAuthToken,
     required this.externalAuthType,
     this.clientSecret,
-  });
+  }) {
+    clientSecret?.validate(maxLength: 1024);
+    externalAuthToken.validate(maxLength: 10240);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [PartnerSdkUnmergeProvisionalAccountRequest].

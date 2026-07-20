@@ -5,10 +5,10 @@ import 'package:test/test.dart';
 void main() {
   group('ActionsGenerateRunnerJitconfigForRepoRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ActionsGenerateRunnerJitconfigForRepoRequest(
+      final instance = ActionsGenerateRunnerJitconfigForRepoRequest(
         name: 'example',
         runnerGroupId: 0,
-        labels: <String>['example'],
+        labels: const <String>['example'],
       );
       final parsed = ActionsGenerateRunnerJitconfigForRepoRequest.maybeFromJson(
         instance.toJson(),

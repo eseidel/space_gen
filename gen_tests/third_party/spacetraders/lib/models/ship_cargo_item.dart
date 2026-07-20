@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/trade_symbol.dart';
 
@@ -8,12 +9,14 @@ import 'package:spacetraders/models/trade_symbol.dart';
 @immutable
 class ShipCargoItem {
   /// {@macro ship_cargo_item}
-  const ShipCargoItem({
+  ShipCargoItem({
     required this.symbol,
     required this.name,
     required this.description,
     required this.units,
-  });
+  }) {
+    units.validate(min: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ShipCargoItem].
   factory ShipCargoItem.fromJson(Map<String, dynamic> json) {

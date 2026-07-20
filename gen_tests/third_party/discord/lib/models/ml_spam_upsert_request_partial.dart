@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/automod_event_type.dart';
 import 'package:discord/models/automod_trigger_type.dart';
@@ -8,7 +9,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class MlSpamUpsertRequestPartial {
-  const MlSpamUpsertRequestPartial({
+  MlSpamUpsertRequestPartial({
     this.name,
     this.eventType,
     this.actions,
@@ -16,7 +17,12 @@ class MlSpamUpsertRequestPartial {
     this.exemptRoles,
     this.exemptChannels,
     this.triggerMetadata,
-  });
+  }) {
+    name?.validate(maxLength: 100);
+    actions?.validate(minItems: 1, maxItems: 5);
+    exemptRoles?.validate(maxItems: 20, unique: true);
+    exemptChannels?.validate(maxItems: 50, unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [MlSpamUpsertRequestPartial].
   factory MlSpamUpsertRequestPartial.fromJson(Map<String, dynamic> json) {

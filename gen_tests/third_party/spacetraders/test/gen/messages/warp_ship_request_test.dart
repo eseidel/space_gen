@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('WarpShipRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = WarpShipRequest(waypointSymbol: 'example');
+      final instance = WarpShipRequest(waypointSymbol: 'example');
       final parsed = WarpShipRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

@@ -1,9 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class WebhookSlackEmbedField {
-  const WebhookSlackEmbedField({this.name, this.value, this.inline});
+  WebhookSlackEmbedField({this.name, this.value, this.inline}) {
+    name?.validate(maxLength: 152133);
+    value?.validate(maxLength: 152133);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [WebhookSlackEmbedField].
   factory WebhookSlackEmbedField.fromJson(Map<String, dynamic> json) {

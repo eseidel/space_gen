@@ -1,12 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/application_command_option_string_choice.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class InteractionApplicationCommandAutocompleteCallbackStringData {
-  const InteractionApplicationCommandAutocompleteCallbackStringData({
-    this.choices,
-  });
+  InteractionApplicationCommandAutocompleteCallbackStringData({this.choices}) {
+    choices?.validate(maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [InteractionApplicationCommandAutocompleteCallbackStringData].

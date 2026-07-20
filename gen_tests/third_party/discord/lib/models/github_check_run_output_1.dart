@@ -1,9 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class GithubCheckRunOutput1 {
-  const GithubCheckRunOutput1({this.title, this.summary});
+  GithubCheckRunOutput1({this.title, this.summary}) {
+    title?.validate(maxLength: 152133);
+    summary?.validate(maxLength: 152133);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GithubCheckRunOutput1].
   factory GithubCheckRunOutput1.fromJson(Map<String, dynamic> json) {

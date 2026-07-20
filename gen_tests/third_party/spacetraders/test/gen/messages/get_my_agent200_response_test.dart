@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('GetMyAgent200Response', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = GetMyAgent200Response(
+      final instance = GetMyAgent200Response(
         data: Agent(
           accountId: 'example',
           symbol: 'example',

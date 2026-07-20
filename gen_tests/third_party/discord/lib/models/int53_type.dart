@@ -2,9 +2,7 @@ import 'package:discord/api_exception.dart';
 
 extension type const Int53Type._(int value) {
   Int53Type(this.value) {
-    value
-      ..validateMaximum(9007199254740991)
-      ..validateMinimum(-9007199254740991);
+    value.validate(min: -9007199254740991, max: 9007199254740991);
   }
 
   factory Int53Type.fromJson(int json) => Int53Type(json);

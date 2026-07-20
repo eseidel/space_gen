@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('IncomingWebhookInteractionRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = IncomingWebhookInteractionRequest();
+      final instance = IncomingWebhookInteractionRequest();
       final parsed = IncomingWebhookInteractionRequest.maybeFromJson(
         instance.toJson(),
       )!;

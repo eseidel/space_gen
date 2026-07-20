@@ -1,14 +1,18 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class GithubRepository {
-  const GithubRepository({
+  GithubRepository({
     required this.id,
     required this.htmlUrl,
     required this.name,
     required this.fullName,
-  });
+  }) {
+    name.validate(maxLength: 152133);
+    fullName.validate(maxLength: 152133);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GithubRepository].
   factory GithubRepository.fromJson(Map<String, dynamic> json) {

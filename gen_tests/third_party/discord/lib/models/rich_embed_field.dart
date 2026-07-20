@@ -1,9 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class RichEmbedField {
-  const RichEmbedField({required this.name, required this.value, this.inline});
+  RichEmbedField({required this.name, required this.value, this.inline}) {
+    name.validate(maxLength: 256);
+    value.validate(maxLength: 1024);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [RichEmbedField].
   factory RichEmbedField.fromJson(Map<String, dynamic> json) {

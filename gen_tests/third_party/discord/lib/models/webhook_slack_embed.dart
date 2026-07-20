@@ -1,10 +1,11 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/webhook_slack_embed_field.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class WebhookSlackEmbed {
-  const WebhookSlackEmbed({
+  WebhookSlackEmbed({
     this.title,
     this.titleLink,
     this.text,
@@ -19,7 +20,18 @@ class WebhookSlackEmbed {
     this.imageUrl,
     this.thumbUrl,
     this.fields,
-  });
+  }) {
+    title?.validate(maxLength: 152133);
+    text?.validate(maxLength: 152133);
+    color?.validate(
+      maxLength: 7,
+      pattern: r'^#(([0-9a-fA-F]{2}){3}|([0-9a-fA-F]){3})$',
+    );
+    pretext?.validate(maxLength: 152133);
+    footer?.validate(maxLength: 152133);
+    authorName?.validate(maxLength: 152133);
+    fields?.validate(maxItems: 1521);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [WebhookSlackEmbed].
   factory WebhookSlackEmbed.fromJson(Map<String, dynamic> json) {

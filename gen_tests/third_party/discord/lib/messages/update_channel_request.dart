@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/channel_permission_overwrite_request.dart';
 import 'package:discord/messages/update_default_reaction_emoji_request.dart';
 import 'package:discord/messages/update_thread_tag_request.dart';
@@ -43,7 +44,9 @@ sealed class UpdateChannelRequest {
 
 @immutable
 final class UpdateDmRequestPartial extends UpdateChannelRequest {
-  const UpdateDmRequestPartial({this.name});
+  UpdateDmRequestPartial({this.name}) {
+    name?.validate(minLength: 0, maxLength: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UpdateDmRequestPartial].
   factory UpdateDmRequestPartial.fromJson(Map<String, dynamic> json) {
@@ -83,7 +86,9 @@ final class UpdateDmRequestPartial extends UpdateChannelRequest {
 
 @immutable
 final class UpdateGroupDmRequestPartial extends UpdateChannelRequest {
-  const UpdateGroupDmRequestPartial({this.name, this.icon});
+  UpdateGroupDmRequestPartial({this.name, this.icon}) {
+    name?.validate(minLength: 0, maxLength: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UpdateGroupDmRequestPartial].
   factory UpdateGroupDmRequestPartial.fromJson(Map<String, dynamic> json) {
@@ -131,7 +136,7 @@ final class UpdateGroupDmRequestPartial extends UpdateChannelRequest {
 
 @immutable
 final class UpdateGuildChannelRequestPartial extends UpdateChannelRequest {
-  const UpdateGuildChannelRequestPartial({
+  UpdateGuildChannelRequestPartial({
     this.type,
     this.name,
     this.position,
@@ -152,7 +157,17 @@ final class UpdateGuildChannelRequestPartial extends UpdateChannelRequest {
     this.defaultTagSetting,
     this.flags,
     this.availableTags,
-  });
+  }) {
+    name?.validate(minLength: 1, maxLength: 100);
+    position?.validate(min: 0);
+    topic?.validate(minLength: 0, maxLength: 4096);
+    bitrate?.validate(min: 8000);
+    userLimit?.validate(min: 0);
+    rateLimitPerUser?.validate(min: 0, max: 21600);
+    permissionOverwrites?.validate(maxItems: 100);
+    defaultThreadRateLimitPerUser?.validate(min: 0, max: 21600);
+    availableTags?.validate(maxItems: 20);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UpdateGuildChannelRequestPartial].
   factory UpdateGuildChannelRequestPartial.fromJson(Map<String, dynamic> json) {
@@ -321,7 +336,7 @@ final class UpdateGuildChannelRequestPartial extends UpdateChannelRequest {
 
 @immutable
 final class UpdateThreadRequestPartial extends UpdateChannelRequest {
-  const UpdateThreadRequestPartial({
+  UpdateThreadRequestPartial({
     this.name,
     this.archived,
     this.locked,
@@ -334,7 +349,13 @@ final class UpdateThreadRequestPartial extends UpdateChannelRequest {
     this.userLimit,
     this.rtcRegion,
     this.videoQualityMode,
-  });
+  }) {
+    name?.validate(minLength: 0, maxLength: 100);
+    rateLimitPerUser?.validate(min: 0, max: 21600);
+    appliedTags?.validate(maxItems: 5);
+    bitrate?.validate(min: 8000);
+    userLimit?.validate(min: 0, max: 99);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UpdateThreadRequestPartial].
   factory UpdateThreadRequestPartial.fromJson(Map<String, dynamic> json) {

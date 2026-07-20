@@ -5,10 +5,10 @@ import 'package:test/test.dart';
 void main() {
   group('RepositoryAdvisoryCreate', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = RepositoryAdvisoryCreate(
+      final instance = RepositoryAdvisoryCreate(
         summary: 'example',
         description: 'example',
-        vulnerabilities: <RepositoryAdvisoryCreateVulnerabilitiesInner>[
+        vulnerabilities: const <RepositoryAdvisoryCreateVulnerabilitiesInner>[
           RepositoryAdvisoryCreateVulnerabilitiesInner(
             package: RepositoryAdvisoryCreateVulnerabilitiesInnerPackage(
               ecosystem: SecurityAdvisoryEcosystems.rubygems,

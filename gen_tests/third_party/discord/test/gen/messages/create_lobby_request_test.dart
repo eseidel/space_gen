@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CreateLobbyRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CreateLobbyRequest();
+      final instance = CreateLobbyRequest();
       final parsed = CreateLobbyRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

@@ -1,12 +1,12 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class RepositoryAdvisoryCvss {
-  const RepositoryAdvisoryCvss({
-    required this.vectorString,
-    required this.score,
-  });
+  RepositoryAdvisoryCvss({required this.vectorString, required this.score}) {
+    score?.validate(min: 0.0, max: 10.0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryAdvisoryCvss].
   factory RepositoryAdvisoryCvss.fromJson(Map<String, dynamic> json) {

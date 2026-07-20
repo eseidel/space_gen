@@ -5,11 +5,11 @@ import 'package:test/test.dart';
 void main() {
   group('ExtractResourcesWithSurvey201Response', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ExtractResourcesWithSurvey201Response(
+      final instance = ExtractResourcesWithSurvey201Response(
         data: ExtractResourcesWithSurvey201ResponseData(
           extraction: Extraction(
             shipSymbol: 'example',
-            yield_: ExtractionYield(
+            yield_: const ExtractionYield(
               symbol: TradeSymbol.preciousStones,
               units: 0,
             ),
@@ -31,7 +31,7 @@ void main() {
               ),
             ],
           ),
-          events: <ShipConditionEvent>[
+          events: const <ShipConditionEvent>[
             ShipConditionEvent(
               symbol: ShipConditionEventSymbol.reactorOverload,
               component: ShipConditionEventComponent.frame,

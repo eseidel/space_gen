@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/custom_property_set_payload_default_value.dart';
 import 'package:github/models/custom_property_set_payload_value_type.dart';
@@ -11,14 +12,16 @@ import 'package:meta/meta.dart';
 @immutable
 class CustomPropertySetPayload {
   /// {@macro custom_property_set_payload}
-  const CustomPropertySetPayload({
+  CustomPropertySetPayload({
     required this.valueType,
     this.required_,
     this.defaultValue,
     this.description,
     this.allowedValues,
     this.valuesEditableBy,
-  });
+  }) {
+    allowedValues?.validate(maxItems: 200);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CustomPropertySetPayload].
   factory CustomPropertySetPayload.fromJson(Map<String, dynamic> json) {

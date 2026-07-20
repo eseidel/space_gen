@@ -7,9 +7,7 @@ import 'package:spacetraders/api_exception.dart';
 /// and represents permanent wear over time.
 extension type const ShipComponentIntegrity._(double value) {
   ShipComponentIntegrity(this.value) {
-    value
-      ..validateMaximum(1.0)
-      ..validateMinimum(0.0);
+    value.validate(min: 0.0, max: 1.0);
   }
 
   factory ShipComponentIntegrity.fromJson(num json) =>

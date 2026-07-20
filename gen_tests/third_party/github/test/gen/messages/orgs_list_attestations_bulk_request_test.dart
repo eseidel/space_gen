@@ -5,8 +5,8 @@ import 'package:test/test.dart';
 void main() {
   group('OrgsListAttestationsBulkRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = OrgsListAttestationsBulkRequest(
-        subjectDigests: <String>['example'],
+      final instance = OrgsListAttestationsBulkRequest(
+        subjectDigests: const <String>['example'],
       );
       final parsed = OrgsListAttestationsBulkRequest.maybeFromJson(
         instance.toJson(),

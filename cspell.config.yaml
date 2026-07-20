@@ -32,6 +32,8 @@ words:
   - regens
   - spacetraders
   - unrepresentable
+  - dart2js
+  - exampleable
   - newtype
   - newtypes
   - eseidel

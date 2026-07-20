@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/onboarding_prompt_option_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/onboarding_prompt_type.dart';
@@ -6,7 +7,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class UpdateOnboardingPromptRequest {
-  const UpdateOnboardingPromptRequest({
+  UpdateOnboardingPromptRequest({
     required this.title,
     required this.options,
     required this.id,
@@ -14,7 +15,10 @@ class UpdateOnboardingPromptRequest {
     this.required_,
     this.inOnboarding,
     this.type,
-  });
+  }) {
+    title.validate(minLength: 1, maxLength: 100);
+    options.validate(minItems: 1, maxItems: 50);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UpdateOnboardingPromptRequest].
   factory UpdateOnboardingPromptRequest.fromJson(Map<String, dynamic> json) {

@@ -5,9 +5,9 @@ import 'package:test/test.dart';
 void main() {
   group('CampaignsCreateCampaignRequestCodeScanningAlertsInner', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CampaignsCreateCampaignRequestCodeScanningAlertsInner(
+      final instance = CampaignsCreateCampaignRequestCodeScanningAlertsInner(
         repositoryId: 0,
-        alertNumbers: <int>[0],
+        alertNumbers: const <int>[0],
       );
       final parsed =
           CampaignsCreateCampaignRequestCodeScanningAlertsInner.maybeFromJson(

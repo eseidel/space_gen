@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('Cooldown', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = Cooldown(
+      final instance = Cooldown(
         shipSymbol: 'example',
         totalSeconds: 0,
         remainingSeconds: 0,

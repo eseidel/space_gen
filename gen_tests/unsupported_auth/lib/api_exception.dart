@@ -50,11 +50,26 @@ class ApiException<T> implements Exception {
   }
 }
 
-/// Validates a number.
+/// Validates a number against the constraints a schema declares for it.
 ///
-/// These are extensions on the num type that throw an exception if the value
-/// does not meet the validation criteria.
+/// [validate] is the sugar the generator emits: one call carrying every bound
+/// the schema sets, each argument omitted when it doesn't. It just forwards to
+/// the single-rule methods below, which are equally usable on their own.
 extension ValidateNumber on num {
+  void validate({
+    num? min,
+    num? max,
+    num? exclusiveMin,
+    num? exclusiveMax,
+    num? multipleOf,
+  }) {
+    if (min != null) validateMinimum(min);
+    if (max != null) validateMaximum(max);
+    if (exclusiveMin != null) validateExclusiveMinimum(exclusiveMin);
+    if (exclusiveMax != null) validateExclusiveMaximum(exclusiveMax);
+    if (multipleOf != null) validateMultipleOf(multipleOf);
+  }
+
   void validateMinimum(num minimum) {
     if (this < minimum) {
       throw Exception('must be greater than or equal to $minimum');
@@ -86,11 +101,16 @@ extension ValidateNumber on num {
   }
 }
 
-/// Validates a string.
+/// Validates a string against the constraints a schema declares for it.
 ///
-/// These are extensions on the String type that throw an exception if the value
-/// does not meet the validation criteria.
+/// See [ValidateNumber] — [validate] is sugar over the single-rule methods.
 extension ValidateString on String {
+  void validate({int? minLength, int? maxLength, String? pattern}) {
+    if (minLength != null) validateMinimumLength(minLength);
+    if (maxLength != null) validateMaximumLength(maxLength);
+    if (pattern != null) validatePattern(pattern);
+  }
+
   void validateMinimumLength(int minimum) {
     if (length < minimum) {
       throw Exception('must be at least $minimum characters long');
@@ -110,16 +130,25 @@ extension ValidateString on String {
   }
 }
 
+/// Validates a list against the constraints a schema declares for it.
+///
+/// See [ValidateNumber] — [validate] is sugar over the single-rule methods.
 extension ValidateArray<T> on List<T> {
-  void validateMaximumItems(int maximum) {
-    if (length > maximum) {
-      throw Exception('must be at most $maximum items long');
-    }
+  void validate({int? minItems, int? maxItems, bool unique = false}) {
+    if (minItems != null) validateMinimumItems(minItems);
+    if (maxItems != null) validateMaximumItems(maxItems);
+    if (unique) validateUniqueItems();
   }
 
   void validateMinimumItems(int minimum) {
     if (length < minimum) {
       throw Exception('must be at least $minimum items long');
+    }
+  }
+
+  void validateMaximumItems(int maximum) {
+    if (length > maximum) {
+      throw Exception('must be at most $maximum items long');
     }
   }
 

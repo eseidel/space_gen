@@ -1,11 +1,14 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CopilotCancelCopilotSeatAssignmentForUsersRequest {
-  const CopilotCancelCopilotSeatAssignmentForUsersRequest({
+  CopilotCancelCopilotSeatAssignmentForUsersRequest({
     required this.selectedUsernames,
-  });
+  }) {
+    selectedUsernames.validate(minItems: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [CopilotCancelCopilotSeatAssignmentForUsersRequest].

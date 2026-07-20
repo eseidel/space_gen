@@ -5,9 +5,9 @@ import 'package:test/test.dart';
 void main() {
   group('SupplyConstruction201Response', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = SupplyConstruction201Response(
+      final instance = SupplyConstruction201Response(
         data: SupplyConstruction201ResponseData(
-          construction: Construction(
+          construction: const Construction(
             symbol: 'example',
             materials: <ConstructionMaterial>[
               ConstructionMaterial(

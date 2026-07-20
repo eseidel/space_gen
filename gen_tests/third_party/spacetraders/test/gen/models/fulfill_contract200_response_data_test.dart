@@ -16,7 +16,7 @@ void main() {
           ),
           expiration: DateTime.utc(2024),
         ),
-        agent: const Agent(
+        agent: Agent(
           accountId: 'example',
           symbol: 'example',
           headquarters: 'example',

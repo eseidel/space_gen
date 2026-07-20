@@ -1,13 +1,18 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class ChecksCreateRequestOneOf0ActionsInner {
-  const ChecksCreateRequestOneOf0ActionsInner({
+  ChecksCreateRequestOneOf0ActionsInner({
     required this.label,
     required this.description,
     required this.identifier,
-  });
+  }) {
+    label.validate(maxLength: 20);
+    description.validate(maxLength: 40);
+    identifier.validate(maxLength: 20);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [ChecksCreateRequestOneOf0ActionsInner].

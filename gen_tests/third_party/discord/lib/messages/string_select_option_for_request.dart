@@ -1,16 +1,21 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/component_emoji_for_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class StringSelectOptionForRequest {
-  const StringSelectOptionForRequest({
+  StringSelectOptionForRequest({
     required this.label,
     required this.value,
     this.description,
     this.default_,
     this.emoji,
-  });
+  }) {
+    label.validate(minLength: 1, maxLength: 100);
+    value.validate(minLength: 1, maxLength: 100);
+    description?.validate(maxLength: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [StringSelectOptionForRequest].
   factory StringSelectOptionForRequest.fromJson(Map<String, dynamic> json) {

@@ -1,14 +1,19 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CheckboxGroupOptionForRequest {
-  const CheckboxGroupOptionForRequest({
+  CheckboxGroupOptionForRequest({
     required this.label,
     required this.value,
     this.description,
     this.default_,
-  });
+  }) {
+    label.validate(minLength: 1, maxLength: 100);
+    value.validate(minLength: 1, maxLength: 100);
+    description?.validate(maxLength: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CheckboxGroupOptionForRequest].
   factory CheckboxGroupOptionForRequest.fromJson(Map<String, dynamic> json) {

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ApplicationCommandRoleOption', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ApplicationCommandRoleOption(
+      final instance = ApplicationCommandRoleOption(
         name: 'example',
         description: 'example',
       );

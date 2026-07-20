@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('UpdateGuildEmojiRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = UpdateGuildEmojiRequest();
+      final instance = UpdateGuildEmojiRequest();
       final parsed = UpdateGuildEmojiRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

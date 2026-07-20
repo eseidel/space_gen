@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CreateGuildChannelRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CreateGuildChannelRequest(name: 'example');
+      final instance = CreateGuildChannelRequest(name: 'example');
       final parsed = CreateGuildChannelRequest.maybeFromJson(
         instance.toJson(),
       )!;

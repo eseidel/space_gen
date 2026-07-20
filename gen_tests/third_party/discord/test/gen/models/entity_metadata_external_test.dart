@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('EntityMetadataExternal', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = EntityMetadataExternal(location: 'example');
+      final instance = EntityMetadataExternal(location: 'example');
       final parsed = EntityMetadataExternal.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

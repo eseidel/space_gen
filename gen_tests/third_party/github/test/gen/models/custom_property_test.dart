@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CustomProperty', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CustomProperty(
+      final instance = CustomProperty(
         propertyName: 'example',
         valueType: CustomPropertyValueType.string,
       );

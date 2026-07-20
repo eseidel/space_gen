@@ -9,7 +9,7 @@ void main() {
         id: 'example',
         url: Uri.parse('https://example.com'),
         message: 'example',
-        author: const GithubAuthor(name: 'example'),
+        author: GithubAuthor(name: 'example'),
       );
       final parsed = GithubCommit.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));

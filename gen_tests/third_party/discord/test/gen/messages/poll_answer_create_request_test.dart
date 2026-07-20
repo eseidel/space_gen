@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('PollAnswerCreateRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = PollAnswerCreateRequest(
+      final instance = PollAnswerCreateRequest(
         pollMedia: PollMediaCreateRequest(),
       );
       final parsed = PollAnswerCreateRequest.maybeFromJson(instance.toJson())!;

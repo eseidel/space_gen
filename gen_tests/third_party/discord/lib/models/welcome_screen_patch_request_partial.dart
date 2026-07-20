@@ -1,14 +1,18 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/guild_welcome_channel.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class WelcomeScreenPatchRequestPartial {
-  const WelcomeScreenPatchRequestPartial({
+  WelcomeScreenPatchRequestPartial({
     this.description,
     this.welcomeChannels,
     this.enabled,
-  });
+  }) {
+    description?.validate(maxLength: 140);
+    welcomeChannels?.validate(maxItems: 5);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [WelcomeScreenPatchRequestPartial].
   factory WelcomeScreenPatchRequestPartial.fromJson(Map<String, dynamic> json) {

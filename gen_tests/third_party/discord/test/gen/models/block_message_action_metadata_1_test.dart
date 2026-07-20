@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('BlockMessageActionMetadata1', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = BlockMessageActionMetadata1();
+      final instance = BlockMessageActionMetadata1();
       final parsed = BlockMessageActionMetadata1.maybeFromJson(
         instance.toJson(),
       )!;

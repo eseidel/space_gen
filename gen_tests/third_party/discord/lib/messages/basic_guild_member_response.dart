@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/user_avatar_decoration_response.dart';
 import 'package:discord/messages/user_collectibles_response.dart';
 import 'package:discord/model_helpers.dart';
@@ -6,7 +7,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class BasicGuildMemberResponse {
-  const BasicGuildMemberResponse({
+  BasicGuildMemberResponse({
     required this.avatar,
     required this.banner,
     required this.communicationDisabledUntil,
@@ -18,7 +19,9 @@ class BasicGuildMemberResponse {
     required this.roles,
     this.avatarDecorationData,
     this.collectibles,
-  });
+  }) {
+    roles.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [BasicGuildMemberResponse].
   factory BasicGuildMemberResponse.fromJson(Map<String, dynamic> json) {

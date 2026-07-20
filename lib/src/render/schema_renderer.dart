@@ -67,16 +67,11 @@ class SchemaUsage {
     );
   }
 
-  /// Matches any `validateXxx` extension-method call. The
-  /// `api_exception.dart` file declares them as extensions on
+  /// Matches the `validate(...)` extension-method call. The
+  /// `api_exception.dart` file declares `validate` as extensions on
   /// `String` / `num` / `List<T>`; a body that calls one needs to
   /// import that file.
-  static final _validationCallPattern = RegExp(
-    r'\.validate(Maximum|Minimum|MaximumLength|MinimumLength|Pattern|'
-    'ExclusiveMaximum|ExclusiveMinimum|MultipleOf|MaximumItems|'
-    'MinimumItems|UniqueItems)'
-    r'\b',
-  );
+  static final _validationCallPattern = RegExp(r'\.validate\(');
 
   final bool usesMetaAnnotations;
 

@@ -1,11 +1,14 @@
 import 'dart:typed_data';
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class UpdateWebhookRequest {
-  const UpdateWebhookRequest({this.name, this.avatar, this.channelId});
+  UpdateWebhookRequest({this.name, this.avatar, this.channelId}) {
+    name?.validate(minLength: 1, maxLength: 80);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UpdateWebhookRequest].
   factory UpdateWebhookRequest.fromJson(Map<String, dynamic> json) {

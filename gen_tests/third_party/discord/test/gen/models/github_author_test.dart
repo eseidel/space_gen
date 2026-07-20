@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('GithubAuthor', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = GithubAuthor(name: 'example');
+      final instance = GithubAuthor(name: 'example');
       final parsed = GithubAuthor.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

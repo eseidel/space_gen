@@ -2,7 +2,7 @@ import 'package:discord/api_exception.dart';
 
 extension type const SnowflakeType._(String value) {
   SnowflakeType(this.value) {
-    value.validatePattern(r'^(0|[1-9][0-9]*)$');
+    value.validate(pattern: r'^(0|[1-9][0-9]*)$');
   }
 
   factory SnowflakeType.fromJson(String json) => SnowflakeType(json);

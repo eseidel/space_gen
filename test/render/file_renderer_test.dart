@@ -3489,14 +3489,14 @@ export 'package:aaa_petstore/auth.dart';
       );
     });
 
-    test('SchemaUsage.fromBody detects validateXxx calls and adds the '
+    test('SchemaUsage.fromBody detects validate calls and adds the '
         'api_exception.dart import', () {
-      // Newtype constructors call `value.validateMaximumLength(40)` etc.
+      // Newtype constructors call `value.validate(maxLength: 40)` etc.
       // SchemaUsage scans the body string and adds the api_exception
-      // import when any `validateXxx` shows up — the extensions live
+      // import when a `.validate(` call shows up — the extensions live
       // there, so the file needs the import.
       final usage = SchemaUsage.fromBody(
-        r"Foo(this.value) { value.validatePattern('^...$'); }",
+        r"Foo(this.value) { value.validate(pattern: '^...$'); }",
       );
       expect(usage.usesValidationExtensions, isTrue);
       expect(
@@ -3506,7 +3506,7 @@ export 'package:aaa_petstore/auth.dart';
     });
 
     test('SchemaUsage.fromBody does not add api_exception when no '
-        'validateXxx calls are present', () {
+        'validate calls are present', () {
       final usage = SchemaUsage.fromBody('class Foo { final int x; }');
       expect(usage.usesValidationExtensions, isFalse);
       expect(

@@ -1,15 +1,18 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/github_user.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class GithubRelease {
-  const GithubRelease({
+  GithubRelease({
     required this.id,
     required this.tagName,
     required this.htmlUrl,
     required this.author,
-  });
+  }) {
+    tagName.validate(maxLength: 152133);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GithubRelease].
   factory GithubRelease.fromJson(Map<String, dynamic> json) {

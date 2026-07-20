@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CampaignsUpdateCampaignRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CampaignsUpdateCampaignRequest();
+      final instance = CampaignsUpdateCampaignRequest();
       final parsed = CampaignsUpdateCampaignRequest.maybeFromJson(
         instance.toJson(),
       )!;

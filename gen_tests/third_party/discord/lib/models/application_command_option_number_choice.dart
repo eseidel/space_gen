@@ -1,13 +1,16 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class ApplicationCommandOptionNumberChoice {
-  const ApplicationCommandOptionNumberChoice({
+  ApplicationCommandOptionNumberChoice({
     required this.name,
     required this.value,
     this.nameLocalizations,
-  });
+  }) {
+    name.validate(minLength: 1, maxLength: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [ApplicationCommandOptionNumberChoice].

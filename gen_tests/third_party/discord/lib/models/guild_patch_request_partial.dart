@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/afk_timeouts.dart';
 import 'package:discord/models/available_locales_enum.dart';
@@ -10,7 +11,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class GuildPatchRequestPartial {
-  const GuildPatchRequestPartial({
+  GuildPatchRequestPartial({
     this.name,
     this.description,
     this.region,
@@ -32,7 +33,11 @@ class GuildPatchRequestPartial {
     this.safetyAlertsChannelId,
     this.publicUpdatesChannelId,
     this.premiumProgressBarEnabled,
-  });
+  }) {
+    name?.validate(minLength: 2, maxLength: 100);
+    description?.validate(minLength: 0, maxLength: 300);
+    features?.validate(maxItems: 1521, unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GuildPatchRequestPartial].
   factory GuildPatchRequestPartial.fromJson(Map<String, dynamic> json) {

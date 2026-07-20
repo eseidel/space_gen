@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/trade_symbol.dart';
 
@@ -8,11 +9,13 @@ import 'package:spacetraders/models/trade_symbol.dart';
 @immutable
 class TransferCargoRequest {
   /// {@macro transfer_cargo_request}
-  const TransferCargoRequest({
+  TransferCargoRequest({
     required this.tradeSymbol,
     required this.units,
     required this.shipSymbol,
-  });
+  }) {
+    units.validate(min: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [TransferCargoRequest].
   factory TransferCargoRequest.fromJson(Map<String, dynamic> json) {

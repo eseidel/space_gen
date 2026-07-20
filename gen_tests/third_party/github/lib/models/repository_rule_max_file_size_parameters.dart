@@ -1,9 +1,12 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class RepositoryRuleMaxFileSizeParameters {
-  const RepositoryRuleMaxFileSizeParameters({required this.maxFileSize});
+  RepositoryRuleMaxFileSizeParameters({required this.maxFileSize}) {
+    maxFileSize.validate(min: 1, max: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RepositoryRuleMaxFileSizeParameters].

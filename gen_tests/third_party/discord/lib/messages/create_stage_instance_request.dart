@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:discord/models/stage_instances_privacy_levels.dart';
@@ -5,13 +6,15 @@ import 'package:meta/meta.dart';
 
 @immutable
 class CreateStageInstanceRequest {
-  const CreateStageInstanceRequest({
+  CreateStageInstanceRequest({
     required this.topic,
     required this.channelId,
     this.privacyLevel,
     this.guildScheduledEventId,
     this.sendStartNotification,
-  });
+  }) {
+    topic.validate(minLength: 1, maxLength: 120);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreateStageInstanceRequest].
   factory CreateStageInstanceRequest.fromJson(Map<String, dynamic> json) {

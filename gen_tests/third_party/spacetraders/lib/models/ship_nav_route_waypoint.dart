@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/system_symbol.dart';
 import 'package:spacetraders/models/waypoint_type.dart';
@@ -9,13 +10,15 @@ import 'package:spacetraders/models/waypoint_type.dart';
 @immutable
 class ShipNavRouteWaypoint {
   /// {@macro ship_nav_route_waypoint}
-  const ShipNavRouteWaypoint({
+  ShipNavRouteWaypoint({
     required this.symbol,
     required this.type,
     required this.systemSymbol,
     required this.x,
     required this.y,
-  });
+  }) {
+    symbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ShipNavRouteWaypoint].
   factory ShipNavRouteWaypoint.fromJson(Map<String, dynamic> json) {

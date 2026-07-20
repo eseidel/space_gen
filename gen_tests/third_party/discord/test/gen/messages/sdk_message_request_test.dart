@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('SdkMessageRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = SdkMessageRequest();
+      final instance = SdkMessageRequest();
       final parsed = SdkMessageRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

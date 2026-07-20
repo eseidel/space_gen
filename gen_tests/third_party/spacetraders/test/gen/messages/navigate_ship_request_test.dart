@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('NavigateShipRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = NavigateShipRequest(waypointSymbol: 'example');
+      final instance = NavigateShipRequest(waypointSymbol: 'example');
       final parsed = NavigateShipRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

@@ -6,7 +6,7 @@ void main() {
   group('CreateShipShipScan201ResponseData', () {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = CreateShipShipScan201ResponseData(
-        cooldown: const Cooldown(
+        cooldown: Cooldown(
           shipSymbol: 'example',
           totalSeconds: 0,
           remainingSeconds: 0,
@@ -14,7 +14,7 @@ void main() {
         ships: <ScannedShip>[
           ScannedShip(
             symbol: 'example',
-            registration: const ShipRegistration(
+            registration: ShipRegistration(
               name: 'example',
               factionSymbol: 'example',
               role: ShipRole.fabricator,

@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/survey_deposit.dart';
 import 'package:spacetraders/models/survey_size.dart';
@@ -10,13 +11,16 @@ import 'package:spacetraders/models/survey_size.dart';
 @immutable
 class Survey {
   /// {@macro survey}
-  const Survey({
+  Survey({
     required this.signature,
     required this.symbol,
     required this.deposits,
     required this.expiration,
     required this.size,
-  });
+  }) {
+    signature.validate(minLength: 1);
+    symbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [Survey].
   factory Survey.fromJson(Map<String, dynamic> json) {

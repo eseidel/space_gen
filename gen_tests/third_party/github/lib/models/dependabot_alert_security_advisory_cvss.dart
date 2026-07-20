@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
@@ -8,10 +9,12 @@ import 'package:meta/meta.dart';
 @immutable
 class DependabotAlertSecurityAdvisoryCvss {
   /// {@macro dependabot_alert_security_advisory_cvss}
-  const DependabotAlertSecurityAdvisoryCvss({
+  DependabotAlertSecurityAdvisoryCvss({
     required this.score,
     required this.vectorString,
-  });
+  }) {
+    score.validate(min: 0.0, max: 10.0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [DependabotAlertSecurityAdvisoryCvss].

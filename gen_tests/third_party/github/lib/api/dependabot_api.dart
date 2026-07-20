@@ -138,10 +138,8 @@ class DependabotApi {
     int? last,
     int? perPage = 30,
   }) async {
-    first?.validateMaximum(100);
-    first?.validateMinimum(1);
-    last?.validateMaximum(100);
-    last?.validateMinimum(1);
+    first?.validate(min: 1, max: 100);
+    last?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -202,9 +200,8 @@ class DependabotApi {
     int? page = 1,
     int? perPage = 30,
   }) async {
-    page?.validateMinimum(1);
-    perPage?.validateMaximum(100);
-    perPage?.validateMinimum(1);
+    page?.validate(min: 1);
+    perPage?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -321,10 +318,8 @@ class DependabotApi {
     int? last,
     int? perPage = 30,
   }) async {
-    first?.validateMaximum(100);
-    first?.validateMinimum(1);
-    last?.validateMaximum(100);
-    last?.validateMinimum(1);
+    first?.validate(min: 1, max: 100);
+    last?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -668,10 +663,8 @@ class DependabotApi {
     int? first = 30,
     int? last,
   }) async {
-    first?.validateMaximum(100);
-    first?.validateMinimum(1);
-    last?.validateMaximum(100);
-    last?.validateMinimum(1);
+    first?.validate(min: 1, max: 100);
+    last?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,

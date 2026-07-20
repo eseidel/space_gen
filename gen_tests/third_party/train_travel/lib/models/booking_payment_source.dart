@@ -3,6 +3,7 @@
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
 import 'package:meta/meta.dart';
+import 'package:train_travel/api_exception.dart';
 import 'package:train_travel/model_helpers.dart';
 import 'package:train_travel/models/booking_payment_source_one_of_1_account_type.dart';
 
@@ -44,7 +45,7 @@ sealed class BookingPaymentSource {
 @immutable
 final class Card extends BookingPaymentSource {
   /// {@macro booking_payment_source_one_of_0}
-  const Card({
+  Card({
     required this.name,
     required this.number,
     required this.cvc,
@@ -55,7 +56,9 @@ final class Card extends BookingPaymentSource {
     this.addressLine2,
     this.addressCity,
     this.addressPostCode,
-  });
+  }) {
+    cvc.validate(minLength: 3, maxLength: 4);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [Card].
   factory Card.fromJson(Map<String, dynamic> json) {

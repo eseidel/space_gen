@@ -2,6 +2,7 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/base_create_message_create_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/channel_types.dart';
@@ -39,13 +40,17 @@ sealed class CreateThreadRequest {
 
 @immutable
 final class CreateForumThreadRequest extends CreateThreadRequest {
-  const CreateForumThreadRequest({
+  CreateForumThreadRequest({
     required this.name,
     required this.message,
     this.autoArchiveDuration,
     this.rateLimitPerUser,
     this.appliedTags,
-  });
+  }) {
+    name.validate(minLength: 1, maxLength: 100);
+    rateLimitPerUser?.validate(min: 0, max: 21600);
+    appliedTags?.validate(maxItems: 5);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreateForumThreadRequest].
   factory CreateForumThreadRequest.fromJson(Map<String, dynamic> json) {
@@ -118,13 +123,16 @@ final class CreateForumThreadRequest extends CreateThreadRequest {
 
 @immutable
 final class CreateTextThreadWithoutMessageRequest extends CreateThreadRequest {
-  const CreateTextThreadWithoutMessageRequest({
+  CreateTextThreadWithoutMessageRequest({
     required this.name,
     this.autoArchiveDuration,
     this.rateLimitPerUser,
     this.type,
     this.invitable,
-  });
+  }) {
+    name.validate(minLength: 1, maxLength: 100);
+    rateLimitPerUser?.validate(min: 0, max: 21600);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [CreateTextThreadWithoutMessageRequest].

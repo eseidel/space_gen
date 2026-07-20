@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('DependabotUpdateAlertRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = DependabotUpdateAlertRequest(
+      final instance = DependabotUpdateAlertRequest(
         state: DependabotUpdateAlertRequestState.dismissed,
       );
       final parsed = DependabotUpdateAlertRequest.maybeFromJson(

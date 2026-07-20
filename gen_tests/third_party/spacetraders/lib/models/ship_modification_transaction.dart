@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 
 /// {@template ship_modification_transaction}
@@ -8,13 +9,15 @@ import 'package:spacetraders/model_helpers.dart';
 @immutable
 class ShipModificationTransaction {
   /// {@macro ship_modification_transaction}
-  const ShipModificationTransaction({
+  ShipModificationTransaction({
     required this.waypointSymbol,
     required this.shipSymbol,
     required this.tradeSymbol,
     required this.totalPrice,
     required this.timestamp,
-  });
+  }) {
+    totalPrice.validate(min: 0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ShipModificationTransaction].
   factory ShipModificationTransaction.fromJson(Map<String, dynamic> json) {

@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/repository_advisory_create_credits_inner.dart';
 import 'package:github/models/repository_advisory_create_severity.dart';
@@ -6,7 +7,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class RepositoryAdvisoryCreate {
-  const RepositoryAdvisoryCreate({
+  RepositoryAdvisoryCreate({
     required this.summary,
     required this.description,
     required this.vulnerabilities,
@@ -16,7 +17,10 @@ class RepositoryAdvisoryCreate {
     this.severity,
     this.cvssVectorString,
     this.startPrivateFork = false,
-  });
+  }) {
+    summary.validate(maxLength: 1024);
+    description.validate(maxLength: 65535);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryAdvisoryCreate].
   factory RepositoryAdvisoryCreate.fromJson(Map<String, dynamic> json) {

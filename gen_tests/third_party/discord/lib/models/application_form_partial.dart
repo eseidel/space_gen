@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/action_types.dart';
 import 'package:discord/models/application_event_webhooks_status.dart';
@@ -12,7 +13,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class ApplicationFormPartial {
-  const ApplicationFormPartial({
+  ApplicationFormPartial({
     this.description,
     this.icon,
     this.coverImage,
@@ -30,7 +31,11 @@ class ApplicationFormPartial {
     this.eventWebhooksStatus,
     this.eventWebhooksUrl,
     this.eventWebhooksTypes,
-  });
+  }) {
+    maxParticipants?.validate(min: -1);
+    tags?.validate(maxItems: 5, unique: true);
+    eventWebhooksTypes?.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [ApplicationFormPartial].
   factory ApplicationFormPartial.fromJson(Map<String, dynamic> json) {

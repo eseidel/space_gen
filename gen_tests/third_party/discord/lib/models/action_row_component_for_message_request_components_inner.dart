@@ -2,6 +2,7 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/button_component_for_message_request.dart';
 import 'package:discord/messages/string_select_option_for_request.dart';
 import 'package:discord/model_helpers.dart';
@@ -78,7 +79,7 @@ final class ActionRowComponentForMessageRequestComponentsInnerButtonComponentFor
 @immutable
 final class ChannelSelectComponentForMessageRequest
     extends ActionRowComponentForMessageRequestComponentsInner {
-  const ChannelSelectComponentForMessageRequest({
+  ChannelSelectComponentForMessageRequest({
     required this.customId,
     this.id,
     this.placeholder,
@@ -88,7 +89,15 @@ final class ChannelSelectComponentForMessageRequest
     this.required_,
     this.defaultValues,
     this.channelTypes,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+    placeholder?.validate(maxLength: 150);
+    minValues?.validate(min: 0, max: 25);
+    maxValues?.validate(min: 1, max: 25);
+    defaultValues?.validate(maxItems: 25);
+    channelTypes?.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [ChannelSelectComponentForMessageRequest].
@@ -191,7 +200,7 @@ final class ChannelSelectComponentForMessageRequest
 @immutable
 final class MentionableSelectComponentForMessageRequest
     extends ActionRowComponentForMessageRequestComponentsInner {
-  const MentionableSelectComponentForMessageRequest({
+  MentionableSelectComponentForMessageRequest({
     required this.customId,
     this.id,
     this.placeholder,
@@ -200,7 +209,14 @@ final class MentionableSelectComponentForMessageRequest
     this.disabled,
     this.required_,
     this.defaultValues,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+    placeholder?.validate(maxLength: 150);
+    minValues?.validate(min: 0, max: 25);
+    maxValues?.validate(min: 1, max: 25);
+    defaultValues?.validate(maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [MentionableSelectComponentForMessageRequest].
@@ -301,7 +317,7 @@ final class MentionableSelectComponentForMessageRequest
 @immutable
 final class RoleSelectComponentForMessageRequest
     extends ActionRowComponentForMessageRequestComponentsInner {
-  const RoleSelectComponentForMessageRequest({
+  RoleSelectComponentForMessageRequest({
     required this.customId,
     this.id,
     this.placeholder,
@@ -310,7 +326,14 @@ final class RoleSelectComponentForMessageRequest
     this.disabled,
     this.required_,
     this.defaultValues,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+    placeholder?.validate(maxLength: 150);
+    minValues?.validate(min: 0, max: 25);
+    maxValues?.validate(min: 1, max: 25);
+    defaultValues?.validate(maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RoleSelectComponentForMessageRequest].
@@ -405,7 +428,7 @@ final class RoleSelectComponentForMessageRequest
 @immutable
 final class StringSelectComponentForMessageRequest
     extends ActionRowComponentForMessageRequestComponentsInner {
-  const StringSelectComponentForMessageRequest({
+  StringSelectComponentForMessageRequest({
     required this.customId,
     required this.options,
     this.id,
@@ -414,7 +437,14 @@ final class StringSelectComponentForMessageRequest
     this.maxValues,
     this.disabled,
     this.required_,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+    placeholder?.validate(maxLength: 150);
+    minValues?.validate(min: 0, max: 25);
+    maxValues?.validate(min: 1, max: 25);
+    options.validate(minItems: 1, maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [StringSelectComponentForMessageRequest].
@@ -511,7 +541,7 @@ final class StringSelectComponentForMessageRequest
 @immutable
 final class UserSelectComponentForMessageRequest
     extends ActionRowComponentForMessageRequestComponentsInner {
-  const UserSelectComponentForMessageRequest({
+  UserSelectComponentForMessageRequest({
     required this.customId,
     this.id,
     this.placeholder,
@@ -520,7 +550,14 @@ final class UserSelectComponentForMessageRequest
     this.disabled,
     this.required_,
     this.defaultValues,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+    placeholder?.validate(maxLength: 150);
+    minValues?.validate(min: 0, max: 25);
+    maxValues?.validate(min: 1, max: 25);
+    defaultValues?.validate(maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [UserSelectComponentForMessageRequest].

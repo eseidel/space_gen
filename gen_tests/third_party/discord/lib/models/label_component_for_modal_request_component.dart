@@ -2,6 +2,7 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/checkbox_group_option_for_request.dart';
 import 'package:discord/messages/radio_group_option_for_request.dart';
 import 'package:discord/messages/string_select_option_for_request.dart';
@@ -84,7 +85,7 @@ final class LabelComponentForModalRequestComponentTextInputComponentForModalRequ
 @immutable
 final class ChannelSelectComponentForModalRequest
     extends LabelComponentForModalRequestComponent {
-  const ChannelSelectComponentForModalRequest({
+  ChannelSelectComponentForModalRequest({
     required this.customId,
     this.id,
     this.placeholder,
@@ -94,7 +95,15 @@ final class ChannelSelectComponentForModalRequest
     this.required_,
     this.defaultValues,
     this.channelTypes,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+    placeholder?.validate(maxLength: 150);
+    minValues?.validate(min: 0, max: 25);
+    maxValues?.validate(min: 1, max: 25);
+    defaultValues?.validate(maxItems: 25);
+    channelTypes?.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [ChannelSelectComponentForModalRequest].
@@ -197,11 +206,14 @@ final class ChannelSelectComponentForModalRequest
 @immutable
 final class CheckboxComponentForModalRequest
     extends LabelComponentForModalRequestComponent {
-  const CheckboxComponentForModalRequest({
+  CheckboxComponentForModalRequest({
     required this.customId,
     this.id,
     this.default_,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CheckboxComponentForModalRequest].
   factory CheckboxComponentForModalRequest.fromJson(Map<String, dynamic> json) {
@@ -259,14 +271,20 @@ final class CheckboxComponentForModalRequest
 @immutable
 final class CheckboxGroupComponentForModalRequest
     extends LabelComponentForModalRequestComponent {
-  const CheckboxGroupComponentForModalRequest({
+  CheckboxGroupComponentForModalRequest({
     required this.customId,
     required this.options,
     this.id,
     this.minValues,
     this.maxValues,
     this.required_,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+    minValues?.validate(min: 0, max: 10);
+    maxValues?.validate(min: 1, max: 10);
+    options.validate(minItems: 1, maxItems: 10);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [CheckboxGroupComponentForModalRequest].
@@ -353,13 +371,18 @@ final class CheckboxGroupComponentForModalRequest
 @immutable
 final class FileUploadComponentForModalRequest
     extends LabelComponentForModalRequestComponent {
-  const FileUploadComponentForModalRequest({
+  FileUploadComponentForModalRequest({
     required this.customId,
     this.id,
     this.minValues,
     this.maxValues,
     this.required_,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+    minValues?.validate(min: 0, max: 10);
+    maxValues?.validate(min: 1, max: 10);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [FileUploadComponentForModalRequest].
@@ -430,7 +453,7 @@ final class FileUploadComponentForModalRequest
 @immutable
 final class MentionableSelectComponentForModalRequest
     extends LabelComponentForModalRequestComponent {
-  const MentionableSelectComponentForModalRequest({
+  MentionableSelectComponentForModalRequest({
     required this.customId,
     this.id,
     this.placeholder,
@@ -439,7 +462,14 @@ final class MentionableSelectComponentForModalRequest
     this.disabled,
     this.required_,
     this.defaultValues,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+    placeholder?.validate(maxLength: 150);
+    minValues?.validate(min: 0, max: 25);
+    maxValues?.validate(min: 1, max: 25);
+    defaultValues?.validate(maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [MentionableSelectComponentForModalRequest].
@@ -538,12 +568,16 @@ final class MentionableSelectComponentForModalRequest
 @immutable
 final class RadioGroupComponentForModalRequest
     extends LabelComponentForModalRequestComponent {
-  const RadioGroupComponentForModalRequest({
+  RadioGroupComponentForModalRequest({
     required this.customId,
     required this.options,
     this.id,
     this.required_,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+    options.validate(minItems: 2, maxItems: 10);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RadioGroupComponentForModalRequest].
@@ -616,7 +650,7 @@ final class RadioGroupComponentForModalRequest
 @immutable
 final class RoleSelectComponentForModalRequest
     extends LabelComponentForModalRequestComponent {
-  const RoleSelectComponentForModalRequest({
+  RoleSelectComponentForModalRequest({
     required this.customId,
     this.id,
     this.placeholder,
@@ -625,7 +659,14 @@ final class RoleSelectComponentForModalRequest
     this.disabled,
     this.required_,
     this.defaultValues,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+    placeholder?.validate(maxLength: 150);
+    minValues?.validate(min: 0, max: 25);
+    maxValues?.validate(min: 1, max: 25);
+    defaultValues?.validate(maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RoleSelectComponentForModalRequest].
@@ -720,7 +761,7 @@ final class RoleSelectComponentForModalRequest
 @immutable
 final class StringSelectComponentForModalRequest
     extends LabelComponentForModalRequestComponent {
-  const StringSelectComponentForModalRequest({
+  StringSelectComponentForModalRequest({
     required this.customId,
     required this.options,
     this.id,
@@ -729,7 +770,14 @@ final class StringSelectComponentForModalRequest
     this.maxValues,
     this.disabled,
     this.required_,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+    placeholder?.validate(maxLength: 150);
+    minValues?.validate(min: 0, max: 25);
+    maxValues?.validate(min: 1, max: 25);
+    options.validate(minItems: 1, maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [StringSelectComponentForModalRequest].
@@ -826,7 +874,7 @@ final class StringSelectComponentForModalRequest
 @immutable
 final class UserSelectComponentForModalRequest
     extends LabelComponentForModalRequestComponent {
-  const UserSelectComponentForModalRequest({
+  UserSelectComponentForModalRequest({
     required this.customId,
     this.id,
     this.placeholder,
@@ -835,7 +883,14 @@ final class UserSelectComponentForModalRequest
     this.disabled,
     this.required_,
     this.defaultValues,
-  });
+  }) {
+    id?.validate(min: 0);
+    customId.validate(minLength: 1, maxLength: 100);
+    placeholder?.validate(maxLength: 150);
+    minValues?.validate(min: 0, max: 25);
+    maxValues?.validate(min: 1, max: 25);
+    defaultValues?.validate(maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [UserSelectComponentForModalRequest].

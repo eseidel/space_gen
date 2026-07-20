@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 
 /// {@template cooldown}
@@ -8,12 +9,16 @@ import 'package:spacetraders/model_helpers.dart';
 @immutable
 class Cooldown {
   /// {@macro cooldown}
-  const Cooldown({
+  Cooldown({
     required this.shipSymbol,
     required this.totalSeconds,
     required this.remainingSeconds,
     this.expiration,
-  });
+  }) {
+    shipSymbol.validate(minLength: 1);
+    totalSeconds.validate(min: 0);
+    remainingSeconds.validate(min: 0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [Cooldown].
   factory Cooldown.fromJson(Map<String, dynamic> json) {

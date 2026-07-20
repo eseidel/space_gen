@@ -7,7 +7,7 @@ void main() {
     test(
       'DefaultKeywordListUpsertRequest round-trips via maybeFromJson/toJson',
       () {
-        const instance = DefaultKeywordListUpsertRequest(
+        final instance = DefaultKeywordListUpsertRequest(
           name: 'example',
           eventType: AutomodEventType.messageSend,
           triggerMetadata: DefaultKeywordListTriggerMetadata(),
@@ -21,7 +21,7 @@ void main() {
     );
 
     test('KeywordUpsertRequest round-trips via maybeFromJson/toJson', () {
-      const instance = KeywordUpsertRequest(
+      final instance = KeywordUpsertRequest(
         name: 'example',
         eventType: AutomodEventType.messageSend,
       );
@@ -31,7 +31,7 @@ void main() {
     });
 
     test('MlSpamUpsertRequest round-trips via maybeFromJson/toJson', () {
-      const instance = MlSpamUpsertRequest(
+      final instance = MlSpamUpsertRequest(
         name: 'example',
         eventType: AutomodEventType.messageSend,
       );
@@ -41,7 +41,7 @@ void main() {
     });
 
     test('MentionSpamUpsertRequest round-trips via maybeFromJson/toJson', () {
-      const instance = MentionSpamUpsertRequest(
+      final instance = MentionSpamUpsertRequest(
         name: 'example',
         eventType: AutomodEventType.messageSend,
       );

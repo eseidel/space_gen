@@ -11,8 +11,8 @@ void main() {
     test(
       'UsersAddEmailForAuthenticatedUserRequestOneOf0 round-trips via maybeFromJson/toJson',
       () {
-        const instance = UsersAddEmailForAuthenticatedUserRequestOneOf0(
-          emails: <String>['username@example.com'],
+        final instance = UsersAddEmailForAuthenticatedUserRequestOneOf0(
+          emails: const <String>['username@example.com'],
         );
         final parsed =
             UsersAddEmailForAuthenticatedUserRequestOneOf0.maybeFromJson(

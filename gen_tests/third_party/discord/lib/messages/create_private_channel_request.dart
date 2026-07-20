@@ -1,14 +1,17 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CreatePrivateChannelRequest {
-  const CreatePrivateChannelRequest({
+  CreatePrivateChannelRequest({
     this.recipientId,
     this.accessTokens,
     this.nicks,
-  });
+  }) {
+    accessTokens?.validate(maxItems: 1521, unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreatePrivateChannelRequest].
   factory CreatePrivateChannelRequest.fromJson(Map<String, dynamic> json) {

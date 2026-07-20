@@ -2,6 +2,7 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/protected_branch_pull_request_review_bypass_pull_request_allowances.dart';
 import 'package:github/models/protected_branch_pull_request_review_dismissal_restrictions.dart';
@@ -14,7 +15,7 @@ import 'package:meta/meta.dart';
 @immutable
 class ProtectedBranchPullRequestReview {
   /// {@macro protected_branch_pull_request_review}
-  const ProtectedBranchPullRequestReview({
+  ProtectedBranchPullRequestReview({
     required this.dismissStaleReviews,
     required this.requireCodeOwnerReviews,
     this.url,
@@ -22,7 +23,9 @@ class ProtectedBranchPullRequestReview {
     this.bypassPullRequestAllowances,
     this.requiredApprovingReviewCount,
     this.requireLastPushApproval = false,
-  });
+  }) {
+    requiredApprovingReviewCount?.validate(min: 0, max: 6);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ProtectedBranchPullRequestReview].
   factory ProtectedBranchPullRequestReview.fromJson(Map<String, dynamic> json) {

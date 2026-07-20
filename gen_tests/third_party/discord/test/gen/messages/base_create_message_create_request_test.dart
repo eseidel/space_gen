@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('BaseCreateMessageCreateRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = BaseCreateMessageCreateRequest();
+      final instance = BaseCreateMessageCreateRequest();
       final parsed = BaseCreateMessageCreateRequest.maybeFromJson(
         instance.toJson(),
       )!;

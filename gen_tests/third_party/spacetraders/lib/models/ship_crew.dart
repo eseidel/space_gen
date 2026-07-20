@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/ship_crew_rotation.dart';
 
@@ -8,14 +9,17 @@ import 'package:spacetraders/models/ship_crew_rotation.dart';
 @immutable
 class ShipCrew {
   /// {@macro ship_crew}
-  const ShipCrew({
+  ShipCrew({
     required this.current,
     required this.required_,
     required this.capacity,
     required this.morale,
     required this.wages,
     this.rotation = .strict,
-  });
+  }) {
+    morale.validate(min: 0, max: 100);
+    wages.validate(min: 0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ShipCrew].
   factory ShipCrew.fromJson(Map<String, dynamic> json) {

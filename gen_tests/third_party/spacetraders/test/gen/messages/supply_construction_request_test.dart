@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('SupplyConstructionRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = SupplyConstructionRequest(
+      final instance = SupplyConstructionRequest(
         shipSymbol: 'DODO-1',
         tradeSymbol: TradeSymbol.preciousStones,
         units: 10,

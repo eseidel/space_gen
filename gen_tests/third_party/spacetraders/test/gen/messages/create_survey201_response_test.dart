@@ -7,7 +7,7 @@ void main() {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = CreateSurvey201Response(
         data: CreateSurvey201ResponseData(
-          cooldown: const Cooldown(
+          cooldown: Cooldown(
             shipSymbol: 'example',
             totalSeconds: 0,
             remainingSeconds: 0,

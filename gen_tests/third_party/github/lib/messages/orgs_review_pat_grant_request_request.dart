@@ -1,10 +1,13 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/orgs_review_pat_grant_request_request_action.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class OrgsReviewPatGrantRequestRequest {
-  const OrgsReviewPatGrantRequestRequest({required this.action, this.reason});
+  OrgsReviewPatGrantRequestRequest({required this.action, this.reason}) {
+    reason?.validate(maxLength: 1024);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [OrgsReviewPatGrantRequestRequest].

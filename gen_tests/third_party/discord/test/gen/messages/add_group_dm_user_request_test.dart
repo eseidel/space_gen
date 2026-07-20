@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('AddGroupDmUserRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = AddGroupDmUserRequest();
+      final instance = AddGroupDmUserRequest();
       final parsed = AddGroupDmUserRequest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

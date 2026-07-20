@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/lobby_member_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/edit_lobby_request_flags_one_of_1.dart';
@@ -5,13 +6,16 @@ import 'package:meta/meta.dart';
 
 @immutable
 class EditLobbyRequest {
-  const EditLobbyRequest({
+  EditLobbyRequest({
     this.idleTimeoutSeconds,
     this.metadata,
     this.members,
     this.flags,
     this.overrideEventWebhooksUrl,
-  });
+  }) {
+    idleTimeoutSeconds?.validate(min: 5, max: 604800);
+    members?.validate(maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [EditLobbyRequest].
   factory EditLobbyRequest.fromJson(Map<String, dynamic> json) {

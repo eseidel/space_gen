@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/application_command_response_options_inner.dart';
 import 'package:discord/models/application_command_type.dart';
@@ -8,7 +9,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class ApplicationCommandResponse {
-  const ApplicationCommandResponse({
+  ApplicationCommandResponse({
     required this.id,
     required this.applicationId,
     required this.version,
@@ -26,7 +27,10 @@ class ApplicationCommandResponse {
     this.integrationTypes,
     this.options,
     this.nsfw,
-  });
+  }) {
+    contexts?.validate(unique: true);
+    integrationTypes?.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [ApplicationCommandResponse].
   factory ApplicationCommandResponse.fromJson(Map<String, dynamic> json) {

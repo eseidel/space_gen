@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('StringSelectOptionForRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = StringSelectOptionForRequest(
+      final instance = StringSelectOptionForRequest(
         label: 'example',
         value: 'example',
       );

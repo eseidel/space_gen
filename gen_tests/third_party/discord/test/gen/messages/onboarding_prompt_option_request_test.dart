@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('OnboardingPromptOptionRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = OnboardingPromptOptionRequest(title: 'example');
+      final instance = OnboardingPromptOptionRequest(title: 'example');
       final parsed = OnboardingPromptOptionRequest.maybeFromJson(
         instance.toJson(),
       )!;

@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/application_command_option_type.dart';
 import 'package:discord/models/application_command_subcommand_option.dart';
@@ -5,14 +6,18 @@ import 'package:meta/meta.dart';
 
 @immutable
 class ApplicationCommandSubcommandGroupOption {
-  const ApplicationCommandSubcommandGroupOption({
+  ApplicationCommandSubcommandGroupOption({
     required this.name,
     required this.description,
     this.nameLocalizations,
     this.descriptionLocalizations,
     this.required_,
     this.options,
-  });
+  }) {
+    name.validate(minLength: 1, maxLength: 32);
+    description.validate(minLength: 1, maxLength: 100);
+    options?.validate(maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [ApplicationCommandSubcommandGroupOption].

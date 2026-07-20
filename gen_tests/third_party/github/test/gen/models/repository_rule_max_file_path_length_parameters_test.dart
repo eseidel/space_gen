@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('RepositoryRuleMaxFilePathLengthParameters', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = RepositoryRuleMaxFilePathLengthParameters(
+      final instance = RepositoryRuleMaxFilePathLengthParameters(
         maxFilePathLength: 1,
       );
       final parsed = RepositoryRuleMaxFilePathLengthParameters.maybeFromJson(

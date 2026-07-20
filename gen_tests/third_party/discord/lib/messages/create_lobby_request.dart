@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/lobby_member_request.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/create_lobby_request_flags_one_of_1.dart';
@@ -5,13 +6,16 @@ import 'package:meta/meta.dart';
 
 @immutable
 class CreateLobbyRequest {
-  const CreateLobbyRequest({
+  CreateLobbyRequest({
     this.idleTimeoutSeconds,
     this.members,
     this.metadata,
     this.flags,
     this.overrideEventWebhooksUrl,
-  });
+  }) {
+    idleTimeoutSeconds?.validate(min: 5, max: 604800);
+    members?.validate(maxItems: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [CreateLobbyRequest].
   factory CreateLobbyRequest.fromJson(Map<String, dynamic> json) {

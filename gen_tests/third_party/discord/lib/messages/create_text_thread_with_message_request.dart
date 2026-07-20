@@ -1,14 +1,18 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/thread_auto_archive_duration.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class CreateTextThreadWithMessageRequest {
-  const CreateTextThreadWithMessageRequest({
+  CreateTextThreadWithMessageRequest({
     required this.name,
     this.autoArchiveDuration,
     this.rateLimitPerUser,
-  });
+  }) {
+    name.validate(minLength: 1, maxLength: 100);
+    rateLimitPerUser?.validate(min: 0, max: 21600);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [CreateTextThreadWithMessageRequest].

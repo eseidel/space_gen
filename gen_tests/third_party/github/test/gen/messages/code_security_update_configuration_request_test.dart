@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CodeSecurityUpdateConfigurationRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CodeSecurityUpdateConfigurationRequest();
+      final instance = CodeSecurityUpdateConfigurationRequest();
       final parsed = CodeSecurityUpdateConfigurationRequest.maybeFromJson(
         instance.toJson(),
       )!;

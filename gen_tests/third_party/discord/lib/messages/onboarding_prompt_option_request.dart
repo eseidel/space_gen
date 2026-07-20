@@ -1,10 +1,11 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/snowflake_type.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class OnboardingPromptOptionRequest {
-  const OnboardingPromptOptionRequest({
+  OnboardingPromptOptionRequest({
     required this.title,
     this.id,
     this.description,
@@ -13,7 +14,13 @@ class OnboardingPromptOptionRequest {
     this.emojiAnimated,
     this.roleIds,
     this.channelIds,
-  });
+  }) {
+    title.validate(minLength: 1, maxLength: 50);
+    description?.validate(maxLength: 100);
+    emojiName?.validate(maxLength: 100);
+    roleIds?.validate(maxItems: 50, unique: true);
+    channelIds?.validate(maxItems: 50, unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [OnboardingPromptOptionRequest].
   factory OnboardingPromptOptionRequest.fromJson(Map<String, dynamic> json) {

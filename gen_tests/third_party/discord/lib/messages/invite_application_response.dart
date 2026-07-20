@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/messages/application_integration_type_configuration_response.dart';
 import 'package:discord/messages/application_o_auth2_install_params_response.dart';
 import 'package:discord/messages/user_response.dart';
@@ -8,7 +9,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class InviteApplicationResponse {
-  const InviteApplicationResponse({
+  InviteApplicationResponse({
     required this.id,
     required this.name,
     required this.icon,
@@ -31,7 +32,9 @@ class InviteApplicationResponse {
     this.integrationTypesConfig,
     this.maxParticipants,
     this.tags,
-  });
+  }) {
+    tags?.validate(unique: true);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [InviteApplicationResponse].
   factory InviteApplicationResponse.fromJson(Map<String, dynamic> json) {

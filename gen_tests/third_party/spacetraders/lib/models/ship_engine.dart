@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/ship_component_condition.dart';
 import 'package:spacetraders/models/ship_component_integrity.dart';
@@ -12,7 +13,7 @@ import 'package:spacetraders/models/ship_requirements.dart';
 @immutable
 class ShipEngine {
   /// {@macro ship_engine}
-  const ShipEngine({
+  ShipEngine({
     required this.symbol,
     required this.name,
     required this.condition,
@@ -21,7 +22,9 @@ class ShipEngine {
     required this.speed,
     required this.requirements,
     required this.quality,
-  });
+  }) {
+    speed.validate(min: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [ShipEngine].
   factory ShipEngine.fromJson(Map<String, dynamic> json) {

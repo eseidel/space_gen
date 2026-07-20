@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('UpdateVoiceChannelStatusRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = UpdateVoiceChannelStatusRequest();
+      final instance = UpdateVoiceChannelStatusRequest();
       final parsed = UpdateVoiceChannelStatusRequest.maybeFromJson(
         instance.toJson(),
       )!;

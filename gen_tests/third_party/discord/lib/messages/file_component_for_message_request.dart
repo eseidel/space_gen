@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/message_component_types.dart';
 import 'package:discord/models/unfurled_media_request_with_attachment_reference_required.dart';
@@ -5,11 +6,9 @@ import 'package:meta/meta.dart';
 
 @immutable
 class FileComponentForMessageRequest {
-  const FileComponentForMessageRequest({
-    required this.file,
-    this.id,
-    this.spoiler,
-  });
+  FileComponentForMessageRequest({required this.file, this.id, this.spoiler}) {
+    id?.validate(min: 0);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [FileComponentForMessageRequest].
   factory FileComponentForMessageRequest.fromJson(Map<String, dynamic> json) {

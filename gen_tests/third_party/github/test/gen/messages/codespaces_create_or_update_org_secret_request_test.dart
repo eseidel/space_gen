@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CodespacesCreateOrUpdateOrgSecretRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CodespacesCreateOrUpdateOrgSecretRequest(
+      final instance = CodespacesCreateOrUpdateOrgSecretRequest(
         visibility: CodespacesCreateOrUpdateOrgSecretRequestVisibility.all,
       );
       final parsed = CodespacesCreateOrUpdateOrgSecretRequest.maybeFromJson(

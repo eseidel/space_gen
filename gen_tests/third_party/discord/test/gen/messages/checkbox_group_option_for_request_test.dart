@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CheckboxGroupOptionForRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CheckboxGroupOptionForRequest(
+      final instance = CheckboxGroupOptionForRequest(
         label: 'example',
         value: 'example',
       );

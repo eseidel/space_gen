@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/entity_metadata_voice.dart';
 import 'package:discord/models/guild_scheduled_event_entity_types.dart';
@@ -9,7 +10,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class VoiceScheduledEventPatchRequestPartial {
-  const VoiceScheduledEventPatchRequestPartial({
+  VoiceScheduledEventPatchRequestPartial({
     this.status,
     this.name,
     this.description,
@@ -20,7 +21,10 @@ class VoiceScheduledEventPatchRequestPartial {
     this.privacyLevel,
     this.channelId,
     this.entityMetadata,
-  });
+  }) {
+    name?.validate(maxLength: 100);
+    description?.validate(maxLength: 1000);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [VoiceScheduledEventPatchRequestPartial].

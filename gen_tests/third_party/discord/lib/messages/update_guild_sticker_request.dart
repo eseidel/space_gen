@@ -1,9 +1,14 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class UpdateGuildStickerRequest {
-  const UpdateGuildStickerRequest({this.name, this.tags, this.description});
+  UpdateGuildStickerRequest({this.name, this.tags, this.description}) {
+    name?.validate(minLength: 2, maxLength: 30);
+    tags?.validate(minLength: 1, maxLength: 200);
+    description?.validate(maxLength: 100);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [UpdateGuildStickerRequest].
   factory UpdateGuildStickerRequest.fromJson(Map<String, dynamic> json) {

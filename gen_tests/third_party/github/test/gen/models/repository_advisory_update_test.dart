@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('RepositoryAdvisoryUpdate', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = RepositoryAdvisoryUpdate();
+      final instance = RepositoryAdvisoryUpdate();
       final parsed = RepositoryAdvisoryUpdate.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

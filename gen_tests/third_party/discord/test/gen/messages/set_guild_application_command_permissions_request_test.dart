@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('SetGuildApplicationCommandPermissionsRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = SetGuildApplicationCommandPermissionsRequest();
+      final instance = SetGuildApplicationCommandPermissionsRequest();
       final parsed = SetGuildApplicationCommandPermissionsRequest.maybeFromJson(
         instance.toJson(),
       )!;

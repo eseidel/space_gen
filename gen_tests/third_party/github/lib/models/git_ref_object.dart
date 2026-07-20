@@ -1,13 +1,12 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class GitRefObject {
-  const GitRefObject({
-    required this.type,
-    required this.sha,
-    required this.url,
-  });
+  GitRefObject({required this.type, required this.sha, required this.url}) {
+    sha.validate(minLength: 40, maxLength: 40);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GitRefObject].
   factory GitRefObject.fromJson(Map<String, dynamic> json) {

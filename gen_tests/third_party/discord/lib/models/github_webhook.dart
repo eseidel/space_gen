@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/github_check_run.dart';
 import 'package:discord/models/github_check_suite.dart';
@@ -13,7 +14,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class GithubWebhook {
-  const GithubWebhook({
+  GithubWebhook({
     required this.sender,
     this.action,
     this.ref,
@@ -34,7 +35,12 @@ class GithubWebhook {
     this.checkSuite,
     this.discussion,
     this.answer,
-  });
+  }) {
+    action?.validate(maxLength: 152133);
+    ref?.validate(maxLength: 152133);
+    refType?.validate(maxLength: 152133);
+    commits?.validate(maxItems: 1521);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [GithubWebhook].
   factory GithubWebhook.fromJson(Map<String, dynamic> json) {

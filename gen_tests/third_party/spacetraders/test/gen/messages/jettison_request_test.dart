@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('JettisonRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = JettisonRequest(
+      final instance = JettisonRequest(
         symbol: TradeSymbol.preciousStones,
         units: 1,
       );

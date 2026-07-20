@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/repository_rule_merge_queue_parameters_grouping_strategy.dart';
 import 'package:github/models/repository_rule_merge_queue_parameters_merge_method.dart';
@@ -5,7 +6,7 @@ import 'package:meta/meta.dart';
 
 @immutable
 class RepositoryRuleMergeQueueParameters {
-  const RepositoryRuleMergeQueueParameters({
+  RepositoryRuleMergeQueueParameters({
     required this.checkResponseTimeoutMinutes,
     required this.groupingStrategy,
     required this.maxEntriesToBuild,
@@ -13,7 +14,13 @@ class RepositoryRuleMergeQueueParameters {
     required this.mergeMethod,
     required this.minEntriesToMerge,
     required this.minEntriesToMergeWaitMinutes,
-  });
+  }) {
+    checkResponseTimeoutMinutes.validate(min: 1, max: 360);
+    maxEntriesToBuild.validate(min: 0, max: 100);
+    maxEntriesToMerge.validate(min: 0, max: 100);
+    minEntriesToMerge.validate(min: 0, max: 100);
+    minEntriesToMergeWaitMinutes.validate(min: 0, max: 360);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RepositoryRuleMergeQueueParameters].

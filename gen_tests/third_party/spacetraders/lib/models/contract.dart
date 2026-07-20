@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/contract_terms.dart';
 import 'package:spacetraders/models/contract_type.dart';
@@ -9,7 +10,7 @@ import 'package:spacetraders/models/contract_type.dart';
 @immutable
 class Contract {
   /// {@macro contract}
-  const Contract({
+  Contract({
     required this.id,
     required this.factionSymbol,
     required this.type,
@@ -18,7 +19,10 @@ class Contract {
     this.accepted = false,
     this.fulfilled = false,
     this.deadlineToAccept,
-  });
+  }) {
+    id.validate(minLength: 1);
+    factionSymbol.validate(minLength: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [Contract].
   factory Contract.fromJson(Map<String, dynamic> json) {

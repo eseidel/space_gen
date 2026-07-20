@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('TransferCargo200ResponseData', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = TransferCargo200ResponseData(
+      final instance = TransferCargo200ResponseData(
         cargo: ShipCargo(
           capacity: 0,
           units: 0,

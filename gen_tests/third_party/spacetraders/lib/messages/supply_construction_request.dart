@@ -1,14 +1,17 @@
 import 'package:meta/meta.dart';
+import 'package:spacetraders/api_exception.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/trade_symbol.dart';
 
 @immutable
 class SupplyConstructionRequest {
-  const SupplyConstructionRequest({
+  SupplyConstructionRequest({
     required this.shipSymbol,
     required this.tradeSymbol,
     required this.units,
-  });
+  }) {
+    units.validate(min: 1);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [SupplyConstructionRequest].
   factory SupplyConstructionRequest.fromJson(Map<String, dynamic> json) {

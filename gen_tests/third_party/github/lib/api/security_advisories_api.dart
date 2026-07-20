@@ -62,8 +62,7 @@ class SecurityAdvisoriesApi {
     int? perPage = 30,
     SecurityAdvisoriesListGlobalAdvisoriesParameter17? sort = .published,
   }) async {
-    perPage?.validateMaximum(100);
-    perPage?.validateMinimum(1);
+    perPage?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -170,8 +169,7 @@ class SecurityAdvisoriesApi {
     int? perPage = 30,
     SecurityAdvisoriesListOrgRepositoryAdvisoriesParameter6? state,
   }) async {
-    perPage?.validateMaximum(100);
-    perPage?.validateMinimum(1);
+    perPage?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,
@@ -225,8 +223,7 @@ class SecurityAdvisoriesApi {
     int? perPage = 30,
     SecurityAdvisoriesListRepositoryAdvisoriesParameter7? state,
   }) async {
-    perPage?.validateMaximum(100);
-    perPage?.validateMinimum(1);
+    perPage?.validate(min: 1, max: 100);
 
     final response = await client.invokeApi(
       method: Method.get,

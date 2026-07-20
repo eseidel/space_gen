@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/container_component_for_message_request_components_inner.dart';
 import 'package:discord/models/message_component_types.dart';
@@ -5,12 +6,16 @@ import 'package:meta/meta.dart';
 
 @immutable
 class ContainerComponentForMessageRequest {
-  const ContainerComponentForMessageRequest({
+  ContainerComponentForMessageRequest({
     required this.components,
     this.id,
     this.accentColor,
     this.spoiler,
-  });
+  }) {
+    id?.validate(min: 0);
+    accentColor?.validate(min: 0, max: 16777215);
+    components.validate(minItems: 1, maxItems: 40);
+  }
 
   /// Converts a `Map<String, dynamic>` to a
   /// [ContainerComponentForMessageRequest].
