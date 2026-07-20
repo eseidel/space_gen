@@ -206,6 +206,32 @@ void main() {
       expect(spec.serverUrl, Uri.parse('https://api.spacetraders.io/v2'));
       expect(spec.paths.keys.first, '/users');
     });
+    test('servers is optional, defaulting the base URL to /', () {
+      // OpenAPI 3.x: an absent or empty `servers` list defaults to a single
+      // Server Object with url `/`, rather than being a parse error.
+      Map<String, dynamic> specWith(Object? servers) => {
+        'openapi': '3.1.0',
+        'info': {'title': 'No Servers API', 'version': '1.0.0'},
+        if (servers != null) 'servers': servers,
+        'paths': {
+          '/users': {
+            'get': {
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+      final logger = _MockLogger();
+      final absent = runWithLogger(logger, () => parseOpenApi(specWith(null)));
+      expect(absent.serverUrl, Uri.parse('/'));
+      final empty = runWithLogger(
+        logger,
+        () => parseOpenApi(specWith(<Object>[])),
+      );
+      expect(empty.serverUrl, Uri.parse('/'));
+    });
     test('allOf with multiple items', () {
       final json = {
         'allOf': [
@@ -1266,23 +1292,6 @@ void main() {
         ),
       );
     });
-    test('servers is required', () {
-      final json = {
-        'openapi': '3.1.0',
-        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
-      };
-      expect(
-        () => parseOpenApi(json),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            equals('Key servers is required in #/'),
-          ),
-        ),
-      );
-    });
-
     test('path-item-level parameters are parsed', () {
       final json = {
         'openapi': '3.1.0',

@@ -28,14 +28,6 @@ MapContext _requiredMap(MapContext json, String key) {
   return json.childAsMap(key);
 }
 
-ListContext _requiredListOfMaps(MapContext json, String key) {
-  final value = json[key];
-  if (value == null) {
-    _error(json, 'Key $key is required');
-  }
-  return json.childAsList(key);
-}
-
 void _expect(bool condition, ParseContext json, String message) {
   if (!condition) {
     _error(json, message);
@@ -2126,6 +2118,25 @@ SecurityRequirement parseSecurityRequirement(MapContext json) {
   return SecurityRequirement(conditions: conditions, pointer: json.pointer);
 }
 
+/// The base URL for generated requests, taken from the first entry of the
+/// top-level `servers` list.
+///
+/// `servers` is optional in OpenAPI 3.x: when it's absent or an empty array,
+/// the spec defines the default as a single Server Object with url `/`. We
+/// mirror that — consumers override `baseUri` on the generated client, so `/`
+/// is a safe placeholder base rather than a parse failure.
+Uri _parseServerUrl(MapContext json) {
+  if (json['servers'] == null) {
+    return Uri.parse('/');
+  }
+  final servers = json.childAsList('servers');
+  if (servers.length == 0) {
+    return Uri.parse('/');
+  }
+  final firstServer = servers.indexAsMap(0);
+  return Uri.parse(_required<String>(firstServer, 'url'));
+}
+
 OpenApi parseOpenApi(Map<String, dynamic> openapiJson) {
   final json = MapContext.initial(openapiJson);
   _refNotExpected(json);
@@ -2141,9 +2152,7 @@ OpenApi parseOpenApi(Map<String, dynamic> openapiJson) {
 
   final info = parseInfo(_requiredMap(json, 'info'));
 
-  final servers = _requiredListOfMaps(json, 'servers');
-  final firstServer = servers.indexAsMap(0);
-  final serverUrl = _required<String>(firstServer, 'url');
+  final serverUrl = _parseServerUrl(json);
 
   final paths = parsePaths(_requiredMap(json, 'paths'));
   final components = parseComponents(_optionalMap(json, 'components'));
@@ -2161,7 +2170,7 @@ OpenApi parseOpenApi(Map<String, dynamic> openapiJson) {
   _ignored<dynamic>(json, 'externalDocs');
   _warnUnused(json);
   return OpenApi(
-    serverUrl: Uri.parse(serverUrl),
+    serverUrl: serverUrl,
     version: version,
     info: info,
     paths: paths,
