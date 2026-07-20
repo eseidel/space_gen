@@ -593,4 +593,62 @@ void main() {
       expect(config.trailingCommas, isNull);
     });
   });
+
+  group('maybeAddFlutterStyleTodosIgnore', () {
+    test('passes through content with no TODO in dartdoc', () {
+      const content = '/// A perfectly ordinary description.\nclass Foo {}\n';
+      expect(maybeAddFlutterStyleTodosIgnore(content), content);
+    });
+
+    test('prepends directive when dartdoc has a bare `TODO`', () {
+      // Mirrors openfoodfacts' `element` schema, whose description ends
+      // with a literal "TODO: add Map type".
+      const content =
+          '/// The element type.\n/// TODO: add Map type\nenum E {}\n';
+      expect(
+        maybeAddFlutterStyleTodosIgnore(content),
+        startsWith('$flutterStyleTodosIgnoreBlock\n'),
+      );
+    });
+
+    test('does not fire on a Flutter-style `TODO(user):` reference', () {
+      // If spec prose already used the accepted form, the lint would not
+      // fire, so neither should the directive (else `unnecessary_ignore`).
+      const content = '/// See TODO(alice): finish this later.\nclass Foo {}\n';
+      expect(maybeAddFlutterStyleTodosIgnore(content), content);
+    });
+
+    test('does not match a `//` line comment, only `///` doc', () {
+      // The generator writes its own `//` TODOs in Flutter style; only
+      // copied spec prose in `///` docs should trigger suppression.
+      const content = '// TODO: internal note\nclass Foo {}\n';
+      expect(maybeAddFlutterStyleTodosIgnore(content), content);
+    });
+
+    test('does not fire on `TODO` embedded in a larger word', () {
+      const content = '/// The MASTODON integration endpoint.\nclass Foo {}\n';
+      expect(maybeAddFlutterStyleTodosIgnore(content), content);
+    });
+
+    test('idempotent: does not double-prepend if marker already present', () {
+      const content =
+          '$flutterStyleTodosIgnoreBlock\n'
+          '/// TODO: add Map type\nenum E {}\n';
+      expect(flutterStyleTodosIgnoreBlock.allMatches(content).length, 1);
+      final result = maybeAddFlutterStyleTodosIgnore(content);
+      expect(flutterStyleTodosIgnoreBlock.allMatches(result).length, 1);
+    });
+
+    test('indented `///` member docs still count', () {
+      const content =
+          'class Foo {\n'
+          '  /// TODO: revisit this field\n'
+          '  final int x;\n'
+          '}\n';
+      expect(
+        maybeAddFlutterStyleTodosIgnore(content),
+        startsWith('$flutterStyleTodosIgnoreBlock\n'),
+      );
+    });
+  });
 }
