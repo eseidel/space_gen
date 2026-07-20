@@ -56,6 +56,38 @@ double? _optionalDouble(MapContext parent, String key) {
   return _expectType<num?>(parent, key, value)?.toDouble();
 }
 
+// Read an integer-typed field (an `integer` schema's `minimum`,
+// `maximum`, `default`, etc.) tolerantly as a `num`. A JSON/YAML integer
+// literal too large for a signed 64-bit int is handed back as a double
+// (e.g. OpenAI's `maximum: 9223372036854775807` — int64 max serialized
+// through float64 as 9223372036854776000), which `_optional<int>` would
+// reject outright. Such a bound is unrepresentable as a Dart `int`
+// literal *and* vacuous for a 64-bit `int` value, so we drop it with a
+// warning rather than crash or emit uncompilable code. A double that is
+// an exact, small-enough integer (`5.0`) is still accepted.
+int? _optionalInt(MapContext parent, String key) {
+  final value = parent[key];
+  if (value == null) {
+    return null;
+  }
+  final number = _expectType<num>(parent, key, value);
+  if (number is int) {
+    return number;
+  }
+  // The value arrived as a double. Only trust the conversion within
+  // ±2^53, the largest magnitude where a double represents every integer
+  // exactly; beyond it `toInt()` silently saturates, so a round-trip
+  // check would falsely accept an out-of-range value. Real specs only
+  // exceed this with int64-boundary sentinels, which are vacuous bounds
+  // for a Dart `int` anyway.
+  const maxExactInt = 0x20000000000000; // 2^53
+  if (number.abs() <= maxExactInt && number == number.roundToDouble()) {
+    return number.toInt();
+  }
+  _warn(parent, "Ignoring '$key'=$number: not representable as a 64-bit int");
+  return null;
+}
+
 List<T> _expectList<T>(MapContext parent, String key, dynamic value) {
   if (value is! List || !value.every((e) => e is T)) {
     _error(parent, "'$key' is not a list of $T: $value");
@@ -1023,12 +1055,12 @@ Schema? _handleNumberTypes(
   if (type == 'integer') {
     return SchemaInteger(
       common: common,
-      defaultValue: _optional<int>(json, 'default'),
-      minimum: _optional<int>(json, 'minimum'),
-      maximum: _optional<int>(json, 'maximum'),
-      exclusiveMinimum: _optional<int>(json, 'exclusiveMinimum'),
-      exclusiveMaximum: _optional<int>(json, 'exclusiveMaximum'),
-      multipleOf: _optional<int>(json, 'multipleOf'),
+      defaultValue: _optionalInt(json, 'default'),
+      minimum: _optionalInt(json, 'minimum'),
+      maximum: _optionalInt(json, 'maximum'),
+      exclusiveMinimum: _optionalInt(json, 'exclusiveMinimum'),
+      exclusiveMaximum: _optionalInt(json, 'exclusiveMaximum'),
+      multipleOf: _optionalInt(json, 'multipleOf'),
     );
   }
   if (type == 'number') {
