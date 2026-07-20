@@ -90,6 +90,26 @@ void main() {
       expect(names, ['g', 'mg', 'mug', 'ml', 'percentVol', 'percent']);
     });
 
+    test('enum names disambiguate post-sanitization collisions', () {
+      // Transliteration (see above) removes most collisions, but distinct
+      // values can still sanitize to the same Dart identifier — `a-b` and
+      // `a b` both reduce to `aB`. Without disambiguation the enum declares
+      // `aB` twice (a `duplicate_definition` error). The first keeps the bare
+      // name; the collider takes the next free numeric suffix.
+      const quirks = Quirks();
+      final names = RenderEnum.variableNamesFor(quirks, ['a-b', 'a b']);
+      expect(names, ['aB', 'aB2']);
+    });
+
+    test('enum name disambiguation skips an already-taken suffix', () {
+      // The suffixed form the collider (`a b` → `aB`) would take (`aB2`) is
+      // itself already a value, so it keeps incrementing to the next free
+      // one (`aB3`).
+      const quirks = Quirks();
+      final names = RenderEnum.variableNamesFor(quirks, ['a-b', 'aB2', 'a b']);
+      expect(names, ['aB', 'aB2', 'aB3']);
+    });
+
     test('parameter names', () {
       const quirks = Quirks();
       expect(quirks.screamingCapsEnums, isFalse);
