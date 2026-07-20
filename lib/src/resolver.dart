@@ -536,9 +536,9 @@ ResolvedSchema _resolveSchemaFully(
     final keySchema = keyRef == null ? null : resolveSchemaRef(keyRef, context);
     if (keySchema != null && keySchema is! ResolvedEnum) {
       _error(
-        'propertyNames must resolve to a string enum for a map-typed '
-        r'schema. Either use a $ref to a named string enum or an inline '
-        'string enum. Got: ${keySchema.runtimeType}',
+        'propertyNames must resolve to an enum for a map-typed '
+        r'schema. Either use a $ref to a named enum or an inline '
+        'enum. Got: ${keySchema.runtimeType}',
         schema.pointer,
       );
     }
@@ -1875,7 +1875,9 @@ class ResolvedMap extends ResolvedSchema {
 
   final ResolvedSchema valueSchema;
 
-  /// Optional typed key schema. Must resolve to a string enum.
+  /// Optional typed key schema. Must resolve to an enum (string- or
+  /// int-valued); an int enum's string JSON key is bridged through
+  /// `int.parse` at the render layer.
   final ResolvedEnum? keySchema;
 
   @override

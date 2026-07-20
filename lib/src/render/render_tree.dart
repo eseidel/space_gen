@@ -3197,6 +3197,53 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     isConstConstructor: false,
   );
 
+  // --- Map-key wire bridging ---------------------------------------------
+  //
+  // JSON object keys are always strings on the wire, but a [RenderMap] key
+  // type's own wire form (its [jsonStorageDartType]) need not be: today an
+  // int-valued enum decodes from `int`. So a key whose wire form is
+  // non-string is bridged through `int.parse` on the way in and
+  // `.toString()` on the way out; a string-wire key passes straight
+  // through. Keyed off the general wire type rather than the concrete class
+  // so it reads as a property of any scalar key. Only meaningful on the
+  // schemas the resolver admits as map keys — like [_fromJsonCall], total
+  // on every schema but only ever called where valid.
+  //
+  // The non-string branch exists solely because an int-valued *enum* is the
+  // only non-string map-key type the generator produces. Once integer enums
+  // become validated int newtypes and stop being usable as typed map keys
+  // (https://github.com/eseidel/space_gen/issues/352), every remaining map
+  // key is a string enum and this bridging can be deleted.
+
+  /// Decode a JSON object key (always a `String`) into this schema's Dart
+  /// type, bridging the string to a non-string wire form first.
+  DartExpression fromJsonMapKey(DartExpression key) =>
+      _fromJsonCall(_stringKeyToWire(key), jsonIsNullable: false);
+
+  /// Encode this schema as a JSON object key, which must be a `String`.
+  /// `toJson` yields the wire value — already a `String` for a string-wire
+  /// key, a non-string (e.g. `int`) otherwise — so stringify the non-string
+  /// case back to a valid key. The inverse of [fromJsonMapKey].
+  DartExpression toJsonMapKey(DartExpression key) {
+    final wire = DartMethodCall(target: key, name: 'toJson');
+    return jsonStorageDartType == DartType.string
+        ? wire
+        : DartMethodCall(target: wire, name: 'toString');
+  }
+
+  /// Bridge a `String` JSON object key to this schema's wire type, so a
+  /// non-string wire type can parse it (e.g. `int.parse`). No-op for a
+  /// string-wire key.
+  DartExpression _stringKeyToWire(DartExpression key) =>
+      jsonStorageDartType == DartType.string
+      ? key
+      : DartInvocation(
+          type: jsonStorageDartType,
+          constructorName: 'parse',
+          arguments: [key],
+          isConstConstructor: false,
+        );
+
   /// A Dart expression that constructs a valid in-memory instance of
   /// this schema, used by generated round-trip tests. Returns `null`
   /// when the generator cannot produce a safe example — e.g. a
@@ -5257,8 +5304,15 @@ class RenderMap extends RenderSchema {
   final RenderSchema valueSchema;
 
   /// Optional typed key schema. JSON always uses string keys on the wire;
-  /// when non-null the generated Dart uses this enum as the map key and
-  /// the enum's `fromJson`/`toJson` round-trips each key at the boundary.
+  /// when non-null the generated Dart uses this schema as the map key and
+  /// its `fromJsonMapKey`/`toJsonMapKey` round-trips each key at the
+  /// boundary (bridging non-string wire forms — see [RenderSchema]).
+  ///
+  /// Typed as [RenderEnum] because the resolver admits only enums here. The
+  /// sole non-string case is an int-valued enum; once integer enums become
+  /// validated int newtypes and drop out as typed keys
+  /// (https://github.com/eseidel/space_gen/issues/352), every key is a
+  /// string enum and the non-string bridging goes away.
   final RenderEnum? keySchema;
 
   @override
@@ -5308,9 +5362,10 @@ class RenderMap extends RenderSchema {
         toJson: 'value',
       );
     }
+    const k = DartIdentifier('k');
     final keyFromJson = keyEnum == null
         ? 'k'
-        : '${keyEnum.typeName}.fromJson(k)';
+        : _runtimeSource(keyEnum.fromJsonMapKey(k));
     final valueFromJson = _runtimeSource(
       value.requireFromJsonExpression(
         const DartIdentifier('val'),
@@ -5319,7 +5374,9 @@ class RenderMap extends RenderSchema {
         dartIsNullable: false,
       ),
     );
-    final keyToJson = keyEnum == null ? 'k' : 'k.toJson()';
+    final keyToJson = keyEnum == null
+        ? 'k'
+        : _runtimeSource(keyEnum.toJsonMapKey(k));
     final valueToJson = value.toJsonExpression(
       const DartIdentifier('val'),
       context,
@@ -5360,9 +5417,8 @@ class RenderMap extends RenderSchema {
   }) {
     const key = DartIdentifier('key');
     const value = DartIdentifier('value');
-    final keyToJson = keySchema == null
-        ? key
-        : const DartMethodCall(target: key, name: 'toJson');
+    final keySchema = this.keySchema;
+    final keyToJson = keySchema == null ? key : keySchema.toJsonMapKey(key);
     final valueToJson = valueSchema.toJsonExpression(
       value,
       context,
@@ -5401,9 +5457,7 @@ class RenderMap extends RenderSchema {
     const key = DartIdentifier('key');
     const value = DartIdentifier('value');
     final keySchema = this.keySchema;
-    final keyFromJson = keySchema == null
-        ? key
-        : keySchema._fromJsonCall(key, jsonIsNullable: false);
+    final keyFromJson = keySchema == null ? key : keySchema.fromJsonMapKey(key);
     final valueFromJson = valueSchema.requireFromJsonExpression(
       value,
       context,
