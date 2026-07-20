@@ -1091,6 +1091,9 @@ ResolvedSpec resolveSpec(
     title: spec.info.title,
     serverUrl: spec.serverUrl,
     paths: _resolvePaths(spec.paths, context),
+    componentSchemas: spec.components.schemas.map(
+      (name, schema) => MapEntry(name, resolveSchemaRef(schema, context)),
+    ),
     tags: spec.tags.map(_resolvedTag).toList(),
   );
 }
@@ -1110,6 +1113,7 @@ class ResolvedSpec {
     required this.serverUrl,
     required this.title,
     required this.paths,
+    required this.componentSchemas,
     required this.tags,
   });
 
@@ -1121,6 +1125,9 @@ class ResolvedSpec {
 
   /// The paths of the spec.
   final List<ResolvedPath> paths;
+
+  /// The top-level component schemas of the spec.
+  final Map<String, ResolvedSchema> componentSchemas;
 
   /// The tags of the spec.
   final List<ResolvedTag> tags;

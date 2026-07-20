@@ -221,6 +221,9 @@ class _NameAssigner {
   }
 
   void visit(ResolvedSpec spec) {
+    for (final schema in spec.componentSchemas.values) {
+      _visitSchema(schema, _SlotKind.componentRoot);
+    }
     for (final path in spec.paths) {
       for (final op in path.operations) {
         visitOperation(op);
@@ -521,6 +524,12 @@ class _NameAssigner {
         }
       case _SlotKind.other:
         _hasOtherUse.add(schema.pointer);
+      case _SlotKind.componentRoot:
+        // Component declarations are roots, not typed references. They need
+        // names, and their children still contribute typed uses, but the
+        // root itself must not disqualify oneOf variants from exclusive-use
+        // smooshing.
+        break;
       case _SlotKind.allOfMember:
         // AllOf members aren't typed Dart references — `ResolvedAllOf`
         // collapses into a synthesized merged `RenderObject` whose
@@ -596,6 +605,9 @@ enum _SlotKind {
   /// property, array items, map value, or operation parameter /
   /// request body / response.
   other,
+
+  /// Reached as a top-level component declaration.
+  componentRoot,
 
   /// Reached as a member of an `allOf`. `ResolvedAllOf` collapses to
   /// a synthesized merged `RenderObject` at render time, so members
