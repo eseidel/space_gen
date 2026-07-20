@@ -3200,16 +3200,20 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   // --- Map-key wire bridging ---------------------------------------------
   //
   // JSON object keys are always strings on the wire, but a [RenderMap] key
-  // type's own wire form (its [jsonStorageDartType]) need not be — an
-  // int-valued enum today, and a validated int newtype once integer enums
-  // stop being Dart enums (see the int-newtype issue), both decode from
-  // `int`. So a key whose wire form is non-string is bridged through
-  // `int.parse` on the way in and `.toString()` on the way out; a
-  // string-wire key passes straight through. Keyed off the general wire
-  // type rather than the concrete class so the same code serves every
-  // scalar newtype the resolver admits as a map key. Only meaningful on
-  // those schemas — like [_fromJsonCall], total on every schema but only
-  // ever called where valid.
+  // type's own wire form (its [jsonStorageDartType]) need not be: today an
+  // int-valued enum decodes from `int`. So a key whose wire form is
+  // non-string is bridged through `int.parse` on the way in and
+  // `.toString()` on the way out; a string-wire key passes straight
+  // through. Keyed off the general wire type rather than the concrete class
+  // so it reads as a property of any scalar key. Only meaningful on the
+  // schemas the resolver admits as map keys — like [_fromJsonCall], total
+  // on every schema but only ever called where valid.
+  //
+  // The non-string branch exists solely because an int-valued *enum* is the
+  // only non-string map-key type the generator produces. Once integer enums
+  // become validated int newtypes and stop being usable as typed map keys
+  // (https://github.com/eseidel/space_gen/issues/352), every remaining map
+  // key is a string enum and this bridging can be deleted.
 
   /// Decode a JSON object key (always a `String`) into this schema's Dart
   /// type, bridging the string to a non-string wire form first.
@@ -5304,10 +5308,11 @@ class RenderMap extends RenderSchema {
   /// its `fromJsonMapKey`/`toJsonMapKey` round-trips each key at the
   /// boundary (bridging non-string wire forms — see [RenderSchema]).
   ///
-  /// Typed as [RenderEnum] because the resolver admits only enums here
-  /// today. The bridge already lives on [RenderSchema], so once integer
-  /// enums become validated int newtypes this field (and the resolver
-  /// check) just widen to the shared scalar-newtype type — no code moves.
+  /// Typed as [RenderEnum] because the resolver admits only enums here. The
+  /// sole non-string case is an int-valued enum; once integer enums become
+  /// validated int newtypes and drop out as typed keys
+  /// (https://github.com/eseidel/space_gen/issues/352), every key is a
+  /// string enum and the non-string bridging goes away.
   final RenderEnum? keySchema;
 
   @override
