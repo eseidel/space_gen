@@ -462,10 +462,14 @@ ResolvedSchema _resolveSchemaFully(
     final members = schemas.where((s) => s is! ResolvedUnknown).toList();
     final nullable =
         resolvedCommon.nullable || metadataOnly.any((s) => s.common.nullable);
+    CommonProperties withNullable(CommonProperties common) =>
+        nullable ? common.copyWith(nullable: true) : common;
     // Elide to the sole substantive member. Covers `allOf: [X]` (a single
     // member — often a scalar wrapped to attach metadata) and
     // `allOf: [X, {nullable: true}]` (the nullable-$ref idiom): both reduce
-    // to X, marked nullable when any member asked for it.
+    // to X, marked nullable when any member asked for it. Return the
+    // resolved instance untouched when no member forced nullability, so
+    // the common single-element `allOf: [X]` case keeps its identity.
     if (members.length == 1) {
       final member = members.first;
       return nullable
@@ -476,7 +480,7 @@ ResolvedSchema _resolveSchemaFully(
     // as an unconstrained value, nullable if any member said so.
     if (members.isEmpty) {
       return ResolvedUnknown(
-        common: resolvedCommon.copyWith(nullable: nullable),
+        common: withNullable(resolvedCommon),
         createsNewType: createsNewType,
       );
     }
@@ -498,9 +502,7 @@ ResolvedSchema _resolveSchemaFully(
       _error('allOf only supports objects: $schema', allOf.pointer);
     }
     return ResolvedAllOf(
-      common: nullable
-          ? resolvedCommon.copyWith(nullable: true)
-          : resolvedCommon,
+      common: withNullable(resolvedCommon),
       schemas: members,
     );
   }

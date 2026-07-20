@@ -709,6 +709,96 @@ void main() {
       expect(allOf.common.nullable, isTrue);
     });
 
+    test('allOf of pure metadata resolves to a nullable unknown', () {
+      // No substantive member — every entry is metadata-only. There is
+      // nothing to merge, so the composition is an unconstrained value,
+      // nullable because a member asked for it.
+      final json = {
+        'allOf': [
+          {'description': 'just a description'},
+          {'nullable': true},
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(schema, isA<ResolvedUnknown>());
+      expect(schema.common.nullable, isTrue);
+    });
+
+    test('allOf with a non-nullable metadata member is not nullable', () {
+      // A metadata-only member that does not ask for nullability (a bare
+      // `{description}`) must not spuriously make the elided member
+      // nullable.
+      final json = {
+        'allOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'name': {'type': 'string'},
+            },
+          },
+          {'description': 'refines the object above'},
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(schema, isA<ResolvedObject>());
+      expect(schema.common.nullable, isFalse);
+    });
+
+    test('allOf nullable as a sibling marks the elided member nullable', () {
+      // `nullable` sits on the allOf itself (not a member): `{allOf: [X],
+      // nullable: true}`. The elided member picks up the composition's own
+      // nullability.
+      final json = {
+        'allOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'name': {'type': 'string'},
+            },
+          },
+        ],
+        'nullable': true,
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(schema, isA<ResolvedObject>());
+      expect(schema.common.nullable, isTrue);
+    });
+
+    test('allOf admits a bare empty-schema member', () {
+      // A bare `{}` member carries neither shape nor metadata; it resolves
+      // to `ResolvedUnknown` and is set aside like any metadata-only
+      // member, leaving the object to elide cleanly.
+      final json = {
+        'allOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'name': {'type': 'string'},
+            },
+          },
+          <String, dynamic>{},
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(schema, isA<ResolvedObject>());
+    });
+
     test('resolve anyOf', () {
       final json = {
         'anyOf': [
