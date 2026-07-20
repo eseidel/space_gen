@@ -2126,15 +2126,14 @@ SecurityRequirement parseSecurityRequirement(MapContext json) {
 /// mirror that — consumers override `baseUri` on the generated client, so `/`
 /// is a safe placeholder base rather than a parse failure.
 Uri _parseServerUrl(MapContext json) {
-  if (json['servers'] == null) {
-    return Uri.parse('/');
+  var url = '/';
+  if (json['servers'] != null) {
+    final servers = json.childAsList('servers');
+    if (servers.length > 0) {
+      url = _required<String>(servers.indexAsMap(0), 'url');
+    }
   }
-  final servers = json.childAsList('servers');
-  if (servers.length == 0) {
-    return Uri.parse('/');
-  }
-  final firstServer = servers.indexAsMap(0);
-  return Uri.parse(_required<String>(firstServer, 'url'));
+  return Uri.parse(url);
 }
 
 OpenApi parseOpenApi(Map<String, dynamic> openapiJson) {
