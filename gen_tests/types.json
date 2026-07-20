@@ -45,6 +45,9 @@
                                         },
                                         "stock": {
                                             "$ref": "#/components/schemas/StockStatus"
+                                        },
+                                        "priority": {
+                                            "$ref": "#/components/schemas/Priority"
                                         }
                                     },
                                     "required": [
@@ -90,6 +93,11 @@
                 "type": "string",
                 "description": "Values whose sanitized identifiers collide — `in stock` and `in-stock` both reduce to the same identifier. The generated enum must disambiguate rather than declare it twice.",
                 "enum": ["in stock", "in-stock", "out of stock"]
+            },
+            "Priority": {
+                "type": "integer",
+                "description": "An integer enum — a closed set of int values. Renders as a validated int newtype (not a Dart enum); the generated round-trip test also exercises the membership check throwing FormatException on an out-of-set value.",
+                "enum": [1, 2, 3]
             },
             "Widget": {
                 "type": "object",

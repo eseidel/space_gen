@@ -533,19 +533,34 @@ ResolvedSchema _resolveSchemaFully(
   }
   if (schema is SchemaMap) {
     final keyRef = schema.keySchema;
-    final keySchema = keyRef == null ? null : resolveSchemaRef(keyRef, context);
-    if (keySchema != null && keySchema is! ResolvedEnum) {
+    final resolvedKey = keyRef == null
+        ? null
+        : resolveSchemaRef(keyRef, context);
+    // Only a string enum can type a JSON map key: keys are strings on the
+    // wire, and a string enum's fromJson/toJson round-trip them directly.
+    ResolvedStringEnum? keySchema;
+    if (resolvedKey is ResolvedStringEnum) {
+      keySchema = resolvedKey;
+    } else if (resolvedKey is ResolvedIntEnum) {
+      // An int enum renders as a value newtype, not an enum, and can't
+      // carry a string key; drop back to plain String keys.
+      _warn(
+        'propertyNames resolves to an integer enum, which cannot type a '
+        'map key (JSON object keys are strings). Using String keys instead.',
+        schema.pointer,
+      );
+    } else if (resolvedKey != null) {
       _error(
-        'propertyNames must resolve to an enum for a map-typed '
-        r'schema. Either use a $ref to a named enum or an inline '
-        'enum. Got: ${keySchema.runtimeType}',
+        'propertyNames must resolve to a string enum for a map-typed '
+        r'schema. Either use a $ref to a named string enum or an inline '
+        'string enum. Got: ${resolvedKey.runtimeType}',
         schema.pointer,
       );
     }
     return ResolvedMap(
       common: resolvedCommon,
       valueSchema: resolveSchemaRef(schema.valueSchema, context),
-      keySchema: keySchema as ResolvedEnum?,
+      keySchema: keySchema,
       createsNewType: createsNewType,
     );
   }
@@ -1875,10 +1890,10 @@ class ResolvedMap extends ResolvedSchema {
 
   final ResolvedSchema valueSchema;
 
-  /// Optional typed key schema. Must resolve to an enum (string- or
-  /// int-valued); an int enum's string JSON key is bridged through
-  /// `int.parse` at the render layer.
-  final ResolvedEnum? keySchema;
+  /// Optional typed key schema. Must resolve to a string enum — JSON object
+  /// keys are strings, and only a string enum can round-trip them as a typed
+  /// key. Int enums render as value newtypes and fall back to `String` keys.
+  final ResolvedStringEnum? keySchema;
 
   @override
   ResolvedMap copyWith({CommonProperties? common}) {

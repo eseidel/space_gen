@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('CreateLobbyRequestFlagsOneOf1', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = CreateLobbyRequestFlagsOneOf1.value1;
+      final instance = CreateLobbyRequestFlagsOneOf1(1);
       final parsed = CreateLobbyRequestFlagsOneOf1.maybeFromJson(
         instance.toJson(),
       )!;
@@ -22,21 +22,6 @@ void main() {
         () => CreateLobbyRequestFlagsOneOf1.maybeFromJson(-1),
         throwsFormatException,
       );
-    });
-
-    test('toString matches toJson for every value', () {
-      for (final value in CreateLobbyRequestFlagsOneOf1.values) {
-        expect(value.toString(), equals(value.toJson().toString()));
-      }
-    });
-
-    test('fromJson round-trips every value', () {
-      for (final value in CreateLobbyRequestFlagsOneOf1.values) {
-        expect(
-          CreateLobbyRequestFlagsOneOf1.fromJson(value.toJson()),
-          equals(value),
-        );
-      }
     });
   });
 }

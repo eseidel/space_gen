@@ -1,19 +1,14 @@
-enum EditLobbyRequestFlagsOneOf1 {
-  value1._(1);
+import 'package:discord/api_exception.dart';
 
-  const EditLobbyRequestFlagsOneOf1._(this.value);
-
-  /// Creates a EditLobbyRequestFlagsOneOf1 from a json value.
-  factory EditLobbyRequestFlagsOneOf1.fromJson(int json) {
-    return EditLobbyRequestFlagsOneOf1.values.firstWhere(
-      (value) => value.value == json,
-      orElse: () => throw FormatException(
-        'Unknown EditLobbyRequestFlagsOneOf1 value: $json',
-      ),
-    );
+extension type const EditLobbyRequestFlagsOneOf1._(int value) {
+  EditLobbyRequestFlagsOneOf1(this.value) {
+    value.validateEnumValues([1]);
   }
 
-  /// Convenience to create a nullable type from a nullable json value.
+  factory EditLobbyRequestFlagsOneOf1.fromJson(int json) =>
+      EditLobbyRequestFlagsOneOf1(json);
+
+  /// Convenience to create a nullable type from a nullable json object.
   /// Useful when parsing optional fields.
   static EditLobbyRequestFlagsOneOf1? maybeFromJson(int? json) {
     if (json == null) {
@@ -22,14 +17,5 @@ enum EditLobbyRequestFlagsOneOf1 {
     return EditLobbyRequestFlagsOneOf1.fromJson(json);
   }
 
-  /// The value of the enum.  This is the exact value
-  /// from the OpenAPI spec and will be used for network transport.
-  final int value;
-
-  /// Converts the enum to its json value.
   int toJson() => value;
-
-  /// Returns the string form of the enum.
-  @override
-  String toString() => value.toString();
 }

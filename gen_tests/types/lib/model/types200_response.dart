@@ -1,5 +1,6 @@
 import 'package:types/date.dart';
 import 'package:types/model/email_type.dart';
+import 'package:types/model/priority.dart';
 import 'package:types/model/status.dart';
 import 'package:types/model/stock_status.dart';
 import 'package:types/model/timestamp.dart';
@@ -17,6 +18,7 @@ class Types200Response {
     required this.widget,
     required this.status,
     this.stock,
+    this.priority,
   });
 
   /// Converts a `Map<String, dynamic>` to a [Types200Response].
@@ -34,6 +36,7 @@ class Types200Response {
         widget: Widget.fromJson(json['widget'] as Map<String, dynamic>),
         status: Status.fromJson(json['status'] as String),
         stock: StockStatus.maybeFromJson(json['stock'] as String?),
+        priority: Priority.maybeFromJson(json['priority'] as int?),
       ),
     );
   }
@@ -63,6 +66,11 @@ class Types200Response {
   /// rather than declare it twice.
   StockStatus? stock;
 
+  /// An integer enum — a closed set of int values. Renders as a validated int
+  /// newtype (not a Dart enum); the generated round-trip test also exercises
+  /// the membership check throwing FormatException on an out-of-set value.
+  Priority? priority;
+
   /// Converts a [Types200Response] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
@@ -74,6 +82,7 @@ class Types200Response {
       'widget': widget.toJson(),
       'status': status.toJson(),
       'stock': ?stock?.toJson(),
+      'priority': ?priority?.toJson(),
     };
   }
 
@@ -87,6 +96,7 @@ class Types200Response {
     widget,
     status,
     stock,
+    priority,
   ]);
 
   @override
@@ -100,6 +110,7 @@ class Types200Response {
         timestamp == other.timestamp &&
         widget == other.widget &&
         status == other.status &&
-        stock == other.stock;
+        stock == other.stock &&
+        priority == other.priority;
   }
 }
