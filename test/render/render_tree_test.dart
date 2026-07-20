@@ -74,6 +74,22 @@ void main() {
       ]);
     });
 
+    test('enum names transliterate symbols instead of collapsing them', () {
+      // openfoodfacts' NutrientUnit: `μg` used to drop its non-ASCII `μ` and
+      // collide with `g`; transliterating it to `mug` keeps every member
+      // both readable and distinct, so no numeric-suffix dedup is needed.
+      const quirks = Quirks();
+      final names = RenderEnum.variableNamesFor(quirks, [
+        'g',
+        'mg',
+        'μg',
+        'ml',
+        '% vol',
+        '%',
+      ]);
+      expect(names, ['g', 'mg', 'mug', 'ml', 'percentVol', 'percent']);
+    });
+
     test('parameter names', () {
       const quirks = Quirks();
       expect(quirks.screamingCapsEnums, isFalse);

@@ -107,4 +107,26 @@ void main() {
     expect(isReservedWord('string'), false);
     expect(isReservedWord('foo'), false);
   });
+
+  test('transliterateToAscii', () {
+    // Greek mu and the identical-looking micro sign both spell out to `mu`,
+    // so `μg`/`µg` become `mug` instead of collapsing to a bare `g`.
+    expect(transliterateToAscii('μg'), 'mug'); // GREEK SMALL LETTER MU
+    expect(transliterateToAscii('µg'), 'mug'); // MICRO SIGN
+    // Unit symbols spell out by name.
+    expect(transliterateToAscii('%'), 'percent');
+    expect(transliterateToAscii('% vol'), 'percent vol');
+    expect(transliterateToAscii('°C'), 'degreeC'); // DEGREE SIGN
+    // Accented Latin folds to the base letter.
+    expect(transliterateToAscii('café'), 'cafe'); // e-acute
+    expect(transliterateToAscii('naïve'), 'naive'); // i-diaeresis
+    // Case mirrors the source, so distinct-cased values stay distinct
+    // (rather than both folding to `delta` and colliding).
+    expect(transliterateToAscii('Δ'), 'Delta'); // GREEK CAPITAL DELTA
+    expect(transliterateToAscii('δ'), 'delta'); // greek small delta
+    // Untouched characters pass through unchanged.
+    expect(transliterateToAscii('plain_name'), 'plain_name');
+    // Separator-like symbols are left alone (handled by the catch-all).
+    expect(transliterateToAscii('a&b'), 'a&b');
+  });
 }
