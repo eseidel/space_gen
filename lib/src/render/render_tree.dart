@@ -1968,22 +1968,30 @@ class Endpoint implements ToTemplateContext {
         multiStatusContext = null;
         returnType = schema.typeName;
         isVoidReturn = schema is RenderVoid;
-        // When the success response advertises a non-JSON content
-        // type, `_responseBodySource` returns the raw `response.body`
-        // string instead of the `jsonDecode(...)` expression — keeps
-        // github's `/zen`, `/octocat`, `/markdown`, `/markdown/raw`
-        // (text/plain) emitting clean Dart. The non-JSON path then
-        // falls back to the raw body without going through
-        // `fromJsonExpression`, since that expects JSON-shaped input.
-        final source = _ResponseBodySource.of(operation.successContentType);
-        responseFromJson = source == _ResponseBodySource.raw
-            ? source.expression
-            : schema.fromJsonExpression(
-                source.expression,
-                context,
-                jsonIsNullable: false,
-                dartIsNullable: false,
-              );
+        if (schema is RenderBinary) {
+          // A binary body is raw bytes, not text — source it from
+          // `response.bodyBytes` (a `Uint8List`) so the `Uint8List` return
+          // type isn't handed the `String` `response.body`. No `fromJson`:
+          // the bytes are the value.
+          responseFromJson = _responseBodyBytes;
+        } else {
+          // When the success response advertises a non-JSON content
+          // type, `_responseBodySource` returns the raw `response.body`
+          // string instead of the `jsonDecode(...)` expression — keeps
+          // github's `/zen`, `/octocat`, `/markdown`, `/markdown/raw`
+          // (text/plain) emitting clean Dart. The non-JSON path then
+          // falls back to the raw body without going through
+          // `fromJsonExpression`, since that expects JSON-shaped input.
+          final source = _ResponseBodySource.of(operation.successContentType);
+          responseFromJson = source == _ResponseBodySource.raw
+              ? source.expression
+              : schema.fromJsonExpression(
+                  source.expression,
+                  context,
+                  jsonIsNullable: false,
+                  dartIsNullable: false,
+                );
+        }
       case MultiStatusReturn():
         multiStatusContext = _buildMultiStatusContext(returnShape, context);
         returnType = multiStatusContext.typeName;
@@ -6231,6 +6239,14 @@ class RenderOneOf extends RenderNewType {
 const _responseBody = DartPropertyAccess(
   target: DartIdentifier('response'),
   name: 'body',
+);
+
+/// `response.bodyBytes`, the raw `Uint8List` an api method gets back for a
+/// binary response body ([RenderBinary]). Sourced instead of [_responseBody]
+/// so a `Uint8List` return type isn't handed a `String`.
+const _responseBodyBytes = DartPropertyAccess(
+  target: DartIdentifier('response'),
+  name: 'bodyBytes',
 );
 
 /// Where an api method reads its response body from.

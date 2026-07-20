@@ -1,3 +1,8 @@
+// Some OpenAPI specs flatten inline schemas into class names long
+// enough that `dart format` can't keep imports and call sites under
+// 80 cols as bare identifiers.
+// ignore_for_file: lines_longer_than_80_chars
+import 'dart:typed_data';
 import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
@@ -12,15 +17,9 @@ class CreateGuildStickerRequest {
 
   /// Converts a `Map<String, dynamic>` to a [CreateGuildStickerRequest].
   factory CreateGuildStickerRequest.fromJson(Map<String, dynamic> json) {
-    return parseFromJson(
-      'CreateGuildStickerRequest',
-      json,
-      () => CreateGuildStickerRequest(
-        name: json['name'] as String,
-        tags: json['tags'] as String,
-        description: json['description'] as String?,
-        file: json['file'] as String,
-      ),
+    throw UnsupportedError(
+      'Cannot decode CreateGuildStickerRequest from JSON (binary field present). '
+      'Input was: $json',
     );
   }
 
@@ -36,20 +35,17 @@ class CreateGuildStickerRequest {
   final String name;
   final String tags;
   final String? description;
-  final String file;
+  final Uint8List file;
 
   /// Converts a [CreateGuildStickerRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'tags': tags,
-      'description': description,
-      'file': file,
-    };
+    throw UnsupportedError(
+      'Cannot encode CreateGuildStickerRequest as JSON (binary field present).',
+    );
   }
 
   @override
-  int get hashCode => Object.hashAll([name, tags, description, file]);
+  int get hashCode => Object.hashAll([name, tags, description, listHash(file)]);
 
   @override
   bool operator ==(Object other) {
@@ -58,6 +54,6 @@ class CreateGuildStickerRequest {
         name == other.name &&
         tags == other.tags &&
         description == other.description &&
-        file == other.file;
+        listsEqual(file, other.file);
   }
 }

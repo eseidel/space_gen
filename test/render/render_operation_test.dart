@@ -77,6 +77,36 @@ void main() {
       );
     });
 
+    test('binary response body reads response.bodyBytes, not body', () {
+      // A `Uint8List` return type must be sourced from `response.bodyBytes`,
+      // not the `String` `response.body` — otherwise the method doesn't
+      // compile (return_of_invalid_type).
+      final operation = {
+        'operationId': 'downloadImage',
+        'responses': {
+          '200': {
+            'description': 'ok',
+            'content': {
+              'image/png': {
+                'schema': {'type': 'string', 'format': 'binary'},
+              },
+            },
+          },
+        },
+      };
+      final result = runWithLogger(
+        _MockLogger(),
+        () => renderTestOperation(
+          path: '/image',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        ),
+      );
+      expect(result, contains('Future<Uint8List> downloadImage('));
+      expect(result, contains('return response.bodyBytes;'));
+      expect(result, isNot(contains('return response.body;')));
+    });
+
     test('String path parameter substitutes bare, without interpolation', () {
       // A String path parameter is already a String, so it substitutes
       // directly — no `'${...}'` wrapper (which would trip
@@ -354,6 +384,46 @@ void main() {
           "http.MultipartFile.fromBytes('file', uploadFileRequest.file, filename: 'file'),",
         ),
       );
+    });
+
+    test('multipart/form-data contentEncoding: binary is a file part', () {
+      // OpenAPI 3.1 spells `format: binary` as `contentEncoding: binary`.
+      // Discord's upload fields use it; the field must become a
+      // `MultipartFile` part, not a string form field.
+      final operation = {
+        'tags': ['files'],
+        'operationId': 'uploadFile',
+        'requestBody': {
+          'required': true,
+          'content': {
+            'multipart/form-data': {
+              'schema': {
+                'type': 'object',
+                'required': ['file'],
+                'properties': {
+                  'file': {'type': 'string', 'contentEncoding': 'binary'},
+                },
+              },
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/upload',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      expect(
+        result,
+        contains(
+          "http.MultipartFile.fromBytes('file', uploadFileRequest.file, filename: 'file'),",
+        ),
+      );
+      // Not routed through the string-valued fields map.
+      expect(result, isNot(contains("multipartFields['file']")));
     });
 
     // #294: `format: date` and base64 bytes were missing from
