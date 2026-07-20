@@ -1,6 +1,7 @@
 export 'package:multipart/api/default_api.dart';
 export 'package:multipart/api_client.dart';
 export 'package:multipart/api_exception.dart';
+export 'package:multipart/model/upload_array_fields_request.dart';
 export 'package:multipart/model/upload_mixed_request.dart';
 export 'package:multipart/model/upload_multi_file_request.dart';
 export 'package:multipart/model/upload_optional_request.dart';

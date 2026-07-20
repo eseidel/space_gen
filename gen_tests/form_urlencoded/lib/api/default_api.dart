@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:form_urlencoded/api_client.dart';
 import 'package:form_urlencoded/api_exception.dart';
 import 'package:form_urlencoded/model/create_session_request.dart';
+import 'package:form_urlencoded/model/edit_product_request.dart';
 import 'package:form_urlencoded/model/subscribe_request.dart';
 import 'package:form_urlencoded/model/update_preferences_request.dart';
 
@@ -61,6 +62,24 @@ class DefaultApi {
       body: <String, String>{
         if (subscribeRequest?.email case final value?) 'email': value,
         if (subscribeRequest?.topic case final value?) 'topic': value,
+      },
+      bodyContentType: BodyContentType.formUrlEncoded,
+    );
+
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException<Object?>(response.statusCode, response.body);
+    }
+  }
+
+  /// Array-of-scalar fields comma-join into one field.
+  Future<void> editProduct(EditProductRequest editProductRequest) async {
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/products',
+      body: <String, String>{
+        'code': editProductRequest.code,
+        'brands': editProductRequest.brands.join(','),
+        'labels': editProductRequest.labels.join(','),
       },
       bodyContentType: BodyContentType.formUrlEncoded,
     );
