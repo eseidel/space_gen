@@ -651,4 +651,48 @@ void main() {
       );
     });
   });
+
+  group('maybeAddAvoidJsRoundedIntsIgnore', () {
+    test('passes through in-range validation bounds', () {
+      // 9007199254740991 is 2^53-1, the largest JS-safe integer — dart2js
+      // represents it exactly, so no directive (and adding one would trip
+      // `unnecessary_ignore`).
+      const content = 'value.validate(max: 9007199254740991);\n';
+      expect(maybeAddAvoidJsRoundedIntsIgnore(content), content);
+    });
+
+    test('prepends directive for an out-of-range validation bound', () {
+      // 18014398509481983 is 2^54-1, which a JS double can't represent
+      // exactly.
+      const content = 'value.validate(max: 18014398509481983);\n';
+      expect(
+        maybeAddAvoidJsRoundedIntsIgnore(content),
+        startsWith('$avoidJsRoundedIntsIgnoreBlock\n'),
+      );
+    });
+
+    test('detects a negative out-of-range minimum bound', () {
+      const content = 'value.validate(min: -18014398509481983);\n';
+      expect(
+        maybeAddAvoidJsRoundedIntsIgnore(content),
+        startsWith('$avoidJsRoundedIntsIgnoreBlock\n'),
+      );
+    });
+
+    test('ignores large integers outside a validate bound arg', () {
+      // A general integer literal isn't scanned — only the generator's own
+      // `validate` numeric bound args — so an in-example big int (its own
+      // `avoid_js_rounded_ints` story, #185) doesn't pull in this directive.
+      const content = 'final x = 18014398509481983;\n';
+      expect(maybeAddAvoidJsRoundedIntsIgnore(content), content);
+    });
+
+    test('is idempotent — does not stack the directive', () {
+      const content =
+          '$avoidJsRoundedIntsIgnoreBlock\n'
+          'value.validate(max: 18014398509481983);\n';
+      final result = maybeAddAvoidJsRoundedIntsIgnore(content);
+      expect(avoidJsRoundedIntsIgnoreBlock.allMatches(result).length, 1);
+    });
+  });
 }

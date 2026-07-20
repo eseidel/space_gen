@@ -241,6 +241,55 @@ String maybeAddCommentReferencesIgnore(String content) {
   return '$commentReferencesIgnoreBlock\n$content';
 }
 
+/// Block prepended to generated `.dart` files that emit a numeric `validate`
+/// bound outside JS's safe-integer range (e.g. Discord's
+/// `defaultMemberPermissions` field carries `maximum: 18014398509481983`,
+/// which `validate(max: 18014398509481983)` renders as an integer literal
+/// dart2js can't represent exactly). Exposed for tests.
+@visibleForTesting
+const avoidJsRoundedIntsIgnoreBlock =
+    "// A spec constraint bound exceeds JS's safe-integer range, so the\n"
+    '// generated `validate` call carries an integer literal dart2js\n'
+    '// rounds. The bound is faithful to the spec; precise web handling of\n'
+    '// 64-bit integers is tracked in\n'
+    '// https://github.com/eseidel/space_gen/issues/185.\n'
+    '// ignore_for_file: avoid_js_rounded_ints';
+
+/// The numeric-bound named arguments of the generated `validate(...)` call,
+/// whose integer values come straight from a schema's constraint bounds. The
+/// length/items counts (`minLength:`, `maxItems:`, ...) can't reach JS-unsafe
+/// magnitudes in practice, so only the value bounds are scanned.
+final _numericValidateBoundRe = RegExp(
+  r'\b(?:min|max|exclusiveMin|exclusiveMax|multipleOf):\s*(-?\d[\d_]*)',
+);
+
+/// Whether [digits] (a Dart integer literal, `_` separators allowed) names
+/// a value dart2js can't represent exactly — the `avoid_js_rounded_ints`
+/// firing condition: the value doesn't survive a round-trip through a
+/// double.
+bool _isJsRoundedInt(String digits) {
+  final value = BigInt.parse(digits.replaceAll('_', ''));
+  final asDouble = value.toDouble();
+  if (!asDouble.isFinite) return true;
+  return BigInt.from(asDouble) != value;
+}
+
+/// Returns [content] with [avoidJsRoundedIntsIgnoreBlock] prepended if any
+/// generated numeric `validate` bound falls outside JS's safe-integer range.
+/// Scoped to those named arguments — the literals this generator itself
+/// emits — rather than scanning every integer in the file, so it can't
+/// over-fire on an in-range literal and trip `unnecessary_ignore`.
+@visibleForTesting
+String maybeAddAvoidJsRoundedIntsIgnore(String content) {
+  const marker = '// ignore_for_file: avoid_js_rounded_ints';
+  if (content.contains(marker)) return content;
+  final hasRoundedBound = _numericValidateBoundRe
+      .allMatches(content)
+      .any((m) => _isJsRoundedInt(m.group(1)!));
+  if (!hasRoundedBound) return content;
+  return '$avoidJsRoundedIntsIgnoreBlock\n$content';
+}
+
 /// Composes the per-file emit-time suppression helpers applied by
 /// `_renderSpecTemplate`. Adding a new gen-time suppression to the
 /// pipeline is a single edit here; call sites stay unchanged.
@@ -248,7 +297,11 @@ String maybeAddCommentReferencesIgnore(String content) {
 /// this entirely (see #138's design rationale).
 String maybeAddIgnoreDirectives(String content) => maybeAddLongLineIgnore(
   maybeAddCommentReferencesIgnore(
-    maybeAddUnintendedHtmlIgnore(maybeAddFlutterStyleTodosIgnore(content)),
+    maybeAddUnintendedHtmlIgnore(
+      maybeAddFlutterStyleTodosIgnore(
+        maybeAddAvoidJsRoundedIntsIgnore(content),
+      ),
+    ),
   ),
 );
 

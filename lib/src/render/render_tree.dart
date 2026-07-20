@@ -161,23 +161,13 @@ Iterable<String> wrapDocComment(String value, {int indent = 0}) {
   ).map((line) => '$prefix$line');
 }
 
-/// Format a list of `validateXxx(...)` extension-method calls as the
-/// body of a newtype constructor. Single call: `<receiver>.<call>;`.
-/// Multiple calls: a `<receiver>` cascade chain so the
-/// `cascade_invocations` lint doesn't fire on the duplicated receiver.
-@visibleForTesting
-String validationBody(List<String> calls, {required String receiver}) {
-  if (calls.isEmpty) return '';
-  if (calls.length == 1) {
-    return '$receiver.${calls.first};';
-  }
-  final buffer = StringBuffer(receiver);
-  for (final call in calls) {
-    buffer.write('\n      ..$call');
-  }
-  buffer.write(';');
-  return buffer.toString();
-}
+/// Assemble a single `validate(...)` invocation from the named arguments a
+/// schema's constraints produce, or null when the schema declares none. Every
+/// constraint on a value collapses into one call — `validate(min: 0, max: 10)`
+/// — rather than a call per bound, so no receiver is ever repeated (no
+/// cascade) and the generated line reads like handwritten Dart.
+String? validateCall(List<String> args) =>
+    args.isEmpty ? null : 'validate(${args.join(', ')})';
 
 /// Renders a two-part class-member doc comment that fits 80 cols
 /// even when long flattened type names would otherwise push the
@@ -395,7 +385,10 @@ abstract class ToTemplateContext {
 abstract class CanBeParameter implements ToTemplateContext {
   bool get isRequired;
   String dartParameterName(Quirks quirks);
-  Iterable<String> get validationCalls;
+
+  /// The single `validate(...)` invocation for this value's constraints
+  /// (receiver excluded), or null when it declares none.
+  String? get validationCall;
 }
 
 // Could make this comparable to have a nicer sort for our test results.
@@ -1275,25 +1268,11 @@ class Endpoint implements ToTemplateContext {
       // boundary because their underlying String / num is the param
       // type itself.
       if (parameter.type.createsNewType) continue;
-      final calls = parameter.validationCalls.toList();
-      if (calls.isEmpty) continue;
+      final call = parameter.validationCall;
+      if (call == null) continue;
       final dartName = parameter.dartParameterName(quirks);
-      if (parameter.isRequired && calls.length > 1) {
-        // Required (non-nullable) param with multiple validators: emit
-        // a cascade so `cascade_invocations` doesn't fire on the
-        // duplicated receiver. Discord's `answerId.validateMaximum(10)`
-        // + `.validateMinimum(1)` is the canonical case.
-        statements.add(validationBody(calls, receiver: dartName));
-      } else {
-        // Single call (any nullability) or nullable multi-call: keep
-        // separate `name.call;` / `name?.call;` statements. The lint
-        // only fires on `.` (non-nullable) chains, so nullable cases
-        // stay as-is and github regen is byte-identical.
-        final nameCall = parameter.isRequired ? '$dartName.' : '$dartName?.';
-        for (final call in calls) {
-          statements.add('$nameCall$call;');
-        }
-      }
+      final access = parameter.isRequired ? '.' : '?.';
+      statements.add('$dartName$access$call;');
     }
     return statements;
   }
@@ -2346,7 +2325,7 @@ sealed class RenderRequestBody implements CanBeParameter {
   final bool isRequired;
 
   @override
-  Iterable<String> get validationCalls => schema.validationCalls;
+  String? get validationCall => schema.validationCall;
 
   @override
   String dartParameterName(Quirks quirks) =>
@@ -2970,11 +2949,14 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
 
   Iterable<Import> get additionalImports => const [];
 
-  // TODO(eseidel): This should be abstract and all classes should override.
-  // This should include validations for the entire subtree of schemas
-  // stopping at any branches that are new types since those can validate
-  // themselves during construction.
-  Iterable<String> get validationCalls => const [];
+  /// The single `validate(...)` invocation for this schema's own constraints
+  /// (receiver excluded, e.g. `validate(min: 0, max: 10)`), or null when it
+  /// declares none. Only the leaf value types (string / numeric / array)
+  /// carry constraints today; everything else inherits this null.
+  //
+  // TODO(eseidel): validate the entire subtree of schemas, stopping at any
+  // branch that is a new type (those validate themselves during construction).
+  String? get validationCall => null;
 
   /// Whether this schema should call toJson to convert to json.
   /// Subclasses should override this to return true if the schema should call
@@ -3240,7 +3222,7 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     return DartInvocation(
       type: dartType,
       arguments: [literal],
-      isConstConstructor: validationCalls.isEmpty,
+      isConstConstructor: validationCall == null,
     );
   }
 
@@ -3696,23 +3678,24 @@ class RenderString extends RenderSchema {
   }
 
   @override
-  Iterable<String> get validationCalls {
-    return [
-      if (maxLength != null) 'validateMaximumLength($maxLength)',
-      if (minLength != null) 'validateMinimumLength($minLength)',
-      if (pattern != null) 'validatePattern(${quoteString(pattern!)})',
-    ];
+  String? get validationCall {
+    final pat = pattern;
+    return validateCall([
+      if (minLength != null) 'minLength: $minLength',
+      if (maxLength != null) 'maxLength: $maxLength',
+      if (pat != null) 'pattern: ${quoteString(pat)}',
+    ]);
   }
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
-    final calls = validationCalls.toList();
+    final call = validationCall;
     return {
       'doc_comment': createDocComment(common: common),
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
-      'hasValidations': calls.isNotEmpty,
-      'validationBody': validationBody(calls, receiver: 'value'),
+      'hasValidations': call != null,
+      'validationBody': call == null ? '' : 'value.$call;',
     };
   }
 
@@ -3798,8 +3781,31 @@ class RenderString extends RenderSchema {
   }
 
   @override
-  DartExpression? exampleValue(SchemaRenderer context) =>
-      newtypeWrappedExample(DartLiteral(validStringExample()));
+  DartExpression? exampleValue(SchemaRenderer context) {
+    final example = validStringExample();
+    // If synthesis couldn't produce a value that satisfies this schema's own
+    // `pattern`, emitting it as an example would make the generated
+    // round-trip test construct a spec-invalid instance — which now throws,
+    // because constrained values validate in their constructor (inline
+    // properties via #204, newtypes via #194). Return null so the example is
+    // skipped: an object with an un-exampleable required property skips its
+    // round-trip test, and an un-exampleable newtype skips its own — the same
+    // null-example path already used for recursive and no-JSON types.
+    final pat = pattern;
+    if (pat != null && !_stringMatchesPattern(pat, example)) return null;
+    return newtypeWrappedExample(DartLiteral(example));
+  }
+}
+
+/// Whether [value] matches [pattern], treating an unparseable author pattern
+/// as "nothing to check against" (matches) — the same lenient stance
+/// [synthesizeStringSatisfying] takes when the regex fails to compile.
+bool _stringMatchesPattern(String pattern, String value) {
+  try {
+    return RegExp(pattern).hasMatch(value);
+  } on FormatException {
+    return true;
+  }
 }
 
 /// Pick the first `String`-typed entry from `common.example` or
@@ -3859,6 +3865,14 @@ String synthesizeStringSatisfying({
     'a' * targetLen, // covers `[0-9a-fA-F]+`, `[a-z]+`, etc.
     '0' * targetLen, // covers `[0-9]+`, `^(0|...)$`.
     '1' * targetLen, // covers `^[1-9][0-9]*$`-leading patterns.
+    // Fixed-block patterns (base64's 4-char groups, github's secret
+    // `^(?:[A-Za-z0-9+/]{4})*...$`) need a length that's a multiple of the
+    // block; a single char repeated `targetLen` times is usually the wrong
+    // length. Try `a`-runs at common block lengths. Listed after the
+    // `targetLen` candidates so patterns that already matched keep their
+    // value (first match wins).
+    for (final len in [4, 8])
+      if (len > targetLen) 'a' * len,
     'example', // simple case for unconstrained patterns.
     resize('example'),
   ];
@@ -3930,24 +3944,20 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
       return DartInvocation(
         type: dartType,
         arguments: [_numericLiteral(value)],
-        isConstConstructor: validationCalls.isEmpty,
+        isConstConstructor: validationCall == null,
       );
     }
     return _numericLiteral(value);
   }
 
   @override
-  Iterable<String> get validationCalls {
-    return [
-      if (maximum != null) 'validateMaximum($maximum)',
-      if (minimum != null) 'validateMinimum($minimum)',
-      if (exclusiveMaximum != null)
-        'validateExclusiveMaximum($exclusiveMaximum)',
-      if (exclusiveMinimum != null)
-        'validateExclusiveMinimum($exclusiveMinimum)',
-      if (multipleOf != null) 'validateMultipleOf($multipleOf)',
-    ];
-  }
+  String? get validationCall => validateCall([
+    if (minimum != null) 'min: $minimum',
+    if (maximum != null) 'max: $maximum',
+    if (exclusiveMinimum != null) 'exclusiveMin: $exclusiveMinimum',
+    if (exclusiveMaximum != null) 'exclusiveMax: $exclusiveMaximum',
+    if (multipleOf != null) 'multipleOf: $multipleOf',
+  ]);
 
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
@@ -3956,7 +3966,7 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
         '$runtimeType.toTemplateContext called for non-new type: $this',
       );
     }
-    final calls = validationCalls.toList();
+    final call = validationCall;
     return {
       'doc_comment': createDocComment(common: common),
       'typeName': typeName,
@@ -3964,8 +3974,8 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
       'jsonType': jsonStorageType(isNullable: false),
       'nullableTypeName': nullableTypeName(context),
       'jsonToDartCall': jsonToDartCall(jsonIsNullable: false),
-      'hasValidations': calls.isNotEmpty,
-      'validationBody': validationBody(calls, receiver: 'value'),
+      'hasValidations': call != null,
+      'validationBody': call == null ? '' : 'value.$call;',
     };
   }
 
@@ -4595,6 +4605,52 @@ class RenderObject extends RenderNewType {
     return assignmentsLine.isEmpty ? null : ': $assignmentsLine';
   }
 
+  /// The `validate*` statements for the constructor body: constraint checks
+  /// (`validatePattern`, `validateMaximum`, `validateMinimumItems`, ...) for
+  /// inline properties whose values aren't validated anywhere else. Because
+  /// `fromJson` routes through this constructor, these also reject invalid
+  /// JSON on decode.
+  ///
+  /// Two kinds of property are skipped:
+  /// - **newtype-typed** (`createsNewType`): the wrapped value is validated in
+  ///   the newtype's own constructor. Calling `validate` on the extension type
+  ///   here wouldn't resolve — the extension method is defined on the
+  ///   underlying `String`/`num`/`List`, not the newtype. Mirrors the
+  ///   API-boundary skip in `RenderOperation.validationStatements`.
+  /// - **const getters**: pinned to a fixed value, no storage to check.
+  ///
+  /// Everything else — inline strings/numbers/arrays carrying `pattern`,
+  /// `maxLength`, `maximum`, `minItems`, ... — is validated here.
+  List<String> constructorValidationStatements(SchemaRenderer context) {
+    final statements = <String>[];
+    for (final entry in properties.entries) {
+      final jsonName = entry.key;
+      final property = entry.value;
+      if (rendersAsConstGetter(jsonName, property)) continue;
+      if (property.createsNewType) continue;
+      final call = property.validationCall;
+      if (call == null) continue;
+      final dartName = variableSafeName(context.quirks, jsonName);
+      // The body references the field/parameter by its bare Dart name. That
+      // name is nullable when the storage slot is (optional or spec-nullable)
+      // or when a non-const default makes the parameter itself nullable
+      // (`Foo? x`, coalesced to the default in the initializer list) — in
+      // which case a passed null skips validation and the default (assumed
+      // valid) stands.
+      final receiverIsNullable =
+          propertyDartIsNullable(
+            jsonName: jsonName,
+            context: context,
+            propertyHasDefaultValue: property.hasDefaultValue(context),
+          ) ||
+          property.common.nullable ||
+          property.hasNonConstDefaultValue(context);
+      final access = receiverIsNullable ? '?.' : '.';
+      statements.add('$dartName$access$call;');
+    }
+    return statements;
+  }
+
   /// Template context for an object schema.
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
@@ -4622,6 +4678,7 @@ class RenderObject extends RenderNewType {
     }
 
     final assignmentsLine = buildAssignmentsLine(storedProperties);
+    final validationStatements = constructorValidationStatements(context);
 
     final valueSchema = additionalProperties;
     final hasAdditionalProperties = valueSchema != null;
@@ -4705,6 +4762,11 @@ class RenderObject extends RenderNewType {
       'hasAdditionalProperties': hasAdditionalProperties,
       'hasNoJsonProperty': hasNoJsonProperty,
       'assignmentsLine': assignmentsLine,
+      // Constraint checks (`validatePattern`, `validateMaximum`, ...) for
+      // inline non-newtype properties, emitted as the constructor body so
+      // both direct construction and `fromJson` reject invalid values.
+      'constructorValidation': validationStatements,
+      'hasConstructorValidation': validationStatements.isNotEmpty,
       // The constructor can be `const` when the class is `@immutable`
       // (fields are `final`) and there's no initializer list — the only
       // initializers we emit are `this.x = x ?? <non-const default>`,
@@ -4853,6 +4915,8 @@ class RenderObject extends RenderNewType {
   /// [assignmentsLine] and [buildAssignmentsLine]).
   bool canBeConst(SchemaRenderer context) {
     if (context.quirks.mutableModels) return false;
+    // A constructor with a validation body isn't a `const` constructor.
+    if (constructorValidationStatements(context).isNotEmpty) return false;
     return !properties.entries.any(
       (entry) =>
           !rendersAsConstGetter(entry.key, entry.value) &&
@@ -4962,13 +5026,11 @@ class RenderArray extends RenderSchema {
   final bool uniqueItems;
 
   @override
-  Iterable<String> get validationCalls {
-    return [
-      if (maxItems != null) 'validateMaximumItems($maxItems)',
-      if (minItems != null) 'validateMinimumItems($minItems)',
-      if (uniqueItems) 'validateUniqueItems()',
-    ];
-  }
+  String? get validationCall => validateCall([
+    if (minItems != null) 'minItems: $minItems',
+    if (maxItems != null) 'maxItems: $maxItems',
+    if (uniqueItems) 'unique: true',
+  ]);
 
   @override
   List<Object?> get props => [
@@ -5164,7 +5226,23 @@ class RenderArray extends RenderSchema {
   DartExpression? exampleValue(SchemaRenderer context) {
     final inner = items.exampleValue(context);
     if (inner == null) return null;
-    return DartListLiteral(elementType: items.dartType, elements: [inner]);
+    // Enough copies to satisfy `minItems` — one otherwise, preserving the
+    // single-element example for the common unconstrained case. A round-trip
+    // test constructs this instance, so it now has to clear the array's own
+    // `validateMinimumItems`/`validateUniqueItems` (#204).
+    final minCount = minItems ?? 0;
+    final count = minCount < 1 ? 1 : minCount;
+    // `uniqueItems` with more than one element would need distinct synthesized
+    // values, and `maxItems < count` is an unsatisfiable bound; in both cases
+    // synthesis can't produce a valid example, so skip it (the object/newtype
+    // then skips its round-trip test, as for any null example).
+    if (count > 1 && uniqueItems) return null;
+    final maxCount = maxItems;
+    if (maxCount != null && count > maxCount) return null;
+    return DartListLiteral(
+      elementType: items.dartType,
+      elements: List.filled(count, inner),
+    );
   }
 }
 
@@ -6842,7 +6920,7 @@ class RenderParameter implements CanBeParameter {
   }
 
   @override
-  Iterable<String> get validationCalls => type.validationCalls;
+  String? get validationCall => type.validationCall;
 
   /// Only the keys `api.mustache` actually reads from an iterated
   /// parameter context: the named/positional slot in the method
