@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:multipart/api_client.dart';
 import 'package:multipart/api_exception.dart';
+import 'package:multipart/model/upload_array_fields_request.dart';
 import 'package:multipart/model/upload_mixed_request.dart';
 import 'package:multipart/model/upload_multi_file_request.dart';
 import 'package:multipart/model/upload_optional_request.dart';
@@ -152,6 +153,31 @@ class DefaultApi {
     final response = await client.invokeApiMultipart(
       method: Method.post,
       path: '/upload/multi-file',
+      fields: multipartFields,
+      files: multipartFiles,
+    );
+
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException<Object?>(response.statusCode, response.body);
+    }
+  }
+
+  /// Array-of-scalar fields comma-join into one part (openfoodfacts
+  /// add-product shape).
+  Future<void> uploadArrayFields(
+    UploadArrayFieldsRequest uploadArrayFieldsRequest,
+  ) async {
+    final multipartFields = <String, String>{
+      'brands': uploadArrayFieldsRequest.brands.join(','),
+      'labels': uploadArrayFieldsRequest.labels.join(','),
+      'counts': uploadArrayFieldsRequest.counts
+          .map((e) => e.toString())
+          .join(','),
+    };
+    final multipartFiles = <http.MultipartFile>[];
+    final response = await client.invokeApiMultipart(
+      method: Method.post,
+      path: '/upload/array-fields',
       fields: multipartFields,
       files: multipartFiles,
     );

@@ -410,6 +410,67 @@ void main() {
       expect(result, isNot(contains("MultipartFile.fromBytes('blob'")));
     });
 
+    // openfoodfacts `add_or_edit_a_product` carries `brands`/`labels`/
+    // `categories` as `type: array` of strings, documented "comma separated
+    // list of values". `http`'s `fields` is a `Map<String, String>` and
+    // can't repeat a key, so an array field comma-joins into one value —
+    // the same `explode: false` form header and query arrays already use.
+    test('multipart/form-data with array-of-scalar fields', () {
+      final operation = {
+        'tags': ['files'],
+        'operationId': 'uploadFile',
+        'requestBody': {
+          'required': true,
+          'content': {
+            'multipart/form-data': {
+              'schema': {
+                'type': 'object',
+                'required': ['brands', 'counts'],
+                'properties': {
+                  'brands': {
+                    'type': 'array',
+                    'items': {'type': 'string'},
+                  },
+                  'labels': {
+                    'type': 'array',
+                    'items': {'type': 'string'},
+                  },
+                  'counts': {
+                    'type': 'array',
+                    'items': {'type': 'integer'},
+                  },
+                },
+              },
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/upload',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      // String items are already `String` on the wire — comma-join with no
+      // per-element `.map`, which would only copy the list.
+      expect(result, contains("'brands': uploadFileRequest.brands.join(','),"));
+      // Non-String items convert each element before joining.
+      expect(
+        result,
+        contains(
+          "'counts': uploadFileRequest.counts.map((e) => e.toString()).join(','),",
+        ),
+      );
+      // Optional array: captured to a local, null-checked, then joined.
+      expect(result, contains('final v = uploadFileRequest.labels;'));
+      expect(
+        result,
+        contains("if (v != null) multipartFields['labels'] = v.join(',');"),
+      );
+    });
+
     test('multipart/form-data with optional file', () {
       final operation = {
         'tags': ['files'],
@@ -529,6 +590,59 @@ void main() {
       );
     });
 
+    // Array *fields* comma-join (above), but only when their items are
+    // themselves wire scalars. An array of objects has no single-value wire
+    // form, so it stays outside the v1-supported set and throws — naming
+    // the property, like every other unsupported multipart shape.
+    test('multipart/form-data rejects an array-of-objects field', () {
+      final operation = {
+        'tags': ['files'],
+        'operationId': 'uploadFile',
+        'requestBody': {
+          'required': true,
+          'content': {
+            'multipart/form-data': {
+              'schema': {
+                'type': 'object',
+                'required': ['items'],
+                'properties': {
+                  'items': {
+                    'type': 'array',
+                    'items': {
+                      'type': 'object',
+                      'properties': {
+                        'name': {'type': 'string'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      expect(
+        () => renderTestOperation(
+          path: '/upload',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        ),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            allOf(
+              contains('multipart/form-data property must be a scalar'),
+              contains('"items"'),
+            ),
+          ),
+        ),
+      );
+    });
+
     // openfoodfacts `POST /cgi/session.pl` offers only
     // application/x-www-form-urlencoded (no JSON alternative), so it's the
     // sole content type the resolver can pick. The body object renders as a
@@ -626,6 +740,114 @@ void main() {
         ),
       );
     });
+
+    // Same comma-join rule as multipart: an array-of-scalar field becomes
+    // one `Map<String, String>` value, not repeated keys the map can't hold.
+    test('application/x-www-form-urlencoded with array-of-scalar fields', () {
+      final operation = {
+        'tags': ['auth'],
+        'operationId': 'createSession',
+        'requestBody': {
+          'required': true,
+          'content': {
+            'application/x-www-form-urlencoded': {
+              'schema': {
+                'type': 'object',
+                'required': ['brands'],
+                'properties': {
+                  'brands': {
+                    'type': 'array',
+                    'items': {'type': 'string'},
+                  },
+                  'labels': {
+                    'type': 'array',
+                    'items': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/session',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      // Required array: bare comma-join off the body field.
+      expect(
+        result,
+        contains("'brands': createSessionRequest.brands.join(',')"),
+      );
+      // Optional array: gated behind a collection-if, joined off `value`.
+      expect(
+        result,
+        contains(
+          'if (createSessionRequest.labels case final value?) '
+          "'labels': value.join(',')",
+        ),
+      );
+    });
+
+    // The mirror of the multipart boundary: form-urlencoded accepts arrays
+    // only when their items are wire scalars. A non-scalar item (here an
+    // object) has no single-value form, so the property throws — naming it.
+    test(
+      'application/x-www-form-urlencoded rejects an array-of-objects field',
+      () {
+        final operation = {
+          'tags': ['auth'],
+          'operationId': 'createSession',
+          'requestBody': {
+            'required': true,
+            'content': {
+              'application/x-www-form-urlencoded': {
+                'schema': {
+                  'type': 'object',
+                  'required': ['items'],
+                  'properties': {
+                    'items': {
+                      'type': 'array',
+                      'items': {
+                        'type': 'object',
+                        'properties': {
+                          'name': {'type': 'string'},
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'responses': {
+            '200': {'description': 'OK'},
+          },
+        };
+        expect(
+          () => renderTestOperation(
+            path: '/session',
+            operationJson: operation,
+            serverUrl: Uri.parse('https://example.com'),
+          ),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              allOf(
+                contains(
+                  'application/x-www-form-urlencoded property must be a scalar',
+                ),
+                contains('"items"'),
+              ),
+            ),
+          ),
+        );
+      },
+    );
 
     test('application/x-www-form-urlencoded rejects non-object schema', () {
       final operation = {
