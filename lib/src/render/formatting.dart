@@ -167,6 +167,46 @@ bool _dartdocHasHtmlTag(String content) {
   return false;
 }
 
+/// Block prepended to generated `.dart` files whose dartdoc copies a
+/// spec description containing a bare `TODO` (e.g. openfoodfacts'
+/// `element` schema documents "TODO: add Map type"). Exposed for tests.
+@visibleForTesting
+const flutterStyleTodosIgnoreBlock =
+    '// Spec descriptions copy prose verbatim into dartdoc, where a bare\n'
+    '// `TODO` in the text (written by the spec author, not us) reads as\n'
+    '// an unformatted to-do. Suppress file-locally so the lint stays live\n'
+    '// elsewhere; spec authors do not write to-dos in Flutter style.\n'
+    '// ignore_for_file: flutter_style_todos';
+
+/// Returns [content] with [flutterStyleTodosIgnoreBlock] prepended if any
+/// `///` doc comment carries a `TODO` token not in Flutter's
+/// `TODO(user): message` form. Threaded through [maybeAddIgnoreDirectives]
+/// at file-emit time on every space_gen-emitted file — hand-written
+/// templates skip the call, so a real to-do in their docs still gets
+/// flagged rather than silently suppressed.
+@visibleForTesting
+String maybeAddFlutterStyleTodosIgnore(String content) {
+  const marker = '// ignore_for_file: flutter_style_todos';
+  if (content.contains(marker)) return content;
+  if (!_dartdocHasUnformattedTodo(content)) return content;
+  return '$flutterStyleTodosIgnoreBlock\n$content';
+}
+
+/// Whether any `///` doc comment line carries a `TODO` token that
+/// `flutter_style_todos` would flag — a bare `TODO` (as spec prose writes
+/// it) rather than the `TODO(user):` form the lint accepts. Restricted to
+/// `///` lines because only doc comments carry copied spec prose; the
+/// generator's own `//` comments are already Flutter-style.
+bool _dartdocHasUnformattedTodo(String content) {
+  final todoRe = RegExp(r'\bTODO\b(?!\s*\()');
+  for (final line in content.split('\n')) {
+    final stripped = line.trimLeft();
+    if (!stripped.startsWith('///')) continue;
+    if (todoRe.hasMatch(stripped.substring(3))) return true;
+  }
+  return false;
+}
+
 /// Returns [content] with [commentReferencesIgnoreBlock] prepended if
 /// any `///` doc comment carries a bracketed token that wouldn't
 /// resolve in scope. Threaded through [maybeAddIgnoreDirectives] at
@@ -207,7 +247,9 @@ String maybeAddCommentReferencesIgnore(String content) {
 /// Hand-written templates use `_renderTemplate` instead and bypass
 /// this entirely (see #138's design rationale).
 String maybeAddIgnoreDirectives(String content) => maybeAddLongLineIgnore(
-  maybeAddCommentReferencesIgnore(maybeAddUnintendedHtmlIgnore(content)),
+  maybeAddCommentReferencesIgnore(
+    maybeAddUnintendedHtmlIgnore(maybeAddFlutterStyleTodosIgnore(content)),
+  ),
 );
 
 /// Collects every `[token]` bracketed reference inside a `///` doc
