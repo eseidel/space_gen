@@ -1459,7 +1459,13 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   final properties = <String, SchemaRef>{};
   final constProperties = <String, Object>{};
   for (final name in propertiesJson.json.keys) {
-    final snakeName = snakeFromCamel(name);
+    // Property names are arbitrary author strings — kebab (`saturated-fat`),
+    // dotted, or spaced keys all appear in real specs. `toSnakeCase` sanitizes
+    // every casing into a valid snake identifier so the synthesized inline-
+    // object type name (`camelFromSnake(snakeName)`) stays a legal Dart
+    // identifier. `snakeFromCamel` alone leaves a hyphen intact, producing e.g.
+    // `NutrientLevelsSaturated-fat`, which fails `dart format`.
+    final snakeName = toSnakeCase(name);
     final childContext = propertiesJson
         .childAsMap(name)
         .addSnakeName(snakeName);

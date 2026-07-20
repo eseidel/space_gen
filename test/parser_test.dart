@@ -2537,6 +2537,33 @@ void main() {
       expect(spec['foo-bar']!.object!.snakeName, equals('foo_bar'));
     });
 
+    test('kebab property name sanitizes into the synthesized type snakeName',
+        () {
+      // A hyphenated property whose value is an inline object synthesizes a
+      // type named from the property. openfoodfacts' `nutrient_levels` has a
+      // `saturated-fat` object property; the hyphen must not survive into the
+      // snake name, or `camelFromSnake` produces the invalid Dart identifier
+      // `...Saturated-fat` and `dart format` rejects the file.
+      final json = {
+        'type': 'object',
+        'properties': {
+          'saturated-fat': {
+            'type': 'object',
+            'properties': {
+              'value': {'type': 'string'},
+            },
+          },
+        },
+      };
+      final schema = parseTestSchema(json) as SchemaObject;
+      final property = schema.properties['saturated-fat']!.object;
+      if (property is! SchemaObject) {
+        fail('Expected SchemaObject, got ${property.runtimeType}');
+      }
+      expect(property.snakeName, isNot(contains('-')));
+      expect(property.snakeName, endsWith('saturated_fat'));
+    });
+
     group('nullable', () {
       test('string', () {
         final json = {'type': 'string', 'nullable': true};
