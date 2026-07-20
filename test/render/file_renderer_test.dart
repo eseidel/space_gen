@@ -741,12 +741,13 @@ void main() {
     });
 
     test(
-      'int enum toString test compares against the stringified value',
+      'named int enum toString test compares against the stringified value',
       () async {
-        // For an int enum `toString()` is a String but `toJson()` is an int, so
-        // comparing them directly is a type category error that always fails.
-        // Compare against the stringified wire value instead — type-safe, and
-        // it keeps `toString()` covered.
+        // A named int enum (member titles) stays a Dart enum, so it gets the
+        // value-iteration round-trip test. There `toString()` is a String but
+        // `toJson()` is an int, so comparing them directly is a type category
+        // error that always fails. Compare against the stringified wire value
+        // instead — type-safe, and it keeps `toString()` covered.
         final fs = MemoryFileSystem.test();
         final spec = {
           'openapi': '3.1.0',
@@ -775,7 +776,11 @@ void main() {
             'schemas': {
               'Level': {
                 'type': 'integer',
-                'enum': [1, 2, 3],
+                'oneOf': [
+                  {'title': 'LOW', 'const': 1},
+                  {'title': 'MEDIUM', 'const': 2},
+                  {'title': 'HIGH', 'const': 3},
+                ],
               },
             },
           },
@@ -788,10 +793,7 @@ void main() {
         // The toString test is present (so toString() stays covered)...
         expect(body, contains('toString matches toJson for every value'));
         // ...comparing against the stringified wire value, not the raw int...
-        expect(
-          body,
-          contains('equals(value.toJson().toString())'),
-        );
+        expect(body, contains('equals(value.toJson().toString())'));
         // ...and the fromJson round-trip check stays too.
         expect(body, contains('fromJson round-trips every value'));
         expect(body, contains('Level.fromJson(value.toJson())'));

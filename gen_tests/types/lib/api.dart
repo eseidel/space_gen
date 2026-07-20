@@ -3,6 +3,7 @@ export 'package:types/api_client.dart';
 export 'package:types/api_exception.dart';
 export 'package:types/date.dart';
 export 'package:types/model/email_type.dart';
+export 'package:types/model/priority.dart';
 export 'package:types/model/status.dart';
 export 'package:types/model/stock_status.dart';
 export 'package:types/model/timestamp.dart';

@@ -749,11 +749,11 @@ void main() {
       expect(a.equalsIgnoringName(c), isFalse);
     });
 
-    test('RenderStringEnum and RenderIntEnum with same shape do not '
-        'compare equal (different concrete subtypes)', () {
-      // The runtime-type guard in RenderEnum.equalsIgnoringName keeps
-      // a String-valued enum from being treated as semantically equal
-      // to an Int-valued one even when the names happen to coincide.
+    test('a string enum and the int newtype for the same values do not '
+        'compare equal (different concrete types)', () {
+      // A string enum stays a Dart enum; an integer enum renders as an int
+      // newtype (RenderIntNewtype). They are different render types, so
+      // equalsIgnoringName never conflates them even at the same shape.
       const common = CommonProperties.test(
         snakeName: 'foo',
         pointer: JsonPointer.empty(),
@@ -764,41 +764,69 @@ void main() {
         values: const ['a'],
         descriptions: null,
       );
-      final intEnum = RenderIntEnum(
+      const intNewtype = RenderIntNewtype(
         common: common,
-        names: const ['a'],
-        values: const [1],
-        descriptions: null,
+        allowedValues: [1],
       );
-      expect(stringEnum.equalsIgnoringName(intEnum), isFalse);
+      expect(stringEnum.equalsIgnoringName(intNewtype), isFalse);
     });
 
-    test('RenderIntEnum.invalidJsonExample picks an out-of-range int', () {
-      // The default fallback is `-1` since most spec int enums use
-      // small non-negative values (bitfield flags, component types).
-      // When -1 is somehow in the value set, we step further out.
+    test('int newtypes are distinguished by their allowed set', () {
+      // The allowed values are the only thing separating one closed-set int
+      // from another (their numeric bounds are all null), so structural
+      // equality must compare them — otherwise distinct int enums would
+      // dedupe together in the import-collection pass.
       const common = CommonProperties.test(
         snakeName: 'foo',
         pointer: JsonPointer.empty(),
       );
-      final context = SchemaRenderer(
-        templates: TemplateProvider.defaultLocation(),
-      );
-      final ordinary = RenderIntEnum(
+      const a = RenderIntNewtype(common: common, allowedValues: [1, 2]);
+      const b = RenderIntNewtype(common: common, allowedValues: [3, 4]);
+      const same = RenderIntNewtype(common: common, allowedValues: [1, 2]);
+      expect(a.equalsIgnoringName(b), isFalse);
+      expect(a.equalsIgnoringName(same), isTrue);
+      // Equatable `==`/props include the allowed set too.
+      expect(a, equals(same));
+      expect(a, isNot(equals(b)));
+      // A plain bounded integer newtype is never a closed-set int.
+      const plainInt = RenderInteger(
         common: common,
-        names: const ['value1', 'value2'],
-        values: const [1, 2],
-        descriptions: null,
+        defaultValue: null,
+        maximum: null,
+        minimum: null,
+        exclusiveMaximum: null,
+        exclusiveMinimum: null,
+        multipleOf: null,
+        createsNewType: true,
       );
-      expect(ordinary.invalidJsonExample(context), '-1');
-      final includesNegOne = RenderIntEnum(
-        common: common,
-        names: const ['valueNeg1', 'value0', 'value1'],
-        values: const [-1, 0, 1],
-        descriptions: null,
-      );
-      expect(includesNegOne.invalidJsonExample(context), '-999999');
+      expect(a.equalsIgnoringName(plainInt), isFalse);
     });
+
+    test(
+      'RenderIntNewtype.invalidJsonExample picks a value outside the set',
+      () {
+        // The default fallback is `-1` since most spec int enums use
+        // small non-negative values (bitfield flags, component types).
+        // When -1 is itself allowed, we step further out.
+        const common = CommonProperties.test(
+          snakeName: 'foo',
+          pointer: JsonPointer.empty(),
+        );
+        final context = SchemaRenderer(
+          templates: TemplateProvider.defaultLocation(),
+        );
+        const ordinary = RenderIntNewtype(
+          common: common,
+          allowedValues: [1, 2],
+        );
+        expect(ordinary.invalidJsonExample(context), '-1');
+        const includesNegOne = RenderIntNewtype(
+          common: common,
+          allowedValues: [-1, 0, 1],
+        );
+        expect(includesNegOne.invalidJsonExample(context), '-999999');
+      },
+    );
 
     test('RenderOneOf', () {
       const a = RenderOneOf(
@@ -1242,6 +1270,18 @@ void main() {
     test('date format produces a Date value-class literal', () {
       const schema = RenderDate(common: common, defaultValue: null);
       expect(schema.exampleValue(context)?.source, 'Date(2024, 1, 1)');
+    });
+
+    test('int newtype example constructs the first allowed value', () {
+      const schema = RenderIntNewtype(
+        common: common,
+        allowedValues: [3, 4],
+        assignedName: 'NovaGroup',
+        assignedSnakeName: 'nova_group',
+      );
+      // Non-const: the validating constructor has a body, so the example is
+      // `NovaGroup(3)`, not `const NovaGroup(3)`.
+      expect(schema.exampleValue(context)?.source, 'NovaGroup(3)');
     });
 
     // `number` examples land in a statically-`double` destination, where an

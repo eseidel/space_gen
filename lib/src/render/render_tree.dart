@@ -656,16 +656,29 @@ class SpecResolver {
           assignedSnakeName: _snakeFor(schema.pointer),
         );
       case ResolvedIntEnum():
-        // An int enum has no value-derived name (`value1`); a spec `title:`
-        // rescues it (`blockMessage`).
         final intNames = schema.names;
-        return RenderIntEnum(
+        // The name split decides the representation. When the spec gives the
+        // members meaningful names — Discord's `oneOf` of `const`s with a
+        // `title:` (`BLOCK_MESSAGE` -> `blockMessage`) — a Dart enum earns
+        // its keep, exactly as for a string enum. When it doesn't, the only
+        // names available are synthetic `value<N>` that carry nothing the
+        // int doesn't, so a validated int newtype (an `extension type` over
+        // `int` whose constructor checks membership) reads better and matches
+        // the other validated-scalar newtypes. See #352.
+        if (intNames != null) {
+          return RenderIntEnum(
+            common: schema.common,
+            values: schema.values,
+            names: RenderEnum.variableNamesFor(quirks, intNames),
+            descriptions: schema.descriptions,
+            defaultValue: schema.defaultValue,
+            assignedName: _nameFor(schema.pointer),
+            assignedSnakeName: _snakeFor(schema.pointer),
+          );
+        }
+        return RenderIntNewtype(
           common: schema.common,
-          values: schema.values,
-          names: intNames != null
-              ? RenderEnum.variableNamesFor(quirks, intNames)
-              : RenderEnum.variableNamesForInts(schema.values),
-          descriptions: schema.descriptions,
+          allowedValues: schema.values,
           defaultValue: schema.defaultValue,
           assignedName: _nameFor(schema.pointer),
           assignedSnakeName: _snakeFor(schema.pointer),
@@ -869,7 +882,7 @@ class SpecResolver {
           valueSchema: toRenderSchema(schema.valueSchema),
           keySchema: keyEnum == null
               ? null
-              : toRenderSchema(keyEnum) as RenderEnum,
+              : toRenderSchema(keyEnum) as RenderStringEnum,
         );
       case ResolvedEmptyObject():
         return RenderEmptyObject(
@@ -3197,53 +3210,6 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
     isConstConstructor: false,
   );
 
-  // --- Map-key wire bridging ---------------------------------------------
-  //
-  // JSON object keys are always strings on the wire, but a [RenderMap] key
-  // type's own wire form (its [jsonStorageDartType]) need not be: today an
-  // int-valued enum decodes from `int`. So a key whose wire form is
-  // non-string is bridged through `int.parse` on the way in and
-  // `.toString()` on the way out; a string-wire key passes straight
-  // through. Keyed off the general wire type rather than the concrete class
-  // so it reads as a property of any scalar key. Only meaningful on the
-  // schemas the resolver admits as map keys — like [_fromJsonCall], total
-  // on every schema but only ever called where valid.
-  //
-  // The non-string branch exists solely because an int-valued *enum* is the
-  // only non-string map-key type the generator produces. Once integer enums
-  // become validated int newtypes and stop being usable as typed map keys
-  // (https://github.com/eseidel/space_gen/issues/352), every remaining map
-  // key is a string enum and this bridging can be deleted.
-
-  /// Decode a JSON object key (always a `String`) into this schema's Dart
-  /// type, bridging the string to a non-string wire form first.
-  DartExpression fromJsonMapKey(DartExpression key) =>
-      _fromJsonCall(_stringKeyToWire(key), jsonIsNullable: false);
-
-  /// Encode this schema as a JSON object key, which must be a `String`.
-  /// `toJson` yields the wire value — already a `String` for a string-wire
-  /// key, a non-string (e.g. `int`) otherwise — so stringify the non-string
-  /// case back to a valid key. The inverse of [fromJsonMapKey].
-  DartExpression toJsonMapKey(DartExpression key) {
-    final wire = DartMethodCall(target: key, name: 'toJson');
-    return jsonStorageDartType == DartType.string
-        ? wire
-        : DartMethodCall(target: wire, name: 'toString');
-  }
-
-  /// Bridge a `String` JSON object key to this schema's wire type, so a
-  /// non-string wire type can parse it (e.g. `int.parse`). No-op for a
-  /// string-wire key.
-  DartExpression _stringKeyToWire(DartExpression key) =>
-      jsonStorageDartType == DartType.string
-      ? key
-      : DartInvocation(
-          type: jsonStorageDartType,
-          constructorName: 'parse',
-          arguments: [key],
-          isConstConstructor: false,
-        );
-
   /// A Dart expression that constructs a valid in-memory instance of
   /// this schema, used by generated round-trip tests. Returns `null`
   /// when the generator cannot produce a safe example — e.g. a
@@ -4619,9 +4585,27 @@ class RenderObject extends RenderNewType {
     required Object constValue,
     required SchemaRenderer context,
   }) {
-    final constExpression = property is RenderEnum
-        ? property.constExpression(constValue)
-        : serializeExpression(DartLiteral(constValue), isConstContext: true);
+    final String constExpression;
+    if (property is RenderEnum) {
+      constExpression = property.constExpression(constValue);
+    } else if (property is RenderIntNewtype) {
+      // Wrap the pinned int in the newtype's (validating, non-const)
+      // constructor so the getter's declared type matches its value —
+      // `CallbackType get type => CallbackType(1);`.
+      constExpression = serializeExpression(
+        DartInvocation(
+          type: property.dartType,
+          arguments: [DartLiteral(constValue)],
+          isConstConstructor: false,
+        ),
+        isConstContext: false,
+      );
+    } else {
+      constExpression = serializeExpression(
+        DartLiteral(constValue),
+        isConstContext: true,
+      );
+    }
     return {
       'dartName': dartName,
       'jsonName': quoteString(jsonName),
@@ -4935,19 +4919,21 @@ class RenderObject extends RenderNewType {
   bool rendersAsConstGetter(String jsonName, RenderSchema property) =>
       constProperties[jsonName] != null && _isConstGetterType(property);
 
-  /// The render types a const getter can pin: a named enum (returns
-  /// `E.member`) or a plain string/int scalar (returns the literal). The
-  /// bare-inline-`const` parser strips its property down to one of the
-  /// scalars, so those are the only extra shapes reachable here.
+  /// The render types a const getter can pin: a named string enum (returns
+  /// `E.member`), a closed-set int newtype (returns `E(value)`), or a plain
+  /// inline string/int scalar (returns the literal). The bare-inline-`const`
+  /// parser strips its property down to one of the scalars, so those are the
+  /// only extra shapes reachable here.
   ///
-  /// The scalars must be inline (`createsNewType == false`): the literal
-  /// getter is typed as the scalar's `typeName`, so `String get x => 'a'`
-  /// is only sound when that name is the built-in `String`/`int`. A named
-  /// scalar newtype (e.g. an `allOf: [{$ref: StringNewtype}]` + `const`)
-  /// would type the getter as the wrapper while returning a raw literal —
-  /// which wouldn't compile — so it keeps the stored-field shape.
+  /// [RenderIntNewtype] is admitted because its getter returns a properly
+  /// typed `E(value)`, not a raw literal. Other named scalar newtypes are
+  /// not: an inline scalar getter returns a raw literal (`String get x =>
+  /// 'a'`), which only type-checks when the getter's type is the built-in
+  /// `String`/`int`; a wrapper-typed getter returning a raw literal wouldn't
+  /// compile, so those keep the stored-field shape (`createsNewType` gate).
   static bool _isConstGetterType(RenderSchema property) =>
       property is RenderEnum ||
+      property is RenderIntNewtype ||
       ((property is RenderString || property is RenderInteger) &&
           !property.createsNewType);
 
@@ -5303,17 +5289,10 @@ class RenderMap extends RenderSchema {
 
   final RenderSchema valueSchema;
 
-  /// Optional typed key schema. JSON always uses string keys on the wire;
-  /// when non-null the generated Dart uses this schema as the map key and
-  /// its `fromJsonMapKey`/`toJsonMapKey` round-trips each key at the
-  /// boundary (bridging non-string wire forms — see [RenderSchema]).
-  ///
-  /// Typed as [RenderEnum] because the resolver admits only enums here. The
-  /// sole non-string case is an int-valued enum; once integer enums become
-  /// validated int newtypes and drop out as typed keys
-  /// (https://github.com/eseidel/space_gen/issues/352), every key is a
-  /// string enum and the non-string bridging goes away.
-  final RenderEnum? keySchema;
+  /// Optional typed key schema. JSON object keys are strings on the wire, so
+  /// only a string enum can type a key — its `fromJson`/`toJson` round-trip
+  /// each key directly. When null, the map has plain `String` keys.
+  final RenderStringEnum? keySchema;
 
   @override
   Iterable<RenderSchema> get children {
@@ -5362,10 +5341,9 @@ class RenderMap extends RenderSchema {
         toJson: 'value',
       );
     }
-    const k = DartIdentifier('k');
     final keyFromJson = keyEnum == null
         ? 'k'
-        : _runtimeSource(keyEnum.fromJsonMapKey(k));
+        : '${keyEnum.typeName}.fromJson(k)';
     final valueFromJson = _runtimeSource(
       value.requireFromJsonExpression(
         const DartIdentifier('val'),
@@ -5374,9 +5352,7 @@ class RenderMap extends RenderSchema {
         dartIsNullable: false,
       ),
     );
-    final keyToJson = keyEnum == null
-        ? 'k'
-        : _runtimeSource(keyEnum.toJsonMapKey(k));
+    final keyToJson = keyEnum == null ? 'k' : 'k.toJson()';
     final valueToJson = value.toJsonExpression(
       const DartIdentifier('val'),
       context,
@@ -5417,8 +5393,11 @@ class RenderMap extends RenderSchema {
   }) {
     const key = DartIdentifier('key');
     const value = DartIdentifier('value');
-    final keySchema = this.keySchema;
-    final keyToJson = keySchema == null ? key : keySchema.toJsonMapKey(key);
+    // A string-enum key serializes via its `toJson`; a plain String key is
+    // already the wire form.
+    final keyToJson = keySchema == null
+        ? key
+        : const DartMethodCall(target: key, name: 'toJson');
     final valueToJson = valueSchema.toJsonExpression(
       value,
       context,
@@ -5457,7 +5436,11 @@ class RenderMap extends RenderSchema {
     const key = DartIdentifier('key');
     const value = DartIdentifier('value');
     final keySchema = this.keySchema;
-    final keyFromJson = keySchema == null ? key : keySchema.fromJsonMapKey(key);
+    // A string-enum key parses via its `fromJson`; a plain String key is
+    // already the wire form.
+    final keyFromJson = keySchema == null
+        ? key
+        : keySchema._fromJsonCall(key, jsonIsNullable: false);
     final valueFromJson = valueSchema.requireFromJsonExpression(
       value,
       context,
@@ -5513,11 +5496,12 @@ class RenderMap extends RenderSchema {
   }
 }
 
-/// Render-tree counterpart to [ResolvedEnum]. Same generic-with-typed-
-/// subclasses pattern: parameterized abstract base, [RenderStringEnum]
-/// and [RenderIntEnum] pin [T]. Branch points where Dart-emission
-/// differs (literal form, JSON storage type, invalid-JSON sentinel)
-/// become abstract methods on the parent.
+/// Render-tree counterpart to [ResolvedEnum], for the enums that stay Dart
+/// enums: string enums, and integer enums whose members have meaningful
+/// spec-provided names ([RenderStringEnum] / [RenderIntEnum]). A nameless
+/// integer enum renders as a [RenderIntNewtype] instead (#352). Branch points
+/// where Dart-emission differs (literal form, JSON storage type, invalid-JSON
+/// sentinel) become abstract methods on the parent.
 abstract class RenderEnum<T extends Object> extends RenderNewType {
   const RenderEnum({
     required super.common,
@@ -5564,8 +5548,7 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
   /// non-ASCII `μ` is dropped; the second becomes `g2`. The first
   /// occurrence keeps the bare name; each later duplicate takes the
   /// smallest free numeric suffix (`g`, `g2`, `g3`). No underscore — the
-  /// suffix stays lowerCamelCase, matching [variableNamesForInts]'
-  /// `value<N>` form.
+  /// suffix stays lowerCamelCase.
   static List<String> _uniqueNames(List<String> names) {
     final seen = <String>{};
     final result = <String>[];
@@ -5579,16 +5562,6 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
       result.add(unique);
     }
     return result;
-  }
-
-  /// Variable names for an int-valued enum. Defaults to `value<N>`
-  /// (e.g. `value1`, `value11`) — not great for multi-value enums in
-  /// principle, but in the common case (single-value discriminator
-  /// tags) this is unambiguous and the variant is rarely referenced
-  /// by name in user code anyway.
-  @visibleForTesting
-  static List<String> variableNamesForInts(List<int> values) {
-    return values.map((v) => v >= 0 ? 'value$v' : 'valueNeg${-v}').toList();
   }
 
   @override
@@ -5751,6 +5724,11 @@ class RenderStringEnum extends RenderEnum<String> {
       "'__invalid_enum_value__'";
 }
 
+/// An integer `enum` whose members have meaningful spec-provided names
+/// (Discord's `oneOf` of `const`s with a `title:`), so it stays a Dart enum
+/// — the same call as a string enum. A nameless integer enum, whose only
+/// names would be synthetic `value<N>`, renders as a [RenderIntNewtype]
+/// instead (see the routing in `toRenderSchema` and #352).
 class RenderIntEnum extends RenderEnum<int> {
   const RenderIntEnum({
     required super.common,
@@ -5777,6 +5755,85 @@ class RenderIntEnum extends RenderEnum<int> {
     if (!values.contains(-1)) return '-1';
     return '-999999';
   }
+}
+
+/// A nameless integer `enum` — a closed set of allowed int values — rendered
+/// as a validated int newtype rather than a Dart enum. Emits the same
+/// `schema_number_newtype` `extension type` as a bounded integer newtype
+/// (it *is* a [RenderInteger]), but with a set-membership validation and
+/// the oneOf-variant behavior of the enum it replaces.
+///
+/// A bounded numeric newtype gates [wrapperTag]/[jsonShapeKey]/
+/// [_variantConversion] on `!createsNewType` (a plain scalar newtype is
+/// referenced by name, not shape-dispatched). A closed-set int, like the
+/// Dart enum it supersedes, *is* shape-dispatchable — matched by
+/// `json is int` and wrapped under its own type name in a oneOf — so these
+/// are un-gated here. Keeping [ResolvedIntEnum] through the resolve layer
+/// means the oneOf dispatch/naming is unchanged; only this type's own file
+/// flips from `enum` to `extension type`. See #352.
+class RenderIntNewtype extends RenderInteger {
+  const RenderIntNewtype({
+    required super.common,
+    required this.allowedValues,
+    super.defaultValue,
+    super.assignedName,
+    super.assignedSnakeName,
+  }) : super(
+         maximum: null,
+         minimum: null,
+         exclusiveMaximum: null,
+         exclusiveMinimum: null,
+         multipleOf: null,
+         createsNewType: true,
+       );
+
+  /// The set of int values the spec's `enum` allows, in spec order.
+  /// Rendered as a `value.validate(enumValues: [...])` membership check.
+  final List<int> allowedValues;
+
+  @override
+  List<Object?> get props => [super.props, allowedValues];
+
+  // A dedicated membership check rather than the multi-bound `validate(...)`
+  // sugar: an int enum never carries min/max/multipleOf (the parser routes
+  // `enum` away from the bounded-numeric path), so membership is the sole
+  // rule and reads better called directly.
+  @override
+  String? get validationCall =>
+      'validateEnumValues([${allowedValues.join(', ')}])';
+
+  @override
+  String? get wrapperTag => typeName;
+
+  @override
+  String? get jsonShapeKey => 'int';
+
+  @override
+  _VariantConversion? _variantConversion(SchemaRenderer context) =>
+      _newtypeConversion(typeName);
+
+  @override
+  DartExpression? exampleValue(SchemaRenderer context) =>
+      newtypeWrappedExample(DartLiteral(allowedValues.first));
+
+  @override
+  String? invalidJsonExample(SchemaRenderer context) {
+    // A value outside the allowed set. -1 works for almost every real spec
+    // (int enums use small non-negative values — bitfield flags, tags);
+    // fall back to a distinctly-large negative if -1 is itself allowed.
+    if (!allowedValues.contains(-1)) return '-1';
+    return '-999999';
+  }
+
+  // The allowed set is what distinguishes one closed-set int from another
+  // (and from a plain bounded integer), so structural equality must compare
+  // it — otherwise two different int enums would dedupe together in the
+  // import-collection pass. RenderNumeric.equalsIgnoringName ignores it.
+  @override
+  bool equalsIgnoringName(RenderSchema other) =>
+      other is RenderIntNewtype &&
+      const ListEquality<int>().equals(allowedValues, other.allowedValues) &&
+      super.equalsIgnoringName(other);
 }
 
 class RenderOneOf extends RenderNewType {

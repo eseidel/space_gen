@@ -70,6 +70,19 @@ extension ValidateNumber on num {
     if (multipleOf != null) validateMultipleOf(multipleOf);
   }
 
+  /// Validates that the value is one of [enumValues] — the members of a
+  /// nameless integer `enum`, which is generated as a newtype over `int`.
+  /// This is its own call rather than a [validate] argument: an int enum
+  /// never also carries range bounds, so membership is the only rule. Unlike
+  /// the range checks, an out-of-set value is a parse failure (the wire
+  /// carried a value the type does not name), so it throws [FormatException]
+  /// to match how a generated `fromJson` reports malformed input.
+  void validateEnumValues(List<num> enumValues) {
+    if (!enumValues.contains(this)) {
+      throw FormatException('$this is not one of $enumValues');
+    }
+  }
+
   void validateMinimum(num minimum) {
     if (this < minimum) {
       throw Exception('must be greater than or equal to $minimum');

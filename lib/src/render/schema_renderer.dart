@@ -67,11 +67,12 @@ class SchemaUsage {
     );
   }
 
-  /// Matches the `validate(...)` extension-method call. The
-  /// `api_exception.dart` file declares `validate` as extensions on
-  /// `String` / `num` / `List<T>`; a body that calls one needs to
-  /// import that file.
-  static final _validationCallPattern = RegExp(r'\.validate\(');
+  /// Matches an `api_exception.dart` validation extension call — the
+  /// combined `validate(...)` or a single-rule variant like
+  /// `validateEnumValues(...)`. Those are declared as extensions on
+  /// `String` / `num` / `List<T>`; a body that calls one needs to import
+  /// that file.
+  static final _validationCallPattern = RegExp(r'\.validate[A-Za-z]*\(');
 
   final bool usesMetaAnnotations;
 

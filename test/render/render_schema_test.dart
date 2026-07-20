@@ -189,10 +189,42 @@ void main() {
       expect(r, contains('MapEntry(key.toJson(), value.toJson())'));
     });
 
-    test('propertyNames with an int enum bridges the string JSON key', () {
-      // JSON object keys are always strings on the wire, but an int-valued
-      // enum's fromJson/toJson speak int, so the key is bridged through
-      // int.parse on decode and stringified on encode.
+    test(
+      'a typed-map-keyed map round-trips its key enum as a oneOf variant',
+      () {
+        // A map with a string-enum key appearing as a `oneOf` variant exercises
+        // RenderMap._variantConversion: the key round-trips through the enum's
+        // fromJson/toJson inside the union's conversion.
+        final schemas = <String, Map<String, dynamic>>{
+          'Platform': {
+            'type': 'string',
+            'enum': ['android', 'ios'],
+          },
+          'U': {
+            'oneOf': [
+              {
+                'type': 'object',
+                'additionalProperties': {'type': 'string'},
+                'propertyNames': {r'$ref': '#/components/schemas/Platform'},
+              },
+              {'type': 'integer'},
+            ],
+          },
+        };
+        final rendered = renderTestSchemas(
+          schemas,
+          specUrl: Uri.parse('file:///spec.yaml'),
+        );
+        final u = rendered['U']!;
+        expect(u, contains('Platform.fromJson(k)'));
+        expect(u, contains('k.toJson()'));
+      },
+    );
+
+    test('propertyNames with an int enum falls back to String keys', () {
+      // An integer enum renders as a value newtype, not an enum, so it can't
+      // type a JSON map key (keys are strings on the wire). The map degrades
+      // to plain String keys rather than a Map<NovaGroup, ...>.
       final schemas = <String, Map<String, dynamic>>{
         'NovaGroup': {
           'type': 'integer',
@@ -212,14 +244,16 @@ void main() {
           },
         },
       };
-      final rendered = renderTestSchemas(
-        schemas,
-        specUrl: Uri.parse('file:///spec.yaml'),
+      // Resolving the dropped int-enum key emits a warning, which needs a
+      // logger in scope.
+      final rendered = runWithLogger(
+        _MockLogger(),
+        () =>
+            renderTestSchemas(schemas, specUrl: Uri.parse('file:///spec.yaml')),
       );
       final r = rendered['R']!;
-      expect(r, contains('final Map<NovaGroup, String> markers;'));
-      expect(r, contains('MapEntry(NovaGroup.fromJson(int.parse(key)),'));
-      expect(r, contains('MapEntry(key.toJson().toString(),'));
+      expect(r, contains('final Map<String, String> markers;'));
+      expect(r, isNot(contains('NovaGroup')));
     });
 
     test('propertyNames without an enum ref is a spec error', () {
@@ -240,7 +274,7 @@ void main() {
           isA<FormatException>().having(
             (e) => e.message,
             'message',
-            contains('must resolve to an enum'),
+            contains('must resolve to a string enum'),
           ),
         ),
       );
@@ -1294,6 +1328,36 @@ void main() {
       expect(rule, contains('TriggerType get triggerType =>'));
       expect(rule, contains("'trigger_type': triggerType.toJson()"));
       expect(rule, isNot(contains('triggerType?.toJson()')));
+    });
+
+    test('const getter pins a named string enum to its member', () {
+      // A string enum pinned to one value via the allOf-ref idiom renders a
+      // fixed getter returning the enum member (`State.active`) — the
+      // Dart-enum const-getter branch, distinct from the int-newtype `E(v)`
+      // form used for a nameless int enum.
+      final results = renderTestSchemas(
+        {
+          'Thing': {
+            'type': 'object',
+            'required': ['state'],
+            'properties': {
+              'state': {
+                'type': 'string',
+                'enum': ['active'],
+                'allOf': [
+                  {r'$ref': '#/components/schemas/State'},
+                ],
+              },
+            },
+          },
+          'State': {
+            'type': 'string',
+            'enum': ['active', 'inactive'],
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      expect(results['Thing'], contains('State get state => State.active;'));
     });
 
     // A bare inline lone `const` on a property renders as a fixed getter
@@ -3197,11 +3261,11 @@ void main() {
       // ActionType value set.
       expect(action, contains('1 => BlockAction.fromJson(json)'));
       expect(action, contains('2 => FlagAction.fromJson(json)'));
-      // The pinned tag renders as a fixed getter of the shared enum — one
-      // per variant, mapping to the pinned member — not a constructor
+      // The pinned tag renders as a fixed getter of the shared int newtype —
+      // one per variant, constructing the pinned value — not a constructor
       // parameter, so the caller neither passes it nor can set it wrong.
-      expect(action, contains('ActionType get type => ActionType.value1;'));
-      expect(action, contains('ActionType get type => ActionType.value2;'));
+      expect(action, contains('ActionType get type => ActionType(1);'));
+      expect(action, contains('ActionType get type => ActionType(2);'));
       // `type` is never a constructor field, nor decoded from JSON...
       expect(action, isNot(contains('this.type')));
       expect(action, isNot(contains('type: ActionType.fromJson')));
@@ -4284,36 +4348,31 @@ void main() {
       );
     });
 
-    test('integer enum renders as a Dart enum with int-typed value', () {
-      // Discord uses single-value `type: integer, enum: [N]` enums as
-      // oneOf discriminator markers (component types). Verify the
-      // generated Dart enum stores the value as `int`, the
-      // factory/maybeFromJson accept `int`/`int?`, and `toJson()`
-      // returns `int`.
+    test('nameless integer enum renders as a validated int newtype', () {
+      // A plain integer `enum` has no member names — only synthetic
+      // `value<N>` — so it renders as an `extension type` over `int` whose
+      // constructor validates membership, not a Dart enum (see #352).
       final json = {
         'type': 'integer',
         'enum': [1, 2, 11],
       };
       final result = renderTestSchema(json);
-      // Variants get name `value<N>` since int values aren't valid
-      // Dart identifiers on their own.
-      expect(result, contains('value1._(1)'));
-      expect(result, contains('value2._(2)'));
-      expect(result, contains('value11._(11)'));
-      // JSON wire types are `int`, not `String`.
-      expect(result, contains('factory Test.fromJson(int json)'));
+      expect(result, contains('extension type const Test._(int value)'));
+      expect(result, contains('value.validateEnumValues([1, 2, 11]);'));
+      expect(result, contains('factory Test.fromJson(int json) => Test(json)'));
       expect(result, contains('static Test? maybeFromJson(int? json)'));
-      expect(result, contains('final int value;'));
       expect(result, contains('int toJson() => value;'));
-      // No String-typed survivors anywhere in the body.
-      expect(result, isNot(contains('final String value;')));
-      expect(result, isNot(contains('factory Test.fromJson(String')));
+      // No Dart-enum artifacts: no synthetic members, no enum keyword.
+      expect(result, isNot(contains('enum Test')));
+      expect(result, isNot(contains('value1._(1)')));
     });
 
-    test('oneOf-of-consts enum names members from the spec titles', () {
-      // Discord spells typed int enums as `oneOf` of `const` variants,
-      // each with a `title:` — the spec's own member name. Use it
-      // (`blockMessage`) rather than the value-derived fallback (`value1`).
+    test('oneOf-of-consts enum names members from the spec titles '
+        '(stays a Dart enum)', () {
+      // Discord spells typed int enums as a `oneOf` of `const` variants,
+      // each with a `title:` — the spec's own member name. Those names are
+      // meaningful, so this stays a Dart enum with `blockMessage`/
+      // `flagToChannel`, not a nameless-int newtype.
       final json = {
         'type': 'integer',
         'oneOf': [
@@ -4324,16 +4383,13 @@ void main() {
       final result = renderTestSchema(json);
       expect(result, contains('blockMessage._(1)'));
       expect(result, contains('flagToChannel._(2)'));
-      // The meaningless value-derived fallback must not appear.
-      expect(result, isNot(contains('value1._(1)')));
-      expect(result, isNot(contains('value2._(2)')));
+      expect(result, isNot(contains('extension type')));
     });
 
-    test('oneOf-of-consts enum falls back to value names when a title is '
-        'missing', () {
-      // Names are all-or-nothing: a partially-titled enum would mix
-      // `blockMessage` with `value2`, so fall back to value-derived names
-      // for the whole enum.
+    test('oneOf-of-consts falls back to a newtype when a title is missing', () {
+      // Names are all-or-nothing: a partially-titled enum has no usable
+      // member names, so it renders as the nameless-int newtype rather than
+      // mixing `blockMessage` with a synthetic `value2`.
       final json = {
         'type': 'integer',
         'oneOf': [
@@ -4342,22 +4398,20 @@ void main() {
         ],
       };
       final result = renderTestSchema(json);
-      expect(result, contains('value1._(1)'));
-      expect(result, contains('value2._(2)'));
+      expect(result, contains('extension type const Test._(int value)'));
+      expect(result, contains('value.validateEnumValues([1, 2]);'));
       expect(result, isNot(contains('blockMessage')));
     });
 
-    test('integer enum with negative values uses safe variable names', () {
+    test('nameless integer enum with negative values renders the check', () {
+      // Negative values were awkward as Dart-enum member names (`value-1`);
+      // as a newtype they are just entries in the membership check.
       final json = {
         'type': 'integer',
         'enum': [-1, 0, 1],
       };
       final result = renderTestSchema(json);
-      // Negative values would be invalid Dart identifiers (`value-1`);
-      // generator falls back to `valueNeg<abs>`.
-      expect(result, contains('valueNeg1._(-1)'));
-      expect(result, contains('value0._(0)'));
-      expect(result, contains('value1._(1)'));
+      expect(result, contains('value.validateEnumValues([-1, 0, 1]);'));
     });
 
     test('properties with invalid names', () {
