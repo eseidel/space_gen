@@ -88,6 +88,35 @@ int? _optionalInt(MapContext parent, String key) {
   return null;
 }
 
+/// Resolves an inclusive/exclusive numeric bound pair, tolerating both
+/// OpenAPI spellings of `exclusiveMinimum` / `exclusiveMaximum`:
+///
+/// - **OpenAPI 3.1 / JSON Schema 2020-12** — a *number* that is itself the
+///   exclusive bound (`exclusiveMinimum: 5` ⇒ value > 5). Passed through.
+/// - **OpenAPI 3.0** — a *boolean* modifier on the sibling inclusive bound
+///   (`minimum: 5` + `exclusiveMinimum: true` ⇒ value > 5). Folded into the
+///   3.1 shape the rest of the pipeline already understands by promoting the
+///   inclusive value into the exclusive slot; `false` leaves it inclusive.
+///
+/// At most one of the returned bounds is non-null.
+({T? inclusive, T? exclusive}) _resolveBound<T extends num>(
+  MapContext json, {
+  required String inclusiveKey,
+  required String exclusiveKey,
+  required T? Function(MapContext, String) readNumber,
+}) {
+  final inclusive = readNumber(json, inclusiveKey);
+  // Reading via `[]` marks the key used; branch before `readNumber` so the
+  // 3.0 boolean never reaches the `num` type check.
+  final exclusiveRaw = json[exclusiveKey];
+  if (exclusiveRaw is bool) {
+    return exclusiveRaw
+        ? (inclusive: null, exclusive: inclusive)
+        : (inclusive: inclusive, exclusive: null);
+  }
+  return (inclusive: inclusive, exclusive: readNumber(json, exclusiveKey));
+}
+
 List<T> _expectList<T>(MapContext parent, String key, dynamic value) {
   if (value is! List || !value.every((e) => e is T)) {
     _error(parent, "'$key' is not a list of $T: $value");
@@ -1053,24 +1082,48 @@ Schema? _handleNumberTypes(
   required CommonProperties common,
 }) {
   if (type == 'integer') {
+    final min = _resolveBound<int>(
+      json,
+      inclusiveKey: 'minimum',
+      exclusiveKey: 'exclusiveMinimum',
+      readNumber: _optionalInt,
+    );
+    final max = _resolveBound<int>(
+      json,
+      inclusiveKey: 'maximum',
+      exclusiveKey: 'exclusiveMaximum',
+      readNumber: _optionalInt,
+    );
     return SchemaInteger(
       common: common,
       defaultValue: _optionalInt(json, 'default'),
-      minimum: _optionalInt(json, 'minimum'),
-      maximum: _optionalInt(json, 'maximum'),
-      exclusiveMinimum: _optionalInt(json, 'exclusiveMinimum'),
-      exclusiveMaximum: _optionalInt(json, 'exclusiveMaximum'),
+      minimum: min.inclusive,
+      maximum: max.inclusive,
+      exclusiveMinimum: min.exclusive,
+      exclusiveMaximum: max.exclusive,
       multipleOf: _optionalInt(json, 'multipleOf'),
     );
   }
   if (type == 'number') {
+    final min = _resolveBound<double>(
+      json,
+      inclusiveKey: 'minimum',
+      exclusiveKey: 'exclusiveMinimum',
+      readNumber: _optionalDouble,
+    );
+    final max = _resolveBound<double>(
+      json,
+      inclusiveKey: 'maximum',
+      exclusiveKey: 'exclusiveMaximum',
+      readNumber: _optionalDouble,
+    );
     return SchemaNumber(
       common: common,
       defaultValue: _optionalDouble(json, 'default'),
-      minimum: _optionalDouble(json, 'minimum'),
-      maximum: _optionalDouble(json, 'maximum'),
-      exclusiveMinimum: _optionalDouble(json, 'exclusiveMinimum'),
-      exclusiveMaximum: _optionalDouble(json, 'exclusiveMaximum'),
+      minimum: min.inclusive,
+      maximum: max.inclusive,
+      exclusiveMinimum: min.exclusive,
+      exclusiveMaximum: max.exclusive,
       multipleOf: _optionalDouble(json, 'multipleOf'),
     );
   }

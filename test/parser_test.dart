@@ -2616,6 +2616,60 @@ void main() {
       },
     );
 
+    group('numeric bounds', () {
+      test('number: 3.1 numeric exclusiveMinimum passes through', () {
+        final json = {'type': 'number', 'exclusiveMinimum': 5};
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaNumber) {
+          fail('Expected SchemaNumber, got ${schema.runtimeType}');
+        }
+        expect(schema.minimum, isNull);
+        expect(schema.exclusiveMinimum, 5.0);
+      });
+      test('number: 3.0 boolean exclusiveMinimum promotes minimum', () {
+        // OpenAI's `learning_rate_multiplier` uses the 3.0 boolean form:
+        // `minimum: 0` + `exclusiveMinimum: true` means value > 0. Fold it
+        // into the numeric `exclusiveMinimum` slot the renderer emits.
+        final json = {
+          'type': 'number',
+          'minimum': 0,
+          'exclusiveMinimum': true,
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaNumber) {
+          fail('Expected SchemaNumber, got ${schema.runtimeType}');
+        }
+        expect(schema.minimum, isNull);
+        expect(schema.exclusiveMinimum, 0.0);
+      });
+      test('integer: 3.0 boolean exclusiveMaximum promotes maximum', () {
+        final json = {
+          'type': 'integer',
+          'maximum': 10,
+          'exclusiveMaximum': true,
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaInteger) {
+          fail('Expected SchemaInteger, got ${schema.runtimeType}');
+        }
+        expect(schema.maximum, isNull);
+        expect(schema.exclusiveMaximum, 10);
+      });
+      test('3.0 boolean exclusive=false leaves the bound inclusive', () {
+        final json = {
+          'type': 'integer',
+          'minimum': 1,
+          'exclusiveMinimum': false,
+        };
+        final schema = parseTestSchema(json);
+        if (schema is! SchemaInteger) {
+          fail('Expected SchemaInteger, got ${schema.runtimeType}');
+        }
+        expect(schema.minimum, 1);
+        expect(schema.exclusiveMinimum, isNull);
+      });
+    });
+
     group('nullable', () {
       test('string', () {
         final json = {'type': 'string', 'nullable': true};
