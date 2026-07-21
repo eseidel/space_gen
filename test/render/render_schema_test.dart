@@ -256,7 +256,42 @@ void main() {
       expect(r, isNot(contains('NovaGroup')));
     });
 
-    test('propertyNames without an enum ref is a spec error', () {
+    test(
+      'constrained-string propertyNames renders a validated newtype key',
+      () {
+        // OpenAI's `VectorStoreFileAttributes`: `propertyNames: {type: string,
+        // maxLength: 64}` becomes a validated string newtype so the length
+        // constraint is enforced on every key.
+        final schemas = <String, Map<String, dynamic>>{
+          'R': {
+            'type': 'object',
+            'required': ['statuses'],
+            'properties': {
+              'statuses': {
+                'type': 'object',
+                'additionalProperties': {'type': 'string'},
+                'propertyNames': {'type': 'string', 'maxLength': 64},
+              },
+            },
+          },
+        };
+        final rendered = renderTestSchemas(
+          schemas,
+          specUrl: Uri.parse('file:///spec.yaml'),
+        );
+        // The key is a typed newtype (`RStatuses`), not plain `String`, and
+        // the parent bridges each key through its `fromJson`. The newtype's
+        // own `maxLength` validation is covered in resolver_test.
+        final r = rendered['R'];
+        expect(r, contains('Map<RStatuses, String> statuses;'));
+        expect(r, contains('RStatuses.fromJson(key)'));
+        expect(r, contains('MapEntry(key.toJson(), value)'));
+      },
+    );
+
+    test('bare-string propertyNames keeps String keys', () {
+      // No constraint to validate, so no newtype and no warning — keys stay
+      // plain `String`.
       final schema = {
         'type': 'object',
         'required': ['statuses'],
@@ -268,16 +303,13 @@ void main() {
           },
         },
       };
-      expect(
+      final logger = _MockLogger();
+      final result = runWithLogger(
+        logger,
         () => renderTestSchema(schema, asComponent: true),
-        throwsA(
-          isA<FormatException>().having(
-            (e) => e.message,
-            'message',
-            contains('must resolve to a string enum'),
-          ),
-        ),
       );
+      expect(result, contains('Map<String, String> statuses;'));
+      verifyNever(() => logger.warn(any()));
     });
 
     test(

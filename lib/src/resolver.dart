@@ -20,6 +20,21 @@ Never _error(String message, JsonPointer pointer) {
   throw FormatException('$message in $pointer');
 }
 
+/// Whether a string used as a map key carries a validation constraint worth
+/// enforcing — in which case it becomes a newtype key rather than plain
+/// `String`. A bare `type: string` has nothing to validate.
+bool _stringKeyNeedsNewType(ResolvedString key) =>
+    key.maxLength != null || key.minLength != null || key.pattern != null;
+
+/// Re-mints a constrained inline string as a newtype so it can carry its
+/// constraint as a validated map-key type. Inline schemas don't create a
+/// newtype on their own (only top-level components do), and a map key has no
+/// enclosing object constructor to validate against (unlike an inline object
+/// property), so the newtype is the only home for the constraint. The
+/// pointer-derived `snakeName` names the emitted key type.
+ResolvedString _promoteStringKeyToNewType(ResolvedString key) =>
+    key.copyWith(createsNewType: true);
+
 class ResolveContext {
   ResolveContext({
     required this.specUrl,
@@ -536,24 +551,39 @@ ResolvedSchema _resolveSchemaFully(
     final resolvedKey = keyRef == null
         ? null
         : resolveSchemaRef(keyRef, context);
-    // Only a string enum can type a JSON map key: keys are strings on the
-    // wire, and a string enum's fromJson/toJson round-trip them directly.
-    ResolvedStringEnum? keySchema;
+    // JSON object keys are strings on the wire, so a `propertyNames` schema
+    // can type a map key only when its wire form is a string that round-trips
+    // through `fromJson`/`toJson`.
+    ResolvedSchema? keySchema;
     if (resolvedKey is ResolvedStringEnum) {
+      // A string enum types the key directly.
       keySchema = resolvedKey;
+    } else if (resolvedKey is ResolvedString) {
+      // A string types the key only when it is a distinct type: a named
+      // string component (already a newtype), or an inline constrained string
+      // (`maxLength` / `minLength` / `pattern`, as in OpenAI's
+      // `VectorStoreFileAttributes`) promoted to one so the constraint runs on
+      // every key. A bare inline `type: string` has nothing to validate and
+      // no distinct identity, so it stays plain `String` keys.
+      if (resolvedKey.createsNewType) {
+        keySchema = resolvedKey;
+      } else if (_stringKeyNeedsNewType(resolvedKey)) {
+        keySchema = _promoteStringKeyToNewType(resolvedKey);
+      }
     } else if (resolvedKey is ResolvedIntEnum) {
-      // An int enum renders as a value newtype, not an enum, and can't
-      // carry a string key; drop back to plain String keys.
+      // An int enum renders as a value newtype whose wire form is an int, not
+      // a string, so it can't type a JSON key; fall back to `String` keys.
       _warn(
         'propertyNames resolves to an integer enum, which cannot type a '
         'map key (JSON object keys are strings). Using String keys instead.',
         schema.pointer,
       );
     } else if (resolvedKey != null) {
-      _error(
-        'propertyNames must resolve to a string enum for a map-typed '
-        r'schema. Either use a $ref to a named string enum or an inline '
-        'string enum. Got: ${resolvedKey.runtimeType}',
+      // A non-string, non-enum `propertyNames` can't describe JSON keys
+      // (which are always strings); keep `String` keys.
+      _warn(
+        'Ignoring propertyNames (${resolvedKey.runtimeType}): map keys are '
+        'always String',
         schema.pointer,
       );
     }
@@ -1385,10 +1415,10 @@ class ResolvedString extends ResolvedSchema {
   final String? pattern;
 
   @override
-  ResolvedString copyWith({CommonProperties? common}) {
+  ResolvedString copyWith({CommonProperties? common, bool? createsNewType}) {
     return ResolvedString(
       common: common ?? this.common,
-      createsNewType: createsNewType,
+      createsNewType: createsNewType ?? this.createsNewType,
       defaultValue: defaultValue,
       maxLength: maxLength,
       minLength: minLength,
@@ -1890,10 +1920,13 @@ class ResolvedMap extends ResolvedSchema {
 
   final ResolvedSchema valueSchema;
 
-  /// Optional typed key schema. Must resolve to a string enum — JSON object
-  /// keys are strings, and only a string enum can round-trip them as a typed
-  /// key. Int enums render as value newtypes and fall back to `String` keys.
-  final ResolvedStringEnum? keySchema;
+  /// Optional typed key schema. JSON object keys are strings on the wire, so
+  /// a key can only be typed by a schema whose wire form is a string that
+  /// round-trips through `fromJson`/`toJson`: a string enum, or a constrained
+  /// string rendered as a validated newtype. When null, the map has plain
+  /// `String` keys. Int enums render as value newtypes (int wire form) and
+  /// fall back to `String` keys.
+  final ResolvedSchema? keySchema;
 
   @override
   ResolvedMap copyWith({CommonProperties? common}) {

@@ -13,16 +13,23 @@ import 'package:space_gen/src/render/schema_renderer.dart';
 import 'package:space_gen/src/render/templates.dart';
 import 'package:space_gen/src/render/tree_visitor.dart';
 import 'package:space_gen/src/string.dart';
+import 'package:space_gen/src/types.dart';
 
 export 'package:space_gen/src/render/formatting.dart'
     show Formatter, RunProcess;
 
 class _ModelCollector extends RenderTreeVisitor {
-  final Set<RenderSchema> schemas = {};
+  // Keyed by pointer (a schema's identity, per RenderSchema's doc): the
+  // walk reaches one definition through many paths, and per `$ref` site as
+  // a distinct instance, so without deduping the same
+  // `lib/models/<name>.dart` would be written more than once.
+  final Map<JsonPointer, RenderSchema> _byPointer = {};
+
+  List<RenderSchema> get schemas => _byPointer.values.toList();
 
   @override
   void visitSchema(RenderSchema schema) {
-    schemas.add(schema);
+    _byPointer.putIfAbsent(schema.pointer, () => schema);
   }
 }
 
@@ -126,7 +133,7 @@ String sortDartImports(String source) {
   ].join('\n');
 }
 
-Set<RenderSchema> collectAllSchemas(RenderSpec spec) {
+List<RenderSchema> collectAllSchemas(RenderSpec spec) {
   final collector = _ModelCollector();
   RenderTreeWalker(visitor: collector).walkRoot(spec);
   return collector.schemas;

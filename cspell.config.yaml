@@ -65,6 +65,7 @@ words:
   - enumless
   - worktree
   - worktrees
+  - shuf
   - smoosh
   - smooshable
   - smooshed

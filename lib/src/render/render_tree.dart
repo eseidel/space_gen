@@ -876,13 +876,11 @@ class SpecResolver {
           wrapperNames: _wrapperNamesFor(schema),
         );
       case ResolvedMap():
-        final keyEnum = schema.keySchema;
+        final keySchema = schema.keySchema;
         return RenderMap(
           common: schema.common,
           valueSchema: toRenderSchema(schema.valueSchema),
-          keySchema: keyEnum == null
-              ? null
-              : toRenderSchema(keyEnum) as RenderStringEnum,
+          keySchema: keySchema == null ? null : toRenderSchema(keySchema),
         );
       case ResolvedEmptyObject():
         return RenderEmptyObject(
@@ -983,8 +981,9 @@ class SpecResolver {
       return SingleSchemaReturn(toRenderSchema(successfulContent.first));
     }
     final renderSchemas = successfulContent.map(toRenderSchema).toList();
-    // We don't implement hashCode/equals but rather equalsIgnoringName.
-    final distinctSchemas = <RenderSchema>{};
+    // These come from different response bodies, so structural sameness
+    // (not identity) is the question — dedup by equalsIgnoringName.
+    final distinctSchemas = <RenderSchema>[];
     for (final schema in renderSchemas) {
       if (!distinctSchemas.any((e) => e.equalsIgnoringName(schema))) {
         distinctSchemas.add(schema);
@@ -2459,15 +2458,18 @@ class RenderRequestBodyTextPlain extends RenderRequestBodySimple {
 }
 
 /// `application/x-www-form-urlencoded` request body. The schema must
-/// resolve to a `RenderObject` whose properties are each a scalar
-/// (string/number/bool/pod/enum/date) or an array of scalars (comma-joined
-/// into one field); the body renders as a `Map<String, String>` literal
-/// that `http` encodes as `key=value&...` form fields.
+/// resolve to a `RenderObject`; the body renders as a `Map<String, String>`
+/// literal that `http` encodes as `key=value&...` form fields.
+///
+/// A scalar property (string/number/bool/pod/enum/date) becomes its plain
+/// string value, and an array of scalars comma-joins into one field. A
+/// complex property (a bare object, an array of objects, an arbitrary-JSON
+/// blob) is `jsonEncode`d into its field, matching OpenAPI's default
+/// `application/json` encoding for a complex form field.
 ///
 /// Unlike multipart there is no file-part path — form-urlencoded has no
-/// way to carry binary — so a `format: binary` property (or any other
-/// non-scalar shape: a nested array, an array of objects, a bare object)
-/// is a render-time `FormatException`.
+/// way to carry binary — so a `format: binary` property (or any other type
+/// with no JSON representation) is a render-time `FormatException`.
 class RenderRequestBodyFormUrlEncoded extends RenderRequestBodySimple {
   const RenderRequestBodyFormUrlEncoded({
     required super.schema,
@@ -2503,18 +2505,11 @@ class RenderRequestBodyFormUrlEncoded extends RenderRequestBodySimple {
       // value is built against the captured `value`; otherwise straight
       // off `access`.
       final guarded = bodyNullable || fieldNullable;
-      final valueExpr = _wireStringFieldSource(
+      final valueExpr = _formUrlEncodedFieldSource(
         property,
         guarded ? 'value' : access,
         context,
       );
-      if (valueExpr == null) {
-        throw FormatException(
-          'application/x-www-form-urlencoded property must be a scalar or an '
-          'array of scalars (got ${property.runtimeType} for "$jsonName") at '
-          '${property.common.pointer}',
-        );
-      }
       entries.add(
         guarded
             ? "if ($access case final value?) '$jsonName': $valueExpr"
@@ -2734,6 +2729,38 @@ String? _wireStringFieldSource(
   return null;
 }
 
+/// Source for [property] rendered as one `Map<String, String>` field of an
+/// `application/x-www-form-urlencoded` body, reading from [access].
+///
+/// A scalar or array of scalars renders as [_wireStringFieldSource] does. A
+/// complex value (a bare object, an array of objects, an arbitrary-JSON
+/// blob) is `jsonEncode`d into its field, matching OpenAPI's default
+/// `application/json` encoding for a complex form field. A [RenderNoJson]
+/// type (binary, void) has no JSON representation and a form body can't
+/// carry it, so it stays a render-time [FormatException] naming the type.
+String _formUrlEncodedFieldSource(
+  RenderSchema property,
+  String access,
+  SchemaRenderer context,
+) {
+  final scalar = _wireStringFieldSource(property, access, context);
+  if (scalar != null) return scalar;
+  if (property is RenderNoJson) {
+    throw FormatException(
+      'application/x-www-form-urlencoded cannot carry a '
+      '${property.runtimeType} property at ${property.common.pointer}',
+    );
+  }
+  final jsonExpr = property.toJsonExpression(
+    DartIdentifier(access),
+    context,
+    dartIsNullable: false,
+  );
+  return _runtimeSource(
+    DartFunctionCall(name: 'jsonEncode', arguments: [jsonExpr]),
+  );
+}
+
 /// Whether [schema] serializes to a single value on the wire, and so can
 /// become one `Map<String, String>` field of a multipart or
 /// form-urlencoded body.
@@ -2843,7 +2870,21 @@ class RenderDefaultResponse {
 /// it post-generation).
 String _equalsReceiver(String name) => name == 'other' ? 'this.$name' : name;
 
-abstract class RenderSchema extends Equatable implements ToTemplateContext {
+/// Equality is identity — the default. A [RenderSchema] is a node in the
+/// render graph, not a value, so `==` means "the same node."
+///
+/// A schema's identity for deduplication is its [pointer] — its location,
+/// which is also what the rest of the pipeline keys on (the resolver's
+/// recursion stack, the naming pass). `toRenderSchema` builds a fresh
+/// instance per `$ref` site, so the two collectors that must collapse
+/// those — file collection and the per-file name walkers — dedup on
+/// [pointer] explicitly, at the call site, rather than through a stand-in
+/// `==`/`hashCode` that would compare neither identity nor value.
+///
+/// Structural sameness across *different* locations (needed to collapse
+/// distinct-but-equivalent response bodies) is a separate question
+/// answered by [equalsIgnoringName].
+abstract class RenderSchema implements ToTemplateContext {
   const RenderSchema({
     required this.common,
     required this.createsNewType,
@@ -3002,9 +3043,6 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// compose their entry/element conversion expressions through the
   /// inner schema's [fromJsonExpression] / [toJsonExpression].
   _VariantConversion? _variantConversion(SchemaRenderer context) => null;
-
-  @override
-  List<Object?> get props => [snakeName, pointer];
 
   /// [expression], with this schema's default substituted when the JSON
   /// value can be null but the value the expression produces still has to
@@ -3378,9 +3416,6 @@ class RenderPod extends RenderSchema {
     };
   }
 
-  @override
-  List<Object?> get props => [super.props, type, defaultValue];
-
   /// The Dart type this pod represents at the use site (when inline) or that
   /// the newtype wraps (when a newtype). The source of truth for [dartType]
   /// and [dartTypeName].
@@ -3677,9 +3712,6 @@ class RenderString extends RenderSchema {
   final String? pattern;
 
   @override
-  List<Object?> get props => [super.props, defaultValue, maxLength, minLength];
-
-  @override
   DartType get dartType =>
       createsNewType ? DartType(_requireAssignedName()) : DartType.string;
 
@@ -3926,17 +3958,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
 
   /// The multiple of value of the number.
   final T? multipleOf;
-
-  @override
-  List<Object?> get props => [
-    super.props,
-    defaultValue,
-    maximum,
-    minimum,
-    exclusiveMaximum,
-    exclusiveMinimum,
-    multipleOf,
-  ];
 
   @override
   DartExpression? defaultValueExpression(SchemaRenderer context) {
@@ -4295,15 +4316,6 @@ class RenderObject extends RenderNewType {
   @override
   _VariantConversion? _variantConversion(SchemaRenderer context) =>
       _newtypeConversion(typeName);
-
-  @override
-  List<Object?> get props => [
-    super.props,
-    properties,
-    additionalProperties,
-    requiredProperties,
-    constProperties,
-  ];
 
   @override
   dynamic get defaultValue => null;
@@ -5134,16 +5146,6 @@ class RenderArray extends RenderSchema {
   ]);
 
   @override
-  List<Object?> get props => [
-    super.props,
-    items,
-    defaultValue,
-    maxItems,
-    minItems,
-    uniqueItems,
-  ];
-
-  @override
   bool get shouldCallToJson => items.shouldCallToJson;
 
   // Inline arrays show up as a oneOf variant; the shape-dispatch
@@ -5358,9 +5360,11 @@ class RenderMap extends RenderSchema {
   final RenderSchema valueSchema;
 
   /// Optional typed key schema. JSON object keys are strings on the wire, so
-  /// only a string enum can type a key — its `fromJson`/`toJson` round-trip
-  /// each key directly. When null, the map has plain `String` keys.
-  final RenderStringEnum? keySchema;
+  /// a key can only be typed by a schema whose wire form is a string that
+  /// round-trips through `fromJson`/`toJson` — a string enum, or a constrained
+  /// string rendered as a validated newtype. When null, the map has plain
+  /// `String` keys.
+  final RenderSchema? keySchema;
 
   @override
   Iterable<RenderSchema> get children {
@@ -5371,14 +5375,6 @@ class RenderMap extends RenderSchema {
 
   @override
   final dynamic defaultValue;
-
-  @override
-  List<Object?> get props => [
-    super.props,
-    valueSchema,
-    keySchema,
-    defaultValue,
-  ];
 
   // Map shape — `Map<String, dynamic>` on the wire. Inline maps
   // (additionalProperties on a parent, or `additionalProperties: true`
@@ -5665,15 +5661,6 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
   _VariantConversion? _variantConversion(SchemaRenderer context) =>
       _newtypeConversion(typeName);
 
-  @override
-  List<Object?> get props => [
-    super.props,
-    values,
-    names,
-    defaultValue,
-    descriptions,
-  ];
-
   /// Template context for an enum schema.
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
@@ -5859,9 +5846,6 @@ class RenderIntNewtype extends RenderInteger {
   /// Rendered as a `value.validate(enumValues: [...])` membership check.
   final List<int> allowedValues;
 
-  @override
-  List<Object?> get props => [super.props, allowedValues];
-
   // A dedicated membership check rather than the multi-bound `validate(...)`
   // sugar: an int enum never carries min/max/multipleOf (the parser routes
   // `enum` away from the bounded-numeric path), so membership is the sole
@@ -5959,9 +5943,6 @@ class RenderOneOf extends RenderNewType {
 
   @override
   Iterable<RenderSchema> get children => schemas;
-
-  @override
-  List<Object?> get props => [super.props, schemas, discriminator];
 
   @override
   bool equalsIgnoringName(RenderSchema other) {
@@ -7396,9 +7377,6 @@ class RenderDate extends RenderSchema {
   final String? defaultValue;
 
   @override
-  List<Object?> get props => [super.props, defaultValue];
-
-  @override
   DartType get dartType => _dateType;
 
   @override
@@ -7604,7 +7582,4 @@ class RenderRecursiveRef extends RenderSchema {
   /// schema opts out of test generation.
   @override
   DartExpression? exampleValue(SchemaRenderer context) => null;
-
-  @override
-  List<Object?> get props => [super.props, targetPointer];
 }

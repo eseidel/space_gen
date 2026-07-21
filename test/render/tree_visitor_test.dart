@@ -36,6 +36,22 @@ void main() {
       expect(named.imported, isNot(contains(outer)));
     });
 
+    test('collapses distinct instances that share a pointer', () {
+      // `toRenderSchema` builds a fresh instance per `$ref` site, so one
+      // definition reached through two fields arrives as two instances
+      // with the same pointer. They must collapse — the file, and the
+      // import naming it, is one. This is the dedup RenderSchema equality
+      // used to back; it now lives here, keyed on pointer.
+      final first = _object('Nested');
+      final second = _object('Nested');
+      expect(identical(first, second), isFalse);
+      expect(first.pointer, second.pointer);
+      final outer = _object('Outer', properties: {'a': first, 'b': second});
+
+      final imported = schemasNamedBy(outer).imported;
+      expect(imported.where((s) => s.pointer == first.pointer), hasLength(1));
+    });
+
     test('descends through inline structure to the newtype inside', () {
       // `List<Deep>` names Deep even though the array itself is inline.
       final deep = _object('Deep');
