@@ -9,6 +9,7 @@ class ReposCreateDispatchEventRequest {
     this.clientPayload,
   }) {
     eventType.validate(minLength: 1, maxLength: 100);
+    clientPayload?.validate(maxProperties: 10);
   }
 
   /// Converts a `Map<String, dynamic>` to a [ReposCreateDispatchEventRequest].

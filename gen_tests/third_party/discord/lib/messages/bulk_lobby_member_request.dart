@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/bulk_lobby_member_request_flags_one_of_1.dart';
 import 'package:discord/models/snowflake_type.dart';
@@ -5,12 +6,14 @@ import 'package:meta/meta.dart';
 
 @immutable
 class BulkLobbyMemberRequest {
-  const BulkLobbyMemberRequest({
+  BulkLobbyMemberRequest({
     required this.id,
     this.metadata,
     this.flags,
     this.removeMember,
-  });
+  }) {
+    metadata?.validate(maxProperties: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [BulkLobbyMemberRequest].
   factory BulkLobbyMemberRequest.fromJson(Map<String, dynamic> json) {

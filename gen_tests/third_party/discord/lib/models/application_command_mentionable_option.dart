@@ -13,7 +13,9 @@ class ApplicationCommandMentionableOption {
     this.required_,
   }) {
     name.validate(minLength: 1, maxLength: 32);
+    nameLocalizations?.validate(maxProperties: 34);
     description.validate(minLength: 1, maxLength: 100);
+    descriptionLocalizations?.validate(maxProperties: 34);
   }
 
   /// Converts a `Map<String, dynamic>` to an

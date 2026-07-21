@@ -27,7 +27,9 @@ class ApplicationCommandPatchRequestPartial {
     this.handler,
   }) {
     name?.validate(minLength: 1, maxLength: 32);
+    nameLocalizations?.validate(maxProperties: 34);
     description?.validate(maxLength: 100);
+    descriptionLocalizations?.validate(maxProperties: 34);
     options?.validate(maxItems: 25);
     defaultMemberPermissions?.validate(min: 0, max: 18014398509481983);
     contexts?.validate(minItems: 1, unique: true);

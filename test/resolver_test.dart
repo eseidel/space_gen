@@ -2408,6 +2408,8 @@ void main() {
             type: PodType.boolean,
           ),
           keySchema: null,
+          maxProperties: null,
+          minProperties: null,
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.valueSchema, equals(schema.valueSchema));

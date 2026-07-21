@@ -936,10 +936,17 @@ SchemaMap _mapSchema(
   final keySchema = propertyNamesJson == null
       ? null
       : parseSchemaOrRef(propertyNamesJson);
+  // `maxProperties`/`minProperties` bound the entry count. On a map the
+  // count is dynamic, so these are real validation constraints (the map
+  // analog of an array's `maxItems`/`minItems`). On a fixed-property
+  // object they're static and meaningless — dropped there, see the
+  // object return path.
   return SchemaMap(
     common: common,
     valueSchema: valueSchema,
     keySchema: keySchema,
+    maxProperties: _optional<int>(json, 'maxProperties'),
+    minProperties: _optional<int>(json, 'minProperties'),
   );
 }
 
@@ -1507,12 +1514,6 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
 
   final additionalPropertiesSchema = _handleAdditionalProperties(json);
 
-  // Object-size validation we don't enforce. Detail-log so the
-  // verbose-log mining workflow can find specs that lean on these
-  // constraints; no behavior to act on.
-  _ignored<int>(json, 'maxProperties');
-  _ignored<int>(json, 'minProperties');
-
   final propertiesJson = _optionalMap(json, 'properties');
   if (propertiesJson == null) {
     if (additionalPropertiesSchema == null) {
@@ -1618,6 +1619,12 @@ Schema _createCorrectSchemaSubtype(MapContext json) {
   _ignored<dynamic>(json, 'discriminator');
   _ignored<dynamic>(json, 'xml');
   _ignored<dynamic>(json, 'externalDocs');
+  // On a fixed-property object the property count is static, so
+  // `maxProperties`/`minProperties` carry no runtime meaning — drop and
+  // detail-log them. On a *map* they're validated instead (see
+  // `_mapSchema`).
+  _ignored<int>(json, 'maxProperties');
+  _ignored<int>(json, 'minProperties');
 
   final declaredRequired = _optionalList<String>(json, 'required') ?? [];
   // OpenAPI lets `required` name any string, but the only meaningful

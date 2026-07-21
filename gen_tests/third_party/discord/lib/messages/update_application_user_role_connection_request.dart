@@ -11,6 +11,7 @@ class UpdateApplicationUserRoleConnectionRequest {
   }) {
     platformName?.validate(maxLength: 50);
     platformUsername?.validate(maxLength: 100);
+    metadata?.validate(maxProperties: 5);
   }
 
   /// Converts a `Map<String, dynamic>` to a

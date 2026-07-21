@@ -14,6 +14,7 @@ class EditLobbyRequest {
     this.overrideEventWebhooksUrl,
   }) {
     idleTimeoutSeconds?.validate(min: 5, max: 604800);
+    metadata?.validate(maxProperties: 25);
     members?.validate(maxItems: 25);
   }
 

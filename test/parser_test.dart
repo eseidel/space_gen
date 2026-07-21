@@ -552,17 +552,41 @@ void main() {
         ).called(1);
       });
 
-      test('maxProperties on an object/map is detail-logged', () {
-        // github's `metadata` and `dispatches.inputs` set
-        // `maxProperties: N`. We don't validate object size.
+      test('maxProperties/minProperties on a map are carried, not dropped', () {
+        // github's `metadata` and `dispatches.inputs`, and discord's lobby
+        // `metadata`, set `maxProperties: N` on a map (arbitrary string
+        // keys). The entry count is dynamic, so it's a real validation
+        // constraint — carried on the SchemaMap, not detail-logged.
         final json = {
           'type': 'object',
           'maxProperties': 10,
+          'minProperties': 1,
           'additionalProperties': true,
         };
         final logger = _MockLogger();
         final schema = runWithLogger(logger, () => parseTestSchema(json));
-        expect(schema, isA<SchemaMap>());
+        if (schema is! SchemaMap) fail('expected a SchemaMap, got $schema');
+        expect(schema.maxProperties, 10);
+        expect(schema.minProperties, 1);
+        verifyNever(
+          () => logger.detail(any(that: contains('maxProperties'))),
+        );
+      });
+
+      test('maxProperties on a fixed-property object is detail-logged', () {
+        // On an object with named properties the count is static, so
+        // `maxProperties` carries no runtime meaning — dropped and
+        // detail-logged (unlike the map case above).
+        final json = {
+          'type': 'object',
+          'maxProperties': 10,
+          'properties': {
+            'id': {'type': 'string'},
+          },
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(logger, () => parseTestSchema(json));
+        expect(schema, isA<SchemaObject>());
         verify(
           () => logger.detail(
             any(that: contains('Ignoring: maxProperties=10')),

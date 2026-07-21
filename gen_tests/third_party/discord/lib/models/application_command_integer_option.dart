@@ -19,7 +19,9 @@ class ApplicationCommandIntegerOption {
     this.maxValue,
   }) {
     name.validate(minLength: 1, maxLength: 32);
+    nameLocalizations?.validate(maxProperties: 34);
     description.validate(minLength: 1, maxLength: 100);
+    descriptionLocalizations?.validate(maxProperties: 34);
     choices?.validate(maxItems: 25);
   }
 

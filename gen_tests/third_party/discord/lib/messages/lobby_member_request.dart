@@ -1,3 +1,4 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/lobby_member_request_flags_one_of_1.dart';
 import 'package:discord/models/snowflake_type.dart';
@@ -5,7 +6,9 @@ import 'package:meta/meta.dart';
 
 @immutable
 class LobbyMemberRequest {
-  const LobbyMemberRequest({required this.id, this.metadata, this.flags});
+  LobbyMemberRequest({required this.id, this.metadata, this.flags}) {
+    metadata?.validate(maxProperties: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [LobbyMemberRequest].
   factory LobbyMemberRequest.fromJson(Map<String, dynamic> json) {

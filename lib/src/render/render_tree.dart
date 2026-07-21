@@ -884,6 +884,8 @@ class SpecResolver {
           common: schema.common,
           valueSchema: toRenderSchema(schema.valueSchema),
           keySchema: keySchema == null ? null : toRenderSchema(keySchema),
+          maxProperties: schema.maxProperties,
+          minProperties: schema.minProperties,
         );
       case ResolvedEmptyObject():
         return RenderEmptyObject(
@@ -5487,10 +5489,27 @@ class RenderMap extends RenderSchema {
     required super.common,
     required this.valueSchema,
     required this.keySchema,
+    required this.maxProperties,
+    required this.minProperties,
     this.defaultValue,
   }) : super(createsNewType: false);
 
   final RenderSchema valueSchema;
+
+  /// The maximum number of entries this map may carry (`maxProperties`), or
+  /// null when unconstrained. Emitted as a `validate(maxProperties: ...)`
+  /// argument — the map analog of [RenderArray.maxItems].
+  final int? maxProperties;
+
+  /// The minimum number of entries this map must carry (`minProperties`), or
+  /// null when unconstrained.
+  final int? minProperties;
+
+  @override
+  String? get validationCall => validateCall([
+    if (minProperties != null) 'minProperties: $minProperties',
+    if (maxProperties != null) 'maxProperties: $maxProperties',
+  ]);
 
   /// Optional typed key schema. JSON object keys are strings on the wire, so
   /// a key can only be typed by a schema whose wire form is a string that
