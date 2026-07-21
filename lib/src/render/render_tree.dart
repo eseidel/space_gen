@@ -876,13 +876,11 @@ class SpecResolver {
           wrapperNames: _wrapperNamesFor(schema),
         );
       case ResolvedMap():
-        final keyEnum = schema.keySchema;
+        final keySchema = schema.keySchema;
         return RenderMap(
           common: schema.common,
           valueSchema: toRenderSchema(schema.valueSchema),
-          keySchema: keyEnum == null
-              ? null
-              : toRenderSchema(keyEnum) as RenderStringEnum,
+          keySchema: keySchema == null ? null : toRenderSchema(keySchema),
         );
       case ResolvedEmptyObject():
         return RenderEmptyObject(
@@ -5266,9 +5264,11 @@ class RenderMap extends RenderSchema {
   final RenderSchema valueSchema;
 
   /// Optional typed key schema. JSON object keys are strings on the wire, so
-  /// only a string enum can type a key — its `fromJson`/`toJson` round-trip
-  /// each key directly. When null, the map has plain `String` keys.
-  final RenderStringEnum? keySchema;
+  /// a key can only be typed by a schema whose wire form is a string that
+  /// round-trips through `fromJson`/`toJson` — a string enum, or a constrained
+  /// string rendered as a validated newtype. When null, the map has plain
+  /// `String` keys.
+  final RenderSchema? keySchema;
 
   @override
   Iterable<RenderSchema> get children {

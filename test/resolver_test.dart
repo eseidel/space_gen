@@ -628,6 +628,177 @@ void main() {
       expect(outer.schemas.first, isA<ResolvedAllOf>());
     });
 
+    test(
+      'allOf with a nullable-ref metadata member elides, marks nullable',
+      () {
+        // OpenAPI 3.0 nullable-$ref idiom (#356): 3.0 forbids `nullable`
+        // beside a `$ref`, so specs wrap both in an allOf. The `{nullable:
+        // true}` member resolves to `ResolvedUnknown` — a metadata-only
+        // modifier. The composition elides to the sole substantive member,
+        // marked nullable, rather than crashing on the non-object member.
+        final json = {
+          'allOf': [
+            {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+              },
+            },
+            {'nullable': true},
+          ],
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(
+          logger,
+          () => parseAndResolveTestSchema(json),
+        );
+        expect(schema, isA<ResolvedObject>());
+        expect(schema.common.nullable, isTrue);
+      },
+    );
+
+    test('allOf wrapping a scalar with a metadata member elides', () {
+      // A scalar refined by a metadata-only sibling (#347): `allOf:
+      // [<scalar>, {description: ...}]`. The description member resolves to
+      // `ResolvedUnknown` and is set aside; the composition elides to the
+      // scalar rather than crashing with "allOf only supports objects".
+      final json = {
+        'allOf': [
+          {'type': 'string', 'nullable': true},
+          {'description': 'refines the string above'},
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(schema, isA<ResolvedString>());
+      expect(schema.common.nullable, isTrue);
+    });
+
+    test('allOf keeps multiple objects, folds in metadata nullable', () {
+      // Two real object members plus a `{nullable: true}` modifier: the
+      // objects still merge into a `ResolvedAllOf` (the metadata member is
+      // dropped, not merged) and the whole composition is nullable.
+      final json = {
+        'allOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'foo': {'type': 'string'},
+            },
+          },
+          {
+            'type': 'object',
+            'properties': {
+              'bar': {'type': 'integer'},
+            },
+          },
+          {'nullable': true},
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(schema, isA<ResolvedAllOf>());
+      final allOf = schema as ResolvedAllOf;
+      expect(allOf.schemas.length, 2);
+      expect(allOf.common.nullable, isTrue);
+    });
+
+    test('allOf of pure metadata resolves to a nullable unknown', () {
+      // No substantive member — every entry is metadata-only. There is
+      // nothing to merge, so the composition is an unconstrained value,
+      // nullable because a member asked for it.
+      final json = {
+        'allOf': [
+          {'description': 'just a description'},
+          {'nullable': true},
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(schema, isA<ResolvedUnknown>());
+      expect(schema.common.nullable, isTrue);
+    });
+
+    test('allOf with a non-nullable metadata member is not nullable', () {
+      // A metadata-only member that does not ask for nullability (a bare
+      // `{description}`) must not spuriously make the elided member
+      // nullable.
+      final json = {
+        'allOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'name': {'type': 'string'},
+            },
+          },
+          {'description': 'refines the object above'},
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(schema, isA<ResolvedObject>());
+      expect(schema.common.nullable, isFalse);
+    });
+
+    test('allOf nullable as a sibling marks the elided member nullable', () {
+      // `nullable` sits on the allOf itself (not a member): `{allOf: [X],
+      // nullable: true}`. The elided member picks up the composition's own
+      // nullability.
+      final json = {
+        'allOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'name': {'type': 'string'},
+            },
+          },
+        ],
+        'nullable': true,
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(schema, isA<ResolvedObject>());
+      expect(schema.common.nullable, isTrue);
+    });
+
+    test('allOf admits a bare empty-schema member', () {
+      // A bare `{}` member carries neither shape nor metadata; it resolves
+      // to `ResolvedUnknown` and is set aside like any metadata-only
+      // member, leaving the object to elide cleanly.
+      final json = {
+        'allOf': [
+          {
+            'type': 'object',
+            'properties': {
+              'name': {'type': 'string'},
+            },
+          },
+          <String, dynamic>{},
+        ],
+      };
+      final logger = _MockLogger();
+      final schema = runWithLogger(
+        logger,
+        () => parseAndResolveTestSchema(json),
+      );
+      expect(schema, isA<ResolvedObject>());
+    });
+
     test('resolve anyOf', () {
       final json = {
         'anyOf': [
@@ -1461,6 +1632,113 @@ void main() {
         (fooRef! as ResolvedRecursiveRef).targetPointer.toString(),
         equals('#/components/schemas/Foo'),
       );
+    });
+
+    group('propertyNames', () {
+      test('string enum propertyNames yields a typed map key', () {
+        final json = {
+          'type': 'object',
+          'propertyNames': {
+            'type': 'string',
+            'enum': ['a', 'b'],
+          },
+          'additionalProperties': {'type': 'string'},
+        };
+        final schema = parseAndResolveTestSchema(json);
+        if (schema is! ResolvedMap) {
+          fail('Expected ResolvedMap, got ${schema.runtimeType}');
+        }
+        expect(schema.keySchema, isA<ResolvedEnum>());
+      });
+
+      test('constrained-string propertyNames becomes a newtype key', () {
+        // OpenAI's `VectorStoreFileAttributes`: `propertyNames` is a plain
+        // `type: string` with `maxLength`. It's promoted to a validated
+        // string newtype so the constraint is enforced on every key.
+        final json = {
+          'type': 'object',
+          'propertyNames': {'type': 'string', 'maxLength': 64},
+          'additionalProperties': {'type': 'string'},
+        };
+        final schema = parseAndResolveTestSchema(json);
+        if (schema is! ResolvedMap) {
+          fail('Expected ResolvedMap, got ${schema.runtimeType}');
+        }
+        final key = schema.keySchema;
+        if (key is! ResolvedString) {
+          fail('Expected ResolvedString key, got ${key.runtimeType}');
+        }
+        expect(key.createsNewType, isTrue);
+        expect(key.maxLength, 64);
+      });
+
+      test('named string-component propertyNames types the key', () {
+        // A `$ref` to a top-level `type: string` component is already a
+        // distinct newtype, so it types the key even without a constraint.
+        final spec = parseAndResolveTestSpec({
+          'openapi': '3.1.0',
+          'info': {'title': 'T', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/a': {
+              'get': {
+                'responses': {
+                  '200': {
+                    'description': 'ok',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          'type': 'object',
+                          'additionalProperties': {'type': 'string'},
+                          'propertyNames': {
+                            r'$ref': '#/components/schemas/UserId',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'components': {
+            'schemas': {
+              'UserId': {'type': 'string'},
+            },
+          },
+        });
+        final map = spec.paths.first.operations.first.responses.first.content;
+        if (map is! ResolvedMap) {
+          fail('Expected ResolvedMap, got ${map.runtimeType}');
+        }
+        final key = map.keySchema;
+        if (key is! ResolvedString) {
+          fail('Expected ResolvedString key, got ${key.runtimeType}');
+        }
+        expect(key.createsNewType, isTrue);
+        expect(key.snakeName, 'user_id');
+      });
+
+      test('bare-string propertyNames keeps plain String keys', () {
+        // No constraint to validate, so no newtype — keys stay `String`.
+        final json = {
+          'type': 'object',
+          'propertyNames': {'type': 'string'},
+          'additionalProperties': {'type': 'string'},
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(
+          logger,
+          () => parseAndResolveTestSchema(json),
+        );
+        if (schema is! ResolvedMap) {
+          fail('Expected ResolvedMap, got ${schema.runtimeType}');
+        }
+        expect(schema.keySchema, isNull);
+        verifyNever(() => logger.warn(any()));
+      });
     });
 
     group('request body content type selection', () {
