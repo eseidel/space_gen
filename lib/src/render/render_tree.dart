@@ -2458,15 +2458,18 @@ class RenderRequestBodyTextPlain extends RenderRequestBodySimple {
 }
 
 /// `application/x-www-form-urlencoded` request body. The schema must
-/// resolve to a `RenderObject` whose properties are each a scalar
-/// (string/number/bool/pod/enum/date) or an array of scalars (comma-joined
-/// into one field); the body renders as a `Map<String, String>` literal
-/// that `http` encodes as `key=value&...` form fields.
+/// resolve to a `RenderObject`; the body renders as a `Map<String, String>`
+/// literal that `http` encodes as `key=value&...` form fields.
+///
+/// A scalar property (string/number/bool/pod/enum/date) becomes its plain
+/// string value, and an array of scalars comma-joins into one field. A
+/// complex property (a bare object, an array of objects, an arbitrary-JSON
+/// blob) is `jsonEncode`d into its field, matching OpenAPI's default
+/// `application/json` encoding for a complex form field.
 ///
 /// Unlike multipart there is no file-part path — form-urlencoded has no
-/// way to carry binary — so a `format: binary` property (or any other
-/// non-scalar shape: a nested array, an array of objects, a bare object)
-/// is a render-time `FormatException`.
+/// way to carry binary — so a `format: binary` property (or any other type
+/// with no JSON representation) is a render-time `FormatException`.
 class RenderRequestBodyFormUrlEncoded extends RenderRequestBodySimple {
   const RenderRequestBodyFormUrlEncoded({
     required super.schema,
@@ -2502,18 +2505,11 @@ class RenderRequestBodyFormUrlEncoded extends RenderRequestBodySimple {
       // value is built against the captured `value`; otherwise straight
       // off `access`.
       final guarded = bodyNullable || fieldNullable;
-      final valueExpr = _wireStringFieldSource(
+      final valueExpr = _formUrlEncodedFieldSource(
         property,
         guarded ? 'value' : access,
         context,
       );
-      if (valueExpr == null) {
-        throw FormatException(
-          'application/x-www-form-urlencoded property must be a scalar or an '
-          'array of scalars (got ${property.runtimeType} for "$jsonName") at '
-          '${property.common.pointer}',
-        );
-      }
       entries.add(
         guarded
             ? "if ($access case final value?) '$jsonName': $valueExpr"
@@ -2731,6 +2727,38 @@ String? _wireStringFieldSource(
     return "$items.join(',')";
   }
   return null;
+}
+
+/// Source for [property] rendered as one `Map<String, String>` field of an
+/// `application/x-www-form-urlencoded` body, reading from [access].
+///
+/// A scalar or array of scalars renders as [_wireStringFieldSource] does. A
+/// complex value (a bare object, an array of objects, an arbitrary-JSON
+/// blob) is `jsonEncode`d into its field, matching OpenAPI's default
+/// `application/json` encoding for a complex form field. A [RenderNoJson]
+/// type (binary, void) has no JSON representation and a form body can't
+/// carry it, so it stays a render-time [FormatException] naming the type.
+String _formUrlEncodedFieldSource(
+  RenderSchema property,
+  String access,
+  SchemaRenderer context,
+) {
+  final scalar = _wireStringFieldSource(property, access, context);
+  if (scalar != null) return scalar;
+  if (property is RenderNoJson) {
+    throw FormatException(
+      'application/x-www-form-urlencoded cannot carry a '
+      '${property.runtimeType} property at ${property.common.pointer}',
+    );
+  }
+  final jsonExpr = property.toJsonExpression(
+    DartIdentifier(access),
+    context,
+    dartIsNullable: false,
+  );
+  return _runtimeSource(
+    DartFunctionCall(name: 'jsonEncode', arguments: [jsonExpr]),
+  );
 }
 
 /// Whether [schema] serializes to a single value on the wire, and so can

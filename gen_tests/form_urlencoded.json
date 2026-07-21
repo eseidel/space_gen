@@ -159,6 +159,60 @@
                     }
                 }
             }
+        },
+        "/payments": {
+            "post": {
+                "operationId": "createPayment",
+                "summary": "Complex form fields JSON-encode (Twilio Payments.Parameter).",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "idempotency_key"
+                                ],
+                                "properties": {
+                                    "idempotency_key": {
+                                        "type": "string"
+                                    },
+                                    "parameters": {
+                                        "description": "A single-level JSON object passed through as a form field."
+                                    },
+                                    "address": {
+                                        "type": "object",
+                                        "properties": {
+                                            "city": {
+                                                "type": "string"
+                                            },
+                                            "zip": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "line_items": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "sku": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
         }
     }
 }

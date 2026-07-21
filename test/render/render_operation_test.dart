@@ -862,30 +862,38 @@ void main() {
       );
     });
 
-    // The mirror of the multipart boundary: form-urlencoded accepts arrays
-    // only when their items are wire scalars. A non-scalar item (here an
-    // object) has no single-value form, so the property throws — naming it.
-    test(
-      'application/x-www-form-urlencoded rejects an array-of-objects field',
-      () {
-        final operation = {
-          'tags': ['auth'],
-          'operationId': 'createSession',
-          'requestBody': {
-            'required': true,
-            'content': {
-              'application/x-www-form-urlencoded': {
-                'schema': {
-                  'type': 'object',
-                  'required': ['items'],
-                  'properties': {
+    // A complex form field — a bare object, an arbitrary-JSON blob (Twilio's
+    // Payments.Parameter), or an array of objects — has no single scalar
+    // form, so it JSON-encodes into its field. This matches OpenAPI's
+    // default `application/json` encoding for a complex form field.
+    test('application/x-www-form-urlencoded JSON-encodes complex fields', () {
+      final operation = {
+        'tags': ['auth'],
+        'operationId': 'createPayment',
+        'requestBody': {
+          'required': true,
+          'content': {
+            'application/x-www-form-urlencoded': {
+              'schema': {
+                'type': 'object',
+                'required': ['lineItems'],
+                'properties': {
+                  // Typeless: an arbitrary-JSON blob, encoded as-is.
+                  'parameters': {'description': 'Arbitrary JSON'},
+                  // Object: toJson() first, then encode the resulting map.
+                  'address': {
+                    'type': 'object',
+                    'properties': {
+                      'city': {'type': 'string'},
+                    },
+                  },
+                  // Array of objects: map each to JSON, then encode the list.
+                  'lineItems': {
+                    'type': 'array',
                     'items': {
-                      'type': 'array',
-                      'items': {
-                        'type': 'object',
-                        'properties': {
-                          'name': {'type': 'string'},
-                        },
+                      'type': 'object',
+                      'properties': {
+                        'sku': {'type': 'string'},
                       },
                     },
                   },
@@ -893,31 +901,82 @@ void main() {
               },
             },
           },
-          'responses': {
-            '200': {'description': 'OK'},
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/payments',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      expect(
+        result,
+        contains(
+          'if (createPaymentRequest.parameters case final value?) '
+          "'parameters': jsonEncode(value)",
+        ),
+      );
+      expect(
+        result,
+        contains(
+          'if (createPaymentRequest.address case final value?) '
+          "'address': jsonEncode(value.toJson())",
+        ),
+      );
+      expect(
+        result,
+        contains(
+          "'lineItems': jsonEncode(createPaymentRequest.lineItems.map((e) =>"
+          ' e.toJson()).toList())',
+        ),
+      );
+    });
+
+    // Form-urlencoded has no way to carry binary, so a `format: binary`
+    // property (a `RenderNoJson` type with no JSON representation) stays a
+    // render-time error rather than emitting `jsonEncode(throw ...)`.
+    test('application/x-www-form-urlencoded rejects a binary field', () {
+      final operation = {
+        'tags': ['auth'],
+        'operationId': 'upload',
+        'requestBody': {
+          'required': true,
+          'content': {
+            'application/x-www-form-urlencoded': {
+              'schema': {
+                'type': 'object',
+                'required': ['file'],
+                'properties': {
+                  'file': {'type': 'string', 'format': 'binary'},
+                },
+              },
+            },
           },
-        };
-        expect(
-          () => renderTestOperation(
-            path: '/session',
-            operationJson: operation,
-            serverUrl: Uri.parse('https://example.com'),
-          ),
-          throwsA(
-            isA<FormatException>().having(
-              (e) => e.message,
-              'message',
-              allOf(
-                contains(
-                  'application/x-www-form-urlencoded property must be a scalar',
-                ),
-                contains('"items"'),
-              ),
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      expect(
+        () => renderTestOperation(
+          path: '/upload',
+          operationJson: operation,
+          serverUrl: Uri.parse('https://example.com'),
+        ),
+        throwsA(
+          isA<FormatException>().having(
+            (e) => e.message,
+            'message',
+            contains(
+              'application/x-www-form-urlencoded cannot carry a '
+              'RenderBinary property',
             ),
           ),
-        );
-      },
-    );
+        ),
+      );
+    });
 
     test('application/x-www-form-urlencoded rejects non-object schema', () {
       final operation = {

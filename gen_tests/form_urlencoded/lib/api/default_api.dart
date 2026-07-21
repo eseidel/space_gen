@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:form_urlencoded/api_client.dart';
 import 'package:form_urlencoded/api_exception.dart';
+import 'package:form_urlencoded/model/create_payment_request.dart';
 import 'package:form_urlencoded/model/create_session_request.dart';
 import 'package:form_urlencoded/model/edit_product_request.dart';
 import 'package:form_urlencoded/model/subscribe_request.dart';
@@ -80,6 +82,29 @@ class DefaultApi {
         'code': editProductRequest.code,
         'brands': editProductRequest.brands.join(','),
         'labels': editProductRequest.labels.join(','),
+      },
+      bodyContentType: BodyContentType.formUrlEncoded,
+    );
+
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException<Object?>(response.statusCode, response.body);
+    }
+  }
+
+  /// Complex form fields JSON-encode (Twilio Payments.Parameter).
+  Future<void> createPayment(CreatePaymentRequest createPaymentRequest) async {
+    final response = await client.invokeApi(
+      method: Method.post,
+      path: '/payments',
+      body: <String, String>{
+        'idempotency_key': createPaymentRequest.idempotencyKey,
+        if (createPaymentRequest.parameters case final value?)
+          'parameters': jsonEncode(value),
+        if (createPaymentRequest.address case final value?)
+          'address': jsonEncode(value.toJson()),
+        'line_items': jsonEncode(
+          createPaymentRequest.lineItems.map((e) => e.toJson()).toList(),
+        ),
       },
       bodyContentType: BodyContentType.formUrlEncoded,
     );
