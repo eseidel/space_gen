@@ -1,6 +1,6 @@
 import 'package:github/model_helpers.dart';
 import 'package:github/models/minimal_repository.dart';
-import 'package:github/models/search_result_text_matches_inner.dart';
+import 'package:github/models/search_result_text_matches.dart';
 import 'package:meta/meta.dart';
 
 /// {@template code_search_result_item}
@@ -46,13 +46,9 @@ class CodeSearchResultItem {
         language: json['language'] as String?,
         lastModifiedAt: maybeParseDateTime(json['last_modified_at'] as String?),
         lineNumbers: (json['line_numbers'] as List?)?.cast<String>(),
-        textMatches: (json['text_matches'] as List?)
-            ?.map<SearchResultTextMatchesInner>(
-              (e) => SearchResultTextMatchesInner.fromJson(
-                e as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+        textMatches: SearchResultTextMatches.maybeFromJson(
+          json['text_matches'] as List?,
+        ),
       ),
     );
   }
@@ -86,7 +82,7 @@ class CodeSearchResultItem {
   final List<String>? lineNumbers;
 
   /// Search Result Text Matches
-  final List<SearchResultTextMatchesInner>? textMatches;
+  final SearchResultTextMatches? textMatches;
 
   /// Converts a [CodeSearchResultItem] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
@@ -103,7 +99,7 @@ class CodeSearchResultItem {
       'language': language,
       'last_modified_at': ?lastModifiedAt?.toIso8601String(),
       'line_numbers': ?lineNumbers,
-      'text_matches': ?textMatches?.map((e) => e.toJson()).toList(),
+      'text_matches': ?textMatches?.toJson(),
     };
   }
 

@@ -1,5 +1,5 @@
 import 'package:github/model_helpers.dart';
-import 'package:github/models/search_result_text_matches_inner.dart';
+import 'package:github/models/search_result_text_matches.dart';
 import 'package:meta/meta.dart';
 
 /// {@template label_search_result_item}
@@ -35,13 +35,9 @@ class LabelSearchResultItem {
         default_: json['default'] as bool,
         description: checkedKey(json, 'description') as String?,
         score: (json['score'] as num).toDouble(),
-        textMatches: (json['text_matches'] as List?)
-            ?.map<SearchResultTextMatchesInner>(
-              (e) => SearchResultTextMatchesInner.fromJson(
-                e as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+        textMatches: SearchResultTextMatches.maybeFromJson(
+          json['text_matches'] as List?,
+        ),
       ),
     );
   }
@@ -65,7 +61,7 @@ class LabelSearchResultItem {
   final double score;
 
   /// Search Result Text Matches
-  final List<SearchResultTextMatchesInner>? textMatches;
+  final SearchResultTextMatches? textMatches;
 
   /// Converts a [LabelSearchResultItem] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
@@ -78,7 +74,7 @@ class LabelSearchResultItem {
       'default': default_,
       'description': description,
       'score': score,
-      'text_matches': ?textMatches?.map((e) => e.toJson()).toList(),
+      'text_matches': ?textMatches?.toJson(),
     };
   }
 

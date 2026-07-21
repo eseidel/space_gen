@@ -3,7 +3,7 @@ import 'package:github/models/commit_search_result_item_commit.dart';
 import 'package:github/models/commit_search_result_item_parents_inner.dart';
 import 'package:github/models/git_user.dart';
 import 'package:github/models/minimal_repository.dart';
-import 'package:github/models/search_result_text_matches_inner.dart';
+import 'package:github/models/search_result_text_matches.dart';
 import 'package:github/models/simple_user.dart';
 import 'package:meta/meta.dart';
 
@@ -60,13 +60,9 @@ class CommitSearchResultItem {
         ),
         score: (json['score'] as num).toDouble(),
         nodeId: json['node_id'] as String,
-        textMatches: (json['text_matches'] as List?)
-            ?.map<SearchResultTextMatchesInner>(
-              (e) => SearchResultTextMatchesInner.fromJson(
-                e as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+        textMatches: SearchResultTextMatches.maybeFromJson(
+          json['text_matches'] as List?,
+        ),
       ),
     );
   }
@@ -102,7 +98,7 @@ class CommitSearchResultItem {
   final String nodeId;
 
   /// Search Result Text Matches
-  final List<SearchResultTextMatchesInner>? textMatches;
+  final SearchResultTextMatches? textMatches;
 
   /// Converts a [CommitSearchResultItem] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
@@ -118,7 +114,7 @@ class CommitSearchResultItem {
       'repository': repository.toJson(),
       'score': score,
       'node_id': nodeId,
-      'text_matches': ?textMatches?.map((e) => e.toJson()).toList(),
+      'text_matches': ?textMatches?.toJson(),
     };
   }
 

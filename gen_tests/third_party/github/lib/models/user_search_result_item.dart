@@ -1,5 +1,5 @@
 import 'package:github/model_helpers.dart';
-import 'package:github/models/search_result_text_matches_inner.dart';
+import 'package:github/models/search_result_text_matches.dart';
 import 'package:meta/meta.dart';
 
 /// {@template user_search_result_item}
@@ -83,13 +83,9 @@ class UserSearchResultItem {
         location: json['location'] as String?,
         siteAdmin: json['site_admin'] as bool,
         hireable: json['hireable'] as bool?,
-        textMatches: (json['text_matches'] as List?)
-            ?.map<SearchResultTextMatchesInner>(
-              (e) => SearchResultTextMatchesInner.fromJson(
-                e as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+        textMatches: SearchResultTextMatches.maybeFromJson(
+          json['text_matches'] as List?,
+        ),
         blog: json['blog'] as String?,
         company: json['company'] as String?,
         suspendedAt: maybeParseDateTime(json['suspended_at'] as String?),
@@ -139,7 +135,7 @@ class UserSearchResultItem {
   final bool? hireable;
 
   /// Search Result Text Matches
-  final List<SearchResultTextMatchesInner>? textMatches;
+  final SearchResultTextMatches? textMatches;
   final String? blog;
   final String? company;
   final DateTime? suspendedAt;
@@ -178,7 +174,7 @@ class UserSearchResultItem {
       'location': location,
       'site_admin': siteAdmin,
       'hireable': hireable,
-      'text_matches': ?textMatches?.map((e) => e.toJson()).toList(),
+      'text_matches': ?textMatches?.toJson(),
       'blog': blog,
       'company': company,
       'suspended_at': suspendedAt?.toIso8601String(),

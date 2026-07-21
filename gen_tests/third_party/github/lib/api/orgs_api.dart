@@ -30,13 +30,13 @@ import 'package:github/messages/orgs_update_request.dart';
 import 'package:github/messages/orgs_update_webhook_config_for_org_request.dart';
 import 'package:github/messages/orgs_update_webhook_request.dart';
 import 'package:github/models/api_insights_actor_type_param.dart';
-import 'package:github/models/api_insights_route_stats_inner.dart';
+import 'package:github/models/api_insights_route_stats.dart';
 import 'package:github/models/api_insights_route_stats_sort_param_inner.dart';
 import 'package:github/models/api_insights_sort_param_inner.dart';
-import 'package:github/models/api_insights_subject_stats_inner.dart';
+import 'package:github/models/api_insights_subject_stats.dart';
 import 'package:github/models/api_insights_summary_stats.dart';
-import 'package:github/models/api_insights_time_stats_inner.dart';
-import 'package:github/models/api_insights_user_stats_inner.dart';
+import 'package:github/models/api_insights_time_stats.dart';
+import 'package:github/models/api_insights_user_stats.dart';
 import 'package:github/models/custom_property.dart';
 import 'package:github/models/custom_property_set_payload.dart';
 import 'package:github/models/direction_param.dart';
@@ -867,7 +867,7 @@ class OrgsApi {
   /// Get route stats by actor
   /// Get API request count statistics for an actor broken down by route
   /// within a specified time frame.
-  Future<List<ApiInsightsRouteStatsInner>> apiInsightsGetRouteStatsByActor(
+  Future<ApiInsightsRouteStats> apiInsightsGetRouteStatsByActor(
     String org,
     ApiInsightsActorTypeParam actorType,
     int actorId,
@@ -902,12 +902,7 @@ class OrgsApi {
     }
 
     if (response.body.isNotEmpty) {
-      return (jsonDecode(response.body) as List)
-          .map<ApiInsightsRouteStatsInner>(
-            (e) =>
-                ApiInsightsRouteStatsInner.fromJson(e as Map<String, dynamic>),
-          )
-          .toList();
+      return ApiInsightsRouteStats.fromJson(jsonDecode(response.body) as List);
     }
 
     throw ApiException<Object?>.unhandled(response.statusCode);
@@ -916,7 +911,7 @@ class OrgsApi {
   /// Get subject stats
   /// Get API request statistics for all subjects within an organization
   /// within a specified time frame. Subjects can be users or GitHub Apps.
-  Future<List<ApiInsightsSubjectStatsInner>> apiInsightsGetSubjectStats(
+  Future<ApiInsightsSubjectStats> apiInsightsGetSubjectStats(
     String org,
     String minTimestamp, {
     String? maxTimestamp,
@@ -949,13 +944,9 @@ class OrgsApi {
     }
 
     if (response.body.isNotEmpty) {
-      return (jsonDecode(response.body) as List)
-          .map<ApiInsightsSubjectStatsInner>(
-            (e) => ApiInsightsSubjectStatsInner.fromJson(
-              e as Map<String, dynamic>,
-            ),
-          )
-          .toList();
+      return ApiInsightsSubjectStats.fromJson(
+        jsonDecode(response.body) as List,
+      );
     }
 
     throw ApiException<Object?>.unhandled(response.statusCode);
@@ -1066,7 +1057,7 @@ class OrgsApi {
   /// Get time stats
   /// Get the number of API requests and rate-limited requests made within an
   /// organization over a specified time period.
-  Future<List<ApiInsightsTimeStatsInner>> apiInsightsGetTimeStats(
+  Future<ApiInsightsTimeStats> apiInsightsGetTimeStats(
     String org,
     String minTimestamp,
     String timestampIncrement, {
@@ -1090,12 +1081,7 @@ class OrgsApi {
     }
 
     if (response.body.isNotEmpty) {
-      return (jsonDecode(response.body) as List)
-          .map<ApiInsightsTimeStatsInner>(
-            (e) =>
-                ApiInsightsTimeStatsInner.fromJson(e as Map<String, dynamic>),
-          )
-          .toList();
+      return ApiInsightsTimeStats.fromJson(jsonDecode(response.body) as List);
     }
 
     throw ApiException<Object?>.unhandled(response.statusCode);
@@ -1104,7 +1090,7 @@ class OrgsApi {
   /// Get time stats by user
   /// Get the number of API requests and rate-limited requests made within an
   /// organization by a specific user over a specified time period.
-  Future<List<ApiInsightsTimeStatsInner>> apiInsightsGetTimeStatsByUser(
+  Future<ApiInsightsTimeStats> apiInsightsGetTimeStatsByUser(
     String org,
     String userId,
     String minTimestamp,
@@ -1128,12 +1114,7 @@ class OrgsApi {
     }
 
     if (response.body.isNotEmpty) {
-      return (jsonDecode(response.body) as List)
-          .map<ApiInsightsTimeStatsInner>(
-            (e) =>
-                ApiInsightsTimeStatsInner.fromJson(e as Map<String, dynamic>),
-          )
-          .toList();
+      return ApiInsightsTimeStats.fromJson(jsonDecode(response.body) as List);
     }
 
     throw ApiException<Object?>.unhandled(response.statusCode);
@@ -1142,7 +1123,7 @@ class OrgsApi {
   /// Get time stats by actor
   /// Get the number of API requests and rate-limited requests made within an
   /// organization by a specific actor within a specified time period.
-  Future<List<ApiInsightsTimeStatsInner>> apiInsightsGetTimeStatsByActor(
+  Future<ApiInsightsTimeStats> apiInsightsGetTimeStatsByActor(
     String org,
     ApiInsightsActorTypeParam actorType,
     int actorId,
@@ -1168,12 +1149,7 @@ class OrgsApi {
     }
 
     if (response.body.isNotEmpty) {
-      return (jsonDecode(response.body) as List)
-          .map<ApiInsightsTimeStatsInner>(
-            (e) =>
-                ApiInsightsTimeStatsInner.fromJson(e as Map<String, dynamic>),
-          )
-          .toList();
+      return ApiInsightsTimeStats.fromJson(jsonDecode(response.body) as List);
     }
 
     throw ApiException<Object?>.unhandled(response.statusCode);
@@ -1182,7 +1158,7 @@ class OrgsApi {
   /// Get user stats
   /// Get API usage statistics within an organization for a user broken down
   /// by the type of access.
-  Future<List<ApiInsightsUserStatsInner>> apiInsightsGetUserStats(
+  Future<ApiInsightsUserStats> apiInsightsGetUserStats(
     String org,
     String userId,
     String minTimestamp, {
@@ -1215,12 +1191,7 @@ class OrgsApi {
     }
 
     if (response.body.isNotEmpty) {
-      return (jsonDecode(response.body) as List)
-          .map<ApiInsightsUserStatsInner>(
-            (e) =>
-                ApiInsightsUserStatsInner.fromJson(e as Map<String, dynamic>),
-          )
-          .toList();
+      return ApiInsightsUserStats.fromJson(jsonDecode(response.body) as List);
     }
 
     throw ApiException<Object?>.unhandled(response.statusCode);

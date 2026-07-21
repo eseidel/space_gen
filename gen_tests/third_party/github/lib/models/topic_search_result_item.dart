@@ -1,5 +1,5 @@
 import 'package:github/model_helpers.dart';
-import 'package:github/models/search_result_text_matches_inner.dart';
+import 'package:github/models/search_result_text_matches.dart';
 import 'package:github/models/topic_search_result_item_aliases_inner.dart';
 import 'package:github/models/topic_search_result_item_related_inner.dart';
 import 'package:meta/meta.dart';
@@ -49,13 +49,9 @@ class TopicSearchResultItem {
         score: (json['score'] as num).toDouble(),
         repositoryCount: json['repository_count'] as int?,
         logoUrl: maybeParseUri(json['logo_url'] as String?),
-        textMatches: (json['text_matches'] as List?)
-            ?.map<SearchResultTextMatchesInner>(
-              (e) => SearchResultTextMatchesInner.fromJson(
-                e as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+        textMatches: SearchResultTextMatches.maybeFromJson(
+          json['text_matches'] as List?,
+        ),
         related: (json['related'] as List?)
             ?.map<TopicSearchResultItemRelatedInner>(
               (e) => TopicSearchResultItemRelatedInner.fromJson(
@@ -98,7 +94,7 @@ class TopicSearchResultItem {
   final Uri? logoUrl;
 
   /// Search Result Text Matches
-  final List<SearchResultTextMatchesInner>? textMatches;
+  final SearchResultTextMatches? textMatches;
   final List<TopicSearchResultItemRelatedInner>? related;
   final List<TopicSearchResultItemAliasesInner>? aliases;
 
@@ -118,7 +114,7 @@ class TopicSearchResultItem {
       'score': score,
       'repository_count': repositoryCount,
       'logo_url': logoUrl?.toString(),
-      'text_matches': ?textMatches?.map((e) => e.toJson()).toList(),
+      'text_matches': ?textMatches?.toJson(),
       'related': related?.map((e) => e.toJson()).toList(),
       'aliases': aliases?.map((e) => e.toJson()).toList(),
     };
