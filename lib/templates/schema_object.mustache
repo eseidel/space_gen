@@ -65,6 +65,9 @@
         return {{ typeName }}.fromJson(json);
     }
 
+    {{#staticConstants}}
+    {{{ doc_comment }}}{{{ declaration }}}
+    {{/staticConstants}}
     {{#properties}}{{{ property_doc_comment }}}{{#isConstGetter}}{{{ constGetter }}}{{/isConstGetter}}{{^isConstGetter}}{{{ storageTypeDeclaration }}}{{ dartName }};{{/isConstGetter}}
     {{/properties}}
     {{#hasAdditionalProperties}}

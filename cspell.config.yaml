@@ -49,6 +49,7 @@ words:
   - pubignore
   - dartdoc
   - uncompilable
+  - omittable
   - endtemplate
   - codepush
   - octocat

@@ -1,42 +1,21 @@
 import 'package:github/model_helpers.dart';
 import 'package:github/models/repository_rule_branch_name_pattern_parameters.dart';
-import 'package:github/models/repository_rule_branch_name_pattern_type.dart';
 import 'package:github/models/repository_rule_code_scanning_parameters.dart';
-import 'package:github/models/repository_rule_code_scanning_type.dart';
 import 'package:github/models/repository_rule_commit_author_email_pattern_parameters.dart';
-import 'package:github/models/repository_rule_commit_author_email_pattern_type.dart';
 import 'package:github/models/repository_rule_commit_message_pattern_parameters.dart';
-import 'package:github/models/repository_rule_commit_message_pattern_type.dart';
 import 'package:github/models/repository_rule_committer_email_pattern_parameters.dart';
-import 'package:github/models/repository_rule_committer_email_pattern_type.dart';
-import 'package:github/models/repository_rule_creation_type.dart';
-import 'package:github/models/repository_rule_deletion_type.dart';
 import 'package:github/models/repository_rule_file_extension_restriction_parameters.dart';
-import 'package:github/models/repository_rule_file_extension_restriction_type.dart';
 import 'package:github/models/repository_rule_file_path_restriction_parameters.dart';
-import 'package:github/models/repository_rule_file_path_restriction_type.dart';
 import 'package:github/models/repository_rule_max_file_path_length_parameters.dart';
-import 'package:github/models/repository_rule_max_file_path_length_type.dart';
 import 'package:github/models/repository_rule_max_file_size_parameters.dart';
-import 'package:github/models/repository_rule_max_file_size_type.dart';
 import 'package:github/models/repository_rule_merge_queue_parameters.dart';
-import 'package:github/models/repository_rule_merge_queue_type.dart';
-import 'package:github/models/repository_rule_non_fast_forward_type.dart';
 import 'package:github/models/repository_rule_pull_request_parameters.dart';
-import 'package:github/models/repository_rule_pull_request_type.dart';
 import 'package:github/models/repository_rule_required_deployments_parameters.dart';
-import 'package:github/models/repository_rule_required_deployments_type.dart';
-import 'package:github/models/repository_rule_required_linear_history_type.dart';
-import 'package:github/models/repository_rule_required_signatures_type.dart';
 import 'package:github/models/repository_rule_required_status_checks_parameters.dart';
-import 'package:github/models/repository_rule_required_status_checks_type.dart';
 import 'package:github/models/repository_rule_ruleset_info_ruleset_source_type.dart';
 import 'package:github/models/repository_rule_tag_name_pattern_parameters.dart';
-import 'package:github/models/repository_rule_tag_name_pattern_type.dart';
 import 'package:github/models/repository_rule_update_parameters.dart';
-import 'package:github/models/repository_rule_update_type.dart';
 import 'package:github/models/repository_rule_workflows_parameters.dart';
-import 'package:github/models/repository_rule_workflows_type.dart';
 import 'package:meta/meta.dart';
 
 /// Repository Rule
@@ -94,7 +73,6 @@ sealed class RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf0 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf0({
-    required this.type,
     this.rulesetSourceType,
     this.rulesetSource,
     this.rulesetId,
@@ -106,7 +84,6 @@ final class RepositoryRuleDetailedOneOf0 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf0',
       json,
       () => RepositoryRuleDetailedOneOf0(
-        type: RepositoryRuleCreationType.fromJson(json['type'] as String),
         rulesetSourceType:
             RepositoryRuleRulesetInfoRulesetSourceType.maybeFromJson(
               json['ruleset_source_type'] as String?,
@@ -128,7 +105,7 @@ final class RepositoryRuleDetailedOneOf0 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf0.fromJson(json);
   }
 
-  final RepositoryRuleCreationType type;
+  String get type => 'creation';
 
   /// The type of source for the ruleset that includes this rule.
   final RepositoryRuleRulesetInfoRulesetSourceType? rulesetSourceType;
@@ -143,7 +120,7 @@ final class RepositoryRuleDetailedOneOf0 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
       'ruleset_id': ?rulesetId,
@@ -152,13 +129,12 @@ final class RepositoryRuleDetailedOneOf0 extends RepositoryRuleDetailed {
 
   @override
   int get hashCode =>
-      Object.hashAll([type, rulesetSourceType, rulesetSource, rulesetId]);
+      Object.hashAll([rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf0 &&
-        type == other.type &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
         rulesetId == other.rulesetId;
@@ -168,7 +144,6 @@ final class RepositoryRuleDetailedOneOf0 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf1 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf1({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -181,7 +156,6 @@ final class RepositoryRuleDetailedOneOf1 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf1',
       json,
       () => RepositoryRuleDetailedOneOf1(
-        type: RepositoryRuleUpdateType.fromJson(json['type'] as String),
         parameters: RepositoryRuleUpdateParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -206,7 +180,7 @@ final class RepositoryRuleDetailedOneOf1 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf1.fromJson(json);
   }
 
-  final RepositoryRuleUpdateType type;
+  String get type => 'update';
   final RepositoryRuleUpdateParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -222,7 +196,7 @@ final class RepositoryRuleDetailedOneOf1 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -231,19 +205,13 @@ final class RepositoryRuleDetailedOneOf1 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf1 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -254,7 +222,6 @@ final class RepositoryRuleDetailedOneOf1 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf2 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf2({
-    required this.type,
     this.rulesetSourceType,
     this.rulesetSource,
     this.rulesetId,
@@ -266,7 +233,6 @@ final class RepositoryRuleDetailedOneOf2 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf2',
       json,
       () => RepositoryRuleDetailedOneOf2(
-        type: RepositoryRuleDeletionType.fromJson(json['type'] as String),
         rulesetSourceType:
             RepositoryRuleRulesetInfoRulesetSourceType.maybeFromJson(
               json['ruleset_source_type'] as String?,
@@ -288,7 +254,7 @@ final class RepositoryRuleDetailedOneOf2 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf2.fromJson(json);
   }
 
-  final RepositoryRuleDeletionType type;
+  String get type => 'deletion';
 
   /// The type of source for the ruleset that includes this rule.
   final RepositoryRuleRulesetInfoRulesetSourceType? rulesetSourceType;
@@ -303,7 +269,7 @@ final class RepositoryRuleDetailedOneOf2 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
       'ruleset_id': ?rulesetId,
@@ -312,13 +278,12 @@ final class RepositoryRuleDetailedOneOf2 extends RepositoryRuleDetailed {
 
   @override
   int get hashCode =>
-      Object.hashAll([type, rulesetSourceType, rulesetSource, rulesetId]);
+      Object.hashAll([rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf2 &&
-        type == other.type &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
         rulesetId == other.rulesetId;
@@ -328,7 +293,6 @@ final class RepositoryRuleDetailedOneOf2 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf3 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf3({
-    required this.type,
     this.rulesetSourceType,
     this.rulesetSource,
     this.rulesetId,
@@ -340,9 +304,6 @@ final class RepositoryRuleDetailedOneOf3 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf3',
       json,
       () => RepositoryRuleDetailedOneOf3(
-        type: RepositoryRuleRequiredLinearHistoryType.fromJson(
-          json['type'] as String,
-        ),
         rulesetSourceType:
             RepositoryRuleRulesetInfoRulesetSourceType.maybeFromJson(
               json['ruleset_source_type'] as String?,
@@ -364,7 +325,7 @@ final class RepositoryRuleDetailedOneOf3 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf3.fromJson(json);
   }
 
-  final RepositoryRuleRequiredLinearHistoryType type;
+  String get type => 'required_linear_history';
 
   /// The type of source for the ruleset that includes this rule.
   final RepositoryRuleRulesetInfoRulesetSourceType? rulesetSourceType;
@@ -379,7 +340,7 @@ final class RepositoryRuleDetailedOneOf3 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
       'ruleset_id': ?rulesetId,
@@ -388,13 +349,12 @@ final class RepositoryRuleDetailedOneOf3 extends RepositoryRuleDetailed {
 
   @override
   int get hashCode =>
-      Object.hashAll([type, rulesetSourceType, rulesetSource, rulesetId]);
+      Object.hashAll([rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf3 &&
-        type == other.type &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
         rulesetId == other.rulesetId;
@@ -404,7 +364,6 @@ final class RepositoryRuleDetailedOneOf3 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf4 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf4({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -417,7 +376,6 @@ final class RepositoryRuleDetailedOneOf4 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf4',
       json,
       () => RepositoryRuleDetailedOneOf4(
-        type: RepositoryRuleMergeQueueType.fromJson(json['type'] as String),
         parameters: RepositoryRuleMergeQueueParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -442,7 +400,7 @@ final class RepositoryRuleDetailedOneOf4 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf4.fromJson(json);
   }
 
-  final RepositoryRuleMergeQueueType type;
+  String get type => 'merge_queue';
   final RepositoryRuleMergeQueueParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -458,7 +416,7 @@ final class RepositoryRuleDetailedOneOf4 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -467,19 +425,13 @@ final class RepositoryRuleDetailedOneOf4 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf4 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -490,7 +442,6 @@ final class RepositoryRuleDetailedOneOf4 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf5 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf5({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -503,9 +454,6 @@ final class RepositoryRuleDetailedOneOf5 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf5',
       json,
       () => RepositoryRuleDetailedOneOf5(
-        type: RepositoryRuleRequiredDeploymentsType.fromJson(
-          json['type'] as String,
-        ),
         parameters: RepositoryRuleRequiredDeploymentsParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -530,7 +478,7 @@ final class RepositoryRuleDetailedOneOf5 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf5.fromJson(json);
   }
 
-  final RepositoryRuleRequiredDeploymentsType type;
+  String get type => 'required_deployments';
   final RepositoryRuleRequiredDeploymentsParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -546,7 +494,7 @@ final class RepositoryRuleDetailedOneOf5 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -555,19 +503,13 @@ final class RepositoryRuleDetailedOneOf5 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf5 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -578,7 +520,6 @@ final class RepositoryRuleDetailedOneOf5 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf6 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf6({
-    required this.type,
     this.rulesetSourceType,
     this.rulesetSource,
     this.rulesetId,
@@ -590,9 +531,6 @@ final class RepositoryRuleDetailedOneOf6 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf6',
       json,
       () => RepositoryRuleDetailedOneOf6(
-        type: RepositoryRuleRequiredSignaturesType.fromJson(
-          json['type'] as String,
-        ),
         rulesetSourceType:
             RepositoryRuleRulesetInfoRulesetSourceType.maybeFromJson(
               json['ruleset_source_type'] as String?,
@@ -614,7 +552,7 @@ final class RepositoryRuleDetailedOneOf6 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf6.fromJson(json);
   }
 
-  final RepositoryRuleRequiredSignaturesType type;
+  String get type => 'required_signatures';
 
   /// The type of source for the ruleset that includes this rule.
   final RepositoryRuleRulesetInfoRulesetSourceType? rulesetSourceType;
@@ -629,7 +567,7 @@ final class RepositoryRuleDetailedOneOf6 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
       'ruleset_id': ?rulesetId,
@@ -638,13 +576,12 @@ final class RepositoryRuleDetailedOneOf6 extends RepositoryRuleDetailed {
 
   @override
   int get hashCode =>
-      Object.hashAll([type, rulesetSourceType, rulesetSource, rulesetId]);
+      Object.hashAll([rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf6 &&
-        type == other.type &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
         rulesetId == other.rulesetId;
@@ -654,7 +591,6 @@ final class RepositoryRuleDetailedOneOf6 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf7 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf7({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -667,7 +603,6 @@ final class RepositoryRuleDetailedOneOf7 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf7',
       json,
       () => RepositoryRuleDetailedOneOf7(
-        type: RepositoryRulePullRequestType.fromJson(json['type'] as String),
         parameters: RepositoryRulePullRequestParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -692,7 +627,7 @@ final class RepositoryRuleDetailedOneOf7 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf7.fromJson(json);
   }
 
-  final RepositoryRulePullRequestType type;
+  String get type => 'pull_request';
   final RepositoryRulePullRequestParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -708,7 +643,7 @@ final class RepositoryRuleDetailedOneOf7 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -717,19 +652,13 @@ final class RepositoryRuleDetailedOneOf7 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf7 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -740,7 +669,6 @@ final class RepositoryRuleDetailedOneOf7 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf8 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf8({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -753,9 +681,6 @@ final class RepositoryRuleDetailedOneOf8 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf8',
       json,
       () => RepositoryRuleDetailedOneOf8(
-        type: RepositoryRuleRequiredStatusChecksType.fromJson(
-          json['type'] as String,
-        ),
         parameters: RepositoryRuleRequiredStatusChecksParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -780,7 +705,7 @@ final class RepositoryRuleDetailedOneOf8 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf8.fromJson(json);
   }
 
-  final RepositoryRuleRequiredStatusChecksType type;
+  String get type => 'required_status_checks';
   final RepositoryRuleRequiredStatusChecksParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -796,7 +721,7 @@ final class RepositoryRuleDetailedOneOf8 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -805,19 +730,13 @@ final class RepositoryRuleDetailedOneOf8 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf8 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -828,7 +747,6 @@ final class RepositoryRuleDetailedOneOf8 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf9 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf9({
-    required this.type,
     this.rulesetSourceType,
     this.rulesetSource,
     this.rulesetId,
@@ -840,7 +758,6 @@ final class RepositoryRuleDetailedOneOf9 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf9',
       json,
       () => RepositoryRuleDetailedOneOf9(
-        type: RepositoryRuleNonFastForwardType.fromJson(json['type'] as String),
         rulesetSourceType:
             RepositoryRuleRulesetInfoRulesetSourceType.maybeFromJson(
               json['ruleset_source_type'] as String?,
@@ -862,7 +779,7 @@ final class RepositoryRuleDetailedOneOf9 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf9.fromJson(json);
   }
 
-  final RepositoryRuleNonFastForwardType type;
+  String get type => 'non_fast_forward';
 
   /// The type of source for the ruleset that includes this rule.
   final RepositoryRuleRulesetInfoRulesetSourceType? rulesetSourceType;
@@ -877,7 +794,7 @@ final class RepositoryRuleDetailedOneOf9 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
       'ruleset_id': ?rulesetId,
@@ -886,13 +803,12 @@ final class RepositoryRuleDetailedOneOf9 extends RepositoryRuleDetailed {
 
   @override
   int get hashCode =>
-      Object.hashAll([type, rulesetSourceType, rulesetSource, rulesetId]);
+      Object.hashAll([rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf9 &&
-        type == other.type &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
         rulesetId == other.rulesetId;
@@ -902,7 +818,6 @@ final class RepositoryRuleDetailedOneOf9 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf10 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf10({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -915,9 +830,6 @@ final class RepositoryRuleDetailedOneOf10 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf10',
       json,
       () => RepositoryRuleDetailedOneOf10(
-        type: RepositoryRuleCommitMessagePatternType.fromJson(
-          json['type'] as String,
-        ),
         parameters: RepositoryRuleCommitMessagePatternParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -942,7 +854,7 @@ final class RepositoryRuleDetailedOneOf10 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf10.fromJson(json);
   }
 
-  final RepositoryRuleCommitMessagePatternType type;
+  String get type => 'commit_message_pattern';
   final RepositoryRuleCommitMessagePatternParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -958,7 +870,7 @@ final class RepositoryRuleDetailedOneOf10 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -967,19 +879,13 @@ final class RepositoryRuleDetailedOneOf10 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf10 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -990,7 +896,6 @@ final class RepositoryRuleDetailedOneOf10 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf11 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf11({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -1003,9 +908,6 @@ final class RepositoryRuleDetailedOneOf11 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf11',
       json,
       () => RepositoryRuleDetailedOneOf11(
-        type: RepositoryRuleCommitAuthorEmailPatternType.fromJson(
-          json['type'] as String,
-        ),
         parameters:
             RepositoryRuleCommitAuthorEmailPatternParameters.maybeFromJson(
               json['parameters'] as Map<String, dynamic>?,
@@ -1031,7 +933,7 @@ final class RepositoryRuleDetailedOneOf11 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf11.fromJson(json);
   }
 
-  final RepositoryRuleCommitAuthorEmailPatternType type;
+  String get type => 'commit_author_email_pattern';
   final RepositoryRuleCommitAuthorEmailPatternParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -1047,7 +949,7 @@ final class RepositoryRuleDetailedOneOf11 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -1056,19 +958,13 @@ final class RepositoryRuleDetailedOneOf11 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf11 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -1079,7 +975,6 @@ final class RepositoryRuleDetailedOneOf11 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf12 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf12({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -1092,9 +987,6 @@ final class RepositoryRuleDetailedOneOf12 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf12',
       json,
       () => RepositoryRuleDetailedOneOf12(
-        type: RepositoryRuleCommitterEmailPatternType.fromJson(
-          json['type'] as String,
-        ),
         parameters: RepositoryRuleCommitterEmailPatternParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -1119,7 +1011,7 @@ final class RepositoryRuleDetailedOneOf12 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf12.fromJson(json);
   }
 
-  final RepositoryRuleCommitterEmailPatternType type;
+  String get type => 'committer_email_pattern';
   final RepositoryRuleCommitterEmailPatternParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -1135,7 +1027,7 @@ final class RepositoryRuleDetailedOneOf12 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -1144,19 +1036,13 @@ final class RepositoryRuleDetailedOneOf12 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf12 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -1167,7 +1053,6 @@ final class RepositoryRuleDetailedOneOf12 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf13 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf13({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -1180,9 +1065,6 @@ final class RepositoryRuleDetailedOneOf13 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf13',
       json,
       () => RepositoryRuleDetailedOneOf13(
-        type: RepositoryRuleBranchNamePatternType.fromJson(
-          json['type'] as String,
-        ),
         parameters: RepositoryRuleBranchNamePatternParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -1207,7 +1089,7 @@ final class RepositoryRuleDetailedOneOf13 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf13.fromJson(json);
   }
 
-  final RepositoryRuleBranchNamePatternType type;
+  String get type => 'branch_name_pattern';
   final RepositoryRuleBranchNamePatternParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -1223,7 +1105,7 @@ final class RepositoryRuleDetailedOneOf13 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -1232,19 +1114,13 @@ final class RepositoryRuleDetailedOneOf13 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf13 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -1255,7 +1131,6 @@ final class RepositoryRuleDetailedOneOf13 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf14 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf14({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -1268,7 +1143,6 @@ final class RepositoryRuleDetailedOneOf14 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf14',
       json,
       () => RepositoryRuleDetailedOneOf14(
-        type: RepositoryRuleTagNamePatternType.fromJson(json['type'] as String),
         parameters: RepositoryRuleTagNamePatternParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -1293,7 +1167,7 @@ final class RepositoryRuleDetailedOneOf14 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf14.fromJson(json);
   }
 
-  final RepositoryRuleTagNamePatternType type;
+  String get type => 'tag_name_pattern';
   final RepositoryRuleTagNamePatternParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -1309,7 +1183,7 @@ final class RepositoryRuleDetailedOneOf14 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -1318,19 +1192,13 @@ final class RepositoryRuleDetailedOneOf14 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf14 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -1341,7 +1209,6 @@ final class RepositoryRuleDetailedOneOf14 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf15 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf15({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -1354,9 +1221,6 @@ final class RepositoryRuleDetailedOneOf15 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf15',
       json,
       () => RepositoryRuleDetailedOneOf15(
-        type: RepositoryRuleFilePathRestrictionType.fromJson(
-          json['type'] as String,
-        ),
         parameters: RepositoryRuleFilePathRestrictionParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -1381,7 +1245,7 @@ final class RepositoryRuleDetailedOneOf15 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf15.fromJson(json);
   }
 
-  final RepositoryRuleFilePathRestrictionType type;
+  String get type => 'file_path_restriction';
   final RepositoryRuleFilePathRestrictionParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -1397,7 +1261,7 @@ final class RepositoryRuleDetailedOneOf15 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -1406,19 +1270,13 @@ final class RepositoryRuleDetailedOneOf15 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf15 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -1429,7 +1287,6 @@ final class RepositoryRuleDetailedOneOf15 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf16 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf16({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -1442,9 +1299,6 @@ final class RepositoryRuleDetailedOneOf16 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf16',
       json,
       () => RepositoryRuleDetailedOneOf16(
-        type: RepositoryRuleMaxFilePathLengthType.fromJson(
-          json['type'] as String,
-        ),
         parameters: RepositoryRuleMaxFilePathLengthParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -1469,7 +1323,7 @@ final class RepositoryRuleDetailedOneOf16 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf16.fromJson(json);
   }
 
-  final RepositoryRuleMaxFilePathLengthType type;
+  String get type => 'max_file_path_length';
   final RepositoryRuleMaxFilePathLengthParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -1485,7 +1339,7 @@ final class RepositoryRuleDetailedOneOf16 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -1494,19 +1348,13 @@ final class RepositoryRuleDetailedOneOf16 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf16 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -1517,7 +1365,6 @@ final class RepositoryRuleDetailedOneOf16 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf17 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf17({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -1530,9 +1377,6 @@ final class RepositoryRuleDetailedOneOf17 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf17',
       json,
       () => RepositoryRuleDetailedOneOf17(
-        type: RepositoryRuleFileExtensionRestrictionType.fromJson(
-          json['type'] as String,
-        ),
         parameters:
             RepositoryRuleFileExtensionRestrictionParameters.maybeFromJson(
               json['parameters'] as Map<String, dynamic>?,
@@ -1558,7 +1402,7 @@ final class RepositoryRuleDetailedOneOf17 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf17.fromJson(json);
   }
 
-  final RepositoryRuleFileExtensionRestrictionType type;
+  String get type => 'file_extension_restriction';
   final RepositoryRuleFileExtensionRestrictionParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -1574,7 +1418,7 @@ final class RepositoryRuleDetailedOneOf17 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -1583,19 +1427,13 @@ final class RepositoryRuleDetailedOneOf17 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf17 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -1606,7 +1444,6 @@ final class RepositoryRuleDetailedOneOf17 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf18 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf18({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -1619,7 +1456,6 @@ final class RepositoryRuleDetailedOneOf18 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf18',
       json,
       () => RepositoryRuleDetailedOneOf18(
-        type: RepositoryRuleMaxFileSizeType.fromJson(json['type'] as String),
         parameters: RepositoryRuleMaxFileSizeParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -1644,7 +1480,7 @@ final class RepositoryRuleDetailedOneOf18 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf18.fromJson(json);
   }
 
-  final RepositoryRuleMaxFileSizeType type;
+  String get type => 'max_file_size';
   final RepositoryRuleMaxFileSizeParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -1660,7 +1496,7 @@ final class RepositoryRuleDetailedOneOf18 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -1669,19 +1505,13 @@ final class RepositoryRuleDetailedOneOf18 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf18 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -1692,7 +1522,6 @@ final class RepositoryRuleDetailedOneOf18 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf19 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf19({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -1705,7 +1534,6 @@ final class RepositoryRuleDetailedOneOf19 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf19',
       json,
       () => RepositoryRuleDetailedOneOf19(
-        type: RepositoryRuleWorkflowsType.fromJson(json['type'] as String),
         parameters: RepositoryRuleWorkflowsParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -1730,7 +1558,7 @@ final class RepositoryRuleDetailedOneOf19 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf19.fromJson(json);
   }
 
-  final RepositoryRuleWorkflowsType type;
+  String get type => 'workflows';
   final RepositoryRuleWorkflowsParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -1746,7 +1574,7 @@ final class RepositoryRuleDetailedOneOf19 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -1755,19 +1583,13 @@ final class RepositoryRuleDetailedOneOf19 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf19 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&
@@ -1778,7 +1600,6 @@ final class RepositoryRuleDetailedOneOf19 extends RepositoryRuleDetailed {
 @immutable
 final class RepositoryRuleDetailedOneOf20 extends RepositoryRuleDetailed {
   const RepositoryRuleDetailedOneOf20({
-    required this.type,
     this.parameters,
     this.rulesetSourceType,
     this.rulesetSource,
@@ -1791,7 +1612,6 @@ final class RepositoryRuleDetailedOneOf20 extends RepositoryRuleDetailed {
       'RepositoryRuleDetailedOneOf20',
       json,
       () => RepositoryRuleDetailedOneOf20(
-        type: RepositoryRuleCodeScanningType.fromJson(json['type'] as String),
         parameters: RepositoryRuleCodeScanningParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -1816,7 +1636,7 @@ final class RepositoryRuleDetailedOneOf20 extends RepositoryRuleDetailed {
     return RepositoryRuleDetailedOneOf20.fromJson(json);
   }
 
-  final RepositoryRuleCodeScanningType type;
+  String get type => 'code_scanning';
   final RepositoryRuleCodeScanningParameters? parameters;
 
   /// The type of source for the ruleset that includes this rule.
@@ -1832,7 +1652,7 @@ final class RepositoryRuleDetailedOneOf20 extends RepositoryRuleDetailed {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'parameters': ?parameters?.toJson(),
       'ruleset_source_type': ?rulesetSourceType?.toJson(),
       'ruleset_source': ?rulesetSource,
@@ -1841,19 +1661,13 @@ final class RepositoryRuleDetailedOneOf20 extends RepositoryRuleDetailed {
   }
 
   @override
-  int get hashCode => Object.hashAll([
-    type,
-    parameters,
-    rulesetSourceType,
-    rulesetSource,
-    rulesetId,
-  ]);
+  int get hashCode =>
+      Object.hashAll([parameters, rulesetSourceType, rulesetSource, rulesetId]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleDetailedOneOf20 &&
-        type == other.type &&
         parameters == other.parameters &&
         rulesetSourceType == other.rulesetSourceType &&
         rulesetSource == other.rulesetSource &&

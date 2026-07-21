@@ -1,14 +1,12 @@
 import 'package:const_property/model_helpers.dart';
 
 /// {@template list_resp}
-/// Envelope whose marker fields are fixed to a lone scalar `const`. Each
-/// renders as a fixed getter returning the literal, not a single-value enum
-/// type — see issue #240.
+/// A paginated list response.
 /// {@endtemplate}
 
 class ListResp {
   /// {@macro list_resp}
-  ListResp({required this.count});
+  ListResp({required this.count, this.apiVersion, this.revision});
 
   /// Converts a `Map<String, dynamic>` to a [ListResp].
   factory ListResp.fromJson(dynamic jsonArg) {
@@ -16,7 +14,11 @@ class ListResp {
     return parseFromJson(
       'ListResp',
       json,
-      () => ListResp(count: json['count'] as int),
+      () => ListResp(
+        apiVersion: json['apiVersion'] as String?,
+        revision: json['revision'] as int?,
+        count: json['count'] as int,
+      ),
     );
   }
 
@@ -29,28 +31,41 @@ class ListResp {
     return ListResp.fromJson(json);
   }
 
-  /// Envelope marker fixed to the literal 'list'.
+  /// The single legal value of `apiVersion`, exposed so it can be set
+  /// explicitly.
+  static const String apiVersionValue = '2024-01-01';
+
+  /// The single legal value of `revision`, exposed so it can be set
+  /// explicitly.
+  static const int revisionValue = 5;
+
+  /// The type of this object.
   String get object => 'list';
-  String get apiVersion => '2024-01-01';
-  int get revision => 5;
+
+  /// The API version this response was produced with.
+  String? apiVersion;
+  int? revision;
   int count;
 
   /// Converts a [ListResp] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
       'object': object,
-      'apiVersion': apiVersion,
-      'revision': revision,
+      'apiVersion': ?apiVersion,
+      'revision': ?revision,
       'count': count,
     };
   }
 
   @override
-  int get hashCode => count.hashCode;
+  int get hashCode => Object.hashAll([apiVersion, revision, count]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is ListResp && count == other.count;
+    return other is ListResp &&
+        apiVersion == other.apiVersion &&
+        revision == other.revision &&
+        count == other.count;
   }
 }
