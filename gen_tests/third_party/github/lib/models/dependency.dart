@@ -15,6 +15,7 @@ class Dependency {
     this.dependencies,
   }) {
     packageUrl?.validate(pattern: '^pkg');
+    metadata?.validate(maxProperties: 8);
   }
 
   /// Converts a `Map<String, dynamic>` to a [Dependency].

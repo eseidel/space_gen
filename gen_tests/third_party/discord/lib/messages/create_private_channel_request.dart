@@ -11,6 +11,7 @@ class CreatePrivateChannelRequest {
     this.nicks,
   }) {
     accessTokens?.validate(maxItems: 1521, unique: true);
+    nicks?.validate(maxProperties: 1521);
   }
 
   /// Converts a `Map<String, dynamic>` to a [CreatePrivateChannelRequest].

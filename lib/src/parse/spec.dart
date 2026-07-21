@@ -226,6 +226,8 @@ class SchemaMap extends Schema {
     required super.common,
     required this.valueSchema,
     required this.keySchema,
+    required this.maxProperties,
+    required this.minProperties,
   });
 
   final SchemaRef valueSchema;
@@ -237,6 +239,15 @@ class SchemaMap extends Schema {
   /// Dart use a richer key type (currently only string enums) with
   /// automatic encode/decode at the boundary.
   final SchemaRef? keySchema;
+
+  /// The maximum number of entries this map may carry (`maxProperties`).
+  /// The map analog of [SchemaArray.maxItems]; validated at the JSON
+  /// boundary. Null when unconstrained.
+  final int? maxProperties;
+
+  /// The minimum number of entries this map must carry (`minProperties`).
+  /// Null when unconstrained.
+  final int? minProperties;
 }
 
 class SchemaBinary extends Schema {

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('ActionsCreateWorkflowDispatchRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = ActionsCreateWorkflowDispatchRequest(ref: 'example');
+      final instance = ActionsCreateWorkflowDispatchRequest(ref: 'example');
       final parsed = ActionsCreateWorkflowDispatchRequest.maybeFromJson(
         instance.toJson(),
       )!;

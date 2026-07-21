@@ -591,6 +591,8 @@ ResolvedSchema _resolveSchemaFully(
       common: resolvedCommon,
       valueSchema: resolveSchemaRef(schema.valueSchema, context),
       keySchema: keySchema,
+      maxProperties: schema.maxProperties,
+      minProperties: schema.minProperties,
       createsNewType: createsNewType,
     );
   }
@@ -1915,6 +1917,8 @@ class ResolvedMap extends ResolvedSchema {
     required super.common,
     required this.valueSchema,
     required this.keySchema,
+    required this.maxProperties,
+    required this.minProperties,
     required super.createsNewType,
   });
 
@@ -1928,12 +1932,23 @@ class ResolvedMap extends ResolvedSchema {
   /// fall back to `String` keys.
   final ResolvedSchema? keySchema;
 
+  /// The maximum number of entries this map may carry (`maxProperties`), or
+  /// null when unconstrained. Validated at the JSON boundary — the map analog
+  /// of [ResolvedArray.maxItems].
+  final int? maxProperties;
+
+  /// The minimum number of entries this map must carry (`minProperties`), or
+  /// null when unconstrained.
+  final int? minProperties;
+
   @override
   ResolvedMap copyWith({CommonProperties? common}) {
     return ResolvedMap(
       common: common ?? this.common,
       valueSchema: valueSchema,
       keySchema: keySchema,
+      maxProperties: maxProperties,
+      minProperties: minProperties,
       createsNewType: createsNewType,
     );
   }

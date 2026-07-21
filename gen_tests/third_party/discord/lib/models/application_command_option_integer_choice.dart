@@ -11,6 +11,7 @@ class ApplicationCommandOptionIntegerChoice {
     this.nameLocalizations,
   }) {
     name.validate(minLength: 1, maxLength: 100);
+    nameLocalizations?.validate(maxProperties: 34);
   }
 
   /// Converts a `Map<String, dynamic>` to an

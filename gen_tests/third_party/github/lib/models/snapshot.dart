@@ -25,6 +25,7 @@ class Snapshot {
   }) {
     sha.validate(minLength: 40, maxLength: 40);
     ref.validate(pattern: '^refs/');
+    metadata?.validate(maxProperties: 8);
   }
 
   /// Converts a `Map<String, dynamic>` to a [Snapshot].
