@@ -21,7 +21,7 @@ import 'package:github/messages/code_security_update_enterprise_configuration_re
 import 'package:github/models/code_security_configuration.dart';
 import 'package:github/models/code_security_configuration_for_repository.dart';
 import 'package:github/models/code_security_configuration_repositories.dart';
-import 'package:github/models/code_security_default_configurations_inner.dart';
+import 'package:github/models/code_security_default_configurations.dart';
 import 'package:github/models/code_security_get_configurations_for_org_parameter1.dart';
 import 'package:meta/meta.dart';
 
@@ -189,7 +189,7 @@ class CodeSecurityApi {
   ///
   /// OAuth app tokens and personal access tokens (classic) need the
   /// `read:enterprise` scope to use this endpoint.
-  Future<List<CodeSecurityDefaultConfigurationsInner>>
+  Future<CodeSecurityDefaultConfigurations>
   codeSecurityGetDefaultConfigurationsForEnterprise(String enterprise) async {
     final response = await client.invokeApi(
       method: Method.get,
@@ -202,13 +202,9 @@ class CodeSecurityApi {
     }
 
     if (response.body.isNotEmpty) {
-      return (jsonDecode(response.body) as List)
-          .map<CodeSecurityDefaultConfigurationsInner>(
-            (e) => CodeSecurityDefaultConfigurationsInner.fromJson(
-              e as Map<String, dynamic>,
-            ),
-          )
-          .toList();
+      return CodeSecurityDefaultConfigurations.fromJson(
+        jsonDecode(response.body) as List,
+      );
     }
 
     throw ApiException<Object?>.unhandled(response.statusCode);
@@ -531,7 +527,7 @@ class CodeSecurityApi {
   ///
   /// OAuth app tokens and personal access tokens (classic) need the
   /// `write:org` scope to use this endpoint.
-  Future<List<CodeSecurityDefaultConfigurationsInner>>
+  Future<CodeSecurityDefaultConfigurations>
   codeSecurityGetDefaultConfigurations(String org) async {
     final response = await client.invokeApi(
       method: Method.get,
@@ -546,13 +542,9 @@ class CodeSecurityApi {
     }
 
     if (response.body.isNotEmpty) {
-      return (jsonDecode(response.body) as List)
-          .map<CodeSecurityDefaultConfigurationsInner>(
-            (e) => CodeSecurityDefaultConfigurationsInner.fromJson(
-              e as Map<String, dynamic>,
-            ),
-          )
-          .toList();
+      return CodeSecurityDefaultConfigurations.fromJson(
+        jsonDecode(response.body) as List,
+      );
     }
 
     throw ApiException<Object?>.unhandled(response.statusCode);

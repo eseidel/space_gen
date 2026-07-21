@@ -3,7 +3,7 @@
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
 import 'package:github/model_helpers.dart';
-import 'package:github/models/content_directory_inner.dart';
+import 'package:github/models/content_directory.dart';
 import 'package:github/models/content_file.dart';
 import 'package:github/models/content_submodule_links.dart';
 import 'package:github/models/content_symlink_links.dart';
@@ -15,11 +15,7 @@ sealed class ReposGetContent200Response {
   factory ReposGetContent200Response.fromJson(dynamic json) {
     return switch (json) {
       final List<dynamic> v => ReposGetContent200ResponseList(
-        v
-            .map<ContentDirectoryInner>(
-              (e) => ContentDirectoryInner.fromJson(e as Map<String, dynamic>),
-            )
-            .toList(),
+        ContentDirectory.fromJson(v),
       ),
       final Map<String, dynamic> v when v.containsKey('content') =>
         ReposGetContent200ResponseContentFile(ContentFile.fromJson(v)),
@@ -53,10 +49,10 @@ sealed class ReposGetContent200Response {
 final class ReposGetContent200ResponseList extends ReposGetContent200Response {
   const ReposGetContent200ResponseList(this.value);
 
-  final List<ContentDirectoryInner> value;
+  final ContentDirectory value;
 
   @override
-  dynamic toJson() => value.map((e) => e.toJson()).toList();
+  dynamic toJson() => value.toJson();
 
   @override
   int get hashCode => value.hashCode;

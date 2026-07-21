@@ -759,6 +759,9 @@ class SpecResolver {
           maxItems: schema.maxItems,
           minItems: schema.minItems,
           uniqueItems: schema.uniqueItems,
+          createsNewType: schema.createsNewType,
+          assignedName: _nameFor(schema.pointer),
+          assignedSnakeName: _snakeFor(schema.pointer),
         );
       case ResolvedVoid():
         return RenderVoid(common: schema.common);
@@ -3017,6 +3020,18 @@ abstract class RenderSchema implements ToTemplateContext {
   /// toJson to convert to json.
   bool get shouldCallToJson => createsNewType;
 
+  /// Whether the generated round-trip test must verify equality by
+  /// comparing `toJson()` rather than `==`/`hashCode`.
+  ///
+  /// A collection newtype (`extension type Foo._(List<T> value)`)
+  /// `implements List<T>`, so its `==`/`hashCode` are the List's —
+  /// reference-based, not value-based — and two content-equal instances
+  /// are neither `==` nor equal-hashed. An extension type cannot override
+  /// those, so the round-trip is verified through the JSON form instead.
+  /// Scalar newtypes (over `String`/`int`), objects, and enums keep true
+  /// value equality, so they stay on the `==`/`hashCode` assertions.
+  bool get roundTripByJson => false;
+
   /// Suffix used to name a [RenderOneOf] wrapper subclass for this
   /// schema in shape dispatch (`<ParentTypeName><wrapperTag>`).
   /// Returns null when this schema can't appear as a shape-dispatch
@@ -5118,7 +5133,10 @@ class RenderArray extends RenderSchema {
     this.maxItems,
     this.minItems,
     this.uniqueItems = false,
-  }) : super(createsNewType: false);
+    super.createsNewType = false,
+    super.assignedName,
+    super.assignedSnakeName,
+  });
 
   /// The items of the resolved schema.
   final RenderSchema items;
@@ -5145,11 +5163,22 @@ class RenderArray extends RenderSchema {
     if (uniqueItems) 'unique: true',
   ]);
 
+  // A newtype needs its own `toJson` called (to unwrap the wrapper); a
+  // plain inline array needs it only when its items do.
   @override
-  bool get shouldCallToJson => items.shouldCallToJson;
+  bool get shouldCallToJson => createsNewType || items.shouldCallToJson;
+
+  // A `List`-backed newtype has the List's reference equality, so its
+  // round-trip test compares JSON rather than `==`/`hashCode`.
+  @override
+  bool get roundTripByJson => createsNewType;
 
   // Inline arrays show up as a oneOf variant; the shape-dispatch
-  // wrapper class is `<ParentTypeName>List`.
+  // wrapper class is `<ParentTypeName>List`. A top-level array *newtype*
+  // still shape-dispatches on the `List` shape, but its conversion goes
+  // through the newtype (below) rather than inlining the item mapping.
+  // (A string newtype opts out of shape dispatch entirely because a bare
+  // `String` shape rarely discriminates; a `List` shape reliably does.)
   @override
   String? get wrapperTag => 'List';
 
@@ -5158,47 +5187,77 @@ class RenderArray extends RenderSchema {
 
   @override
   _VariantConversion? _variantConversion(SchemaRenderer context) {
-    final itemTypeName = items.typeName;
-    final String fromJson;
-    // `shouldCallToJson` is the symmetric "this item needs JSON conversion"
-    // predicate — true for newtypes/enums AND for pods whose Dart type differs
-    // from their wire type (`Uri`, `DateTime`, `uriTemplate`). A bare
-    // `.cast<Uri>()` over a `List<String>` is a lazy view that throws on
-    // access; those items must be mapped through `fromJsonExpression`.
-    if (items.shouldCallToJson) {
-      final itemFrom = _runtimeSource(
-        items.requireFromJsonExpression(
-          const DartIdentifier('e'),
-          context,
-          jsonIsNullable: false,
-          dartIsNullable: false,
-        ),
+    // A newtype variant is wrapped by name — the wrapper holds a
+    // `Foo`, built with `Foo.fromJson(v)` and serialized via its own
+    // `toJson`. This keeps the union referencing the newtype (so import
+    // collection sees it) instead of inlining the item type, which the
+    // walker no longer descends into.
+    if (createsNewType) {
+      final name = typeName;
+      return _VariantConversion(
+        valueType: name,
+        fromJson: '$name.fromJson(v)',
+        toJson: 'value.toJson()',
       );
-      fromJson = 'v.map<$itemTypeName>((e) => $itemFrom).toList()';
-    } else {
-      fromJson = 'v.cast<$itemTypeName>()';
-    }
-    final String toJson;
-    if (items.shouldCallToJson) {
-      final itemTo = items.toJsonExpression(
-        const DartIdentifier('e'),
-        context,
-        dartIsNullable: false,
-      );
-      toJson = 'value.map((e) => ${_runtimeSource(itemTo)}).toList()';
-    } else {
-      toJson = 'value';
     }
     return _VariantConversion(
-      valueType: 'List<$itemTypeName>',
-      fromJson: fromJson,
-      toJson: toJson,
+      valueType: 'List<${items.typeName}>',
+      fromJson: _elementsFromJson('v', context),
+      toJson: _elementsToJson(context),
     );
   }
 
-  /// The type name of this schema.
+  /// The wire-`List<dynamic>`-to-`List<item>` conversion, reading from
+  /// [source]. A json-native item (`String`, `int`) casts directly;
+  /// anything whose Dart type differs from its wire type — a newtype, an
+  /// enum, a `Uri`/`DateTime` pod — maps through the item's own `fromJson`,
+  /// because a bare `.cast<Uri>()` over a `List<String>` is a lazy view
+  /// that throws on access. Shared by the newtype factory body
+  /// ([toTemplateContext], reading `json`) and the oneOf shape-variant
+  /// conversion ([_variantConversion], reading the matched `v`).
+  String _elementsFromJson(String source, SchemaRenderer context) {
+    final itemTypeName = items.typeName;
+    if (!items.shouldCallToJson) {
+      return '$source.cast<$itemTypeName>()';
+    }
+    final itemFrom = _runtimeSource(
+      items.requireFromJsonExpression(
+        const DartIdentifier('e'),
+        context,
+        jsonIsNullable: false,
+        dartIsNullable: false,
+      ),
+    );
+    return '$source.map<$itemTypeName>((e) => $itemFrom).toList()';
+  }
+
+  /// The `List<item>`-to-wire conversion, reading from the newtype's
+  /// `value` field. Symmetric with [_elementsFromJson]: json-native items
+  /// pass through, others map through the item's own `toJson`.
+  String _elementsToJson(SchemaRenderer context) {
+    if (!items.shouldCallToJson) {
+      return 'value';
+    }
+    final itemTo = items.toJsonExpression(
+      const DartIdentifier('e'),
+      context,
+      dartIsNullable: false,
+    );
+    return 'value.map((e) => ${_runtimeSource(itemTo)}).toList()';
+  }
+
+  /// The type name of this schema. A named top-level array component is
+  /// its own newtype (`extension type const Foo._(List<T> value)`), so it
+  /// references by class name; an inline array is a bare `List<T>`.
   @override
-  DartType get dartType => DartType.list(items.dartType);
+  DartType get dartType => createsNewType
+      ? DartType(_requireAssignedName())
+      : DartType.list(items.dartType);
+
+  /// The `List<T>` this newtype wraps — its representation type, and what
+  /// the `extension type` `implements`. Only meaningful when
+  /// [createsNewType].
+  DartType get _newtypeValueType => DartType.list(items.dartType);
 
   @override
   String equalsExpression(String name, SchemaRenderer context) =>
@@ -5214,15 +5273,29 @@ class RenderArray extends RenderSchema {
       return null;
     }
     final listDefault = value as List;
+    final DartExpression list;
     if (listDefault.isEmpty) {
       // Type annotation is not needed for empty lists.
-      return DartListLiteral.empty;
+      list = DartListLiteral.empty;
+    } else {
+      list = DartListLiteral(
+        elementType: items.dartType,
+        elements: listDefault.map(DartLiteral.new).toList(),
+      );
     }
-    return DartListLiteral(
-      elementType: items.dartType,
-      elements: listDefault.map(DartLiteral.new).toList(),
-    );
+    // A newtype field is typed by its class name, so its default has to be
+    // wrapped in the newtype constructor rather than left a bare `List`.
+    return createsNewType ? _wrapInNewtype(list) : list;
   }
+
+  /// `Foo([...])` — the array value wrapped in the newtype's constructor.
+  /// Non-const so it always compiles regardless of element const-ness; the
+  /// post-render `dart fix` promotes it to `const` where the elements allow.
+  DartExpression _wrapInNewtype(DartExpression list) => DartInvocation(
+    type: dartType,
+    arguments: [list],
+    isConstConstructor: false,
+  );
 
   @override
   DartType get jsonStorageDartType => DartType.list();
@@ -5233,6 +5306,15 @@ class RenderArray extends RenderSchema {
     SchemaRenderer context, {
     required bool dartIsNullable,
   }) {
+    // A newtype hides the element-mapping inside its own `toJson`; the use
+    // site just calls it, like every other newtype.
+    if (createsNewType) {
+      return DartMethodCall(
+        target: dartName,
+        name: 'toJson',
+        isNullAware: dartIsNullable,
+      );
+    }
     // Pod types don't need toJson.
     if (!items.shouldCallToJson) {
       return dartName;
@@ -5262,6 +5344,16 @@ class RenderArray extends RenderSchema {
     required bool jsonIsNullable,
     required bool dartIsNullable,
   }) {
+    // A newtype parses through its own `fromJson`/`maybeFromJson` factory,
+    // like every other newtype — the element-mapping lives there.
+    if (createsNewType) {
+      return parsedFromJson(
+        jsonValue,
+        context,
+        jsonIsNullable: jsonIsNullable,
+        dartIsNullable: dartIsNullable,
+      );
+    }
     // Cast through a bare `List` first, then convert to the item type —
     // the wire value is a list of anything whatever the items are.
     final cast = jsonCast(jsonValue, jsonIsNullable: jsonIsNullable);
@@ -5311,8 +5403,47 @@ class RenderArray extends RenderSchema {
   }
 
   @override
-  Map<String, dynamic> toTemplateContext(SchemaRenderer context) =>
-      throw UnimplementedError('RenderArray.toTemplateContext');
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
+    final itemTypeName = items.typeName;
+    // The newtype's own `fromJson`/`toJson` bodies read from `json`/`value`
+    // and map each element through the item schema — the same conversion an
+    // inline array does, moved inside the wrapper. A json-native item
+    // (`String`, `int`) casts; anything needing conversion (a newtype, enum,
+    // or a `Uri`/`DateTime` pod) maps through the item's own factory.
+    final String fromJsonBody;
+    final String toJsonBody;
+    if (items.shouldCallToJson) {
+      final itemFrom = _runtimeSource(
+        items.requireFromJsonExpression(
+          const DartIdentifier('e'),
+          context,
+          jsonIsNullable: false,
+          dartIsNullable: false,
+        ),
+      );
+      fromJsonBody = 'json.map<$itemTypeName>((e) => $itemFrom).toList()';
+      final itemTo = items.toJsonExpression(
+        const DartIdentifier('e'),
+        context,
+        dartIsNullable: false,
+      );
+      toJsonBody = 'value.map((e) => ${_runtimeSource(itemTo)}).toList()';
+    } else {
+      fromJsonBody = 'json.cast<$itemTypeName>()';
+      toJsonBody = 'value';
+    }
+    final call = validationCall;
+    return {
+      'doc_comment': createDocComment(common: common),
+      'typeName': typeName,
+      'nullableTypeName': nullableTypeName(context),
+      'valueType': _newtypeValueType.toString(),
+      'hasValidations': call != null,
+      'validationBody': call == null ? '' : 'value.$call;',
+      'fromJsonBody': fromJsonBody,
+      'toJsonBody': toJsonBody,
+    };
+  }
 
   @override
   bool equalsIgnoringName(RenderSchema other) {
@@ -5342,10 +5473,12 @@ class RenderArray extends RenderSchema {
     if (count > 1 && uniqueItems) return null;
     final maxCount = maxItems;
     if (maxCount != null && count > maxCount) return null;
-    return DartListLiteral(
+    final list = DartListLiteral(
       elementType: items.dartType,
       elements: List.filled(count, inner),
     );
+    // A newtype example constructs the wrapper around the list literal.
+    return createsNewType ? _wrapInNewtype(list) : list;
   }
 }
 

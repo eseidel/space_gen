@@ -8,7 +8,7 @@ import 'package:github/models/issue_type.dart';
 import 'package:github/models/milestone.dart';
 import 'package:github/models/reaction_rollup.dart';
 import 'package:github/models/repository.dart';
-import 'package:github/models/search_result_text_matches_inner.dart';
+import 'package:github/models/search_result_text_matches.dart';
 import 'package:github/models/simple_user.dart';
 import 'package:meta/meta.dart';
 
@@ -107,13 +107,9 @@ class IssueSearchResultItem {
         createdAt: DateTime.parse(json['created_at'] as String),
         updatedAt: DateTime.parse(json['updated_at'] as String),
         closedAt: maybeParseDateTime(checkedKey(json, 'closed_at') as String?),
-        textMatches: (json['text_matches'] as List?)
-            ?.map<SearchResultTextMatchesInner>(
-              (e) => SearchResultTextMatchesInner.fromJson(
-                e as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+        textMatches: SearchResultTextMatches.maybeFromJson(
+          json['text_matches'] as List?,
+        ),
         pullRequest: IssueSearchResultItemPullRequest.maybeFromJson(
           json['pull_request'] as Map<String, dynamic>?,
         ),
@@ -186,7 +182,7 @@ class IssueSearchResultItem {
   final DateTime? closedAt;
 
   /// Search Result Text Matches
-  final List<SearchResultTextMatchesInner>? textMatches;
+  final SearchResultTextMatches? textMatches;
   final IssueSearchResultItemPullRequest? pullRequest;
   final String? body;
   final double score;
@@ -245,7 +241,7 @@ class IssueSearchResultItem {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'closed_at': closedAt?.toIso8601String(),
-      'text_matches': ?textMatches?.map((e) => e.toJson()).toList(),
+      'text_matches': ?textMatches?.toJson(),
       'pull_request': ?pullRequest?.toJson(),
       'body': ?body,
       'score': score,

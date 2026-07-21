@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:github/api_client.dart';
 import 'package:github/api_exception.dart';
 import 'package:github/messages/dependency_graph_create_repository_snapshot201_response.dart';
-import 'package:github/models/dependency_graph_diff_inner.dart';
+import 'package:github/models/dependency_graph_diff.dart';
 import 'package:github/models/dependency_graph_spdx_sbom.dart';
 import 'package:github/models/snapshot.dart';
 
@@ -18,7 +18,7 @@ class DependencyGraphApi {
   /// Gets the diff of the dependency changes between two commits of a
   /// repository, based on the changes to the dependency manifests made in
   /// those commits.
-  Future<List<DependencyGraphDiffInner>> dependencyGraphDiffRange(
+  Future<DependencyGraphDiff> dependencyGraphDiffRange(
     String owner,
     String repo,
     String basehead, {
@@ -40,11 +40,7 @@ class DependencyGraphApi {
     }
 
     if (response.body.isNotEmpty) {
-      return (jsonDecode(response.body) as List)
-          .map<DependencyGraphDiffInner>(
-            (e) => DependencyGraphDiffInner.fromJson(e as Map<String, dynamic>),
-          )
-          .toList();
+      return DependencyGraphDiff.fromJson(jsonDecode(response.body) as List);
     }
 
     throw ApiException<Object?>.unhandled(response.statusCode);

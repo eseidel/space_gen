@@ -1,7 +1,7 @@
 import 'package:github/model_helpers.dart';
 import 'package:github/models/license_simple.dart';
 import 'package:github/models/repo_search_result_item_permissions.dart';
-import 'package:github/models/search_result_text_matches_inner.dart';
+import 'package:github/models/search_result_text_matches.dart';
 import 'package:github/models/simple_user.dart';
 import 'package:meta/meta.dart';
 
@@ -195,13 +195,9 @@ class RepoSearchResultItem {
         permissions: RepoSearchResultItemPermissions.maybeFromJson(
           json['permissions'] as Map<String, dynamic>?,
         ),
-        textMatches: (json['text_matches'] as List?)
-            ?.map<SearchResultTextMatchesInner>(
-              (e) => SearchResultTextMatchesInner.fromJson(
-                e as Map<String, dynamic>,
-              ),
-            )
-            .toList(),
+        textMatches: SearchResultTextMatches.maybeFromJson(
+          json['text_matches'] as List?,
+        ),
         tempCloneToken: json['temp_clone_token'] as String?,
         allowMergeCommit: json['allow_merge_commit'] as bool?,
         allowSquashMerge: json['allow_squash_merge'] as bool?,
@@ -315,7 +311,7 @@ class RepoSearchResultItem {
   final RepoSearchResultItemPermissions? permissions;
 
   /// Search Result Text Matches
-  final List<SearchResultTextMatchesInner>? textMatches;
+  final SearchResultTextMatches? textMatches;
   final String? tempCloneToken;
   final bool? allowMergeCommit;
   final bool? allowSquashMerge;
@@ -410,7 +406,7 @@ class RepoSearchResultItem {
       'visibility': ?visibility,
       'license': license?.toJson(),
       'permissions': ?permissions?.toJson(),
-      'text_matches': ?textMatches?.map((e) => e.toJson()).toList(),
+      'text_matches': ?textMatches?.toJson(),
       'temp_clone_token': ?tempCloneToken,
       'allow_merge_commit': ?allowMergeCommit,
       'allow_squash_merge': ?allowSquashMerge,

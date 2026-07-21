@@ -81,6 +81,7 @@ import 'package:github/models/branch_short.dart';
 import 'package:github/models/branch_with_protection.dart';
 import 'package:github/models/check_automated_security_fixes.dart';
 import 'package:github/models/clone_traffic.dart';
+import 'package:github/models/code_frequency_stat.dart';
 import 'package:github/models/codeowners_errors.dart';
 import 'package:github/models/collaborator.dart';
 import 'package:github/models/combined_commit_status.dart';
@@ -151,7 +152,7 @@ import 'package:github/models/repository_rule_detailed.dart';
 import 'package:github/models/repository_ruleset.dart';
 import 'package:github/models/rule_suite.dart';
 import 'package:github/models/rule_suite_result_param.dart';
-import 'package:github/models/rule_suites_inner.dart';
+import 'package:github/models/rule_suites.dart';
 import 'package:github/models/ruleset_version.dart';
 import 'package:github/models/ruleset_version_with_state.dart';
 import 'package:github/models/short_branch.dart';
@@ -349,7 +350,7 @@ final class ReposGetCodeFrequencyStatsResponse200
     extends ReposGetCodeFrequencyStatsResponse {
   const ReposGetCodeFrequencyStatsResponse200(this.value);
 
-  final List<List<int>> value;
+  final List<CodeFrequencyStat> value;
 
   @override
   int get hashCode => value.hashCode;
@@ -508,7 +509,7 @@ final class ReposGetPunchCardStatsResponse200
     extends ReposGetPunchCardStatsResponse {
   const ReposGetPunchCardStatsResponse200(this.value);
 
-  final List<List<int>> value;
+  final List<CodeFrequencyStat> value;
 
   @override
   int get hashCode => value.hashCode;
@@ -680,7 +681,7 @@ class ReposApi {
   /// Lists suites of rule evaluations at the organization level.
   /// For more information, see "[Managing rulesets for repositories in your
   /// organization](https://docs.github.com/organizations/managing-organization-settings/managing-rulesets-for-repositories-in-your-organization#viewing-insights-for-rulesets)."
-  Future<List<RuleSuitesInner>> getOrgRuleSuites(
+  Future<RuleSuites> getOrgRuleSuites(
     String org, {
     String? ref,
     String? repositoryName,
@@ -713,11 +714,7 @@ class ReposApi {
     }
 
     if (response.body.isNotEmpty) {
-      return (jsonDecode(response.body) as List)
-          .map<RuleSuitesInner>(
-            (e) => RuleSuitesInner.fromJson(e as Map<String, dynamic>),
-          )
-          .toList();
+      return RuleSuites.fromJson(jsonDecode(response.body) as List);
     }
 
     throw ApiException<Object?>.unhandled(response.statusCode);
@@ -6602,7 +6599,7 @@ class ReposApi {
   /// Lists suites of rule evaluations at the repository level.
   /// For more information, see "[Managing rulesets for a
   /// repository](https://docs.github.com/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/managing-rulesets-for-a-repository#viewing-insights-for-rulesets)."
-  Future<List<RuleSuitesInner>> getRepoRuleSuites(
+  Future<RuleSuites> getRepoRuleSuites(
     String owner,
     String repo, {
     String? ref,
@@ -6633,11 +6630,7 @@ class ReposApi {
     }
 
     if (response.body.isNotEmpty) {
-      return (jsonDecode(response.body) as List)
-          .map<RuleSuitesInner>(
-            (e) => RuleSuitesInner.fromJson(e as Map<String, dynamic>),
-          )
-          .toList();
+      return RuleSuites.fromJson(jsonDecode(response.body) as List);
     }
 
     throw ApiException<Object?>.unhandled(response.statusCode);
@@ -6852,7 +6845,11 @@ class ReposApi {
 
     return switch (response.statusCode) {
       200 => ReposGetCodeFrequencyStatsResponse200(
-        (jsonDecode(response.body) as List).cast<List<int>>(),
+        (jsonDecode(response.body) as List)
+            .map<CodeFrequencyStat>(
+              (e) => CodeFrequencyStat.fromJson(e as List),
+            )
+            .toList(),
       ),
       202 => ReposGetCodeFrequencyStatsResponse202(jsonDecode(response.body)),
       204 => const ReposGetCodeFrequencyStatsResponse204(),
@@ -6997,7 +6994,11 @@ class ReposApi {
 
     return switch (response.statusCode) {
       200 => ReposGetPunchCardStatsResponse200(
-        (jsonDecode(response.body) as List).cast<List<int>>(),
+        (jsonDecode(response.body) as List)
+            .map<CodeFrequencyStat>(
+              (e) => CodeFrequencyStat.fromJson(e as List),
+            )
+            .toList(),
       ),
       204 => const ReposGetPunchCardStatsResponse204(),
       _ => throw ApiException<Object?>.unhandled(response.statusCode),

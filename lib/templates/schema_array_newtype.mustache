@@ -1,0 +1,25 @@
+{{{ doc_comment }}}extension type const {{{ typeName }}}._({{{ valueType }}} value)
+    implements {{{ valueType }}} {
+{{#hasValidations}}
+    {{ typeName }}(this.value) {
+        {{{ validationBody }}}
+    }
+{{/hasValidations}}
+{{^hasValidations}}
+    const {{ typeName }}(this.value);
+{{/hasValidations}}
+
+    factory {{ typeName }}.fromJson(List<dynamic> json) =>
+        {{ typeName }}({{{ fromJsonBody }}});
+
+    /// Convenience to create a nullable type from a nullable json object.
+    /// Useful when parsing optional fields.
+    static {{ nullableTypeName }} maybeFromJson(List<dynamic>? json) {
+        if (json == null) {
+            return null;
+        }
+        return {{ typeName }}.fromJson(json);
+    }
+
+    List<dynamic> toJson() => {{{ toJsonBody }}};
+}
