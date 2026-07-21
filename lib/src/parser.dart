@@ -2410,6 +2410,7 @@ class MapContext extends ParseContext {
     required super.pointerParts,
     required super.snakeNameStack,
     required this.json,
+    super.baseUri,
     // Only exposed in the constructor so that addSnakeName can pass it to
     // prevent resetting the usedKeys set.
     Set<String>? usedKeys,
@@ -2423,6 +2424,7 @@ class MapContext extends ParseContext {
          pointerParts: [...parent.pointerParts, key],
          snakeNameStack: parent.snakeNameStack,
          json: json,
+         baseUri: parent.baseUri,
        );
 
   MapContext.initial(Json json)
@@ -2459,6 +2461,7 @@ class MapContext extends ParseContext {
     pointerParts: pointerParts,
     snakeNameStack: [...snakeNameStack, snakeName],
     json: json,
+    baseUri: baseUri,
     usedKeys: usedKeys,
   );
 
@@ -2498,6 +2501,7 @@ class ListContext extends ParseContext {
     required super.pointerParts,
     required super.snakeNameStack,
     required this.json,
+    super.baseUri,
   });
 
   ListContext.fromParent({
@@ -2508,6 +2512,7 @@ class ListContext extends ParseContext {
          pointerParts: [...parent.pointerParts, key],
          snakeNameStack: parent.snakeNameStack,
          json: json,
+         baseUri: parent.baseUri,
        );
 
   MapContext indexAsMap(int index) {
@@ -2533,7 +2538,16 @@ class ListContext extends ParseContext {
 /// Immutable context for parsing a spec.
 /// SchemaRegistry is internally mutable, so this is not truly immutable.
 abstract class ParseContext {
-  ParseContext({required this.pointerParts, required this.snakeNameStack});
+  ParseContext({
+    required this.pointerParts,
+    required this.snakeNameStack,
+    // Null for the root document (the common single-document case) and set
+    // only when parsing an external document, so its pointers carry a
+    // distinct identity — see [JsonPointer.fromParts]. Optional rather than
+    // `required` because nearly every call site parses the root; the
+    // external-document path threads it explicitly.
+    this.baseUri,
+  });
 
   /// Json pointer location of the current schema.
   final List<String> pointerParts;
@@ -2541,7 +2555,13 @@ abstract class ParseContext {
   /// Stack of name parts for the current schema.
   final List<String> snakeNameStack;
 
-  JsonPointer get pointer => JsonPointer.fromParts(pointerParts);
+  /// The document being parsed, or null for the root document. Flows into
+  /// every [pointer] so external-document pointers don't collide with the
+  /// root's (#358).
+  final Uri? baseUri;
+
+  JsonPointer get pointer =>
+      JsonPointer.fromParts(pointerParts, baseUri: baseUri);
 
   String get snakeName {
     // To match OpenAPI, we don't put a _ before numbers.

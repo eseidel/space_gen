@@ -400,6 +400,98 @@ void main() {
     });
 
     test(
+      'two documents defining the same schema name emit distinct types',
+      () async {
+        // Regression for #358: a root spec and an external components-library
+        // both defining `#/components/schemas/Foo` used to conflate into one
+        // `foo.dart` (whichever the walk reached first won). Namespacing the
+        // external pointer by its document keeps the two identities distinct,
+        // so both types render — the second disambiguated to `foo2`.
+        final out = MemoryFileSystem.test().directory('pkg');
+        out.fileSystem.file('shared.json')
+          ..createSync(recursive: true)
+          ..writeAsStringSync(
+            jsonEncode({
+              'openapi': '3.0.0',
+              'info': {'title': 'Shared', 'version': '1.0.0'},
+              'components': {
+                'schemas': {
+                  'Foo': {
+                    'type': 'object',
+                    'properties': {
+                      'externalField': {'type': 'integer'},
+                    },
+                  },
+                },
+              },
+            }),
+          );
+        await renderToDirectory(
+          outDir: out,
+          spec: {
+            'openapi': '3.0.0',
+            'info': {'title': 'Multi Doc', 'version': '1.0.0'},
+            'paths': {
+              '/local': {
+                'get': {
+                  'operationId': 'getLocal',
+                  'responses': {
+                    '200': {
+                      'description': 'ok',
+                      'content': {
+                        'application/json': {
+                          'schema': {r'$ref': '#/components/schemas/Foo'},
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              '/external': {
+                'get': {
+                  'operationId': 'getExternal',
+                  'responses': {
+                    '200': {
+                      'description': 'ok',
+                      'content': {
+                        'application/json': {
+                          'schema': {
+                            r'$ref': './shared.json#/components/schemas/Foo',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            'components': {
+              'schemas': {
+                'Foo': {
+                  'type': 'object',
+                  'properties': {
+                    'localField': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+        );
+
+        final foo = out.childFile('lib/models/foo.dart');
+        final foo2 = out.childFile('lib/models/foo2.dart');
+        expect(foo.existsSync(), isTrue);
+        expect(foo2.existsSync(), isTrue);
+        // Each document's fields land in exactly one of the two files —
+        // the two schemas are not merged.
+        final bodies = [foo.readAsStringSync(), foo2.readAsStringSync()];
+        expect(bodies.where((b) => b.contains('localField')), hasLength(1));
+        expect(bodies.where((b) => b.contains('externalField')), hasLength(1));
+        expect(bodies.every((b) => b.contains('class Foo')), isTrue);
+      },
+    );
+
+    test(
       'default response schema is emitted even when no explicit status '
       'code references it',
       () async {
