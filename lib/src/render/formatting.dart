@@ -412,6 +412,14 @@ final _memberRe = RegExp(
 /// `comment_references` lint would then fire in generated code). All
 /// keyword-prefixed field declarations are handled by [_memberRe]
 /// above, so excluding leading keywords here costs no field matches.
+///
+/// Bare fields are only emitted under the `mutableModels` quirk; in
+/// immutable output every field carries `final`, so this matches
+/// nothing there. It runs unguarded regardless — the scan takes raw
+/// content, not the quirks — because a bare-field declaration is a
+/// text-level fact worth resolving wherever it appears, and its
+/// false-positive surface (method bodies, getters) is shared with
+/// immutable output and already excluded above.
 final _bareFieldRe = RegExp(
   r'^\s+(?!(?:return|throw|yield|await|library)\b)'
   r'[A-Za-z_][\w.]*(?:<[\w\s,<>?.]*>)?\??\s+'
