@@ -106,7 +106,6 @@ void main() {
       // Inline `location` object also gets a name (it's a newtype).
       // The synthesized snake name combines parent + property.
       final inlineNames = names
-          .toMap()
           .entries
           .where((e) => e.key.toString().contains('location'))
           .toList();
@@ -964,7 +963,6 @@ void main() {
       // The `login` string property also isn't named — it's a
       // primitive, not a newtype.
       final loginNames = names
-          .toMap()
           .entries
           .where((e) => e.key.toString().endsWith('/login'))
           .toList();
