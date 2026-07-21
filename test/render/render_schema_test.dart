@@ -5200,6 +5200,62 @@ void main() {
       });
     });
 
+    group('array newtype', () {
+      // #206: a top-level `type: array` component becomes an `extension
+      // type` over `List<T>`, mirroring the string/number pod newtypes,
+      // instead of inlining as a bare `List<T>` at every use site.
+      test('array of scalars casts through the item type', () {
+        final result = renderTestSchema({
+          'type': 'array',
+          'items': {'type': 'string'},
+        }, asComponent: true);
+        expect(
+          result,
+          contains('extension type const Test._(List<String> value)'),
+        );
+        expect(result, contains('implements List<String>'));
+        expect(result, contains('const Test(this.value);'));
+        expect(
+          result,
+          contains('factory Test.fromJson(List<dynamic> json) =>'),
+        );
+        expect(result, contains('Test(json.cast<String>())'));
+        expect(result, contains('List<dynamic> toJson() => value;'));
+      });
+
+      // Items that need conversion (here an inline object) map through the
+      // item's own factory in both directions, not a bare cast.
+      test('array of objects maps each element through its factory', () {
+        final result = renderTestSchema({
+          'type': 'array',
+          'items': {
+            'type': 'object',
+            'properties': {'name': {'type': 'string'}},
+          },
+        }, asComponent: true);
+        expect(result, contains('extension type const Test._(List<'));
+        expect(result, contains('.fromJson(e as Map<String, dynamic>)'));
+        expect(
+          result,
+          contains('List<dynamic> toJson() => value.map((e) => e.toJson())'),
+        );
+      });
+
+      // Array constraints validate in a (non-const) constructor body, the
+      // same shape a constrained string/number newtype uses.
+      test('constrained array validates in its constructor', () {
+        final result = renderTestSchema({
+          'type': 'array',
+          'items': {'type': 'integer'},
+          'minItems': 2,
+        }, asComponent: true);
+        // A validating constructor is non-const and has a body.
+        expect(result, contains('Test(this.value) {'));
+        expect(result, contains('value.validate(minItems: 2);'));
+        expect(result, isNot(contains('const Test(this.value);')));
+      });
+    });
+
     group('deprecated', () {
       test('string', () {
         final json = {

@@ -1022,6 +1022,7 @@ class FileRenderer {
           'exampleIsConst': example.canBeConst,
           'invalidJsonExample': invalidJson,
           'isEnum': schema is RenderEnum,
+          'roundTripByJson': schema.roundTripByJson,
           // `toString()` returns a String for every enum, but `toJson()`
           // returns the wire type — String for a string enum, int for an int
           // enum. Compare `toString()` against the *stringified* wire value so
