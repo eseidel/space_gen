@@ -981,8 +981,9 @@ class SpecResolver {
       return SingleSchemaReturn(toRenderSchema(successfulContent.first));
     }
     final renderSchemas = successfulContent.map(toRenderSchema).toList();
-    // We don't implement hashCode/equals but rather equalsIgnoringName.
-    final distinctSchemas = <RenderSchema>{};
+    // These come from different response bodies, so structural sameness
+    // (not identity) is the question — dedup by equalsIgnoringName.
+    final distinctSchemas = <RenderSchema>[];
     for (final schema in renderSchemas) {
       if (!distinctSchemas.any((e) => e.equalsIgnoringName(schema))) {
         distinctSchemas.add(schema);
@@ -2841,7 +2842,21 @@ class RenderDefaultResponse {
 /// it post-generation).
 String _equalsReceiver(String name) => name == 'other' ? 'this.$name' : name;
 
-abstract class RenderSchema extends Equatable implements ToTemplateContext {
+/// Equality is identity — the default. A [RenderSchema] is a node in the
+/// render graph, not a value, so `==` means "the same node."
+///
+/// A schema's identity for deduplication is its [pointer] — its location,
+/// which is also what the rest of the pipeline keys on (the resolver's
+/// recursion stack, the naming pass). `toRenderSchema` builds a fresh
+/// instance per `$ref` site, so the two collectors that must collapse
+/// those — file collection and the per-file name walkers — dedup on
+/// [pointer] explicitly, at the call site, rather than through a stand-in
+/// `==`/`hashCode` that would compare neither identity nor value.
+///
+/// Structural sameness across *different* locations (needed to collapse
+/// distinct-but-equivalent response bodies) is a separate question
+/// answered by [equalsIgnoringName].
+abstract class RenderSchema implements ToTemplateContext {
   const RenderSchema({
     required this.common,
     required this.createsNewType,
@@ -3000,9 +3015,6 @@ abstract class RenderSchema extends Equatable implements ToTemplateContext {
   /// compose their entry/element conversion expressions through the
   /// inner schema's [fromJsonExpression] / [toJsonExpression].
   _VariantConversion? _variantConversion(SchemaRenderer context) => null;
-
-  @override
-  List<Object?> get props => [snakeName, pointer];
 
   /// [expression], with this schema's default substituted when the JSON
   /// value can be null but the value the expression produces still has to
@@ -3376,9 +3388,6 @@ class RenderPod extends RenderSchema {
     };
   }
 
-  @override
-  List<Object?> get props => [super.props, type, defaultValue];
-
   /// The Dart type this pod represents at the use site (when inline) or that
   /// the newtype wraps (when a newtype). The source of truth for [dartType]
   /// and [dartTypeName].
@@ -3675,9 +3684,6 @@ class RenderString extends RenderSchema {
   final String? pattern;
 
   @override
-  List<Object?> get props => [super.props, defaultValue, maxLength, minLength];
-
-  @override
   DartType get dartType =>
       createsNewType ? DartType(_requireAssignedName()) : DartType.string;
 
@@ -3924,17 +3930,6 @@ abstract class RenderNumeric<T extends num> extends RenderSchema {
 
   /// The multiple of value of the number.
   final T? multipleOf;
-
-  @override
-  List<Object?> get props => [
-    super.props,
-    defaultValue,
-    maximum,
-    minimum,
-    exclusiveMaximum,
-    exclusiveMinimum,
-    multipleOf,
-  ];
 
   @override
   DartExpression? defaultValueExpression(SchemaRenderer context) {
@@ -4293,15 +4288,6 @@ class RenderObject extends RenderNewType {
   @override
   _VariantConversion? _variantConversion(SchemaRenderer context) =>
       _newtypeConversion(typeName);
-
-  @override
-  List<Object?> get props => [
-    super.props,
-    properties,
-    additionalProperties,
-    requiredProperties,
-    constProperties,
-  ];
 
   @override
   dynamic get defaultValue => null;
@@ -5064,16 +5050,6 @@ class RenderArray extends RenderSchema {
   ]);
 
   @override
-  List<Object?> get props => [
-    super.props,
-    items,
-    defaultValue,
-    maxItems,
-    minItems,
-    uniqueItems,
-  ];
-
-  @override
   bool get shouldCallToJson => items.shouldCallToJson;
 
   // Inline arrays show up as a oneOf variant; the shape-dispatch
@@ -5303,14 +5279,6 @@ class RenderMap extends RenderSchema {
 
   @override
   final dynamic defaultValue;
-
-  @override
-  List<Object?> get props => [
-    super.props,
-    valueSchema,
-    keySchema,
-    defaultValue,
-  ];
 
   // Map shape — `Map<String, dynamic>` on the wire. Inline maps
   // (additionalProperties on a parent, or `additionalProperties: true`
@@ -5597,15 +5565,6 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
   _VariantConversion? _variantConversion(SchemaRenderer context) =>
       _newtypeConversion(typeName);
 
-  @override
-  List<Object?> get props => [
-    super.props,
-    values,
-    names,
-    defaultValue,
-    descriptions,
-  ];
-
   /// Template context for an enum schema.
   @override
   Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
@@ -5791,9 +5750,6 @@ class RenderIntNewtype extends RenderInteger {
   /// Rendered as a `value.validate(enumValues: [...])` membership check.
   final List<int> allowedValues;
 
-  @override
-  List<Object?> get props => [super.props, allowedValues];
-
   // A dedicated membership check rather than the multi-bound `validate(...)`
   // sugar: an int enum never carries min/max/multipleOf (the parser routes
   // `enum` away from the bounded-numeric path), so membership is the sole
@@ -5891,9 +5847,6 @@ class RenderOneOf extends RenderNewType {
 
   @override
   Iterable<RenderSchema> get children => schemas;
-
-  @override
-  List<Object?> get props => [super.props, schemas, discriminator];
 
   @override
   bool equalsIgnoringName(RenderSchema other) {
@@ -7328,9 +7281,6 @@ class RenderDate extends RenderSchema {
   final String? defaultValue;
 
   @override
-  List<Object?> get props => [super.props, defaultValue];
-
-  @override
   DartType get dartType => _dateType;
 
   @override
@@ -7536,7 +7486,4 @@ class RenderRecursiveRef extends RenderSchema {
   /// schema opts out of test generation.
   @override
   DartExpression? exampleValue(SchemaRenderer context) => null;
-
-  @override
-  List<Object?> get props => [super.props, targetPointer];
 }

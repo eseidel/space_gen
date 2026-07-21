@@ -1148,91 +1148,12 @@ void main() {
       expect(collector.visited.whereType<RenderObject>().length, 1);
       expect(collector.visited.whereType<RenderRecursiveRef>().length, 1);
     });
-
-    test('equality is based on pointer + snakeName + targetPointer', () {
-      const a = RenderRecursiveRef(
-        common: CommonProperties.test(
-          snakeName: 'node',
-          pointer: JsonPointer.empty(),
-        ),
-        targetPointer: JsonPointer.empty(),
-      );
-      const b = RenderRecursiveRef(
-        common: CommonProperties.test(
-          snakeName: 'node',
-          pointer: JsonPointer.empty(),
-        ),
-        targetPointer: JsonPointer.empty(),
-      );
-      final differentTarget = RenderRecursiveRef(
-        common: const CommonProperties.test(
-          snakeName: 'node',
-          pointer: JsonPointer.empty(),
-        ),
-        targetPointer: JsonPointer.parse('#/components/schemas/Node'),
-      );
-      expect(a, equals(b));
-      expect(a, isNot(equals(differentTarget)));
-    });
   });
 
-  group('RenderSchema equality (load-bearing)', () {
-    // _ModelCollector in file_renderer.dart accumulates a
-    // `Set<RenderSchema>` while walking the render tree and relies on
-    // `==` / `hashCode` to dedup duplicate-pointer instances.
-    // `toRenderSchema` produces a fresh instance per `$ref` site (no
-    // instance caching), so without dedup we'd try to emit the same
-    // `lib/models/<name>.dart` file twice and `writeFile` would throw.
-    // These tests document that invariant — if someone removes the
-    // equality contract from `RenderSchema`, the github regen will
-    // crash with "File already written" and these tests will surface
-    // the cause earlier.
-
-    test('two RenderObject instances with the same pointer compare equal', () {
-      const a = RenderObject(
-        common: CommonProperties.test(
-          snakeName: 'user',
-          pointer: JsonPointer.empty(),
-        ),
-        properties: <String, RenderSchema>{},
-        assignedName: 'User',
-        assignedSnakeName: 'user',
-      );
-      const b = RenderObject(
-        common: CommonProperties.test(
-          snakeName: 'user',
-          pointer: JsonPointer.empty(),
-        ),
-        properties: <String, RenderSchema>{},
-        assignedName: 'User',
-        assignedSnakeName: 'user',
-      );
-      expect(a, equals(b));
-      expect(a.hashCode, equals(b.hashCode));
-    });
-
-    test('two RenderObjects with different pointers do NOT compare equal', () {
-      const a = RenderObject(
-        common: CommonProperties.test(
-          snakeName: 'user',
-          pointer: JsonPointer.empty(),
-        ),
-        properties: <String, RenderSchema>{},
-        assignedName: 'User',
-        assignedSnakeName: 'user',
-      );
-      final b = RenderObject(
-        common: CommonProperties.test(
-          snakeName: 'user',
-          pointer: JsonPointer.parse('#/components/schemas/User'),
-        ),
-        properties: const <String, RenderSchema>{},
-        assignedName: 'User',
-        assignedSnakeName: 'user',
-      );
-      expect(a, isNot(equals(b)));
-    });
-  });
+  // RenderSchema equality is plain identity; the duplicate-pointer dedup
+  // it used to back now lives explicitly in the collectors, tested by
+  // `schemasNamedBy collapses distinct instances that share a pointer`
+  // in tree_visitor_test.dart.
 
   group('Import equality (load-bearing)', () {
     // _ImportCollector in file_renderer.dart accumulates a
@@ -2259,12 +2180,7 @@ void main() {
       expect(date.defaultValueExpression(context), isNull);
     });
 
-    test('equality includes the default; toTemplateContext throws', () {
-      expect(date, const RenderDate(common: common, defaultValue: null));
-      expect(
-        date,
-        isNot(const RenderDate(common: common, defaultValue: '2020-01-01')),
-      );
+    test('toTemplateContext throws', () {
       expect(() => date.toTemplateContext(context), throwsUnimplementedError);
     });
   });

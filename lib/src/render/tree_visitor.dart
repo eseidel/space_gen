@@ -1,4 +1,5 @@
 import 'package:space_gen/src/render/render_tree.dart';
+import 'package:space_gen/src/types.dart';
 
 class RenderTreeVisitor {
   void visitSchema(RenderSchema schema) {}
@@ -115,15 +116,16 @@ class NamedSchemas {
   const NamedSchemas({required this.imported, required this.inline});
 
   /// Newtypes the body names. Each renders to its own file, so each
-  /// needs an import at this use site.
-  final Set<RenderSchema> imported;
+  /// needs an import at this use site. Deduplicated by pointer (see
+  /// [_NamedSchemaCollector]).
+  final List<RenderSchema> imported;
 
   /// Schemas whose code this file renders itself: inline structure
   /// (arrays, maps, non-newtype objects) and smooshed variants, which
   /// a sealed parent emits into its own library. Named without an
   /// import, but they can still contribute library imports of their
-  /// own (see `RenderSchema.additionalImports`).
-  final Set<RenderSchema> inline;
+  /// own (see `RenderSchema.additionalImports`). Deduplicated by pointer.
+  final List<RenderSchema> inline;
 }
 
 /// Collects the schemas named by the file rendered for [root].
@@ -179,10 +181,17 @@ NamedSchemas schemasNamedByApi(Api api) {
 }
 
 class _NamedSchemaCollector {
-  final Set<RenderSchema> imported = {};
-  final Set<RenderSchema> inline = {};
+  // Keyed by pointer (a schema's identity): a schema is reached repeatedly
+  // (endpoints share structure; `$ref` sites produce distinct instances
+  // of one definition). First instance per pointer wins, matching
+  // insertion order.
+  final Map<JsonPointer, RenderSchema> _imported = {};
+  final Map<JsonPointer, RenderSchema> _inline = {};
 
-  NamedSchemas get result => NamedSchemas(imported: imported, inline: inline);
+  NamedSchemas get result => NamedSchemas(
+    imported: _imported.values.toList(),
+    inline: _inline.values.toList(),
+  );
 
   /// Collects from [schema] itself, which this file renders — so it is
   /// never its own import.
@@ -197,13 +206,14 @@ class _NamedSchemaCollector {
       // its sealed parent renders it — so it resolves locally, and this
       // file goes on to name whatever the variant names.
       if (schema.createsNewType && !schema.isSmooshed) {
-        imported.add(schema);
+        _imported.putIfAbsent(schema.pointer, () => schema);
         return;
       }
       // Descend each inline schema once. An api file's endpoints share
       // structure freely, so without this the same subtree is re-walked
       // per endpoint that reaches it.
-      if (!inline.add(schema)) return;
+      if (_inline.containsKey(schema.pointer)) return;
+      _inline[schema.pointer] = schema;
     }
     // A oneOf with no dispatch emits an `UnimplementedError` stub that
     // names no variant, so this file imports none of them. Asking the
