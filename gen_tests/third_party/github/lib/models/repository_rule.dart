@@ -1,41 +1,20 @@
 import 'package:github/model_helpers.dart';
 import 'package:github/models/repository_rule_branch_name_pattern_parameters.dart';
-import 'package:github/models/repository_rule_branch_name_pattern_type.dart';
 import 'package:github/models/repository_rule_code_scanning_parameters.dart';
-import 'package:github/models/repository_rule_code_scanning_type.dart';
 import 'package:github/models/repository_rule_commit_author_email_pattern_parameters.dart';
-import 'package:github/models/repository_rule_commit_author_email_pattern_type.dart';
 import 'package:github/models/repository_rule_commit_message_pattern_parameters.dart';
-import 'package:github/models/repository_rule_commit_message_pattern_type.dart';
 import 'package:github/models/repository_rule_committer_email_pattern_parameters.dart';
-import 'package:github/models/repository_rule_committer_email_pattern_type.dart';
-import 'package:github/models/repository_rule_creation_type.dart';
-import 'package:github/models/repository_rule_deletion_type.dart';
 import 'package:github/models/repository_rule_file_extension_restriction_parameters.dart';
-import 'package:github/models/repository_rule_file_extension_restriction_type.dart';
 import 'package:github/models/repository_rule_file_path_restriction_parameters.dart';
-import 'package:github/models/repository_rule_file_path_restriction_type.dart';
 import 'package:github/models/repository_rule_max_file_path_length_parameters.dart';
-import 'package:github/models/repository_rule_max_file_path_length_type.dart';
 import 'package:github/models/repository_rule_max_file_size_parameters.dart';
-import 'package:github/models/repository_rule_max_file_size_type.dart';
 import 'package:github/models/repository_rule_merge_queue_parameters.dart';
-import 'package:github/models/repository_rule_merge_queue_type.dart';
-import 'package:github/models/repository_rule_non_fast_forward_type.dart';
 import 'package:github/models/repository_rule_pull_request_parameters.dart';
-import 'package:github/models/repository_rule_pull_request_type.dart';
 import 'package:github/models/repository_rule_required_deployments_parameters.dart';
-import 'package:github/models/repository_rule_required_deployments_type.dart';
-import 'package:github/models/repository_rule_required_linear_history_type.dart';
-import 'package:github/models/repository_rule_required_signatures_type.dart';
 import 'package:github/models/repository_rule_required_status_checks_parameters.dart';
-import 'package:github/models/repository_rule_required_status_checks_type.dart';
 import 'package:github/models/repository_rule_tag_name_pattern_parameters.dart';
-import 'package:github/models/repository_rule_tag_name_pattern_type.dart';
 import 'package:github/models/repository_rule_update_parameters.dart';
-import 'package:github/models/repository_rule_update_type.dart';
 import 'package:github/models/repository_rule_workflows_parameters.dart';
-import 'package:github/models/repository_rule_workflows_type.dart';
 import 'package:meta/meta.dart';
 
 /// Repository Rule
@@ -107,16 +86,14 @@ sealed class RepositoryRule {
 @immutable
 final class RepositoryRuleCreation extends RepositoryRule {
   /// {@macro repository_rule_creation}
-  const RepositoryRuleCreation({required this.type});
+  const RepositoryRuleCreation();
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryRuleCreation].
   factory RepositoryRuleCreation.fromJson(Map<String, dynamic> json) {
     return parseFromJson(
       'RepositoryRuleCreation',
       json,
-      () => RepositoryRuleCreation(
-        type: RepositoryRuleCreationType.fromJson(json['type'] as String),
-      ),
+      RepositoryRuleCreation.new,
     );
   }
 
@@ -129,21 +106,21 @@ final class RepositoryRuleCreation extends RepositoryRule {
     return RepositoryRuleCreation.fromJson(json);
   }
 
-  final RepositoryRuleCreationType type;
+  String get type => 'creation';
 
   /// Converts a [RepositoryRuleCreation] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson()};
+    return {'type': type};
   }
 
   @override
-  int get hashCode => type.hashCode;
+  int get hashCode => Object.hashAll([]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RepositoryRuleCreation && type == other.type;
+    return other is RepositoryRuleCreation;
   }
 }
 
@@ -154,7 +131,7 @@ final class RepositoryRuleCreation extends RepositoryRule {
 @immutable
 final class RepositoryRuleUpdate extends RepositoryRule {
   /// {@macro repository_rule_update}
-  const RepositoryRuleUpdate({required this.type, this.parameters});
+  const RepositoryRuleUpdate({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryRuleUpdate].
   factory RepositoryRuleUpdate.fromJson(Map<String, dynamic> json) {
@@ -162,7 +139,6 @@ final class RepositoryRuleUpdate extends RepositoryRule {
       'RepositoryRuleUpdate',
       json,
       () => RepositoryRuleUpdate(
-        type: RepositoryRuleUpdateType.fromJson(json['type'] as String),
         parameters: RepositoryRuleUpdateParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -179,24 +155,22 @@ final class RepositoryRuleUpdate extends RepositoryRule {
     return RepositoryRuleUpdate.fromJson(json);
   }
 
-  final RepositoryRuleUpdateType type;
+  String get type => 'update';
   final RepositoryRuleUpdateParameters? parameters;
 
   /// Converts a [RepositoryRuleUpdate] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RepositoryRuleUpdate &&
-        type == other.type &&
-        parameters == other.parameters;
+    return other is RepositoryRuleUpdate && parameters == other.parameters;
   }
 }
 
@@ -207,16 +181,14 @@ final class RepositoryRuleUpdate extends RepositoryRule {
 @immutable
 final class RepositoryRuleDeletion extends RepositoryRule {
   /// {@macro repository_rule_deletion}
-  const RepositoryRuleDeletion({required this.type});
+  const RepositoryRuleDeletion();
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryRuleDeletion].
   factory RepositoryRuleDeletion.fromJson(Map<String, dynamic> json) {
     return parseFromJson(
       'RepositoryRuleDeletion',
       json,
-      () => RepositoryRuleDeletion(
-        type: RepositoryRuleDeletionType.fromJson(json['type'] as String),
-      ),
+      RepositoryRuleDeletion.new,
     );
   }
 
@@ -229,21 +201,21 @@ final class RepositoryRuleDeletion extends RepositoryRule {
     return RepositoryRuleDeletion.fromJson(json);
   }
 
-  final RepositoryRuleDeletionType type;
+  String get type => 'deletion';
 
   /// Converts a [RepositoryRuleDeletion] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson()};
+    return {'type': type};
   }
 
   @override
-  int get hashCode => type.hashCode;
+  int get hashCode => Object.hashAll([]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RepositoryRuleDeletion && type == other.type;
+    return other is RepositoryRuleDeletion;
   }
 }
 
@@ -254,7 +226,7 @@ final class RepositoryRuleDeletion extends RepositoryRule {
 @immutable
 final class RepositoryRuleRequiredLinearHistory extends RepositoryRule {
   /// {@macro repository_rule_required_linear_history}
-  const RepositoryRuleRequiredLinearHistory({required this.type});
+  const RepositoryRuleRequiredLinearHistory();
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RepositoryRuleRequiredLinearHistory].
@@ -264,11 +236,7 @@ final class RepositoryRuleRequiredLinearHistory extends RepositoryRule {
     return parseFromJson(
       'RepositoryRuleRequiredLinearHistory',
       json,
-      () => RepositoryRuleRequiredLinearHistory(
-        type: RepositoryRuleRequiredLinearHistoryType.fromJson(
-          json['type'] as String,
-        ),
-      ),
+      RepositoryRuleRequiredLinearHistory.new,
     );
   }
 
@@ -283,22 +251,22 @@ final class RepositoryRuleRequiredLinearHistory extends RepositoryRule {
     return RepositoryRuleRequiredLinearHistory.fromJson(json);
   }
 
-  final RepositoryRuleRequiredLinearHistoryType type;
+  String get type => 'required_linear_history';
 
   /// Converts a [RepositoryRuleRequiredLinearHistory]
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson()};
+    return {'type': type};
   }
 
   @override
-  int get hashCode => type.hashCode;
+  int get hashCode => Object.hashAll([]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RepositoryRuleRequiredLinearHistory && type == other.type;
+    return other is RepositoryRuleRequiredLinearHistory;
   }
 }
 
@@ -309,7 +277,7 @@ final class RepositoryRuleRequiredLinearHistory extends RepositoryRule {
 @immutable
 final class RepositoryRuleMergeQueue extends RepositoryRule {
   /// {@macro repository_rule_merge_queue}
-  const RepositoryRuleMergeQueue({required this.type, this.parameters});
+  const RepositoryRuleMergeQueue({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryRuleMergeQueue].
   factory RepositoryRuleMergeQueue.fromJson(Map<String, dynamic> json) {
@@ -317,7 +285,6 @@ final class RepositoryRuleMergeQueue extends RepositoryRule {
       'RepositoryRuleMergeQueue',
       json,
       () => RepositoryRuleMergeQueue(
-        type: RepositoryRuleMergeQueueType.fromJson(json['type'] as String),
         parameters: RepositoryRuleMergeQueueParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -334,24 +301,22 @@ final class RepositoryRuleMergeQueue extends RepositoryRule {
     return RepositoryRuleMergeQueue.fromJson(json);
   }
 
-  final RepositoryRuleMergeQueueType type;
+  String get type => 'merge_queue';
   final RepositoryRuleMergeQueueParameters? parameters;
 
   /// Converts a [RepositoryRuleMergeQueue] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RepositoryRuleMergeQueue &&
-        type == other.type &&
-        parameters == other.parameters;
+    return other is RepositoryRuleMergeQueue && parameters == other.parameters;
   }
 }
 
@@ -363,10 +328,7 @@ final class RepositoryRuleMergeQueue extends RepositoryRule {
 @immutable
 final class RepositoryRuleRequiredDeployments extends RepositoryRule {
   /// {@macro repository_rule_required_deployments}
-  const RepositoryRuleRequiredDeployments({
-    required this.type,
-    this.parameters,
-  });
+  const RepositoryRuleRequiredDeployments({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RepositoryRuleRequiredDeployments].
@@ -377,9 +339,6 @@ final class RepositoryRuleRequiredDeployments extends RepositoryRule {
       'RepositoryRuleRequiredDeployments',
       json,
       () => RepositoryRuleRequiredDeployments(
-        type: RepositoryRuleRequiredDeploymentsType.fromJson(
-          json['type'] as String,
-        ),
         parameters: RepositoryRuleRequiredDeploymentsParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -398,24 +357,23 @@ final class RepositoryRuleRequiredDeployments extends RepositoryRule {
     return RepositoryRuleRequiredDeployments.fromJson(json);
   }
 
-  final RepositoryRuleRequiredDeploymentsType type;
+  String get type => 'required_deployments';
   final RepositoryRuleRequiredDeploymentsParameters? parameters;
 
   /// Converts a [RepositoryRuleRequiredDeployments]
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleRequiredDeployments &&
-        type == other.type &&
         parameters == other.parameters;
   }
 }
@@ -427,18 +385,14 @@ final class RepositoryRuleRequiredDeployments extends RepositoryRule {
 @immutable
 final class RepositoryRuleRequiredSignatures extends RepositoryRule {
   /// {@macro repository_rule_required_signatures}
-  const RepositoryRuleRequiredSignatures({required this.type});
+  const RepositoryRuleRequiredSignatures();
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryRuleRequiredSignatures].
   factory RepositoryRuleRequiredSignatures.fromJson(Map<String, dynamic> json) {
     return parseFromJson(
       'RepositoryRuleRequiredSignatures',
       json,
-      () => RepositoryRuleRequiredSignatures(
-        type: RepositoryRuleRequiredSignaturesType.fromJson(
-          json['type'] as String,
-        ),
-      ),
+      RepositoryRuleRequiredSignatures.new,
     );
   }
 
@@ -453,21 +407,21 @@ final class RepositoryRuleRequiredSignatures extends RepositoryRule {
     return RepositoryRuleRequiredSignatures.fromJson(json);
   }
 
-  final RepositoryRuleRequiredSignaturesType type;
+  String get type => 'required_signatures';
 
   /// Converts a [RepositoryRuleRequiredSignatures] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson()};
+    return {'type': type};
   }
 
   @override
-  int get hashCode => type.hashCode;
+  int get hashCode => Object.hashAll([]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RepositoryRuleRequiredSignatures && type == other.type;
+    return other is RepositoryRuleRequiredSignatures;
   }
 }
 
@@ -479,7 +433,7 @@ final class RepositoryRuleRequiredSignatures extends RepositoryRule {
 @immutable
 final class RepositoryRulePullRequest extends RepositoryRule {
   /// {@macro repository_rule_pull_request}
-  const RepositoryRulePullRequest({required this.type, this.parameters});
+  const RepositoryRulePullRequest({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryRulePullRequest].
   factory RepositoryRulePullRequest.fromJson(Map<String, dynamic> json) {
@@ -487,7 +441,6 @@ final class RepositoryRulePullRequest extends RepositoryRule {
       'RepositoryRulePullRequest',
       json,
       () => RepositoryRulePullRequest(
-        type: RepositoryRulePullRequestType.fromJson(json['type'] as String),
         parameters: RepositoryRulePullRequestParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -504,24 +457,22 @@ final class RepositoryRulePullRequest extends RepositoryRule {
     return RepositoryRulePullRequest.fromJson(json);
   }
 
-  final RepositoryRulePullRequestType type;
+  String get type => 'pull_request';
   final RepositoryRulePullRequestParameters? parameters;
 
   /// Converts a [RepositoryRulePullRequest] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RepositoryRulePullRequest &&
-        type == other.type &&
-        parameters == other.parameters;
+    return other is RepositoryRulePullRequest && parameters == other.parameters;
   }
 }
 
@@ -533,10 +484,7 @@ final class RepositoryRulePullRequest extends RepositoryRule {
 @immutable
 final class RepositoryRuleRequiredStatusChecks extends RepositoryRule {
   /// {@macro repository_rule_required_status_checks}
-  const RepositoryRuleRequiredStatusChecks({
-    required this.type,
-    this.parameters,
-  });
+  const RepositoryRuleRequiredStatusChecks({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RepositoryRuleRequiredStatusChecks].
@@ -547,9 +495,6 @@ final class RepositoryRuleRequiredStatusChecks extends RepositoryRule {
       'RepositoryRuleRequiredStatusChecks',
       json,
       () => RepositoryRuleRequiredStatusChecks(
-        type: RepositoryRuleRequiredStatusChecksType.fromJson(
-          json['type'] as String,
-        ),
         parameters: RepositoryRuleRequiredStatusChecksParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -568,24 +513,23 @@ final class RepositoryRuleRequiredStatusChecks extends RepositoryRule {
     return RepositoryRuleRequiredStatusChecks.fromJson(json);
   }
 
-  final RepositoryRuleRequiredStatusChecksType type;
+  String get type => 'required_status_checks';
   final RepositoryRuleRequiredStatusChecksParameters? parameters;
 
   /// Converts a [RepositoryRuleRequiredStatusChecks]
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleRequiredStatusChecks &&
-        type == other.type &&
         parameters == other.parameters;
   }
 }
@@ -597,16 +541,14 @@ final class RepositoryRuleRequiredStatusChecks extends RepositoryRule {
 @immutable
 final class RepositoryRuleNonFastForward extends RepositoryRule {
   /// {@macro repository_rule_non_fast_forward}
-  const RepositoryRuleNonFastForward({required this.type});
+  const RepositoryRuleNonFastForward();
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryRuleNonFastForward].
   factory RepositoryRuleNonFastForward.fromJson(Map<String, dynamic> json) {
     return parseFromJson(
       'RepositoryRuleNonFastForward',
       json,
-      () => RepositoryRuleNonFastForward(
-        type: RepositoryRuleNonFastForwardType.fromJson(json['type'] as String),
-      ),
+      RepositoryRuleNonFastForward.new,
     );
   }
 
@@ -621,21 +563,21 @@ final class RepositoryRuleNonFastForward extends RepositoryRule {
     return RepositoryRuleNonFastForward.fromJson(json);
   }
 
-  final RepositoryRuleNonFastForwardType type;
+  String get type => 'non_fast_forward';
 
   /// Converts a [RepositoryRuleNonFastForward] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson()};
+    return {'type': type};
   }
 
   @override
-  int get hashCode => type.hashCode;
+  int get hashCode => Object.hashAll([]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RepositoryRuleNonFastForward && type == other.type;
+    return other is RepositoryRuleNonFastForward;
   }
 }
 
@@ -646,10 +588,7 @@ final class RepositoryRuleNonFastForward extends RepositoryRule {
 @immutable
 final class RepositoryRuleCommitMessagePattern extends RepositoryRule {
   /// {@macro repository_rule_commit_message_pattern}
-  const RepositoryRuleCommitMessagePattern({
-    required this.type,
-    this.parameters,
-  });
+  const RepositoryRuleCommitMessagePattern({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RepositoryRuleCommitMessagePattern].
@@ -660,9 +599,6 @@ final class RepositoryRuleCommitMessagePattern extends RepositoryRule {
       'RepositoryRuleCommitMessagePattern',
       json,
       () => RepositoryRuleCommitMessagePattern(
-        type: RepositoryRuleCommitMessagePatternType.fromJson(
-          json['type'] as String,
-        ),
         parameters: RepositoryRuleCommitMessagePatternParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -681,24 +617,23 @@ final class RepositoryRuleCommitMessagePattern extends RepositoryRule {
     return RepositoryRuleCommitMessagePattern.fromJson(json);
   }
 
-  final RepositoryRuleCommitMessagePatternType type;
+  String get type => 'commit_message_pattern';
   final RepositoryRuleCommitMessagePatternParameters? parameters;
 
   /// Converts a [RepositoryRuleCommitMessagePattern]
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleCommitMessagePattern &&
-        type == other.type &&
         parameters == other.parameters;
   }
 }
@@ -710,10 +645,7 @@ final class RepositoryRuleCommitMessagePattern extends RepositoryRule {
 @immutable
 final class RepositoryRuleCommitAuthorEmailPattern extends RepositoryRule {
   /// {@macro repository_rule_commit_author_email_pattern}
-  const RepositoryRuleCommitAuthorEmailPattern({
-    required this.type,
-    this.parameters,
-  });
+  const RepositoryRuleCommitAuthorEmailPattern({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RepositoryRuleCommitAuthorEmailPattern].
@@ -724,9 +656,6 @@ final class RepositoryRuleCommitAuthorEmailPattern extends RepositoryRule {
       'RepositoryRuleCommitAuthorEmailPattern',
       json,
       () => RepositoryRuleCommitAuthorEmailPattern(
-        type: RepositoryRuleCommitAuthorEmailPatternType.fromJson(
-          json['type'] as String,
-        ),
         parameters:
             RepositoryRuleCommitAuthorEmailPatternParameters.maybeFromJson(
               json['parameters'] as Map<String, dynamic>?,
@@ -746,24 +675,23 @@ final class RepositoryRuleCommitAuthorEmailPattern extends RepositoryRule {
     return RepositoryRuleCommitAuthorEmailPattern.fromJson(json);
   }
 
-  final RepositoryRuleCommitAuthorEmailPatternType type;
+  String get type => 'commit_author_email_pattern';
   final RepositoryRuleCommitAuthorEmailPatternParameters? parameters;
 
   /// Converts a [RepositoryRuleCommitAuthorEmailPattern]
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleCommitAuthorEmailPattern &&
-        type == other.type &&
         parameters == other.parameters;
   }
 }
@@ -775,10 +703,7 @@ final class RepositoryRuleCommitAuthorEmailPattern extends RepositoryRule {
 @immutable
 final class RepositoryRuleCommitterEmailPattern extends RepositoryRule {
   /// {@macro repository_rule_committer_email_pattern}
-  const RepositoryRuleCommitterEmailPattern({
-    required this.type,
-    this.parameters,
-  });
+  const RepositoryRuleCommitterEmailPattern({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RepositoryRuleCommitterEmailPattern].
@@ -789,9 +714,6 @@ final class RepositoryRuleCommitterEmailPattern extends RepositoryRule {
       'RepositoryRuleCommitterEmailPattern',
       json,
       () => RepositoryRuleCommitterEmailPattern(
-        type: RepositoryRuleCommitterEmailPatternType.fromJson(
-          json['type'] as String,
-        ),
         parameters: RepositoryRuleCommitterEmailPatternParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -810,24 +732,23 @@ final class RepositoryRuleCommitterEmailPattern extends RepositoryRule {
     return RepositoryRuleCommitterEmailPattern.fromJson(json);
   }
 
-  final RepositoryRuleCommitterEmailPatternType type;
+  String get type => 'committer_email_pattern';
   final RepositoryRuleCommitterEmailPatternParameters? parameters;
 
   /// Converts a [RepositoryRuleCommitterEmailPattern]
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleCommitterEmailPattern &&
-        type == other.type &&
         parameters == other.parameters;
   }
 }
@@ -839,7 +760,7 @@ final class RepositoryRuleCommitterEmailPattern extends RepositoryRule {
 @immutable
 final class RepositoryRuleBranchNamePattern extends RepositoryRule {
   /// {@macro repository_rule_branch_name_pattern}
-  const RepositoryRuleBranchNamePattern({required this.type, this.parameters});
+  const RepositoryRuleBranchNamePattern({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryRuleBranchNamePattern].
   factory RepositoryRuleBranchNamePattern.fromJson(Map<String, dynamic> json) {
@@ -847,9 +768,6 @@ final class RepositoryRuleBranchNamePattern extends RepositoryRule {
       'RepositoryRuleBranchNamePattern',
       json,
       () => RepositoryRuleBranchNamePattern(
-        type: RepositoryRuleBranchNamePatternType.fromJson(
-          json['type'] as String,
-        ),
         parameters: RepositoryRuleBranchNamePatternParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -868,23 +786,22 @@ final class RepositoryRuleBranchNamePattern extends RepositoryRule {
     return RepositoryRuleBranchNamePattern.fromJson(json);
   }
 
-  final RepositoryRuleBranchNamePatternType type;
+  String get type => 'branch_name_pattern';
   final RepositoryRuleBranchNamePatternParameters? parameters;
 
   /// Converts a [RepositoryRuleBranchNamePattern] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleBranchNamePattern &&
-        type == other.type &&
         parameters == other.parameters;
   }
 }
@@ -896,7 +813,7 @@ final class RepositoryRuleBranchNamePattern extends RepositoryRule {
 @immutable
 final class RepositoryRuleTagNamePattern extends RepositoryRule {
   /// {@macro repository_rule_tag_name_pattern}
-  const RepositoryRuleTagNamePattern({required this.type, this.parameters});
+  const RepositoryRuleTagNamePattern({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryRuleTagNamePattern].
   factory RepositoryRuleTagNamePattern.fromJson(Map<String, dynamic> json) {
@@ -904,7 +821,6 @@ final class RepositoryRuleTagNamePattern extends RepositoryRule {
       'RepositoryRuleTagNamePattern',
       json,
       () => RepositoryRuleTagNamePattern(
-        type: RepositoryRuleTagNamePatternType.fromJson(json['type'] as String),
         parameters: RepositoryRuleTagNamePatternParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -923,23 +839,22 @@ final class RepositoryRuleTagNamePattern extends RepositoryRule {
     return RepositoryRuleTagNamePattern.fromJson(json);
   }
 
-  final RepositoryRuleTagNamePatternType type;
+  String get type => 'tag_name_pattern';
   final RepositoryRuleTagNamePatternParameters? parameters;
 
   /// Converts a [RepositoryRuleTagNamePattern] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleTagNamePattern &&
-        type == other.type &&
         parameters == other.parameters;
   }
 }
@@ -953,10 +868,7 @@ final class RepositoryRuleTagNamePattern extends RepositoryRule {
 @immutable
 final class RepositoryRuleFilePathRestriction extends RepositoryRule {
   /// {@macro repository_rule_file_path_restriction}
-  const RepositoryRuleFilePathRestriction({
-    required this.type,
-    this.parameters,
-  });
+  const RepositoryRuleFilePathRestriction({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RepositoryRuleFilePathRestriction].
@@ -967,9 +879,6 @@ final class RepositoryRuleFilePathRestriction extends RepositoryRule {
       'RepositoryRuleFilePathRestriction',
       json,
       () => RepositoryRuleFilePathRestriction(
-        type: RepositoryRuleFilePathRestrictionType.fromJson(
-          json['type'] as String,
-        ),
         parameters: RepositoryRuleFilePathRestrictionParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -988,24 +897,23 @@ final class RepositoryRuleFilePathRestriction extends RepositoryRule {
     return RepositoryRuleFilePathRestriction.fromJson(json);
   }
 
-  final RepositoryRuleFilePathRestrictionType type;
+  String get type => 'file_path_restriction';
   final RepositoryRuleFilePathRestrictionParameters? parameters;
 
   /// Converts a [RepositoryRuleFilePathRestriction]
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleFilePathRestriction &&
-        type == other.type &&
         parameters == other.parameters;
   }
 }
@@ -1018,7 +926,7 @@ final class RepositoryRuleFilePathRestriction extends RepositoryRule {
 @immutable
 final class RepositoryRuleMaxFilePathLength extends RepositoryRule {
   /// {@macro repository_rule_max_file_path_length}
-  const RepositoryRuleMaxFilePathLength({required this.type, this.parameters});
+  const RepositoryRuleMaxFilePathLength({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryRuleMaxFilePathLength].
   factory RepositoryRuleMaxFilePathLength.fromJson(Map<String, dynamic> json) {
@@ -1026,9 +934,6 @@ final class RepositoryRuleMaxFilePathLength extends RepositoryRule {
       'RepositoryRuleMaxFilePathLength',
       json,
       () => RepositoryRuleMaxFilePathLength(
-        type: RepositoryRuleMaxFilePathLengthType.fromJson(
-          json['type'] as String,
-        ),
         parameters: RepositoryRuleMaxFilePathLengthParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -1047,23 +952,22 @@ final class RepositoryRuleMaxFilePathLength extends RepositoryRule {
     return RepositoryRuleMaxFilePathLength.fromJson(json);
   }
 
-  final RepositoryRuleMaxFilePathLengthType type;
+  String get type => 'max_file_path_length';
   final RepositoryRuleMaxFilePathLengthParameters? parameters;
 
   /// Converts a [RepositoryRuleMaxFilePathLength] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleMaxFilePathLength &&
-        type == other.type &&
         parameters == other.parameters;
   }
 }
@@ -1076,10 +980,7 @@ final class RepositoryRuleMaxFilePathLength extends RepositoryRule {
 @immutable
 final class RepositoryRuleFileExtensionRestriction extends RepositoryRule {
   /// {@macro repository_rule_file_extension_restriction}
-  const RepositoryRuleFileExtensionRestriction({
-    required this.type,
-    this.parameters,
-  });
+  const RepositoryRuleFileExtensionRestriction({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a
   /// [RepositoryRuleFileExtensionRestriction].
@@ -1090,9 +991,6 @@ final class RepositoryRuleFileExtensionRestriction extends RepositoryRule {
       'RepositoryRuleFileExtensionRestriction',
       json,
       () => RepositoryRuleFileExtensionRestriction(
-        type: RepositoryRuleFileExtensionRestrictionType.fromJson(
-          json['type'] as String,
-        ),
         parameters:
             RepositoryRuleFileExtensionRestrictionParameters.maybeFromJson(
               json['parameters'] as Map<String, dynamic>?,
@@ -1112,24 +1010,23 @@ final class RepositoryRuleFileExtensionRestriction extends RepositoryRule {
     return RepositoryRuleFileExtensionRestriction.fromJson(json);
   }
 
-  final RepositoryRuleFileExtensionRestrictionType type;
+  String get type => 'file_extension_restriction';
   final RepositoryRuleFileExtensionRestrictionParameters? parameters;
 
   /// Converts a [RepositoryRuleFileExtensionRestriction]
   /// to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleFileExtensionRestriction &&
-        type == other.type &&
         parameters == other.parameters;
   }
 }
@@ -1142,7 +1039,7 @@ final class RepositoryRuleFileExtensionRestriction extends RepositoryRule {
 @immutable
 final class RepositoryRuleMaxFileSize extends RepositoryRule {
   /// {@macro repository_rule_max_file_size}
-  const RepositoryRuleMaxFileSize({required this.type, this.parameters});
+  const RepositoryRuleMaxFileSize({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryRuleMaxFileSize].
   factory RepositoryRuleMaxFileSize.fromJson(Map<String, dynamic> json) {
@@ -1150,7 +1047,6 @@ final class RepositoryRuleMaxFileSize extends RepositoryRule {
       'RepositoryRuleMaxFileSize',
       json,
       () => RepositoryRuleMaxFileSize(
-        type: RepositoryRuleMaxFileSizeType.fromJson(json['type'] as String),
         parameters: RepositoryRuleMaxFileSizeParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -1167,24 +1063,22 @@ final class RepositoryRuleMaxFileSize extends RepositoryRule {
     return RepositoryRuleMaxFileSize.fromJson(json);
   }
 
-  final RepositoryRuleMaxFileSizeType type;
+  String get type => 'max_file_size';
   final RepositoryRuleMaxFileSizeParameters? parameters;
 
   /// Converts a [RepositoryRuleMaxFileSize] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RepositoryRuleMaxFileSize &&
-        type == other.type &&
-        parameters == other.parameters;
+    return other is RepositoryRuleMaxFileSize && parameters == other.parameters;
   }
 }
 
@@ -1196,7 +1090,7 @@ final class RepositoryRuleMaxFileSize extends RepositoryRule {
 @immutable
 final class RepositoryRuleWorkflows extends RepositoryRule {
   /// {@macro repository_rule_workflows}
-  const RepositoryRuleWorkflows({required this.type, this.parameters});
+  const RepositoryRuleWorkflows({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryRuleWorkflows].
   factory RepositoryRuleWorkflows.fromJson(Map<String, dynamic> json) {
@@ -1204,7 +1098,6 @@ final class RepositoryRuleWorkflows extends RepositoryRule {
       'RepositoryRuleWorkflows',
       json,
       () => RepositoryRuleWorkflows(
-        type: RepositoryRuleWorkflowsType.fromJson(json['type'] as String),
         parameters: RepositoryRuleWorkflowsParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -1221,24 +1114,22 @@ final class RepositoryRuleWorkflows extends RepositoryRule {
     return RepositoryRuleWorkflows.fromJson(json);
   }
 
-  final RepositoryRuleWorkflowsType type;
+  String get type => 'workflows';
   final RepositoryRuleWorkflowsParameters? parameters;
 
   /// Converts a [RepositoryRuleWorkflows] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RepositoryRuleWorkflows &&
-        type == other.type &&
-        parameters == other.parameters;
+    return other is RepositoryRuleWorkflows && parameters == other.parameters;
   }
 }
 
@@ -1251,7 +1142,7 @@ final class RepositoryRuleWorkflows extends RepositoryRule {
 @immutable
 final class RepositoryRuleCodeScanning extends RepositoryRule {
   /// {@macro repository_rule_code_scanning}
-  const RepositoryRuleCodeScanning({required this.type, this.parameters});
+  const RepositoryRuleCodeScanning({this.parameters});
 
   /// Converts a `Map<String, dynamic>` to a [RepositoryRuleCodeScanning].
   factory RepositoryRuleCodeScanning.fromJson(Map<String, dynamic> json) {
@@ -1259,7 +1150,6 @@ final class RepositoryRuleCodeScanning extends RepositoryRule {
       'RepositoryRuleCodeScanning',
       json,
       () => RepositoryRuleCodeScanning(
-        type: RepositoryRuleCodeScanningType.fromJson(json['type'] as String),
         parameters: RepositoryRuleCodeScanningParameters.maybeFromJson(
           json['parameters'] as Map<String, dynamic>?,
         ),
@@ -1276,23 +1166,22 @@ final class RepositoryRuleCodeScanning extends RepositoryRule {
     return RepositoryRuleCodeScanning.fromJson(json);
   }
 
-  final RepositoryRuleCodeScanningType type;
+  String get type => 'code_scanning';
   final RepositoryRuleCodeScanningParameters? parameters;
 
   /// Converts a [RepositoryRuleCodeScanning] to a `Map<String, dynamic>`.
   @override
   Map<String, dynamic> toJson() {
-    return {'type': type.toJson(), 'parameters': ?parameters?.toJson()};
+    return {'type': type, 'parameters': ?parameters?.toJson()};
   }
 
   @override
-  int get hashCode => Object.hashAll([type, parameters]);
+  int get hashCode => parameters.hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is RepositoryRuleCodeScanning &&
-        type == other.type &&
         parameters == other.parameters;
   }
 }

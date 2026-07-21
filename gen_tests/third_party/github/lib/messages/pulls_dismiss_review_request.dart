@@ -1,5 +1,4 @@
 import 'package:github/model_helpers.dart';
-import 'package:github/models/pulls_dismiss_review_request_event.dart';
 import 'package:meta/meta.dart';
 
 @immutable
@@ -13,9 +12,7 @@ class PullsDismissReviewRequest {
       json,
       () => PullsDismissReviewRequest(
         message: json['message'] as String,
-        event: PullsDismissReviewRequestEvent.maybeFromJson(
-          json['event'] as String?,
-        ),
+        event: json['event'] as String?,
       ),
     );
   }
@@ -29,15 +26,18 @@ class PullsDismissReviewRequest {
     return PullsDismissReviewRequest.fromJson(json);
   }
 
+  /// The single legal value of `event`, exposed so it can be set explicitly.
+  static const String eventValue = 'DISMISS';
+
   /// The message for the pull request review dismissal
   final String message;
 
   /// Example: `'"DISMISS"'`
-  final PullsDismissReviewRequestEvent? event;
+  final String? event;
 
   /// Converts a [PullsDismissReviewRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'message': message, 'event': ?event?.toJson()};
+    return {'message': message, 'event': ?event};
   }
 
   @override

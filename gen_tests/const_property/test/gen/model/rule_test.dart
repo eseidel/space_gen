@@ -1,20 +1,18 @@
 // GENERATED — do not hand-edit.
-import 'package:github/api.dart';
+import 'package:const_property/api.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('OrgsUpdatePatAccessRequest', () {
+  group('Rule', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = OrgsUpdatePatAccessRequest();
-      final parsed = OrgsUpdatePatAccessRequest.maybeFromJson(
-        instance.toJson(),
-      )!;
+      final instance = Rule();
+      final parsed = Rule.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));
     });
 
     test('maybeFromJson returns null on null input', () {
-      expect(OrgsUpdatePatAccessRequest.maybeFromJson(null), isNull);
+      expect(Rule.maybeFromJson(null), isNull);
     });
   });
 }

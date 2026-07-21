@@ -1,11 +1,10 @@
 import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
-import 'package:github/models/orgs_update_pat_accesses_request_action.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class OrgsUpdatePatAccessesRequest {
-  OrgsUpdatePatAccessesRequest({required this.action, required this.patIds}) {
+  OrgsUpdatePatAccessesRequest({required this.patIds}) {
     patIds.validate(minItems: 1, maxItems: 100);
   }
 
@@ -15,9 +14,6 @@ class OrgsUpdatePatAccessesRequest {
       'OrgsUpdatePatAccessesRequest',
       json,
       () => OrgsUpdatePatAccessesRequest(
-        action: OrgsUpdatePatAccessesRequestAction.fromJson(
-          json['action'] as String,
-        ),
         patIds: (json['pat_ids'] as List).cast<int>(),
       ),
     );
@@ -35,24 +31,23 @@ class OrgsUpdatePatAccessesRequest {
   }
 
   /// Action to apply to the fine-grained personal access token.
-  final OrgsUpdatePatAccessesRequestAction action;
+  String get action => 'revoke';
 
   /// The IDs of the fine-grained personal access tokens.
   final List<int> patIds;
 
   /// Converts an [OrgsUpdatePatAccessesRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'action': action.toJson(), 'pat_ids': patIds};
+    return {'action': action, 'pat_ids': patIds};
   }
 
   @override
-  int get hashCode => Object.hashAll([action, listHash(patIds)]);
+  int get hashCode => listHash(patIds).hashCode;
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is OrgsUpdatePatAccessesRequest &&
-        action == other.action &&
         listsEqual(patIds, other.patIds);
   }
 }

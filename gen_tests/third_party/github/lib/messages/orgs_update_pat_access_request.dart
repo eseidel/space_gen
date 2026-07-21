@@ -1,21 +1,16 @@
 import 'package:github/model_helpers.dart';
-import 'package:github/models/orgs_update_pat_access_request_action.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class OrgsUpdatePatAccessRequest {
-  const OrgsUpdatePatAccessRequest({required this.action});
+  const OrgsUpdatePatAccessRequest();
 
   /// Converts a `Map<String, dynamic>` to an [OrgsUpdatePatAccessRequest].
   factory OrgsUpdatePatAccessRequest.fromJson(Map<String, dynamic> json) {
     return parseFromJson(
       'OrgsUpdatePatAccessRequest',
       json,
-      () => OrgsUpdatePatAccessRequest(
-        action: OrgsUpdatePatAccessRequestAction.fromJson(
-          json['action'] as String,
-        ),
-      ),
+      OrgsUpdatePatAccessRequest.new,
     );
   }
 
@@ -29,19 +24,19 @@ class OrgsUpdatePatAccessRequest {
   }
 
   /// Action to apply to the fine-grained personal access token.
-  final OrgsUpdatePatAccessRequestAction action;
+  String get action => 'revoke';
 
   /// Converts an [OrgsUpdatePatAccessRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'action': action.toJson()};
+    return {'action': action};
   }
 
   @override
-  int get hashCode => action.hashCode;
+  int get hashCode => Object.hashAll([]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is OrgsUpdatePatAccessRequest && action == other.action;
+    return other is OrgsUpdatePatAccessRequest;
   }
 }

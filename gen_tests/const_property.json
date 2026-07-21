@@ -45,23 +45,42 @@
                     }
                 }
             }
+        },
+        "/rule": {
+            "get": {
+                "operationId": "getRule",
+                "summary": "Rule",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Rule"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
         "schemas": {
             "ListResp": {
                 "type": "object",
-                "description": "Envelope whose marker fields are fixed to a lone scalar `const`. Each renders as a fixed getter returning the literal, not a single-value enum type — see issue #240.",
+                "description": "A paginated list response.",
                 "required": ["object", "count"],
                 "properties": {
                     "object": {
                         "type": "string",
                         "const": "list",
-                        "description": "Envelope marker fixed to the literal 'list'."
+                        "description": "The type of this object."
                     },
                     "apiVersion": {
                         "type": "string",
-                        "const": "2024-01-01"
+                        "const": "2024-01-01",
+                        "description": "The API version this response was produced with."
                     },
                     "revision": {
                         "type": "integer",
@@ -74,12 +93,28 @@
             },
             "Marker": {
                 "type": "object",
-                "description": "An object whose every property is a lone const — the constructor takes no arguments and it stores nothing.",
+                "description": "An empty marker object.",
                 "required": ["kind"],
                 "properties": {
                     "kind": {
                         "type": "string",
                         "const": "marker"
+                    }
+                }
+            },
+            "Rule": {
+                "type": "object",
+                "description": "A repository rule.",
+                "required": ["type"],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": ["creation"],
+                        "description": "The rule type."
+                    },
+                    "workflows": {
+                        "type": "string",
+                        "enum": ["write"]
                     }
                 }
             }

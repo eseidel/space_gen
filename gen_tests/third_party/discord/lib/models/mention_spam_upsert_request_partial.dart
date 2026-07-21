@@ -16,6 +16,7 @@ class MentionSpamUpsertRequestPartial {
     this.enabled,
     this.exemptRoles,
     this.exemptChannels,
+    this.triggerType,
     this.triggerMetadata,
   }) {
     name?.validate(maxLength: 100);
@@ -46,6 +47,9 @@ class MentionSpamUpsertRequestPartial {
         exemptChannels: (json['exempt_channels'] as List?)
             ?.map<SnowflakeType>((e) => SnowflakeType.fromJson(e as String))
             .toList(),
+        triggerType: AutomodTriggerType.maybeFromJson(
+          json['trigger_type'] as int?,
+        ),
         triggerMetadata: MentionSpamTriggerMetadata.maybeFromJson(
           json['trigger_metadata'] as Map<String, dynamic>?,
         ),
@@ -70,7 +74,7 @@ class MentionSpamUpsertRequestPartial {
   final bool? enabled;
   final List<SnowflakeType>? exemptRoles;
   final List<SnowflakeType>? exemptChannels;
-  AutomodTriggerType get triggerType => AutomodTriggerType.mentionSpam;
+  final AutomodTriggerType? triggerType;
   final MentionSpamTriggerMetadata? triggerMetadata;
 
   /// Converts a [MentionSpamUpsertRequestPartial] to a `Map<String, dynamic>`.
@@ -82,7 +86,7 @@ class MentionSpamUpsertRequestPartial {
       'enabled': enabled,
       'exempt_roles': exemptRoles?.map((e) => e.toJson()).toList(),
       'exempt_channels': exemptChannels?.map((e) => e.toJson()).toList(),
-      'trigger_type': triggerType.toJson(),
+      'trigger_type': ?triggerType?.toJson(),
       'trigger_metadata': triggerMetadata?.toJson(),
     };
   }
@@ -95,6 +99,7 @@ class MentionSpamUpsertRequestPartial {
     enabled,
     listHash(exemptRoles),
     listHash(exemptChannels),
+    triggerType,
     triggerMetadata,
   ]);
 
@@ -108,6 +113,7 @@ class MentionSpamUpsertRequestPartial {
         enabled == other.enabled &&
         listsEqual(exemptRoles, other.exemptRoles) &&
         listsEqual(exemptChannels, other.exemptChannels) &&
+        triggerType == other.triggerType &&
         triggerMetadata == other.triggerMetadata;
   }
 }

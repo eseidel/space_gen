@@ -5,9 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('OrgsUpdateMembershipForAuthenticatedUserRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = OrgsUpdateMembershipForAuthenticatedUserRequest(
-        state: OrgsUpdateMembershipForAuthenticatedUserRequestState.active,
-      );
+      const instance = OrgsUpdateMembershipForAuthenticatedUserRequest();
       final parsed =
           OrgsUpdateMembershipForAuthenticatedUserRequest.maybeFromJson(
             instance.toJson(),
@@ -20,15 +18,6 @@ void main() {
       expect(
         OrgsUpdateMembershipForAuthenticatedUserRequest.maybeFromJson(null),
         isNull,
-      );
-    });
-
-    test('maybeFromJson throws FormatException on invalid input', () {
-      expect(
-        () => OrgsUpdateMembershipForAuthenticatedUserRequest.maybeFromJson(
-          <String, dynamic>{},
-        ),
-        throwsFormatException,
       );
     });
   });
