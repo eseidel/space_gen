@@ -357,6 +357,12 @@ final _commentReferenceRe = RegExp(
 ///   to a `final String hash;` field, which the analyzer's
 ///   `comment_references` lint follows through enclosing class
 ///   scope.
+/// - **Bare fields** the renderer emits *without* a leading keyword
+///   for mutable models (`Quirks.openapi()`): `String? workflows;`,
+///   `Map<String, String> attributes;`. [_memberRe] above only sees
+///   keyword-prefixed fields, so in mutable output a `[workflows]`
+///   ref that the analyzer *would* resolve was treated as unresolved
+///   and tripped the directive (#363).
 ///
 /// Methods and getters / setters aren't tracked (the regex would
 /// over-match too easily). A `[fooMethod]` ref that resolves only
@@ -364,22 +370,54 @@ final _commentReferenceRe = RegExp(
 /// positive, but harmless: the directive is per-file and only
 /// suppresses `comment_references`.
 Set<String> _topLevelDeclarations(String content) {
-  final declRe = RegExp(
-    r'(?:class|enum|mixin|extension type(?:\s+const)?)\s+'
-    '([A-Z][A-Za-z0-9_]*)',
-  );
-  final memberRe = RegExp(
-    r'(?:final|late\s+final|const|var|static)\s+\S+\s+([a-zA-Z_]\w*)',
-  );
   final names = <String>{};
-  for (final m in declRe.allMatches(content)) {
+  for (final m in _declRe.allMatches(content)) {
     names.add(m.group(1)!);
   }
-  for (final m in memberRe.allMatches(content)) {
+  for (final m in _memberRe.allMatches(content)) {
+    names.add(m.group(1)!);
+  }
+  for (final m in _bareFieldRe.allMatches(content)) {
     names.add(m.group(1)!);
   }
   return names;
 }
+
+/// Top-level types the renderer emits — `class`, `enum`, `mixin`,
+/// `extension type [const] Foo._(...)`. Captures the type name.
+final _declRe = RegExp(
+  r'(?:class|enum|mixin|extension type(?:\s+const)?)\s+'
+  '([A-Z][A-Za-z0-9_]*)',
+);
+
+/// Keyword-prefixed field declarations (`final String hash;`).
+/// Captures the field name after the type.
+final _memberRe = RegExp(
+  r'(?:final|late\s+final|const|var|static)\s+\S+\s+([a-zA-Z_]\w*)',
+);
+
+/// Bare (keyword-less) field declarations, as emitted for mutable
+/// models: `String? workflows;`, `Map<String, dynamic> entries;`.
+/// The whole line must be `<type> <name>;` — a type (identifier,
+/// optional generic arguments, optional `?`), the field name, then
+/// `;` with nothing after. That end-anchor excludes getters
+/// (`T get x => ...;`), methods (`T x() {`) and assignments
+/// (`x = y;`, also lacking the two-token shape), leaving only
+/// declarations.
+///
+/// The leading negative lookahead drops keyword-led statements that
+/// share the two-token shape — `return foo;`, `throw foo;` — which
+/// would otherwise add a method-local name to the resolved set and
+/// *wrongly* suppress the directive (the dangerous direction: a real
+/// `comment_references` lint would then fire in generated code). All
+/// keyword-prefixed field declarations are handled by [_memberRe]
+/// above, so excluding leading keywords here costs no field matches.
+final _bareFieldRe = RegExp(
+  r'^\s+(?!(?:return|throw|yield|await|library)\b)'
+  r'[A-Za-z_][\w.]*(?:<[\w\s,<>?.]*>)?\??\s+'
+  r'([a-zA-Z_]\w*)\s*;\s*$',
+  multiLine: true,
+);
 
 /// Signature for the function [Formatter] uses to spawn `dart`
 /// subprocesses. Defaults to [Process.runSync]; tests can swap in a

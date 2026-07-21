@@ -274,6 +274,69 @@ void main() {
         startsWith('$commentReferencesIgnoreBlock\n'),
       );
     });
+
+    test('passes through refs to bare (keyword-less) mutable-model fields', () {
+      // Mutable models (`Quirks.openapi()`) emit fields with no leading
+      // keyword: `String? workflows;`. The analyzer resolves a
+      // `[workflows]` ref against that field, so no directive is
+      // needed. Before #363 the keyword-only member scan missed these
+      // and the file got a spurious directive.
+      const content =
+          '/// The [workflows] to run.\n'
+          'class Pipeline {\n'
+          '  String? workflows;\n'
+          '}\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
+    });
+
+    test('passes through refs to bare fields with generic types', () {
+      // `Map<String, dynamic> entries;` — the generic arguments (with
+      // their embedded spaces and commas) must not throw off the
+      // field-name capture.
+      const content =
+          '/// The [entries] and [attributes] of this object.\n'
+          'class Bag {\n'
+          '  Map<String, dynamic> entries;\n'
+          '  Map<String, String> attributes;\n'
+          '}\n';
+      expect(maybeAddCommentReferencesIgnore(content), content);
+    });
+
+    test('does not treat a `return foo;` statement as a field declaration', () {
+      // A bare-field matcher must not pick up keyword-led statements
+      // that share the `<word> <word>;` shape. Here `[result]` resolves
+      // to nothing (it is only a method-local return value), so the
+      // directive is still required — adding it to the resolved set
+      // would wrongly suppress a real `comment_references` lint.
+      const content =
+          '/// Returns the [result].\n'
+          'class Runner {\n'
+          '  Object run() {\n'
+          '    final result = compute();\n'
+          '    return result;\n'
+          '  }\n'
+          '}\n';
+      expect(
+        maybeAddCommentReferencesIgnore(content),
+        startsWith('$commentReferencesIgnoreBlock\n'),
+      );
+    });
+
+    test('does not treat a getter as a bare field declaration', () {
+      // `int get hashCode => ...;` is a getter, not a field. The
+      // bare-field scan must not add `hashCode`; getters remain
+      // untracked, so a ref resolving only via one still needs the
+      // directive (documents the boundary, matches pre-#363 behavior).
+      const content =
+          '/// Mirrors [answer].\n'
+          'class Thing {\n'
+          '  int get answer => 42;\n'
+          '}\n';
+      expect(
+        maybeAddCommentReferencesIgnore(content),
+        startsWith('$commentReferencesIgnoreBlock\n'),
+      );
+    });
   });
 
   group('maybeAddUnintendedHtmlIgnore', () {
