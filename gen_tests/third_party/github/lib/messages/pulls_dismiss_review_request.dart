@@ -26,7 +26,7 @@ class PullsDismissReviewRequest {
     return PullsDismissReviewRequest.fromJson(json);
   }
 
-  /// The single legal value of [event], exposed so it can be set explicitly.
+  /// The single legal value of `event`, exposed so it can be set explicitly.
   static const String eventValue = 'DISMISS';
 
   /// The message for the pull request review dismissal

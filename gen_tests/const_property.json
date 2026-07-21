@@ -69,17 +69,18 @@
         "schemas": {
             "ListResp": {
                 "type": "object",
-                "description": "A single legal value renders differently by presence. A *required* marker fixed to a lone scalar `const` (`object`) is always present, so it collapses to a fixed getter returning the literal — no single-value enum type or file (issue #240). An *optional* one (`apiVersion`, `revision`) is 'absent, or that value', so it stays an omittable plain-scalar field; the constant is surfaced as a `static const` (e.g. `apiVersionValue`) for callers who want to set it explicitly.",
+                "description": "A paginated list response.",
                 "required": ["object", "count"],
                 "properties": {
                     "object": {
                         "type": "string",
                         "const": "list",
-                        "description": "Required marker fixed to the literal 'list'."
+                        "description": "The type of this object."
                     },
                     "apiVersion": {
                         "type": "string",
-                        "const": "2024-01-01"
+                        "const": "2024-01-01",
+                        "description": "The API version this response was produced with."
                     },
                     "revision": {
                         "type": "integer",
@@ -92,7 +93,7 @@
             },
             "Marker": {
                 "type": "object",
-                "description": "An object whose every property is a required lone const — the constructor takes no arguments and it stores nothing.",
+                "description": "An empty marker object.",
                 "required": ["kind"],
                 "properties": {
                     "kind": {
@@ -103,13 +104,13 @@
             },
             "Rule": {
                 "type": "object",
-                "description": "The single-value `enum: [X]` spelling of a fixed value (how github tags its discriminated-union variants). A *required* one (`type`) collapses to a fixed getter, dropping the throwaway single-value enum type (issue #239); an *optional* one (`workflows`) stays an omittable plain-scalar field with the value surfaced as a `static const` (`workflowsValue`).",
+                "description": "A repository rule.",
                 "required": ["type"],
                 "properties": {
                     "type": {
                         "type": "string",
                         "enum": ["creation"],
-                        "description": "Required tag fixed to the one member 'creation'."
+                        "description": "The rule type."
                     },
                     "workflows": {
                         "type": "string",

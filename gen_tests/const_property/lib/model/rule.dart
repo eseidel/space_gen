@@ -1,17 +1,7 @@
-// Spec descriptions copy prose verbatim into dartdoc, where `[x]`
-// inside a sentence (placeholder text, ALL_CAPS tokens, license
-// templates) is parsed as a symbol reference even when no such
-// symbol exists. Suppress file-locally so the lint stays live
-// elsewhere; spec authors do not always escape brackets.
-// ignore_for_file: comment_references
 import 'package:const_property/model_helpers.dart';
 
 /// {@template rule}
-/// The single-value `enum: [X]` spelling of a fixed value (how github tags its
-/// discriminated-union variants). A *required* one (`type`) collapses to a
-/// fixed getter, dropping the throwaway single-value enum type (issue #239); an
-/// *optional* one (`workflows`) stays an omittable plain-scalar field with the
-/// value surfaced as a `static const` (`workflowsValue`).
+/// A repository rule.
 /// {@endtemplate}
 
 class Rule {
@@ -37,11 +27,11 @@ class Rule {
     return Rule.fromJson(json);
   }
 
-  /// The single legal value of [workflows], exposed so it can be set
+  /// The single legal value of `workflows`, exposed so it can be set
   /// explicitly.
   static const String workflowsValue = 'write';
 
-  /// Required tag fixed to the one member 'creation'.
+  /// The rule type.
   String get type => 'creation';
   String? workflows;
 

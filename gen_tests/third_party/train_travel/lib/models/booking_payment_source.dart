@@ -91,7 +91,7 @@ final class Card extends BookingPaymentSource {
     return Card.fromJson(json);
   }
 
-  /// The single legal value of [object], exposed so it can be set explicitly.
+  /// The single legal value of `object`, exposed so it can be set explicitly.
   static const String objectValue = 'card';
   final String? object;
 
@@ -218,7 +218,7 @@ final class BankAccount extends BookingPaymentSource {
     return BankAccount.fromJson(json);
   }
 
-  /// The single legal value of [object], exposed so it can be set explicitly.
+  /// The single legal value of `object`, exposed so it can be set explicitly.
   static const String objectValue = 'bank_account';
   final String? object;
   final String name;

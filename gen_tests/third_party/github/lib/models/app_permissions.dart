@@ -269,23 +269,23 @@ class AppPermissions {
     return AppPermissions.fromJson(json);
   }
 
-  /// The single legal value of [workflows], exposed so it can be set
+  /// The single legal value of `workflows`, exposed so it can be set
   /// explicitly.
   static const String workflowsValue = 'write';
 
-  /// The single legal value of [organizationCopilotSeatManagement], exposed
+  /// The single legal value of `organizationCopilotSeatManagement`, exposed
   /// so it can be set explicitly.
   static const String organizationCopilotSeatManagementValue = 'write';
 
-  /// The single legal value of [organizationEvents], exposed so it can be set
+  /// The single legal value of `organizationEvents`, exposed so it can be set
   /// explicitly.
   static const String organizationEventsValue = 'read';
 
-  /// The single legal value of [organizationPlan], exposed so it can be set
+  /// The single legal value of `organizationPlan`, exposed so it can be set
   /// explicitly.
   static const String organizationPlanValue = 'read';
 
-  /// The single legal value of [profile], exposed so it can be set
+  /// The single legal value of `profile`, exposed so it can be set
   /// explicitly.
   static const String profileValue = 'write';
 

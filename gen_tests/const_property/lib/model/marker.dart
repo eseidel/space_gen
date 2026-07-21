@@ -1,8 +1,7 @@
 import 'package:const_property/model_helpers.dart';
 
 /// {@template marker}
-/// An object whose every property is a required lone const — the constructor
-/// takes no arguments and it stores nothing.
+/// An empty marker object.
 /// {@endtemplate}
 
 class Marker {

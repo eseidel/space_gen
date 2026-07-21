@@ -4987,9 +4987,13 @@ class RenderObject extends RenderNewType {
       final dartName = variableSafeName(context.quirks, jsonName);
       final valueExpression = _pinnedValueExpression(property, constValue);
       constants.add({
+        // `$dartName` as a code span, not a `[$dartName]` doc reference: in a
+        // mutable model the field is a bare `Type name;`, which the
+        // `comment_references` resolver doesn't track, so a symbol link would
+        // trip a spurious file-wide ignore directive (issue #363).
         'doc_comment': createDocCommentFromParts(
           body:
-              'The single legal value of [$dartName], exposed so it can be set '
+              'The single legal value of `$dartName`, exposed so it can be set '
               'explicitly.',
           indent: 4,
         ),
