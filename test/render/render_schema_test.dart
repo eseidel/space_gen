@@ -1335,6 +1335,10 @@ void main() {
       expect(rule, isNot(contains('get triggerType =>')));
       expect(rule, contains('this.triggerType'));
       expect(rule, contains('TriggerType? triggerType'));
+      // No `static const` either: the named enum's member (`TriggerType.x`)
+      // is already an accessible symbolic value, so unlike a stripped bare
+      // scalar the pin needs no separate constant.
+      expect(rule, isNot(contains('triggerTypeValue')));
     });
 
     test('required single-value pin collapses to a const getter', () {
@@ -1404,16 +1408,21 @@ void main() {
     // fixed getter; an *optional* one is a plain nullable field plus a
     // `static const` exposing the value.
     test('bare inline lone const: required getter, optional field + const', () {
+      // Both `string` and `integer` are exercised so the getter body and the
+      // `static const` type/literal render correctly for each (a string
+      // literal is quoted, an int is bare).
       final results = renderTestSchemas(
         {
           'ListResp': {
             'type': 'object',
             'properties': {
               'object': {'type': 'string', 'const': 'list'},
+              'code': {'type': 'integer', 'const': 200},
               'apiVersion': {'type': 'string', 'const': '2024-01-01'},
+              'revision': {'type': 'integer', 'const': 5},
               'count': {'type': 'integer'},
             },
-            'required': ['object'],
+            'required': ['object', 'code'],
           },
         },
         specUrl: Uri.parse('file:///spec.yaml'),
@@ -1422,20 +1431,29 @@ void main() {
       expect(listResp, isNotNull);
       // Required: fixed getter returning the literal, always serialized.
       expect(listResp, contains("String get object => 'list';"));
+      expect(listResp, contains('int get code => 200;'));
       expect(listResp, contains("'object': object"));
+      expect(listResp, contains("'code': code"));
       expect(listResp, isNot(contains('this.object')));
-      // Optional: plain nullable field + a static const for the value, and
-      // omittable in toJson.
+      expect(listResp, isNot(contains('this.code')));
+      // Optional: plain nullable field + a static const for the value (string
+      // quoted, int bare), and omittable in toJson.
       expect(listResp, contains('String? apiVersion'));
+      expect(listResp, contains('int? revision'));
       expect(
         listResp,
         contains("static const String apiVersionValue = '2024-01-01';"),
       );
+      expect(listResp, contains('static const int revisionValue = 5;'));
       expect(listResp, contains("'apiVersion': ?apiVersion"));
+      expect(listResp, contains("'revision': ?revision"));
       expect(listResp, isNot(contains('get apiVersion =>')));
-      // No throwaway single-value enum type was synthesized for either.
+      expect(listResp, isNot(contains('get revision =>')));
+      // No throwaway single-value enum type was synthesized for any of them.
       expect(results.keys, isNot(contains('ListRespObject')));
+      expect(results.keys, isNot(contains('ListRespCode')));
       expect(listResp, isNot(contains('ListRespApiVersion')));
+      expect(listResp, isNot(contains('ListRespRevision')));
     });
 
     // A bare single-value `enum: [X]` is the third spelling of the fixed-value
