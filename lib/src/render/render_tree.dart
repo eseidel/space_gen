@@ -4568,31 +4568,19 @@ class RenderObject extends RenderNewType {
     );
   }
 
-  /// Template context for a property pinned to a single value, which
-  /// renders as a fixed getter. Deliberately much narrower than the stored-
-  /// property context: a const getter appears only in the field declaration,
-  /// `operator[]` and `toJson`, so those are the only keys it carries. The
-  /// getter returns [RenderSchema.typeName], so it is never nullable and
-  /// `toJson` must not reach through it with `?.`.
-  ///
-  /// The getter body is the pinned value as a Dart expression: an enum
-  /// member (`E.member`) when the property is that enum, or the literal
-  /// itself (`'list'`, `5`) when it's a bare inline lone `const` scalar.
-  Map<String, dynamic> _constGetterPropertyContext({
-    required String jsonName,
-    required String dartName,
-    required RenderSchema property,
-    required Object constValue,
-    required SchemaRenderer context,
-  }) {
-    final String constExpression;
+  /// The pinned value of a const property as a Dart expression: an enum
+  /// member (`E.member`) when the property is that enum, the newtype
+  /// constructor (`E(1)`) for an int newtype, or the literal itself
+  /// (`'list'`, `5`) for a bare inline scalar.
+  String _pinnedValueExpression(RenderSchema property, Object constValue) {
     if (property is RenderEnum) {
-      constExpression = property.constExpression(constValue);
-    } else if (property is RenderIntNewtype) {
+      return property.constExpression(constValue);
+    }
+    if (property is RenderIntNewtype) {
       // Wrap the pinned int in the newtype's (validating, non-const)
       // constructor so the getter's declared type matches its value —
       // `CallbackType get type => CallbackType(1);`.
-      constExpression = serializeExpression(
+      return serializeExpression(
         DartInvocation(
           type: property.dartType,
           arguments: [DartLiteral(constValue)],
@@ -4600,12 +4588,28 @@ class RenderObject extends RenderNewType {
         ),
         isConstContext: false,
       );
-    } else {
-      constExpression = serializeExpression(
-        DartLiteral(constValue),
-        isConstContext: true,
-      );
     }
+    return serializeExpression(DartLiteral(constValue), isConstContext: true);
+  }
+
+  /// Template context for a property pinned to a single value, which
+  /// renders as a fixed getter. Deliberately much narrower than the stored-
+  /// property context: a const getter appears only in the field declaration,
+  /// `operator[]` and `toJson`, so those are the only keys it carries. The
+  /// getter returns [RenderSchema.typeName], so it is never nullable and
+  /// `toJson` must not reach through it with `?.`.
+  ///
+  /// The getter body is [_pinnedValueExpression] — an enum member
+  /// (`E.member`), an int-newtype constructor (`E(1)`), or the literal itself
+  /// (`'list'`, `5`) for a bare inline scalar.
+  Map<String, dynamic> _constGetterPropertyContext({
+    required String jsonName,
+    required String dartName,
+    required RenderSchema property,
+    required Object constValue,
+    required SchemaRenderer context,
+  }) {
+    final constExpression = _pinnedValueExpression(property, constValue);
     return {
       'dartName': dartName,
       'jsonName': quoteString(jsonName),
@@ -4771,6 +4775,9 @@ class RenderObject extends RenderNewType {
       ),
       'typeName': typeName,
       'nullableTypeName': nullableTypeName(context),
+      // Class-level `static const`s for optional single-value scalar props
+      // (the value a stripped `String?`/`int?` field would otherwise lose).
+      'staticConstants': staticConstantContexts(context),
       'hasProperties': hasProperties,
       // Special case behavior hashCode with only one property.
       'hasOneProperty': realPropertiesCount == 1,
@@ -4916,8 +4923,20 @@ class RenderObject extends RenderNewType {
   /// The definition of the const-getter shape. Written as a lookup rather
   /// than `containsKey` so it stays a single test even if
   /// `constProperties` ever gains nullable values.
+  ///
+  /// Gated on `required`: a const getter serializes its value
+  /// unconditionally and drops the constructor parameter, so it only models
+  /// an *always-present* property. An optional property whose schema admits
+  /// one value is "absent, or that value" — a real, omittable field, not a
+  /// fixed getter that would force the value into every payload. Such a
+  /// property renders as a plain nullable field, with the constant exposed as
+  /// a `static const` for callers who want to set it (see
+  /// [staticConstantContexts]); the `allOf`-ref pin keeps its named enum,
+  /// whose member is already an accessible symbolic value.
   bool rendersAsConstGetter(String jsonName, RenderSchema property) =>
-      constProperties[jsonName] != null && _isConstGetterType(property);
+      requiredProperties.contains(jsonName) &&
+      constProperties[jsonName] != null &&
+      _isConstGetterType(property);
 
   /// The render types a const getter can pin: a named string enum (returns
   /// `E.member`), a closed-set int newtype (returns `E(value)`), or a plain
@@ -4936,6 +4955,51 @@ class RenderObject extends RenderNewType {
       property is RenderIntNewtype ||
       ((property is RenderString || property is RenderInteger) &&
           !property.createsNewType);
+
+  /// Class-level `static const` declarations for optional properties fixed to
+  /// a single scalar value. The parser strips such a property's `const`/`enum`
+  /// down to a plain scalar (so no throwaway single-value enum type is minted)
+  /// and records the value in [constProperties]. When the property is
+  /// *required* it collapses to a const getter ([rendersAsConstGetter]); when
+  /// *optional* it stays an omittable `String?`/`int?` field, and stripping to
+  /// a bare scalar would otherwise discard the one legal value. This surfaces
+  /// it back as `static const <field>Value = <literal>;`, so a caller can set
+  /// the field explicitly (`Foo(apiVersion: Foo.apiVersionValue)`) without a
+  /// magic literal.
+  ///
+  /// Inline scalars only: an `allOf`-ref pin keeps its named enum, whose
+  /// member (`E.member`) is already a symbolic value, so it needs no
+  /// duplicate constant.
+  List<Map<String, dynamic>> staticConstantContexts(SchemaRenderer context) {
+    final constants = <Map<String, dynamic>>[];
+    for (final entry in properties.entries) {
+      final jsonName = entry.key;
+      final property = entry.value;
+      final constValue = constProperties[jsonName];
+      if (constValue == null) continue;
+      if (rendersAsConstGetter(jsonName, property)) continue;
+      // Only the stripped bare scalars — a named enum (allOf-ref pin) already
+      // exposes its value as `E.member`.
+      final isInlineScalar =
+          (property is RenderString || property is RenderInteger) &&
+          !property.createsNewType;
+      if (!isInlineScalar) continue;
+      final dartName = variableSafeName(context.quirks, jsonName);
+      final valueExpression = _pinnedValueExpression(property, constValue);
+      constants.add({
+        'doc_comment': createDocCommentFromParts(
+          body:
+              'The single legal value of [$dartName], exposed so it can be set '
+              'explicitly.',
+          indent: 4,
+        ),
+        'declaration':
+            'static const ${property.typeName} ${dartName}Value = '
+            '$valueExpression;',
+      });
+    }
+    return constants;
+  }
 
   /// Whether the generated constructor is declared `const`.
   ///

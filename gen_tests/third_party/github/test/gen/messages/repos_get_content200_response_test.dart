@@ -6,7 +6,6 @@ void main() {
   group('ReposGetContent200Response', () {
     test('ContentSymlink round-trips via maybeFromJson/toJson', () {
       final instance = ContentSymlink(
-        type: ContentSymlinkType.symlink,
         target: 'example',
         size: 0,
         name: 'example',
@@ -29,7 +28,6 @@ void main() {
 
     test('ContentSubmodule round-trips via maybeFromJson/toJson', () {
       final instance = ContentSubmodule(
-        type: ContentSubmoduleType.submodule,
         submoduleGitUrl: Uri.parse('https://example.com'),
         size: 0,
         name: 'example',

@@ -52,6 +52,7 @@ final class Card extends BookingPaymentSource {
     required this.expMonth,
     required this.expYear,
     required this.addressCountry,
+    this.object,
     this.addressLine1,
     this.addressLine2,
     this.addressCity,
@@ -66,6 +67,7 @@ final class Card extends BookingPaymentSource {
       'Card',
       json,
       () => Card(
+        object: json['object'] as String?,
         name: json['name'] as String,
         number: json['number'] as String,
         cvc: json['cvc'] as String,
@@ -89,7 +91,9 @@ final class Card extends BookingPaymentSource {
     return Card.fromJson(json);
   }
 
-  String get object => 'card';
+  /// The single legal value of [object], exposed so it can be set explicitly.
+  static const String objectValue = 'card';
+  final String? object;
 
   /// Cardholder's full name as it appears on the card.
   /// Example: `'Francis Bourgeois'`
@@ -121,7 +125,7 @@ final class Card extends BookingPaymentSource {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'object': object,
+      'object': ?object,
       'name': name,
       'number': number,
       'cvc': cvc,
@@ -137,6 +141,7 @@ final class Card extends BookingPaymentSource {
 
   @override
   int get hashCode => Object.hashAll([
+    object,
     name,
     number,
     cvc,
@@ -153,6 +158,7 @@ final class Card extends BookingPaymentSource {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is Card &&
+        object == other.object &&
         name == other.name &&
         number == other.number &&
         cvc == other.cvc &&
@@ -180,6 +186,7 @@ final class BankAccount extends BookingPaymentSource {
     required this.accountType,
     required this.bankName,
     required this.country,
+    this.object,
     this.sortCode,
   });
 
@@ -189,6 +196,7 @@ final class BankAccount extends BookingPaymentSource {
       'BankAccount',
       json,
       () => BankAccount(
+        object: json['object'] as String?,
         name: json['name'] as String,
         number: json['number'] as String,
         sortCode: json['sort_code'] as String?,
@@ -210,7 +218,9 @@ final class BankAccount extends BookingPaymentSource {
     return BankAccount.fromJson(json);
   }
 
-  String get object => 'bank_account';
+  /// The single legal value of [object], exposed so it can be set explicitly.
+  static const String objectValue = 'bank_account';
+  final String? object;
   final String name;
 
   /// The account number for the bank account, in string form. Must be a
@@ -236,7 +246,7 @@ final class BankAccount extends BookingPaymentSource {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'object': object,
+      'object': ?object,
       'name': name,
       'number': number,
       'sort_code': ?sortCode,
@@ -247,13 +257,21 @@ final class BankAccount extends BookingPaymentSource {
   }
 
   @override
-  int get hashCode =>
-      Object.hashAll([name, number, sortCode, accountType, bankName, country]);
+  int get hashCode => Object.hashAll([
+    object,
+    name,
+    number,
+    sortCode,
+    accountType,
+    bankName,
+    country,
+  ]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is BankAccount &&
+        object == other.object &&
         name == other.name &&
         number == other.number &&
         sortCode == other.sortCode &&

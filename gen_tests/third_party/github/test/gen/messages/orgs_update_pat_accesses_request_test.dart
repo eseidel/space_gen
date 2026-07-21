@@ -5,10 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('OrgsUpdatePatAccessesRequest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      final instance = OrgsUpdatePatAccessesRequest(
-        action: OrgsUpdatePatAccessesRequestAction.revoke,
-        patIds: const <int>[0],
-      );
+      final instance = OrgsUpdatePatAccessesRequest(patIds: const <int>[0]);
       final parsed = OrgsUpdatePatAccessesRequest.maybeFromJson(
         instance.toJson(),
       )!;

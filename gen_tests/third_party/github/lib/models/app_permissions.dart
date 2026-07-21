@@ -17,23 +17,19 @@ import 'package:github/models/app_permissions_members.dart';
 import 'package:github/models/app_permissions_metadata.dart';
 import 'package:github/models/app_permissions_organization_administration.dart';
 import 'package:github/models/app_permissions_organization_announcement_banners.dart';
-import 'package:github/models/app_permissions_organization_copilot_seat_management.dart';
 import 'package:github/models/app_permissions_organization_custom_org_roles.dart';
 import 'package:github/models/app_permissions_organization_custom_properties.dart';
 import 'package:github/models/app_permissions_organization_custom_roles.dart';
-import 'package:github/models/app_permissions_organization_events.dart';
 import 'package:github/models/app_permissions_organization_hooks.dart';
 import 'package:github/models/app_permissions_organization_packages.dart';
 import 'package:github/models/app_permissions_organization_personal_access_token_requests.dart';
 import 'package:github/models/app_permissions_organization_personal_access_tokens.dart';
-import 'package:github/models/app_permissions_organization_plan.dart';
 import 'package:github/models/app_permissions_organization_projects.dart';
 import 'package:github/models/app_permissions_organization_secrets.dart';
 import 'package:github/models/app_permissions_organization_self_hosted_runners.dart';
 import 'package:github/models/app_permissions_organization_user_blocking.dart';
 import 'package:github/models/app_permissions_packages.dart';
 import 'package:github/models/app_permissions_pages.dart';
-import 'package:github/models/app_permissions_profile.dart';
 import 'package:github/models/app_permissions_pull_requests.dart';
 import 'package:github/models/app_permissions_repository_custom_properties.dart';
 import 'package:github/models/app_permissions_repository_hooks.dart';
@@ -46,7 +42,6 @@ import 'package:github/models/app_permissions_starring.dart';
 import 'package:github/models/app_permissions_statuses.dart';
 import 'package:github/models/app_permissions_team_discussions.dart';
 import 'package:github/models/app_permissions_vulnerability_alerts.dart';
-import 'package:github/models/app_permissions_workflows.dart';
 import 'package:meta/meta.dart';
 
 /// {@template app_permissions}
@@ -183,9 +178,7 @@ class AppPermissions {
         vulnerabilityAlerts: AppPermissionsVulnerabilityAlerts.maybeFromJson(
           json['vulnerability_alerts'] as String?,
         ),
-        workflows: AppPermissionsWorkflows.maybeFromJson(
-          json['workflows'] as String?,
-        ),
+        workflows: json['workflows'] as String?,
         members: AppPermissionsMembers.maybeFromJson(
           json['members'] as String?,
         ),
@@ -206,16 +199,12 @@ class AppPermissions {
               json['organization_custom_properties'] as String?,
             ),
         organizationCopilotSeatManagement:
-            AppPermissionsOrganizationCopilotSeatManagement.maybeFromJson(
-              json['organization_copilot_seat_management'] as String?,
-            ),
+            json['organization_copilot_seat_management'] as String?,
         organizationAnnouncementBanners:
             AppPermissionsOrganizationAnnouncementBanners.maybeFromJson(
               json['organization_announcement_banners'] as String?,
             ),
-        organizationEvents: AppPermissionsOrganizationEvents.maybeFromJson(
-          json['organization_events'] as String?,
-        ),
+        organizationEvents: json['organization_events'] as String?,
         organizationHooks: AppPermissionsOrganizationHooks.maybeFromJson(
           json['organization_hooks'] as String?,
         ),
@@ -227,9 +216,7 @@ class AppPermissions {
             AppPermissionsOrganizationPersonalAccessTokenRequests.maybeFromJson(
               json['organization_personal_access_token_requests'] as String?,
             ),
-        organizationPlan: AppPermissionsOrganizationPlan.maybeFromJson(
-          json['organization_plan'] as String?,
-        ),
+        organizationPlan: json['organization_plan'] as String?,
         organizationProjects: AppPermissionsOrganizationProjects.maybeFromJson(
           json['organization_projects'] as String?,
         ),
@@ -265,9 +252,7 @@ class AppPermissions {
         interactionLimits: AppPermissionsInteractionLimits.maybeFromJson(
           json['interaction_limits'] as String?,
         ),
-        profile: AppPermissionsProfile.maybeFromJson(
-          json['profile'] as String?,
-        ),
+        profile: json['profile'] as String?,
         starring: AppPermissionsStarring.maybeFromJson(
           json['starring'] as String?,
         ),
@@ -283,6 +268,26 @@ class AppPermissions {
     }
     return AppPermissions.fromJson(json);
   }
+
+  /// The single legal value of [workflows], exposed so it can be set
+  /// explicitly.
+  static const String workflowsValue = 'write';
+
+  /// The single legal value of [organizationCopilotSeatManagement], exposed
+  /// so it can be set explicitly.
+  static const String organizationCopilotSeatManagementValue = 'write';
+
+  /// The single legal value of [organizationEvents], exposed so it can be set
+  /// explicitly.
+  static const String organizationEventsValue = 'read';
+
+  /// The single legal value of [organizationPlan], exposed so it can be set
+  /// explicitly.
+  static const String organizationPlanValue = 'read';
+
+  /// The single legal value of [profile], exposed so it can be set
+  /// explicitly.
+  static const String profileValue = 'write';
 
   /// The level of permission to grant the access token for GitHub Actions
   /// workflows, workflow runs, and artifacts.
@@ -372,7 +377,7 @@ class AppPermissions {
 
   /// The level of permission to grant the access token to update GitHub
   /// Actions workflow files.
-  final AppPermissionsWorkflows? workflows;
+  final String? workflows;
 
   /// The level of permission to grant the access token for organization teams
   /// and members.
@@ -399,8 +404,7 @@ class AppPermissions {
   /// GitHub Copilot for members of an organization with a Copilot Business
   /// subscription. This property is in public preview and is subject to
   /// change.
-  final AppPermissionsOrganizationCopilotSeatManagement?
-  organizationCopilotSeatManagement;
+  final String? organizationCopilotSeatManagement;
 
   /// The level of permission to grant the access token to view and manage
   /// announcement banners for an organization.
@@ -409,7 +413,7 @@ class AppPermissions {
 
   /// The level of permission to grant the access token to view events
   /// triggered by an activity in an organization.
-  final AppPermissionsOrganizationEvents? organizationEvents;
+  final String? organizationEvents;
 
   /// The level of permission to grant the access token to manage the
   /// post-receive hooks for an organization.
@@ -428,7 +432,7 @@ class AppPermissions {
 
   /// The level of permission to grant the access token for viewing an
   /// organization's plan.
-  final AppPermissionsOrganizationPlan? organizationPlan;
+  final String? organizationPlan;
 
   /// The level of permission to grant the access token to manage organization
   /// projects and projects public preview (where available).
@@ -477,7 +481,7 @@ class AppPermissions {
 
   /// The level of permission to grant the access token to manage the profile
   /// settings belonging to a user.
-  final AppPermissionsProfile? profile;
+  final String? profile;
 
   /// The level of permission to grant the access token to list and manage
   /// repositories a user is starring.
@@ -508,23 +512,23 @@ class AppPermissions {
       'single_file': ?singleFile?.toJson(),
       'statuses': ?statuses?.toJson(),
       'vulnerability_alerts': ?vulnerabilityAlerts?.toJson(),
-      'workflows': ?workflows?.toJson(),
+      'workflows': ?workflows,
       'members': ?members?.toJson(),
       'organization_administration': ?organizationAdministration?.toJson(),
       'organization_custom_roles': ?organizationCustomRoles?.toJson(),
       'organization_custom_org_roles': ?organizationCustomOrgRoles?.toJson(),
       'organization_custom_properties': ?organizationCustomProperties?.toJson(),
-      'organization_copilot_seat_management': ?organizationCopilotSeatManagement
-          ?.toJson(),
+      'organization_copilot_seat_management':
+          ?organizationCopilotSeatManagement,
       'organization_announcement_banners': ?organizationAnnouncementBanners
           ?.toJson(),
-      'organization_events': ?organizationEvents?.toJson(),
+      'organization_events': ?organizationEvents,
       'organization_hooks': ?organizationHooks?.toJson(),
       'organization_personal_access_tokens': ?organizationPersonalAccessTokens
           ?.toJson(),
       'organization_personal_access_token_requests':
           ?organizationPersonalAccessTokenRequests?.toJson(),
-      'organization_plan': ?organizationPlan?.toJson(),
+      'organization_plan': ?organizationPlan,
       'organization_projects': ?organizationProjects?.toJson(),
       'organization_packages': ?organizationPackages?.toJson(),
       'organization_secrets': ?organizationSecrets?.toJson(),
@@ -537,7 +541,7 @@ class AppPermissions {
       'git_ssh_keys': ?gitSshKeys?.toJson(),
       'gpg_keys': ?gpgKeys?.toJson(),
       'interaction_limits': ?interactionLimits?.toJson(),
-      'profile': ?profile?.toJson(),
+      'profile': ?profile,
       'starring': ?starring?.toJson(),
     };
   }
