@@ -5230,7 +5230,9 @@ void main() {
           'type': 'array',
           'items': {
             'type': 'object',
-            'properties': {'name': {'type': 'string'}},
+            'properties': {
+              'name': {'type': 'string'},
+            },
           },
         }, asComponent: true);
         expect(result, contains('extension type const Test._(List<'));
