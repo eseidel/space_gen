@@ -5200,42 +5200,50 @@ class RenderArray extends RenderSchema {
         toJson: 'value.toJson()',
       );
     }
+    return _VariantConversion(
+      valueType: 'List<${items.typeName}>',
+      fromJson: _elementsFromJson('v', context),
+      toJson: _elementsToJson(context),
+    );
+  }
+
+  /// The wire-`List<dynamic>`-to-`List<item>` conversion, reading from
+  /// [source]. A json-native item (`String`, `int`) casts directly;
+  /// anything whose Dart type differs from its wire type — a newtype, an
+  /// enum, a `Uri`/`DateTime` pod — maps through the item's own `fromJson`,
+  /// because a bare `.cast<Uri>()` over a `List<String>` is a lazy view
+  /// that throws on access. Shared by the newtype factory body
+  /// ([toTemplateContext], reading `json`) and the oneOf shape-variant
+  /// conversion ([_variantConversion], reading the matched `v`).
+  String _elementsFromJson(String source, SchemaRenderer context) {
     final itemTypeName = items.typeName;
-    final String fromJson;
-    // `shouldCallToJson` is the symmetric "this item needs JSON conversion"
-    // predicate — true for newtypes/enums AND for pods whose Dart type differs
-    // from their wire type (`Uri`, `DateTime`, `uriTemplate`). A bare
-    // `.cast<Uri>()` over a `List<String>` is a lazy view that throws on
-    // access; those items must be mapped through `fromJsonExpression`.
-    if (items.shouldCallToJson) {
-      final itemFrom = _runtimeSource(
-        items.requireFromJsonExpression(
-          const DartIdentifier('e'),
-          context,
-          jsonIsNullable: false,
-          dartIsNullable: false,
-        ),
-      );
-      fromJson = 'v.map<$itemTypeName>((e) => $itemFrom).toList()';
-    } else {
-      fromJson = 'v.cast<$itemTypeName>()';
+    if (!items.shouldCallToJson) {
+      return '$source.cast<$itemTypeName>()';
     }
-    final String toJson;
-    if (items.shouldCallToJson) {
-      final itemTo = items.toJsonExpression(
+    final itemFrom = _runtimeSource(
+      items.requireFromJsonExpression(
         const DartIdentifier('e'),
         context,
+        jsonIsNullable: false,
         dartIsNullable: false,
-      );
-      toJson = 'value.map((e) => ${_runtimeSource(itemTo)}).toList()';
-    } else {
-      toJson = 'value';
-    }
-    return _VariantConversion(
-      valueType: 'List<$itemTypeName>',
-      fromJson: fromJson,
-      toJson: toJson,
+      ),
     );
+    return '$source.map<$itemTypeName>((e) => $itemFrom).toList()';
+  }
+
+  /// The `List<item>`-to-wire conversion, reading from the newtype's
+  /// `value` field. Symmetric with [_elementsFromJson]: json-native items
+  /// pass through, others map through the item's own `toJson`.
+  String _elementsToJson(SchemaRenderer context) {
+    if (!items.shouldCallToJson) {
+      return 'value';
+    }
+    final itemTo = items.toJsonExpression(
+      const DartIdentifier('e'),
+      context,
+      dartIsNullable: false,
+    );
+    return 'value.map((e) => ${_runtimeSource(itemTo)}).toList()';
   }
 
   /// The type name of this schema. A named top-level array component is
