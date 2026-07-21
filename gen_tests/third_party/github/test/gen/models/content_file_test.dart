@@ -6,7 +6,6 @@ void main() {
   group('ContentFile', () {
     test('round-trips via maybeFromJson/toJson', () {
       final instance = ContentFile(
-        type: ContentFileType.file,
         encoding: 'example',
         size: 0,
         name: 'example',

@@ -9,27 +9,21 @@ import 'package:test/test.dart';
 void main() {
   group('RepositoryRule', () {
     test('RepositoryRuleCreation round-trips via maybeFromJson/toJson', () {
-      const instance = RepositoryRuleCreation(
-        type: RepositoryRuleCreationType.creation,
-      );
+      const instance = RepositoryRuleCreation();
       final parsed = RepositoryRuleCreation.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));
     });
 
     test('RepositoryRuleUpdate round-trips via maybeFromJson/toJson', () {
-      const instance = RepositoryRuleUpdate(
-        type: RepositoryRuleUpdateType.update,
-      );
+      const instance = RepositoryRuleUpdate();
       final parsed = RepositoryRuleUpdate.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));
     });
 
     test('RepositoryRuleDeletion round-trips via maybeFromJson/toJson', () {
-      const instance = RepositoryRuleDeletion(
-        type: RepositoryRuleDeletionType.deletion,
-      );
+      const instance = RepositoryRuleDeletion();
       final parsed = RepositoryRuleDeletion.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));
@@ -38,9 +32,7 @@ void main() {
     test(
       'RepositoryRuleRequiredLinearHistory round-trips via maybeFromJson/toJson',
       () {
-        const instance = RepositoryRuleRequiredLinearHistory(
-          type: RepositoryRuleRequiredLinearHistoryType.requiredLinearHistory,
-        );
+        const instance = RepositoryRuleRequiredLinearHistory();
         final parsed = RepositoryRuleRequiredLinearHistory.maybeFromJson(
           instance.toJson(),
         )!;
@@ -50,9 +42,7 @@ void main() {
     );
 
     test('RepositoryRuleMergeQueue round-trips via maybeFromJson/toJson', () {
-      const instance = RepositoryRuleMergeQueue(
-        type: RepositoryRuleMergeQueueType.mergeQueue,
-      );
+      const instance = RepositoryRuleMergeQueue();
       final parsed = RepositoryRuleMergeQueue.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));
@@ -61,9 +51,7 @@ void main() {
     test(
       'RepositoryRuleRequiredDeployments round-trips via maybeFromJson/toJson',
       () {
-        const instance = RepositoryRuleRequiredDeployments(
-          type: RepositoryRuleRequiredDeploymentsType.requiredDeployments,
-        );
+        const instance = RepositoryRuleRequiredDeployments();
         final parsed = RepositoryRuleRequiredDeployments.maybeFromJson(
           instance.toJson(),
         )!;
@@ -75,9 +63,7 @@ void main() {
     test(
       'RepositoryRuleRequiredSignatures round-trips via maybeFromJson/toJson',
       () {
-        const instance = RepositoryRuleRequiredSignatures(
-          type: RepositoryRuleRequiredSignaturesType.requiredSignatures,
-        );
+        const instance = RepositoryRuleRequiredSignatures();
         final parsed = RepositoryRuleRequiredSignatures.maybeFromJson(
           instance.toJson(),
         )!;
@@ -87,9 +73,7 @@ void main() {
     );
 
     test('RepositoryRulePullRequest round-trips via maybeFromJson/toJson', () {
-      const instance = RepositoryRulePullRequest(
-        type: RepositoryRulePullRequestType.pullRequest,
-      );
+      const instance = RepositoryRulePullRequest();
       final parsed = RepositoryRulePullRequest.maybeFromJson(
         instance.toJson(),
       )!;
@@ -100,9 +84,7 @@ void main() {
     test(
       'RepositoryRuleRequiredStatusChecks round-trips via maybeFromJson/toJson',
       () {
-        const instance = RepositoryRuleRequiredStatusChecks(
-          type: RepositoryRuleRequiredStatusChecksType.requiredStatusChecks,
-        );
+        const instance = RepositoryRuleRequiredStatusChecks();
         final parsed = RepositoryRuleRequiredStatusChecks.maybeFromJson(
           instance.toJson(),
         )!;
@@ -114,9 +96,7 @@ void main() {
     test(
       'RepositoryRuleNonFastForward round-trips via maybeFromJson/toJson',
       () {
-        const instance = RepositoryRuleNonFastForward(
-          type: RepositoryRuleNonFastForwardType.nonFastForward,
-        );
+        const instance = RepositoryRuleNonFastForward();
         final parsed = RepositoryRuleNonFastForward.maybeFromJson(
           instance.toJson(),
         )!;
@@ -128,9 +108,7 @@ void main() {
     test(
       'RepositoryRuleCommitMessagePattern round-trips via maybeFromJson/toJson',
       () {
-        const instance = RepositoryRuleCommitMessagePattern(
-          type: RepositoryRuleCommitMessagePatternType.commitMessagePattern,
-        );
+        const instance = RepositoryRuleCommitMessagePattern();
         final parsed = RepositoryRuleCommitMessagePattern.maybeFromJson(
           instance.toJson(),
         )!;
@@ -142,10 +120,7 @@ void main() {
     test(
       'RepositoryRuleCommitAuthorEmailPattern round-trips via maybeFromJson/toJson',
       () {
-        const instance = RepositoryRuleCommitAuthorEmailPattern(
-          type: RepositoryRuleCommitAuthorEmailPatternType
-              .commitAuthorEmailPattern,
-        );
+        const instance = RepositoryRuleCommitAuthorEmailPattern();
         final parsed = RepositoryRuleCommitAuthorEmailPattern.maybeFromJson(
           instance.toJson(),
         )!;
@@ -157,9 +132,7 @@ void main() {
     test(
       'RepositoryRuleCommitterEmailPattern round-trips via maybeFromJson/toJson',
       () {
-        const instance = RepositoryRuleCommitterEmailPattern(
-          type: RepositoryRuleCommitterEmailPatternType.committerEmailPattern,
-        );
+        const instance = RepositoryRuleCommitterEmailPattern();
         final parsed = RepositoryRuleCommitterEmailPattern.maybeFromJson(
           instance.toJson(),
         )!;
@@ -171,9 +144,7 @@ void main() {
     test(
       'RepositoryRuleBranchNamePattern round-trips via maybeFromJson/toJson',
       () {
-        const instance = RepositoryRuleBranchNamePattern(
-          type: RepositoryRuleBranchNamePatternType.branchNamePattern,
-        );
+        const instance = RepositoryRuleBranchNamePattern();
         final parsed = RepositoryRuleBranchNamePattern.maybeFromJson(
           instance.toJson(),
         )!;
@@ -185,9 +156,7 @@ void main() {
     test(
       'RepositoryRuleTagNamePattern round-trips via maybeFromJson/toJson',
       () {
-        const instance = RepositoryRuleTagNamePattern(
-          type: RepositoryRuleTagNamePatternType.tagNamePattern,
-        );
+        const instance = RepositoryRuleTagNamePattern();
         final parsed = RepositoryRuleTagNamePattern.maybeFromJson(
           instance.toJson(),
         )!;
@@ -199,9 +168,7 @@ void main() {
     test(
       'RepositoryRuleFilePathRestriction round-trips via maybeFromJson/toJson',
       () {
-        const instance = RepositoryRuleFilePathRestriction(
-          type: RepositoryRuleFilePathRestrictionType.filePathRestriction,
-        );
+        const instance = RepositoryRuleFilePathRestriction();
         final parsed = RepositoryRuleFilePathRestriction.maybeFromJson(
           instance.toJson(),
         )!;
@@ -213,9 +180,7 @@ void main() {
     test(
       'RepositoryRuleMaxFilePathLength round-trips via maybeFromJson/toJson',
       () {
-        const instance = RepositoryRuleMaxFilePathLength(
-          type: RepositoryRuleMaxFilePathLengthType.maxFilePathLength,
-        );
+        const instance = RepositoryRuleMaxFilePathLength();
         final parsed = RepositoryRuleMaxFilePathLength.maybeFromJson(
           instance.toJson(),
         )!;
@@ -227,10 +192,7 @@ void main() {
     test(
       'RepositoryRuleFileExtensionRestriction round-trips via maybeFromJson/toJson',
       () {
-        const instance = RepositoryRuleFileExtensionRestriction(
-          type: RepositoryRuleFileExtensionRestrictionType
-              .fileExtensionRestriction,
-        );
+        const instance = RepositoryRuleFileExtensionRestriction();
         final parsed = RepositoryRuleFileExtensionRestriction.maybeFromJson(
           instance.toJson(),
         )!;
@@ -240,9 +202,7 @@ void main() {
     );
 
     test('RepositoryRuleMaxFileSize round-trips via maybeFromJson/toJson', () {
-      const instance = RepositoryRuleMaxFileSize(
-        type: RepositoryRuleMaxFileSizeType.maxFileSize,
-      );
+      const instance = RepositoryRuleMaxFileSize();
       final parsed = RepositoryRuleMaxFileSize.maybeFromJson(
         instance.toJson(),
       )!;
@@ -251,18 +211,14 @@ void main() {
     });
 
     test('RepositoryRuleWorkflows round-trips via maybeFromJson/toJson', () {
-      const instance = RepositoryRuleWorkflows(
-        type: RepositoryRuleWorkflowsType.workflows,
-      );
+      const instance = RepositoryRuleWorkflows();
       final parsed = RepositoryRuleWorkflows.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));
     });
 
     test('RepositoryRuleCodeScanning round-trips via maybeFromJson/toJson', () {
-      const instance = RepositoryRuleCodeScanning(
-        type: RepositoryRuleCodeScanningType.codeScanning,
-      );
+      const instance = RepositoryRuleCodeScanning();
       final parsed = RepositoryRuleCodeScanning.maybeFromJson(
         instance.toJson(),
       )!;

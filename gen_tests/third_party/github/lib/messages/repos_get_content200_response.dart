@@ -6,9 +6,7 @@ import 'package:github/model_helpers.dart';
 import 'package:github/models/content_directory_inner.dart';
 import 'package:github/models/content_file.dart';
 import 'package:github/models/content_submodule_links.dart';
-import 'package:github/models/content_submodule_type.dart';
 import 'package:github/models/content_symlink_links.dart';
-import 'package:github/models/content_symlink_type.dart';
 import 'package:meta/meta.dart';
 
 sealed class ReposGetContent200Response {
@@ -99,7 +97,6 @@ final class ReposGetContent200ResponseContentFile
 final class ContentSymlink extends ReposGetContent200Response {
   /// {@macro content_symlink}
   const ContentSymlink({
-    required this.type,
     required this.target,
     required this.size,
     required this.name,
@@ -118,7 +115,6 @@ final class ContentSymlink extends ReposGetContent200Response {
       'ContentSymlink',
       json,
       () => ContentSymlink(
-        type: ContentSymlinkType.fromJson(json['type'] as String),
         target: json['target'] as String,
         size: json['size'] as int,
         name: json['name'] as String,
@@ -144,7 +140,7 @@ final class ContentSymlink extends ReposGetContent200Response {
     return ContentSymlink.fromJson(json);
   }
 
-  final ContentSymlinkType type;
+  String get type => 'symlink';
   final String target;
   final int size;
   final String name;
@@ -160,7 +156,7 @@ final class ContentSymlink extends ReposGetContent200Response {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'target': target,
       'size': size,
       'name': name,
@@ -176,7 +172,6 @@ final class ContentSymlink extends ReposGetContent200Response {
 
   @override
   int get hashCode => Object.hashAll([
-    type,
     target,
     size,
     name,
@@ -193,7 +188,6 @@ final class ContentSymlink extends ReposGetContent200Response {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is ContentSymlink &&
-        type == other.type &&
         target == other.target &&
         size == other.size &&
         name == other.name &&
@@ -215,7 +209,6 @@ final class ContentSymlink extends ReposGetContent200Response {
 final class ContentSubmodule extends ReposGetContent200Response {
   /// {@macro content_submodule}
   const ContentSubmodule({
-    required this.type,
     required this.submoduleGitUrl,
     required this.size,
     required this.name,
@@ -234,7 +227,6 @@ final class ContentSubmodule extends ReposGetContent200Response {
       'ContentSubmodule',
       json,
       () => ContentSubmodule(
-        type: ContentSubmoduleType.fromJson(json['type'] as String),
         submoduleGitUrl: Uri.parse(json['submodule_git_url'] as String),
         size: json['size'] as int,
         name: json['name'] as String,
@@ -260,7 +252,7 @@ final class ContentSubmodule extends ReposGetContent200Response {
     return ContentSubmodule.fromJson(json);
   }
 
-  final ContentSubmoduleType type;
+  String get type => 'submodule';
   final Uri submoduleGitUrl;
   final int size;
   final String name;
@@ -276,7 +268,7 @@ final class ContentSubmodule extends ReposGetContent200Response {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'submodule_git_url': submoduleGitUrl.toString(),
       'size': size,
       'name': name,
@@ -292,7 +284,6 @@ final class ContentSubmodule extends ReposGetContent200Response {
 
   @override
   int get hashCode => Object.hashAll([
-    type,
     submoduleGitUrl,
     size,
     name,
@@ -309,7 +300,6 @@ final class ContentSubmodule extends ReposGetContent200Response {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is ContentSubmodule &&
-        type == other.type &&
         submoduleGitUrl == other.submoduleGitUrl &&
         size == other.size &&
         name == other.name &&

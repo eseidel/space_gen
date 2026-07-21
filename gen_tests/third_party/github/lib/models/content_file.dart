@@ -1,6 +1,5 @@
 import 'package:github/model_helpers.dart';
 import 'package:github/models/content_file_links.dart';
-import 'package:github/models/content_file_type.dart';
 import 'package:meta/meta.dart';
 
 /// {@template content_file}
@@ -11,7 +10,6 @@ import 'package:meta/meta.dart';
 class ContentFile {
   /// {@macro content_file}
   const ContentFile({
-    required this.type,
     required this.encoding,
     required this.size,
     required this.name,
@@ -33,7 +31,6 @@ class ContentFile {
       'ContentFile',
       json,
       () => ContentFile(
-        type: ContentFileType.fromJson(json['type'] as String),
         encoding: json['encoding'] as String,
         size: json['size'] as int,
         name: json['name'] as String,
@@ -62,7 +59,7 @@ class ContentFile {
     return ContentFile.fromJson(json);
   }
 
-  final ContentFileType type;
+  String get type => 'file';
   final String encoding;
   final int size;
   final String name;
@@ -84,7 +81,7 @@ class ContentFile {
   /// Converts a [ContentFile] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'type': type.toJson(),
+      'type': type,
       'encoding': encoding,
       'size': size,
       'name': name,
@@ -103,7 +100,6 @@ class ContentFile {
 
   @override
   int get hashCode => Object.hashAll([
-    type,
     encoding,
     size,
     name,
@@ -123,7 +119,6 @@ class ContentFile {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is ContentFile &&
-        type == other.type &&
         encoding == other.encoding &&
         size == other.size &&
         name == other.name &&

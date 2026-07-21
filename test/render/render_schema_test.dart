@@ -1330,7 +1330,15 @@ void main() {
     // is an `invalid_null_aware_operator` warning, not just a lint.
     // Discord's `*UpsertRequestPartial.trigger_type` is the canonical
     // site: pinned to one enum value but absent from `required`.
-    test('optional const-getter property serializes without null-aware', () {
+    test('optional single-value pin renders as an omittable field, '
+        'not a const getter', () {
+      // An `allOf: [{$ref: E}]` pin fixing the value to one member, on an
+      // *optional* property, is "absent, or that member" — not an always-
+      // present tag. It must render as a real, omittable field (the nullable
+      // named enum, which validates the one legal value at the type level),
+      // never a const getter that would force the value into every payload.
+      // See [RenderObject.rendersAsConstGetter]. (Required pins still collapse
+      // to a getter — the next test.)
       final results = renderTestSchemas(
         {
           'Rule': {
@@ -1344,8 +1352,7 @@ void main() {
                 ],
               },
             },
-            // Deliberately not required — that is what made the
-            // generator believe the getter was nullable.
+            // Deliberately not required.
           },
           'TriggerType': {
             'type': 'integer',
@@ -1356,7 +1363,42 @@ void main() {
       );
       final rule = results['Rule'];
       expect(rule, isNotNull);
-      // The getter itself is non-nullable.
+      // A stored, omittable field — not a fixed getter.
+      expect(rule, isNot(contains('get triggerType =>')));
+      expect(rule, contains('this.triggerType'));
+      expect(rule, contains('TriggerType? triggerType'));
+      // No `static const` either: the named enum's member (`TriggerType.x`)
+      // is already an accessible symbolic value, so unlike a stripped bare
+      // scalar the pin needs no separate constant.
+      expect(rule, isNot(contains('triggerTypeValue')));
+    });
+
+    test('required single-value pin collapses to a const getter', () {
+      final results = renderTestSchemas(
+        {
+          'Rule': {
+            'type': 'object',
+            'required': ['trigger_type'],
+            'properties': {
+              'trigger_type': {
+                'type': 'integer',
+                'enum': [1],
+                'allOf': [
+                  {r'$ref': '#/components/schemas/TriggerType'},
+                ],
+              },
+            },
+          },
+          'TriggerType': {
+            'type': 'integer',
+            'enum': [1, 4],
+          },
+        },
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final rule = results['Rule'];
+      expect(rule, isNotNull);
+      // The getter itself is non-nullable and always serializes.
       expect(rule, contains('TriggerType get triggerType =>'));
       expect(rule, contains("'trigger_type': triggerType.toJson()"));
       expect(rule, isNot(contains('triggerType?.toJson()')));
@@ -1392,43 +1434,105 @@ void main() {
       expect(results['Thing'], contains('State get state => State.active;'));
     });
 
-    // A bare inline lone `const` on a property renders as a fixed getter
-    // returning the *literal* (not an enum member), and mints no
-    // single-value enum type or file — the non-enum sibling of the
-    // allOf-ref idiom above (issue #240).
-    test('bare inline lone const renders as a literal getter, no enum', () {
+    // A bare inline lone `const` renders as the *literal* (not an enum
+    // member) and mints no single-value enum type or file — the non-enum
+    // sibling of the allOf-ref idiom above (issue #240). A *required* one is a
+    // fixed getter; an *optional* one is a plain nullable field plus a
+    // `static const` exposing the value.
+    test('bare inline lone const: required getter, optional field + const', () {
+      // Both `string` and `integer` are exercised so the getter body and the
+      // `static const` type/literal render correctly for each (a string
+      // literal is quoted, an int is bare).
       final results = renderTestSchemas(
         {
           'ListResp': {
             'type': 'object',
             'properties': {
               'object': {'type': 'string', 'const': 'list'},
-              'version': {'type': 'integer', 'const': 5},
+              'code': {'type': 'integer', 'const': 200},
+              'apiVersion': {'type': 'string', 'const': '2024-01-01'},
+              'revision': {'type': 'integer', 'const': 5},
               'count': {'type': 'integer'},
             },
-            'required': ['object'],
+            'required': ['object', 'code'],
           },
         },
         specUrl: Uri.parse('file:///spec.yaml'),
       );
       final listResp = results['ListResp'];
       expect(listResp, isNotNull);
-      // Getters return the literal directly, not `SomeEnum.member`.
+      // Required: fixed getter returning the literal, always serialized.
       expect(listResp, contains("String get object => 'list';"));
-      expect(listResp, contains('int get version => 5;'));
-      // toJson emits the getter value with no `.toJson()` conversion.
+      expect(listResp, contains('int get code => 200;'));
       expect(listResp, contains("'object': object"));
-      expect(listResp, contains("'version': version"));
-      // No throwaway single-value enum type was synthesized.
-      expect(results.keys, isNot(contains('ListRespObject')));
-      expect(listResp, isNot(contains('ListRespObject')));
-      // The const properties take no constructor argument and play no part
-      // in equality — only `count` is stored.
-      expect(listResp, contains('this.count'));
+      expect(listResp, contains("'code': code"));
       expect(listResp, isNot(contains('this.object')));
-      expect(listResp, isNot(contains('this.version')));
-      expect(listResp, isNot(contains('object == other.object')));
+      expect(listResp, isNot(contains('this.code')));
+      // Optional: plain nullable field + a static const for the value (string
+      // quoted, int bare), and omittable in toJson.
+      expect(listResp, contains('String? apiVersion'));
+      expect(listResp, contains('int? revision'));
+      expect(
+        listResp,
+        contains("static const String apiVersionValue = '2024-01-01';"),
+      );
+      expect(listResp, contains('static const int revisionValue = 5;'));
+      expect(listResp, contains("'apiVersion': ?apiVersion"));
+      expect(listResp, contains("'revision': ?revision"));
+      expect(listResp, isNot(contains('get apiVersion =>')));
+      expect(listResp, isNot(contains('get revision =>')));
+      // No throwaway single-value enum type was synthesized for any of them.
+      expect(results.keys, isNot(contains('ListRespObject')));
+      expect(results.keys, isNot(contains('ListRespCode')));
+      expect(listResp, isNot(contains('ListRespApiVersion')));
+      expect(listResp, isNot(contains('ListRespRevision')));
     });
+
+    // A bare single-value `enum: [X]` is the third spelling of the fixed-value
+    // semantic (github tags its discriminated-union variants this way). When
+    // required it collapses to a literal getter with no throwaway enum type —
+    // exactly like a lone `const`; when optional it stays an omittable
+    // plain-scalar field, with the value surfaced as a `static const` so it
+    // can be set explicitly, and again no throwaway enum type. Issue #239.
+    test(
+      'single-value enum: required collapses, optional is field + const',
+      () {
+        final results = renderTestSchemas(
+          {
+            'Rule': {
+              'type': 'object',
+              'properties': {
+                // Required, single-value string enum — a fixed tag.
+                'type': {
+                  'type': 'string',
+                  'enum': ['creation'],
+                },
+                // Optional, single-value string enum — "absent, or write".
+                'workflows': {
+                  'type': 'string',
+                  'enum': ['write'],
+                },
+              },
+              'required': ['type'],
+            },
+          },
+          specUrl: Uri.parse('file:///spec.yaml'),
+        );
+        final rule = results['Rule'];
+        expect(rule, isNotNull);
+        // Required tag: literal getter, no constructor arg, no enum type.
+        expect(rule, contains("String get type => 'creation';"));
+        expect(rule, contains("'type': type"));
+        expect(rule, isNot(contains('this.type')));
+        expect(rule, isNot(contains('RuleType')));
+        // Optional single-value: plain nullable field + static const, no
+        // throwaway enum type.
+        expect(rule, contains('String? workflows'));
+        expect(rule, contains("static const String workflowsValue = 'write';"));
+        expect(rule, isNot(contains('RuleWorkflows')));
+        expect(rule, isNot(contains('get workflows =>')));
+      },
+    );
 
     // A property pinned via `allOf: [{$ref: E}]` + `const` where the ref
     // targets a scalar *newtype* (not an enum) must keep the stored-field

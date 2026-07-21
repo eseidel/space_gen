@@ -5,6 +5,7 @@ import 'package:const_property/api_client.dart';
 import 'package:const_property/api_exception.dart';
 import 'package:const_property/model/list_resp.dart';
 import 'package:const_property/model/marker.dart';
+import 'package:const_property/model/rule.dart';
 
 /// Endpoints with tag Default
 class DefaultApi {
@@ -42,6 +43,21 @@ class DefaultApi {
 
     if (response.body.isNotEmpty) {
       return Marker.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    }
+
+    throw ApiException<Object?>.unhandled(response.statusCode);
+  }
+
+  /// Rule
+  Future<Rule> getRule() async {
+    final response = await client.invokeApi(method: Method.get, path: '/rule');
+
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException<Object?>(response.statusCode, response.body);
+    }
+
+    if (response.body.isNotEmpty) {
+      return Rule.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
     }
 
     throw ApiException<Object?>.unhandled(response.statusCode);

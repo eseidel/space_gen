@@ -1,10 +1,9 @@
 import 'package:github/model_helpers.dart';
-import 'package:github/models/orgs_update_membership_for_authenticated_user_request_state.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class OrgsUpdateMembershipForAuthenticatedUserRequest {
-  const OrgsUpdateMembershipForAuthenticatedUserRequest({required this.state});
+  const OrgsUpdateMembershipForAuthenticatedUserRequest();
 
   /// Converts a `Map<String, dynamic>` to an
   /// [OrgsUpdateMembershipForAuthenticatedUserRequest].
@@ -14,11 +13,7 @@ class OrgsUpdateMembershipForAuthenticatedUserRequest {
     return parseFromJson(
       'OrgsUpdateMembershipForAuthenticatedUserRequest',
       json,
-      () => OrgsUpdateMembershipForAuthenticatedUserRequest(
-        state: OrgsUpdateMembershipForAuthenticatedUserRequestState.fromJson(
-          json['state'] as String,
-        ),
-      ),
+      OrgsUpdateMembershipForAuthenticatedUserRequest.new,
     );
   }
 
@@ -35,21 +30,20 @@ class OrgsUpdateMembershipForAuthenticatedUserRequest {
 
   /// The state that the membership should be in. Only `"active"` will be
   /// accepted.
-  final OrgsUpdateMembershipForAuthenticatedUserRequestState state;
+  String get state => 'active';
 
   /// Converts an [OrgsUpdateMembershipForAuthenticatedUserRequest]
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'state': state.toJson()};
+    return {'state': state};
   }
 
   @override
-  int get hashCode => state.hashCode;
+  int get hashCode => Object.hashAll([]);
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is OrgsUpdateMembershipForAuthenticatedUserRequest &&
-        state == other.state;
+    return other is OrgsUpdateMembershipForAuthenticatedUserRequest;
   }
 }
