@@ -3237,4 +3237,82 @@ void main() {
       expect(() => registry.followAliases(a), throwsFormatException);
     });
   });
+
+  group('RefRegistry registration', () {
+    SchemaObject schemaNamed(String pointer, String snakeName) => SchemaObject(
+      common: CommonProperties.empty(
+        pointer: JsonPointer.parse(pointer),
+        snakeName: snakeName,
+      ),
+      properties: const {},
+      requiredProperties: const [],
+      additionalProperties: null,
+      defaultValue: null,
+      constProperties: const {},
+    );
+
+    test('registering a second object at the same URI warns and throws', () {
+      final uri = Uri.parse('file:///a.yaml#/components/schemas/Thing');
+      final logger = _MockLogger();
+      final registry = RefRegistry()..register(uri, 1);
+      expect(
+        () => runWithLogger(logger, () => registry.register(uri, 2)),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'toString',
+            contains('Object already registered'),
+          ),
+        ),
+      );
+      verify(
+        () => logger.warn(any(that: contains('Object already registered'))),
+      ).called(1);
+      // The first-registered object is left in place, not overwritten.
+      expect(registry.get<int>(uri), 1);
+    });
+
+    // Two documents each defining a schema that resolves to the same
+    // snakeName (the multi-document collision of #358). The registry keeps
+    // both by URI but surfaces the name clash as a warning.
+    test('registering two schemas with the same snakeName warns', () {
+      final logger = _MockLogger();
+      final registry = RefRegistry();
+      runWithLogger(logger, () {
+        registry
+          ..register(
+            Uri.parse('file:///a.yaml#/components/schemas/Thing'),
+            schemaNamed('#/components/schemas/Thing', 'thing'),
+          )
+          ..register(
+            Uri.parse('file:///b.yaml#/components/schemas/Thing'),
+            schemaNamed('#/components/schemas/Thing', 'thing'),
+          );
+      });
+      verify(
+        () => logger.warn(
+          any(that: contains('Schema already registered by name: thing')),
+        ),
+      ).called(1);
+    });
+
+    test('distinct snakeNames register without a collision warning', () {
+      final logger = _MockLogger();
+      final registry = RefRegistry();
+      runWithLogger(logger, () {
+        registry
+          ..register(
+            Uri.parse('file:///a.yaml#/components/schemas/Thing'),
+            schemaNamed('#/components/schemas/Thing', 'thing'),
+          )
+          ..register(
+            Uri.parse('file:///b.yaml#/components/schemas/Other'),
+            schemaNamed('#/components/schemas/Other', 'other'),
+          );
+      });
+      verifyNever(
+        () => logger.warn(any(that: contains('already registered by name'))),
+      );
+    });
+  });
 }
