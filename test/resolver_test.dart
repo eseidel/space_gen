@@ -1634,6 +1634,113 @@ void main() {
       );
     });
 
+    group('propertyNames', () {
+      test('string enum propertyNames yields a typed map key', () {
+        final json = {
+          'type': 'object',
+          'propertyNames': {
+            'type': 'string',
+            'enum': ['a', 'b'],
+          },
+          'additionalProperties': {'type': 'string'},
+        };
+        final schema = parseAndResolveTestSchema(json);
+        if (schema is! ResolvedMap) {
+          fail('Expected ResolvedMap, got ${schema.runtimeType}');
+        }
+        expect(schema.keySchema, isA<ResolvedEnum>());
+      });
+
+      test('constrained-string propertyNames becomes a newtype key', () {
+        // OpenAI's `VectorStoreFileAttributes`: `propertyNames` is a plain
+        // `type: string` with `maxLength`. It's promoted to a validated
+        // string newtype so the constraint is enforced on every key.
+        final json = {
+          'type': 'object',
+          'propertyNames': {'type': 'string', 'maxLength': 64},
+          'additionalProperties': {'type': 'string'},
+        };
+        final schema = parseAndResolveTestSchema(json);
+        if (schema is! ResolvedMap) {
+          fail('Expected ResolvedMap, got ${schema.runtimeType}');
+        }
+        final key = schema.keySchema;
+        if (key is! ResolvedString) {
+          fail('Expected ResolvedString key, got ${key.runtimeType}');
+        }
+        expect(key.createsNewType, isTrue);
+        expect(key.maxLength, 64);
+      });
+
+      test('named string-component propertyNames types the key', () {
+        // A `$ref` to a top-level `type: string` component is already a
+        // distinct newtype, so it types the key even without a constraint.
+        final spec = parseAndResolveTestSpec({
+          'openapi': '3.1.0',
+          'info': {'title': 'T', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/a': {
+              'get': {
+                'responses': {
+                  '200': {
+                    'description': 'ok',
+                    'content': {
+                      'application/json': {
+                        'schema': {
+                          'type': 'object',
+                          'additionalProperties': {'type': 'string'},
+                          'propertyNames': {
+                            r'$ref': '#/components/schemas/UserId',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'components': {
+            'schemas': {
+              'UserId': {'type': 'string'},
+            },
+          },
+        });
+        final map = spec.paths.first.operations.first.responses.first.content;
+        if (map is! ResolvedMap) {
+          fail('Expected ResolvedMap, got ${map.runtimeType}');
+        }
+        final key = map.keySchema;
+        if (key is! ResolvedString) {
+          fail('Expected ResolvedString key, got ${key.runtimeType}');
+        }
+        expect(key.createsNewType, isTrue);
+        expect(key.snakeName, 'user_id');
+      });
+
+      test('bare-string propertyNames keeps plain String keys', () {
+        // No constraint to validate, so no newtype — keys stay `String`.
+        final json = {
+          'type': 'object',
+          'propertyNames': {'type': 'string'},
+          'additionalProperties': {'type': 'string'},
+        };
+        final logger = _MockLogger();
+        final schema = runWithLogger(
+          logger,
+          () => parseAndResolveTestSchema(json),
+        );
+        if (schema is! ResolvedMap) {
+          fail('Expected ResolvedMap, got ${schema.runtimeType}');
+        }
+        expect(schema.keySchema, isNull);
+        verifyNever(() => logger.warn(any()));
+      });
+    });
+
     group('request body content type selection', () {
       Map<String, dynamic> specWith(Map<String, dynamic> content) => {
         'openapi': '3.1.0',
