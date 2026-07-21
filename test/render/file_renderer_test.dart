@@ -406,7 +406,9 @@ void main() {
         // both defining `#/components/schemas/Foo` used to conflate into one
         // `foo.dart` (whichever the walk reached first won). Namespacing the
         // external pointer by its document keeps the two identities distinct,
-        // so both types render — the second disambiguated to `foo2`.
+        // so both types render — the root keeps `Foo`, the external one
+        // disambiguates to `Foo1` (`foo_1.dart`), the same `_1` convention an
+        // in-document name collision uses.
         final out = MemoryFileSystem.test().directory('pkg');
         out.fileSystem.file('shared.json')
           ..createSync(recursive: true)
@@ -479,15 +481,15 @@ void main() {
         );
 
         final foo = out.childFile('lib/models/foo.dart');
-        final foo2 = out.childFile('lib/models/foo2.dart');
+        final foo1 = out.childFile('lib/models/foo_1.dart');
         expect(foo.existsSync(), isTrue);
-        expect(foo2.existsSync(), isTrue);
-        // Each document's fields land in exactly one of the two files —
-        // the two schemas are not merged.
-        final bodies = [foo.readAsStringSync(), foo2.readAsStringSync()];
-        expect(bodies.where((b) => b.contains('localField')), hasLength(1));
-        expect(bodies.where((b) => b.contains('externalField')), hasLength(1));
-        expect(bodies.every((b) => b.contains('class Foo')), isTrue);
+        expect(foo1.existsSync(), isTrue);
+        // The root schema keeps the bare `Foo`; the external one takes the
+        // `_1` suffix, matching how an in-document collision disambiguates.
+        expect(foo.readAsStringSync(), contains('class Foo {'));
+        expect(foo.readAsStringSync(), contains('localField'));
+        expect(foo1.readAsStringSync(), contains('class Foo1 {'));
+        expect(foo1.readAsStringSync(), contains('externalField'));
       },
     );
 

@@ -1057,10 +1057,29 @@ class _NameCollector extends Visitor {
   }
 }
 
-Map<String, List<JsonPointer>> _collectNames(OpenApi spec) {
+Map<String, List<JsonPointer>> _collectNames(
+  OpenApi spec,
+  RefRegistry? registry,
+) {
   final nameToPointers = <String, List<JsonPointer>>{};
   final collector = _NameCollector(nameToPointers);
   SpecWalker(collector).walkRoot(spec);
+  // Schemas defined in an *external* document (`baseUri != null`) aren't
+  // reached by the root walk, but they get inlined at resolution and must
+  // disambiguate against a same-named root schema the same way an
+  // in-document collision does (#358): a shared `Foo` becomes `Foo` +
+  // `Foo1` (the `_1` convention), not the name allocator's fallback `Foo2`.
+  // The root walk already added the root's schemas first — so the root keeps
+  // the bare name and the external one takes the suffix — and we fold in only
+  // the registry's external schemas here (its copies of root schemas would
+  // double-count into a false self-collision).
+  if (registry != null) {
+    for (final object in registry.objectsByUri.values) {
+      if (object is Schema && object.pointer.baseUri != null) {
+        collector.visitSchema(object);
+      }
+    }
+  }
   return nameToPointers;
 }
 
@@ -1100,8 +1119,11 @@ Map<JsonPointer, String> _resolveCollisions(
   return changedNames;
 }
 
-Map<JsonPointer, String> resolveNameCollisions(OpenApi spec) {
-  final nameToPointers = _collectNames(spec);
+Map<JsonPointer, String> resolveNameCollisions(
+  OpenApi spec, {
+  RefRegistry? refRegistry,
+}) {
+  final nameToPointers = _collectNames(spec, refRegistry);
   return _resolveCollisions(nameToPointers);
 }
 
@@ -1112,8 +1134,10 @@ ResolvedSpec resolveSpec(
   Map<JsonPointer, String> nameOverrides = const {},
   RefRegistry? refRegistry,
 }) {
-  // Walk and look for snake_name collisions.
-  final nameOverrides = resolveNameCollisions(spec);
+  // Walk and look for snake_name collisions. Pass the assembled registry so
+  // schemas from external documents disambiguate against the root's the same
+  // way in-document collisions do (#358).
+  final nameOverrides = resolveNameCollisions(spec, refRegistry: refRegistry);
   if (nameOverrides.isNotEmpty) {
     logger.detail('Resolved ${nameOverrides.length} naming collisions');
   }
