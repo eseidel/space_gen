@@ -128,11 +128,6 @@ class AssignedNames {
   /// multiple resolved schemas without losing the snake key.
   Iterable<MapEntry<JsonPointer, String>> get snakeEntries =>
       _snakeByPointer.entries;
-
-  /// Returns an unmodifiable view of the camel-name map. Test-only.
-  Map<JsonPointer, String> toMap() => Map.unmodifiable({
-    for (final e in _snakeByPointer.entries) e.key: camelFromSnake(e.value),
-  });
 }
 
 /// Walks the resolved tree, builds a preference list for each named
