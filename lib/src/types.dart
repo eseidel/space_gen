@@ -54,10 +54,20 @@ enum Method {
 /// https://spec.openapis.org/oas/v3.1.0#json-pointer
 @immutable
 class JsonPointer extends Equatable {
-  const JsonPointer.empty() : parts = const [];
+  const JsonPointer.empty() : parts = const [], baseUri = null;
 
   /// Create a new JsonPointer from a list of parts.
-  const JsonPointer.fromParts(this.parts);
+  ///
+  /// [baseUri] is the document the pointer lives in. It is null for the
+  /// primary (root) document — the common single-document case — and set
+  /// only for a pointer parsed out of an *external* document, so that two
+  /// documents each defining, say, `#/components/schemas/Foo` produce
+  /// distinct pointers (distinct identity) rather than conflating into one
+  /// type (#358). It participates in equality but never in
+  /// [urlEncodedFragment], which stays document-relative: the fragment is
+  /// what the ref registry resolves a `$ref` against, and what any
+  /// diagnostic prints.
+  const JsonPointer.fromParts(this.parts, {this.baseUri});
 
   /// Create a new JsonPointer from a string.
   factory JsonPointer.parse(String string) {
@@ -67,10 +77,15 @@ class JsonPointer extends Equatable {
     return JsonPointer.fromParts(string.substring(2).split('/'));
   }
 
-  JsonPointer add(String part) => JsonPointer.fromParts([...parts, part]);
+  JsonPointer add(String part) =>
+      JsonPointer.fromParts([...parts, part], baseUri: baseUri);
 
   /// The parts of the json pointer.
   final List<String> parts;
+
+  /// The document this pointer resolves within, or null for the root
+  /// document. See [JsonPointer.fromParts].
+  final Uri? baseUri;
 
   String get urlEncodedFragment {
     /// This pointer encoded as a url-ready string.
@@ -86,7 +101,7 @@ class JsonPointer extends Equatable {
   String toString() => urlEncodedFragment;
 
   @override
-  List<Object?> get props => [parts];
+  List<Object?> get props => [parts, baseUri];
 }
 
 /// Known supported mime types for this library.

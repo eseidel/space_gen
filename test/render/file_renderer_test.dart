@@ -400,6 +400,100 @@ void main() {
     });
 
     test(
+      'two documents defining the same schema name emit distinct types',
+      () async {
+        // Regression for #358: a root spec and an external components-library
+        // both defining `#/components/schemas/Foo` used to conflate into one
+        // `foo.dart` (whichever the walk reached first won). Namespacing the
+        // external pointer by its document keeps the two identities distinct,
+        // so both types render — the root keeps `Foo`, the external one
+        // disambiguates to `Foo1` (`foo_1.dart`), the same `_1` convention an
+        // in-document name collision uses.
+        final out = MemoryFileSystem.test().directory('pkg');
+        out.fileSystem.file('shared.json')
+          ..createSync(recursive: true)
+          ..writeAsStringSync(
+            jsonEncode({
+              'openapi': '3.0.0',
+              'info': {'title': 'Shared', 'version': '1.0.0'},
+              'components': {
+                'schemas': {
+                  'Foo': {
+                    'type': 'object',
+                    'properties': {
+                      'externalField': {'type': 'integer'},
+                    },
+                  },
+                },
+              },
+            }),
+          );
+        await renderToDirectory(
+          outDir: out,
+          spec: {
+            'openapi': '3.0.0',
+            'info': {'title': 'Multi Doc', 'version': '1.0.0'},
+            'paths': {
+              '/local': {
+                'get': {
+                  'operationId': 'getLocal',
+                  'responses': {
+                    '200': {
+                      'description': 'ok',
+                      'content': {
+                        'application/json': {
+                          'schema': {r'$ref': '#/components/schemas/Foo'},
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              '/external': {
+                'get': {
+                  'operationId': 'getExternal',
+                  'responses': {
+                    '200': {
+                      'description': 'ok',
+                      'content': {
+                        'application/json': {
+                          'schema': {
+                            r'$ref': './shared.json#/components/schemas/Foo',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            'components': {
+              'schemas': {
+                'Foo': {
+                  'type': 'object',
+                  'properties': {
+                    'localField': {'type': 'string'},
+                  },
+                },
+              },
+            },
+          },
+        );
+
+        final foo = out.childFile('lib/models/foo.dart');
+        final foo1 = out.childFile('lib/models/foo_1.dart');
+        expect(foo.existsSync(), isTrue);
+        expect(foo1.existsSync(), isTrue);
+        // The root schema keeps the bare `Foo`; the external one takes the
+        // `_1` suffix, matching how an in-document collision disambiguates.
+        expect(foo.readAsStringSync(), contains('class Foo {'));
+        expect(foo.readAsStringSync(), contains('localField'));
+        expect(foo1.readAsStringSync(), contains('class Foo1 {'));
+        expect(foo1.readAsStringSync(), contains('externalField'));
+      },
+    );
+
+    test(
       'default response schema is emitted even when no explicit status '
       'code references it',
       () async {

@@ -104,12 +104,18 @@ Future<void> _loadExternalRefs({
     final componentsJson = doc['components'];
     if (componentsJson is Map<String, dynamic>) {
       // OpenAPI-shaped components library: index every component by its
-      // in-document pointer (`docUri#/components/schemas/Foo`).
+      // in-document pointer (`docUri#/components/schemas/Foo`). The parse
+      // carries [docUri] as the pointer base so a component here keeps a
+      // distinct identity from a same-named component in the root (or
+      // another external) document — otherwise two `Foo`s conflate into
+      // one type (#358). The base is identity-only; the registry key stays
+      // the document-relative `docUri#/...` that `$ref`s resolve against.
       fullyIndexedDocs.add(docUri);
       final componentsContext = MapContext(
         pointerParts: ['components'],
         snakeNameStack: const [],
         json: componentsJson,
+        baseUri: docUri,
       );
       final components = parseComponents(componentsContext);
 
