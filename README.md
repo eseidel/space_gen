@@ -202,6 +202,21 @@ OpenAPI uses SCREAMING_CAPS enums, this can be enabled in space_gen for easier
 transition from openapi_generator to space_gen. By default space_gen will
 use lowerCamelCase enums matching Dart style.
 
+#### Preserve unknown enums
+
+`--preserve-unknown-enums` (also `Quirks.preserveUnknownEnums`) is independent
+of `--openapi` and off by default.
+
+With the flag on, unknown enum JSON does not throw. Named enums become a
+sealed `Status` plus `StatusKnown` (the spec members) plus `StatusUnknown`
+holding the original token as `raw`. `toJson()` emits that `raw`, so GET then
+PUT does not overwrite a member the old client does not know. Exhaustive
+`switch` must handle `StatusUnknown`. `Status.open` and `Status.values` still
+work (aliases / known members only). Nameless integer enums skip the
+membership check so an unknown int is kept.
+
+Without the flag, `fromJson` throws `FormatException` on unknown values.
+
 #### Mutable Models
 
 OpenAPI generates mutable model types and your existing code may depend on

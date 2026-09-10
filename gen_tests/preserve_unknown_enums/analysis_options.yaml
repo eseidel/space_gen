@@ -1,0 +1,19 @@
+include: package:very_good_analysis/analysis_options.yaml
+analyzer:
+  errors:
+    # This triggers even from the same class, which is too much.
+    # See also https://github.com/dart-lang/sdk/issues/61037
+    deprecated_member_use_from_same_package: ignore
+linter:
+  rules:
+    # We do not generate docs yet.
+    public_member_api_docs: false
+    # OpenAPI has no deprecation messages.
+    provide_deprecation_message: false
+    # Some specs contain code blocks which are not properly annotated.
+    # There isn't a great solution for us to fix them, so we ignore the lint.
+    missing_code_block_language_in_doc_comment: false
+    # When using SCREAMING_CAPS for enum values, we need to disable this rule.
+    constant_identifier_names: false
+    # When quirking to have mutable models, we need to disable this rule.
+    avoid_equals_and_hash_code_on_mutable_classes: false

@@ -4,7 +4,8 @@ import 'package:github/models/api_insights_subject_stats_inner.dart';
 /// API Insights usage subject stats for an organization
 extension type const ApiInsightsSubjectStats._(
   List<ApiInsightsSubjectStatsInner> value
-) implements List<ApiInsightsSubjectStatsInner> {
+)
+    implements List<ApiInsightsSubjectStatsInner> {
   const ApiInsightsSubjectStats(this.value);
 
   factory ApiInsightsSubjectStats.fromJson(List<dynamic> json) =>

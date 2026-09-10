@@ -189,6 +189,7 @@ void main() {
       Logger? logger,
       bool generateTests = true,
       bool clearDirectory = true,
+      Quirks quirks = const Quirks(),
       FileRendererBuilder fileRendererBuilder = FileRenderer.new,
     }) async {
       final out = outDir ?? MemoryFileSystem.test().directory('spacetraders');
@@ -208,6 +209,7 @@ void main() {
             logSchemas: false,
             generateTests: generateTests,
             clearDirectory: clearDirectory,
+            quirks: quirks,
             fileRendererBuilder: fileRendererBuilder,
           ),
         ),
@@ -739,6 +741,93 @@ void main() {
       expect(body, contains('value.toString()'));
       expect(body, contains('Role.fromJson(value.toJson())'));
     });
+
+    test(
+      'preserveUnknownEnums round-trip tests keep unknown named and '
+      'nameless enum values',
+      () async {
+        final fs = MemoryFileSystem.test();
+        final spec = {
+          'openapi': '3.1.0',
+          'info': {'title': 'PreserveUnknownEnums', 'version': '1.0.0'},
+          'servers': [
+            {'url': 'https://example.com'},
+          ],
+          'paths': {
+            '/item': {
+              'get': {
+                'operationId': 'getItem',
+                'responses': {
+                  '200': {
+                    'description': 'OK',
+                    'content': {
+                      'application/json': {
+                        'schema': {r'$ref': '#/components/schemas/Item'},
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          'components': {
+            'schemas': {
+              'Status': {
+                'type': 'string',
+                'enum': ['open', 'closed'],
+              },
+              'Priority': {
+                'type': 'integer',
+                'enum': [1, 2],
+              },
+              'Item': {
+                'type': 'object',
+                'required': ['status', 'priority'],
+                'properties': {
+                  'status': {r'$ref': '#/components/schemas/Status'},
+                  'priority': {r'$ref': '#/components/schemas/Priority'},
+                },
+              },
+            },
+          },
+        };
+        final out = fs.directory('out');
+        await renderToDirectory(
+          spec: spec,
+          outDir: out,
+          quirks: const Quirks(preserveUnknownEnums: true),
+        );
+        final status = out
+            .childFile('lib/models/status.dart')
+            .readAsStringSync();
+        expect(status, contains("import 'package:meta/meta.dart';"));
+        expect(status, contains('@immutable'));
+        expect(status, contains('final class StatusUnknown extends Status'));
+        final statusTest = out
+            .childFile('test/gen/models/status_test.dart')
+            .readAsStringSync();
+        expect(
+          statusTest,
+          contains('fromJson round-trips unknown values via raw'),
+        );
+        expect(statusTest, contains('isA<StatusUnknown>()'));
+        expect(
+          statusTest,
+          isNot(contains('maybeFromJson throws FormatException')),
+        );
+        final priorityTest = out
+            .childFile('test/gen/models/priority_test.dart')
+            .readAsStringSync();
+        expect(
+          priorityTest,
+          contains('fromJson round-trips unknown values via raw'),
+        );
+        expect(
+          priorityTest,
+          isNot(contains('maybeFromJson throws FormatException')),
+        );
+      },
+    );
 
     test(
       'named int enum toString test compares against the stringified value',

@@ -5813,11 +5813,15 @@ abstract class RenderEnum<T extends Object> extends RenderNewType {
     return {
       'doc_comment': createDocComment(common: common),
       'typeName': typeName,
+      'knownTypeName': '${typeName}Known',
+      'unknownTypeName': '${typeName}Unknown',
       'nullableTypeName': nullableTypeName(context),
       'valueDartType': valueDartType,
-      // A string enum's `value` is already a `String`, so `toString()`
-      // returns it directly; an int enum must convert (see the template).
+      // A string enum's `value`/`raw` is already a `String`, so
+      // `toString()` returns it directly; an int enum must convert
+      // (see the template).
       'valueIsString': jsonStorageDartType == DartType.string,
+      'preserveUnknownEnums': context.quirks.preserveUnknownEnums,
       'enumValues': [
         for (var i = 0; i < values.length; i++) enumValueToTemplateContext(i),
       ],
@@ -5986,6 +5990,25 @@ class RenderIntNewtype extends RenderInteger {
   @override
   String? get validationCall =>
       'validateEnumValues([${allowedValues.join(', ')}])';
+
+  @override
+  Map<String, dynamic> toTemplateContext(SchemaRenderer context) {
+    if (!context.quirks.preserveUnknownEnums) {
+      return super.toTemplateContext(context);
+    }
+    // Skip the membership check so an unknown int is kept on the
+    // extension type and round-trips through toJson.
+    return {
+      'doc_comment': createDocComment(common: common),
+      'typeName': typeName,
+      'dartType': 'int',
+      'jsonType': jsonStorageType(isNullable: false),
+      'nullableTypeName': nullableTypeName(context),
+      'jsonToDartCall': jsonToDartCall(jsonIsNullable: false),
+      'hasValidations': false,
+      'validationBody': '',
+    };
+  }
 
   @override
   String? get wrapperTag => typeName;

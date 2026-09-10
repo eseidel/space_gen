@@ -8,9 +8,9 @@ import 'package:space_gen/src/render.dart';
 import 'package:space_gen/src/render/file_renderer.dart';
 
 /// Entrypoint helper: parses the standard space_gen CLI flags
-/// (`--in`/`--out`/`--verbose`/`--openapi`), wires up a [Logger],
-/// resolves the bundled templates directory, and runs
-/// [loadAndRenderSpec].
+/// (`--in`/`--out`/`--verbose`/`--openapi`/`--preserve-unknown-enums`),
+/// wires up a [Logger], resolves the bundled templates directory, and
+/// runs [loadAndRenderSpec].
 ///
 /// The core CLI is identical across every consumer; only the
 /// [fileRendererBuilder] tends to vary. Shorebird's entrypoint, for
@@ -50,6 +50,13 @@ Future<int> _runCli(
     ..addFlag('verbose', abbr: 'v', help: 'Verbose output')
     ..addFlag('openapi', help: 'Use OpenAPI quirks')
     ..addFlag(
+      'preserve-unknown-enums',
+      help:
+          'Parse unknown enum values into TypeUnknown(raw) instead of '
+          'throwing, and round-trip that raw on toJson. Combinable with '
+          '--openapi.',
+    )
+    ..addFlag(
       'clear',
       defaultsTo: true,
       help:
@@ -78,9 +85,12 @@ Future<int> _runCli(
       "since '$rawPackageName' is not a valid Dart package name.",
     );
   }
-  final quirks = results['openapi'] as bool
+  final baseQuirks = results['openapi'] as bool
       ? const Quirks.openapi()
       : const Quirks();
+  final quirks = baseQuirks.copyWith(
+    preserveUnknownEnums: results['preserve-unknown-enums'] as bool,
+  );
 
   final templatesUri = await Isolate.resolvePackageUri(
     Uri.parse('package:space_gen/templates'),

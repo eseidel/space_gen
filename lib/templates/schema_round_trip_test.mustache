@@ -20,6 +20,17 @@ void main() {
       expect({{{ typeName }}}.maybeFromJson(null), isNull);
     });
 {{#invalidJsonExample}}
+{{#unknownJsonRoundTrips}}
+
+    test('fromJson round-trips unknown values via raw', () {
+      final parsed = {{{ typeName }}}.fromJson({{{ invalidJsonExample }}});
+{{#isEnum}}
+      expect(parsed, isA<{{{ unknownTypeName }}}>());
+{{/isEnum}}
+      expect(parsed.toJson(), equals({{{ invalidJsonExample }}}));
+    });
+{{/unknownJsonRoundTrips}}
+{{^unknownJsonRoundTrips}}
 
     test('maybeFromJson throws FormatException on invalid input', () {
       expect(
@@ -27,6 +38,7 @@ void main() {
         throwsFormatException,
       );
     });
+{{/unknownJsonRoundTrips}}
 {{/invalidJsonExample}}
 {{#isEnum}}
 

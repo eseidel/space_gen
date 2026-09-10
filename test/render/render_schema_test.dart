@@ -4484,6 +4484,103 @@ void main() {
       );
     });
 
+    test('preserveUnknownEnums emits sealed type + known enum + unknown', () {
+      final json = {
+        'type': 'string',
+        'enum': ['open', 'closed'],
+      };
+      final result = renderTestSchema(
+        json,
+        quirks: const Quirks(preserveUnknownEnums: true),
+      );
+      expect(result, startsWith('sealed class Test {'));
+      expect(result, contains('static const open = TestKnown.open;'));
+      expect(result, contains('static const closed = TestKnown.closed;'));
+      expect(
+        result,
+        contains('static List<TestKnown> get values => TestKnown.values;'),
+      );
+      expect(result, contains('String get raw;'));
+      expect(result, contains('return TestUnknown(json);'));
+      expect(result, contains('enum TestKnown implements Test {'));
+      expect(result, contains("open._('open')"));
+      expect(result, contains('@immutable'));
+      expect(result, contains('final class TestUnknown extends Test {'));
+      expect(result, contains('final String raw;'));
+      expect(
+        result,
+        contains('other is TestUnknown && other.raw == raw'),
+      );
+      expect(result, isNot(contains('throw FormatException')));
+      expect(result, isNot(contains('this.value')));
+    });
+
+    test('Quirks.copyWith replaces provided fields and keeps the rest', () {
+      const original = Quirks();
+      final unchanged = original.copyWith();
+      expect(unchanged.dynamicJson, isFalse);
+      expect(unchanged.mutableModels, isFalse);
+      expect(unchanged.allListsDefaultToEmpty, isFalse);
+      expect(unchanged.screamingCapsEnums, isFalse);
+      expect(unchanged.flatModelDir, isFalse);
+      expect(unchanged.preserveUnknownEnums, isFalse);
+
+      final copied = original.copyWith(
+        dynamicJson: true,
+        mutableModels: true,
+        allListsDefaultToEmpty: true,
+        screamingCapsEnums: true,
+        flatModelDir: true,
+        preserveUnknownEnums: true,
+      );
+      expect(copied.dynamicJson, isTrue);
+      expect(copied.mutableModels, isTrue);
+      expect(copied.allListsDefaultToEmpty, isTrue);
+      expect(copied.screamingCapsEnums, isTrue);
+      expect(copied.flatModelDir, isTrue);
+      expect(copied.preserveUnknownEnums, isTrue);
+
+      expect(
+        const Quirks(
+          preserveUnknownEnums: true,
+        ).copyWith().preserveUnknownEnums,
+        isTrue,
+      );
+    });
+
+    test('preserveUnknownEnums is off under Quirks.openapi', () {
+      expect(const Quirks.openapi().preserveUnknownEnums, isFalse);
+      expect(const Quirks().preserveUnknownEnums, isFalse);
+      final json = {
+        'type': 'string',
+        'enum': ['open'],
+      };
+      final result = renderTestSchema(json, quirks: const Quirks.openapi());
+      expect(result, startsWith('enum Test {'));
+      expect(result, contains('throw FormatException'));
+    });
+
+    test('preserveUnknownEnums named int enum uses int raw', () {
+      final json = {
+        'type': 'integer',
+        'oneOf': [
+          {'title': 'BLOCK_MESSAGE', 'const': 1},
+          {'title': 'FLAG_TO_CHANNEL', 'const': 2},
+        ],
+      };
+      final result = renderTestSchema(
+        json,
+        quirks: const Quirks(preserveUnknownEnums: true),
+      );
+      expect(result, contains('sealed class Test {'));
+      expect(result, contains('int get raw;'));
+      expect(result, contains('enum TestKnown implements Test {'));
+      expect(result, contains('blockMessage._(1)'));
+      expect(result, contains('@immutable'));
+      expect(result, contains('final class TestUnknown extends Test {'));
+      expect(result, contains('final int raw;'));
+    });
+
     test('nameless integer enum renders as a validated int newtype', () {
       // A plain integer `enum` has no member names — only synthetic
       // `value<N>` — so it renders as an `extension type` over `int` whose
@@ -4548,6 +4645,20 @@ void main() {
       };
       final result = renderTestSchema(json);
       expect(result, contains('value.validateEnumValues([-1, 0, 1]);'));
+    });
+
+    test('preserveUnknownEnums skips nameless int enum membership check', () {
+      final json = {
+        'type': 'integer',
+        'enum': [1, 2, 11],
+      };
+      final result = renderTestSchema(
+        json,
+        quirks: const Quirks(preserveUnknownEnums: true),
+      );
+      expect(result, contains('extension type const Test._(int value)'));
+      expect(result, contains('const Test(this.value);'));
+      expect(result, isNot(contains('validateEnumValues')));
     });
 
     test('properties with invalid names', () {

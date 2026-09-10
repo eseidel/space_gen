@@ -106,12 +106,16 @@ List<TestCase> _testsFromManifest(Directory testDir) {
     final packageName =
         (entry['package'] as String?) ?? _derivePackageName(specFile);
     final openapi = entry['openapi'] as bool? ?? dirOpenapi;
+    final preserveUnknownEnums =
+        entry['preserveUnknownEnums'] as bool? ?? false;
     final verify = entry['verify'] as bool? ?? dirVerify;
     tests.add(
       TestCase(
         spec: specFile,
         outDir: testDir.childDirectory(packageName),
-        quirks: openapi ? const Quirks.openapi() : const Quirks(),
+        quirks: (openapi ? const Quirks.openapi() : const Quirks()).copyWith(
+          preserveUnknownEnums: preserveUnknownEnums,
+        ),
         verify: verify,
       ),
     );

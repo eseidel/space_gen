@@ -1,3 +1,78 @@
+{{#preserveUnknownEnums}}
+{{{ doc_comment }}}sealed class {{ typeName }} {
+    const {{ typeName }}();
+
+    {{#enumValues}}
+    static const {{ enumValueName }} = {{ knownTypeName }}.{{ enumValueName }};
+    {{/enumValues}}
+
+    static List<{{ knownTypeName }}> get values => {{ knownTypeName }}.values;
+
+    /// Creates a {{ typeName }} from a json value.
+    factory {{ typeName }}.fromJson({{ valueDartType }} json) {
+        for (final value in {{ knownTypeName }}.values) {
+            if (value.raw == json) {
+                return value;
+            }
+        }
+        return {{ unknownTypeName }}(json);
+    }
+
+    /// Convenience to create a nullable type from a nullable json value.
+    /// Useful when parsing optional fields.
+    static {{ nullableTypeName }} maybeFromJson({{ valueDartType }}? json) {
+        if (json == null) {
+            return null;
+        }
+        return {{ typeName }}.fromJson(json);
+    }
+
+    /// The value of the enum.  This is the exact value
+    /// from the OpenAPI spec and will be used for network transport.
+    {{ valueDartType }} get raw;
+
+    /// Converts the enum to its json value.
+    {{ valueDartType }} toJson() => raw;
+
+    /// Returns the string form of the enum.
+    @override
+    String toString() => raw{{^valueIsString}}.toString(){{/valueIsString}};
+}
+
+enum {{ knownTypeName }} implements {{ typeName }} {
+    {{#enumValues}}
+    {{{ enum_value_doc_comment }}}{{ enumValueName }}._({{{ enumValue }}}),
+    {{/enumValues}}
+    ;
+
+    const {{ knownTypeName }}._(this.raw);
+
+    @override
+    final {{ valueDartType }} raw;
+
+    @override
+    {{ valueDartType }} toJson() => raw;
+
+    @override
+    String toString() => raw{{^valueIsString}}.toString(){{/valueIsString}};
+}
+
+@immutable
+final class {{ unknownTypeName }} extends {{ typeName }} {
+    const {{ unknownTypeName }}(this.raw);
+
+    @override
+    final {{ valueDartType }} raw;
+
+    @override
+    int get hashCode => raw.hashCode;
+
+    @override
+    bool operator ==(Object other) =>
+        other is {{ unknownTypeName }} && other.raw == raw;
+}
+{{/preserveUnknownEnums}}
+{{^preserveUnknownEnums}}
 {{{ doc_comment }}}enum {{ typeName }} {
     {{#enumValues}}
     {{{ enum_value_doc_comment }}}{{ enumValueName }}._({{{ enumValue }}}),
@@ -35,3 +110,4 @@
     @override
     String toString() => value{{^valueIsString}}.toString(){{/valueIsString}};
 }
+{{/preserveUnknownEnums}}

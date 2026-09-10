@@ -10,11 +10,11 @@
 # which has its own manifest — see the README there.
 #
 # These fixtures are generated WITH `Quirks.openapi()`, unlike
-# `third_party/`, which sets `openapi: false`. The quirks flip six flags
-# (dynamicJson, mutableModels, nonNullableDefaultValues,
-# allListsDefaultToEmpty, screamingCapsEnums, flatModelDir), so the
-# setting decides both the `lib/model/` layout and the emitted
-# nullability and mutability.
+# `third_party/`, which sets `openapi: false`. The quirks flip five flags
+# (dynamicJson, mutableModels, allListsDefaultToEmpty, screamingCapsEnums,
+# flatModelDir), so the setting decides both the `lib/model/` layout and
+# the emitted nullability and mutability. `preserveUnknownEnums` is
+# independent and defaults off; set it per spec when needed.
 openapi: true
 
 # `--verify` compiles and tests these (dart pub get + analyze + test).
@@ -33,3 +33,5 @@ specs:
   - spec: security.json
   - spec: types.json
   - spec: unsupported_auth.json
+  - spec: preserve_unknown_enums.json
+    preserveUnknownEnums: true

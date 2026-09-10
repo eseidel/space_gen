@@ -1022,6 +1022,10 @@ class FileRenderer {
           'exampleIsConst': example.canBeConst,
           'invalidJsonExample': invalidJson,
           'isEnum': schema is RenderEnum,
+          'unknownJsonRoundTrips':
+              quirks.preserveUnknownEnums &&
+              (schema is RenderEnum || schema is RenderIntNewtype),
+          'unknownTypeName': '${schema.typeName}Unknown',
           'roundTripByJson': schema.roundTripByJson,
           // `toString()` returns a String for every enum, but `toJson()`
           // returns the wire type — String for a string enum, int for an int

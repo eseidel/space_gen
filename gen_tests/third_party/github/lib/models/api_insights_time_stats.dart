@@ -4,7 +4,8 @@ import 'package:github/models/api_insights_time_stats_inner.dart';
 /// API Insights usage time stats for an organization
 extension type const ApiInsightsTimeStats._(
   List<ApiInsightsTimeStatsInner> value
-) implements List<ApiInsightsTimeStatsInner> {
+)
+    implements List<ApiInsightsTimeStatsInner> {
   const ApiInsightsTimeStats(this.value);
 
   factory ApiInsightsTimeStats.fromJson(List<dynamic> json) =>

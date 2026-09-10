@@ -58,6 +58,7 @@ void main() {
     test('enum names', () {
       const quirks = Quirks();
       expect(quirks.screamingCapsEnums, isFalse);
+      expect(quirks.preserveUnknownEnums, isFalse);
       final names = RenderEnum.variableNamesFor(quirks, [
         'shortCamel',
         'TallCamel',
@@ -159,6 +160,7 @@ void main() {
     test('enum values preserve SCREAMING_CAPS under openapi quirks', () {
       const quirks = Quirks.openapi();
       expect(quirks.screamingCapsEnums, isTrue);
+      expect(quirks.preserveUnknownEnums, isFalse);
       final names = RenderEnum.variableNamesFor(quirks, [
         'AVAILABLE',
         'PENDING',
