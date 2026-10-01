@@ -6,8 +6,6 @@ analyzer:
     deprecated_member_use_from_same_package: ignore
 linter:
   rules:
-    # We do not generate docs yet.
-    public_member_api_docs: false
     # OpenAPI has no deprecation messages.
     provide_deprecation_message: false
     # Some specs contain code blocks which are not properly annotated.

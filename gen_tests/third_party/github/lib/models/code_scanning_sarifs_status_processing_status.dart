@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// `pending` files have not yet been processed, while `complete` means results
 /// from the SARIF have been stored. `failed` files have either not been
 /// processed at all, or could only be partially processed.

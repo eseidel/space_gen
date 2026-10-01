@@ -2,6 +2,10 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// When set to ALLGREEN, the merge commit created by merge queue for each PR in
 /// the group must pass all required checks to merge. When set to HEADGREEN,
 /// only the commit at the head of the merge group, i.e. the commit containing

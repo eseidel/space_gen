@@ -502,7 +502,10 @@ class FileRenderer {
     final formatted = _dartFormatter.formatIfDart(outPath, output);
     fileWriter.writeFile(
       path: outPath,
-      content: maybeAddIgnoreDirectives(formatted),
+      content: maybeAddIgnoreDirectives(
+        formatted,
+        isLibrary: p.isWithin('lib', outPath),
+      ),
     );
   }
 

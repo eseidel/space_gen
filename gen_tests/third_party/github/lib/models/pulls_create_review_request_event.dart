@@ -2,6 +2,10 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// The review action you want to perform. The review actions include:
 /// `APPROVE`, `REQUEST_CHANGES`, or `COMMENT`. By leaving this blank, you set
 /// the review action state to `PENDING`, which means you will need to [submit

@@ -4,6 +4,10 @@
 // symbol exists. Suppress file-locally so the lint stays live
 // elsewhere; spec authors do not always escape brackets.
 // ignore_for_file: comment_references
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 import 'package:backstage/model_helpers.dart';
 import 'package:backstage/models/entity_link.dart';
 import 'package:meta/meta.dart';

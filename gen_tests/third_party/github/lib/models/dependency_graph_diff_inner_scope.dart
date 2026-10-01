@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// Where the dependency is utilized. `development` means that the dependency is
 /// only utilized in the development environment. `runtime` means that the
 /// dependency is utilized at runtime and in the development environment.

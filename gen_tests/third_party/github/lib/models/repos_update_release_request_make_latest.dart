@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// Specifies whether this release should be set as the latest release for the
 /// repository. Drafts and prereleases cannot be set as latest. Defaults to
 /// `true` for newly published releases. `legacy` specifies that the latest

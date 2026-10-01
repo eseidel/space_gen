@@ -1,10 +1,15 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 import 'package:github/models/api_insights_subject_stats_inner.dart';
 
 /// Subject Stats
 /// API Insights usage subject stats for an organization
 extension type const ApiInsightsSubjectStats._(
   List<ApiInsightsSubjectStatsInner> value
-) implements List<ApiInsightsSubjectStatsInner> {
+)
+    implements List<ApiInsightsSubjectStatsInner> {
   const ApiInsightsSubjectStats(this.value);
 
   factory ApiInsightsSubjectStats.fromJson(List<dynamic> json) =>

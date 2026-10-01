@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// The review action you want to perform. The review actions include:
 /// `APPROVE`, `REQUEST_CHANGES`, or `COMMENT`. When you leave this blank, the
 /// API returns _HTTP 422 (Unrecognizable entity)_ and sets the review action

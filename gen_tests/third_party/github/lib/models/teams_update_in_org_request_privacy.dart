@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// The level of privacy this team should have. Editing teams without specifying
 /// this parameter leaves `privacy` intact. When a team is nested, the `privacy`
 /// for parent teams cannot be `secret`. The options are:

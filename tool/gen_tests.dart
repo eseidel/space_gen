@@ -199,15 +199,17 @@ Future<void> _run(
 }
 
 /// Compiles and tests a generated package: `dart pub get`, then
-/// `dart analyze`, then `dart test` when the package has a `test/`
-/// directory. Fixtures like `unsupported_auth` generate no model tests,
-/// and `dart test` errors when there is nothing to run, so testing is
-/// skipped there — analysis still covers that the code compiles.
+/// `dart analyze --fatal-infos`, then `dart test` when the package has a
+/// `test/` directory. Fixtures like `unsupported_auth` generate no model
+/// tests, and `dart test` errors when there is nothing to run, so testing
+/// is skipped there — analysis still covers that the code compiles.
 Future<void> _verify(TestCase test) async {
   final dir = test.outDir.path;
   logger.info('Verifying ${test.packageName}');
   await _run('dart', ['pub', 'get'], workingDirectory: dir);
-  await _run('dart', ['analyze'], workingDirectory: dir);
+  // `--fatal-infos`: lints like `public_member_api_docs` are infos, and
+  // generated code is meant to be lint-clean, not just error-free.
+  await _run('dart', ['analyze', '--fatal-infos'], workingDirectory: dir);
   if (test.outDir.childDirectory('test').existsSync()) {
     await _run('dart', ['test'], workingDirectory: dir);
   }

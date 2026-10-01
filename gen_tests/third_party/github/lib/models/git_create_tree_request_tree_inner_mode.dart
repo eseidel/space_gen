@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// The file mode; one of `100644` for file (blob), `100755` for executable
 /// (blob), `040000` for subdirectory (tree), `160000` for submodule (commit),
 /// or `120000` for a blob that specifies the path of a symlink.

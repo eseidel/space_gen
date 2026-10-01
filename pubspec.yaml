@@ -10,6 +10,7 @@ executables:
   space_gen:
 
 dependencies:
+  analyzer: ^14.1.0
   args: ^2.4.2
   collection: ^1.19.1
   dart_style: ^3.0.0

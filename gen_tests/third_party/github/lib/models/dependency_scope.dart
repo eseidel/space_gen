@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// A notation of whether the dependency is required for the primary build
 /// artifact (runtime) or is only used for development. Future versions of this
 /// specification may allow for more granular scopes.

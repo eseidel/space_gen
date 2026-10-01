@@ -2,6 +2,10 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// The level of permission to grant the access token for viewing and managing
 /// fine-grained personal access token requests to an organization.
 enum AppPermissionsOrganizationPersonalAccessTokens {

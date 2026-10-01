@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// The Git reference, formatted as `refs/pull/<number>/merge`,
 /// `refs/pull/<number>/head`,
 /// `refs/heads/<branch name>` or simply `<branch name>`.

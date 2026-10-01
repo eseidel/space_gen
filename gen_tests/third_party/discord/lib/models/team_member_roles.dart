@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 enum TeamMemberRoles {
   /// Admins have similar access as owners, except they cannot take
   /// destructive actions on the team or team-owned apps.

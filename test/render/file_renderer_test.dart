@@ -9,6 +9,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/render.dart';
 import 'package:space_gen/src/render/file_renderer.dart';
+import 'package:space_gen/src/render/formatting.dart'
+    show publicMemberApiDocsIgnoreBlock;
 import 'package:space_gen/src/render/render_tree.dart';
 import 'package:space_gen/src/render/schema_renderer.dart';
 import 'package:space_gen/src/render/templates.dart';
@@ -640,6 +642,103 @@ void main() {
       expect(body, contains('parsed.hashCode'));
     });
 
+    test('suppresses public_member_api_docs only where docs are missing '
+        '(#375)', () async {
+      final fs = MemoryFileSystem.test();
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Docs', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/downloads': {
+            'get': {
+              'operationId': 'getAppPatchDownloads',
+              'parameters': [
+                {
+                  'name': 'granularity',
+                  'in': 'query',
+                  'schema': {
+                    'type': 'string',
+                    'enum': ['hour', 'day', 'week'],
+                  },
+                },
+                {
+                  'name': 'interval',
+                  'in': 'query',
+                  'schema': {r'$ref': '#/components/schemas/Interval'},
+                },
+              ],
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Download'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Interval': {
+              'type': 'string',
+              'enum': ['short', 'long'],
+            },
+            'Download': {
+              'type': 'object',
+              'description': 'A download count.',
+              'required': ['count'],
+              'properties': {
+                'count': {
+                  'type': 'integer',
+                  'description': 'How many downloads.',
+                },
+              },
+            },
+          },
+        },
+      };
+      final out = fs.directory('out');
+      await renderToDirectory(spec: spec, outDir: out);
+      const marker = '// ignore_for_file: public_member_api_docs';
+      String fileDeclaring(String declaration) => out
+          .childDirectory('lib')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .map((f) => f.readAsStringSync())
+          .singleWhere((body) => body.contains(declaration));
+
+      // Inline query-parameter enum and component enum, neither described.
+      final inlineEnum = fileDeclaring('enum GetAppPatchDownloadsParameter');
+      expect(inlineEnum, startsWith('$publicMemberApiDocsIgnoreBlock\n'));
+      expect(inlineEnum, contains("hour._('hour')"));
+      expect(
+        fileDeclaring('enum Interval '),
+        startsWith('$publicMemberApiDocsIgnoreBlock\n'),
+      );
+      // Every public member documented: no directive.
+      expect(fileDeclaring('class Download '), isNot(contains(marker)));
+      // The lint only runs on lib/, so generated tests never get it.
+      final tests = out
+          .childDirectory('test')
+          .listSync(recursive: true)
+          .whereType<File>();
+      expect(tests, isNotEmpty);
+      for (final file in tests) {
+        expect(file.readAsStringSync(), isNot(contains(marker)));
+      }
+      // The generated package now enforces the lint itself.
+      expect(
+        out.childFile('analysis_options.yaml').readAsStringSync(),
+        isNot(contains('public_member_api_docs')),
+      );
+    });
+
     test('round-trip example omits args that match a default value', () async {
       final fs = MemoryFileSystem.test();
       final spec = {
@@ -1179,11 +1278,18 @@ void main() {
         clientContent,
         "import 'package:spacetraders/api.dart';\n"
         '\n'
+        '/// The API client: one property per group of endpoints, all sharing\n'
+        '/// [client].\n'
         'class Space {\n'
+        '  /// Creates the client, sending requests through [client] or, '
+        'when null,\n'
+        '  /// a default [ApiClient].\n'
         '  Space({ApiClient? client}) : client = client ?? ApiClient();\n'
         '\n'
+        '  /// The client requests are sent through.\n'
         '  final ApiClient client;\n'
         '\n'
+        '  /// The [DefaultApi] endpoints.\n'
         '  DefaultApi get defaultApi => DefaultApi(client);\n'
         '}\n',
       );

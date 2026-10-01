@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// The phase of the lifecycle that the check is currently in. Statuses of
 /// waiting, requested, and pending are reserved for GitHub Actions check runs.
 /// Example: `'queued'`

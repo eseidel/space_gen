@@ -9,10 +9,19 @@ export 'package:form_urlencoded/auth.dart';
 
 /// The HTTP methods supported by the API.
 enum Method {
+  /// HTTP `DELETE`.
   delete,
+
+  /// HTTP `GET`.
   get,
+
+  /// HTTP `PATCH`.
   patch,
+
+  /// HTTP `POST`.
   post,
+
+  /// HTTP `PUT`.
   put;
 
   /// Whether the method supports a request body.
@@ -31,14 +40,24 @@ enum Method {
 /// `Map<String, String>`; the `http` package encodes it as
 /// `key=value&...` form fields.
 enum BodyContentType {
+  /// `application/json`.
   json('application/json'),
+
+  /// `multipart/form-data`.
   multipartFormData('multipart/form-data'),
+
+  /// `application/octet-stream`.
   octetStream('application/octet-stream'),
+
+  /// `text/plain`.
   textPlain('text/plain'),
+
+  /// `application/x-www-form-urlencoded`.
   formUrlEncoded('application/x-www-form-urlencoded');
 
   const BodyContentType(this.value);
 
+  /// The `Content-Type` header value.
   final String value;
 }
 
@@ -69,6 +88,11 @@ Uri _appendPath(Uri baseUri, String path) {
 /// The client interface for the API.
 /// Subclasses can override [invokeApi] to add custom behavior.
 class ApiClient {
+  /// Creates a client sending requests to [baseUri] (default: the spec's
+  /// server URL) through [client] (default: a new `http` [Client]).
+  ///
+  /// [defaultHeaders] are sent with every request. [readSecret] looks up
+  /// the secrets named by the spec's security schemes; see [resolveAuth].
   ApiClient({
     Uri? baseUri,
     Client? client,
@@ -77,9 +101,16 @@ class ApiClient {
   }) : baseUri = baseUri ?? Uri.parse('https://example.com/form'),
        client = client ?? Client();
 
+  /// The server URL operation paths are appended to.
   final Uri baseUri;
+
+  /// The `http` client requests are sent through.
   final Client client;
+
+  /// Headers sent with every request.
   final Map<String, String> defaultHeaders;
+
+  /// Looks up a secret by its security scheme name, or returns null.
   final String? Function(String name)? readSecret;
 
   Uri _resolveUri({
@@ -187,6 +218,11 @@ class ApiClient {
     }
   }
 
+  /// Sends a [method] request to [path] with the given query parameters,
+  /// body, headers and auth, returning the raw [Response].
+  ///
+  /// Network failures throw [ApiException]; status codes are left to the
+  /// caller.
   Future<Response> invokeApi({
     required Method method,
     required String path,

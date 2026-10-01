@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// The state of the status. When you set a transient deployment to `inactive`,
 /// the deployment will be shown as `destroyed` in GitHub.
 enum ReposCreateDeploymentStatusRequestState {

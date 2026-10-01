@@ -1,11 +1,17 @@
 import 'package:{{packageName}}/api.dart';
 
+/// The API client: one property per group of endpoints, all sharing
+/// [client].
 class {{clientClassName}} {
+  /// Creates the client, sending requests through [client] or, when null,
+  /// a default [ApiClient].
   {{clientClassName}}({ApiClient? client}) : client = client ?? ApiClient();
 
+  /// The client requests are sent through.
   final ApiClient client;
 
   {{#apis}}
+  /// The [{{apiClassName}}] endpoints.
   {{apiClassName}} get {{apiName}} => {{apiClassName}}(client);
   {{/apis}}
 }
