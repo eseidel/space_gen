@@ -1,10 +1,15 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 import 'package:github/models/api_insights_route_stats_inner.dart';
 
 /// Route Stats
 /// API Insights usage route stats for an actor
 extension type const ApiInsightsRouteStats._(
   List<ApiInsightsRouteStatsInner> value
-) implements List<ApiInsightsRouteStatsInner> {
+)
+    implements List<ApiInsightsRouteStatsInner> {
   const ApiInsightsRouteStats(this.value);
 
   factory ApiInsightsRouteStats.fromJson(List<dynamic> json) =>

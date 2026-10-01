@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 import 'package:discord/messages/new_member_action_response.dart';
 import 'package:discord/messages/resource_channel_response.dart';
 import 'package:discord/messages/welcome_message_response.dart';

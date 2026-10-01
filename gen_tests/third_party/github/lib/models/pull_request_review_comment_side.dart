@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// The side of the diff to which the comment applies. The side of the last line
 /// of the range for a multi-line comment
 enum PullRequestReviewCommentSide {

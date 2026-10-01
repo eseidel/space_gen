@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// The reason for a failure of the variant analysis. This is only available if
 /// the variant analysis has failed.
 enum CodeScanningVariantAnalysisFailureReason {

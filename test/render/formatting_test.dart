@@ -715,6 +715,126 @@ void main() {
     });
   });
 
+  group('maybeAddPublicMemberApiDocsIgnore', () {
+    void expectFlagged(String content) => expect(
+      maybeAddPublicMemberApiDocsIgnore(content),
+      '$publicMemberApiDocsIgnoreBlock\n$content',
+    );
+    void expectClean(String content) =>
+        expect(maybeAddPublicMemberApiDocsIgnore(content), content);
+
+    test('passes through a fully documented file', () {
+      expectClean(
+        '/// An enum.\n'
+        'enum E {\n'
+        '  /// A.\n'
+        "  a._('a');\n"
+        '\n'
+        '  const E._(this.value);\n'
+        '\n'
+        '  /// The value.\n'
+        '  final String value;\n'
+        '\n'
+        '  @override\n'
+        '  String toString() => value;\n'
+        '}\n',
+      );
+    });
+
+    test('flags an undocumented enum and its values (#375)', () {
+      expectFlagged(
+        'enum GetAppPatchDownloadsParameter2 {\n'
+        "  hour._('hour'),\n"
+        "  day._('day');\n"
+        '\n'
+        '  const GetAppPatchDownloadsParameter2._(this.value);\n'
+        '\n'
+        '  /// The value.\n'
+        '  final String value;\n'
+        '}\n',
+      );
+    });
+
+    test('flags an undocumented enum value alone', () {
+      expectFlagged('/// An enum.\nenum E {\n  /// A.\n  a,\n  b,\n}\n');
+    });
+
+    test('flags undocumented class, field, constructor and method', () {
+      expectFlagged('class C {}\n');
+      expectFlagged('/// C.\nclass C {\n  final int x = 0;\n}\n');
+      expectFlagged('/// C.\nclass C {\n  C();\n}\n');
+      expectFlagged('/// C.\nclass C {\n  C.named();\n}\n');
+      expectFlagged('/// C.\nclass C {\n  void m() {}\n}\n');
+      expectFlagged('/// C.\nclass C {\n  int get g => 0;\n}\n');
+    });
+
+    test('flags undocumented top-level declarations', () {
+      expectFlagged('int x = 0;\n');
+      expectFlagged('void f() {}\n');
+      expectFlagged('typedef F = int Function();\n');
+      expectFlagged('class A = Object with M;\n');
+      expectFlagged('mixin M {}\n');
+      expectFlagged('extension X on int {}\n');
+      expectFlagged('/// M.\nmixin M {\n  void m() {}\n}\n');
+      expectFlagged('/// X.\nextension X on int {\n  void m() {}\n}\n');
+    });
+
+    test('flags extension type members but not the representation', () {
+      expectClean(
+        '/// T.\n'
+        'extension type const T._(String value) {\n'
+        '  /// Wraps.\n'
+        '  const T(this.value);\n'
+        '}\n',
+      );
+      expectFlagged(
+        '/// T.\n'
+        'extension type const T._(String value) {\n'
+        '  const T(this.value);\n'
+        '}\n',
+      );
+    });
+
+    test('ignores what the lint exempts', () {
+      // Private declarations and members of private types.
+      expectClean('class _C {\n  final int x = 0;\n  void m() {}\n}\n');
+      expectClean('/// C.\nclass C {\n  C._();\n  void _m() {}\n}\n');
+      expectClean('void main() {}\n');
+      // Overrides inherit their docs.
+      expectClean(
+        '/// C.\nclass C {\n  @override\n  int get hashCode => 0;\n}\n',
+      );
+      expectClean('/// C.\nclass C {\n  @override\n  final int x = 0;\n}\n');
+      // Constructors of sealed classes and enums.
+      expectClean('/// S.\nsealed class S {\n  const S();\n}\n');
+      expectClean('/// S.\nabstract final class S {\n  const S();\n}\n');
+      expectClean('/// S.\nabstract interface class S {\n  const S();\n}\n');
+      expectClean('/// E.\nenum E {\n  /// A.\n  a;\n\n  const E();\n}\n');
+      // A setter whose getter is documented.
+      expectClean(
+        '/// C.\nclass C {\n  /// G.\n  int get g => 0;\n'
+        '  set g(int v) {}\n}\n',
+      );
+      // Unnamed extensions and @internal declarations.
+      expectClean('extension on int {}\n');
+      expectClean('@internal\nclass C {}\n');
+    });
+
+    test('idempotent: does not double-prepend if marker already present', () {
+      const content = '$publicMemberApiDocsIgnoreBlock\nclass C {}\n';
+      expect(maybeAddPublicMemberApiDocsIgnore(content), content);
+    });
+
+    test('maybeAddIgnoreDirectives skips it outside lib/', () {
+      const content = 'class C {}\n';
+      expect(
+        maybeAddIgnoreDirectives(content),
+        '$publicMemberApiDocsIgnoreBlock\n$content',
+      );
+      expect(maybeAddIgnoreDirectives(content, isLibrary: false), content);
+    });
+  });
+
   group('maybeAddAvoidJsRoundedIntsIgnore', () {
     test('passes through in-range validation bounds', () {
       // 9007199254740991 is 2^53-1, the largest JS-safe integer — dart2js

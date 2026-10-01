@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// Whether a prebuild is currently available when creating a codespace for this
 /// machine and repository. If a branch was not specified as a ref, the default
 /// branch will be assumed. Value will be "null" if prebuilds are not supported

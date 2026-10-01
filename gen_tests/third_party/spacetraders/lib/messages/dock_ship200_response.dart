@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 import 'package:meta/meta.dart';
 import 'package:spacetraders/model_helpers.dart';
 import 'package:spacetraders/models/dock_ship200_response_data.dart';

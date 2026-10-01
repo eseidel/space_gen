@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 import 'package:github/model_helpers.dart';
 import 'package:github/models/environment_protection_rules_inner_any_of_1_reviewers_inner.dart';
 import 'package:github/models/wait_timer.dart';

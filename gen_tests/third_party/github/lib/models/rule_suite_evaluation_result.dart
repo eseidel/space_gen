@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// The result of the rule evaluations for rules with the `active` and
 /// `evaluate` enforcement statuses, demonstrating whether rules would pass or
 /// fail if all rules in the rule suite were `active`. Null if no rules with

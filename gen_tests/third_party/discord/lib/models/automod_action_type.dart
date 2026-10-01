@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 enum AutomodActionType {
   /// Block a user's message and prevent it from being posted. A custom
   /// explanation can be specified and shown to members whenever their message

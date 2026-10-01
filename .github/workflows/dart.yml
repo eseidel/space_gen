@@ -113,7 +113,7 @@ jobs:
         working-directory: ${{ matrix.dir }}
         run: |
           dart pub get
-          dart analyze
+          dart analyze --fatal-infos
 
   # Aggregate gate so branch protection can require a single stable check
   # instead of one context per matrix leg — adding a third_party spec

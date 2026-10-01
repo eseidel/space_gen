@@ -11,16 +11,22 @@ import 'package:meta/meta.dart';
 /// [body] is always null.
 @immutable
 class ApiException<T> implements Exception {
+  /// Creates an exception for an error response with status [code],
+  /// raw response [message] and, when the spec declares one, parsed [body].
   const ApiException(this.code, this.message, {this.body})
     : innerException = null,
       stackTrace = null;
 
+  /// Creates an exception for a response with status [code] that the
+  /// operation does not declare.
   const ApiException.unhandled(this.code)
     : message = 'Unhandled response',
       body = null,
       innerException = null,
       stackTrace = null;
 
+  /// Creates an exception wrapping [innerException], thrown while sending
+  /// the request, and its [stackTrace].
   const ApiException.withInner(
     this.code,
     this.message,
@@ -28,13 +34,21 @@ class ApiException<T> implements Exception {
     this.stackTrace,
   ) : body = null;
 
+  /// The HTTP status code.
   final int code;
+
+  /// A description of the failure; the raw response body for error
+  /// responses.
   final String? message;
 
   /// The parsed error body, if the operation's `default:` response declared
   /// a schema. Null otherwise.
   final T? body;
+
+  /// The exception that caused this one, if any.
   final Exception? innerException;
+
+  /// The stack trace of [innerException], if any.
   final StackTrace? stackTrace;
 
   @override
@@ -56,6 +70,7 @@ class ApiException<T> implements Exception {
 /// the schema sets, each argument omitted when it doesn't. It just forwards to
 /// the single-rule methods below, which are equally usable on their own.
 extension ValidateNumber on num {
+  /// Validates every constraint given; each argument may be omitted.
   void validate({
     num? min,
     num? max,
@@ -83,30 +98,35 @@ extension ValidateNumber on num {
     }
   }
 
+  /// Throws unless the value is greater than or equal to [minimum].
   void validateMinimum(num minimum) {
     if (this < minimum) {
       throw Exception('must be greater than or equal to $minimum');
     }
   }
 
+  /// Throws unless the value is less than or equal to [maximum].
   void validateMaximum(num maximum) {
     if (this > maximum) {
       throw Exception('must be less than or equal to $maximum');
     }
   }
 
+  /// Throws unless the value is greater than [minimum].
   void validateExclusiveMinimum(num minimum) {
     if (this <= minimum) {
       throw Exception('must be greater than $minimum');
     }
   }
 
+  /// Throws unless the value is less than [maximum].
   void validateExclusiveMaximum(num maximum) {
     if (this >= maximum) {
       throw Exception('must be less than $maximum');
     }
   }
 
+  /// Throws unless the value is a multiple of [multiple].
   void validateMultipleOf(num multiple) {
     if (this % multiple != 0) {
       throw Exception('must be a multiple of $multiple');
@@ -118,24 +138,28 @@ extension ValidateNumber on num {
 ///
 /// See [ValidateNumber] — [validate] is sugar over the single-rule methods.
 extension ValidateString on String {
+  /// Validates every constraint given; each argument may be omitted.
   void validate({int? minLength, int? maxLength, String? pattern}) {
     if (minLength != null) validateMinimumLength(minLength);
     if (maxLength != null) validateMaximumLength(maxLength);
     if (pattern != null) validatePattern(pattern);
   }
 
+  /// Throws unless the string has at least [minimum] characters.
   void validateMinimumLength(int minimum) {
     if (length < minimum) {
       throw Exception('must be at least $minimum characters long');
     }
   }
 
+  /// Throws unless the string has at most [maximum] characters.
   void validateMaximumLength(int maximum) {
     if (length > maximum) {
       throw Exception('must be at most $maximum characters long');
     }
   }
 
+  /// Throws unless the string matches the regular expression [pattern].
   void validatePattern(String pattern) {
     if (!RegExp(pattern).hasMatch(this)) {
       throw Exception('must match the pattern $pattern');
@@ -147,24 +171,28 @@ extension ValidateString on String {
 ///
 /// See [ValidateNumber] — [validate] is sugar over the single-rule methods.
 extension ValidateArray<T> on List<T> {
+  /// Validates every constraint given; each argument may be omitted.
   void validate({int? minItems, int? maxItems, bool unique = false}) {
     if (minItems != null) validateMinimumItems(minItems);
     if (maxItems != null) validateMaximumItems(maxItems);
     if (unique) validateUniqueItems();
   }
 
+  /// Throws unless the list has at least [minimum] items.
   void validateMinimumItems(int minimum) {
     if (length < minimum) {
       throw Exception('must be at least $minimum items long');
     }
   }
 
+  /// Throws unless the list has at most [maximum] items.
   void validateMaximumItems(int maximum) {
     if (length > maximum) {
       throw Exception('must be at most $maximum items long');
     }
   }
 
+  /// Throws unless every item in the list is distinct.
   void validateUniqueItems() {
     if (toSet().length != length) {
       throw Exception('must contain unique items');

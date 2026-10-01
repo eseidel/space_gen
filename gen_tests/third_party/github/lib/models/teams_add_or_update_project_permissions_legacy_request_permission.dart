@@ -2,6 +2,10 @@
 // enough that `dart format` can't keep imports and call sites under
 // 80 cols as bare identifiers.
 // ignore_for_file: lines_longer_than_80_chars
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// The permission to grant to the team for this project. Default: the team's
 /// `permission` attribute will be used to determine what permission to grant
 /// the team on this project. Note that, if you choose not to pass any

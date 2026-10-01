@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// When the specified actor can bypass the ruleset. `pull_request` means that
 /// an actor can only bypass rules on pull requests. `pull_request` is not
 /// applicable for the `DeployKey` actor type. Also, `pull_request` is only

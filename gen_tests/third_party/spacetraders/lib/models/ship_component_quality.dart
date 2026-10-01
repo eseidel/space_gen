@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// The overall quality of the component, which determines the quality of the
 /// component. High quality components return more ships parts and ship plating
 /// when a ship is scrapped. But also require more of these parts to repair.

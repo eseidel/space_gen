@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 import 'package:github/models/validation_error.dart';
 import 'package:github/models/validation_error_simple.dart';
 import 'package:meta/meta.dart';

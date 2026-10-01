@@ -1,3 +1,7 @@
+// Some public members in this file have no doc comment: doc comments
+// are copied from spec descriptions, and not every member has one.
+// Suppress file-locally so the lint stays live elsewhere.
+// ignore_for_file: public_member_api_docs
 /// The ID of the push protection bypass placeholder. This value is returned on
 /// any push protected routes.
 extension type const SecretScanningPushProtectionBypassPlaceholderId._(

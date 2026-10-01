@@ -80,6 +80,7 @@ class ResolvedAuth {
 /// An abstract class representing an auth request.
 @immutable
 abstract class AuthRequest {
+  /// Base constructor for subclasses.
   const AuthRequest();
 
   /// Used to check if the getSecret function has all the secrets for this auth.
@@ -108,6 +109,7 @@ class NoAuth extends AuthRequest {
 /// An auth request that is a one of any of the given auth requests.
 @immutable
 class OneOfAuth extends AuthRequest {
+  /// Create a new [OneOfAuth] satisfied by any one of [auths].
   const OneOfAuth(this.auths);
 
   /// The auth requests that are a one of.
@@ -163,6 +165,7 @@ class AllOfAuth extends AuthRequest {
 /// An auth request that requires a secret.
 @immutable
 abstract class SecretAuth extends AuthRequest {
+  /// Base constructor for subclasses; [secretName] names the secret.
   const SecretAuth({required this.secretName});
 
   /// The name of the secret.
@@ -197,11 +200,21 @@ class HttpAuth extends SecretAuth {
 }
 
 /// Where an API key is sent on the request.
-enum ApiKeyLocation { query, header, cookie }
+enum ApiKeyLocation {
+  /// Sent as a query parameter.
+  query,
+
+  /// Sent as a request header.
+  header,
+
+  /// Sent as a cookie.
+  cookie,
+}
 
 /// An API key authentication scheme.
 @immutable
 class ApiKeyAuth extends SecretAuth {
+  /// Create a new API key authentication scheme.
   const ApiKeyAuth({
     required this.name,
     required this.sendIn,

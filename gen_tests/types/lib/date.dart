@@ -16,6 +16,7 @@ import 'package:meta/meta.dart';
 /// if it gains one, this becomes an alias for it.
 @immutable
 class Date implements Comparable<Date> {
+  /// Creates the date [year]-[month]-[day], as given (not range-checked).
   const Date(this.year, this.month, this.day);
 
   /// Parses an RFC 3339 full-date. Only the calendar components are read — the
@@ -29,10 +30,16 @@ class Date implements Comparable<Date> {
   static Date? maybeFromJson(String? json) =>
       json == null ? null : Date.fromJson(json);
 
+  /// The year, e.g. `2024`.
   final int year;
+
+  /// The month, `1` through `12`.
   final int month;
+
+  /// The day of the month, `1` through `31`.
   final int day;
 
+  /// The RFC 3339 full-date form, `YYYY-MM-DD`.
   String toJson() =>
       '${year.toString().padLeft(4, '0')}-'
       '${month.toString().padLeft(2, '0')}-'

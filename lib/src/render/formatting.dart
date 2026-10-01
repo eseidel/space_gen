@@ -1,5 +1,8 @@
 import 'dart:io';
 
+import 'package:analyzer/dart/analysis/utilities.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/token.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:file/file.dart';
 import 'package:meta/meta.dart';
@@ -290,20 +293,175 @@ String maybeAddAvoidJsRoundedIntsIgnore(String content) {
   return '$avoidJsRoundedIntsIgnoreBlock\n$content';
 }
 
+/// Block prepended to generated library files that declare a public
+/// member with no doc comment because the spec gave it no description
+/// (e.g. an inline query-parameter `enum` and its values). Exposed for
+/// tests.
+@visibleForTesting
+const publicMemberApiDocsIgnoreBlock =
+    '// Some public members in this file have no doc comment: doc comments\n'
+    '// are copied from spec descriptions, and not every member has one.\n'
+    '// Suppress file-locally so the lint stays live elsewhere.\n'
+    '// ignore_for_file: public_member_api_docs';
+
+/// Returns [content] with [publicMemberApiDocsIgnoreBlock] prepended if
+/// it declares a public member that `public_member_api_docs` would flag
+/// for lacking a doc comment. Threaded through [maybeAddIgnoreDirectives]
+/// at file-emit time on every space_gen-emitted library file (the lint
+/// only runs on `lib/`). Hand-written templates skip the call, so they
+/// stay documented at the source.
+@visibleForTesting
+String maybeAddPublicMemberApiDocsIgnore(String content) {
+  const marker = '// ignore_for_file: public_member_api_docs';
+  if (content.contains(marker)) return content;
+  if (!hasUndocumentedPublicMember(content)) return content;
+  return '$publicMemberApiDocsIgnoreBlock\n$content';
+}
+
+/// Whether [content] declares a public member `public_member_api_docs`
+/// would flag: one with no doc comment that isn't exempt.
+///
+/// Mirrors the lint's rules on an unresolved parse. Exempt are private
+/// names, `main`, members of private types, enum constructors,
+/// constructors of sealed / `abstract final` / `abstract interface`
+/// classes, an extension type's representation, setters whose getter is
+/// documented (or absent), and overrides. Overrides are recognized by
+/// their `@override` annotation rather than by resolution; generated
+/// code always carries it (`annotate_overrides`).
+@visibleForTesting
+bool hasUndocumentedPublicMember(String content) {
+  final unit = parseString(content: content, throwIfDiagnostics: false).unit;
+  return unit.declarations.any(_declarationHasUndocumentedMember);
+}
+
+bool _isPrivate(Token? name) => name == null || name.lexeme.startsWith('_');
+
+bool _hasAnnotation(AnnotatedNode node, String name) =>
+    node.metadata.any((a) => a.name.name == name);
+
+/// Whether [node] lacks the doc comment the lint wants. A field or
+/// top-level variable's `@override` sits on its enclosing declaration
+/// (`FieldDeclaration` / `TopLevelVariableDeclaration`), two levels up.
+bool _isUndocumented(AnnotatedNode node) {
+  if (node.documentationComment != null) return false;
+  final annotated = node is VariableDeclaration
+      ? node.parent!.parent! as AnnotatedNode
+      : node;
+  return !_hasAnnotation(annotated, 'override');
+}
+
+bool _declarationHasUndocumentedMember(CompilationUnitMember node) {
+  if (_hasAnnotation(node, 'internal')) return false;
+  switch (node) {
+    case ClassDeclaration():
+      if (_isPrivate(node.namePart.typeName)) return false;
+      final skipConstructors =
+          node.sealedKeyword != null ||
+          (node.abstractKeyword != null &&
+              (node.finalKeyword != null || node.interfaceKeyword != null));
+      return _isUndocumented(node) ||
+          _membersHaveUndocumented(
+            node.body.members,
+            skipConstructors: skipConstructors,
+          );
+    case EnumDeclaration():
+      if (_isPrivate(node.namePart.typeName)) return false;
+      return _isUndocumented(node) ||
+          node.body.constants.any(
+            (c) => !_isPrivate(c.name) && _isUndocumented(c),
+          ) ||
+          _membersHaveUndocumented(node.body.members, skipConstructors: true);
+    case ExtensionTypeDeclaration():
+      if (_isPrivate(node.namePart.typeName)) return false;
+      return _isUndocumented(node) ||
+          _membersHaveUndocumented(
+            node.body.members,
+            skipConstructors: false,
+            staticFieldsOnly: true,
+          );
+    case MixinDeclaration():
+      if (_isPrivate(node.name)) return false;
+      return _isUndocumented(node) ||
+          _membersHaveUndocumented(node.body.members, skipConstructors: false);
+    case ExtensionDeclaration():
+      if (_isPrivate(node.name)) return false;
+      return _isUndocumented(node) ||
+          _membersHaveUndocumented(node.body.members, skipConstructors: false);
+    case ClassTypeAlias():
+      return !_isPrivate(node.name) && _isUndocumented(node);
+    case TypeAlias():
+      return !_isPrivate(node.name) && _isUndocumented(node);
+    case TopLevelVariableDeclaration():
+      return node.variables.variables.any(
+        (v) => !_isPrivate(v.name) && _isUndocumented(v),
+      );
+    case FunctionDeclaration():
+      if (_isPrivate(node.name) || node.name.lexeme == 'main') return false;
+      // A setter is only flagged alongside an undocumented getter, which
+      // is flagged on its own.
+      return !node.isSetter && _isUndocumented(node);
+    default:
+      return false;
+  }
+}
+
+/// Whether any of a public type's [members] lacks a doc comment.
+/// [skipConstructors] covers enums and the class shapes whose
+/// constructors the lint treats as private; [staticFieldsOnly] covers
+/// extension types, whose instance fields are invalid code anyway.
+bool _membersHaveUndocumented(
+  List<ClassMember> members, {
+  required bool skipConstructors,
+  bool staticFieldsOnly = false,
+}) {
+  for (final member in members) {
+    if (_hasAnnotation(member, 'internal')) continue;
+    switch (member) {
+      case ConstructorDeclaration():
+        if (skipConstructors ||
+            _isPrivate(member.name ?? member.typeName?.token)) {
+          continue;
+        }
+        if (_isUndocumented(member)) return true;
+      case FieldDeclaration():
+        if (staticFieldsOnly && !member.isStatic) continue;
+        for (final field in member.fields.variables) {
+          if (!_isPrivate(field.name) && _isUndocumented(field)) return true;
+        }
+      case MethodDeclaration():
+        // As with top-level functions, a setter is only flagged alongside
+        // an undocumented getter.
+        if (_isPrivate(member.name) || member.isSetter) continue;
+        if (_isUndocumented(member)) return true;
+      default:
+        continue;
+    }
+  }
+  return false;
+}
+
 /// Composes the per-file emit-time suppression helpers applied by
 /// `_renderSpecTemplate`. Adding a new gen-time suppression to the
 /// pipeline is a single edit here; call sites stay unchanged.
 /// Hand-written templates use `_renderTemplate` instead and bypass
 /// this entirely (see #138's design rationale).
-String maybeAddIgnoreDirectives(String content) => maybeAddLongLineIgnore(
-  maybeAddCommentReferencesIgnore(
-    maybeAddUnintendedHtmlIgnore(
-      maybeAddFlutterStyleTodosIgnore(
-        maybeAddAvoidJsRoundedIntsIgnore(content),
+///
+/// [isLibrary] is whether the file lives under `lib/`; the
+/// `public_member_api_docs` check only applies there, since the lint
+/// doesn't run on tests and an unneeded directive trips
+/// `unnecessary_ignore`.
+String maybeAddIgnoreDirectives(String content, {bool isLibrary = true}) =>
+    maybeAddLongLineIgnore(
+      maybeAddCommentReferencesIgnore(
+        maybeAddUnintendedHtmlIgnore(
+          maybeAddFlutterStyleTodosIgnore(
+            maybeAddAvoidJsRoundedIntsIgnore(
+              isLibrary ? maybeAddPublicMemberApiDocsIgnore(content) : content,
+            ),
+          ),
+        ),
       ),
-    ),
-  ),
-);
+    );
 
 /// Collects every `[token]` bracketed reference inside a `///` doc
 /// comment that `comment_references` could actually fire on, ignoring
