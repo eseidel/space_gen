@@ -3,7 +3,8 @@ import 'package:github/models/search_result_text_matches_inner.dart';
 /// Search Result Text Matches
 extension type const SearchResultTextMatches._(
   List<SearchResultTextMatchesInner> value
-) implements List<SearchResultTextMatchesInner> {
+)
+    implements List<SearchResultTextMatchesInner> {
   const SearchResultTextMatches(this.value);
 
   factory SearchResultTextMatches.fromJson(List<dynamic> json) =>

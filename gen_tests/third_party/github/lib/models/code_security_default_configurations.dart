@@ -3,7 +3,8 @@ import 'package:github/models/code_security_default_configurations_inner.dart';
 /// A list of default code security configurations
 extension type const CodeSecurityDefaultConfigurations._(
   List<CodeSecurityDefaultConfigurationsInner> value
-) implements List<CodeSecurityDefaultConfigurationsInner> {
+)
+    implements List<CodeSecurityDefaultConfigurationsInner> {
   const CodeSecurityDefaultConfigurations(this.value);
 
   factory CodeSecurityDefaultConfigurations.fromJson(List<dynamic> json) =>

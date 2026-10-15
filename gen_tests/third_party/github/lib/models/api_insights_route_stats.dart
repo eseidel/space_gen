@@ -4,7 +4,8 @@ import 'package:github/models/api_insights_route_stats_inner.dart';
 /// API Insights usage route stats for an actor
 extension type const ApiInsightsRouteStats._(
   List<ApiInsightsRouteStatsInner> value
-) implements List<ApiInsightsRouteStatsInner> {
+)
+    implements List<ApiInsightsRouteStatsInner> {
   const ApiInsightsRouteStats(this.value);
 
   factory ApiInsightsRouteStats.fromJson(List<dynamic> json) =>

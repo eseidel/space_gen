@@ -4,7 +4,8 @@ import 'package:github/models/api_insights_user_stats_inner.dart';
 /// API Insights usage stats for a user
 extension type const ApiInsightsUserStats._(
   List<ApiInsightsUserStatsInner> value
-) implements List<ApiInsightsUserStatsInner> {
+)
+    implements List<ApiInsightsUserStatsInner> {
   const ApiInsightsUserStats(this.value);
 
   factory ApiInsightsUserStats.fromJson(List<dynamic> json) =>
