@@ -99,7 +99,7 @@ class CodeScanningUploadSarifRequest {
       'ref': ref.toJson(),
       'sarif': sarif.toJson(),
       'checkout_uri': ?checkoutUri?.toString(),
-      'started_at': ?startedAt?.toIso8601String(),
+      'started_at': ?startedAt?.toUtc().toIso8601String(),
       'tool_name': ?toolName,
       'validate': ?validate,
     };

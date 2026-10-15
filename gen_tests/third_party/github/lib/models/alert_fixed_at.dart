@@ -15,5 +15,5 @@ extension type const AlertFixedAt._(DateTime value) {
     return AlertFixedAt.fromJson(json);
   }
 
-  String toJson() => value.toIso8601String();
+  String toJson() => value.toUtc().toIso8601String();
 }

@@ -60,7 +60,7 @@ class IssuesUpdateMilestoneRequest {
       'title': ?title,
       'state': state.toJson(),
       'description': ?description,
-      'due_on': ?dueOn?.toIso8601String(),
+      'due_on': ?dueOn?.toUtc().toIso8601String(),
     };
   }
 

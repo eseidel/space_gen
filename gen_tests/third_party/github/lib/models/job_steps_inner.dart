@@ -68,8 +68,8 @@ class JobStepsInner {
       'conclusion': conclusion,
       'name': name,
       'number': number,
-      'started_at': startedAt?.toIso8601String(),
-      'completed_at': completedAt?.toIso8601String(),
+      'started_at': startedAt?.toUtc().toIso8601String(),
+      'completed_at': completedAt?.toUtc().toIso8601String(),
     };
   }
 

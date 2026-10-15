@@ -63,7 +63,7 @@ class PollResponse {
     return {
       'question': question.toJson(),
       'answers': answers.map((e) => e.toJson()).toList(),
-      'expiry': expiry.toIso8601String(),
+      'expiry': expiry.toUtc().toIso8601String(),
       'allow_multiselect': allowMultiselect,
       'layout_type': layoutType.toJson(),
       'results': results.toJson(),

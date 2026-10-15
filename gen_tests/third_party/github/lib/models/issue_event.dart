@@ -209,7 +209,7 @@ class IssueEvent {
       'event': event,
       'commit_id': commitId,
       'commit_url': commitUrl,
-      'created_at': createdAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
       'issue': issue?.toJson(),
       'label': ?label?.toJson(),
       'assignee': assignee?.toJson(),

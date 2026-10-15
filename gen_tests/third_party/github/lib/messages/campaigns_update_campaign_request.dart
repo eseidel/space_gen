@@ -79,7 +79,7 @@ class CampaignsUpdateCampaignRequest {
       'description': ?description,
       'managers': ?managers,
       'team_managers': ?teamManagers,
-      'ends_at': ?endsAt?.toIso8601String(),
+      'ends_at': ?endsAt?.toUtc().toIso8601String(),
       'contact_link': contactLink?.toString(),
       'state': ?state?.toJson(),
     };

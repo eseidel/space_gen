@@ -52,7 +52,7 @@ class AgentEvent {
       'type': type,
       'message': message,
       'data': ?data,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': createdAt.toUtc().toIso8601String(),
     };
   }
 

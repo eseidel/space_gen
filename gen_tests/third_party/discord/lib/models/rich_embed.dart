@@ -102,7 +102,7 @@ class RichEmbed {
       'url': url?.toString(),
       'title': title,
       'color': color,
-      'timestamp': timestamp?.toIso8601String(),
+      'timestamp': timestamp?.toUtc().toIso8601String(),
       'description': description,
       'author': author?.toJson(),
       'image': image?.toJson(),

@@ -113,7 +113,7 @@ class ThreadResponse {
       'type': type.toJson(),
       'last_message_id': lastMessageId?.toJson(),
       'flags': flags,
-      'last_pin_timestamp': lastPinTimestamp?.toIso8601String(),
+      'last_pin_timestamp': lastPinTimestamp?.toUtc().toIso8601String(),
       'guild_id': guildId.toJson(),
       'name': name,
       'parent_id': parentId?.toJson(),

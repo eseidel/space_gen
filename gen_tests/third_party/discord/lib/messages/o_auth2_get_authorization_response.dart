@@ -54,7 +54,7 @@ class OAuth2GetAuthorizationResponse {
   Map<String, dynamic> toJson() {
     return {
       'application': application.toJson(),
-      'expires': expires.toIso8601String(),
+      'expires': expires.toUtc().toIso8601String(),
       'scopes': scopes.map((e) => e.toJson()).toList(),
       'user': ?user?.toJson(),
     };

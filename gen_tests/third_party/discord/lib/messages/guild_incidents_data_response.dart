@@ -39,8 +39,8 @@ class GuildIncidentsDataResponse {
   /// Converts a [GuildIncidentsDataResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'invites_disabled_until': invitesDisabledUntil?.toIso8601String(),
-      'dms_disabled_until': dmsDisabledUntil?.toIso8601String(),
+      'invites_disabled_until': invitesDisabledUntil?.toUtc().toIso8601String(),
+      'dms_disabled_until': dmsDisabledUntil?.toUtc().toIso8601String(),
     };
   }
 

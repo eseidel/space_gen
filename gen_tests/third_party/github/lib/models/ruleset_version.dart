@@ -51,7 +51,7 @@ class RulesetVersion {
     return {
       'version_id': versionId,
       'actor': actor.toJson(),
-      'updated_at': updatedAt.toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
     };
   }
 

@@ -2099,9 +2099,9 @@ class OrgsApi {
         if (repository != null) 'repository': [repository],
         if (permission != null) 'permission': [permission],
         if (lastUsedBefore != null)
-          'last_used_before': [lastUsedBefore.toIso8601String()],
+          'last_used_before': [lastUsedBefore.toUtc().toIso8601String()],
         if (lastUsedAfter != null)
-          'last_used_after': [lastUsedAfter.toIso8601String()],
+          'last_used_after': [lastUsedAfter.toUtc().toIso8601String()],
         if (tokenId != null) 'token_id': tokenId,
       },
     );
@@ -2254,9 +2254,9 @@ class OrgsApi {
         if (repository != null) 'repository': [repository],
         if (permission != null) 'permission': [permission],
         if (lastUsedBefore != null)
-          'last_used_before': [lastUsedBefore.toIso8601String()],
+          'last_used_before': [lastUsedBefore.toUtc().toIso8601String()],
         if (lastUsedAfter != null)
-          'last_used_after': [lastUsedAfter.toIso8601String()],
+          'last_used_after': [lastUsedAfter.toUtc().toIso8601String()],
         if (tokenId != null) 'token_id': tokenId,
       },
     );

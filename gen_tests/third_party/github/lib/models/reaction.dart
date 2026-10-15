@@ -69,7 +69,7 @@ class Reaction {
       'node_id': nodeId,
       'user': user?.toJson(),
       'content': content.toJson(),
-      'created_at': createdAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
     };
   }
 

@@ -143,8 +143,8 @@ class GpgKey {
       'can_encrypt_comms': canEncryptComms,
       'can_encrypt_storage': canEncryptStorage,
       'can_certify': canCertify,
-      'created_at': createdAt.toIso8601String(),
-      'expires_at': expiresAt?.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'expires_at': expiresAt?.toUtc().toIso8601String(),
       'revoked': revoked,
       'raw_key': rawKey,
     };

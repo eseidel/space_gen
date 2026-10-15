@@ -88,7 +88,7 @@ class MarketTransaction {
       'units': units,
       'pricePerUnit': pricePerUnit,
       'totalPrice': totalPrice,
-      'timestamp': timestamp.toIso8601String(),
+      'timestamp': timestamp.toUtc().toIso8601String(),
     };
   }
 

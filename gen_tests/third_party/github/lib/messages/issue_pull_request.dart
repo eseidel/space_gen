@@ -44,7 +44,7 @@ class IssuePullRequest {
   /// Converts an [IssuePullRequest] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'merged_at': mergedAt?.toIso8601String(),
+      'merged_at': mergedAt?.toUtc().toIso8601String(),
       'diff_url': diffUrl?.toString(),
       'html_url': htmlUrl?.toString(),
       'patch_url': patchUrl?.toString(),

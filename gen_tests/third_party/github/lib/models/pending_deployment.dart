@@ -77,7 +77,7 @@ class PendingDeployment {
     return {
       'environment': environment.toJson(),
       'wait_timer': waitTimer,
-      'wait_timer_started_at': waitTimerStartedAt?.toIso8601String(),
+      'wait_timer_started_at': waitTimerStartedAt?.toUtc().toIso8601String(),
       'current_user_can_approve': currentUserCanApprove,
       'reviewers': reviewers.map((e) => e.toJson()).toList(),
     };

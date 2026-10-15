@@ -64,8 +64,8 @@ class TargetUsersJobStatusResponse {
       'status': status.toJson(),
       'total_users': totalUsers.toJson(),
       'processed_users': processedUsers.toJson(),
-      'created_at': createdAt?.toIso8601String(),
-      'completed_at': completedAt?.toIso8601String(),
+      'created_at': createdAt?.toUtc().toIso8601String(),
+      'completed_at': completedAt?.toUtc().toIso8601String(),
       'error_message': errorMessage,
     };
   }

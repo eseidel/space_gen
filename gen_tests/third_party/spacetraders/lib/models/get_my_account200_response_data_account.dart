@@ -50,7 +50,7 @@ class GetMyAccount200ResponseDataAccount {
       'id': id,
       'email': email,
       'token': ?token,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': createdAt.toUtc().toIso8601String(),
     };
   }
 

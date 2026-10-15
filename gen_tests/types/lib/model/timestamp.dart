@@ -12,5 +12,5 @@ extension type const Timestamp._(DateTime value) {
     return Timestamp.fromJson(json);
   }
 
-  String toJson() => value.toIso8601String();
+  String toJson() => value.toUtc().toIso8601String();
 }

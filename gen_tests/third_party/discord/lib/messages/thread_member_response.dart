@@ -50,7 +50,7 @@ class ThreadMemberResponse {
     return {
       'id': id.toJson(),
       'user_id': userId.toJson(),
-      'join_timestamp': joinTimestamp.toIso8601String(),
+      'join_timestamp': joinTimestamp.toUtc().toIso8601String(),
       'flags': flags,
       'member': ?member?.toJson(),
     };

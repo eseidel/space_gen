@@ -42,7 +42,7 @@ class ShipFuelConsumed {
 
   /// Converts a [ShipFuelConsumed] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'amount': amount, 'timestamp': timestamp.toIso8601String()};
+    return {'amount': amount, 'timestamp': timestamp.toUtc().toIso8601String()};
   }
 
   @override

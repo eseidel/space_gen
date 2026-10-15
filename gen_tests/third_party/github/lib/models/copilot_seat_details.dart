@@ -110,10 +110,10 @@ class CopilotSeatDetails {
       'organization': organization?.toJson(),
       'assigning_team': assigningTeam?.toJson(),
       'pending_cancellation_date': pendingCancellationDate?.toJson(),
-      'last_activity_at': lastActivityAt?.toIso8601String(),
+      'last_activity_at': lastActivityAt?.toUtc().toIso8601String(),
       'last_activity_editor': lastActivityEditor,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': ?updatedAt?.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'updated_at': ?updatedAt?.toUtc().toIso8601String(),
       'plan_type': ?planType?.toJson(),
     };
   }

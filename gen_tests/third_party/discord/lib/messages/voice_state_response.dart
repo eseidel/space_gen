@@ -83,7 +83,9 @@ class VoiceStateResponse {
       'guild_id': guildId?.toJson(),
       'member': ?member?.toJson(),
       'mute': mute,
-      'request_to_speak_timestamp': requestToSpeakTimestamp?.toIso8601String(),
+      'request_to_speak_timestamp': requestToSpeakTimestamp
+          ?.toUtc()
+          .toIso8601String(),
       'suppress': suppress,
       'self_stream': selfStream,
       'self_deaf': selfDeaf,

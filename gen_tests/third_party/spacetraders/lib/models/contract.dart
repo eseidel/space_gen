@@ -87,8 +87,8 @@ class Contract {
       'terms': terms.toJson(),
       'accepted': accepted,
       'fulfilled': fulfilled,
-      'expiration': expiration.toIso8601String(),
-      'deadlineToAccept': ?deadlineToAccept?.toIso8601String(),
+      'expiration': expiration.toUtc().toIso8601String(),
+      'deadlineToAccept': ?deadlineToAccept?.toUtc().toIso8601String(),
     };
   }
 

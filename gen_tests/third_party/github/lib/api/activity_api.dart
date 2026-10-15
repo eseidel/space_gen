@@ -227,8 +227,8 @@ class ActivityApi {
       queryParameters: {
         if (all != null) 'all': [all.toString()],
         if (participating != null) 'participating': [participating.toString()],
-        if (since != null) 'since': [since.toIso8601String()],
-        if (before != null) 'before': [before.toIso8601String()],
+        if (since != null) 'since': [since.toUtc().toIso8601String()],
+        if (before != null) 'before': [before.toUtc().toIso8601String()],
         if (page != null) 'page': [page.toString()],
         if (perPage != null) 'per_page': [perPage.toString()],
       },
@@ -517,8 +517,8 @@ class ActivityApi {
       queryParameters: {
         if (all != null) 'all': [all.toString()],
         if (participating != null) 'participating': [participating.toString()],
-        if (since != null) 'since': [since.toIso8601String()],
-        if (before != null) 'before': [before.toIso8601String()],
+        if (since != null) 'since': [since.toUtc().toIso8601String()],
+        if (before != null) 'before': [before.toUtc().toIso8601String()],
         if (perPage != null) 'per_page': [perPage.toString()],
         if (page != null) 'page': [page.toString()],
       },

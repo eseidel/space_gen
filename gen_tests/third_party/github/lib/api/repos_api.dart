@@ -3093,8 +3093,8 @@ class ReposApi {
         if (path != null) 'path': [path],
         if (author != null) 'author': [author],
         if (committer != null) 'committer': [committer],
-        if (since != null) 'since': [since.toIso8601String()],
-        if (until != null) 'until': [until.toIso8601String()],
+        if (since != null) 'since': [since.toUtc().toIso8601String()],
+        if (until != null) 'until': [until.toUtc().toIso8601String()],
         if (perPage != null) 'per_page': [perPage.toString()],
         if (page != null) 'page': [page.toString()],
       },
@@ -7630,8 +7630,8 @@ class ReposApi {
         if (direction != null) 'direction': [direction.toJson()],
         if (perPage != null) 'per_page': [perPage.toString()],
         if (page != null) 'page': [page.toString()],
-        if (since != null) 'since': [since.toIso8601String()],
-        if (before != null) 'before': [before.toIso8601String()],
+        if (since != null) 'since': [since.toUtc().toIso8601String()],
+        if (before != null) 'before': [before.toUtc().toIso8601String()],
       },
     );
 

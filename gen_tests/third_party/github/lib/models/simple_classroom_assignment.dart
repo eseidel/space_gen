@@ -164,7 +164,7 @@ class SimpleClassroomAssignment {
       'submitted': submitted,
       'passing': passing,
       'language': language,
-      'deadline': deadline?.toIso8601String(),
+      'deadline': deadline?.toUtc().toIso8601String(),
       'classroom': classroom.toJson(),
     };
   }

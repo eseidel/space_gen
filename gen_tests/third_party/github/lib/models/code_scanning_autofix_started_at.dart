@@ -14,5 +14,5 @@ extension type const CodeScanningAutofixStartedAt._(DateTime value) {
     return CodeScanningAutofixStartedAt.fromJson(json);
   }
 
-  String toJson() => value.toIso8601String();
+  String toJson() => value.toUtc().toIso8601String();
 }

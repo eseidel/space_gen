@@ -40,7 +40,10 @@ class StarredRepository {
 
   /// Converts a [StarredRepository] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'starred_at': starredAt.toIso8601String(), 'repo': repo.toJson()};
+    return {
+      'starred_at': starredAt.toUtc().toIso8601String(),
+      'repo': repo.toJson(),
+    };
   }
 
   @override

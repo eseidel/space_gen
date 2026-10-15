@@ -47,7 +47,9 @@ class UpdateSelfVoiceStateRequestPartial {
   /// to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'request_to_speak_timestamp': requestToSpeakTimestamp?.toIso8601String(),
+      'request_to_speak_timestamp': requestToSpeakTimestamp
+          ?.toUtc()
+          .toIso8601String(),
       'suppress': suppress,
       'channel_id': channelId?.toJson(),
     };

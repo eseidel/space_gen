@@ -76,7 +76,7 @@ class Event {
       'org': ?org?.toJson(),
       'payload': payload.toJson(),
       'public': public,
-      'created_at': createdAt?.toIso8601String(),
+      'created_at': createdAt?.toUtc().toIso8601String(),
     };
   }
 

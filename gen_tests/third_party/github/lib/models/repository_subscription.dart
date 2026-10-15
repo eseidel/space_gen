@@ -65,7 +65,7 @@ class RepositorySubscription {
       'subscribed': subscribed,
       'ignored': ignored,
       'reason': reason,
-      'created_at': createdAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
       'url': url.toString(),
       'repository_url': repositoryUrl.toString(),
     };

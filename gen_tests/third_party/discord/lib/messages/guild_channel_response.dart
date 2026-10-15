@@ -155,7 +155,7 @@ class GuildChannelResponse {
       'type': type.toJson(),
       'last_message_id': lastMessageId?.toJson(),
       'flags': flags,
-      'last_pin_timestamp': lastPinTimestamp?.toIso8601String(),
+      'last_pin_timestamp': lastPinTimestamp?.toUtc().toIso8601String(),
       'guild_id': guildId.toJson(),
       'name': name,
       'parent_id': parentId?.toJson(),
@@ -178,7 +178,7 @@ class GuildChannelResponse {
       'default_sort_order': defaultSortOrder?.toJson(),
       'default_forum_layout': ?defaultForumLayout?.toJson(),
       'default_tag_setting': defaultTagSetting?.toJson(),
-      'hd_streaming_until': ?hdStreamingUntil?.toIso8601String(),
+      'hd_streaming_until': ?hdStreamingUntil?.toUtc().toIso8601String(),
       'hd_streaming_buyer_id': ?hdStreamingBuyerId?.toJson(),
     };
   }

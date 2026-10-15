@@ -119,7 +119,7 @@ class ActionsHostedRunner {
       'maximum_runners': maximumRunners,
       'public_ip_enabled': publicIpEnabled,
       'public_ips': ?publicIps?.map((e) => e.toJson()).toList(),
-      'last_active_on': lastActiveOn?.toIso8601String(),
+      'last_active_on': lastActiveOn?.toUtc().toIso8601String(),
     };
   }
 

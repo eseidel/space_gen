@@ -135,10 +135,10 @@ class Milestone {
       'creator': creator?.toJson(),
       'open_issues': openIssues,
       'closed_issues': closedIssues,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
-      'closed_at': closedAt?.toIso8601String(),
-      'due_on': dueOn?.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
+      'closed_at': closedAt?.toUtc().toIso8601String(),
+      'due_on': dueOn?.toUtc().toIso8601String(),
     };
   }
 

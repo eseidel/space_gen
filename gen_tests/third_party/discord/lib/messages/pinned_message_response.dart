@@ -35,7 +35,7 @@ class PinnedMessageResponse {
   /// Converts a [PinnedMessageResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'pinned_at': pinnedAt.toIso8601String(),
+      'pinned_at': pinnedAt.toUtc().toIso8601String(),
       'message': message.toJson(),
     };
   }

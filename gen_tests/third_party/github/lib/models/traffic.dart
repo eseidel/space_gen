@@ -42,7 +42,7 @@ class Traffic {
   /// Converts a [Traffic] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'timestamp': timestamp.toIso8601String(),
+      'timestamp': timestamp.toUtc().toIso8601String(),
       'uniques': uniques,
       'count': count,
     };

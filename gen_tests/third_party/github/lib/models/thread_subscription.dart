@@ -69,7 +69,7 @@ class ThreadSubscription {
       'subscribed': subscribed,
       'ignored': ignored,
       'reason': reason,
-      'created_at': createdAt?.toIso8601String(),
+      'created_at': createdAt?.toUtc().toIso8601String(),
       'url': url.toString(),
       'thread_url': ?threadUrl?.toString(),
       'repository_url': ?repositoryUrl?.toString(),

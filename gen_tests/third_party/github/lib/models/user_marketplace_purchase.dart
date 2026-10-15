@@ -85,11 +85,11 @@ class UserMarketplacePurchase {
   Map<String, dynamic> toJson() {
     return {
       'billing_cycle': billingCycle,
-      'next_billing_date': nextBillingDate?.toIso8601String(),
+      'next_billing_date': nextBillingDate?.toUtc().toIso8601String(),
       'unit_count': unitCount,
       'on_free_trial': onFreeTrial,
-      'free_trial_ends_on': freeTrialEndsOn?.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
+      'free_trial_ends_on': freeTrialEndsOn?.toUtc().toIso8601String(),
+      'updated_at': updatedAt?.toUtc().toIso8601String(),
       'account': account.toJson(),
       'plan': plan.toJson(),
     };

@@ -53,7 +53,7 @@ class Chart {
     return {
       'waypointSymbol': waypointSymbol.toJson(),
       'submittedBy': submittedBy,
-      'submittedOn': submittedOn.toIso8601String(),
+      'submittedOn': submittedOn.toUtc().toIso8601String(),
     };
   }
 

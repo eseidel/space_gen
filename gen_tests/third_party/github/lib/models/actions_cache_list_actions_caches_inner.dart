@@ -74,8 +74,8 @@ class ActionsCacheListActionsCachesInner {
       'ref': ?ref,
       'key': ?key,
       'version': ?version,
-      'last_accessed_at': ?lastAccessedAt?.toIso8601String(),
-      'created_at': ?createdAt?.toIso8601String(),
+      'last_accessed_at': ?lastAccessedAt?.toUtc().toIso8601String(),
+      'created_at': ?createdAt?.toUtc().toIso8601String(),
       'size_in_bytes': ?sizeInBytes,
     };
   }

@@ -102,12 +102,12 @@ class Authorization {
       'app': app.toJson(),
       'note': note,
       'note_url': noteUrl?.toString(),
-      'updated_at': updatedAt.toIso8601String(),
-      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
       'fingerprint': fingerprint,
       'user': user?.toJson(),
       'installation': installation?.toJson(),
-      'expires_at': expiresAt?.toIso8601String(),
+      'expires_at': expiresAt?.toUtc().toIso8601String(),
     };
   }
 

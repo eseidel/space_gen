@@ -542,9 +542,9 @@ class OrganizationFull {
           ?secretScanningPushProtectionCustomLinkEnabled,
       'secret_scanning_push_protection_custom_link':
           secretScanningPushProtectionCustomLink,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
-      'archived_at': archivedAt?.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
+      'archived_at': archivedAt?.toUtc().toIso8601String(),
       'deploy_keys_enabled_for_repositories': ?deployKeysEnabledForRepositories,
     };
   }

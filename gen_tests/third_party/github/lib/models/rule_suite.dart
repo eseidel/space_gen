@@ -116,7 +116,7 @@ class RuleSuite {
       'ref': ?ref,
       'repository_id': ?repositoryId,
       'repository_name': ?repositoryName,
-      'pushed_at': ?pushedAt?.toIso8601String(),
+      'pushed_at': ?pushedAt?.toUtc().toIso8601String(),
       'result': ?result?.toJson(),
       'evaluation_result': evaluationResult?.toJson(),
       'rule_evaluations': ?ruleEvaluations?.map((e) => e.toJson()).toList(),

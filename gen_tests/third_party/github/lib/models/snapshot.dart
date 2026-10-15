@@ -103,7 +103,7 @@ class Snapshot {
       'manifests': ?manifests?.map(
         (key, value) => MapEntry(key, value.toJson()),
       ),
-      'scanned': scanned.toIso8601String(),
+      'scanned': scanned.toUtc().toIso8601String(),
     };
   }
 

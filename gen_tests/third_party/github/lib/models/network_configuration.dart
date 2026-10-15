@@ -73,7 +73,7 @@ class NetworkConfiguration {
       'name': name,
       'compute_service': ?computeService?.toJson(),
       'network_settings_ids': ?networkSettingsIds,
-      'created_on': createdOn?.toIso8601String(),
+      'created_on': createdOn?.toUtc().toIso8601String(),
     };
   }
 

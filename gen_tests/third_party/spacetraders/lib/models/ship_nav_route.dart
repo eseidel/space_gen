@@ -61,8 +61,8 @@ class ShipNavRoute {
     return {
       'destination': destination.toJson(),
       'origin': origin.toJson(),
-      'departureTime': departureTime.toIso8601String(),
-      'arrival': arrival.toIso8601String(),
+      'departureTime': departureTime.toUtc().toIso8601String(),
+      'arrival': arrival.toUtc().toIso8601String(),
     };
   }
 

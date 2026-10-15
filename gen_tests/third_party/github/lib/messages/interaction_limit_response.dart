@@ -53,7 +53,7 @@ class InteractionLimitResponse {
     return {
       'limit': limit.toJson(),
       'origin': origin,
-      'expires_at': expiresAt.toIso8601String(),
+      'expires_at': expiresAt.toUtc().toIso8601String(),
     };
   }
 

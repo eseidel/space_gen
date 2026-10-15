@@ -163,14 +163,14 @@ class Installation {
       'target_type': targetType,
       'permissions': permissions.toJson(),
       'events': events,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
       'single_file_name': singleFileName,
       'has_multiple_single_files': ?hasMultipleSingleFiles,
       'single_file_paths': ?singleFilePaths,
       'app_slug': appSlug,
       'suspended_by': suspendedBy?.toJson(),
-      'suspended_at': suspendedAt?.toIso8601String(),
+      'suspended_at': suspendedAt?.toUtc().toIso8601String(),
       'contact_email': contactEmail,
     };
   }
