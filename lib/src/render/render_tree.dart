@@ -1095,6 +1095,9 @@ class SpecResolver {
       title: spec.title,
       serverUrl: spec.serverUrl,
       paths: spec.paths.map(toRenderPath).toList(),
+      componentSchemas: spec.componentSchemas.map(
+        (name, schema) => MapEntry(name, toRenderSchema(schema)),
+      ),
       tagDefinitions: spec.tags.map(toRenderTag).toList(),
     );
   }
@@ -1114,6 +1117,7 @@ class RenderSpec {
     required this.title,
     required this.serverUrl,
     required this.paths,
+    required this.componentSchemas,
     required this.tagDefinitions,
   });
 
@@ -1125,6 +1129,9 @@ class RenderSpec {
 
   /// The paths of the spec.
   final List<RenderPath> paths;
+
+  /// The top-level component schemas of the spec.
+  final Map<String, RenderSchema> componentSchemas;
 
   /// The tag definitions of the spec.
   final List<RenderTag> tagDefinitions;
