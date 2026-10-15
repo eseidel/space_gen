@@ -72,7 +72,7 @@ class GistCommit {
       'version': version,
       'user': user?.toJson(),
       'change_status': changeStatus.toJson(),
-      'committed_at': committedAt.toIso8601String(),
+      'committed_at': committedAt.toUtc().toIso8601String(),
     };
   }
 

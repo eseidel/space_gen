@@ -59,7 +59,7 @@ class Order {
       'id': ?id,
       'petId': ?petId,
       'quantity': ?quantity,
-      'shipDate': ?shipDate?.toIso8601String(),
+      'shipDate': ?shipDate?.toUtc().toIso8601String(),
       'status': ?status?.toJson(),
       'complete': ?complete,
     };

@@ -38,7 +38,7 @@ class MessageCallResponse {
   /// Converts a [MessageCallResponse] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'ended_timestamp': endedTimestamp?.toIso8601String(),
+      'ended_timestamp': endedTimestamp?.toUtc().toIso8601String(),
       'participants': participants.map((e) => e.toJson()).toList(),
     };
   }

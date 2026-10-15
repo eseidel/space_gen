@@ -82,7 +82,7 @@ class AuthenticationToken {
   Map<String, dynamic> toJson() {
     return {
       'token': token,
-      'expires_at': expiresAt.toIso8601String(),
+      'expires_at': expiresAt.toUtc().toIso8601String(),
       'permissions': ?permissions,
       'repositories': ?repositories?.map((e) => e.toJson()).toList(),
       'single_file': singleFile,

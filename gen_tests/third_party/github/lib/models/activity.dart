@@ -90,7 +90,7 @@ class Activity {
       'before': before,
       'after': after,
       'ref': ref,
-      'timestamp': timestamp.toIso8601String(),
+      'timestamp': timestamp.toUtc().toIso8601String(),
       'activity_type': activityType.toJson(),
       'actor': actor?.toJson(),
     };

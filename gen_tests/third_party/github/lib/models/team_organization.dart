@@ -311,7 +311,7 @@ class TeamOrganization {
       'followers': followers,
       'following': following,
       'html_url': htmlUrl.toString(),
-      'created_at': createdAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
       'type': type,
       'total_private_repos': ?totalPrivateRepos,
       'owned_private_repos': ?ownedPrivateRepos,
@@ -337,8 +337,8 @@ class TeamOrganization {
       'members_can_fork_private_repositories':
           membersCanForkPrivateRepositories,
       'web_commit_signoff_required': ?webCommitSignoffRequired,
-      'updated_at': updatedAt.toIso8601String(),
-      'archived_at': archivedAt?.toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
+      'archived_at': archivedAt?.toUtc().toIso8601String(),
     };
   }
 

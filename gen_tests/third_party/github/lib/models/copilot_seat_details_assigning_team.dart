@@ -153,8 +153,8 @@ final class EnterpriseTeam extends CopilotSeatDetailsAssigningTeam {
       'group_name': groupName,
       'html_url': htmlUrl.toString(),
       'members_url': membersUrl,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
     };
   }
 

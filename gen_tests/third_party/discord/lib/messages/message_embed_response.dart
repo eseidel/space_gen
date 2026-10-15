@@ -109,7 +109,7 @@ class MessageEmbedResponse {
       'title': ?title,
       'description': ?description,
       'color': ?color,
-      'timestamp': ?timestamp?.toIso8601String(),
+      'timestamp': ?timestamp?.toUtc().toIso8601String(),
       'fields': ?fields?.map((e) => e.toJson()).toList(),
       'author': ?author?.toJson(),
       'provider': ?provider?.toJson(),

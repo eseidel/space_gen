@@ -500,7 +500,7 @@ void main() {
         '    /// Converts a [Test] to a `Map<String, dynamic>`.\n'
         '    Map<String, dynamic> toJson() {\n'
         '        return {\n'
-        "            'foo': foo.toIso8601String(),\n"
+        "            'foo': foo.toUtc().toIso8601String(),\n"
         '        };\n'
         '    }\n'
         '\n'
@@ -3942,7 +3942,7 @@ void main() {
         "            'm_int': ?mInt,\n"
         "            'm_number': ?mNumber,\n"
         "            'm_boolean': ?mBoolean,\n"
-        "            'm_date_time': ?mDateTime?.map((key, value) => MapEntry(key, value.toIso8601String())),\n"
+        "            'm_date_time': ?mDateTime?.map((key, value) => MapEntry(key, value.toUtc().toIso8601String())),\n"
         "            'm_uri': ?mUri?.map((key, value) => MapEntry(key, value.toString())),\n"
         "            'm_map_of_string': ?mMapOfString,\n"
         "            'm_enum': ?mEnum?.map((key, value) => MapEntry(key, value.toJson())),\n"
@@ -4082,7 +4082,7 @@ void main() {
         "            'a_int': aInt,\n"
         "            'a_number': aNumber,\n"
         "            'a_boolean': aBoolean,\n"
-        "            'a_date_time': aDateTime.map((e) => e.toIso8601String()).toList(),\n"
+        "            'a_date_time': aDateTime.map((e) => e.toUtc().toIso8601String()).toList(),\n"
         "            'a_uri': aUri.map((e) => e.toString()).toList(),\n"
         "            'a_array_of_string': aArrayOfString,\n"
         "            'a_enum': aEnum.map((e) => e.toJson()).toList(),\n"

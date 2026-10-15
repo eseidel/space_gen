@@ -55,7 +55,7 @@ class ContractTerms {
   /// Converts a [ContractTerms] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
-      'deadline': deadline.toIso8601String(),
+      'deadline': deadline.toUtc().toIso8601String(),
       'payment': payment.toJson(),
       'deliver': ?deliver?.map((e) => e.toJson()).toList(),
     };

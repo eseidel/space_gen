@@ -2264,7 +2264,7 @@ class DefaultApi {
         Uri.encodeComponent(channelId.toJson()),
       ),
       queryParameters: {
-        if (before != null) 'before': [before.toIso8601String()],
+        if (before != null) 'before': [before.toUtc().toIso8601String()],
         if (limit != null) 'limit': [limit.toString()],
       },
       authRequest: const ApiKeyAuth(
@@ -3326,7 +3326,7 @@ class DefaultApi {
         Uri.encodeComponent(channelId.toJson()),
       ),
       queryParameters: {
-        if (before != null) 'before': [before.toIso8601String()],
+        if (before != null) 'before': [before.toUtc().toIso8601String()],
         if (limit != null) 'limit': [limit.toString()],
       },
       authRequest: const ApiKeyAuth(
@@ -3369,7 +3369,7 @@ class DefaultApi {
         Uri.encodeComponent(channelId.toJson()),
       ),
       queryParameters: {
-        if (before != null) 'before': [before.toIso8601String()],
+        if (before != null) 'before': [before.toUtc().toIso8601String()],
         if (limit != null) 'limit': [limit.toString()],
       },
       authRequest: const ApiKeyAuth(

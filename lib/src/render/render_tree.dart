@@ -2550,11 +2550,13 @@ class MultipartTextPart extends Equatable {
   final bool isNullable;
 
   /// The non-null value expression used when the property is required
-  /// and accessed directly (e.g. `pet.capturedAt.toIso8601String()`).
+  /// and accessed directly
+  /// (e.g. `pet.capturedAt.toUtc().toIso8601String()`).
   final String requiredValueExpr;
 
   /// The non-null value expression used inside a null-check block where
-  /// the local has already been captured as `v` (e.g. `v.toIso8601String()`).
+  /// the local has already been captured as `v`
+  /// (e.g. `v.toUtc().toIso8601String()`).
   final String nullableValueExpr;
 
   @override
@@ -3516,7 +3518,13 @@ class RenderPod extends RenderSchema {
       isNullAware: nameIsNullable,
     );
     return switch (type) {
-      PodType.dateTime => method('toIso8601String'),
+      // RFC 3339 `date-time` requires an offset, which `toIso8601String`
+      // only writes for a UTC `DateTime`. Null-shorting carries the `?.`
+      // through the chain.
+      PodType.dateTime => DartMethodCall(
+        target: method('toUtc'),
+        name: 'toIso8601String',
+      ),
       PodType.uri || PodType.uriTemplate => method('toString'),
       // String- and bool-backed types: no conversion; `name` already
       // has the correct nullable/non-nullable type.

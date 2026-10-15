@@ -49,7 +49,7 @@ class SshSigningKey {
       'key': key,
       'id': id,
       'title': title,
-      'created_at': createdAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
     };
   }
 

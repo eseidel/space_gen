@@ -200,9 +200,9 @@ final class ChecksCreateRequestOneOf0 extends ChecksCreateRequest {
       'details_url': ?detailsUrl,
       'external_id': ?externalId,
       'status': status.toJson(),
-      'started_at': ?startedAt?.toIso8601String(),
+      'started_at': ?startedAt?.toUtc().toIso8601String(),
       'conclusion': conclusion.toJson(),
-      'completed_at': ?completedAt?.toIso8601String(),
+      'completed_at': ?completedAt?.toUtc().toIso8601String(),
       'output': ?output?.toJson(),
       'actions': ?actions?.map((e) => e.toJson()).toList(),
       for (final entry in entries.entries)
@@ -407,9 +407,9 @@ final class ChecksCreateRequestOneOf1 extends ChecksCreateRequest {
       'details_url': ?detailsUrl,
       'external_id': ?externalId,
       'status': ?status?.toJson(),
-      'started_at': ?startedAt?.toIso8601String(),
+      'started_at': ?startedAt?.toUtc().toIso8601String(),
       'conclusion': ?conclusion?.toJson(),
-      'completed_at': ?completedAt?.toIso8601String(),
+      'completed_at': ?completedAt?.toUtc().toIso8601String(),
       'output': ?output?.toJson(),
       'actions': ?actions?.map((e) => e.toJson()).toList(),
       for (final entry in entries.entries)

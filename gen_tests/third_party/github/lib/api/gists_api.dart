@@ -34,7 +34,7 @@ class GistsApi {
       method: Method.get,
       path: '/gists',
       queryParameters: {
-        if (since != null) 'since': [since.toIso8601String()],
+        if (since != null) 'since': [since.toUtc().toIso8601String()],
         if (perPage != null) 'per_page': [perPage.toString()],
         if (page != null) 'page': [page.toString()],
       },
@@ -96,7 +96,7 @@ class GistsApi {
       method: Method.get,
       path: '/gists/public',
       queryParameters: {
-        if (since != null) 'since': [since.toIso8601String()],
+        if (since != null) 'since': [since.toUtc().toIso8601String()],
         if (perPage != null) 'per_page': [perPage.toString()],
         if (page != null) 'page': [page.toString()],
       },
@@ -126,7 +126,7 @@ class GistsApi {
       method: Method.get,
       path: '/gists/starred',
       queryParameters: {
-        if (since != null) 'since': [since.toIso8601String()],
+        if (since != null) 'since': [since.toUtc().toIso8601String()],
         if (perPage != null) 'per_page': [perPage.toString()],
         if (page != null) 'page': [page.toString()],
       },
@@ -597,7 +597,7 @@ class GistsApi {
         Uri.encodeComponent(username),
       ),
       queryParameters: {
-        if (since != null) 'since': [since.toIso8601String()],
+        if (since != null) 'since': [since.toUtc().toIso8601String()],
         if (perPage != null) 'per_page': [perPage.toString()],
         if (page != null) 'page': [page.toString()],
       },

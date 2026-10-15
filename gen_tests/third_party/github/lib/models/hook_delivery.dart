@@ -126,7 +126,7 @@ class HookDelivery {
     return {
       'id': id,
       'guid': guid,
-      'delivered_at': deliveredAt.toIso8601String(),
+      'delivered_at': deliveredAt.toUtc().toIso8601String(),
       'redelivery': redelivery,
       'duration': duration,
       'status': status,
@@ -135,7 +135,7 @@ class HookDelivery {
       'action': action,
       'installation_id': installationId,
       'repository_id': repositoryId,
-      'throttled_at': throttledAt?.toIso8601String(),
+      'throttled_at': throttledAt?.toUtc().toIso8601String(),
       'url': ?url,
       'request': request.toJson(),
       'response': response.toJson(),

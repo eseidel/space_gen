@@ -169,9 +169,9 @@ class DependabotAlertSecurityAdvisory {
       'cwes': cwes.map((e) => e.toJson()).toList(),
       'identifiers': identifiers.map((e) => e.toJson()).toList(),
       'references': references.map((e) => e.toJson()).toList(),
-      'published_at': publishedAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
-      'withdrawn_at': withdrawnAt?.toIso8601String(),
+      'published_at': publishedAt.toUtc().toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
+      'withdrawn_at': withdrawnAt?.toUtc().toIso8601String(),
     };
   }
 

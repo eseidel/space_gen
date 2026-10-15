@@ -123,7 +123,8 @@ class Page {
       'cname': cname,
       'protected_domain_state': protectedDomainState?.toJson(),
       'pending_domain_unverified_at': pendingDomainUnverifiedAt
-          ?.toIso8601String(),
+          ?.toUtc()
+          .toIso8601String(),
       'custom_404': custom404,
       'html_url': ?htmlUrl?.toString(),
       'build_type': buildType?.toJson(),

@@ -65,7 +65,8 @@ class UpdateGuildMemberRequest {
       'deaf': deaf,
       'channel_id': channelId?.toJson(),
       'communication_disabled_until': communicationDisabledUntil
-          ?.toIso8601String(),
+          ?.toUtc()
+          .toIso8601String(),
       'flags': flags,
     };
   }

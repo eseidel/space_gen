@@ -61,7 +61,7 @@ class RepairTransaction {
       'waypointSymbol': waypointSymbol.toJson(),
       'shipSymbol': shipSymbol,
       'totalPrice': totalPrice,
-      'timestamp': timestamp.toIso8601String(),
+      'timestamp': timestamp.toUtc().toIso8601String(),
     };
   }
 

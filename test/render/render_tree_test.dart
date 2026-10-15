@@ -2258,7 +2258,18 @@ void main() {
               dartIsNullable: false,
             )
             .source,
-        'x.toIso8601String()',
+        'x.toUtc().toIso8601String()',
+      );
+      // Null-shorting carries the `?.` through the rest of the chain.
+      expect(
+        pod(PodType.dateTime)
+            .toJsonExpression(
+              const DartIdentifier('x'),
+              context,
+              dartIsNullable: true,
+            )
+            .source,
+        'x?.toUtc().toIso8601String()',
       );
       // email and uuid are Strings; no conversion, just pass dartName.
       expect(
@@ -2340,7 +2351,7 @@ void main() {
       expect(ctx['dartType'], 'DateTime');
       expect(ctx['jsonType'], 'String');
       expect(ctx['fromJsonBody'], 'DateTime.parse(json)');
-      expect(ctx['toJsonBody'], 'value.toIso8601String()');
+      expect(ctx['toJsonBody'], 'value.toUtc().toIso8601String()');
 
       final emailCtx = pod(
         PodType.email,

@@ -97,7 +97,7 @@ class CodeSearchResultItem {
       'score': score,
       'file_size': ?fileSize,
       'language': language,
-      'last_modified_at': ?lastModifiedAt?.toIso8601String(),
+      'last_modified_at': ?lastModifiedAt?.toUtc().toIso8601String(),
       'line_numbers': ?lineNumbers,
       'text_matches': ?textMatches?.toJson(),
     };

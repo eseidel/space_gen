@@ -104,7 +104,7 @@ class CodeScanningDefaultSetup {
       'runner_label': runnerLabel,
       'query_suite': ?querySuite?.toJson(),
       'threat_model': ?threatModel?.toJson(),
-      'updated_at': updatedAt?.toIso8601String(),
+      'updated_at': updatedAt?.toUtc().toIso8601String(),
       'schedule': schedule?.toJson(),
     };
   }

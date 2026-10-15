@@ -77,7 +77,7 @@ class CodespaceExportDetails {
   Map<String, dynamic> toJson() {
     return {
       'state': state,
-      'completed_at': completedAt?.toIso8601String(),
+      'completed_at': completedAt?.toUtc().toIso8601String(),
       'branch': branch,
       'sha': sha,
       'id': ?id,

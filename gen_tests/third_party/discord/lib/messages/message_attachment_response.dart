@@ -112,7 +112,7 @@ class MessageAttachmentResponse {
       'placeholder_version': ?placeholderVersion,
       'title': title,
       'application': ?application?.toJson(),
-      'clip_created_at': ?clipCreatedAt?.toIso8601String(),
+      'clip_created_at': ?clipCreatedAt?.toUtc().toIso8601String(),
       'clip_participants': ?clipParticipants?.map((e) => e.toJson()).toList(),
     };
   }

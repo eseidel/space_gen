@@ -57,7 +57,7 @@ class GistHistory {
     return {
       'user': user?.toJson(),
       'version': ?version,
-      'committed_at': ?committedAt?.toIso8601String(),
+      'committed_at': ?committedAt?.toUtc().toIso8601String(),
       'change_status': ?changeStatus?.toJson(),
       'url': ?url?.toString(),
     };

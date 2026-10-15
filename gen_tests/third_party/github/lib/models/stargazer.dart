@@ -42,7 +42,10 @@ class Stargazer {
 
   /// Converts a [Stargazer] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'starred_at': starredAt.toIso8601String(), 'user': user?.toJson()};
+    return {
+      'starred_at': starredAt.toUtc().toIso8601String(),
+      'user': user?.toJson(),
+    };
   }
 
   @override

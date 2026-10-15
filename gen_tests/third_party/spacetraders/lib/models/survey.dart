@@ -77,7 +77,7 @@ class Survey {
       'signature': signature,
       'symbol': symbol,
       'deposits': deposits.map((e) => e.toJson()).toList(),
-      'expiration': expiration.toIso8601String(),
+      'expiration': expiration.toUtc().toIso8601String(),
       'size': size.toJson(),
     };
   }

@@ -219,7 +219,7 @@ class SecretScanningAlert {
       'locations_url': ?locationsUrl?.toString(),
       'state': ?state?.toJson(),
       'resolution': resolution?.toJson(),
-      'resolved_at': resolvedAt?.toIso8601String(),
+      'resolved_at': resolvedAt?.toUtc().toIso8601String(),
       'resolved_by': resolvedBy?.toJson(),
       'resolution_comment': resolutionComment,
       'secret_type': ?secretType,
@@ -228,7 +228,8 @@ class SecretScanningAlert {
       'push_protection_bypassed': pushProtectionBypassed,
       'push_protection_bypassed_by': pushProtectionBypassedBy?.toJson(),
       'push_protection_bypassed_at': pushProtectionBypassedAt
-          ?.toIso8601String(),
+          ?.toUtc()
+          .toIso8601String(),
       'push_protection_bypass_request_reviewer':
           pushProtectionBypassRequestReviewer?.toJson(),
       'push_protection_bypass_request_reviewer_comment':

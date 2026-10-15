@@ -54,8 +54,8 @@ class SecretScanningScan {
     return {
       'type': ?type,
       'status': ?status,
-      'completed_at': completedAt?.toIso8601String(),
-      'started_at': startedAt?.toIso8601String(),
+      'completed_at': completedAt?.toUtc().toIso8601String(),
+      'started_at': startedAt?.toUtc().toIso8601String(),
     };
   }
 

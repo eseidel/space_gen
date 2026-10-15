@@ -92,12 +92,13 @@ class GuildMemberResponse {
       'avatar_decoration_data': avatarDecorationData?.toJson(),
       'banner': banner,
       'communication_disabled_until': communicationDisabledUntil
-          ?.toIso8601String(),
+          ?.toUtc()
+          .toIso8601String(),
       'flags': flags,
-      'joined_at': joinedAt.toIso8601String(),
+      'joined_at': joinedAt.toUtc().toIso8601String(),
       'nick': nick,
       'pending': pending,
-      'premium_since': premiumSince?.toIso8601String(),
+      'premium_since': premiumSince?.toUtc().toIso8601String(),
       'roles': roles.map((e) => e.toJson()).toList(),
       'collectibles': collectibles?.toJson(),
       'user': user.toJson(),

@@ -49,7 +49,11 @@ class GitCommitAuthor {
 
   /// Converts a [GitCommitAuthor] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
-    return {'date': date.toIso8601String(), 'email': email, 'name': name};
+    return {
+      'date': date.toUtc().toIso8601String(),
+      'email': email,
+      'name': name,
+    };
   }
 
   @override

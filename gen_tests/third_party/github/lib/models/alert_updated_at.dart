@@ -15,5 +15,5 @@ extension type const AlertUpdatedAt._(DateTime value) {
     return AlertUpdatedAt.fromJson(json);
   }
 
-  String toJson() => value.toIso8601String();
+  String toJson() => value.toUtc().toIso8601String();
 }

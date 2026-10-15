@@ -242,9 +242,9 @@ class Codespace {
       'machine': machine?.toJson(),
       'devcontainer_path': devcontainerPath,
       'prebuild': prebuild,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
-      'last_used_at': lastUsedAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
+      'last_used_at': lastUsedAt.toUtc().toIso8601String(),
       'state': state.toJson(),
       'url': url.toString(),
       'git_status': gitStatus.toJson(),
@@ -262,7 +262,7 @@ class Codespace {
       'pending_operation_disabled_reason': pendingOperationDisabledReason,
       'idle_timeout_notice': idleTimeoutNotice,
       'retention_period_minutes': retentionPeriodMinutes,
-      'retention_expires_at': retentionExpiresAt?.toIso8601String(),
+      'retention_expires_at': retentionExpiresAt?.toUtc().toIso8601String(),
       'last_known_stop_notice': lastKnownStopNotice,
     };
   }

@@ -3542,7 +3542,7 @@ class ActionsApi {
         if (status != null) 'status': [status.toJson()],
         if (perPage != null) 'per_page': [perPage.toString()],
         if (page != null) 'page': [page.toString()],
-        if (created != null) 'created': [created.toIso8601String()],
+        if (created != null) 'created': [created.toUtc().toIso8601String()],
         if (excludePullRequests != null)
           'exclude_pull_requests': [excludePullRequests.toString()],
         if (checkSuiteId != null) 'check_suite_id': [checkSuiteId.toString()],
@@ -4780,7 +4780,7 @@ class ActionsApi {
         if (status != null) 'status': [status.toJson()],
         if (perPage != null) 'per_page': [perPage.toString()],
         if (page != null) 'page': [page.toString()],
-        if (created != null) 'created': [created.toIso8601String()],
+        if (created != null) 'created': [created.toUtc().toIso8601String()],
         if (excludePullRequests != null)
           'exclude_pull_requests': [excludePullRequests.toString()],
         if (checkSuiteId != null) 'check_suite_id': [checkSuiteId.toString()],

@@ -166,8 +166,8 @@ class UserSearchResultItem {
       'public_gists': ?publicGists,
       'followers': ?followers,
       'following': ?following,
-      'created_at': ?createdAt?.toIso8601String(),
-      'updated_at': ?updatedAt?.toIso8601String(),
+      'created_at': ?createdAt?.toUtc().toIso8601String(),
+      'updated_at': ?updatedAt?.toUtc().toIso8601String(),
       'name': name,
       'bio': bio,
       'email': email,
@@ -177,7 +177,7 @@ class UserSearchResultItem {
       'text_matches': ?textMatches?.toJson(),
       'blog': blog,
       'company': company,
-      'suspended_at': suspendedAt?.toIso8601String(),
+      'suspended_at': suspendedAt?.toUtc().toIso8601String(),
       'user_view_type': ?userViewType,
     };
   }

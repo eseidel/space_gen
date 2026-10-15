@@ -105,7 +105,9 @@ class DefaultApi {
   ) async {
     final multipartFields = <String, String>{
       'visibility': uploadRichScalarsRequest.visibility.toJson(),
-      'capturedAt': uploadRichScalarsRequest.capturedAt.toIso8601String(),
+      'capturedAt': uploadRichScalarsRequest.capturedAt
+          .toUtc()
+          .toIso8601String(),
     };
     final multipartFiles = <http.MultipartFile>[
       http.MultipartFile.fromBytes(

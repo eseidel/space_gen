@@ -67,7 +67,7 @@ class ShipModificationTransaction {
       'shipSymbol': shipSymbol,
       'tradeSymbol': tradeSymbol,
       'totalPrice': totalPrice,
-      'timestamp': timestamp.toIso8601String(),
+      'timestamp': timestamp.toUtc().toIso8601String(),
     };
   }
 

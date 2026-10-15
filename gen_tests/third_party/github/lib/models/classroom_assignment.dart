@@ -174,7 +174,7 @@ class ClassroomAssignment {
       'submitted': submitted,
       'passing': passing,
       'language': language,
-      'deadline': deadline?.toIso8601String(),
+      'deadline': deadline?.toUtc().toIso8601String(),
       'starter_code_repository': starterCodeRepository.toJson(),
       'classroom': classroom.toJson(),
     };

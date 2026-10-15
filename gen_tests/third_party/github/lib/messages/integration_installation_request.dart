@@ -70,7 +70,7 @@ class IntegrationInstallationRequest {
       'node_id': ?nodeId,
       'account': account.toJson(),
       'requester': requester.toJson(),
-      'created_at': createdAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
     };
   }
 

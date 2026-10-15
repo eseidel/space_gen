@@ -47,7 +47,7 @@ class TripsApi {
         if (limit != null) 'limit': [limit.toString()],
         'origin': [origin],
         'destination': [destination],
-        'date': [date.toIso8601String()],
+        'date': [date.toUtc().toIso8601String()],
         if (bicycles != null) 'bicycles': [bicycles.toString()],
         if (dogs != null) 'dogs': [dogs.toString()],
       },

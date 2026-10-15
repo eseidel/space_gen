@@ -75,7 +75,7 @@ class SimpleCommit {
       'id': id,
       'tree_id': treeId,
       'message': message,
-      'timestamp': timestamp.toIso8601String(),
+      'timestamp': timestamp.toUtc().toIso8601String(),
       'author': author?.toJson(),
       'committer': committer?.toJson(),
     };

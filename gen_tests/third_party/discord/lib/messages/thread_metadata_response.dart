@@ -55,10 +55,10 @@ class ThreadMetadataResponse {
   Map<String, dynamic> toJson() {
     return {
       'archived': archived,
-      'archive_timestamp': archiveTimestamp?.toIso8601String(),
+      'archive_timestamp': archiveTimestamp?.toUtc().toIso8601String(),
       'auto_archive_duration': autoArchiveDuration.toJson(),
       'locked': locked,
-      'create_timestamp': ?createTimestamp?.toIso8601String(),
+      'create_timestamp': ?createTimestamp?.toUtc().toIso8601String(),
       'invitable': ?invitable,
     };
   }

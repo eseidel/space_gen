@@ -79,7 +79,7 @@ class CodeScanningVariantAnalysisRepository {
       'full_name': fullName,
       'private': private,
       'stargazers_count': stargazersCount,
-      'updated_at': updatedAt?.toIso8601String(),
+      'updated_at': updatedAt?.toUtc().toIso8601String(),
     };
   }
 

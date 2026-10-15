@@ -210,7 +210,7 @@ class PullsApi {
       queryParameters: {
         if (sort != null) 'sort': [sort.toJson()],
         if (direction != null) 'direction': [direction.toJson()],
-        if (since != null) 'since': [since.toIso8601String()],
+        if (since != null) 'since': [since.toUtc().toIso8601String()],
         if (perPage != null) 'per_page': [perPage.toString()],
         if (page != null) 'page': [page.toString()],
       },
@@ -529,7 +529,7 @@ class PullsApi {
       queryParameters: {
         if (sort != null) 'sort': [sort.toJson()],
         if (direction != null) 'direction': [direction.toJson()],
-        if (since != null) 'since': [since.toIso8601String()],
+        if (since != null) 'since': [since.toUtc().toIso8601String()],
         if (perPage != null) 'per_page': [perPage.toString()],
         if (page != null) 'page': [page.toString()],
       },

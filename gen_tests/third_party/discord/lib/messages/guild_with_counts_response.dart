@@ -251,7 +251,7 @@ class GuildWithCountsResponse {
       'public_updates_channel_id': publicUpdatesChannelId?.toJson(),
       'premium_progress_bar_enabled': premiumProgressBarEnabled,
       'premium_progress_bar_enabled_user_updated_at':
-          premiumProgressBarEnabledUserUpdatedAt?.toIso8601String(),
+          premiumProgressBarEnabledUserUpdatedAt?.toUtc().toIso8601String(),
       'nsfw': nsfw,
       'nsfw_level': nsfwLevel.toJson(),
       'emojis': emojis.map((e) => e.toJson()).toList(),

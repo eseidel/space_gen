@@ -303,7 +303,7 @@ class AppsApi {
       queryParameters: {
         if (perPage != null) 'per_page': [perPage.toString()],
         if (page != null) 'page': [page.toString()],
-        if (since != null) 'since': [since.toIso8601String()],
+        if (since != null) 'since': [since.toUtc().toIso8601String()],
         if (outdated != null) 'outdated': [outdated],
       },
     );
