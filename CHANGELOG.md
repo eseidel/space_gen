@@ -82,6 +82,13 @@ on regeneration. space_gen itself now requires Dart 3.11.
 - space_gen's own SDK floor is now `^3.11.0` (for `dart_style` 3.1.12,
   which parses dot shorthands). Generated packages still require
   `>=3.10.0` (#328).
+- CI runs in parallel jobs, and each third-party fixture is now analyzed
+  in its own job. Coverage dropped a slow no-op flag (#331, #333, #334).
+- Internal cleanups with no change to generated output: `RenderSchema`
+  no longer uses `Equatable` and dedups by JSON pointer, and a test-only
+  `AssignedNames.toMap()` was removed (#349, #367).
+- Added `RefRegistry` duplicate-registration tests and a `go-next`
+  work-picker skill for contributors (#366, #362).
 
 ## 1.4.0
 
