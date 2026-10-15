@@ -1,3 +1,95 @@
+## 1.5.0
+
+Broader real-world spec support, driven by scouting OpenAI, Box, Twilio
+and openfoodfacts: many shapes that used to crash generation now produce
+code. The generated API also models specs more precisely. Nameless
+integer enums, top-level array components and single-value properties
+get new representations, so some generated types and signatures change
+on regeneration. space_gen itself now requires Dart 3.11.
+
+### Features
+
+- **Top-level array components render as named newtypes.** A
+  `type: array` component schema now emits an
+  `extension type PetIds(List<String>) implements List<String>` instead
+  of inlining as `List<T>` at every use site, so the spec's name survives
+  (`listPets()` returns `Future<PetIds>`) (#368, part of #206).
+- **Model single-value properties by presence, not spelling.** A bare
+  `enum: [X]`, a lone `const`, and the `allOf: [{$ref: E}]` pin all
+  render the same way. A required one becomes a const getter. An
+  optional one becomes a nullable field plus a `static const <field>Value`,
+  so it's no longer forced into every payload. On github this removes 27
+  throwaway single-value enum types (#360, #239).
+- **Nameless integer enums render as validated `int` newtypes**
+  (`extension type const Flags._(int value)` with `validateEnumValues`)
+  instead of Dart enums with synthetic `value<N>` members. Integer enums
+  with spec-provided names stay Dart enums (#357, #352).
+- **Validate constrained inline object properties.** `pattern`,
+  `maxLength`, `minimum`, `maxItems` and the other constraints on a plain
+  object's own properties are now checked in its constructor, with one
+  `validate(...)` call per value (`name.validate(minLength: 1,
+  maxLength: 32)`) (#337, #204).
+- **Support OpenAPI 3.1 `contentEncoding: binary`** as raw bytes, like
+  `format: binary`. In discord this turns 44 multipart upload fields into
+  real `MultipartFile` parts. Binary response bodies now return
+  `Uint8List` from `response.bodyBytes`; before, the generated code
+  didn't compile (#342).
+- **Array-of-scalar fields in multipart and form-urlencoded bodies**
+  comma-join into one value instead of throwing (#329).
+- **Dart 3.10 dot shorthands for enum defaults:** `this.flightMode =
+  .cruise` instead of `ShipNavFlightMode.cruise` (#330, #323).
+- **Transliterate non-ASCII symbols in identifiers** instead of dropping
+  them: `μg` → `mug`, `% vol` → `percentVol`, `café` → `cafe` (#341).
+- **Suppress `flutter_style_todos`** per file when a spec description
+  copied into a doc comment contains a bare `TODO` (#343).
+
+### Bug fixes
+
+- **`date-time` values serialize as UTC.** A local `DateTime` was
+  written with no offset (`2024-01-02T03:04:05.000`), which isn't a
+  valid RFC 3339 `date-time`. Values are now written with
+  `toUtc().toIso8601String()` (#378, #377).
+- **`allOf` with metadata-only members resolves instead of crashing.**
+  This covers the OpenAPI 3.0 nullable-`$ref` idiom
+  (`allOf: [{$ref: X}, {nullable: true}]` → `X?`) and a scalar wrapped
+  in an `allOf` to attach a description (#359).
+- **Complex `x-www-form-urlencoded` fields** (objects, arrays of
+  objects, JSON blobs) are `jsonEncode`d instead of crashing (#365, #348).
+- **Constrained-string `propertyNames`** become a validated newtype map
+  key instead of crashing (#355).
+- **Accept OpenAPI 3.0 boolean `exclusiveMinimum`/`exclusiveMaximum`**
+  instead of crashing (#350).
+- **Integer bounds beyond 64 bits** (OpenAI's float-rounded int64
+  limits) no longer crash the parser. Bounds within ±2^53 are read
+  exactly, and larger ones are dropped with a warning (#345).
+- **An invalid enum `default`** is dropped with a warning instead of
+  aborting the run, and a one-element list default (`[auto]`) is
+  unwrapped (#353).
+- **`servers` is optional,** with the base URL defaulting to `/` per
+  the spec, instead of failing with `Key servers is required` (#339).
+- **Enum member names that collide after sanitization** get a numeric
+  suffix (`g`, `g2`) instead of emitting a duplicate definition (#335).
+- **Int-enum-keyed maps** convert their string JSON keys at the map
+  boundary, so the generated code compiles (#344).
+- **Kebab, dotted and spaced property names** produce valid inline type
+  names. `saturated-fat` used to produce `NutrientLevelsSaturated-fat`
+  (#332).
+- **No spurious `comment_references` ignore** when a doc comment
+  references a mutable model's bare field (#369, #363).
+
+### Chores
+
+- space_gen's own SDK floor is now `^3.11.0` (for `dart_style` 3.1.12,
+  which parses dot shorthands). Generated packages still require
+  `>=3.10.0` (#328).
+- CI runs in parallel jobs, and each third-party fixture is now analyzed
+  in its own job. Coverage dropped a slow no-op flag (#331, #333, #334).
+- Internal cleanups with no change to generated output: `RenderSchema`
+  no longer uses `Equatable` and dedups by JSON pointer, and a test-only
+  `AssignedNames.toMap()` was removed (#349, #367).
+- Added `RefRegistry` duplicate-registration tests and a `go-next`
+  work-picker skill for contributors (#366, #362).
+
 ## 1.4.0
 
 Correctness pass over the optional/nullable/default matrix, broader
