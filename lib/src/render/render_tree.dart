@@ -692,6 +692,7 @@ class SpecResolver {
           additionalProperties: maybeRenderSchema(schema.additionalProperties),
           requiredProperties: schema.requiredProperties,
           constProperties: schema.constProperties,
+          propertyDescriptions: schema.propertyDescriptions,
           parentSealedTypeName: _names.parentSealedTypeFor(schema.pointer),
           assignedName: _nameFor(schema.pointer),
           assignedSnakeName: _snakeFor(schema.pointer),
@@ -837,12 +838,18 @@ class SpecResolver {
         // open member wins (multiple open members in one allOf is degenerate).
         RenderSchema? additionalProperties;
         final constProperties = <String, Object>{};
+        final propertyDescriptions = <String, String>{};
         for (final schema in schema.schemas) {
           final renderSchema = toRenderSchema(schema);
           if (renderSchema is RenderObject) {
             properties.addAll(renderSchema.properties);
             requiredProperties.addAll(renderSchema.requiredProperties);
             constProperties.addAll(renderSchema.constProperties);
+            // A later member that redefines a property replaces its schema
+            // above, so it replaces (or clears) its sibling description too.
+            propertyDescriptions
+              ..removeWhere((k, _) => renderSchema.properties.containsKey(k))
+              ..addAll(renderSchema.propertyDescriptions);
             // A member that itself declares `additionalProperties` (an
             // object with an overflow) opens the merged object too.
             additionalProperties ??= renderSchema.additionalProperties;
@@ -859,6 +866,7 @@ class SpecResolver {
           additionalProperties: additionalProperties,
           requiredProperties: requiredProperties.toList(),
           constProperties: constProperties,
+          propertyDescriptions: propertyDescriptions,
           parentSealedTypeName: _names.parentSealedTypeFor(schema.pointer),
           assignedName: _nameFor(schema.pointer),
           assignedSnakeName: _snakeFor(schema.pointer),
@@ -4272,6 +4280,7 @@ class RenderObject extends RenderNewType {
   const RenderObject({
     required super.common,
     required this.properties,
+    required this.propertyDescriptions,
     this.additionalProperties,
     this.requiredProperties = const [],
     this.constProperties = const {},
@@ -4299,6 +4308,21 @@ class RenderObject extends RenderNewType {
   /// instance in Dart, so it can't back a serialized/polymorphic property.
   /// The getter has no storage and is un-settable, which is exactly right.
   final Map<String, Object> constProperties;
+
+  /// Descriptions written alongside a property's `$ref`, keyed by property
+  /// name; see [ResolvedObject.propertyDescriptions].
+  final Map<String, String> propertyDescriptions;
+
+  /// The doc comment for the field [jsonName], whose schema is [property].
+  String? _propertyDocComment(String jsonName, RenderSchema property) {
+    final description = propertyDescriptions[jsonName];
+    return createDocComment(
+      common: description == null
+          ? property.common
+          : property.common.copyWith(description: description),
+      indent: 4,
+    );
+  }
 
   /// The additional properties of the resolved schema.
   final RenderSchema? additionalProperties;
@@ -4510,10 +4534,7 @@ class RenderObject extends RenderNewType {
     return {
       'dartName': dartName,
       'jsonName': quoteString(jsonName),
-      'property_doc_comment': createDocComment(
-        common: property.common,
-        indent: 4,
-      ),
+      'property_doc_comment': _propertyDocComment(jsonName, property),
       // Required named params must precede optional ones in the
       // constructor (`always_put_required_named_parameters_first`); see
       // the required/optional split in the object template context.
@@ -4648,10 +4669,7 @@ class RenderObject extends RenderNewType {
     return {
       'dartName': dartName,
       'jsonName': quoteString(jsonName),
-      'property_doc_comment': createDocComment(
-        common: property.common,
-        indent: 4,
-      ),
+      'property_doc_comment': _propertyDocComment(jsonName, property),
       'isConstGetter': true,
       'constGetter': '${property.typeName} get $dartName => $constExpression;',
       // The getter returns a pinned value and is never null, so the key is

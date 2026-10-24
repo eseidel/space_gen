@@ -45,8 +45,13 @@ class TargetUsersJobStatusResponse {
     return TargetUsersJobStatusResponse.fromJson(json);
   }
 
+  /// The status of the job processing the target users.
   final TargetUsersJobStatusTypes status;
+
+  /// The total number of users in the provided list.
   final UInt32Type totalUsers;
+
+  /// The number of users processed so far.
   final UInt32Type processedUsers;
 
   /// The timestamp when the job was created.

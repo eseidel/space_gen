@@ -49,6 +49,52 @@ void main() {
       return spec.paths.first.operations.first.responses.first.content;
     }
 
+    test(r"a $ref property's sibling description is kept per property", () {
+      final spec = parseAndResolveTestSpec({
+        'openapi': '3.1.0',
+        'info': {'title': 'Test API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/invoice': {
+            'get': {
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'properties': {
+                          'total': {
+                            r'$ref': '#/components/schemas/Money',
+                            'description': 'The amount due.',
+                          },
+                          'tax': {r'$ref': '#/components/schemas/Money'},
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Money': {'type': 'object', 'description': 'An amount.'},
+          },
+        },
+      });
+      final invoice =
+          spec.paths.first.operations.first.responses.first.content
+              as ResolvedObject;
+      expect(invoice.propertyDescriptions, {'total': 'The amount due.'});
+      // The shared target keeps its own description.
+      expect(invoice.properties['total']!.common.description, 'An amount.');
+    });
+
     group('query parameter shapes', () {
       Map<String, dynamic> specWithQueryParam(Map<String, dynamic> schema) => {
         'openapi': '3.1.0',
@@ -1972,6 +2018,7 @@ void main() {
           additionalProperties: null,
           requiredProperties: const [],
           constProperties: const {},
+          propertyDescriptions: const {},
         );
         final schema2 = ResolvedObject(
           common: CommonProperties.test(
@@ -1985,6 +2032,7 @@ void main() {
           additionalProperties: null,
           requiredProperties: const [],
           constProperties: const {},
+          propertyDescriptions: const {},
         );
         expect(schema1, equals(schema1));
         // Different pointer.
@@ -2258,6 +2306,7 @@ void main() {
           additionalProperties: null,
           requiredProperties: const [],
           constProperties: const {},
+          propertyDescriptions: const {},
         );
         testCopyWith(schema, (schema, copy) {
           expect(copy.properties, equals(schema.properties));

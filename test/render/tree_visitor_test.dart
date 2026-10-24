@@ -9,6 +9,7 @@ RenderObject _object(
   Map<String, RenderSchema> properties = const {},
   String? parentSealedTypeName,
 }) => RenderObject(
+  propertyDescriptions: const {},
   common: CommonProperties.test(
     snakeName: name.toLowerCase(),
     pointer: JsonPointer.parse('#/components/schemas/${name.toLowerCase()}'),
@@ -150,6 +151,7 @@ void main() {
       // Deep, the same as a declared field of that type would.
       final deep = _object('Deep');
       final outer = RenderObject(
+        propertyDescriptions: const {},
         common: CommonProperties.test(
           snakeName: 'outer',
           pointer: JsonPointer.parse('#/components/schemas/outer'),
