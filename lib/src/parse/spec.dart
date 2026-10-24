@@ -115,13 +115,21 @@ class Ref<T extends Parseable> {
 /// https://spec.openapis.org/oas/v3.0.0#schemaObject
 @immutable
 class RefOr<T extends Parseable> {
-  RefOr.ref(String stringRef, this.pointer)
+  RefOr.ref(String stringRef, this.pointer, {this.description})
     : object = null,
       ref = Ref(Uri.parse(stringRef));
-  const RefOr.object(this.object, this.pointer) : ref = null;
+  const RefOr.object(this.object, this.pointer)
+    : ref = null,
+      description = null;
 
   final Ref<T>? ref;
   final T? object;
+
+  /// A `description` written alongside the `$ref`, which describes this use
+  /// of the target rather than the target itself (OpenAPI 3.1's Reference
+  /// Object, and JSON Schema 2020-12 sibling keywords). Null for an inline
+  /// object. Read only for schema refs today.
+  final String? description;
 
   final JsonPointer pointer;
 }

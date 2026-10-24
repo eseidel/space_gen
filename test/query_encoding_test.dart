@@ -23,6 +23,7 @@ ResolvedObject _object() => ResolvedObject(
   requiredProperties: const [],
   additionalProperties: null,
   constProperties: const {},
+  propertyDescriptions: const {},
 );
 
 ResolvedOneOf _oneOf(List<ResolvedSchema> schemas) =>

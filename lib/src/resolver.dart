@@ -333,6 +333,10 @@ ResolvedSchema _resolveSchemaFully(
       ),
       requiredProperties: schema.requiredProperties,
       constProperties: schema.constProperties,
+      propertyDescriptions: {
+        for (final MapEntry(:key, :value) in schema.properties.entries)
+          if (value.description case final description?) key: description,
+      },
     );
   }
   if (schema is SchemaStringEnum) {
@@ -1696,6 +1700,7 @@ class ResolvedObject extends ResolvedSchema {
     required this.additionalProperties,
     required this.requiredProperties,
     required this.constProperties,
+    required this.propertyDescriptions,
   }) : super(createsNewType: true);
 
   /// The properties of the resolved schema.
@@ -1715,6 +1720,12 @@ class ResolvedObject extends ResolvedSchema {
   /// the plain `E` ref. See [SchemaObject.constProperties].
   final Map<String, Object> constProperties;
 
+  /// Descriptions written alongside a property's `$ref`, keyed by property
+  /// name. They describe the field, so they replace the target's own
+  /// description in the field's doc comment. Kept here rather than on the
+  /// property's schema, which is the shared target and renders its own type.
+  final Map<String, String> propertyDescriptions;
+
   @override
   ResolvedObject copyWith({CommonProperties? common}) {
     return ResolvedObject(
@@ -1723,6 +1734,7 @@ class ResolvedObject extends ResolvedSchema {
       additionalProperties: additionalProperties,
       requiredProperties: requiredProperties,
       constProperties: constProperties,
+      propertyDescriptions: propertyDescriptions,
     );
   }
 
@@ -1733,6 +1745,7 @@ class ResolvedObject extends ResolvedSchema {
     additionalProperties,
     requiredProperties,
     constProperties,
+    propertyDescriptions,
   ];
 }
 

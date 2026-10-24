@@ -129,6 +129,48 @@ void main() {
       );
     });
 
+    test("a \$ref property's sibling description documents the field", () {
+      // OpenAPI 3.1 allows `description` next to `$ref`; it describes this
+      // field, so it replaces the target's description on the field. The
+      // target's own class keeps its description, and a field without a
+      // sibling still falls back to the target's.
+      final schemas = <String, Map<String, dynamic>>{
+        'Money': {
+          'type': 'object',
+          'description': 'An amount in a currency.',
+          'properties': {
+            'cents': {'type': 'integer'},
+          },
+        },
+        'Invoice': {
+          'type': 'object',
+          'required': ['total', 'tax'],
+          'properties': {
+            'total': {
+              r'$ref': '#/components/schemas/Money',
+              'description': 'The amount due, tax included.',
+            },
+            'tax': {r'$ref': '#/components/schemas/Money'},
+          },
+        },
+      };
+      final rendered = renderTestSchemas(
+        schemas,
+        specUrl: Uri.parse('file:///spec.yaml'),
+      );
+      final invoice = rendered['Invoice']!;
+      expect(
+        invoice,
+        contains('/// The amount due, tax included.\n    final Money total;'),
+      );
+      expect(
+        invoice,
+        contains('/// An amount in a currency.\n    final Money tax;'),
+      );
+      expect(rendered['Money'], contains('/// An amount in a currency.'));
+      expect(rendered['Money'], isNot(contains('tax included')));
+    });
+
     test('long property description wraps to 80 cols at 4-space indent', () {
       final schema = {
         'type': 'object',

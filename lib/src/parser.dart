@@ -1788,8 +1788,9 @@ SchemaRef? _maybeSchemaOrRef(MapContext? json) {
 SchemaRef parseSchemaOrRef(MapContext json) {
   if (json.containsKey(r'$ref')) {
     final ref = json[r'$ref'] as String;
+    final description = _optional<String>(json, 'description');
     _warnUnused(json);
-    return SchemaRef.ref(ref, json.pointer);
+    return SchemaRef.ref(ref, json.pointer, description: description);
   }
   return SchemaRef.object(parseSchema(json), json.pointer);
 }
