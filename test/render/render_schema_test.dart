@@ -129,7 +129,7 @@ void main() {
       );
     });
 
-    test("a \$ref property's sibling description documents the field", () {
+    test(r"a $ref property's sibling description documents the field", () {
       // OpenAPI 3.1 allows `description` next to `$ref`; it describes this
       // field, so it replaces the target's description on the field. The
       // target's own class keeps its description, and a field without a
@@ -169,6 +169,58 @@ void main() {
       );
       expect(rendered['Money'], contains('/// An amount in a currency.'));
       expect(rendered['Money'], isNot(contains('tax included')));
+    });
+
+    test('allOf merges sibling descriptions; a redefinition replaces one', () {
+      final schemas = <String, Map<String, dynamic>>{
+        'Money': {
+          'type': 'object',
+          'description': 'An amount in a currency.',
+          'properties': {
+            'cents': {'type': 'integer'},
+          },
+        },
+        'Base': {
+          'type': 'object',
+          'properties': {
+            'kept': {
+              r'$ref': '#/components/schemas/Money',
+              'description': 'Inherited sibling description.',
+            },
+            'redefined': {
+              r'$ref': '#/components/schemas/Money',
+              'description': 'Sibling description from Base.',
+            },
+          },
+        },
+        'Child': {
+          'allOf': [
+            {r'$ref': '#/components/schemas/Base'},
+            {
+              'type': 'object',
+              'properties': {
+                'redefined': {
+                  'type': 'string',
+                  'description': 'Inline string from Child.',
+                },
+              },
+            },
+          ],
+        },
+      };
+      final child = renderTestSchemas(
+        schemas,
+        specUrl: Uri.parse('file:///spec.yaml'),
+      )['Child']!;
+      expect(
+        child,
+        contains('/// Inherited sibling description.\n    final Money? kept;'),
+      );
+      expect(
+        child,
+        contains('/// Inline string from Child.\n    final String? redefined;'),
+      );
+      expect(child, isNot(contains('Sibling description from Base.')));
     });
 
     test('long property description wraps to 80 cols at 4-space indent', () {

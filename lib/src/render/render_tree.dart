@@ -845,7 +845,11 @@ class SpecResolver {
             properties.addAll(renderSchema.properties);
             requiredProperties.addAll(renderSchema.requiredProperties);
             constProperties.addAll(renderSchema.constProperties);
-            propertyDescriptions.addAll(renderSchema.propertyDescriptions);
+            // A later member that redefines a property replaces its schema
+            // above, so it replaces (or clears) its sibling description too.
+            propertyDescriptions
+              ..removeWhere((k, _) => renderSchema.properties.containsKey(k))
+              ..addAll(renderSchema.propertyDescriptions);
             // A member that itself declares `additionalProperties` (an
             // object with an overflow) opens the merged object too.
             additionalProperties ??= renderSchema.additionalProperties;
@@ -4276,10 +4280,10 @@ class RenderObject extends RenderNewType {
   const RenderObject({
     required super.common,
     required this.properties,
+    required this.propertyDescriptions,
     this.additionalProperties,
     this.requiredProperties = const [],
     this.constProperties = const {},
-    this.propertyDescriptions = const {},
     this.parentSealedTypeName,
     super.assignedName,
     super.assignedSnakeName,

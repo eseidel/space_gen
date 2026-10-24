@@ -3391,6 +3391,7 @@ export 'package:aaa_petstore/auth.dart';
         ),
       );
       final schema = RenderObject(
+        propertyDescriptions: const {},
         common: CommonProperties.test(
           snakeName: 'foo',
           pointer: JsonPointer.parse('#/foo'),
@@ -3450,6 +3451,7 @@ export 'package:aaa_petstore/auth.dart';
       // Deep-typed field. Outer's file references Nested but never Deep
       // (that lives in Nested's own file), so only Nested is imported.
       final deep = RenderObject(
+        propertyDescriptions: const {},
         common: CommonProperties.test(
           snakeName: 'deep',
           pointer: JsonPointer.parse('#/components/schemas/deep'),
@@ -3459,6 +3461,7 @@ export 'package:aaa_petstore/auth.dart';
         properties: const {},
       );
       final nested = RenderObject(
+        propertyDescriptions: const {},
         common: CommonProperties.test(
           snakeName: 'nested',
           pointer: JsonPointer.parse('#/components/schemas/nested'),
@@ -3468,6 +3471,7 @@ export 'package:aaa_petstore/auth.dart';
         properties: {'deep': deep},
       );
       final outer = RenderObject(
+        propertyDescriptions: const {},
         common: CommonProperties.test(
           snakeName: 'outer',
           pointer: JsonPointer.parse('#/components/schemas/outer'),

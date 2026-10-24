@@ -434,6 +434,7 @@ void main() {
   group('equalsIgnoringName', () {
     test('RenderObject', () {
       const a = RenderObject(
+        propertyDescriptions: {},
         common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
@@ -444,6 +445,7 @@ void main() {
       expect(a.equalsIgnoringName(a), isTrue);
 
       const b = RenderObject(
+        propertyDescriptions: {},
         common: CommonProperties.test(
           snakeName: 'b',
           pointer: JsonPointer.empty(),
@@ -454,6 +456,7 @@ void main() {
       expect(a.equalsIgnoringName(b), isTrue);
 
       const c = RenderObject(
+        propertyDescriptions: {},
         common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
@@ -472,6 +475,7 @@ void main() {
       expect(a.equalsIgnoringName(c), isFalse);
 
       const d = RenderObject(
+        propertyDescriptions: {},
         common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
@@ -492,6 +496,7 @@ void main() {
       expect(a.equalsIgnoringName(d), isFalse);
 
       const e = RenderObject(
+        propertyDescriptions: {},
         common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
@@ -511,6 +516,7 @@ void main() {
       expect(a.equalsIgnoringName(e), isFalse);
 
       const f = RenderObject(
+        propertyDescriptions: {},
         common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
@@ -522,6 +528,7 @@ void main() {
       expect(a.equalsIgnoringName(f), isFalse);
 
       const g = RenderObject(
+        propertyDescriptions: {},
         common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
@@ -541,6 +548,7 @@ void main() {
       expect(e.equalsIgnoringName(g), isFalse);
 
       const h = RenderObject(
+        propertyDescriptions: {},
         common: CommonProperties.test(
           snakeName: 'a',
           pointer: JsonPointer.empty(),
@@ -955,6 +963,7 @@ void main() {
     test('basic', () {
       expect(
         const RenderObject(
+          propertyDescriptions: {},
           common: CommonProperties.test(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
@@ -972,6 +981,7 @@ void main() {
     test('deprecated property adds no import', () {
       expect(
         const RenderObject(
+          propertyDescriptions: {},
           common: CommonProperties.test(
             snakeName: 'a',
             pointer: JsonPointer.empty(),
@@ -1129,6 +1139,7 @@ void main() {
       // the ref target still gets a file. (Which files *name* it — and
       // so import it — is `schemasNamedBy`, a separate question.)
       const nodeObject = RenderObject(
+        propertyDescriptions: {},
         common: CommonProperties.test(
           snakeName: 'node',
           pointer: JsonPointer.empty(),
@@ -1708,6 +1719,7 @@ void main() {
     );
 
     RenderObject objectWithStringDefault(String? defaultValue) => RenderObject(
+      propertyDescriptions: const {},
       common: common,
       assignedName: 'Foo',
       requiredProperties: const ['a'],
@@ -2463,6 +2475,7 @@ void main() {
 
     test('newtype RenderObject without assignedName throws on typeName', () {
       const schema = RenderObject(
+        propertyDescriptions: {},
         common: CommonProperties.test(
           snakeName: 'foo',
           pointer: JsonPointer.empty(),
@@ -2505,6 +2518,7 @@ void main() {
 
     test('newtype with assignedName returns it as typeName', () {
       const schema = RenderObject(
+        propertyDescriptions: {},
         common: CommonProperties.test(
           snakeName: 'foo',
           pointer: JsonPointer.empty(),

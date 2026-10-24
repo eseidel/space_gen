@@ -115,7 +115,7 @@ class Ref<T extends Parseable> {
 /// https://spec.openapis.org/oas/v3.0.0#schemaObject
 @immutable
 class RefOr<T extends Parseable> {
-  RefOr.ref(String stringRef, this.pointer, {this.description})
+  RefOr.ref(String stringRef, this.pointer, {required this.description})
     : object = null,
       ref = Ref(Uri.parse(stringRef));
   const RefOr.object(this.object, this.pointer)

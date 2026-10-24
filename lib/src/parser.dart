@@ -244,7 +244,7 @@ void _warnUnused(MapContext context) {
 RefOr<Parameter> parseParameterOrRef(MapContext json) {
   if (json.containsKey(r'$ref')) {
     final ref = json[r'$ref'] as String;
-    return RefOr<Parameter>.ref(ref, json.pointer);
+    return RefOr<Parameter>.ref(ref, json.pointer, description: null);
   }
   return RefOr<Parameter>.object(parseParameter(json), json.pointer);
 }
@@ -482,7 +482,7 @@ List<dynamic>? _parseExamplesMap(MapContext json) {
 RefOr<Header> parseHeaderOrRef(MapContext json) {
   if (json.containsKey(r'$ref')) {
     final ref = json[r'$ref'] as String;
-    return RefOr<Header>.ref(ref, json.pointer);
+    return RefOr<Header>.ref(ref, json.pointer, description: null);
   }
   return RefOr<Header>.object(parseHeader(json), json.pointer);
 }
@@ -513,7 +513,11 @@ SchemaDiscriminator? _parseDiscriminator(MapContext json) {
       final refString = raw.startsWith('#/') || raw.startsWith('/')
           ? raw
           : '#/components/schemas/$raw';
-      mapping[key] = SchemaRef.ref(refString, mappingJson.pointer.add(key));
+      mapping[key] = SchemaRef.ref(
+        refString,
+        mappingJson.pointer.add(key),
+        description: null,
+      );
     }
   }
   return SchemaDiscriminator(propertyName: propertyName, mapping: mapping);
@@ -1809,7 +1813,7 @@ RefOr<RequestBody> parseRequestBodyOrRef(MapContext json) {
   if (json.containsKey(r'$ref')) {
     final ref = json[r'$ref'] as String;
     _warnUnused(json);
-    return RefOr<RequestBody>.ref(ref, json.pointer);
+    return RefOr<RequestBody>.ref(ref, json.pointer, description: null);
   }
   final body = parseRequestBody(json);
   return RefOr<RequestBody>.object(body, json.pointer);
@@ -1962,7 +1966,7 @@ RefOr<Response> parseResponseOrRef(MapContext json) {
   final ref = _optional<String>(json, r'$ref');
   if (ref != null) {
     _warnUnused(json);
-    return RefOr<Response>.ref(ref, json.pointer);
+    return RefOr<Response>.ref(ref, json.pointer, description: null);
   }
   return RefOr<Response>.object(_parseResponse(json), json.pointer);
 }
