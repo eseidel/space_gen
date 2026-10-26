@@ -80,7 +80,7 @@ import 'package:github/models/actions_cache_usage_org_enterprise.dart';
 import 'package:github/models/actions_get_default_workflow_permissions.dart';
 import 'package:github/models/actions_hosted_runner.dart';
 import 'package:github/models/actions_hosted_runner_limits.dart';
-import 'package:github/models/actions_list_jobs_for_workflow_run_parameter3.dart';
+import 'package:github/models/actions_list_jobs_for_workflow_run_filter.dart';
 import 'package:github/models/actions_organization_permissions.dart';
 import 'package:github/models/actions_public_key.dart';
 import 'package:github/models/actions_repository_permissions.dart';
@@ -3962,7 +3962,7 @@ class ActionsApi {
     String owner,
     String repo,
     int runId, {
-    ActionsListJobsForWorkflowRunParameter3? filter = .latest,
+    ActionsListJobsForWorkflowRunFilter? filter = .latest,
     int? perPage = 30,
     int? page = 1,
   }) async {

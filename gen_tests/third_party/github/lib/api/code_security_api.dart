@@ -22,7 +22,7 @@ import 'package:github/models/code_security_configuration.dart';
 import 'package:github/models/code_security_configuration_for_repository.dart';
 import 'package:github/models/code_security_configuration_repositories.dart';
 import 'package:github/models/code_security_default_configurations.dart';
-import 'package:github/models/code_security_get_configurations_for_org_parameter1.dart';
+import 'package:github/models/code_security_get_configurations_for_org_target_type.dart';
 import 'package:meta/meta.dart';
 
 sealed class CodeSecurityUpdateConfigurationResponse {
@@ -449,7 +449,7 @@ class CodeSecurityApi {
   /// `write:org` scope to use this endpoint.
   Future<List<CodeSecurityConfiguration>> codeSecurityGetConfigurationsForOrg(
     String org, {
-    CodeSecurityGetConfigurationsForOrgParameter1? targetType = .all,
+    CodeSecurityGetConfigurationsForOrgTargetType? targetType = .all,
     int? perPage = 30,
     String? before,
     String? after,

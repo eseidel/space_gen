@@ -15,8 +15,8 @@ import 'package:github/messages/migrations_start_import_request.dart';
 import 'package:github/messages/migrations_update_import_request.dart';
 import 'package:github/models/import.dart';
 import 'package:github/models/migration.dart';
-import 'package:github/models/migrations_get_status_for_org_parameter2_inner.dart';
-import 'package:github/models/migrations_list_for_org_parameter3_inner.dart';
+import 'package:github/models/migrations_get_status_for_org_exclude_inner.dart';
+import 'package:github/models/migrations_list_for_org_exclude_inner.dart';
 import 'package:github/models/minimal_repository.dart';
 import 'package:github/models/porter_author.dart';
 import 'package:github/models/porter_large_file.dart';
@@ -37,7 +37,7 @@ class MigrationsApi {
     String org, {
     int? perPage = 30,
     int? page = 1,
-    List<MigrationsListForOrgParameter3Inner>? exclude,
+    List<MigrationsListForOrgExcludeInner>? exclude,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,
@@ -105,7 +105,7 @@ class MigrationsApi {
   Future<Migration> getStatusForOrg(
     String org,
     int migrationId, {
-    List<MigrationsGetStatusForOrgParameter2Inner>? exclude,
+    List<MigrationsGetStatusForOrgExcludeInner>? exclude,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,

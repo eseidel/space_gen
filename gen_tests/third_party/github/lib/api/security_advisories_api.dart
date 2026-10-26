@@ -14,15 +14,15 @@ import 'package:github/models/private_vulnerability_report_create.dart';
 import 'package:github/models/repository_advisory.dart';
 import 'package:github/models/repository_advisory_create.dart';
 import 'package:github/models/repository_advisory_update.dart';
-import 'package:github/models/security_advisories_list_global_advisories_parameter1.dart';
-import 'package:github/models/security_advisories_list_global_advisories_parameter17.dart';
-import 'package:github/models/security_advisories_list_global_advisories_parameter4.dart';
-import 'package:github/models/security_advisories_list_global_advisories_parameter5.dart';
-import 'package:github/models/security_advisories_list_global_advisories_parameter7.dart';
-import 'package:github/models/security_advisories_list_org_repository_advisories_parameter2.dart';
-import 'package:github/models/security_advisories_list_org_repository_advisories_parameter6.dart';
-import 'package:github/models/security_advisories_list_repository_advisories_parameter3.dart';
-import 'package:github/models/security_advisories_list_repository_advisories_parameter7.dart';
+import 'package:github/models/security_advisories_list_global_advisories_affects.dart';
+import 'package:github/models/security_advisories_list_global_advisories_cwes.dart';
+import 'package:github/models/security_advisories_list_global_advisories_severity.dart';
+import 'package:github/models/security_advisories_list_global_advisories_sort.dart';
+import 'package:github/models/security_advisories_list_global_advisories_type.dart';
+import 'package:github/models/security_advisories_list_org_repository_advisories_sort.dart';
+import 'package:github/models/security_advisories_list_org_repository_advisories_state.dart';
+import 'package:github/models/security_advisories_list_repository_advisories_sort.dart';
+import 'package:github/models/security_advisories_list_repository_advisories_state.dart';
 import 'package:github/models/security_advisory_ecosystems.dart';
 
 /// Manage security advisories.
@@ -44,13 +44,13 @@ class SecurityAdvisoriesApi {
   /// database](https://docs.github.com/code-security/security-advisories/global-security-advisories/about-the-github-advisory-database#about-types-of-security-advisories)."
   Future<List<GlobalAdvisory>> securityAdvisoriesListGlobalAdvisories({
     String? ghsaId,
-    SecurityAdvisoriesListGlobalAdvisoriesParameter1? type = .reviewed,
+    SecurityAdvisoriesListGlobalAdvisoriesType? type = .reviewed,
     String? cveId,
     SecurityAdvisoryEcosystems? ecosystem,
-    SecurityAdvisoriesListGlobalAdvisoriesParameter4? severity,
-    SecurityAdvisoriesListGlobalAdvisoriesParameter5? cwes,
+    SecurityAdvisoriesListGlobalAdvisoriesSeverity? severity,
+    SecurityAdvisoriesListGlobalAdvisoriesCwes? cwes,
     bool? isWithdrawn,
-    SecurityAdvisoriesListGlobalAdvisoriesParameter7? affects,
+    SecurityAdvisoriesListGlobalAdvisoriesAffects? affects,
     String? published,
     String? updated,
     String? modified,
@@ -60,7 +60,7 @@ class SecurityAdvisoriesApi {
     String? after,
     DirectionParam? direction = .desc,
     int? perPage = 30,
-    SecurityAdvisoriesListGlobalAdvisoriesParameter17? sort = .published,
+    SecurityAdvisoriesListGlobalAdvisoriesSort? sort = .published,
   }) async {
     perPage?.validate(min: 1, max: 100);
 
@@ -75,25 +75,18 @@ class SecurityAdvisoriesApi {
         if (severity != null) 'severity': [severity.toJson()],
         if (cwes != null)
           'cwes': switch (cwes) {
-            SecurityAdvisoriesListGlobalAdvisoriesParameter5String(
-              :final value,
-            ) =>
-              [value],
-            SecurityAdvisoriesListGlobalAdvisoriesParameter5List(
-              :final value,
-            ) =>
+            SecurityAdvisoriesListGlobalAdvisoriesCwesString(:final value) => [
+              value,
+            ],
+            SecurityAdvisoriesListGlobalAdvisoriesCwesList(:final value) =>
               value,
           },
         if (isWithdrawn != null) 'is_withdrawn': [isWithdrawn.toString()],
         if (affects != null)
           'affects': switch (affects) {
-            SecurityAdvisoriesListGlobalAdvisoriesParameter7String(
-              :final value,
-            ) =>
+            SecurityAdvisoriesListGlobalAdvisoriesAffectsString(:final value) =>
               [value],
-            SecurityAdvisoriesListGlobalAdvisoriesParameter7List(
-              :final value,
-            ) =>
+            SecurityAdvisoriesListGlobalAdvisoriesAffectsList(:final value) =>
               value,
           },
         if (published != null) 'published': [published],
@@ -163,11 +156,11 @@ class SecurityAdvisoriesApi {
   securityAdvisoriesListOrgRepositoryAdvisories(
     String org, {
     DirectionParam? direction = .desc,
-    SecurityAdvisoriesListOrgRepositoryAdvisoriesParameter2? sort = .created,
+    SecurityAdvisoriesListOrgRepositoryAdvisoriesSort? sort = .created,
     String? before,
     String? after,
     int? perPage = 30,
-    SecurityAdvisoriesListOrgRepositoryAdvisoriesParameter6? state,
+    SecurityAdvisoriesListOrgRepositoryAdvisoriesState? state,
   }) async {
     perPage?.validate(min: 1, max: 100);
 
@@ -217,11 +210,11 @@ class SecurityAdvisoriesApi {
     String owner,
     String repo, {
     DirectionParam? direction = .desc,
-    SecurityAdvisoriesListRepositoryAdvisoriesParameter3? sort = .created,
+    SecurityAdvisoriesListRepositoryAdvisoriesSort? sort = .created,
     String? before,
     String? after,
     int? perPage = 30,
-    SecurityAdvisoriesListRepositoryAdvisoriesParameter7? state,
+    SecurityAdvisoriesListRepositoryAdvisoriesState? state,
   }) async {
     perPage?.validate(min: 1, max: 100);
 

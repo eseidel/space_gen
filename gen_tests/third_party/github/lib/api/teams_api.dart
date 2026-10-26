@@ -35,8 +35,8 @@ import 'package:github/models/team_full.dart';
 import 'package:github/models/team_membership.dart';
 import 'package:github/models/team_project.dart';
 import 'package:github/models/team_repository.dart';
-import 'package:github/models/teams_list_members_in_org_parameter2.dart';
-import 'package:github/models/teams_list_members_legacy_parameter1.dart';
+import 'package:github/models/teams_list_members_in_org_role.dart';
+import 'package:github/models/teams_list_members_legacy_role.dart';
 import 'package:meta/meta.dart';
 
 sealed class TeamsCheckPermissionsForRepoInOrgResponse {
@@ -705,7 +705,7 @@ class TeamsApi {
   Future<List<SimpleUser>> listMembersInOrg(
     String org,
     String teamSlug, {
-    TeamsListMembersInOrgParameter2? role = .all,
+    TeamsListMembersInOrgRole? role = .all,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -1734,7 +1734,7 @@ class TeamsApi {
   /// Team members will include the members of child teams.
   Future<List<SimpleUser>> listMembersLegacy(
     int teamId, {
-    TeamsListMembersLegacyParameter1? role = .all,
+    TeamsListMembersLegacyRole? role = .all,
     int? perPage = 30,
     int? page = 1,
   }) async {

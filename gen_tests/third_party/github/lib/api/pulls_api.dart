@@ -29,12 +29,12 @@ import 'package:github/models/pull_request_merge_result.dart';
 import 'package:github/models/pull_request_review.dart';
 import 'package:github/models/pull_request_review_comment.dart';
 import 'package:github/models/pull_request_simple.dart';
-import 'package:github/models/pulls_list_parameter2.dart';
-import 'package:github/models/pulls_list_parameter5.dart';
-import 'package:github/models/pulls_list_parameter6.dart';
-import 'package:github/models/pulls_list_review_comments_for_repo_parameter2.dart';
-import 'package:github/models/pulls_list_review_comments_for_repo_parameter3.dart';
-import 'package:github/models/pulls_list_review_comments_parameter4.dart';
+import 'package:github/models/pulls_list_direction.dart';
+import 'package:github/models/pulls_list_review_comments_direction.dart';
+import 'package:github/models/pulls_list_review_comments_for_repo_direction.dart';
+import 'package:github/models/pulls_list_review_comments_for_repo_sort.dart';
+import 'package:github/models/pulls_list_sort.dart';
+import 'package:github/models/pulls_list_state.dart';
 import 'package:github/models/review_comment.dart';
 import 'package:github/models/sort_param.dart';
 
@@ -73,11 +73,11 @@ class PullsApi {
   Future<List<PullRequestSimple>> list(
     String owner,
     String repo, {
-    PullsListParameter2? state = .open,
+    PullsListState? state = .open,
     String? head,
     String? base,
-    PullsListParameter5? sort = .created,
-    PullsListParameter6? direction,
+    PullsListSort? sort = .created,
+    PullsListDirection? direction,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -196,8 +196,8 @@ class PullsApi {
   Future<List<PullRequestReviewComment>> listReviewCommentsForRepo(
     String owner,
     String repo, {
-    PullsListReviewCommentsForRepoParameter2? sort,
-    PullsListReviewCommentsForRepoParameter3? direction,
+    PullsListReviewCommentsForRepoSort? sort,
+    PullsListReviewCommentsForRepoDirection? direction,
     DateTime? since,
     int? perPage = 30,
     int? page = 1,
@@ -515,7 +515,7 @@ class PullsApi {
     String repo,
     int pullNumber, {
     SortParam? sort = .created,
-    PullsListReviewCommentsParameter4? direction,
+    PullsListReviewCommentsDirection? direction,
     DateTime? since,
     int? perPage = 30,
     int? page = 1,
