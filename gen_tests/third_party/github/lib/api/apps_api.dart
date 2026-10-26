@@ -25,8 +25,8 @@ import 'package:github/messages/apps_reset_token_request.dart';
 import 'package:github/messages/apps_scope_token_request.dart';
 import 'package:github/messages/apps_update_webhook_config_for_app_request.dart';
 import 'package:github/messages/integration_installation_request.dart';
-import 'package:github/models/apps_list_accounts_for_plan_parameter2.dart';
-import 'package:github/models/apps_list_accounts_for_plan_stubbed_parameter2.dart';
+import 'package:github/models/apps_list_accounts_for_plan_direction.dart';
+import 'package:github/models/apps_list_accounts_for_plan_stubbed_direction.dart';
 import 'package:github/models/authorization.dart';
 import 'package:github/models/hook_delivery.dart';
 import 'package:github/models/hook_delivery_item.dart';
@@ -790,7 +790,7 @@ class AppsApi {
   Future<List<MarketplacePurchase>> listAccountsForPlan(
     int planId, {
     SortParam? sort = .created,
-    AppsListAccountsForPlanParameter2? direction,
+    AppsListAccountsForPlanDirection? direction,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -910,7 +910,7 @@ class AppsApi {
   Future<List<MarketplacePurchase>> listAccountsForPlanStubbed(
     int planId, {
     SortParam? sort = .created,
-    AppsListAccountsForPlanStubbedParameter2? direction,
+    AppsListAccountsForPlanStubbedDirection? direction,
     int? perPage = 30,
     int? page = 1,
   }) async {

@@ -24,7 +24,7 @@ export 'package:backstage/models/analyze_location_entity_field.dart';
 export 'package:backstage/models/analyze_location_entity_field_state.dart';
 export 'package:backstage/models/analyze_location_existing_entity.dart';
 export 'package:backstage/models/analyze_location_generate_entity.dart';
-export 'package:backstage/models/create_location_parameter1.dart';
+export 'package:backstage/models/create_location_on_conflict.dart';
 export 'package:backstage/models/entities_query_response_page_info.dart';
 export 'package:backstage/models/entity.dart';
 export 'package:backstage/models/entity_ancestry_response_items_inner.dart';

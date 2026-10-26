@@ -10,15 +10,21 @@ import 'package:space_gen/src/render/file_renderer.dart';
 /// Entrypoint helper: parses the standard space_gen CLI flags
 /// (`--in`/`--out`/`--verbose`/`--openapi`), wires up a [Logger],
 /// resolves the bundled templates directory, and runs
-/// [loadAndRenderSpec].
+/// [loadAndRenderSpec]. Returns the process exit code: 0 on success,
+/// 64 (usage) for bad arguments. Dart ignores `main`'s return value, so
+/// callers assign it to `exitCode` from `dart:io`.
 ///
 /// The core CLI is identical across every consumer; only the
 /// [fileRendererBuilder] tends to vary. Shorebird's entrypoint, for
 /// example, is:
 ///
 /// ```dart
-/// Future<int> main(List<String> args) =>
-///     runCli(args, fileRendererBuilder: ShorebirdFileRenderer.new);
+/// Future<void> main(List<String> args) async {
+///   exitCode = await runCli(
+///     args,
+///     fileRendererBuilder: ShorebirdFileRenderer.new,
+///   );
+/// }
 /// ```
 ///
 /// Consumers that need to customize anything else — new flags,
@@ -47,6 +53,7 @@ Future<int> _runCli(
       help: 'Path to output directory',
       mandatory: true,
     )
+    ..addFlag('help', abbr: 'h', negatable: false, help: 'Show this help')
     ..addFlag('verbose', abbr: 'v', help: 'Verbose output')
     ..addFlag('openapi', help: 'Use OpenAPI quirks')
     ..addFlag(
@@ -58,12 +65,32 @@ Future<int> _runCli(
           'stale file behind. Pass --no-clear to manage stale output '
           'yourself.',
     );
-  final results = parser.parse(arguments);
-  if (results.rest.isNotEmpty) {
+  int usageError(String message) {
     logger
-      ..err('Unexpected arguments: ${results.rest}')
+      ..err(message)
       ..info(parser.usage);
-    return 1;
+    return ExitCode.usage.code;
+  }
+
+  final ArgResults results;
+  try {
+    results = parser.parse(arguments);
+  } on ArgParserException catch (e) {
+    return usageError(e.message);
+  }
+  if (results['help'] as bool) {
+    logger.info(parser.usage);
+    return ExitCode.success.code;
+  }
+  if (results.rest.isNotEmpty) {
+    return usageError('Unexpected arguments: ${results.rest}');
+  }
+  // ArgResults throws an ArgumentError when a missing mandatory option
+  // is read, so check for them up front.
+  for (final option in parser.options.values.where((o) => o.mandatory)) {
+    if (!results.wasParsed(option.name)) {
+      return usageError('Missing required option --${option.name}.');
+    }
   }
 
   if (results['verbose'] as bool) setVerboseLogging();

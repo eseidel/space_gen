@@ -29,7 +29,7 @@ import 'package:github/models/private_user.dart';
 import 'package:github/models/simple_user.dart';
 import 'package:github/models/social_account.dart';
 import 'package:github/models/ssh_signing_key.dart';
-import 'package:github/models/users_get_context_for_user_parameter1.dart';
+import 'package:github/models/users_get_context_for_user_subject_type.dart';
 import 'package:meta/meta.dart';
 
 sealed class UsersListAttestationsResponse {
@@ -1228,7 +1228,7 @@ class UsersApi {
   /// scope to use this endpoint.
   Future<Hovercard> getContextForUser(
     String username, {
-    UsersGetContextForUserParameter1? subjectType,
+    UsersGetContextForUserSubjectType? subjectType,
     String? subjectId,
   }) async {
     final response = await client.invokeApi(

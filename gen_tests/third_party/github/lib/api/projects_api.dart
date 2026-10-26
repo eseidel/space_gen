@@ -24,11 +24,11 @@ import 'package:github/models/project.dart';
 import 'package:github/models/project_card.dart';
 import 'package:github/models/project_collaborator_permission.dart';
 import 'package:github/models/project_column.dart';
-import 'package:github/models/projects_list_cards_parameter1.dart';
-import 'package:github/models/projects_list_collaborators_parameter1.dart';
-import 'package:github/models/projects_list_for_org_parameter1.dart';
-import 'package:github/models/projects_list_for_repo_parameter2.dart';
-import 'package:github/models/projects_list_for_user_parameter1.dart';
+import 'package:github/models/projects_list_cards_archived_state.dart';
+import 'package:github/models/projects_list_collaborators_affiliation.dart';
+import 'package:github/models/projects_list_for_org_state.dart';
+import 'package:github/models/projects_list_for_repo_state.dart';
+import 'package:github/models/projects_list_for_user_state.dart';
 import 'package:github/models/simple_user.dart';
 
 /// Interact with GitHub Projects.
@@ -46,7 +46,7 @@ class ProjectsApi {
   /// for more information.
   Future<List<Project>> listForOrg(
     String org, {
-    ProjectsListForOrgParameter1? state = .open,
+    ProjectsListForOrgState? state = .open,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -317,7 +317,7 @@ class ProjectsApi {
   /// for more information.
   Future<List<ProjectCard>> listCards(
     int columnId, {
-    ProjectsListCardsParameter1? archivedState = .notArchived,
+    ProjectsListCardsArchivedState? archivedState = .notArchived,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -498,7 +498,7 @@ class ProjectsApi {
   /// for more information.
   Future<List<SimpleUser>> listCollaborators(
     int projectId, {
-    ProjectsListCollaboratorsParameter1? affiliation = .all,
+    ProjectsListCollaboratorsAffiliation? affiliation = .all,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -688,7 +688,7 @@ class ProjectsApi {
   Future<List<Project>> listForRepo(
     String owner,
     String repo, {
-    ProjectsListForRepoParameter2? state = .open,
+    ProjectsListForRepoState? state = .open,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -789,7 +789,7 @@ class ProjectsApi {
   /// for more information.
   Future<List<Project>> listForUser(
     String username, {
-    ProjectsListForUserParameter1? state = .open,
+    ProjectsListForUserState? state = .open,
     int? perPage = 30,
     int? page = 1,
   }) async {

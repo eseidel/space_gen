@@ -2027,6 +2027,84 @@ void main() {
       expect(result, isNot(contains(' response.')));
     });
 
+    test('inline enum is named after the operation and parameter', () {
+      final json = {
+        'summary': 'Get user',
+        'parameters': [
+          {
+            'name': 'sort',
+            'in': 'query',
+            'schema': {
+              'type': 'string',
+              'enum': ['name', 'date'],
+            },
+          },
+        ],
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(result, contains('{ UsersSort? sort, }'));
+    });
+
+    test('a bracketed parameter name still makes an identifier', () {
+      final json = {
+        'summary': 'Get user',
+        'parameters': [
+          {
+            'name': 'filter[status]',
+            'in': 'query',
+            'schema': {
+              'type': 'string',
+              'enum': ['open', 'closed'],
+            },
+          },
+        ],
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(result, contains('UsersFilterStatus?'));
+    });
+
+    test('a name shared across locations falls back to position', () {
+      // OpenAPI keys parameters by name and location, so `sort` can be
+      // both a query parameter and a header; naming both `UsersSort`
+      // would collide.
+      Map<String, dynamic> sortIn(String location) => {
+        'name': 'sort',
+        'in': location,
+        'schema': {
+          'type': 'string',
+          'enum': ['name', 'date'],
+        },
+      };
+      final json = {
+        'summary': 'Get user',
+        'parameters': [sortIn('query'), sortIn('header')],
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(result, contains('UsersParameter0'));
+      expect(result, contains('UsersParameter1'));
+    });
+
     group('multiple types', () {
       test('string or number', () {
         final json = {
@@ -2050,7 +2128,7 @@ void main() {
           operationJson: json,
           serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
         );
-        // TODO(eseidel): Use dynamic instead of UsersParameter0.
+        // TODO(eseidel): Use dynamic instead of UsersFoo.
         expect(
           result,
           '/// Test API\n'
@@ -2061,7 +2139,7 @@ void main() {
           '\n'
           '    /// Get user\n'
           '    Future<void> users(\n'
-          '        { UsersParameter0? foo, }\n'
+          '        { UsersFoo? foo, }\n'
           '    ) async {\n'
           '        final response = await client.invokeApi(\n'
           '            method: Method.post,\n'
@@ -2114,8 +2192,8 @@ void main() {
           result,
           contains(
             "if (cwes != null) 'cwes': switch (cwes) { "
-            'UsersParameter0String(:final value) => [value], '
-            'UsersParameter0List(:final value) => value, }',
+            'UsersCwesString(:final value) => [value], '
+            'UsersCwesList(:final value) => value, }',
           ),
         );
       });

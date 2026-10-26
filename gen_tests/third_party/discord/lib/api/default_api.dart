@@ -147,8 +147,8 @@ import 'package:discord/models/author_type.dart';
 import 'package:discord/models/bulk_update_guild_channels_request_inner.dart';
 import 'package:discord/models/create_entitlement_request_data.dart';
 import 'package:discord/models/embedded_activity_instance.dart';
-import 'package:discord/models/get_current_user_application_entitlements_parameter0.dart';
-import 'package:discord/models/get_entitlements_parameter1.dart';
+import 'package:discord/models/get_current_user_application_entitlements_sku_ids.dart';
+import 'package:discord/models/get_entitlements_sku_ids.dart';
 import 'package:discord/models/github_webhook.dart';
 import 'package:discord/models/guild_patch_request_partial.dart';
 import 'package:discord/models/has_option.dart';
@@ -160,7 +160,7 @@ import 'package:discord/models/list_guild_integrations200_response_inner.dart';
 import 'package:discord/models/list_guild_scheduled_events200_response_inner.dart';
 import 'package:discord/models/message_edit_request_partial.dart';
 import 'package:discord/models/o_auth2_get_keys.dart';
-import 'package:discord/models/preview_prune_guild_parameter1.dart';
+import 'package:discord/models/preview_prune_guild_include_roles.dart';
 import 'package:discord/models/reaction_types.dart';
 import 'package:discord/models/searchable_embed_type.dart';
 import 'package:discord/models/slack_webhook.dart';
@@ -168,7 +168,7 @@ import 'package:discord/models/snowflake_type.dart';
 import 'package:discord/models/sorting_mode.dart';
 import 'package:discord/models/sorting_order.dart';
 import 'package:discord/models/soundboard_patch_request_partial.dart';
-import 'package:discord/models/thread_search_parameter4.dart';
+import 'package:discord/models/thread_search_tag.dart';
 import 'package:discord/models/thread_search_tag_setting.dart';
 import 'package:discord/models/thread_sorting_mode.dart';
 import 'package:discord/models/update_role_request_partial.dart';
@@ -1200,7 +1200,7 @@ class DefaultApi {
   Future<List<EntitlementResponse>> getEntitlements(
     SnowflakeType applicationId, {
     SnowflakeType? userId,
-    GetEntitlementsParameter1? skuIds,
+    GetEntitlementsSkuIds? skuIds,
     SnowflakeType? guildId,
     SnowflakeType? before,
     SnowflakeType? after,
@@ -1221,8 +1221,8 @@ class DefaultApi {
         if (userId != null) 'user_id': [userId.toJson()],
         if (skuIds != null)
           'sku_ids': switch (skuIds) {
-            GetEntitlementsParameter1String(:final value) => [value],
-            GetEntitlementsParameter1List(:final value) =>
+            GetEntitlementsSkuIdsString(:final value) => [value],
+            GetEntitlementsSkuIdsList(:final value) =>
               value.map((e) => e.toJson()).toList(),
           },
         if (guildId != null) 'guild_id': [guildId.toJson()],
@@ -3404,7 +3404,7 @@ class DefaultApi {
     int? slop,
     SnowflakeType? minId,
     SnowflakeType? maxId,
-    ThreadSearchParameter4? tag,
+    ThreadSearchTag? tag,
     ThreadSearchTagSetting? tagSetting,
     bool? archived,
     ThreadSortingMode? sortBy,
@@ -3430,8 +3430,8 @@ class DefaultApi {
         if (maxId != null) 'max_id': [maxId.toJson()],
         if (tag != null)
           'tag': switch (tag) {
-            ThreadSearchParameter4String(:final value) => [value],
-            ThreadSearchParameter4List(:final value) =>
+            ThreadSearchTagString(:final value) => [value],
+            ThreadSearchTagList(:final value) =>
               value.map((e) => e.toJson()).toList(),
           },
         if (tagSetting != null) 'tag_setting': [tagSetting.toJson()],
@@ -5218,7 +5218,7 @@ class DefaultApi {
   Future<GuildPruneResponse> previewPruneGuild(
     SnowflakeType guildId, {
     int? days,
-    PreviewPruneGuildParameter1? includeRoles,
+    PreviewPruneGuildIncludeRoles? includeRoles,
   }) async {
     days?.validate(min: 1, max: 30);
 
@@ -5232,8 +5232,8 @@ class DefaultApi {
         if (days != null) 'days': [days.toString()],
         if (includeRoles != null)
           'include_roles': switch (includeRoles) {
-            PreviewPruneGuildParameter1String(:final value) => [value],
-            PreviewPruneGuildParameter1List(:final value) =>
+            PreviewPruneGuildIncludeRolesString(:final value) => [value],
+            PreviewPruneGuildIncludeRolesList(:final value) =>
               value.map((e) => e.toJson()).toList(),
           },
       },
@@ -8185,7 +8185,7 @@ class DefaultApi {
 
   Future<List<EntitlementResponse>> getCurrentUserApplicationEntitlements(
     SnowflakeType applicationId, {
-    GetCurrentUserApplicationEntitlementsParameter0? skuIds,
+    GetCurrentUserApplicationEntitlementsSkuIds? skuIds,
     bool? excludeConsumed,
   }) async {
     final response = await client.invokeApi(
@@ -8197,11 +8197,10 @@ class DefaultApi {
       queryParameters: {
         if (skuIds != null)
           'sku_ids': switch (skuIds) {
-            GetCurrentUserApplicationEntitlementsParameter0String(
-              :final value,
-            ) =>
-              [value],
-            GetCurrentUserApplicationEntitlementsParameter0List(:final value) =>
+            GetCurrentUserApplicationEntitlementsSkuIdsString(:final value) => [
+              value,
+            ],
+            GetCurrentUserApplicationEntitlementsSkuIdsList(:final value) =>
               value.map((e) => e.toJson()).toList(),
           },
         if (excludeConsumed != null)
