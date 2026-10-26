@@ -1941,6 +1941,38 @@ void main() {
       );
     });
 
+    test('parameters named like method-body identifiers are escaped', () {
+      // The method body declares `response`, reads `client`, and calls
+      // `jsonDecode`; a parameter by any of those names would shadow it.
+      final json = {
+        'summary': 'Get user',
+        'parameters': [
+          for (final name in ['response', 'client', 'json_decode'])
+            {
+              'name': name,
+              'in': 'query',
+              'schema': {'type': 'string'},
+            },
+        ],
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      for (final name in ['response_', 'client_', 'jsonDecode_']) {
+        expect(result, contains('String? $name,'));
+      }
+      expect(
+        result,
+        contains("if (response_ != null) 'response': [response_],"),
+      );
+      expect(result, contains('final response = await client.invokeApi('));
+    });
+
     group('multiple types', () {
       test('string or number', () {
         final json = {

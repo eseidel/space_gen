@@ -40,13 +40,16 @@ String avoidReservedWord(String value) {
 }
 
 /// Identifiers a generated api method body declares or reads (see
-/// `api.mustache` and [RenderOperation]'s multipart assembly). A method
-/// parameter by one of these names would shadow it.
-const _methodBodyNames = {
+/// `api.mustache` and [RenderOperation]'s multipart assembly): its locals,
+/// the `client` field, the `http.` import prefix and `dart:convert`'s
+/// functions. A method parameter by one of these names would shadow it.
+final Set<String> _methodBodyNames = {
   'client',
   'response',
   'multipartFields',
   'multipartFiles',
+  'http',
+  ...Libraries.dartConvert.provides,
 };
 
 /// [name] as an api method parameter: reserved words and
