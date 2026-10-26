@@ -487,12 +487,14 @@ void main() {
     test('ignores pubspec.lock; language version is pubspec.yaml', () {
       // A lock only exists after `pub get`, and its `sdks.dart` can
       // differ from the package's own constraint. Output must not
-      // depend on whether `pub get` ran, so the 3.6 (short style)
-      // lock here must lose to the 3.9 (tall style) pubspec.
+      // depend on whether `pub get` ran, so the 3.9 (tall style) lock
+      // here must lose to the 3.6 (short style) pubspec. Short style
+      // also differs from the latest-version fallback, so this proves
+      // the pubspec was read.
       final formatter = buildFormatter({
-        '/pkg/pubspec.lock': 'sdks:\n  dart: ">=3.6.0 <4.0.0"\n',
+        '/pkg/pubspec.lock': 'sdks:\n  dart: ">=3.9.0 <4.0.0"\n',
         '/pkg/pubspec.yaml':
-            'name: foo\nenvironment:\n  sdk: ">=3.9.0 <4.0.0"\n',
+            'name: foo\nenvironment:\n  sdk: ">=3.6.0 <4.0.0"\n',
       });
       final result = formatter.formatIfDart(
         '/pkg/lib/x.dart',
@@ -500,7 +502,7 @@ void main() {
       );
       // Tall style adds a trailing comma when it splits an argument
       // list; short style doesn't.
-      expect(result, contains('${'c' * 30},\n'));
+      expect(result, contains('${'c' * 30});'));
     });
 
     test('formats with pubspec.yaml alone', () {
