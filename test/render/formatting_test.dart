@@ -484,32 +484,30 @@ void main() {
       expect(result, endsWith('\n'));
     });
 
-    test('reads language version from pubspec.lock when present', () {
-      // Lock takes precedence over pubspec.yaml — reflects the
-      // resolved SDK from the most recent `pub get`.
+    test('ignores pubspec.lock; language version is pubspec.yaml', () {
+      // A lock only exists after `pub get`, and its `sdks.dart` can
+      // differ from the package's own constraint. Output must not
+      // depend on whether `pub get` ran, so the 3.6 (short style)
+      // lock here must lose to the 3.9 (tall style) pubspec.
       final formatter = buildFormatter({
         '/pkg/pubspec.lock': 'sdks:\n  dart: ">=3.6.0 <4.0.0"\n',
         '/pkg/pubspec.yaml':
             'name: foo\nenvironment:\n  sdk: ">=3.9.0 <4.0.0"\n',
       });
-      // Force the resolution by formatting any Dart content.
-      // ignore: cascade_invocations
-      formatter.formatIfDart('/pkg/lib/x.dart', 'var x = 1;\n');
-      // Can't observe the language version directly, but we can verify
-      // the pubspec.lock path was preferred by checking that the
-      // formatter accepts older-style code (a feature of < 3.7) — the
-      // 3.6.0 from the lock allows pre-tall-style formatting.
-      // (Smoke-testing the resolution wiring; deeper coverage of
-      // version selection lives at the dart_style level.)
+      final result = formatter.formatIfDart(
+        '/pkg/lib/x.dart',
+        'void f() { someFunction(${'a' * 30}, ${'b' * 30}, ${'c' * 30}); }\n',
+      );
+      // Tall style adds a trailing comma when it splits an argument
+      // list; short style doesn't.
+      expect(result, contains('${'c' * 30},\n'));
     });
 
-    test('falls back to pubspec.yaml when no lock', () {
+    test('formats with pubspec.yaml alone', () {
       final formatter = buildFormatter({
         '/pkg/pubspec.yaml':
             'name: foo\nenvironment:\n  sdk: ">=3.9.0 <4.0.0"\n',
       });
-      // Smoke test: formatting a simple Dart file succeeds without a
-      // lock file present.
       final result = formatter.formatIfDart(
         '/pkg/lib/x.dart',
         'class Foo {}\n',

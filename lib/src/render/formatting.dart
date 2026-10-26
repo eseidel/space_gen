@@ -19,8 +19,7 @@ class FormatContext {
   });
 
   /// Lower bound of the consuming package's `environment.sdk`
-  /// constraint (or the most recently resolved SDK from
-  /// `pubspec.lock`). Picks short style for SDKs < 3.7 and tall style
+  /// constraint. Picks short style for SDKs < 3.7 and tall style
   /// for SDKs >= 3.7. Falls back to
   /// [DartFormatter.latestLanguageVersion] when no consumer pubspec is
   /// found.
@@ -547,10 +546,13 @@ class DartFileFormatter {
   /// a parent file at the workspace root.
   ///
   /// Resolution order at each directory:
-  /// - `pubspec.lock` → `sdks.dart` lower bound (most authoritative,
-  ///   set by the most recent `pub get`).
-  /// - `pubspec.yaml` → `environment.sdk` lower bound (fallback before
-  ///   any `pub get`).
+  /// - `pubspec.yaml` → `environment.sdk` lower bound. This is the
+  ///   package's language version, the same value `pub get` writes to
+  ///   `package_config.json` for `dart format` to use. `pubspec.lock`'s
+  ///   `sdks.dart` is deliberately ignored: it's the intersection of
+  ///   every dependency's constraint, so it can sit above the package's
+  ///   own language version, and it only exists after a `pub get`,
+  ///   which would make output depend on whether one ran.
   /// - `analysis_options.yaml` → `formatter:` page width and trailing
   ///   commas. Follows simple relative-path `include:` directives;
   ///   `package:` includes are skipped (resolving them would require
@@ -588,10 +590,9 @@ class DartFileFormatter {
     );
   }
 
-  /// Read the SDK constraint's lower bound from [dir]'s `pubspec.lock`
-  /// (preferred — reflects the resolved SDK from the most recent `pub
-  /// get`) or `pubspec.yaml` (fallback). Returns null if neither file
-  /// exists in [dir] or neither carries a parsable Dart constraint.
+  /// Read the SDK constraint's lower bound from [dir]'s `pubspec.yaml`.
+  /// Returns null if it doesn't exist or carries no parsable Dart
+  /// constraint.
   Version? _readSdkLowerBound(Directory dir) {
     Version? fromConstraintString(String? constraint) {
       if (constraint == null) return null;
@@ -603,21 +604,6 @@ class DartFileFormatter {
       }
     }
 
-    final lock = fs.file(p.join(dir.path, 'pubspec.lock'));
-    if (lock.existsSync()) {
-      try {
-        final yaml = loadYaml(lock.readAsStringSync());
-        if (yaml is Map) {
-          final sdks = yaml['sdks'];
-          if (sdks is Map) {
-            final v = fromConstraintString(sdks['dart'] as String?);
-            if (v != null) return v;
-          }
-        }
-      } on YamlException {
-        // Fall through to pubspec.yaml.
-      }
-    }
     final spec = fs.file(p.join(dir.path, 'pubspec.yaml'));
     if (spec.existsSync()) {
       try {
