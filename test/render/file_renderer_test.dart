@@ -940,6 +940,50 @@ void main() {
       },
     );
 
+    test('no round-trip test for a model with an optional binary', () async {
+      // Its toJson throws (binary field present), so a round-trip test
+      // would fail whether or not the binary property is required.
+      final fs = MemoryFileSystem.test();
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Upload', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://example.com'},
+        ],
+        'paths': {
+          '/upload': {
+            'post': {
+              'operationId': 'upload',
+              'requestBody': {
+                'content': {
+                  'multipart/form-data': {
+                    'schema': {
+                      'type': 'object',
+                      'properties': {
+                        'note': {'type': 'string'},
+                        'file': {'type': 'string', 'format': 'binary'},
+                      },
+                    },
+                  },
+                },
+              },
+              'responses': {
+                '200': {'description': 'OK'},
+              },
+            },
+          },
+        },
+      };
+      final out = fs.directory('out');
+      await renderToDirectory(spec: spec, outDir: out);
+      final tests = out
+          .listSync(recursive: true)
+          .whereType<File>()
+          .map((f) => f.basename);
+      expect(tests, isNot(contains('upload_request_test.dart')));
+      expect(tests, contains('upload_request.dart'));
+    });
+
     test(
       'api.dart barrel re-exports third-party packages used by models',
       () async {
