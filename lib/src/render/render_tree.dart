@@ -1766,7 +1766,7 @@ class Endpoint implements ToTemplateContext {
     final body = requestBody;
     if (body is! RenderRequestBodyMultipart) return '';
 
-    final parts = body.partsFor(context);
+    final parts = body.partsFor(context, fieldValue: locals.fieldValue);
     final textFields = parts.textParts;
     final files = parts.files;
 
@@ -1875,8 +1875,8 @@ class Endpoint implements ToTemplateContext {
       );
       out.addAll([
         '$outer{',
-        '${inner}final v = ${s.dartAccess};',
-        '${inner}if (v != null) $setStmt',
+        '${inner}final ${locals.fieldValue} = ${s.dartAccess};',
+        '${inner}if (${locals.fieldValue} != null) $setStmt',
         '$outer}',
       ]);
     }
@@ -1893,11 +1893,16 @@ class Endpoint implements ToTemplateContext {
   ) {
     final out = <String>[];
     for (final file in files.where((f) => f.isNullable)) {
-      final addStmt = _fileAddLine('', file.fieldName, 'f', locals);
+      final addStmt = _fileAddLine(
+        '',
+        file.fieldName,
+        locals.fileValue,
+        locals,
+      );
       out.addAll([
         '$outer{',
-        '${inner}final f = ${file.dartAccess};',
-        '${inner}if (f != null) $addStmt',
+        '${inner}final ${locals.fileValue} = ${file.dartAccess};',
+        '${inner}if (${locals.fileValue} != null) $addStmt',
         '$outer}',
       ]);
     }
@@ -2610,7 +2615,8 @@ class MultipartTextPart extends Equatable {
   final String requiredValueExpr;
 
   /// The non-null value expression used inside a null-check block where
-  /// the local has already been captured as `v`
+  /// the local has already been captured (as `v`, unless a parameter has
+  /// that name)
   /// (e.g. `v.toUtc().toIso8601String()`).
   final String nullableValueExpr;
 
@@ -2664,9 +2670,12 @@ class RenderRequestBodyMultipart extends RenderRequestBody {
   /// generator will emit. Called once from `_buildMultipartAssembly`
   /// on every render cycle, so schema-shape errors surface even though
   /// no eager validation happens at construction time.
+  ///
+  /// [fieldValue] names the local a nullable text part is captured into.
   ({List<MultipartTextPart> textParts, List<MultipartFilePart> files}) partsFor(
-    SchemaRenderer context,
-  ) {
+    SchemaRenderer context, {
+    required String fieldValue,
+  }) {
     final object = _requireObjectBody(this, MimeType.multipartFormData.value);
     final paramName = dartParameterName(context.quirks);
     final textParts = <MultipartTextPart>[];
@@ -2694,14 +2703,18 @@ class RenderRequestBodyMultipart extends RenderRequestBody {
       }
       // A scalar becomes one text field; an array of scalars comma-joins
       // into one (see [_wireStringFieldSource]). `requiredValueExpr` reads
-      // straight off `dartAccess`; `nullableValueExpr` reads off the `v`
-      // local the nullable-field block captures the property into.
+      // straight off `dartAccess`; `nullableValueExpr` reads off the
+      // [fieldValue] local the nullable-field block captures it into.
       final requiredValueExpr = _wireStringFieldSource(
         property,
         dartAccess,
         context,
       );
-      final nullableValueExpr = _wireStringFieldSource(property, 'v', context);
+      final nullableValueExpr = _wireStringFieldSource(
+        property,
+        fieldValue,
+        context,
+      );
       if (requiredValueExpr == null || nullableValueExpr == null) {
         throw FormatException(
           'multipart/form-data property must be a scalar, an array of '
@@ -6675,7 +6688,7 @@ class RenderOneOf extends RenderNewType {
 
 /// The names a generated api method body uses for its own values: the
 /// `response` local, the multipart `multipartFields` / `multipartFiles`
-/// locals, and the `client` field. Parameters keep their spec names; a
+/// locals and their per-part `v` / `f`, and the `client` field. Parameters keep their spec names; a
 /// local a parameter already has takes the next free numeric suffix
 /// (`response2`), and the field is reached through `this.client`.
 @immutable
@@ -6693,6 +6706,8 @@ final class _MethodLocals {
       response: free('response'),
       multipartFields: free('multipartFields'),
       multipartFiles: free('multipartFiles'),
+      fieldValue: free('v'),
+      fileValue: free('f'),
       client: parameterNames.contains('client') ? 'this.client' : 'client',
     );
   }
@@ -6701,12 +6716,20 @@ final class _MethodLocals {
     required this.response,
     required this.multipartFields,
     required this.multipartFiles,
+    required this.fieldValue,
+    required this.fileValue,
     required this.client,
   });
 
   final String response;
   final String multipartFields;
   final String multipartFiles;
+
+  /// A nullable multipart text part, captured for its null check.
+  final String fieldValue;
+
+  /// A nullable multipart file part, captured for its null check.
+  final String fileValue;
 
   /// How the body reaches the `ApiClient` field.
   final String client;
