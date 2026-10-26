@@ -39,24 +39,6 @@ String avoidReservedWord(String value) {
   return value;
 }
 
-/// Identifiers a generated api method body declares or reads (see
-/// `api.mustache` and [RenderOperation]'s multipart assembly): its locals,
-/// the `client` field, the `http.` import prefix and `dart:convert`'s
-/// functions. A method parameter by one of these names would shadow it.
-final Set<String> _methodBodyNames = {
-  'client',
-  'response',
-  'multipartFields',
-  'multipartFiles',
-  'http',
-  ...Libraries.dartConvert.provides,
-};
-
-/// [name] as an api method parameter: reserved words and
-/// [_methodBodyNames] get a trailing `_`.
-String _methodParameterName(String name) =>
-    _methodBodyNames.contains(name) ? '${name}_' : avoidReservedWord(name);
-
 /// `Map<String, dynamic>` — the JSON wire type of an arbitrary object. The
 /// storage type for objects, maps, and object-shaped composites.
 final _jsonWireMap = DartType.map(DartType.string, DartType.dynamic_);
@@ -1385,14 +1367,14 @@ class Endpoint implements ToTemplateContext {
   /// share one template emission point; the two paths only differ here in
   /// which body/fields/files keys they emit. No trailing newline — the
   /// template wraps it in `(\n...\n        );`.
-  String _buildInvokeArgs(SchemaRenderer context) {
+  String _buildInvokeArgs(SchemaRenderer context, _MethodLocals locals) {
     final indent = _invokeArgIndent;
     final innerIndent = indent + _nestedStep;
     final lines = <String>[
       '${indent}method: Method.${method.name},',
       _pathArgLine(indent, context),
       ..._queryParamsLines(indent, innerIndent, context),
-      ..._bodyArgLines(indent, context),
+      ..._bodyArgLines(indent, context, locals),
       ..._headerParamsLines(indent, innerIndent, context),
       ..._authRequestLines(indent),
     ];
@@ -1701,21 +1683,24 @@ class Endpoint implements ToTemplateContext {
     return 'switch ($access) { ${arms.join(' ')} }';
   }
 
-  List<String> _bodyArgLines(String indent, SchemaRenderer context) =>
-      switch (requestBody) {
-        null => const [],
-        RenderRequestBodyMultipart() => [
-          '${indent}fields: multipartFields,',
-          '${indent}files: multipartFiles,',
-        ],
-        final RenderRequestBodySimple body => [
-          '${indent}body: ${body.bodyExpression(context)},',
-          // invokeApi defaults bodyContentType to BodyContentType.json,
-          // so only pass it for the non-default content types.
-          if (!body.isDefaultBodyContentType)
-            '${indent}bodyContentType: ${body.bodyContentTypeExpression},',
-        ],
-      };
+  List<String> _bodyArgLines(
+    String indent,
+    SchemaRenderer context,
+    _MethodLocals locals,
+  ) => switch (requestBody) {
+    null => const [],
+    RenderRequestBodyMultipart() => [
+      '${indent}fields: ${locals.multipartFields},',
+      '${indent}files: ${locals.multipartFiles},',
+    ],
+    final RenderRequestBodySimple body => [
+      '${indent}body: ${body.bodyExpression(context)},',
+      // invokeApi defaults bodyContentType to BodyContentType.json,
+      // so only pass it for the non-default content types.
+      if (!body.isDefaultBodyContentType)
+        '${indent}bodyContentType: ${body.bodyContentTypeExpression},',
+    ],
+  };
 
   List<String> _headerParamsLines(
     String indent,
@@ -1774,7 +1759,10 @@ class Endpoint implements ToTemplateContext {
   /// Output ends with a trailing newline when non-empty so the template
   /// can splice it inline before `final response = ...` without caring
   /// whether it's empty.
-  String _buildMultipartAssembly(SchemaRenderer context) {
+  String _buildMultipartAssembly(
+    SchemaRenderer context,
+    _MethodLocals locals,
+  ) {
     final body = requestBody;
     if (body is! RenderRequestBodyMultipart) return '';
 
@@ -1790,10 +1778,12 @@ class Endpoint implements ToTemplateContext {
       // Body is non-nullable at the Dart call site, so we can read its
       // fields directly into the initializing literals.
       lines
-        ..addAll(_multipartFieldsLiteral(outer, inner, textFields))
-        ..addAll(_multipartFilesLiteral(outer, inner, files))
-        ..addAll(_multipartNullableFieldBlocks(outer, inner, textFields))
-        ..addAll(_multipartNullableFileBlocks(outer, inner, files));
+        ..addAll(_multipartFieldsLiteral(outer, inner, textFields, locals))
+        ..addAll(_multipartFilesLiteral(outer, inner, files, locals))
+        ..addAll(
+          _multipartNullableFieldBlocks(outer, inner, textFields, locals),
+        )
+        ..addAll(_multipartNullableFileBlocks(outer, inner, files, locals));
     } else {
       // Nullable body: empty literals up front, populate inside
       // `if (body != null) { ... }` so field access doesn't NPE.
@@ -1801,20 +1791,31 @@ class Endpoint implements ToTemplateContext {
       final guarded = inner;
       final guardedInner = guarded + _nestedStep;
       lines
-        ..add('${outer}final multipartFields = <String, String>{};')
-        ..add('${outer}final multipartFiles = <http.MultipartFile>[];')
+        ..add('${outer}final ${locals.multipartFields} = <String, String>{};')
+        ..add(
+          '${outer}final ${locals.multipartFiles} = <http.MultipartFile>[];',
+        )
         ..add('${outer}if ($paramName != null) {');
       for (final s in textFields.where((s) => !s.isNullable)) {
-        lines.add(_fieldSetLine(guarded, s.fieldName, s.requiredValueExpr));
+        lines.add(
+          _fieldSetLine(guarded, s.fieldName, s.requiredValueExpr, locals),
+        );
       }
       lines.addAll(
-        _multipartNullableFieldBlocks(guarded, guardedInner, textFields),
+        _multipartNullableFieldBlocks(
+          guarded,
+          guardedInner,
+          textFields,
+          locals,
+        ),
       );
       for (final f in files.where((f) => !f.isNullable)) {
-        lines.add(_fileAddLine(guarded, f.fieldName, f.dartAccess));
+        lines.add(_fileAddLine(guarded, f.fieldName, f.dartAccess, locals));
       }
       lines
-        ..addAll(_multipartNullableFileBlocks(guarded, guardedInner, files))
+        ..addAll(
+          _multipartNullableFileBlocks(guarded, guardedInner, files, locals),
+        )
         ..add('$outer}');
     }
 
@@ -1828,10 +1829,11 @@ class Endpoint implements ToTemplateContext {
     String outer,
     String inner,
     List<MultipartTextPart> textFields,
+    _MethodLocals locals,
   ) {
     final nonNull = textFields.where((s) => !s.isNullable).toList();
     return [
-      '${outer}final multipartFields = <String, String>{',
+      '${outer}final ${locals.multipartFields} = <String, String>{',
       for (final s in nonNull)
         _fieldLiteralEntry(inner, s.fieldName, s.requiredValueExpr),
       '$outer};',
@@ -1844,10 +1846,11 @@ class Endpoint implements ToTemplateContext {
     String outer,
     String inner,
     List<MultipartFilePart> files,
+    _MethodLocals locals,
   ) {
     final nonNull = files.where((f) => !f.isNullable).toList();
     return [
-      '${outer}final multipartFiles = <http.MultipartFile>[',
+      '${outer}final ${locals.multipartFiles} = <http.MultipartFile>[',
       for (final f in nonNull)
         _fileLiteralEntry(inner, f.fieldName, f.dartAccess),
       '$outer];',
@@ -1860,10 +1863,16 @@ class Endpoint implements ToTemplateContext {
     String outer,
     String inner,
     List<MultipartTextPart> textFields,
+    _MethodLocals locals,
   ) {
     final out = <String>[];
     for (final s in textFields.where((s) => s.isNullable)) {
-      final setStmt = _fieldSetLine('', s.fieldName, s.nullableValueExpr);
+      final setStmt = _fieldSetLine(
+        '',
+        s.fieldName,
+        s.nullableValueExpr,
+        locals,
+      );
       out.addAll([
         '$outer{',
         '${inner}final v = ${s.dartAccess};',
@@ -1880,10 +1889,11 @@ class Endpoint implements ToTemplateContext {
     String outer,
     String inner,
     List<MultipartFilePart> files,
+    _MethodLocals locals,
   ) {
     final out = <String>[];
     for (final file in files.where((f) => f.isNullable)) {
-      final addStmt = _fileAddLine('', file.fieldName, 'f');
+      final addStmt = _fileAddLine('', file.fieldName, 'f', locals);
       out.addAll([
         '$outer{',
         '${inner}final f = ${file.dartAccess};',
@@ -1905,8 +1915,12 @@ class Endpoint implements ToTemplateContext {
   /// `${indent}multipartFields['$fieldName'] = $valueExpr;` — a single
   /// assignment into `multipartFields` (used inside the null guard or
   /// when populating a pre-declared empty map).
-  String _fieldSetLine(String indent, String fieldName, String valueExpr) =>
-      "${indent}multipartFields['$fieldName'] = $valueExpr;";
+  String _fieldSetLine(
+    String indent,
+    String fieldName,
+    String valueExpr,
+    _MethodLocals locals,
+  ) => "$indent${locals.multipartFields}['$fieldName'] = $valueExpr;";
 
   /// Emits one `http.MultipartFile.fromBytes(...)` entry inside a
   /// `multipartFiles` list literal. `filename:` is hardcoded to the
@@ -1921,11 +1935,16 @@ class Endpoint implements ToTemplateContext {
   /// Emits `multipartFiles.add(http.MultipartFile.fromBytes(...));` —
   /// used inside the null guard or when populating a pre-declared empty
   /// list.
-  String _fileAddLine(String indent, String fieldName, String bytes) {
+  String _fileAddLine(
+    String indent,
+    String fieldName,
+    String bytes,
+    _MethodLocals locals,
+  ) {
     final constructor =
         "http.MultipartFile.fromBytes('$fieldName', $bytes, "
         "filename: '$fieldName')";
-    return '${indent}multipartFiles.add($constructor);';
+    return '$indent${locals.multipartFiles}.add($constructor);';
   }
 
   /// Build the per-status sealed-class context for a multi-status
@@ -1939,6 +1958,7 @@ class Endpoint implements ToTemplateContext {
   _MultiStatusContext _buildMultiStatusContext(
     MultiStatusReturn multiStatus,
     SchemaRenderer context,
+    _MethodLocals locals,
   ) {
     final typeName = multiStatus.wrapperTypeName;
     final sortedEntries = multiStatus.responses.entries.toList()
@@ -1958,7 +1978,7 @@ class Endpoint implements ToTemplateContext {
     return _MultiStatusContext(
       typeName: typeName,
       wrapperClassDefs: statuses.map((s) => s.wrapperClassDef()).toList(),
-      switchCases: statuses.map((s) => s.switchCase(context)).toList(),
+      switchCases: statuses.map((s) => s.switchCase(context, locals)).toList(),
     );
   }
 
@@ -1970,6 +1990,9 @@ class Endpoint implements ToTemplateContext {
     // Parameters as passed to the Dart function call, including the request
     // body if it exists.
     final dartParameters = <CanBeParameter>[...parameters, ?requestBody];
+    final locals = _MethodLocals.avoiding({
+      for (final p in dartParameters) p.dartParameterName(context.quirks),
+    });
 
     // Pattern-match on the operation's return shape: single schema
     // (the legacy / non-multi-status path) or multi-status (synthesize
@@ -1993,7 +2016,7 @@ class Endpoint implements ToTemplateContext {
           // `response.bodyBytes` (a `Uint8List`) so the `Uint8List` return
           // type isn't handed the `String` `response.body`. No `fromJson`:
           // the bytes are the value.
-          responseFromJson = _responseBodyBytes;
+          responseFromJson = locals.responseBodyBytes;
         } else {
           // When the success response advertises a non-JSON content
           // type, `_responseBodySource` returns the raw `response.body`
@@ -2004,16 +2027,20 @@ class Endpoint implements ToTemplateContext {
           // `fromJsonExpression`, since that expects JSON-shaped input.
           final source = _ResponseBodySource.of(operation.successContentType);
           responseFromJson = source == _ResponseBodySource.raw
-              ? source.expression
+              ? source.expression(locals)
               : schema.fromJsonExpression(
-                  source.expression,
+                  source.expression(locals),
                   context,
                   jsonIsNullable: false,
                   dartIsNullable: false,
                 );
         }
       case MultiStatusReturn():
-        multiStatusContext = _buildMultiStatusContext(returnShape, context);
+        multiStatusContext = _buildMultiStatusContext(
+          returnShape,
+          context,
+          locals,
+        );
         returnType = multiStatusContext.typeName;
         isVoidReturn = false;
         responseFromJson = null;
@@ -2025,7 +2052,7 @@ class Endpoint implements ToTemplateContext {
     final hasErrorType = errorSchema != null;
     final errorType = errorSchema?.typeName;
     final errorFromJson = errorSchema?.fromJsonExpression(
-      _ResponseBodySource.json.expression,
+      _ResponseBodySource.json.expression(locals),
       context,
       jsonIsNullable: false,
       dartIsNullable: false,
@@ -2081,8 +2108,10 @@ class Endpoint implements ToTemplateContext {
       // headers/auth emission in one place, and avoids mustache's
       // standalone-partial indentation quirks on empty sections.
       'invokeMethodName': isMultipart ? 'invokeApiMultipart' : 'invokeApi',
-      'invokeArgs': _buildInvokeArgs(context),
-      'multipartAssembly': _buildMultipartAssembly(context),
+      'responseVar': locals.response,
+      'clientRef': locals.client,
+      'invokeArgs': _buildInvokeArgs(context, locals),
+      'multipartAssembly': _buildMultipartAssembly(context, locals),
       'returnType': returnType,
       'isVoidReturn': isVoidReturn,
       'responseFromJson': _maybeRuntimeSource(responseFromJson),
@@ -2372,7 +2401,7 @@ sealed class RenderRequestBody implements CanBeParameter {
   String dartParameterName(Quirks quirks) =>
       // TODO(eseidel): Is there a name we can use instead of the typename?
       // Removing any template parameters from the type.
-      _methodParameterName(schema.typeName.lowerFirst().split('<').first);
+      schema.typeName.lowerFirst().split('<').first;
 }
 
 /// Request bodies that pass through `ApiClient.invokeApi` as a single
@@ -6644,25 +6673,61 @@ class RenderOneOf extends RenderNewType {
   }
 }
 
+/// The names a generated api method body uses for its own values: the
+/// `response` local, the multipart `multipartFields` / `multipartFiles`
+/// locals, and the `client` field. Parameters keep their spec names; a
+/// local a parameter already has takes the next free numeric suffix
+/// (`response2`), and the field is reached through `this.client`.
+@immutable
+final class _MethodLocals {
+  factory _MethodLocals.avoiding(Set<String> parameterNames) {
+    String free(String base) {
+      var name = base;
+      for (var i = 2; parameterNames.contains(name); i++) {
+        name = '$base$i';
+      }
+      return name;
+    }
+
+    return _MethodLocals._(
+      response: free('response'),
+      multipartFields: free('multipartFields'),
+      multipartFiles: free('multipartFiles'),
+      client: parameterNames.contains('client') ? 'this.client' : 'client',
+    );
+  }
+
+  const _MethodLocals._({
+    required this.response,
+    required this.multipartFields,
+    required this.multipartFiles,
+    required this.client,
+  });
+
+  final String response;
+  final String multipartFields;
+  final String multipartFiles;
+
+  /// How the body reaches the `ApiClient` field.
+  final String client;
+
+  /// `response.body`, the raw string an api method gets back.
+  DartExpression get responseBody =>
+      DartPropertyAccess(target: DartIdentifier(response), name: 'body');
+
+  /// `response.bodyBytes`, the raw `Uint8List` an api method gets back for
+  /// a binary response body ([RenderBinary]). Sourced instead of
+  /// [responseBody] so a `Uint8List` return type isn't handed a `String`.
+  DartExpression get responseBodyBytes =>
+      DartPropertyAccess(target: DartIdentifier(response), name: 'bodyBytes');
+}
+
 /// Wire-source expression for decoding a response body. Returns
 /// `jsonDecode(response.body)` for JSON content (or unspecified —
 /// most specs imply JSON), and the raw `response.body` for everything
 /// else (`text/plain`, `text/html`, `application/octet-stream`, …).
 /// Used by both the single-schema return path and the per-arm
 /// decode in multi-status dispatch.
-/// `response.body`, the raw string an api method gets back.
-const _responseBody = DartPropertyAccess(
-  target: DartIdentifier('response'),
-  name: 'body',
-);
-
-/// `response.bodyBytes`, the raw `Uint8List` an api method gets back for a
-/// binary response body ([RenderBinary]). Sourced instead of [_responseBody]
-/// so a `Uint8List` return type isn't handed a `String`.
-const _responseBodyBytes = DartPropertyAccess(
-  target: DartIdentifier('response'),
-  name: 'bodyBytes',
-);
 
 /// Where an api method reads its response body from.
 ///
@@ -6672,15 +6737,19 @@ const _responseBodyBytes = DartPropertyAccess(
 /// `'response.body'` is the coupling `doc/dart_expression.md` calls out.
 enum _ResponseBodySource {
   /// The body is JSON and has to be decoded before parsing.
-  // Not `call(...)`: a const initializer needs the constructor directly.
-  json(DartFunctionCall(name: 'jsonDecode', arguments: [_responseBody])),
+  json,
 
   /// A non-JSON content type: the body is the value.
-  raw(_responseBody);
+  raw;
 
-  const _ResponseBodySource(this.expression);
-
-  final DartExpression expression;
+  /// Where this source reads from in a method whose locals are [locals].
+  DartExpression expression(_MethodLocals locals) => switch (this) {
+    json => DartFunctionCall(
+      name: 'jsonDecode',
+      arguments: [locals.responseBody],
+    ),
+    raw => locals.responseBody,
+  };
 
   static _ResponseBodySource of(String? contentType) =>
       contentType == null || contentType == 'application/json' ? json : raw;
@@ -6727,7 +6796,10 @@ final class _StatusInfo {
 
   /// Mustache context for one `case` in the api method's
   /// `switch (response.statusCode)`.
-  Map<String, dynamic> switchCase(SchemaRenderer context) {
+  Map<String, dynamic> switchCase(
+    SchemaRenderer context,
+    _MethodLocals locals,
+  ) {
     final body = this.body;
     final String construction;
     if (body == null) {
@@ -6735,7 +6807,7 @@ final class _StatusInfo {
     } else {
       final decoded = _runtimeSource(
         body.requireFromJsonExpression(
-          _ResponseBodySource.of(contentType).expression,
+          _ResponseBodySource.of(contentType).expression(locals),
           context,
           jsonIsNullable: false,
           dartIsNullable: false,
@@ -7224,8 +7296,7 @@ class RenderParameter implements CanBeParameter {
   final QueryEncoding? queryEncoding;
 
   @override
-  String dartParameterName(Quirks quirks) =>
-      _methodParameterName(variableSafeName(quirks, name));
+  String dartParameterName(Quirks quirks) => variableSafeName(quirks, name);
 
   /// The description of the parameter.
   final String? description;
