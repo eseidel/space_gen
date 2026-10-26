@@ -1848,12 +1848,21 @@ String _snakeNameForOperation(MapContext operationJson, String path) {
 /// becomes `GetOrganizationAppsSort`). A parameter whose name isn't unique in
 /// the list (OpenAPI keys parameters by name and location, so a `sort` query
 /// and a `sort` header can coexist) keeps its position, `parameter$index`.
+///
+/// Query parameter names can hold characters no identifier can, such as
+/// JSON:API's `filter[status]`; those become underscores, so that one names
+/// `GetOrganizationAppsFilterStatus`.
 List<String> _operationParameterSnakeNames(MapContext operationJson) {
   final raw = operationJson.json['parameters'];
   if (raw is! List) return const [];
   final names = [
     for (final p in raw)
-      if (p case {'name': final String name}) toSnakeCase(name) else null,
+      if (p case {'name': final String name})
+        toSnakeCase(
+          name.replaceAll(RegExp(r'[^\w\s.-]+'), '_'),
+        ).replaceAll(RegExp(r'_+$'), '')
+      else
+        null,
   ];
   return [
     for (final (i, name) in names.indexed)

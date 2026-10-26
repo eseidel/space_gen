@@ -1966,6 +1966,31 @@ void main() {
       expect(result, contains('{ UsersSort? sort, }'));
     });
 
+    test('a bracketed parameter name still makes an identifier', () {
+      final json = {
+        'summary': 'Get user',
+        'parameters': [
+          {
+            'name': 'filter[status]',
+            'in': 'query',
+            'schema': {
+              'type': 'string',
+              'enum': ['open', 'closed'],
+            },
+          },
+        ],
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      expect(result, contains('UsersFilterStatus?'));
+    });
+
     test('a name shared across locations falls back to position', () {
       // OpenAPI keys parameters by name and location, so `sort` can be
       // both a query parameter and a header; naming both `UsersSort`
