@@ -1,3 +1,7 @@
+import 'dart:io';
+
 import 'package:space_gen/space_gen.dart';
 
-Future<int> main(List<String> arguments) => runCli(arguments);
+Future<void> main(List<String> arguments) async {
+  exitCode = await runCli(arguments);
+}
