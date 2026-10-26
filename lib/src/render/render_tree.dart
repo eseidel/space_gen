@@ -4847,13 +4847,6 @@ class RenderObject extends RenderNewType {
     final hasClassDescription =
         common.title != null || common.description != null;
     final templateName = hasClassDescription ? common.snakeName : null;
-    // Objects with no-JSON properties (today: `format: binary` →
-    // `Uint8List`) can't round-trip through JSON. The object lives on
-    // because it's the method parameter type, but toJson/fromJson must
-    // throw wholesale — otherwise the per-property throws become dead
-    // code after the first no-JSON property. Matches what the user gets
-    // if they accidentally call toJson on a multipart body.
-    final hasNoJsonProperty = properties.values.any((p) => p is RenderNoJson);
     // The generated `operator[]` returns whichever value the key selects — a
     // named property or the overflow — so its type must cover them all, and it
     // is always nullable (an absent key yields null).
@@ -5138,8 +5131,22 @@ class RenderObject extends RenderNewType {
     );
   }
 
+  /// Whether any property has no JSON form (today: `format: binary` →
+  /// `Uint8List`). Such an object can't round-trip through JSON. It lives
+  /// on because it's the method parameter type, but toJson/fromJson
+  /// throw wholesale; otherwise the per-property throws become dead code
+  /// after the first no-JSON property. Matches what the user gets if they
+  /// accidentally call toJson on a multipart body.
+  bool get hasNoJsonProperty => properties.values.any((p) => p is RenderNoJson);
+
   @override
   DartExpression? exampleValue(SchemaRenderer context) {
+    // No example: the round-trip test would call a throwing toJson,
+    // whether or not the binary property is required. Binary
+    // additionalProperties throw per entry, so they count too.
+    if (hasNoJsonProperty || additionalProperties is RenderNoJson) {
+      return null;
+    }
     final args = <String, DartExpression>{};
     for (final entry in properties.entries) {
       final jsonName = entry.key;
