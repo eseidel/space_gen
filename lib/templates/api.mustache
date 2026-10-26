@@ -17,39 +17,39 @@
         { {{#namedParameters}}{{#required}}required {{{ type }}}{{/required}}{{^required}}{{{ nullableType }}}{{/required}} {{{ dartName }}}{{#hasDefaultValue}} = {{{ defaultValue }}}{{/hasDefaultValue}},{{/namedParameters}} }
         {{/hasNamedParameters}}
     ) async {
-        {{{ validationStatements }}}{{{ multipartAssembly }}}final response = await client.{{{invokeMethodName}}}(
+        {{{ validationStatements }}}{{{ multipartAssembly }}}final {{{ responseVar }}} = await {{{ clientRef }}}.{{{invokeMethodName}}}(
 {{{ invokeArgs }}}
         );
 
-        if (response.statusCode >= HttpStatus.badRequest) {
+        if ({{{ responseVar }}}.statusCode >= HttpStatus.badRequest) {
             {{#hasErrorType}}
             throw ApiException<{{{ errorType }}}>(
-                response.statusCode,
-                response.body,
+                {{{ responseVar }}}.statusCode,
+                {{{ responseVar }}}.body,
                 body: {{{ errorFromJson }}},
             );
             {{/hasErrorType}}
             {{^hasErrorType}}
-            throw ApiException<Object?>(response.statusCode, response.body);
+            throw ApiException<Object?>({{{ responseVar }}}.statusCode, {{{ responseVar }}}.body);
             {{/hasErrorType}}
         }
 {{^isVoidReturn}}
 {{#multiStatus}}
 
-        return switch (response.statusCode) {
+        return switch ({{{ responseVar }}}.statusCode) {
 {{#switchCases}}
             {{ statusCode }} => {{{ construction }}},
 {{/switchCases}}
-            _ => throw ApiException<Object?>.unhandled(response.statusCode),
+            _ => throw ApiException<Object?>.unhandled({{{ responseVar }}}.statusCode),
         };
 {{/multiStatus}}
 {{^multiStatus}}
 
-        if (response.body.isNotEmpty) {
+        if ({{{ responseVar }}}.body.isNotEmpty) {
             return {{{ responseFromJson }}};
         }
 
-        throw ApiException<Object?>.unhandled(response.statusCode);
+        throw ApiException<Object?>.unhandled({{{ responseVar }}}.statusCode);
 {{/multiStatus}}
 {{/isVoidReturn}}
     }

@@ -8,3 +8,4 @@ export 'package:multipart/model/upload_optional_request.dart';
 export 'package:multipart/model/upload_plain_request.dart';
 export 'package:multipart/model/upload_rich_scalars_request.dart';
 export 'package:multipart/model/upload_rich_scalars_request_visibility.dart';
+export 'package:multipart/model/upload_shadowed_request.dart';

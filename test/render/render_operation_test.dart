@@ -334,6 +334,48 @@ void main() {
       expect(result, isNot(contains('body:')));
     });
 
+    test('multipart locals yield to parameters', () {
+      final operation = {
+        'operationId': 'uploadFile',
+        'parameters': [
+          for (final name in ['multipart_fields', 'multipart_files'])
+            {
+              'name': name,
+              'in': 'query',
+              'schema': {'type': 'string'},
+            },
+        ],
+        'requestBody': {
+          'content': {
+            'multipart/form-data': {
+              'schema': {
+                'type': 'object',
+                'properties': {
+                  'note': {'type': 'string'},
+                  'file': {'type': 'string', 'format': 'binary'},
+                },
+              },
+            },
+          },
+        },
+        'responses': {
+          '200': {'description': 'OK'},
+        },
+      };
+      final result = renderTestOperation(
+        path: '/upload',
+        operationJson: operation,
+        serverUrl: Uri.parse('https://example.com'),
+      );
+      expect(result, contains('String? multipartFields,'));
+      expect(result, contains('String? multipartFiles,'));
+      expect(result, contains('final multipartFields2 = <String, String>{};'));
+      expect(result, contains("multipartFields2['note'] = v;"));
+      expect(result, contains('multipartFiles2.add('));
+      expect(result, contains('fields: multipartFields2,'));
+      expect(result, contains('files: multipartFiles2,'));
+    });
+
     test('multipart/form-data with scalar + binary + optional field', () {
       final operation = {
         'tags': ['files'],
@@ -1939,6 +1981,50 @@ void main() {
         '    }\n'
         '}\n',
       );
+    });
+
+    test('method-body locals yield to parameters', () {
+      // The method body declares `response` and reads the `client` field.
+      // Parameters keep their spec names; the local takes the next free
+      // suffix (`response2` is a parameter too, so `response3`) and the
+      // field is reached through `this.client`.
+      final json = {
+        'summary': 'Get user',
+        'parameters': [
+          for (final name in ['response', 'response2', 'client'])
+            {
+              'name': name,
+              'in': 'query',
+              'schema': {'type': 'string'},
+            },
+        ],
+        'responses': {
+          '200': {
+            'description': 'OK',
+            'content': {
+              'application/json': {
+                'schema': {'type': 'string'},
+              },
+            },
+          },
+        },
+      };
+      final result = renderTestOperation(
+        path: '/users',
+        operationJson: json,
+        serverUrl: Uri.parse('https://api.spacetraders.io/v2'),
+      );
+      for (final name in ['response', 'response2', 'client']) {
+        expect(result, contains('String? $name,'));
+      }
+      expect(result, contains("if (response != null) 'response': [response],"));
+      expect(
+        result,
+        contains('final response3 = await this.client.invokeApi('),
+      );
+      expect(result, contains('jsonDecode(response3.body)'));
+      expect(result, contains('response3.statusCode'));
+      expect(result, isNot(contains(' response.')));
     });
 
     test('inline enum is named after the operation and parameter', () {
