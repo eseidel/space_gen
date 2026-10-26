@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:multipart/api_client.dart';
@@ -9,6 +10,7 @@ import 'package:multipart/model/upload_multi_file_request.dart';
 import 'package:multipart/model/upload_optional_request.dart';
 import 'package:multipart/model/upload_plain_request.dart';
 import 'package:multipart/model/upload_rich_scalars_request.dart';
+import 'package:multipart/model/upload_shadowed_request.dart';
 
 /// Endpoints with tag Default
 class DefaultApi {
@@ -187,5 +189,66 @@ class DefaultApi {
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException<Object?>(response.statusCode, response.body);
     }
+  }
+
+  /// Parameters named like the locals the method body declares.
+  /// The body's `response`, `multipartFields`, `multipartFiles`, `v` and `f`
+  /// locals take a suffix, and `client` is reached through `this.client`.
+  Future<String> uploadShadowed({
+    String? response,
+    String? client,
+    String? multipartFields,
+    String? multipartFiles,
+    String? v,
+    String? f,
+    UploadShadowedRequest? uploadShadowedRequest,
+  }) async {
+    final multipartFields2 = <String, String>{};
+    final multipartFiles2 = <http.MultipartFile>[];
+    if (uploadShadowedRequest != null) {
+      {
+        final v2 = uploadShadowedRequest.note;
+        if (v2 != null) multipartFields2['note'] = v2;
+      }
+      multipartFiles2.add(
+        http.MultipartFile.fromBytes(
+          'primary',
+          uploadShadowedRequest.primary,
+          filename: 'primary',
+        ),
+      );
+      {
+        final f2 = uploadShadowedRequest.file;
+        if (f2 != null) {
+          multipartFiles2.add(
+            http.MultipartFile.fromBytes('file', f2, filename: 'file'),
+          );
+        }
+      }
+    }
+    final response2 = await this.client.invokeApiMultipart(
+      method: Method.post,
+      path: '/upload/shadowed',
+      queryParameters: {
+        if (response != null) 'response': [response],
+        if (client != null) 'client': [client],
+        if (multipartFields != null) 'multipart_fields': [multipartFields],
+        if (multipartFiles != null) 'multipart_files': [multipartFiles],
+        if (v != null) 'v': [v],
+        if (f != null) 'f': [f],
+      },
+      fields: multipartFields2,
+      files: multipartFiles2,
+    );
+
+    if (response2.statusCode >= HttpStatus.badRequest) {
+      throw ApiException<Object?>(response2.statusCode, response2.body);
+    }
+
+    if (response2.body.isNotEmpty) {
+      return jsonDecode(response2.body) as String;
+    }
+
+    throw ApiException<Object?>.unhandled(response2.statusCode);
   }
 }

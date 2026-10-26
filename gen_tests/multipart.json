@@ -238,6 +238,94 @@
                     }
                 }
             }
+        },
+        "/upload/shadowed": {
+            "post": {
+                "operationId": "uploadShadowed",
+                "summary": "Parameters named like the locals the method body declares.",
+                "description": "The body's `response`, `multipartFields`, `multipartFiles`, `v` and `f` locals take a suffix, and `client` is reached through `this.client`.",
+                "parameters": [
+                    {
+                        "name": "response",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "client",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "multipart_fields",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "multipart_files",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "v",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "f",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "primary"
+                                ],
+                                "properties": {
+                                    "primary": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "note": {
+                                        "type": "string"
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
