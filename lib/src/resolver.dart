@@ -1051,6 +1051,21 @@ List<String> defaultGenerateUniqueNames(
   return newNames;
 }
 
+/// Whether [pointer] is inside an inline parameter schema under `paths`
+/// (`/paths/~1users/get/parameters/0/schema/...`). Those are named after the
+/// parameter, so they yield a contested name to the component schema or
+/// request body that would otherwise have had it.
+bool _isUnderPathParameter(JsonPointer pointer) {
+  final parts = pointer.parts;
+  if (parts.isEmpty || parts.first != 'paths') return false;
+  for (var i = 0; i + 1 < parts.length; i++) {
+    if (parts[i] == 'parameters' && int.tryParse(parts[i + 1]) != null) {
+      return true;
+    }
+  }
+  return false;
+}
+
 Map<JsonPointer, String> _resolveCollisions(
   Map<String, List<JsonPointer>> nameToPointers, {
   List<String> Function(String name, List<JsonPointer> pointers)
@@ -1060,10 +1075,13 @@ Map<JsonPointer, String> _resolveCollisions(
   final changedNames = <JsonPointer, String>{};
   for (final entry in nameToPointers.entries) {
     final name = entry.key;
-    final pointers = entry.value;
-    if (pointers.length < 2) {
+    if (entry.value.length < 2) {
       continue;
     }
+    final pointers = [
+      ...entry.value.whereNot(_isUnderPathParameter),
+      ...entry.value.where(_isUnderPathParameter),
+    ];
     final newNames = generateUniqueNames(name, pointers);
     for (final (index, pointer) in pointers.indexed) {
       logger.detail('Collision: $name -> ${newNames[index]} @ $pointer');
