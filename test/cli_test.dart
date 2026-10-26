@@ -1,5 +1,5 @@
 import 'package:mason_logger/mason_logger.dart';
-import 'package:space_gen/src/cli.dart';
+import 'package:space_gen/space_gen.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -87,9 +87,9 @@ Future<int> _runCli(
   }
   // ArgResults throws an ArgumentError when a missing mandatory option
   // is read, so check for them up front.
-  for (final name in ['in', 'out']) {
-    if (!results.wasParsed(name)) {
-      return usageError('Missing required option --$name.');
+  for (final option in parser.options.values.where((o) => o.mandatory)) {
+    if (!results.wasParsed(option.name)) {
+      return usageError('Missing required option --${option.name}.');
     }
   }
 
