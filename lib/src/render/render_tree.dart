@@ -5081,9 +5081,12 @@ class RenderObject extends RenderNewType {
 
   @override
   DartExpression? exampleValue(SchemaRenderer context) {
-    // No example: the round-trip test would call the throwing toJson,
-    // whether or not the binary property is required.
-    if (hasNoJsonProperty) return null;
+    // No example: the round-trip test would call a throwing toJson,
+    // whether or not the binary property is required. Binary
+    // additionalProperties throw per entry, so they count too.
+    if (hasNoJsonProperty || additionalProperties is RenderNoJson) {
+      return null;
+    }
     final args = <String, DartExpression>{};
     for (final entry in properties.entries) {
       final jsonName = entry.key;

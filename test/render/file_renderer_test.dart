@@ -940,7 +940,7 @@ void main() {
       },
     );
 
-    test('no round-trip test for a model with an optional binary', () async {
+    test('no round-trip test for a model with any binary field', () async {
       // Its toJson throws (binary field present), so a round-trip test
       // would fail whether or not the binary property is required.
       final fs = MemoryFileSystem.test();
@@ -967,6 +967,44 @@ void main() {
                   },
                 },
               },
+              // A JSON-only model alongside, which does get a test.
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'required': ['id'],
+                        'properties': {
+                          'id': {'type': 'string'},
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          '/attachments': {
+            'post': {
+              'operationId': 'attach',
+              'requestBody': {
+                'content': {
+                  'multipart/form-data': {
+                    'schema': {
+                      'type': 'object',
+                      'properties': {
+                        'note': {'type': 'string'},
+                      },
+                      'additionalProperties': {
+                        'type': 'string',
+                        'format': 'binary',
+                      },
+                    },
+                  },
+                },
+              },
               'responses': {
                 '200': {'description': 'OK'},
               },
@@ -982,6 +1020,9 @@ void main() {
           .map((f) => f.basename);
       expect(tests, isNot(contains('upload_request_test.dart')));
       expect(tests, contains('upload_request.dart'));
+      expect(tests, isNot(contains('attach_request_test.dart')));
+      expect(tests, contains('attach_request.dart'));
+      expect(tests, contains('upload200_response_test.dart'));
     });
 
     test(
