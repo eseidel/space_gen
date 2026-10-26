@@ -278,9 +278,7 @@ Future<void> run({
 
   // Compile and test the generated packages that ask for it. Off by
   // default because it is slow and needs the network (a `dart pub get`
-  // per package); CI turns it on. Regeneration above already ran for
-  // every fixture, so the goldens are settled before anything here
-  // touches a `pubspec.lock` (gitignored, so it never reaches the diff).
+  // per package); CI turns it on.
   if (verify) {
     for (final test in tests.where((t) => t.verify)) {
       await _verify(test);
