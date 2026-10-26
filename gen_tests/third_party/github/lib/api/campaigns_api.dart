@@ -7,7 +7,7 @@ import 'package:github/messages/campaigns_create_campaign_request.dart';
 import 'package:github/messages/campaigns_update_campaign_request.dart';
 import 'package:github/models/campaign_state.dart';
 import 'package:github/models/campaign_summary.dart';
-import 'package:github/models/campaigns_list_org_campaigns_parameter5.dart';
+import 'package:github/models/campaigns_list_org_campaigns_sort.dart';
 import 'package:github/models/direction_param.dart';
 
 /// Endpoints to manage campaigns via the REST API.
@@ -30,7 +30,7 @@ class CampaignsApi {
     int? perPage = 30,
     DirectionParam? direction = .desc,
     CampaignState? state,
-    CampaignsListOrgCampaignsParameter5? sort = .created,
+    CampaignsListOrgCampaignsSort? sort = .created,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,

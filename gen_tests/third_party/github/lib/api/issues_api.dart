@@ -28,21 +28,21 @@ import 'package:github/models/issue.dart';
 import 'package:github/models/issue_comment.dart';
 import 'package:github/models/issue_event.dart';
 import 'package:github/models/issue_event_for_issue.dart';
-import 'package:github/models/issues_list_comments_for_repo_parameter3.dart';
-import 'package:github/models/issues_list_for_authenticated_user_parameter0.dart';
-import 'package:github/models/issues_list_for_authenticated_user_parameter1.dart';
-import 'package:github/models/issues_list_for_authenticated_user_parameter3.dart';
-import 'package:github/models/issues_list_for_org_parameter1.dart';
-import 'package:github/models/issues_list_for_org_parameter2.dart';
-import 'package:github/models/issues_list_for_org_parameter5.dart';
-import 'package:github/models/issues_list_for_repo_parameter3.dart';
-import 'package:github/models/issues_list_for_repo_parameter9.dart';
-import 'package:github/models/issues_list_milestones_parameter2.dart';
-import 'package:github/models/issues_list_milestones_parameter3.dart';
-import 'package:github/models/issues_list_milestones_parameter4.dart';
-import 'package:github/models/issues_list_parameter0.dart';
-import 'package:github/models/issues_list_parameter1.dart';
-import 'package:github/models/issues_list_parameter3.dart';
+import 'package:github/models/issues_list_comments_for_repo_direction.dart';
+import 'package:github/models/issues_list_filter.dart';
+import 'package:github/models/issues_list_for_authenticated_user_filter.dart';
+import 'package:github/models/issues_list_for_authenticated_user_sort.dart';
+import 'package:github/models/issues_list_for_authenticated_user_state.dart';
+import 'package:github/models/issues_list_for_org_filter.dart';
+import 'package:github/models/issues_list_for_org_sort.dart';
+import 'package:github/models/issues_list_for_org_state.dart';
+import 'package:github/models/issues_list_for_repo_sort.dart';
+import 'package:github/models/issues_list_for_repo_state.dart';
+import 'package:github/models/issues_list_milestones_direction.dart';
+import 'package:github/models/issues_list_milestones_sort.dart';
+import 'package:github/models/issues_list_milestones_state.dart';
+import 'package:github/models/issues_list_sort.dart';
+import 'package:github/models/issues_list_state.dart';
 import 'package:github/models/label.dart';
 import 'package:github/models/milestone.dart';
 import 'package:github/models/simple_user.dart';
@@ -87,10 +87,10 @@ class IssuesApi {
   /// representations. Response will include `body`, `body_text`, and
   /// `body_html`.
   Future<List<Issue>> list({
-    IssuesListParameter0? filter = .assigned,
-    IssuesListParameter1? state = .open,
+    IssuesListFilter? filter = .assigned,
+    IssuesListState? state = .open,
     String? labels,
-    IssuesListParameter3? sort = .created,
+    IssuesListSort? sort = .created,
     DirectionParam? direction = .desc,
     DateTime? since,
     bool? collab,
@@ -161,11 +161,11 @@ class IssuesApi {
   /// `body_html`.
   Future<List<Issue>> listForOrg(
     String org, {
-    IssuesListForOrgParameter1? filter = .assigned,
-    IssuesListForOrgParameter2? state = .open,
+    IssuesListForOrgFilter? filter = .assigned,
+    IssuesListForOrgState? state = .open,
     String? labels,
     String? type,
-    IssuesListForOrgParameter5? sort = .created,
+    IssuesListForOrgSort? sort = .created,
     DirectionParam? direction = .desc,
     DateTime? since,
     int? perPage = 30,
@@ -293,13 +293,13 @@ class IssuesApi {
     String owner,
     String repo, {
     String? milestone,
-    IssuesListForRepoParameter3? state = .open,
+    IssuesListForRepoState? state = .open,
     String? assignee,
     String? type,
     String? creator,
     String? mentioned,
     String? labels,
-    IssuesListForRepoParameter9? sort = .created,
+    IssuesListForRepoSort? sort = .created,
     DirectionParam? direction = .desc,
     DateTime? since,
     int? perPage = 30,
@@ -416,7 +416,7 @@ class IssuesApi {
     String owner,
     String repo, {
     SortParam? sort = .created,
-    IssuesListCommentsForRepoParameter3? direction,
+    IssuesListCommentsForRepoDirection? direction,
     DateTime? since,
     int? perPage = 30,
     int? page = 1,
@@ -1482,9 +1482,9 @@ class IssuesApi {
   Future<List<Milestone>> listMilestones(
     String owner,
     String repo, {
-    IssuesListMilestonesParameter2? state = .open,
-    IssuesListMilestonesParameter3? sort = .dueOn,
-    IssuesListMilestonesParameter4? direction = .asc,
+    IssuesListMilestonesState? state = .open,
+    IssuesListMilestonesSort? sort = .dueOn,
+    IssuesListMilestonesDirection? direction = .asc,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -1684,10 +1684,10 @@ class IssuesApi {
   /// representations. Response will include `body`, `body_text`, and
   /// `body_html`.
   Future<List<Issue>> listForAuthenticatedUser({
-    IssuesListForAuthenticatedUserParameter0? filter = .assigned,
-    IssuesListForAuthenticatedUserParameter1? state = .open,
+    IssuesListForAuthenticatedUserFilter? filter = .assigned,
+    IssuesListForAuthenticatedUserState? state = .open,
     String? labels,
-    IssuesListForAuthenticatedUserParameter3? sort = .created,
+    IssuesListForAuthenticatedUserSort? sort = .created,
     DirectionParam? direction = .desc,
     DateTime? since,
     int? perPage = 30,

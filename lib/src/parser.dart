@@ -1843,6 +1843,38 @@ String _snakeNameForOperation(MapContext operationJson, String path) {
   return toSnakeCase(Uri.parse(path).pathSegments.last);
 }
 
+/// Snake names for an operation's parameters, by index, used to name types
+/// synthesized from inline parameter schemas (`sort` on `getOrganizationApps`
+/// becomes `GetOrganizationAppsSort`). A parameter whose name isn't unique in
+/// the list (OpenAPI keys parameters by name and location, so a `sort` query
+/// and a `sort` header can coexist) keeps its position, `parameter$index`.
+///
+/// Query parameter names can hold characters no identifier can, such as
+/// JSON:API's `filter[status]`; those become underscores, so that one names
+/// `GetOrganizationAppsFilterStatus`.
+List<String> _operationParameterSnakeNames(MapContext operationJson) {
+  final raw = operationJson.json['parameters'];
+  if (raw is! List) return const [];
+  final names = [
+    for (final p in raw)
+      if (p case {'name': final String name})
+        toSnakeCase(
+          name.replaceAll(RegExp(r'[^\w\s.-]+'), '_'),
+        ).replaceAll(RegExp(r'_+$'), '')
+      else
+        null,
+  ];
+  return [
+    for (final (i, name) in names.indexed)
+      if (name != null &&
+          name.isNotEmpty &&
+          names.where((n) => n == name).length == 1)
+        name
+      else
+        'parameter$i',
+  ];
+}
+
 Operation parseOperation(MapContext operationJson, String path) {
   _refNotExpected(operationJson);
   final snakeName = _snakeNameForOperation(operationJson, path);
@@ -1851,11 +1883,12 @@ Operation parseOperation(MapContext operationJson, String path) {
   final summary = _optional<String>(context, 'summary');
   final description = _optional<String>(context, 'description');
   final tags = _optionalList<String>(context, 'tags') ?? [];
+  final parameterNames = _operationParameterSnakeNames(context);
   final parameters = _mapOptionalList(
     context,
     'parameters',
     (child, index) =>
-        parseParameterOrRef(child.addSnakeName('parameter$index')),
+        parseParameterOrRef(child.addSnakeName(parameterNames[index])),
   );
   final requestBody = maybeRequestBodyOrRef(
     _optionalMap(context, 'requestBody')?.addSnakeName('request'),

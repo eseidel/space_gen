@@ -2623,6 +2623,67 @@ void main() {
         ]),
       );
     });
+    test('a parameter-named type yields its name on collision', () async {
+      // The `status` parameter on `users` wants `UsersStatus`, which the
+      // component schema `users-status` already has. The component keeps it.
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Space Traders API', 'version': '1.0.0'},
+        'servers': [
+          {'url': 'https://api.spacetraders.io/v2'},
+        ],
+        'paths': {
+          '/users': {
+            'get': {
+              'parameters': [
+                {
+                  'name': 'status',
+                  'in': 'query',
+                  'schema': {
+                    'type': 'string',
+                    'enum': ['active', 'banned'],
+                  },
+                },
+              ],
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        r'$ref': '#/components/schemas/users-status',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'users-status': {
+              'type': 'object',
+              'properties': {
+                'count': {'type': 'integer'},
+              },
+            },
+          },
+        },
+      };
+      final fs = MemoryFileSystem.test();
+      final out = fs.directory('spacetraders');
+
+      await renderToDirectory(spec: spec, outDir: out);
+      final files = out
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((f) => f.path.contains('/lib/'));
+      String contentOf(String name) =>
+          files.firstWhere((f) => f.basename == name).readAsStringSync();
+      expect(contentOf('users_status.dart'), contains('class UsersStatus '));
+      expect(contentOf('users_status_1.dart'), contains('enum UsersStatus1 '));
+    });
     test('non-rendered types do not count as collisions', () async {
       final spec = {
         'openapi': '3.1.0',

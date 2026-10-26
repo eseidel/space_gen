@@ -130,21 +130,21 @@ import 'package:github/models/referrer_traffic.dart';
 import 'package:github/models/release.dart';
 import 'package:github/models/release_asset.dart';
 import 'package:github/models/release_notes_content.dart';
-import 'package:github/models/repos_list_activities_parameter8.dart';
-import 'package:github/models/repos_list_activities_parameter9.dart';
-import 'package:github/models/repos_list_collaborators_parameter2.dart';
-import 'package:github/models/repos_list_collaborators_parameter3.dart';
-import 'package:github/models/repos_list_for_authenticated_user_parameter0.dart';
-import 'package:github/models/repos_list_for_authenticated_user_parameter2.dart';
-import 'package:github/models/repos_list_for_authenticated_user_parameter3.dart';
-import 'package:github/models/repos_list_for_authenticated_user_parameter4.dart';
-import 'package:github/models/repos_list_for_org_parameter1.dart';
-import 'package:github/models/repos_list_for_org_parameter2.dart';
-import 'package:github/models/repos_list_for_org_parameter3.dart';
-import 'package:github/models/repos_list_for_user_parameter1.dart';
-import 'package:github/models/repos_list_for_user_parameter2.dart';
-import 'package:github/models/repos_list_for_user_parameter3.dart';
-import 'package:github/models/repos_list_forks_parameter2.dart';
+import 'package:github/models/repos_list_activities_activity_type.dart';
+import 'package:github/models/repos_list_activities_time_period.dart';
+import 'package:github/models/repos_list_collaborators_affiliation.dart';
+import 'package:github/models/repos_list_collaborators_permission.dart';
+import 'package:github/models/repos_list_for_authenticated_user_direction.dart';
+import 'package:github/models/repos_list_for_authenticated_user_sort.dart';
+import 'package:github/models/repos_list_for_authenticated_user_type.dart';
+import 'package:github/models/repos_list_for_authenticated_user_visibility.dart';
+import 'package:github/models/repos_list_for_org_direction.dart';
+import 'package:github/models/repos_list_for_org_sort.dart';
+import 'package:github/models/repos_list_for_org_type.dart';
+import 'package:github/models/repos_list_for_user_direction.dart';
+import 'package:github/models/repos_list_for_user_sort.dart';
+import 'package:github/models/repos_list_for_user_type.dart';
+import 'package:github/models/repos_list_forks_sort.dart';
 import 'package:github/models/repository.dart';
 import 'package:github/models/repository_collaborator_permission.dart';
 import 'package:github/models/repository_invitation.dart';
@@ -550,9 +550,9 @@ class ReposApi {
   /// organization](https://docs.github.com/organizations/managing-peoples-access-to-your-organization-with-roles/managing-security-managers-in-your-organization)."
   Future<List<MinimalRepository>> listForOrg(
     String org, {
-    ReposListForOrgParameter1? type = .all,
-    ReposListForOrgParameter2? sort = .created,
-    ReposListForOrgParameter3? direction,
+    ReposListForOrgType? type = .all,
+    ReposListForOrgSort? sort = .created,
+    ReposListForOrgDirection? direction,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -917,8 +917,8 @@ class ReposApi {
     String? after,
     String? ref,
     String? actor,
-    ReposListActivitiesParameter8? timePeriod,
-    ReposListActivitiesParameter9? activityType,
+    ReposListActivitiesTimePeriod? timePeriod,
+    ReposListActivitiesActivityType? activityType,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,
@@ -2612,8 +2612,8 @@ class ReposApi {
   Future<List<Collaborator>> listCollaborators(
     String owner,
     String repo, {
-    ReposListCollaboratorsParameter2? affiliation = .all,
-    ReposListCollaboratorsParameter3? permission,
+    ReposListCollaboratorsAffiliation? affiliation = .all,
+    ReposListCollaboratorsPermission? permission,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -4791,7 +4791,7 @@ class ReposApi {
   Future<List<MinimalRepository>> listForks(
     String owner,
     String repo, {
-    ReposListForksParameter2? sort = .newest,
+    ReposListForksSort? sort = .newest,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -7609,11 +7609,11 @@ class ReposApi {
   /// they own, repositories where they are a collaborator, and repositories
   /// that they can access through an organization membership.
   Future<List<Repository>> listForAuthenticatedUser({
-    ReposListForAuthenticatedUserParameter0? visibility = .all,
+    ReposListForAuthenticatedUserVisibility? visibility = .all,
     String? affiliation = 'owner,collaborator,organization_member',
-    ReposListForAuthenticatedUserParameter2? type = .all,
-    ReposListForAuthenticatedUserParameter3? sort = .fullName,
-    ReposListForAuthenticatedUserParameter4? direction,
+    ReposListForAuthenticatedUserType? type = .all,
+    ReposListForAuthenticatedUserSort? sort = .fullName,
+    ReposListForAuthenticatedUserDirection? direction,
     int? perPage = 30,
     int? page = 1,
     DateTime? since,
@@ -7746,9 +7746,9 @@ class ReposApi {
   /// Lists public repositories for the specified user.
   Future<List<MinimalRepository>> listForUser(
     String username, {
-    ReposListForUserParameter1? type = .owner,
-    ReposListForUserParameter2? sort = .fullName,
-    ReposListForUserParameter3? direction,
+    ReposListForUserType? type = .owner,
+    ReposListForUserSort? sort = .fullName,
+    ReposListForUserDirection? direction,
     int? perPage = 30,
     int? page = 1,
   }) async {
