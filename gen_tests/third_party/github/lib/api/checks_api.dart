@@ -24,8 +24,8 @@ import 'package:github/models/check_annotation.dart';
 import 'package:github/models/check_run.dart';
 import 'package:github/models/check_suite.dart';
 import 'package:github/models/check_suite_preference.dart';
-import 'package:github/models/checks_list_for_ref_parameter5.dart';
-import 'package:github/models/checks_list_for_suite_parameter5.dart';
+import 'package:github/models/checks_list_for_ref_filter.dart';
+import 'package:github/models/checks_list_for_suite_filter.dart';
 import 'package:github/models/empty_object.dart';
 import 'package:github/models/status_param.dart';
 
@@ -358,7 +358,7 @@ class ChecksApi {
     int checkSuiteId, {
     String? checkName,
     StatusParam? status,
-    ChecksListForSuiteParameter5? filter = .latest,
+    ChecksListForSuiteFilter? filter = .latest,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -451,7 +451,7 @@ class ChecksApi {
     String ref, {
     String? checkName,
     StatusParam? status,
-    ChecksListForRefParameter5? filter = .latest,
+    ChecksListForRefFilter? filter = .latest,
     int? perPage = 30,
     int? page = 1,
     int? appId,

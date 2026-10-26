@@ -11,11 +11,11 @@ import 'package:github/models/package.dart';
 import 'package:github/models/package_type_param.dart';
 import 'package:github/models/package_version.dart';
 import 'package:github/models/package_visibility_param.dart';
-import 'package:github/models/packages_get_all_package_versions_for_package_owned_by_authenticated_user_parameter4.dart';
-import 'package:github/models/packages_get_all_package_versions_for_package_owned_by_org_parameter5.dart';
-import 'package:github/models/packages_list_packages_for_authenticated_user_parameter0.dart';
-import 'package:github/models/packages_list_packages_for_organization_parameter0.dart';
-import 'package:github/models/packages_list_packages_for_user_parameter0.dart';
+import 'package:github/models/packages_get_all_package_versions_for_package_owned_by_authenticated_user_state.dart';
+import 'package:github/models/packages_get_all_package_versions_for_package_owned_by_org_state.dart';
+import 'package:github/models/packages_list_packages_for_authenticated_user_package_type.dart';
+import 'package:github/models/packages_list_packages_for_organization_package_type.dart';
+import 'package:github/models/packages_list_packages_for_user_package_type.dart';
 
 /// Manage packages for authenticated users and organizations.
 class PackagesApi {
@@ -63,7 +63,7 @@ class PackagesApi {
   /// "[About permissions for GitHub
   /// Packages](https://docs.github.com/packages/learn-github-packages/about-permissions-for-github-packages#permissions-for-repository-scoped-packages)."
   Future<List<Package>> listPackagesForOrganization(
-    PackagesListPackagesForOrganizationParameter0 packageType,
+    PackagesListPackagesForOrganizationPackageType packageType,
     String org, {
     PackageVisibilityParam? visibility,
     int? page = 1,
@@ -229,8 +229,7 @@ class PackagesApi {
     String org, {
     int? page = 1,
     int? perPage = 30,
-    PackagesGetAllPackageVersionsForPackageOwnedByOrgParameter5? state =
-        .active,
+    PackagesGetAllPackageVersionsForPackageOwnedByOrgState? state = .active,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,
@@ -426,7 +425,7 @@ class PackagesApi {
   /// "[About permissions for GitHub
   /// Packages](https://docs.github.com/packages/learn-github-packages/about-permissions-for-github-packages#permissions-for-repository-scoped-packages)."
   Future<List<Package>> listPackagesForAuthenticatedUser(
-    PackagesListPackagesForAuthenticatedUserParameter0 packageType, {
+    PackagesListPackagesForAuthenticatedUserPackageType packageType, {
     PackageVisibilityParam? visibility,
     int? page = 1,
     int? perPage = 30,
@@ -569,7 +568,7 @@ class PackagesApi {
     String packageName, {
     int? page = 1,
     int? perPage = 30,
-    PackagesGetAllPackageVersionsForPackageOwnedByAuthenticatedUserParameter4?
+    PackagesGetAllPackageVersionsForPackageOwnedByAuthenticatedUserState?
         state =
         .active,
   }) async {
@@ -754,7 +753,7 @@ class PackagesApi {
   /// "[About permissions for GitHub
   /// Packages](https://docs.github.com/packages/learn-github-packages/about-permissions-for-github-packages#permissions-for-repository-scoped-packages)."
   Future<List<Package>> listPackagesForUser(
-    PackagesListPackagesForUserParameter0 packageType,
+    PackagesListPackagesForUserPackageType packageType,
     String username, {
     PackageVisibilityParam? visibility,
     int? page = 1,

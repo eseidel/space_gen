@@ -15,13 +15,13 @@ import 'package:github/messages/search_repos200_response.dart';
 import 'package:github/messages/search_topics200_response.dart';
 import 'package:github/messages/search_users200_response.dart';
 import 'package:github/models/order_param.dart';
-import 'package:github/models/search_code_parameter1.dart';
-import 'package:github/models/search_code_parameter2.dart';
-import 'package:github/models/search_commits_parameter1.dart';
-import 'package:github/models/search_issues_and_pull_requests_parameter1.dart';
-import 'package:github/models/search_labels_parameter2.dart';
-import 'package:github/models/search_repos_parameter1.dart';
-import 'package:github/models/search_users_parameter1.dart';
+import 'package:github/models/search_code_order.dart';
+import 'package:github/models/search_code_sort.dart';
+import 'package:github/models/search_commits_sort.dart';
+import 'package:github/models/search_issues_and_pull_requests_sort.dart';
+import 'package:github/models/search_labels_sort.dart';
+import 'package:github/models/search_repos_sort.dart';
+import 'package:github/models/search_users_sort.dart';
 
 /// Look for stuff on GitHub.
 class SearchApi {
@@ -68,8 +68,8 @@ class SearchApi {
   /// per minute.
   Future<SearchCode200Response> code(
     String q, {
-    SearchCodeParameter1? sort,
-    SearchCodeParameter2? order = .desc,
+    SearchCodeSort? sort,
+    SearchCodeOrder? order = .desc,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -115,7 +115,7 @@ class SearchApi {
   /// `q=repo:octocat/Spoon-Knife+css`
   Future<SearchCommits200Response> commits(
     String q, {
-    SearchCommitsParameter1? sort,
+    SearchCommitsSort? sort,
     OrderParam? order = .desc,
     int? perPage = 30,
     int? page = 1,
@@ -153,7 +153,7 @@ class SearchApi {
   /// blog](https://github.blog/changelog/2025-03-06-github-issues-projects-api-support-for-issues-advanced-search-and-more/).
   Future<SearchIssuesAndPullRequests200Response> issuesAndPullRequests(
     String q, {
-    SearchIssuesAndPullRequestsParameter1? sort,
+    SearchIssuesAndPullRequestsSort? sort,
     OrderParam? order = .desc,
     int? perPage = 30,
     int? page = 1,
@@ -206,7 +206,7 @@ class SearchApi {
   Future<SearchLabels200Response> labels(
     int repositoryId,
     String q, {
-    SearchLabelsParameter2? sort,
+    SearchLabelsSort? sort,
     OrderParam? order = .desc,
     int? perPage = 30,
     int? page = 1,
@@ -260,7 +260,7 @@ class SearchApi {
   /// in the search results.
   Future<SearchRepos200Response> repos(
     String q, {
-    SearchReposParameter1? sort,
+    SearchReposSort? sort,
     OrderParam? order = .desc,
     int? perPage = 30,
     int? page = 1,
@@ -372,7 +372,7 @@ class SearchApi {
   /// Queries](https://docs.github.com/graphql/reference/queries#search)."
   Future<SearchUsers200Response> users(
     String q, {
-    SearchUsersParameter1? sort,
+    SearchUsersSort? sort,
     OrderParam? order = .desc,
     int? perPage = 30,
     int? page = 1,

@@ -5,7 +5,7 @@ import 'dart:typed_data';
 import 'package:petstore/api_client.dart';
 import 'package:petstore/api_exception.dart';
 import 'package:petstore/messages/api_response.dart';
-import 'package:petstore/models/find_pets_by_status_parameter0.dart';
+import 'package:petstore/models/find_pets_by_status_status.dart';
 import 'package:petstore/models/pet.dart';
 
 /// Everything about your Pets
@@ -65,7 +65,7 @@ class PetApi {
   /// Finds Pets by status.
   /// Multiple status values can be provided with comma separated strings.
   Future<List<Pet>> findPetsByStatus({
-    FindPetsByStatusParameter0? status = .available,
+    FindPetsByStatusStatus? status = .available,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,

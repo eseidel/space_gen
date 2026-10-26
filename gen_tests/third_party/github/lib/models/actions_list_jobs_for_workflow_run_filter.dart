@@ -1,0 +1,36 @@
+enum ActionsListJobsForWorkflowRunFilter {
+  latest._('latest'),
+  all._('all');
+
+  const ActionsListJobsForWorkflowRunFilter._(this.value);
+
+  /// Creates a ActionsListJobsForWorkflowRunFilter from a json value.
+  factory ActionsListJobsForWorkflowRunFilter.fromJson(String json) {
+    return ActionsListJobsForWorkflowRunFilter.values.firstWhere(
+      (value) => value.value == json,
+      orElse: () => throw FormatException(
+        'Unknown ActionsListJobsForWorkflowRunFilter value: $json',
+      ),
+    );
+  }
+
+  /// Convenience to create a nullable type from a nullable json value.
+  /// Useful when parsing optional fields.
+  static ActionsListJobsForWorkflowRunFilter? maybeFromJson(String? json) {
+    if (json == null) {
+      return null;
+    }
+    return ActionsListJobsForWorkflowRunFilter.fromJson(json);
+  }
+
+  /// The value of the enum.  This is the exact value
+  /// from the OpenAPI spec and will be used for network transport.
+  final String value;
+
+  /// Converts the enum to its json value.
+  String toJson() => value;
+
+  /// Returns the string form of the enum.
+  @override
+  String toString() => value;
+}

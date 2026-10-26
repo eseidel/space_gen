@@ -55,12 +55,12 @@ import 'package:github/models/organization_programmatic_access_grant.dart';
 import 'package:github/models/organization_role.dart';
 import 'package:github/models/organization_simple.dart';
 import 'package:github/models/organization_update_issue_type.dart';
-import 'package:github/models/orgs_list_members_parameter1.dart';
-import 'package:github/models/orgs_list_members_parameter2.dart';
-import 'package:github/models/orgs_list_memberships_for_authenticated_user_parameter0.dart';
-import 'package:github/models/orgs_list_outside_collaborators_parameter1.dart';
-import 'package:github/models/orgs_list_pending_invitations_parameter3.dart';
-import 'package:github/models/orgs_list_pending_invitations_parameter4.dart';
+import 'package:github/models/orgs_list_members_filter.dart';
+import 'package:github/models/orgs_list_members_role.dart';
+import 'package:github/models/orgs_list_memberships_for_authenticated_user_state.dart';
+import 'package:github/models/orgs_list_outside_collaborators_filter.dart';
+import 'package:github/models/orgs_list_pending_invitations_invitation_source.dart';
+import 'package:github/models/orgs_list_pending_invitations_role.dart';
 import 'package:github/models/personal_access_token_sort_param.dart';
 import 'package:github/models/ruleset_version.dart';
 import 'package:github/models/ruleset_version_with_state.dart';
@@ -1247,8 +1247,8 @@ class OrgsApi {
     String org, {
     int? perPage = 30,
     int? page = 1,
-    OrgsListPendingInvitationsParameter3? role = .all,
-    OrgsListPendingInvitationsParameter4? invitationSource = .all,
+    OrgsListPendingInvitationsRole? role = .all,
+    OrgsListPendingInvitationsInvitationSource? invitationSource = .all,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,
@@ -1497,8 +1497,8 @@ class OrgsApi {
   /// public members will be returned.
   Future<List<SimpleUser>> orgsListMembers(
     String org, {
-    OrgsListMembersParameter1? filter = .all,
-    OrgsListMembersParameter2? role = .all,
+    OrgsListMembersFilter? filter = .all,
+    OrgsListMembersRole? role = .all,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -1969,7 +1969,7 @@ class OrgsApi {
   /// List all users who are outside collaborators of an organization.
   Future<List<SimpleUser>> orgsListOutsideCollaborators(
     String org, {
-    OrgsListOutsideCollaboratorsParameter1? filter = .all,
+    OrgsListOutsideCollaboratorsFilter? filter = .all,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -2884,7 +2884,7 @@ class OrgsApi {
   /// List organization memberships for the authenticated user
   /// Lists all of the authenticated user's organization memberships.
   Future<List<OrgMembership>> orgsListMembershipsForAuthenticatedUser({
-    OrgsListMembershipsForAuthenticatedUserParameter0? state,
+    OrgsListMembershipsForAuthenticatedUserState? state,
     int? perPage = 30,
     int? page = 1,
   }) async {

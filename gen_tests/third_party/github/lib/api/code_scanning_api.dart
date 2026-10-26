@@ -28,9 +28,9 @@ import 'package:github/models/code_scanning_autofix_commits.dart';
 import 'package:github/models/code_scanning_codeql_database.dart';
 import 'package:github/models/code_scanning_default_setup.dart';
 import 'package:github/models/code_scanning_default_setup_update.dart';
-import 'package:github/models/code_scanning_list_alerts_for_org_parameter9.dart';
-import 'package:github/models/code_scanning_list_alerts_for_repo_parameter11.dart';
-import 'package:github/models/code_scanning_list_recent_analyses_parameter10.dart';
+import 'package:github/models/code_scanning_list_alerts_for_org_sort.dart';
+import 'package:github/models/code_scanning_list_alerts_for_repo_sort.dart';
+import 'package:github/models/code_scanning_list_recent_analyses_sort.dart';
 import 'package:github/models/code_scanning_organization_alert_items.dart';
 import 'package:github/models/code_scanning_ref.dart';
 import 'package:github/models/code_scanning_sarifs_receipt.dart';
@@ -112,7 +112,7 @@ class CodeScanningApi {
     int? perPage = 30,
     DirectionParam? direction = .desc,
     CodeScanningAlertStateQuery? state,
-    CodeScanningListAlertsForOrgParameter9? sort = .created,
+    CodeScanningListAlertsForOrgSort? sort = .created,
     CodeScanningAlertSeverity? severity,
   }) async {
     final response = await client.invokeApi(
@@ -176,7 +176,7 @@ class CodeScanningApi {
     DirectionParam? direction = .desc,
     String? before,
     String? after,
-    CodeScanningListAlertsForRepoParameter11? sort = .created,
+    CodeScanningListAlertsForRepoSort? sort = .created,
     CodeScanningAlertStateQuery? state,
     CodeScanningAlertSeverity? severity,
   }) async {
@@ -475,7 +475,7 @@ class CodeScanningApi {
     CodeScanningRef? ref,
     CodeScanningAnalysisSarifId? sarifId,
     DirectionParam? direction = .desc,
-    CodeScanningListRecentAnalysesParameter10? sort = .created,
+    CodeScanningListRecentAnalysesSort? sort = .created,
   }) async {
     final response = await client.invokeApi(
       method: Method.get,

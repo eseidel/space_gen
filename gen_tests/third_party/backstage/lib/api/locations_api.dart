@@ -9,7 +9,7 @@ import 'package:backstage/messages/create_location201_response.dart';
 import 'package:backstage/messages/create_location_request.dart';
 import 'package:backstage/messages/get_locations_by_query_request.dart';
 import 'package:backstage/messages/locations_query_response.dart';
-import 'package:backstage/models/create_location_parameter1.dart';
+import 'package:backstage/models/create_location_on_conflict.dart';
 import 'package:backstage/models/error.dart';
 import 'package:backstage/models/get_locations200_response_inner.dart';
 import 'package:backstage/models/location.dart';
@@ -57,7 +57,7 @@ class LocationsApi {
   Future<CreateLocation201Response> createLocation(
     CreateLocationRequest createLocationRequest, {
     String? dryRun,
-    CreateLocationParameter1? onConflict,
+    CreateLocationOnConflict? onConflict,
   }) async {
     final response = await client.invokeApi(
       method: Method.post,

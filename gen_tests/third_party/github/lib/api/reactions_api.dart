@@ -17,15 +17,15 @@ import 'package:github/messages/reactions_create_for_team_discussion_comment_leg
 import 'package:github/messages/reactions_create_for_team_discussion_in_org_request.dart';
 import 'package:github/messages/reactions_create_for_team_discussion_legacy_request.dart';
 import 'package:github/models/reaction.dart';
-import 'package:github/models/reactions_list_for_commit_comment_parameter3.dart';
-import 'package:github/models/reactions_list_for_issue_comment_parameter3.dart';
-import 'package:github/models/reactions_list_for_issue_parameter3.dart';
-import 'package:github/models/reactions_list_for_pull_request_review_comment_parameter3.dart';
-import 'package:github/models/reactions_list_for_release_parameter3.dart';
-import 'package:github/models/reactions_list_for_team_discussion_comment_in_org_parameter4.dart';
-import 'package:github/models/reactions_list_for_team_discussion_comment_legacy_parameter3.dart';
-import 'package:github/models/reactions_list_for_team_discussion_in_org_parameter3.dart';
-import 'package:github/models/reactions_list_for_team_discussion_legacy_parameter2.dart';
+import 'package:github/models/reactions_list_for_commit_comment_content.dart';
+import 'package:github/models/reactions_list_for_issue_comment_content.dart';
+import 'package:github/models/reactions_list_for_issue_content.dart';
+import 'package:github/models/reactions_list_for_pull_request_review_comment_content.dart';
+import 'package:github/models/reactions_list_for_release_content.dart';
+import 'package:github/models/reactions_list_for_team_discussion_comment_in_org_content.dart';
+import 'package:github/models/reactions_list_for_team_discussion_comment_legacy_content.dart';
+import 'package:github/models/reactions_list_for_team_discussion_in_org_content.dart';
+import 'package:github/models/reactions_list_for_team_discussion_legacy_content.dart';
 
 /// Interact with reactions to various GitHub entities.
 class ReactionsApi {
@@ -48,7 +48,7 @@ class ReactionsApi {
     String teamSlug,
     int discussionNumber,
     int commentNumber, {
-    ReactionsListForTeamDiscussionCommentInOrgParameter4? content,
+    ReactionsListForTeamDiscussionCommentInOrgContent? content,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -172,7 +172,7 @@ class ReactionsApi {
     String org,
     String teamSlug,
     int discussionNumber, {
-    ReactionsListForTeamDiscussionInOrgParameter3? content,
+    ReactionsListForTeamDiscussionInOrgContent? content,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -284,7 +284,7 @@ class ReactionsApi {
     String owner,
     String repo,
     int commentId, {
-    ReactionsListForCommitCommentParameter3? content,
+    ReactionsListForCommitCommentContent? content,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -383,7 +383,7 @@ class ReactionsApi {
     String owner,
     String repo,
     int commentId, {
-    ReactionsListForIssueCommentParameter3? content,
+    ReactionsListForIssueCommentContent? content,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -481,7 +481,7 @@ class ReactionsApi {
     String owner,
     String repo,
     int issueNumber, {
-    ReactionsListForIssueParameter3? content,
+    ReactionsListForIssueContent? content,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -579,7 +579,7 @@ class ReactionsApi {
     String owner,
     String repo,
     int commentId, {
-    ReactionsListForPullRequestReviewCommentParameter3? content,
+    ReactionsListForPullRequestReviewCommentContent? content,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -678,7 +678,7 @@ class ReactionsApi {
     String owner,
     String repo,
     int releaseId, {
-    ReactionsListForReleaseParameter3? content,
+    ReactionsListForReleaseContent? content,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -785,7 +785,7 @@ class ReactionsApi {
     int teamId,
     int discussionNumber,
     int commentNumber, {
-    ReactionsListForTeamDiscussionCommentLegacyParameter3? content,
+    ReactionsListForTeamDiscussionCommentLegacyContent? content,
     int? perPage = 30,
     int? page = 1,
   }) async {
@@ -877,7 +877,7 @@ class ReactionsApi {
   Future<List<Reaction>> listForTeamDiscussionLegacy(
     int teamId,
     int discussionNumber, {
-    ReactionsListForTeamDiscussionLegacyParameter2? content,
+    ReactionsListForTeamDiscussionLegacyContent? content,
     int? perPage = 30,
     int? page = 1,
   }) async {
