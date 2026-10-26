@@ -39,6 +39,21 @@ String avoidReservedWord(String value) {
   return value;
 }
 
+/// Identifiers a generated api method body declares or reads (see
+/// `api.mustache` and [RenderOperation]'s multipart assembly). A method
+/// parameter by one of these names would shadow it.
+const _methodBodyNames = {
+  'client',
+  'response',
+  'multipartFields',
+  'multipartFiles',
+};
+
+/// [name] as an api method parameter: reserved words and
+/// [_methodBodyNames] get a trailing `_`.
+String _methodParameterName(String name) =>
+    _methodBodyNames.contains(name) ? '${name}_' : avoidReservedWord(name);
+
 /// `Map<String, dynamic>` — the JSON wire type of an arbitrary object. The
 /// storage type for objects, maps, and object-shaped composites.
 final _jsonWireMap = DartType.map(DartType.string, DartType.dynamic_);
@@ -2354,7 +2369,7 @@ sealed class RenderRequestBody implements CanBeParameter {
   String dartParameterName(Quirks quirks) =>
       // TODO(eseidel): Is there a name we can use instead of the typename?
       // Removing any template parameters from the type.
-      schema.typeName.lowerFirst().split('<').first;
+      _methodParameterName(schema.typeName.lowerFirst().split('<').first);
 }
 
 /// Request bodies that pass through `ApiClient.invokeApi` as a single
@@ -7206,7 +7221,8 @@ class RenderParameter implements CanBeParameter {
   final QueryEncoding? queryEncoding;
 
   @override
-  String dartParameterName(Quirks quirks) => variableSafeName(quirks, name);
+  String dartParameterName(Quirks quirks) =>
+      _methodParameterName(variableSafeName(quirks, name));
 
   /// The description of the parameter.
   final String? description;

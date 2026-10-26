@@ -199,6 +199,31 @@ void main() {
       expect(parameter.name, 'with');
       expect(parameter.bracketedName, '{with}');
     });
+
+    test('parameter named like a method-body local is escaped', () {
+      // The generated method declares `final response = ...` and calls
+      // `client.invokeApi`; a parameter by either name would shadow it.
+      RenderParameter named(String name) => RenderParameter(
+        description: null,
+        name: name,
+        type: RenderUnknown(
+          common: CommonProperties.test(
+            snakeName: name,
+            pointer: const JsonPointer.empty(),
+          ),
+        ),
+        isRequired: false,
+        isDeprecated: false,
+        inLocation: ParameterLocation.query,
+        example: null,
+        examples: null,
+        queryEncoding: null,
+      );
+      const quirks = Quirks();
+      expect(named('response').dartParameterName(quirks), 'response_');
+      expect(named('client').dartParameterName(quirks), 'client_');
+      expect(named('responses').dartParameterName(quirks), 'responses');
+    });
   });
 
   group('createDocComment', () {
