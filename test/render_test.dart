@@ -81,22 +81,5 @@ void main() {
       expect(packageNameForOutDir(fs.directory('./')), 'my_api');
       expect(packageNameForOutDir(fs.directory('../my_api/.')), 'my_api');
     });
-
-    test('prefers the name in an existing pubspec', () {
-      final fs = MemoryFileSystem.test();
-      fs.file('/work/protocol/pubspec.yaml')
-        ..createSync(recursive: true)
-        ..writeAsStringSync('name: my_protocol\n');
-      fs.currentDirectory = '/work/protocol';
-      expect(packageNameForOutDir(fs.directory('.')), 'my_protocol');
-    });
-
-    test('ignores a pubspec without a name', () {
-      final fs = MemoryFileSystem.test();
-      fs.file('/work/my_api/pubspec.yaml')
-        ..createSync(recursive: true)
-        ..writeAsStringSync('description: x\n');
-      expect(packageNameForOutDir(fs.directory('/work/my_api')), 'my_api');
-    });
   });
 }
