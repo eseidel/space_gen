@@ -44,6 +44,14 @@ String sanitizePackageName(String raw) {
   return s;
 }
 
+/// The package name [outDir] should get, before [sanitizePackageName]:
+/// the directory's own name. The path is made absolute first so
+/// `--out .` names the package after the current directory, not `.`.
+String packageNameForOutDir(Directory outDir) {
+  final path = outDir.fileSystem.path;
+  return path.basename(path.normalize(outDir.absolute.path));
+}
+
 /// Format [url] for log output: `file:` URLs are shown as paths
 /// relative to the cwd (readable), everything else prints as-is.
 @visibleForTesting

@@ -2,7 +2,6 @@ import 'dart:isolate';
 
 import 'package:args/args.dart';
 import 'package:file/local.dart';
-import 'package:path/path.dart' as p;
 import 'package:space_gen/src/logger.dart';
 import 'package:space_gen/src/render.dart';
 import 'package:space_gen/src/render/file_renderer.dart';
@@ -97,7 +96,7 @@ Future<int> _runCli(
 
   final specUrl = Uri.parse(results['in'] as String);
   final outDir = fs.directory(results['out'] as String);
-  final rawPackageName = p.basename(outDir.path);
+  final rawPackageName = packageNameForOutDir(outDir);
   final packageName = sanitizePackageName(rawPackageName);
   if (packageName != rawPackageName) {
     logger.info(
