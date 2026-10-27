@@ -1,3 +1,48 @@
+## 1.6.0
+
+Generated names and docs track the spec more closely. Inline parameter
+schemas are now named after their parameter rather than their position,
+so specs with such schemas get renamed types on regeneration.
+
+### Features
+
+- **Inline parameter schemas are named after the parameter.** An inline
+  enum `sort` on `getOrganizationApps` now generates
+  `GetOrganizationAppsSort`, not `GetOrganizationAppsParameter0`, so
+  adding or reordering an operation's parameters no longer renames its
+  other parameter types. Path-item-level parameters and a name repeated
+  within one operation keep positional names, and a name that collides
+  with a component gets a numeric suffix (#381).
+- **A `$ref` property's sibling `description` documents the field.**
+  OpenAPI 3.1 allows `{$ref: ..., description: ...}`; that text now
+  becomes the field's doc comment instead of the target type's own
+  description (#380).
+
+### Bug fixes
+
+- **Parameters may share a name with generated locals.** A parameter
+  named `response`, `multipartFields`, `multipartFiles`, `v` or `f` no
+  longer breaks the generated method: the local takes the next free name
+  (`response2`, ...). A `client` parameter keeps its name and the method
+  calls `this.client.invokeApi(...)` (#384).
+- **No failing round-trip tests for binary fields.** A model whose binary
+  fields are all optional (its `toJson` throws by design) gets no
+  round-trip test, and a model with binary `additionalProperties` gets
+  the `dart:typed_data` import its test needs (#385).
+- **CLI usage errors.** `space_gen --help` prints usage, and unknown or
+  missing options are reported as usage errors (`runCli` returns 64)
+  instead of crashing. A custom entrypoint must assign the result,
+  `exitCode = await runCli(...)`: Dart ignores the value `main` returns,
+  so `Future<int> main(...) => runCli(...)` still exits 0 (#382).
+- **Reproducible formatting.** Generated output no longer depends on
+  whether `pub get` ran in the output package before: the formatter's
+  language version comes from `pubspec.yaml`, not `pubspec.lock` (#383).
+
+### Chores
+
+- Allow `scoped_deps` 0.2 and `equatable` 3, so space_gen resolves in
+  workspaces already on them (#386).
+
 ## 1.5.0
 
 Broader real-world spec support, driven by scouting OpenAI, Box, Twilio
