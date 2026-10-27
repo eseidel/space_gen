@@ -9,8 +9,10 @@ so specs with such schemas get renamed types on regeneration.
 - **Inline parameter schemas are named after the parameter.** An inline
   enum `sort` on `getOrganizationApps` now generates
   `GetOrganizationAppsSort`, not `GetOrganizationAppsParameter0`, so
-  adding or reordering a parameter no longer renames unrelated types
-  (#381).
+  adding or reordering an operation's parameters no longer renames its
+  other parameter types. Path-item-level parameters and a name repeated
+  within one operation keep positional names, and a name that collides
+  with a component gets a numeric suffix (#381).
 - **A `$ref` property's sibling `description` documents the field.**
   OpenAPI 3.1 allows `{$ref: ..., description: ...}`; that text now
   becomes the field's doc comment instead of the target type's own
@@ -18,16 +20,23 @@ so specs with such schemas get renamed types on regeneration.
 
 ### Bug fixes
 
-- Generated methods no longer break when a parameter is named
-  `response`, `client` or one of the multipart locals: the generated
-  locals take the next free name instead (#384).
-- No round-trip test is generated for a model whose binary fields are
-  all optional, whose `toJson` throws by design (#385).
-- `space_gen --help` prints usage, and unknown or missing options are
-  reported as usage errors (exit 64) instead of crashing (#382).
-- Generated output no longer depends on whether `pub get` ran in the
-  output package before: the formatter's language version comes from
-  `pubspec.yaml`, not `pubspec.lock` (#383).
+- **Parameters may share a name with generated locals.** A parameter
+  named `response`, `multipartFields`, `multipartFiles`, `v` or `f` no
+  longer breaks the generated method: the local takes the next free name
+  (`response2`, ...). A `client` parameter keeps its name and the method
+  calls `this.client.invokeApi(...)` (#384).
+- **No failing round-trip tests for binary fields.** A model whose binary
+  fields are all optional (its `toJson` throws by design) gets no
+  round-trip test, and a model with binary `additionalProperties` gets
+  the `dart:typed_data` import its test needs (#385).
+- **CLI usage errors.** `space_gen --help` prints usage, and unknown or
+  missing options are reported as usage errors (`runCli` returns 64)
+  instead of crashing. A custom entrypoint must assign the result,
+  `exitCode = await runCli(...)`: Dart ignores the value `main` returns,
+  so `Future<int> main(...) => runCli(...)` still exits 0 (#382).
+- **Reproducible formatting.** Generated output no longer depends on
+  whether `pub get` ran in the output package before: the formatter's
+  language version comes from `pubspec.yaml`, not `pubspec.lock` (#383).
 
 ### Chores
 
