@@ -15,6 +15,7 @@ import 'package:space_gen/src/render/schema_renderer.dart';
 import 'package:space_gen/src/render/templates.dart';
 import 'package:space_gen/src/resolver.dart';
 import 'package:space_gen/src/string.dart';
+import 'package:yaml/yaml.dart';
 
 export 'package:space_gen/src/quirks.dart';
 
@@ -42,6 +43,23 @@ String sanitizePackageName(String raw) {
   }
   if (s.length > 64) s = s.substring(0, 64);
   return s;
+}
+
+/// The package name [outDir] should get, before [sanitizePackageName]:
+/// the `name:` of an existing `pubspec.yaml` there (regenerating into
+/// a package keeps its name), otherwise the directory's own name.
+/// The path is made absolute first so `--out .` names the package
+/// after the current directory, not `.`.
+String packageNameForOutDir(Directory outDir) {
+  final pubspec = outDir.childFile('pubspec.yaml');
+  if (pubspec.existsSync()) {
+    final yaml = loadYaml(pubspec.readAsStringSync());
+    if (yaml is YamlMap) {
+      final name = yaml['name'];
+      if (name is String && name.isNotEmpty) return name;
+    }
+  }
+  return p.basename(p.normalize(outDir.absolute.path));
 }
 
 /// Format [url] for log output: `file:` URLs are shown as paths

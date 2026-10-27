@@ -1,3 +1,4 @@
+import 'package:file/memory.dart';
 import 'package:space_gen/src/render.dart';
 import 'package:test/test.dart';
 
@@ -61,6 +62,41 @@ void main() {
     test('non-file URL is rendered as-is', () {
       final url = Uri.parse('https://example.com/spec.yaml');
       expect(describeSpecUrl(url), 'https://example.com/spec.yaml');
+    });
+  });
+
+  group('packageNameForOutDir', () {
+    test('uses the directory name of a relative path', () {
+      final fs = MemoryFileSystem.test();
+      fs.directory('/work/my_api').createSync(recursive: true);
+      fs.currentDirectory = '/work';
+      expect(packageNameForOutDir(fs.directory('my_api')), 'my_api');
+    });
+
+    test("names '.' after the current directory", () {
+      final fs = MemoryFileSystem.test();
+      fs.directory('/work/my_api').createSync(recursive: true);
+      fs.currentDirectory = '/work/my_api';
+      expect(packageNameForOutDir(fs.directory('.')), 'my_api');
+      expect(packageNameForOutDir(fs.directory('./')), 'my_api');
+      expect(packageNameForOutDir(fs.directory('../my_api/.')), 'my_api');
+    });
+
+    test('prefers the name in an existing pubspec', () {
+      final fs = MemoryFileSystem.test();
+      fs.file('/work/protocol/pubspec.yaml')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('name: my_protocol\n');
+      fs.currentDirectory = '/work/protocol';
+      expect(packageNameForOutDir(fs.directory('.')), 'my_protocol');
+    });
+
+    test('ignores a pubspec without a name', () {
+      final fs = MemoryFileSystem.test();
+      fs.file('/work/my_api/pubspec.yaml')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('description: x\n');
+      expect(packageNameForOutDir(fs.directory('/work/my_api')), 'my_api');
     });
   });
 }
