@@ -39,17 +39,20 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/lcov.info
 
-  # Resolve every dependency to the lowest version pubspec.yaml allows and
-  # run the analyzer and tests against that. The floors are what a
-  # consumer's resolver may pick, and nothing else checks them: dart_style
-  # ^3.0.0 resolved to a version without the TrailingCommas API space_gen
-  # uses. Format isn't checked here, since an older dart_style formats
-  # some constructs differently.
+  # Resolve every dependency to the lowest version pubspec.yaml allows, on
+  # the lowest SDK it allows, and run the analyzer and tests against that.
+  # The floors are what a consumer's resolver may pick, and nothing else
+  # checks them: dart_style ^3.0.0 resolved to a version without the
+  # TrailingCommas API space_gen uses. Format isn't checked here, since an
+  # older dart_style formats some constructs differently. Keep `sdk` equal
+  # to the floor of `environment: sdk` in pubspec.yaml.
   downgrade:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.11.0
       - name: Resolve lowest allowed dependencies
         run: dart pub downgrade
       - name: Analyze project source
