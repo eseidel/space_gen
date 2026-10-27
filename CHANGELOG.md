@@ -1,3 +1,39 @@
+## 1.6.0
+
+Generated names and docs track the spec more closely. Inline parameter
+schemas are now named after their parameter rather than their position,
+so specs with such schemas get renamed types on regeneration.
+
+### Features
+
+- **Inline parameter schemas are named after the parameter.** An inline
+  enum `sort` on `getOrganizationApps` now generates
+  `GetOrganizationAppsSort`, not `GetOrganizationAppsParameter0`, so
+  adding or reordering a parameter no longer renames unrelated types
+  (#381).
+- **A `$ref` property's sibling `description` documents the field.**
+  OpenAPI 3.1 allows `{$ref: ..., description: ...}`; that text now
+  becomes the field's doc comment instead of the target type's own
+  description (#380).
+
+### Bug fixes
+
+- Generated methods no longer break when a parameter is named
+  `response`, `client` or one of the multipart locals: the generated
+  locals take the next free name instead (#384).
+- No round-trip test is generated for a model whose binary fields are
+  all optional, whose `toJson` throws by design (#385).
+- `space_gen --help` prints usage, and unknown or missing options are
+  reported as usage errors (exit 64) instead of crashing (#382).
+- Generated output no longer depends on whether `pub get` ran in the
+  output package before: the formatter's language version comes from
+  `pubspec.yaml`, not `pubspec.lock` (#383).
+
+### Chores
+
+- Allow `scoped_deps` 0.2 and `equatable` 3, so space_gen resolves in
+  workspaces already on them (#386).
+
 ## 1.5.0
 
 Broader real-world spec support, driven by scouting OpenAI, Box, Twilio
