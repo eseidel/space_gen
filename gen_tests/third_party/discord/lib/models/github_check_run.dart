@@ -1,7 +1,7 @@
 import 'package:discord/api_exception.dart';
 import 'package:discord/messages/github_check_pull_request.dart';
 import 'package:discord/model_helpers.dart';
-import 'package:discord/models/github_check_run_output_1.dart';
+import 'package:discord/models/github_check_run_output.dart';
 import 'package:discord/models/github_check_suite.dart';
 import 'package:meta/meta.dart';
 
@@ -34,7 +34,7 @@ class GithubCheckRun {
           json['check_suite'] as Map<String, dynamic>,
         ),
         detailsUrl: maybeParseUri(json['details_url'] as String?),
-        output: GithubCheckRunOutput1.maybeFromJson(
+        output: GithubCheckRunOutput.maybeFromJson(
           json['output'] as Map<String, dynamic>?,
         ),
         pullRequests: (json['pull_requests'] as List?)
@@ -60,7 +60,7 @@ class GithubCheckRun {
   final Uri htmlUrl;
   final GithubCheckSuite checkSuite;
   final Uri? detailsUrl;
-  final GithubCheckRunOutput1? output;
+  final GithubCheckRunOutput? output;
   final List<GithubCheckPullRequest>? pullRequests;
 
   /// Converts a [GithubCheckRun] to a `Map<String, dynamic>`.

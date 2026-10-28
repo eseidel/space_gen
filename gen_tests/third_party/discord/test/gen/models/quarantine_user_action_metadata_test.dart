@@ -3,10 +3,10 @@ import 'package:discord/api.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('BlockMessageActionMetadata1', () {
+  group('QuarantineUserActionMetadata', () {
     test('round-trips via maybeFromJson/toJson', () {
-      final instance = BlockMessageActionMetadata1();
-      final parsed = BlockMessageActionMetadata1.maybeFromJson(
+      const instance = QuarantineUserActionMetadata();
+      final parsed = QuarantineUserActionMetadata.maybeFromJson(
         instance.toJson(),
       )!;
       expect(parsed, equals(instance));
@@ -14,7 +14,7 @@ void main() {
     });
 
     test('maybeFromJson returns null on null input', () {
-      expect(BlockMessageActionMetadata1.maybeFromJson(null), isNull);
+      expect(QuarantineUserActionMetadata.maybeFromJson(null), isNull);
     });
   });
 }

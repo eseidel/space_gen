@@ -1,12 +1,12 @@
 import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
-import 'package:discord/models/rich_embed_author_1.dart';
+import 'package:discord/models/rich_embed_author.dart';
 import 'package:discord/models/rich_embed_field.dart';
-import 'package:discord/models/rich_embed_footer_1.dart';
-import 'package:discord/models/rich_embed_image_1.dart';
-import 'package:discord/models/rich_embed_provider_1.dart';
-import 'package:discord/models/rich_embed_thumbnail_1.dart';
-import 'package:discord/models/rich_embed_video_1.dart';
+import 'package:discord/models/rich_embed_footer.dart';
+import 'package:discord/models/rich_embed_image.dart';
+import 'package:discord/models/rich_embed_provider.dart';
+import 'package:discord/models/rich_embed_thumbnail.dart';
+import 'package:discord/models/rich_embed_video.dart';
 import 'package:meta/meta.dart';
 
 @immutable
@@ -45,16 +45,16 @@ class RichEmbed {
         color: json['color'] as int?,
         timestamp: maybeParseDateTime(json['timestamp'] as String?),
         description: json['description'] as String?,
-        author: RichEmbedAuthor1.maybeFromJson(
+        author: RichEmbedAuthor.maybeFromJson(
           json['author'] as Map<String, dynamic>?,
         ),
-        image: RichEmbedImage1.maybeFromJson(
+        image: RichEmbedImage.maybeFromJson(
           json['image'] as Map<String, dynamic>?,
         ),
-        thumbnail: RichEmbedThumbnail1.maybeFromJson(
+        thumbnail: RichEmbedThumbnail.maybeFromJson(
           json['thumbnail'] as Map<String, dynamic>?,
         ),
-        footer: RichEmbedFooter1.maybeFromJson(
+        footer: RichEmbedFooter.maybeFromJson(
           json['footer'] as Map<String, dynamic>?,
         ),
         fields: (json['fields'] as List?)
@@ -62,10 +62,10 @@ class RichEmbed {
               (e) => RichEmbedField.fromJson(e as Map<String, dynamic>),
             )
             .toList(),
-        provider: RichEmbedProvider1.maybeFromJson(
+        provider: RichEmbedProvider.maybeFromJson(
           json['provider'] as Map<String, dynamic>?,
         ),
-        video: RichEmbedVideo1.maybeFromJson(
+        video: RichEmbedVideo.maybeFromJson(
           json['video'] as Map<String, dynamic>?,
         ),
       ),
@@ -87,13 +87,13 @@ class RichEmbed {
   final int? color;
   final DateTime? timestamp;
   final String? description;
-  final RichEmbedAuthor1? author;
-  final RichEmbedImage1? image;
-  final RichEmbedThumbnail1? thumbnail;
-  final RichEmbedFooter1? footer;
+  final RichEmbedAuthor? author;
+  final RichEmbedImage? image;
+  final RichEmbedThumbnail? thumbnail;
+  final RichEmbedFooter? footer;
   final List<RichEmbedField>? fields;
-  final RichEmbedProvider1? provider;
-  final RichEmbedVideo1? video;
+  final RichEmbedProvider? provider;
+  final RichEmbedVideo? video;
 
   /// Converts a [RichEmbed] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

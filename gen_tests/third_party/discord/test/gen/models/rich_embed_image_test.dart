@@ -3,16 +3,16 @@ import 'package:discord/api.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('RichEmbedFooter1', () {
+  group('RichEmbedImage', () {
     test('round-trips via maybeFromJson/toJson', () {
-      final instance = RichEmbedFooter1();
-      final parsed = RichEmbedFooter1.maybeFromJson(instance.toJson())!;
+      final instance = RichEmbedImage();
+      final parsed = RichEmbedImage.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));
     });
 
     test('maybeFromJson returns null on null input', () {
-      expect(RichEmbedFooter1.maybeFromJson(null), isNull);
+      expect(RichEmbedImage.maybeFromJson(null), isNull);
     });
   });
 }

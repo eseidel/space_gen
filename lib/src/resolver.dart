@@ -1011,9 +1011,13 @@ bool shouldCreateNewType(Schema schema) {
 
 /// Collects all snake names from the parse tree to detect collisions
 class _NameCollector extends Visitor {
-  _NameCollector(this._nameToPointers);
+  _NameCollector(this._nameToPointers, this._synthesized);
 
   final Map<String, List<JsonPointer>> _nameToPointers;
+
+  /// Inline schemas, whose names the parser synthesized from their
+  /// parent and property rather than taking from the spec.
+  final Set<JsonPointer> _synthesized;
 
   @override
   void visitSchema(Schema schema) {
@@ -1022,19 +1026,13 @@ class _NameCollector extends Visitor {
       return;
     }
     _nameToPointers.putIfAbsent(schema.snakeName, () => []).add(schema.pointer);
+    if (!isTopLevelComponent(schema.pointer)) _synthesized.add(schema.pointer);
   }
 
   @override
   void visitOperation(Operation op) {
     _nameToPointers.putIfAbsent(op.snakeName, () => []).add(op.pointer);
   }
-}
-
-Map<String, List<JsonPointer>> _collectNames(OpenApi spec) {
-  final nameToPointers = <String, List<JsonPointer>>{};
-  final collector = _NameCollector(nameToPointers);
-  SpecWalker(collector).walkRoot(spec);
-  return nameToPointers;
 }
 
 // TODO(eseidel): Provide a set of all used names so it can avoid colliding
@@ -1066,8 +1064,17 @@ bool _isUnderPathParameter(JsonPointer pointer) {
   return false;
 }
 
+/// Gives each colliding snake name's first claimant the bare name and
+/// suffixes the rest. Claimants are in walk order within three tiers:
+///
+/// 1. Names the spec gives: components and operations.
+/// 2. Inline schemas, whose names were synthesized from their parent
+///    and property: an `EnterpriseBilling.plan` that synthesizes
+///    `enterprise_billing_plan` yields it to the component of that name.
+/// 3. Inline parameter schemas (see [_isUnderPathParameter]).
 Map<JsonPointer, String> _resolveCollisions(
-  Map<String, List<JsonPointer>> nameToPointers, {
+  Map<String, List<JsonPointer>> nameToPointers,
+  Set<JsonPointer> synthesized, {
   List<String> Function(String name, List<JsonPointer> pointers)
       generateUniqueNames =
       defaultGenerateUniqueNames,
@@ -1078,9 +1085,13 @@ Map<JsonPointer, String> _resolveCollisions(
     if (entry.value.length < 2) {
       continue;
     }
+    final parameters = entry.value.where(_isUnderPathParameter);
     final pointers = [
-      ...entry.value.whereNot(_isUnderPathParameter),
-      ...entry.value.where(_isUnderPathParameter),
+      ...entry.value.whereNot(synthesized.contains),
+      ...entry.value
+          .where(synthesized.contains)
+          .whereNot(_isUnderPathParameter),
+      ...parameters,
     ];
     final newNames = generateUniqueNames(name, pointers);
     for (final (index, pointer) in pointers.indexed) {
@@ -1092,8 +1103,10 @@ Map<JsonPointer, String> _resolveCollisions(
 }
 
 Map<JsonPointer, String> resolveNameCollisions(OpenApi spec) {
-  final nameToPointers = _collectNames(spec);
-  return _resolveCollisions(nameToPointers);
+  final nameToPointers = <String, List<JsonPointer>>{};
+  final synthesized = <JsonPointer>{};
+  SpecWalker(_NameCollector(nameToPointers, synthesized)).walkRoot(spec);
+  return _resolveCollisions(nameToPointers, synthesized);
 }
 
 ResolvedSpec resolveSpec(

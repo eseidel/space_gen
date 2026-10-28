@@ -2769,6 +2769,66 @@ void main() {
       expect(contentOf('users_status.dart'), contains('class UsersStatus '));
       expect(contentOf('users_status_1.dart'), contains('enum UsersStatus1 '));
     });
+
+    test('a component keeps its name over a colliding inline schema', () async {
+      // `Billing.plan` synthesizes `billing_plan`, the same name as the
+      // `BillingPlan` component it refers to. The nullable oneOf collapses
+      // to `BillingPlan?`, so if it took the bare name the component would
+      // render as `BillingPlan1` with no `BillingPlan` anywhere.
+      final spec = {
+        'openapi': '3.1.0',
+        'info': {'title': 'Billing', 'version': '1.0.0'},
+        'paths': {
+          '/billing': {
+            'get': {
+              'operationId': 'getBilling',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {r'$ref': '#/components/schemas/Billing'},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Billing': {
+              'type': 'object',
+              'properties': {
+                'plan': {
+                  'oneOf': [
+                    {r'$ref': '#/components/schemas/BillingPlan'},
+                    {'type': 'null'},
+                  ],
+                },
+              },
+            },
+            'BillingPlan': {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+              },
+            },
+          },
+        },
+      };
+      final fs = MemoryFileSystem.test();
+      final out = fs.directory('billing');
+
+      await renderToDirectory(spec: spec, outDir: out);
+      expect(
+        out,
+        hasGeneratedSchemaFiles(['billing.dart', 'billing_plan.dart']),
+      );
+      final billing = out.childFile('lib/models/billing.dart');
+      expect(billing.readAsStringSync(), contains('final BillingPlan? plan;'));
+    });
+
     test('non-rendered types do not count as collisions', () async {
       final spec = {
         'openapi': '3.1.0',
