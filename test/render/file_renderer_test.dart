@@ -2829,6 +2829,97 @@ void main() {
       expect(billing.readAsStringSync(), contains('final BillingPlan? plan;'));
     });
 
+    group('inline schema vs component of the same name', () {
+      // `Billing.plan` is an inline object that renders its own class,
+      // synthesized as `billing_plan`, colliding with `BillingPlan`.
+      Map<String, dynamic> specWith({required bool referenceComponent}) => {
+        'openapi': '3.1.0',
+        'info': {'title': 'Billing', 'version': '1.0.0'},
+        'paths': {
+          '/billing': {
+            'get': {
+              'operationId': 'getBilling',
+              'responses': {
+                '200': {
+                  'description': 'OK',
+                  'content': {
+                    'application/json': {
+                      'schema': {
+                        'type': 'object',
+                        'properties': {
+                          'billing': {r'$ref': '#/components/schemas/Billing'},
+                          if (referenceComponent)
+                            'other': {
+                              r'$ref': '#/components/schemas/BillingPlan',
+                            },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        'components': {
+          'schemas': {
+            'Billing': {
+              'type': 'object',
+              'properties': {
+                'plan': {
+                  'type': 'object',
+                  'properties': {
+                    'tier': {'type': 'string'},
+                  },
+                },
+              },
+            },
+            'BillingPlan': {
+              'type': 'object',
+              'properties': {
+                'name': {'type': 'string'},
+              },
+            },
+          },
+        },
+      };
+
+      test('a referenced component keeps the name', () async {
+        final out = MemoryFileSystem.test().directory('billing');
+        await renderToDirectory(
+          spec: specWith(referenceComponent: true),
+          outDir: out,
+        );
+        final billing = out.childFile('lib/models/billing.dart');
+        expect(
+          billing.readAsStringSync(),
+          contains('final BillingPlan1? plan;'),
+        );
+        final plan = out.childFile('lib/models/billing_plan.dart');
+        expect(plan.readAsStringSync(), contains("json['name']"));
+      });
+
+      test(
+        'an unreferenced component, which renders nothing, yields it',
+        () async {
+          final out = MemoryFileSystem.test().directory('billing');
+          await renderToDirectory(
+            spec: specWith(referenceComponent: false),
+            outDir: out,
+          );
+          final billing = out.childFile('lib/models/billing.dart');
+          expect(
+            billing.readAsStringSync(),
+            contains('final BillingPlan? plan;'),
+          );
+          expect(
+            out.childFile('lib/models/billing_plan_1.dart').existsSync(),
+            isFalse,
+          );
+        },
+      );
+    });
+
     test('non-rendered types do not count as collisions', () async {
       final spec = {
         'openapi': '3.1.0',
