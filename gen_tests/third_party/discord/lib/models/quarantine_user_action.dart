@@ -1,6 +1,6 @@
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/automod_action_type.dart';
-import 'package:discord/models/quarantine_user_action_metadata_1.dart';
+import 'package:discord/models/quarantine_user_action_metadata.dart';
 import 'package:meta/meta.dart';
 
 @immutable
@@ -13,7 +13,7 @@ class QuarantineUserAction {
       'QuarantineUserAction',
       json,
       () => QuarantineUserAction(
-        metadata: QuarantineUserActionMetadata1.maybeFromJson(
+        metadata: QuarantineUserActionMetadata.maybeFromJson(
           json['metadata'] as Map<String, dynamic>?,
         ),
       ),
@@ -30,7 +30,7 @@ class QuarantineUserAction {
   }
 
   AutomodActionType get type => AutomodActionType.quarantineUser;
-  final QuarantineUserActionMetadata1? metadata;
+  final QuarantineUserActionMetadata? metadata;
 
   /// Converts a [QuarantineUserAction] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

@@ -3,8 +3,8 @@ import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
-class RichEmbedVideo1 {
-  RichEmbedVideo1({
+class RichEmbedVideo {
+  RichEmbedVideo({
     this.url,
     this.width,
     this.height,
@@ -18,12 +18,12 @@ class RichEmbedVideo1 {
     description?.validate(maxLength: 4096);
   }
 
-  /// Converts a `Map<String, dynamic>` to a [RichEmbedVideo1].
-  factory RichEmbedVideo1.fromJson(Map<String, dynamic> json) {
+  /// Converts a `Map<String, dynamic>` to a [RichEmbedVideo].
+  factory RichEmbedVideo.fromJson(Map<String, dynamic> json) {
     return parseFromJson(
-      'RichEmbedVideo1',
+      'RichEmbedVideo',
       json,
-      () => RichEmbedVideo1(
+      () => RichEmbedVideo(
         url: maybeParseUri(json['url'] as String?),
         width: json['width'] as int?,
         height: json['height'] as int?,
@@ -37,11 +37,11 @@ class RichEmbedVideo1 {
 
   /// Convenience to create a nullable type from a nullable json object.
   /// Useful when parsing optional fields.
-  static RichEmbedVideo1? maybeFromJson(Map<String, dynamic>? json) {
+  static RichEmbedVideo? maybeFromJson(Map<String, dynamic>? json) {
     if (json == null) {
       return null;
     }
-    return RichEmbedVideo1.fromJson(json);
+    return RichEmbedVideo.fromJson(json);
   }
 
   final Uri? url;
@@ -52,7 +52,7 @@ class RichEmbedVideo1 {
   final bool? isAnimated;
   final String? description;
 
-  /// Converts a [RichEmbedVideo1] to a `Map<String, dynamic>`.
+  /// Converts a [RichEmbedVideo] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
       'url': url?.toString(),
@@ -79,7 +79,7 @@ class RichEmbedVideo1 {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RichEmbedVideo1 &&
+    return other is RichEmbedVideo &&
         url == other.url &&
         width == other.width &&
         height == other.height &&

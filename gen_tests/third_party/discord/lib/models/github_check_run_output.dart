@@ -3,18 +3,18 @@ import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
-class GithubCheckRunOutput1 {
-  GithubCheckRunOutput1({this.title, this.summary}) {
+class GithubCheckRunOutput {
+  GithubCheckRunOutput({this.title, this.summary}) {
     title?.validate(maxLength: 152133);
     summary?.validate(maxLength: 152133);
   }
 
-  /// Converts a `Map<String, dynamic>` to a [GithubCheckRunOutput1].
-  factory GithubCheckRunOutput1.fromJson(Map<String, dynamic> json) {
+  /// Converts a `Map<String, dynamic>` to a [GithubCheckRunOutput].
+  factory GithubCheckRunOutput.fromJson(Map<String, dynamic> json) {
     return parseFromJson(
-      'GithubCheckRunOutput1',
+      'GithubCheckRunOutput',
       json,
-      () => GithubCheckRunOutput1(
+      () => GithubCheckRunOutput(
         title: json['title'] as String?,
         summary: json['summary'] as String?,
       ),
@@ -23,17 +23,17 @@ class GithubCheckRunOutput1 {
 
   /// Convenience to create a nullable type from a nullable json object.
   /// Useful when parsing optional fields.
-  static GithubCheckRunOutput1? maybeFromJson(Map<String, dynamic>? json) {
+  static GithubCheckRunOutput? maybeFromJson(Map<String, dynamic>? json) {
     if (json == null) {
       return null;
     }
-    return GithubCheckRunOutput1.fromJson(json);
+    return GithubCheckRunOutput.fromJson(json);
   }
 
   final String? title;
   final String? summary;
 
-  /// Converts a [GithubCheckRunOutput1] to a `Map<String, dynamic>`.
+  /// Converts a [GithubCheckRunOutput] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {'title': title, 'summary': summary};
   }
@@ -44,7 +44,7 @@ class GithubCheckRunOutput1 {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is GithubCheckRunOutput1 &&
+    return other is GithubCheckRunOutput &&
         title == other.title &&
         summary == other.summary;
   }

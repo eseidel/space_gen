@@ -1,6 +1,6 @@
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/automod_action_type.dart';
-import 'package:discord/models/block_message_action_metadata_1.dart';
+import 'package:discord/models/block_message_action_metadata.dart';
 import 'package:meta/meta.dart';
 
 @immutable
@@ -13,7 +13,7 @@ class BlockMessageAction {
       'BlockMessageAction',
       json,
       () => BlockMessageAction(
-        metadata: BlockMessageActionMetadata1.maybeFromJson(
+        metadata: BlockMessageActionMetadata.maybeFromJson(
           json['metadata'] as Map<String, dynamic>?,
         ),
       ),
@@ -30,7 +30,7 @@ class BlockMessageAction {
   }
 
   AutomodActionType get type => AutomodActionType.blockMessage;
-  final BlockMessageActionMetadata1? metadata;
+  final BlockMessageActionMetadata? metadata;
 
   /// Converts a [BlockMessageAction] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {

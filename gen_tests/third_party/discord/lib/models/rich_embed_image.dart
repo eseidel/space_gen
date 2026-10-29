@@ -3,8 +3,8 @@ import 'package:discord/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
-class RichEmbedThumbnail1 {
-  RichEmbedThumbnail1({
+class RichEmbedImage {
+  RichEmbedImage({
     this.url,
     this.width,
     this.height,
@@ -18,12 +18,12 @@ class RichEmbedThumbnail1 {
     description?.validate(maxLength: 4096);
   }
 
-  /// Converts a `Map<String, dynamic>` to a [RichEmbedThumbnail1].
-  factory RichEmbedThumbnail1.fromJson(Map<String, dynamic> json) {
+  /// Converts a `Map<String, dynamic>` to a [RichEmbedImage].
+  factory RichEmbedImage.fromJson(Map<String, dynamic> json) {
     return parseFromJson(
-      'RichEmbedThumbnail1',
+      'RichEmbedImage',
       json,
-      () => RichEmbedThumbnail1(
+      () => RichEmbedImage(
         url: maybeParseUri(json['url'] as String?),
         width: json['width'] as int?,
         height: json['height'] as int?,
@@ -37,11 +37,11 @@ class RichEmbedThumbnail1 {
 
   /// Convenience to create a nullable type from a nullable json object.
   /// Useful when parsing optional fields.
-  static RichEmbedThumbnail1? maybeFromJson(Map<String, dynamic>? json) {
+  static RichEmbedImage? maybeFromJson(Map<String, dynamic>? json) {
     if (json == null) {
       return null;
     }
-    return RichEmbedThumbnail1.fromJson(json);
+    return RichEmbedImage.fromJson(json);
   }
 
   final Uri? url;
@@ -52,7 +52,7 @@ class RichEmbedThumbnail1 {
   final bool? isAnimated;
   final String? description;
 
-  /// Converts a [RichEmbedThumbnail1] to a `Map<String, dynamic>`.
+  /// Converts a [RichEmbedImage] to a `Map<String, dynamic>`.
   Map<String, dynamic> toJson() {
     return {
       'url': url?.toString(),
@@ -79,7 +79,7 @@ class RichEmbedThumbnail1 {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is RichEmbedThumbnail1 &&
+    return other is RichEmbedImage &&
         url == other.url &&
         width == other.width &&
         height == other.height &&

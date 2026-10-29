@@ -1011,9 +1011,13 @@ bool shouldCreateNewType(Schema schema) {
 
 /// Collects all snake names from the parse tree to detect collisions
 class _NameCollector extends Visitor {
-  _NameCollector(this._nameToPointers);
+  _NameCollector(this._nameToPointers, this._synthesized);
 
   final Map<String, List<JsonPointer>> _nameToPointers;
+
+  /// Inline schemas, whose names the parser synthesized from their
+  /// parent and property rather than taking from the spec.
+  final Set<JsonPointer> _synthesized;
 
   @override
   void visitSchema(Schema schema) {
@@ -1022,19 +1026,13 @@ class _NameCollector extends Visitor {
       return;
     }
     _nameToPointers.putIfAbsent(schema.snakeName, () => []).add(schema.pointer);
+    if (!isTopLevelComponent(schema.pointer)) _synthesized.add(schema.pointer);
   }
 
   @override
   void visitOperation(Operation op) {
     _nameToPointers.putIfAbsent(op.snakeName, () => []).add(op.pointer);
   }
-}
-
-Map<String, List<JsonPointer>> _collectNames(OpenApi spec) {
-  final nameToPointers = <String, List<JsonPointer>>{};
-  final collector = _NameCollector(nameToPointers);
-  SpecWalker(collector).walkRoot(spec);
-  return nameToPointers;
 }
 
 // TODO(eseidel): Provide a set of all used names so it can avoid colliding
@@ -1066,21 +1064,95 @@ bool _isUnderPathParameter(JsonPointer pointer) {
   return false;
 }
 
+/// Collects the local component each `$ref` points at, as a
+/// `components/<kind>/<name>` pointer.
+class _RefTargetCollector extends Visitor {
+  final List<JsonPointer> targets = [];
+
+  @override
+  void visitRefOr<T extends Parseable>(RefOr<T> refOr) {
+    final uri = refOr.ref?.uri;
+    // External refs are loaded as their own documents, which this walk
+    // never visits.
+    if (uri == null || uri.path.isNotEmpty) return;
+    final parts = Uri.decodeComponent(uri.fragment).split('/');
+    // `#/components/<kind>/<name>` splits to ['', 'components', ...].
+    if (parts.length < 4 || parts[1] != 'components') return;
+    final name = parts[3].replaceAll('~1', '/').replaceAll('~0', '~');
+    targets.add(JsonPointer.fromParts([parts[1], parts[2], name]));
+  }
+}
+
+/// The components (`components/<kind>/<name>` pointers) an operation
+/// reaches through `$ref`s, directly or through other components. Only
+/// these render; the rest of `components` is dead to the generator.
+Set<JsonPointer> _reachableComponents(OpenApi spec) {
+  final components = spec.components;
+  RefOr<Parseable>? lookup(JsonPointer component) {
+    final name = component.parts[2];
+    return switch (component.parts[1]) {
+      'schemas' => components.schemas[name],
+      'parameters' => components.parameters[name],
+      'requestBodies' => components.requestBodies[name],
+      'responses' => components.responses[name],
+      'headers' => components.headers[name],
+      _ => null,
+    };
+  }
+
+  final collector = _RefTargetCollector();
+  final walker = SpecWalker(collector);
+  for (final path in spec.paths.paths.values) {
+    walker.walkPathItem(path);
+  }
+  final reached = <JsonPointer>{};
+  while (collector.targets.isNotEmpty) {
+    final target = collector.targets.removeLast();
+    if (!reached.add(target)) continue;
+    final component = lookup(target);
+    if (component != null) walker.walkRefOr(component);
+  }
+  return reached;
+}
+
+/// Gives each colliding snake name's first claimant the bare name and
+/// suffixes the rest. Claimants are in walk order within four tiers:
+///
+/// 1. Names the spec gives: component schemas and operations.
+/// 2. Inline schemas, whose names were synthesized from their parent
+///    and property: an `EnterpriseBilling.plan` that synthesizes
+///    `enterprise_billing_plan` yields it to the component of that name.
+/// 3. Inline parameter schemas (see [_isUnderPathParameter]).
+/// 4. Anything inside a component no operation reaches, which renders
+///    nothing and so shouldn't push a rendered type to a suffix.
 Map<JsonPointer, String> _resolveCollisions(
   Map<String, List<JsonPointer>> nameToPointers, {
+  required Set<JsonPointer> synthesized,
+  required Set<JsonPointer> reachable,
   List<String> Function(String name, List<JsonPointer> pointers)
       generateUniqueNames =
       defaultGenerateUniqueNames,
 }) {
+  int tier(JsonPointer pointer) {
+    final parts = pointer.parts;
+    if (parts.length >= 3 &&
+        parts.first == 'components' &&
+        !reachable.contains(JsonPointer.fromParts(parts.sublist(0, 3)))) {
+      return 3;
+    }
+    if (_isUnderPathParameter(pointer)) return 2;
+    return synthesized.contains(pointer) ? 1 : 0;
+  }
+
   final changedNames = <JsonPointer, String>{};
   for (final entry in nameToPointers.entries) {
     final name = entry.key;
     if (entry.value.length < 2) {
       continue;
     }
+    final tiers = entry.value.groupListsBy(tier);
     final pointers = [
-      ...entry.value.whereNot(_isUnderPathParameter),
-      ...entry.value.where(_isUnderPathParameter),
+      for (var t = 0; t <= 3; t++) ...?tiers[t],
     ];
     final newNames = generateUniqueNames(name, pointers);
     for (final (index, pointer) in pointers.indexed) {
@@ -1092,8 +1164,14 @@ Map<JsonPointer, String> _resolveCollisions(
 }
 
 Map<JsonPointer, String> resolveNameCollisions(OpenApi spec) {
-  final nameToPointers = _collectNames(spec);
-  return _resolveCollisions(nameToPointers);
+  final nameToPointers = <String, List<JsonPointer>>{};
+  final synthesized = <JsonPointer>{};
+  SpecWalker(_NameCollector(nameToPointers, synthesized)).walkRoot(spec);
+  return _resolveCollisions(
+    nameToPointers,
+    synthesized: synthesized,
+    reachable: _reachableComponents(spec),
+  );
 }
 
 ResolvedSpec resolveSpec(
