@@ -1,111 +1,21 @@
-# Project Context for Claude
+# space_gen
 
-## What `space_gen` is
+Dart OpenAPI client generator. Generated code must have zero analyzer, lint or
+format issues. Pipeline and recursion design: `ARCHITECTURE.md`.
 
-A Dart OpenAPI 3.0/3.1 client generator. The goal is highest-quality idiomatic
-Dart output — zero analyzer/lint/format issues on generated code, reads as
-close to handwritten as possible. Pipeline:
+## Golden fixtures
 
-1. **Loader** (`lib/src/loader.dart`) — fetches specs/imports.
-2. **Parser** (`lib/src/parser.dart`, `lib/src/parse/`) — YAML/JSON → `Spec`
-   (+ validation).
-3. **Resolver** (`lib/src/resolver.dart`) — walks `Spec`, turns every `$ref`
-   into a fully resolved `ResolvedSchema` tree. Adds more validation.
-4. **Renderer** (`lib/src/render/`) —
-   - `render_tree.dart` translates `ResolvedSchema` → `RenderSchema` via
-     `SpecResolver.toRenderSchema`.
-   - `file_renderer.dart` walks the render tree, emits Dart files via Mustache
-     templates (or `.dart` file templates).
-   - `schema_renderer.dart` is the per-schema template-context builder.
-   - `tree_visitor.dart` has `RenderTreeWalker` — used to collect schemas
-     under an API for import generation.
+- `dart run tool/gen_tests.dart` regenerates `gen_tests/`; commit the regen
+  with any generator change that alters output. CI fails on any diff.
+- `gen_tests/` uses `Quirks.openapi()`; `gen_tests/third_party/` does not.
+- `gen_tests/*` are standalone packages, excluded from root `dart analyze`.
 
-Two related predicates split on purpose:
+## Rules
 
-- `createsNewType` — true when a schema participates in a named-type identity
-  (has its own class name used at reference sites). True for objects, enums,
-  oneOf/allOf/anyOf, **and** `RenderRecursiveRef` (which points at one).
-- `FileRenderer.rendersToSeparateFile` — true only when a schema actually
-  renders its own Dart file. True for newtypes, **false** for
-  `RenderRecursiveRef` (the target renders the file, the ref just imports it).
-
-## Commands
-
-```sh
-dart test                 # full test suite
-dart test test/foo.dart   # single file
-dart analyze
-dart format .
-dart run space_gen -i <spec> -o <out>   # run the generator
-```
-
-Golden-output tests live under `gen_tests/` and are driven by
-`tool/gen_tests.dart`. `gen_tests/*` are standalone packages with their own
-pubspec — excluded from the root `dart analyze` via `analysis_options.yaml`,
-and from the published package via `.pubignore`.
-
-Two directories, each with its own `gen_tests.yaml` manifest:
-
-- `gen_tests/` — synthetic specs we authored, one per feature. Generated
-  **with** `Quirks.openapi()`.
-- `gen_tests/third_party/` — real-world specs from the web (github, discord,
-  backstage, petstore, spacetraders, train_travel). Generated **without** the
-  quirks. Third-party text, so the whole directory is excluded from cspell;
-  see the README there.
-
-A generator change that alters output must be committed together with the
-regenerated fixtures — CI runs the tool and fails on any diff. Expect large
-diffs from `third_party/`: github and discord alone are ~4700 files, and they
-account for most of the roughly 40s the regen takes.
-
-## Recursion support
-
-Recursive `$ref` cycles (e.g. `Node` with `left`/`right` both
-`$ref: '#/components/schemas/Node'`) are supported via a cycle-break marker
-approach. See the class-level doc comment on `RenderRecursiveRef` in
-`lib/src/render/render_tree.dart` for the full design. Short version:
-
-- `resolveSchemaRef` tracks a `resolvingStack` of pointers currently being
-  resolved. A `$ref` back into the stack returns `ResolvedRecursiveRef`
-  (cycle-break). Non-cyclic refs still inline as before — preserving behavior
-  for non-recursive specs.
-- `ResolvedRecursiveRef` → `RenderRecursiveRef` in `toRenderSchema`.
-- `RenderRecursiveRef` is a walker leaf. It emits the target's class name and
-  standard `Map<String, dynamic>` `toJson`/`fromJson` calls, hard-coded
-  because today's cycle targets are always object-shaped newtypes (Object /
-  OneOf / AllOf / AnyOf / EmptyObject). If top-level Array/Map newtypes ever
-  ship (README TODO), this class will need to delegate those methods to the
-  target — see its doc comment.
-
-## Conventions
-
-- 80-col wrap (enforced for code, not strict for doc comments).
-- `very_good_analysis` lint.
-- Prefer new atomic commits over `git amend`.
-- **Don't edit `CHANGELOG.md` in regular PRs.** It's generated at
-  release time from merged PR bodies — see `.claude/skills/release/`.
-  Write the PR body as if it were a CHANGELOG entry (`## Summary`
-  section becomes the bullet) and the release workflow handles the
-  rest. Editing the file in a feature PR just creates merge
-  conflicts with every other open PR.
-- Keep custom words in `cspell.config.yaml` — CI blocks on unknown words.
-  `newtype` / `newtypes` / `renderable` are common false positives.
-- **`required` on internal pipeline types**: `Schema*` (parse),
-  `Resolved*` (resolve), and `Render*` (render) classes mark **every**
-  constructor parameter `required`, including fields that default to
-  `null` or an empty list. These aren't user-facing APIs like Flutter
-  widgets — they're plumbing. A field that should thread all three
-  layers can silently be dropped if intermediate constructors have
-  defaults; `required` turns the "I forgot to pass it" case into a
-  compile error at every call site instead of a quietly-dropped value
-  in the generator. Any exception here should be justified in code
-  comments, not with a convenient default.
-
-## Gotchas
-
-- There may be an in-progress `git rebase` left over from an old session
-  (`adding_fixes` onto some older commit). If `git status` says "currently
-  editing a commit while rebasing" and you're not doing that work, don't
-  touch it — ask before `git rebase --abort`.
-- Local scratch files at the repo root (`.vscode/`, `auth_design.md`,
-  `*.txt` spec fixtures) are untracked and not part of any PR.
+- Don't edit `CHANGELOG.md`; the release skill builds it from each PR body's
+  `## Summary`.
+- `Schema*`, `Resolved*` and `Render*` classes mark every constructor
+  parameter `required`, including nullable and list fields.
+- `createsNewType` is true for `RenderRecursiveRef`;
+  `FileRenderer.rendersToSeparateFile` is false for it.
+- New words go in `cspell.config.yaml`; CI blocks on unknown words.
