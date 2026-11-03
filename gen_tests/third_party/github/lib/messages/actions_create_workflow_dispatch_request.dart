@@ -1,9 +1,12 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class ActionsCreateWorkflowDispatchRequest {
-  const ActionsCreateWorkflowDispatchRequest({required this.ref, this.inputs});
+  ActionsCreateWorkflowDispatchRequest({required this.ref, this.inputs}) {
+    inputs?.validate(maxProperties: 10);
+  }
 
   /// Converts a `Map<String, dynamic>` to an
   /// [ActionsCreateWorkflowDispatchRequest].

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 void main() {
   group('Manifest', () {
     test('round-trips via maybeFromJson/toJson', () {
-      const instance = Manifest(name: 'package-lock.json');
+      final instance = Manifest(name: 'package-lock.json');
       final parsed = Manifest.maybeFromJson(instance.toJson())!;
       expect(parsed, equals(instance));
       expect(parsed.hashCode, equals(instance.hashCode));

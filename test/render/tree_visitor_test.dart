@@ -188,6 +188,8 @@ void main() {
         ),
         valueSchema: value,
         keySchema: keyEnum,
+        maxProperties: null,
+        minProperties: null,
       );
       final outer = _object('Outer', properties: {'map': map});
 

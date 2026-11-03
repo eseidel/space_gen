@@ -1,3 +1,4 @@
+import 'package:github/api_exception.dart';
 import 'package:github/model_helpers.dart';
 import 'package:github/models/dependency.dart';
 import 'package:github/models/manifest_file.dart';
@@ -6,7 +7,9 @@ import 'package:meta/meta.dart';
 
 @immutable
 class Manifest {
-  const Manifest({required this.name, this.file, this.metadata, this.resolved});
+  Manifest({required this.name, this.file, this.metadata, this.resolved}) {
+    metadata?.validate(maxProperties: 8);
+  }
 
   /// Converts a `Map<String, dynamic>` to a [Manifest].
   factory Manifest.fromJson(Map<String, dynamic> json) {

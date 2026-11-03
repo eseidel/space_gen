@@ -171,3 +171,28 @@ extension ValidateArray<T> on List<T> {
     }
   }
 }
+
+/// Validates a map against the constraints a schema declares for it.
+///
+/// See [ValidateNumber] — [validate] is sugar over the single-rule methods.
+/// `maxProperties`/`minProperties` bound the entry count of a map-shaped
+/// object (arbitrary string keys), the map analog of a list's
+/// `maxItems`/`minItems`.
+extension ValidateMap<K, V> on Map<K, V> {
+  void validate({int? minProperties, int? maxProperties}) {
+    if (minProperties != null) validateMinimumProperties(minProperties);
+    if (maxProperties != null) validateMaximumProperties(maxProperties);
+  }
+
+  void validateMinimumProperties(int minimum) {
+    if (length < minimum) {
+      throw Exception('must have at least $minimum entries');
+    }
+  }
+
+  void validateMaximumProperties(int maximum) {
+    if (length > maximum) {
+      throw Exception('must have at most $maximum entries');
+    }
+  }
+}

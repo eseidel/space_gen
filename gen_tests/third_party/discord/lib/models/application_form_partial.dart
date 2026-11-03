@@ -34,6 +34,7 @@ class ApplicationFormPartial {
   }) {
     maxParticipants?.validate(min: -1);
     tags?.validate(maxItems: 5, unique: true);
+    integrationTypesConfig?.validate(minProperties: 1, maxProperties: 2);
     eventWebhooksTypes?.validate(unique: true);
   }
 

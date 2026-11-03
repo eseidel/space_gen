@@ -1,10 +1,13 @@
+import 'package:discord/api_exception.dart';
 import 'package:discord/model_helpers.dart';
 import 'package:discord/models/add_lobby_member_request_flags_one_of_1.dart';
 import 'package:meta/meta.dart';
 
 @immutable
 class AddLobbyMemberRequest {
-  const AddLobbyMemberRequest({this.metadata, this.flags});
+  AddLobbyMemberRequest({this.metadata, this.flags}) {
+    metadata?.validate(maxProperties: 25);
+  }
 
   /// Converts a `Map<String, dynamic>` to an [AddLobbyMemberRequest].
   factory AddLobbyMemberRequest.fromJson(Map<String, dynamic> json) {

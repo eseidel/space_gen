@@ -941,6 +941,8 @@ void main() {
         ),
         valueSchema: boolValue,
         keySchema: null,
+        maxProperties: null,
+        minProperties: null,
       );
       final withKey = RenderMap(
         common: const CommonProperties.test(
@@ -950,12 +952,65 @@ void main() {
         ),
         valueSchema: boolValue,
         keySchema: enumKey,
+        maxProperties: null,
+        minProperties: null,
       );
       expect(noKey.equalsIgnoringName(noKey), isTrue);
       expect(withKey.equalsIgnoringName(withKey), isTrue);
       // Different keySchema (null vs enum) => not equal.
       expect(noKey.equalsIgnoringName(withKey), isFalse);
       expect(withKey.equalsIgnoringName(noKey), isFalse);
+    });
+
+    test('RenderMap emits a validate call for maxProperties/minProperties', () {
+      const boolValue = RenderPod(
+        common: CommonProperties.test(
+          snakeName: 'v',
+          pointer: JsonPointer.empty(),
+          description: 'v',
+        ),
+        type: PodType.boolean,
+        createsNewType: false,
+      );
+      const common = CommonProperties.test(
+        snakeName: 'a',
+        pointer: JsonPointer.empty(),
+        description: 'm',
+      );
+      // Both bounds: one combined call, min before max (matching the
+      // array/number ordering).
+      expect(
+        const RenderMap(
+          common: common,
+          valueSchema: boolValue,
+          keySchema: null,
+          maxProperties: 25,
+          minProperties: 1,
+        ).validationCall,
+        'validate(minProperties: 1, maxProperties: 25)',
+      );
+      // Only one bound present.
+      expect(
+        const RenderMap(
+          common: common,
+          valueSchema: boolValue,
+          keySchema: null,
+          maxProperties: 5,
+          minProperties: null,
+        ).validationCall,
+        'validate(maxProperties: 5)',
+      );
+      // No bounds => no call (unconstrained map).
+      expect(
+        const RenderMap(
+          common: common,
+          valueSchema: boolValue,
+          keySchema: null,
+          maxProperties: null,
+          minProperties: null,
+        ).validationCall,
+        isNull,
+      );
     });
   });
 
@@ -1324,6 +1379,8 @@ void main() {
         common: common,
         valueSchema: void_,
         keySchema: null,
+        maxProperties: null,
+        minProperties: null,
       );
       expect(
         () => map.fromJsonExpression(
@@ -1427,6 +1484,8 @@ void main() {
         common: common,
         valueSchema: inner,
         keySchema: keySchema,
+        maxProperties: null,
+        minProperties: null,
       );
       // Key example names the enum's first member; value is the string
       // example.
@@ -2009,6 +2068,8 @@ void main() {
           common: common,
           valueSchema: nonConstValue,
           keySchema: null,
+          maxProperties: null,
+          minProperties: null,
         ).exampleValue(context)?.canBeConst,
         isFalse,
       );

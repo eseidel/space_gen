@@ -10,6 +10,7 @@ class ApplicationCommandOptionStringChoice {
     this.nameLocalizations,
   }) {
     name.validate(minLength: 1, maxLength: 100);
+    nameLocalizations?.validate(maxProperties: 34);
     value.validate(maxLength: 6000);
   }
 

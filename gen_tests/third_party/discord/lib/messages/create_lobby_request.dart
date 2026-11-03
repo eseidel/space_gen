@@ -15,6 +15,7 @@ class CreateLobbyRequest {
   }) {
     idleTimeoutSeconds?.validate(min: 5, max: 604800);
     members?.validate(maxItems: 25);
+    metadata?.validate(maxProperties: 25);
   }
 
   /// Converts a `Map<String, dynamic>` to a [CreateLobbyRequest].

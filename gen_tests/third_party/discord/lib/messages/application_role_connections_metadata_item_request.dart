@@ -15,7 +15,9 @@ class ApplicationRoleConnectionsMetadataItemRequest {
   }) {
     key.validate(minLength: 1, maxLength: 50);
     name.validate(minLength: 1, maxLength: 100);
+    nameLocalizations?.validate(maxProperties: 1521);
     description.validate(minLength: 1, maxLength: 200);
+    descriptionLocalizations?.validate(maxProperties: 1521);
   }
 
   /// Converts a `Map<String, dynamic>` to an

@@ -13,6 +13,8 @@ class CreateOrJoinLobbyRequest {
     this.flags,
   }) {
     idleTimeoutSeconds?.validate(min: 5, max: 604800);
+    lobbyMetadata?.validate(maxProperties: 25);
+    memberMetadata?.validate(maxProperties: 25);
     secret.validate(maxLength: 250);
   }
 
