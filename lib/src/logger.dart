@@ -16,6 +16,12 @@ R runWithLogger<R>(Logger logger, R Function() fn) {
   return runScoped(fn, values: {loggerRef.overrideWith(() => logger)});
 }
 
+/// Run [fn] with the current logger, or a default [Logger] when no logger has
+/// been scoped by the caller.
+R runWithDefaultLogger<R>(R Function() fn) {
+  return runWithLogger(read(loggerRef, orElse: Logger.new), fn);
+}
+
 /// Set the global logger to verbose logging.
 void setVerboseLogging() {
   logger.level = Level.verbose;
